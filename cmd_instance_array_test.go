@@ -205,3 +205,64 @@ func TestInstanceArrayListCmd(t *testing.T) {
 	Expect(r["LABEL"].(string)).To(Equal(iao.InstanceArrayLabel))
 
 }
+
+func TestInstanceArrayDeleteCmd(t *testing.T) {
+	RegisterTestingT(t)
+	ctrl := gomock.NewController(t)
+
+	infra := metalcloud.Infrastructure{
+		InfrastructureID:    10002,
+		InfrastructureLabel: "testinfra",
+	}
+
+	iao := metalcloud.InstanceArrayOperation{
+		InstanceArrayID:           11,
+		InstanceArrayLabel:        "testia-edited",
+		InstanceArrayDeployType:   "edit",
+		InstanceArrayDeployStatus: "not_started",
+	}
+
+	ia := metalcloud.InstanceArray{
+		InstanceArrayID:            11,
+		InstanceArrayLabel:         "testia",
+		InfrastructureID:           infra.InfrastructureID,
+		InstanceArrayOperation:     &iao,
+		InstanceArrayServiceStatus: "active",
+	}
+
+	client := mock_metalcloud.NewMockMetalCloudClient(ctrl)
+
+	client.EXPECT().
+		InfrastructureGet(infra.InfrastructureID).
+		Return(&infra, nil).
+		AnyTimes()
+
+	client.EXPECT().
+		InstanceArrayGet(ia.InstanceArrayID).
+		Return(&ia, nil).
+		AnyTimes()
+
+	cmd := Command{
+		Arguments: map[string]interface{}{
+			"instance_array_id": &ia.InstanceArrayID,
+		},
+	}
+
+	client.EXPECT().
+		InstanceArrayDelete(ia.InstanceArrayID).
+		Return(nil).
+		Times(1)
+
+	//test autoconfirm
+	_, err := instanceArrayDeleteCmd(&cmd, client)
+	Expect(err.Error()).To(Equal("Operation not confirmed. Aborting"))
+
+	bTrue := true
+	cmd.Arguments["autoconfirm"] = &bTrue
+
+	ret, err := instanceArrayDeleteCmd(&cmd, client)
+
+	Expect(err).To(BeNil())
+	Expect(ret).To(BeEmpty())
+
+}

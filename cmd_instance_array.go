@@ -1,7 +1,6 @@
 package main
 
 import (
-	"bufio"
 	"flag"
 	"fmt"
 	"os"
@@ -33,7 +32,7 @@ var InstanceArrayCmds = []Command{
 				"instance_array_disk_size_mbytes":     c.FlagSet.Int("disk_size", 1, "InstanceArray's local disk sizes"),
 				"instance_array_boot_method":          c.FlagSet.String("boot", "", "InstanceArray's boot type:'pxe_iscsi','local_drives'"),
 				"instance_array_firewall_managed":     c.FlagSet.Bool("managed_fw", true, "InstanceArray's firewall management on or off"),
-				"volume_template_id":                  c.FlagSet.Int("volume_template_id", 0, "InstanceArray's volume template when booting from for local drives"),
+				"volume_template_id":                  c.FlagSet.Int("template", 0, "InstanceArray's volume template when booting from for local drives"),
 				"return_id":                           c.FlagSet.Bool("return_id", false, "(Optional) Will print the ID of the created Instance Array. Useful for automating tasks."),
 			}
 		},
@@ -89,7 +88,7 @@ var InstanceArrayCmds = []Command{
 				"instance_array_disk_size_mbytes":     c.FlagSet.Int("disk_size", 1, "InstanceArray's local disk sizes"),
 				"instance_array_boot_method":          c.FlagSet.String("boot", "", "InstanceArray's boot type:'pxe_iscsi','local_drives'"),
 				"instance_array_firewall_managed":     c.FlagSet.Bool("managed_fw", true, "InstanceArray's firewall management on or off"),
-				"volume_template_id":                  c.FlagSet.Int("volume_template_id", 0, "InstanceArray's volume template when booting from for local drives"),
+				"volume_template_id":                  c.FlagSet.Int("template", 0, "InstanceArray's volume template when booting from for local drives"),
 				"bSwapExistingInstancesHardware":      c.FlagSet.Bool("swap_existing_hardware", false, "If true, all the hardware of the Instance objects is swapped to match the new InstanceArray specifications"),
 				"bKeepDetachingDrives":                c.FlagSet.Bool("keep_detaching_drives", true, "If false and the number of Instance objects is reduced, then the detaching Drive objects will be deleted. If it's set to true, the detaching Drive objects will not be deleted."),
 				//		"objServerTypeMatches":                c.FlagSet.Int("server_type_id", 0, "If not null then the instances of this InstanceArray will be matched with the server configuration provided in the parameter (through the server_type_id property of a ServerType object). The InstanceArray properties detailing the minimum hardware configuration will be ignored."),
@@ -116,7 +115,7 @@ func instanceArrayCreateCmd(c *Command, client MetalCloudClient) (string, error)
 	retIA, err := client.InstanceArrayCreate(*infrastructureID.(*int), *ia)
 
 	if c.Arguments["return_id"] != nil && *c.Arguments["return_id"].(*bool) == true {
-		return fmt.Sprintf("%d\n", retIA.InstanceArrayID), nil
+		return fmt.Sprintf("%d", retIA.InstanceArrayID), nil
 	}
 	return "", err
 }
@@ -256,33 +255,31 @@ func instanceArrayDeleteCmd(c *Command, client MetalCloudClient) (string, error)
 		return "", err2
 	}
 
-	autoConfirm := c.Arguments["autoconfirm"]
-
 	confirm := false
 
-	if autoConfirm == nil || *autoConfirm.(*bool) == false {
-		fmt.Printf("Deleting instance array %s (%d) - from infrastructure %s (%d).  Are you sure? Type \"yes\" to continue:",
+	if c.Arguments["autoconfirm"] != nil && *c.Arguments["autoconfirm"].(*bool) == true {
+		confirm = true
+	} else {
+
+		confirmationMessage := fmt.Sprintf("Deleting instance array %s (%d) - from infrastructure %s (%d).  Are you sure? Type \"yes\" to continue:",
 			retIA.InstanceArrayLabel, retIA.InstanceArrayID,
 			retInfra.InfrastructureLabel, retInfra.InfrastructureID)
-		reader := bufio.NewReader(os.Stdin)
-		yes, _ := reader.ReadString('\n')
 
-		if yes == "yes\n" {
-			confirm = true
+		//this is simply so that we don't output a text on the command line under go test
+		if strings.HasSuffix(os.Args[0], ".test") {
+			confirmationMessage = ""
 		}
 
-	} else {
-		confirm = true
+		confirm = requestConfirmation(confirmationMessage)
 	}
 
-	if confirm {
-		err := client.InstanceArrayDelete(*instanceArrayID.(*int))
-		if err != nil {
-			return "", err
-		}
+	if !confirm {
+		return "", fmt.Errorf("Operation not confirmed. Aborting")
 	}
 
-	return "", nil
+	err := client.InstanceArrayDelete(*instanceArrayID.(*int))
+
+	return "", err
 }
 
 func argsToInstanceArray(m map[string]interface{}) *metalcloud.InstanceArray {

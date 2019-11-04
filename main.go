@@ -1,6 +1,7 @@
 package main
 
 import (
+	"bufio"
 	"fmt"
 	"os"
 	"regexp"
@@ -143,4 +144,11 @@ func validateAPIKey(apiKey string) error {
 	}
 
 	return nil
+}
+
+func requestConfirmation(s string) bool {
+	reader := bufio.NewReader(os.Stdin)
+	yes, _ := reader.ReadString('\n')
+
+	return yes == "yes\n"
 }

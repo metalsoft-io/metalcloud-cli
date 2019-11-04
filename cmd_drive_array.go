@@ -1,7 +1,6 @@
 package main
 
 import (
-	"bufio"
 	"flag"
 	"fmt"
 	"os"
@@ -54,7 +53,7 @@ var DriveArrayCmds = []Command{
 				"drive_size_mbytes_default":              c.FlagSet.Int("size", _nilDefaultInt, "(Optional, default = 40960) Drive arrays's size in MBytes"),
 				"drive_array_count":                      c.FlagSet.Int("count", _nilDefaultInt, "DriveArrays's drive count. Use this only for unconnected DriveArrays."),
 				"drive_array_expand_with_instance_array": c.FlagSet.Bool("expand_with_ia", true, "Auto-expand when the connected instance array expands"),
-				"volume_template_id":                     c.FlagSet.Int("volume_template_id", _nilDefaultInt, "DriveArrays's volume template to clone when creating Drives"),
+				"volume_template_id":                     c.FlagSet.Int("template", _nilDefaultInt, "DriveArrays's volume template to clone when creating Drives"),
 			}
 		},
 		ExecuteFunc: driveArrayEditCmd,
@@ -116,7 +115,7 @@ func driveArrayCreateCmd(c *Command, client MetalCloudClient) (string, error) {
 	retDA, err := client.DriveArrayCreate(*infrastructureID.(*int), *da)
 
 	if c.Arguments["return_id"] != nil && *c.Arguments["return_id"].(*bool) == true {
-		return fmt.Sprintf("%d\n", retDA.DriveArrayID), nil
+		return fmt.Sprintf("%d", retDA.DriveArrayID), nil
 	}
 
 	return "", err
@@ -292,41 +291,41 @@ func driveArrayDeleteCmd(c *Command, client MetalCloudClient) (string, error) {
 		return "", err2
 	}
 
-	autoConfirm := c.Arguments["autoconfirm"]
-
 	confirm := false
 
-	if autoConfirm == nil || *autoConfirm.(*bool) == false {
+	if c.Arguments["autoconfirm"] != nil && *c.Arguments["autoconfirm"].(*bool) == true {
+		confirm = true
+	} else {
+
+		var confirmationMessage string
+
 		if retIA != nil {
-			fmt.Printf("Deleting drive array %s (%d), attached to instance array (%s, %d) - from infrastructure %s (%d).  Are you sure? Type \"yes\" to continue:",
+			confirmationMessage = fmt.Sprintf("Deleting drive array %s (%d), attached to instance array (%s, %d) - from infrastructure %s (%d).  Are you sure? Type \"yes\" to continue:",
 				retDA.DriveArrayLabel, retDA.DriveArrayID,
 				retIA.InstanceArrayLabel, retIA.InstanceArrayID,
 				retInfra.InfrastructureLabel, retInfra.InfrastructureID)
 		} else {
-			fmt.Printf("Deleting drive array %s (%d), unattached - from infrastructure %s (%d).  Are you sure? Type \"yes\" to continue:",
+			confirmationMessage = fmt.Sprintf("Deleting drive array %s (%d), unattached - from infrastructure %s (%d).  Are you sure? Type \"yes\" to continue:",
 				retDA.DriveArrayLabel, retDA.DriveArrayID,
 				retInfra.InfrastructureLabel, retInfra.InfrastructureID)
 		}
 
-		reader := bufio.NewReader(os.Stdin)
-		yes, _ := reader.ReadString('\n')
-
-		if yes == "yes\n" {
-			confirm = true
+		//this is simply so that we don't output a text on the command line
+		if strings.HasSuffix(os.Args[0], ".test") {
+			confirmationMessage = ""
 		}
 
-	} else {
-		confirm = true
+		confirm = requestConfirmation(confirmationMessage)
+
 	}
 
-	if confirm {
-		err := client.DriveArrayDelete(*driveArrayID.(*int))
-		if err != nil {
-			return "", err
-		}
+	if !confirm {
+		return "", fmt.Errorf("Operation not confirmed. Aborting")
 	}
 
-	return "", nil
+	err := client.DriveArrayDelete(*driveArrayID.(*int))
+
+	return "", err
 }
 
 func argsToDriveArray(m map[string]interface{}) *metalcloud.DriveArray {

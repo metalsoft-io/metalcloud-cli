@@ -45,11 +45,11 @@ func TestInfrastructureRevertCmd(t *testing.T) {
 		Return(&ia, nil).
 		AnyTimes()
 
-	format := "json"
+	autoconfirm := true
 	cmd := Command{
 		Arguments: map[string]interface{}{
 			"infrastructure_id": &infra.InfrastructureID,
-			"format":            &format,
+			"autoconfirm":       &autoconfirm,
 		},
 	}
 
@@ -103,20 +103,21 @@ func TestInfrastructureDeployCmd(t *testing.T) {
 
 	bFalse := false
 	bTrue := true
+	timeout := 256
 	cmd := Command{
 		Arguments: map[string]interface{}{
 			"infrastructure_id":             &infra.InfrastructureID,
 			"allow_data_loss":               &bTrue,
 			"hard_shutdown_after_timeout":   &bTrue,
 			"attempt_soft_shutdown":         &bFalse,
-			"soft_shutdown_timeout_seconds": 256,
+			"soft_shutdown_timeout_seconds": &timeout,
 		},
 	}
 
 	expectedShutdownOptions := metalcloud.ShutdownOptions{
 		HardShutdownAfterTimeout:   true,
 		AttemptSoftShutdown:        false,
-		SoftShutdownTimeoutSeconds: 256,
+		SoftShutdownTimeoutSeconds: timeout,
 	}
 
 	client.EXPECT().
@@ -124,9 +125,16 @@ func TestInfrastructureDeployCmd(t *testing.T) {
 		Return(nil).
 		Times(1)
 
-	ret, err := infrastructureRevertCmd(&cmd, client)
-
+	//test first without confirmation
+	ret, err := infrastructureDeleteCmd(&cmd, client)
 	Expect(ret).To(Equal(""))
-	Expect(err).To(BeNil())
+	Expect(err).NotTo(BeNil()) //should throw error indicating confirmation not given
+	Expect(err.Error()).To(Equal("Operation not confirmed. Aborting"))
+
+	cmd.Arguments["autoconfirm"] = &bTrue
+
+	ret, err = infrastructureDeployCmd(&cmd, client)
+	Expect(ret).To(Equal(""))
+	Expect(err).To(BeNil()) //should be nil
 
 }

@@ -131,7 +131,7 @@ func infrastructureCreateCmd(c *Command, client MetalCloudClient) (string, error
 	}
 
 	if c.Arguments["return_id"] != nil && *c.Arguments["return_id"].(*bool) == true {
-		return fmt.Sprintf("%d\n", retInfra.InfrastructureID), nil
+		return fmt.Sprintf("%d", retInfra.InfrastructureID), nil
 	}
 
 	return "", nil
@@ -254,31 +254,29 @@ func infrastructureDeleteCmd(c *Command, client MetalCloudClient) (string, error
 		return "", err2
 	}
 
-	autoConfirm := c.Arguments["autoconfirm"]
-
 	confirm := false
 
-	if autoConfirm == nil || autoConfirm == false {
-		fmt.Printf("Deleting infrastructure %s (%d). Are you sure? Type \"yes\" to continue:", ret.InfrastructureLabel, ret.InfrastructureID)
-		reader := bufio.NewReader(os.Stdin)
-		yes, _ := reader.ReadString('\n')
-
-		if yes == "yes\n" {
-			confirm = true
-		}
-
-	} else {
+	if c.Arguments["autoconfirm"] != nil && *c.Arguments["autoconfirm"].(*bool) == true {
 		confirm = true
-	}
+	} else {
 
-	if confirm {
-		err := client.InfrastructureDelete(*infrastructureID.(*int))
-		if err != nil {
-			return "", err
+		confirmationMessage := fmt.Sprintf("Deleting infrastructure %s (%d). Are you sure? Type \"yes\" to continue:", ret.InfrastructureLabel, ret.InfrastructureID)
+
+		//this is simply so that we don't output a text on the command line under go test
+		if strings.HasSuffix(os.Args[0], ".test") {
+			confirmationMessage = ""
 		}
+
+		confirm = requestConfirmation(confirmationMessage)
 	}
 
-	return "", nil
+	if !confirm {
+		return "", fmt.Errorf("Operation not confirmed. Aborting")
+	}
+
+	err := client.InfrastructureDelete(*infrastructureID.(*int))
+
+	return "", err
 }
 
 func infrastructureDeployCmd(c *Command, client MetalCloudClient) (string, error) {
@@ -294,21 +292,23 @@ func infrastructureDeployCmd(c *Command, client MetalCloudClient) (string, error
 		return "", err2
 	}
 
-	autoConfirm := c.Arguments["autoconfirm"]
-
 	confirm := false
 
-	if autoConfirm == nil || autoConfirm == false {
-		fmt.Printf("Deploying infrastructure %s (%d). Are you sure? Type \"yes\" to continue:", ret.InfrastructureLabel, ret.InfrastructureID)
-		reader := bufio.NewReader(os.Stdin)
-		yes, _ := reader.ReadString('\n')
+	if c.Arguments["autoconfirm"] != nil && *c.Arguments["autoconfirm"].(*bool) == true {
+		confirm = true
+	} else {
 
-		if yes == "yes\n" {
-			confirm = true
+		confirmationMessage := fmt.Sprintf("Deploying infrastructure %s (%d). Are you sure? Type \"yes\" to continue:", ret.InfrastructureLabel, ret.InfrastructureID)
+		//this is simply so that we don't output a text on the command line under go test
+		if strings.HasSuffix(os.Args[0], ".test") {
+			confirmationMessage = ""
 		}
 
-	} else {
-		confirm = true
+		confirm = requestConfirmation(confirmationMessage)
+	}
+
+	if !confirm {
+		return "", fmt.Errorf("Operation not confirmed. Aborting")
 	}
 
 	timeout := 180
@@ -322,18 +322,13 @@ func infrastructureDeployCmd(c *Command, client MetalCloudClient) (string, error
 		SoftShutdownTimeoutSeconds: timeout,
 	}
 
-	if confirm {
-		err := client.InfrastructureDeploy(*infrastructureID.(*int),
-			shutDownOptions,
-			c.Arguments["allow_data_loss"] != nil && *c.Arguments["allow_data_loss"].(*bool),
-			c.Arguments["skip_ansible"] != nil && *c.Arguments["skip_ansible"].(*bool),
-		)
-		if err != nil {
-			return "", err
-		}
-	}
+	err := client.InfrastructureDeploy(*infrastructureID.(*int),
+		shutDownOptions,
+		c.Arguments["allow_data_loss"] != nil && *c.Arguments["allow_data_loss"].(*bool),
+		c.Arguments["skip_ansible"] != nil && *c.Arguments["skip_ansible"].(*bool),
+	)
 
-	return "", nil
+	return "", err
 }
 
 func infrastructureRevertCmd(c *Command, client MetalCloudClient) (string, error) {
@@ -349,11 +344,12 @@ func infrastructureRevertCmd(c *Command, client MetalCloudClient) (string, error
 		return "", err2
 	}
 
-	autoConfirm := c.Arguments["autoconfirm"]
-
 	confirm := false
 
-	if autoConfirm == nil || autoConfirm == false {
+	if c.Arguments["autoconfirm"] != nil && *c.Arguments["autoconfirm"].(*bool) == true {
+		confirm = true
+	} else {
+
 		fmt.Printf("Reverting infrastructure %s (%d) to the deployed state. Are you sure? Type \"yes\" to continue:", ret.InfrastructureLabel, ret.InfrastructureID)
 		reader := bufio.NewReader(os.Stdin)
 		yes, _ := reader.ReadString('\n')
@@ -361,19 +357,15 @@ func infrastructureRevertCmd(c *Command, client MetalCloudClient) (string, error
 		if yes == "yes\n" {
 			confirm = true
 		}
-
-	} else {
-		confirm = true
 	}
 
-	if confirm {
-		err := client.InfrastructureOperationCancel(*infrastructureID.(*int))
-		if err != nil {
-			return "", err
-		}
+	if !confirm {
+		return "", fmt.Errorf("Operation not confirmed. Aborting")
 	}
 
-	return "", nil
+	err := client.InfrastructureOperationCancel(*infrastructureID.(*int))
+
+	return "", err
 }
 
 func infrastructureGetCmd(c *Command, client MetalCloudClient) (string, error) {

@@ -258,3 +258,80 @@ func TestDriveArrayListCmd(t *testing.T) {
 	Expect(r["LABEL"].(string)).To(Equal(dao.DriveArrayLabel))
 
 }
+
+func TestDriveArrayDeleteCmd(t *testing.T) {
+	RegisterTestingT(t)
+	ctrl := gomock.NewController(t)
+
+	infra := metalcloud.Infrastructure{
+		InfrastructureID:    10002,
+		InfrastructureLabel: "testinfra",
+	}
+
+	ia := metalcloud.InstanceArray{
+		InstanceArrayID:    11,
+		InstanceArrayLabel: "testia",
+		InfrastructureID:   infra.InfrastructureID,
+	}
+
+	dao := metalcloud.DriveArrayOperation{
+		DriveArrayID:           10,
+		DriveArrayLabel:        "test-edited",
+		InstanceArrayID:        ia.InstanceArrayID,
+		InfrastructureID:       infra.InfrastructureID,
+		DriveArrayCount:        101,
+		DriveArrayDeployType:   "edit",
+		DriveArrayDeployStatus: "not_started",
+	}
+
+	da := metalcloud.DriveArray{
+		DriveArrayID:            10,
+		DriveArrayLabel:         "test",
+		InstanceArrayID:         ia.InstanceArrayID,
+		InfrastructureID:        infra.InfrastructureID,
+		DriveArrayCount:         101,
+		DriveArrayOperation:     &dao,
+		DriveArrayServiceStatus: "active",
+	}
+
+	client := mock_metalcloud.NewMockMetalCloudClient(ctrl)
+
+	client.EXPECT().
+		InfrastructureGet(infra.InfrastructureID).
+		Return(&infra, nil).
+		AnyTimes()
+
+	client.EXPECT().
+		DriveArrayGet(da.DriveArrayID).
+		Return(&da, nil).
+		AnyTimes()
+
+	client.EXPECT().
+		InstanceArrayGet(da.InstanceArrayID).
+		Return(&ia, nil).
+		AnyTimes()
+
+	cmd := Command{
+		Arguments: map[string]interface{}{
+			"drive_array_id": &da.DriveArrayID,
+		},
+	}
+
+	client.EXPECT().
+		DriveArrayDelete(da.DriveArrayID).
+		Return(nil).
+		AnyTimes()
+
+	ret, err := driveArrayDeleteCmd(&cmd, client)
+
+	Expect(err.Error()).To(Equal("Operation not confirmed. Aborting"))
+
+	bTrue := true
+	cmd.Arguments["autoconfirm"] = &bTrue
+
+	ret, err = driveArrayDeleteCmd(&cmd, client)
+
+	Expect(err).To(BeNil())
+	Expect(ret).To(BeEmpty())
+
+}
