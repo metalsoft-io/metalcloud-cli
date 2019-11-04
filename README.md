@@ -1,8 +1,8 @@
 # metalcloud-cli
-Bigstep Metalcloud CLI tool
+
 [![Build Status](https://travis-ci.org/bigstepinc/metalcloud-cli.svg?branch=master)](https://travis-ci.org/bigstepinc/metalcloud-cli)
 
-This tool allows the manipulation of all metal cloud elements via the command line.
+This tool allows the manipulation of all Bigstep Metal Cloud elements via the command line.
 
 To install use:
 ```bash
