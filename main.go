@@ -3,6 +3,7 @@ package main
 import (
 	"fmt"
 	"os"
+	"regexp"
 
 	metalcloud "github.com/bigstepinc/metal-cloud-sdk-go"
 )
@@ -114,6 +115,11 @@ func initClient() (MetalCloudClient, error) {
 	user := os.Getenv("METALCLOUD_USER_EMAIL")
 	endpoint := os.Getenv("METALCLOUD_ENDPOINT")
 
+	err := validateAPIKey(apiKey)
+	if err != nil {
+		return nil, err
+	}
+
 	return metalcloud.GetMetalcloudClient(user, apiKey, endpoint, false)
 }
 
@@ -125,4 +131,16 @@ func getCommands() []Command {
 	commands = append(commands, DriveArrayCmds...)
 
 	return commands
+}
+
+func validateAPIKey(apiKey string) error {
+	const pattern = "^\\d+\\:[0-9a-zA-Z]{63}$"
+
+	matched, _ := regexp.MatchString(pattern, apiKey)
+
+	if !matched {
+		return fmt.Errorf("API Key is not valid. It should start with a number followed by a semicolon and 63 alphanumeric characters <id>:<63 chars> ")
+	}
+
+	return nil
 }
