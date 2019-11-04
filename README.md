@@ -20,11 +20,11 @@ export METALCLOUD_DATACENTER="uk-reading"
 ## Getting started
 
 To create an infrastructure, in the default datacenter, configured via the `METALCLOUD_DATACENTER` environment variable):
-```bash
+```
 metalcloud-cli create infrastructure -label test
 ```
 
-```bash
+```
 metalcloud-cli list infrastructure 
 +-------+-----------------------------------------+-------------------------------+-----------+-----------+---------------------+---------------------+
 | ID    | LABEL                                   | OWNER                         | REL.      | STATUS    | CREATED             | UPDATED             |
@@ -35,12 +35,12 @@ metalcloud-cli list infrastructure
 
 To create an instance array in that infrastructure, get the ID of the infrastructure from above (12345):
 
-```bash
+```
 metalcloud-cli create instance_array -infra 12345 -label master -proc 1 -proc_core_count 8 -ram 16
 ```
 
 To view the id of the previously created drive array use
-```bash
+```
 metalcloud-cli list instance_array -infra 12345
 +-------+---------------------+---------------------+-----------+
 | ID    | LABEL               | STATUS              | INST_CNT  |
@@ -51,12 +51,12 @@ Total: 1 Instance Arrays
 ```
 
 To create a drive array and attach it to the previous instance array
-```bash
+```
 metalcloud-cli create drive_array -infra 12345 -label master-da -ia 54321
 ```
 
 To view the current status of the infrastructure
-```bash
+```
 metalcloud-cli get infrastructure -infra 12345
 alex@Alexandrus-MacBook-Pro metalcloud-cli $ ./metalcloud-cli get infrastructure -id 26345
 Infrastructures I have access to (as test@test.com)
