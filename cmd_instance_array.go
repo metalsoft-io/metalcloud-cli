@@ -34,6 +34,7 @@ var InstanceArrayCmds = []Command{
 				"instance_array_boot_method":          c.FlagSet.String("boot", "", "InstanceArray's boot type:'pxe_iscsi','local_drives'"),
 				"instance_array_firewall_managed":     c.FlagSet.Bool("managed_fw", true, "InstanceArray's firewall management on or off"),
 				"volume_template_id":                  c.FlagSet.Int("volume_template_id", 0, "InstanceArray's volume template when booting from for local drives"),
+				"return_id":                           c.FlagSet.Bool("return_id", false, "(Optional) Will print the ID of the created Instance Array. Useful for automating tasks."),
 			}
 		},
 		ExecuteFunc: instanceArrayCreateCmd,
@@ -112,8 +113,11 @@ func instanceArrayCreateCmd(c *Command, client MetalCloudClient) (string, error)
 		return "", fmt.Errorf("-label <instance_array_label> is required")
 	}
 
-	_, err := client.InstanceArrayCreate(*infrastructureID.(*int), *ia)
+	retIA, err := client.InstanceArrayCreate(*infrastructureID.(*int), *ia)
 
+	if c.Arguments["return_id"] != nil && *c.Arguments["return_id"].(*bool) == true {
+		return fmt.Sprintf("%d\n", retIA.InstanceArrayID), nil
+	}
 	return "", err
 }
 

@@ -33,6 +33,7 @@ var DriveArrayCmds = []Command{
 				"drive_array_count":                      c.FlagSet.Int("count", 1, "DriveArrays's drive count. Use this only for unconnected DriveArrays."),
 				"drive_array_expand_with_instance_array": c.FlagSet.Bool("expand_with_ia", true, "Auto-expand when the connected instance array expands"),
 				"volume_template_id":                     c.FlagSet.Int("template", 0, "DriveArrays's volume template to clone when creating Drives"),
+				"return_id":                              c.FlagSet.Bool("return_id", false, "(Optional) Will print the ID of the created Drive Array. Useful for automating tasks."),
 			}
 		},
 		ExecuteFunc: driveArrayCreateCmd,
@@ -112,7 +113,11 @@ func driveArrayCreateCmd(c *Command, client MetalCloudClient) (string, error) {
 		return "", fmt.Errorf("-label <drive_array_label> is required")
 	}
 
-	_, err := client.DriveArrayCreate(*infrastructureID.(*int), *da)
+	retDA, err := client.DriveArrayCreate(*infrastructureID.(*int), *da)
+
+	if c.Arguments["return_id"] != nil && *c.Arguments["return_id"].(*bool) == true {
+		return fmt.Sprintf("%d\n", retDA.DriveArrayID), nil
+	}
 
 	return "", err
 }
