@@ -23,7 +23,7 @@ var InfrastructureCmds = []Command{
 		InitFunc: func(c *Command) {
 			c.Arguments = map[string]interface{}{
 				"infrastructure_label": c.FlagSet.String("label", "", "(Required) Infrastructure's label"),
-				"datacenter":           c.FlagSet.String("dc", "", "(Required) Infrastructure datacenter"),
+				"datacenter":           c.FlagSet.String("dc", GetDatacenter(), "(Required) Infrastructure datacenter"),
 			}
 		},
 		ExecuteFunc: infrastructureCreateCmd,
@@ -118,11 +118,6 @@ func infrastructureCreateCmd(c *Command, client MetalCloudClient) (string, error
 	}
 
 	datacenter := c.Arguments["datacenter"]
-
-	if datacenter == nil || *datacenter.(*string) == "" {
-		//	return "", fmt.Errorf("-dc <datacenter> is required")
-		datacenter = GetDatacenter()
-	}
 
 	ia := metalcloud.Infrastructure{
 		InfrastructureLabel: *infrastructureLabel.(*string),
