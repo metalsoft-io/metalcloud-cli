@@ -25,30 +25,55 @@ metalcloud-cli create infrastructure -label test
 ```
 
 ```bash
-metalcloud-cli list infrastructure
+metalcloud-cli list infrastructure 
++-------+-----------------------------------------+-------------------------------+-----------+-----------+---------------------+---------------------+
+| ID    | LABEL                                   | OWNER                         | REL.      | STATUS    | CREATED             | UPDATED             |
++-------+-----------------------------------------+-------------------------------+-----------+-----------+---------------------+---------------------+
+| 12345 | complex-demo                            | d.d@sdd.com                   | OWNER     | active    | 2019-03-28T15:23:08Z| 2019-03-28T15:23:08Z|
++-------+-----------------------------------------+-------------------------------+-----------+-----------+---------------------+---------------------+
 ```
 
-To create an instance array in that infrastructure:
+To create an instance array in that infrastructure, get the ID of the infrastructure from above (12345):
 
 ```bash
-metalcloud-cli create instance_array -label master -proc 1 -proc_core_count 8 -ram 16
+metalcloud-cli create instance_array -infra 12345 -label master -proc 1 -proc_core_count 8 -ram 16
 ```
 
 To view the id of the previously created drive array use
 ```bash
-metalcloud-cli list instance_array -infra 
+metalcloud-cli list instance_array -infra 12345
++-------+---------------------+---------------------+-----------+
+| ID    | LABEL               | STATUS              | INST_CNT  |
++-------+---------------------+---------------------+-----------+
+| 54321 | master              | ordered             | 1         |
++-------+---------------------+---------------------+-----------+
+Total: 1 Instance Arrays
 ```
 
 To create a drive array and attach it to the previous instance array
 ```bash
-metalcloud-cli create drive_array -label master -proc 1 -proc_core_count 8 -ram 16
+metalcloud-cli create drive_array -infra 12345 -label master-da -ia 54321
+```
+
+To view the current status of the infrastructure
+```bash
+metalcloud-cli get infrastructure -infra 12345
+alex@Alexandrus-MacBook-Pro metalcloud-cli $ ./metalcloud-cli get infrastructure -id 26345
+Infrastructures I have access to (as test@test.com)
++-------+----------------+-------------------------------+-----------------------------------------------------------------------+-----------+
+| ID    | OBJECT_TYPE    | LABEL                         | DETAILS                                                               | STATUS    |
++-------+----------------+-------------------------------+-----------------------------------------------------------------------+-----------+
+| 36791 | InstanceArray  | master                        | 1 instances (16 RAM, 8 cores, 1 disks)                                | ordered   |
+| 47398 | DriveArray     | master-da                     | 1 drives - 40.0 GB iscsi_ssd (volume_template:0) attached to: 36791   | ordered   |
++-------+----------------+-------------------------------+-----------------------------------------------------------------------+-----------+
+Total: 2 elements
 ```
 
 ## Supported commands
 
 Supported commands:
 
-```bash
+```
 $ metalcloud-cli help
 Syntax: metalcloud-cli <command> [args]
 Accepted commands:
