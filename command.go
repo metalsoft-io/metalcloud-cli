@@ -16,3 +16,10 @@ type Command struct {
 	InitFunc     func(c *Command)
 	ExecuteFunc  func(c *Command, client MetalCloudClient) (string, error)
 }
+
+func sameCommand(a *Command, b *Command) bool {
+	return a.Subject == b.Subject &&
+		a.AltSubject == b.AltSubject &&
+		a.Predicate == b.Predicate &&
+		a.AltPredicate == b.AltPredicate
+}

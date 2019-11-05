@@ -76,7 +76,7 @@ var InfrastructureCmds = []Command{
 				"autoconfirm":                   c.FlagSet.Bool("autoconfirm", false, "If true it does not ask for confirmation anymore"),
 			}
 		},
-		ExecuteFunc: infrastructureDeleteCmd,
+		ExecuteFunc: infrastructureDeployCmd,
 	},
 	Command{
 		Description:  "Get an infrastructure.",

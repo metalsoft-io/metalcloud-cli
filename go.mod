@@ -6,6 +6,7 @@ require (
 	github.com/bigstepinc/metal-cloud-sdk-go v0.0.0-20191104123125-712ec3bd67d7
 	github.com/golang/mock v1.3.1
 	github.com/golang/protobuf v1.3.2 // indirect
+	github.com/google/go-cmp v0.3.1
 	github.com/onsi/ginkgo v1.10.3 // indirect
 	github.com/onsi/gomega v1.7.1
 	github.com/vburenin/ifacemaker v1.1.0 // indirect
