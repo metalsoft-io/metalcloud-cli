@@ -23,3 +23,6 @@ func sameCommand(a *Command, b *Command) bool {
 		a.Predicate == b.Predicate &&
 		a.AltPredicate == b.AltPredicate
 }
+
+const _nilDefaultStr = "__NIL__"
+const _nilDefaultInt = -14234

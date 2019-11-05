@@ -9,9 +9,6 @@ import (
 	metalcloud "github.com/bigstepinc/metal-cloud-sdk-go"
 )
 
-const _nilDefaultStr = "__NIL__"
-const _nilDefaultInt = -14234
-
 //DriveArrayCmds commands affecting instance arrays
 var DriveArrayCmds = []Command{
 
@@ -24,14 +21,14 @@ var DriveArrayCmds = []Command{
 		FlagSet:      flag.NewFlagSet("drive_array", flag.ExitOnError),
 		InitFunc: func(c *Command) {
 			c.Arguments = map[string]interface{}{
-				"infrastructure_id":                      c.FlagSet.Int("infra", 0, "(Required) Infrastrucure ID"),
-				"instance_array_id":                      c.FlagSet.Int("ia", 0, "(Required) The id of the instance array it is attached to. It can be zero for unattached Drive Arrays"),
-				"drive_array_label":                      c.FlagSet.String("label", "", "(Required) The label of the drive array"),
-				"drive_array_storage_type":               c.FlagSet.String("type", "", "Possible values: iscsi_ssd, iscsi_hdd"),
-				"drive_size_mbytes_default":              c.FlagSet.Int("size", 40960, "(Optional, default = 40960) Drive arrays's size in MBytes"),
-				"drive_array_count":                      c.FlagSet.Int("count", 1, "DriveArrays's drive count. Use this only for unconnected DriveArrays."),
+				"infrastructure_id":                      c.FlagSet.Int("infra", _nilDefaultInt, "(Required) Infrastrucure ID"),
+				"instance_array_id":                      c.FlagSet.Int("ia", _nilDefaultInt, "(Required) The id of the instance array it is attached to. It can be zero for unattached Drive Arrays"),
+				"drive_array_label":                      c.FlagSet.String("label", _nilDefaultStr, "(Required) The label of the drive array"),
+				"drive_array_storage_type":               c.FlagSet.String("type", _nilDefaultStr, "Possible values: iscsi_ssd, iscsi_hdd"),
+				"drive_size_mbytes_default":              c.FlagSet.Int("size", _nilDefaultInt, "(Optional, default = 40960) Drive arrays's size in MBytes"),
+				"drive_array_count":                      c.FlagSet.Int("count", _nilDefaultInt, "DriveArrays's drive count. Use this only for unconnected DriveArrays."),
 				"drive_array_expand_with_instance_array": c.FlagSet.Bool("expand_with_ia", true, "Auto-expand when the connected instance array expands"),
-				"volume_template_id":                     c.FlagSet.Int("template", 0, "DriveArrays's volume template to clone when creating Drives"),
+				"volume_template_id":                     c.FlagSet.Int("template", _nilDefaultInt, "DriveArrays's volume template to clone when creating Drives"),
 				"return_id":                              c.FlagSet.Bool("return_id", false, "(Optional) Will print the ID of the created Drive Array. Useful for automating tasks."),
 			}
 		},
@@ -331,27 +328,27 @@ func driveArrayDeleteCmd(c *Command, client MetalCloudClient) (string, error) {
 func argsToDriveArray(m map[string]interface{}) *metalcloud.DriveArray {
 	obj := metalcloud.DriveArray{}
 
-	if v := m["drive_array_id"]; v != nil {
+	if v := m["drive_array_id"]; v != nil && *v.(*int) != _nilDefaultInt {
 		obj.DriveArrayID = *v.(*int)
 	}
 
-	if v := m["drive_array_label"]; v != nil {
+	if v := m["drive_array_label"]; v != nil && *v.(*string) != _nilDefaultStr {
 		obj.DriveArrayLabel = *v.(*string)
 	}
 
-	if v := m["volume_template_id"]; v != nil {
+	if v := m["volume_template_id"]; v != nil && *v.(*int) != _nilDefaultInt {
 		obj.VolumeTemplateID = *v.(*int)
 	}
 
-	if v := m["drive_array_storage_type"]; v != nil {
+	if v := m["drive_array_storage_type"]; v != nil && *v.(*string) != _nilDefaultStr {
 		obj.DriveArrayStorageType = *v.(*string)
 	}
 
-	if v := m["drive_array_count"]; v != nil {
+	if v := m["drive_array_count"]; v != nil && *v.(*int) != _nilDefaultInt {
 		obj.DriveArrayCount = *v.(*int)
 	}
 
-	if v := m["drive_size_mbytes_default"]; v != nil {
+	if v := m["drive_size_mbytes_default"]; v != nil && *v.(*int) != _nilDefaultInt {
 		obj.DriveSizeMBytesDefault = *v.(*int)
 	}
 
@@ -359,7 +356,7 @@ func argsToDriveArray(m map[string]interface{}) *metalcloud.DriveArray {
 		obj.DriveArrayExpandWithInstanceArray = *v.(*bool)
 	}
 
-	if v := m["instance_array_id"]; v != nil {
+	if v := m["instance_array_id"]; v != nil && *v.(*int) != _nilDefaultInt {
 		obj.InstanceArrayID = *v.(*int)
 	}
 

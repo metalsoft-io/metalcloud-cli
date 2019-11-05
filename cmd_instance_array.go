@@ -21,18 +21,18 @@ var InstanceArrayCmds = []Command{
 		FlagSet:      flag.NewFlagSet("instance_array", flag.ExitOnError),
 		InitFunc: func(c *Command) {
 			c.Arguments = map[string]interface{}{
-				"infrastructure_id":                   c.FlagSet.Int("infra", 0, "(Required) Infrastrucure ID"),
-				"instance_array_instance_count":       c.FlagSet.Int("instance_count", 1, "(Required) Instance count of this instance array"),
-				"instance_array_label":                c.FlagSet.String("label", "", "InstanceArray's label"),
-				"instance_array_ram_gbytes":           c.FlagSet.Int("ram", 1, "InstanceArray's minimum RAM (GB)"),
-				"instance_array_processor_count":      c.FlagSet.Int("proc", 1, "InstanceArray's minimum processor count"),
-				"instance_array_processor_core_mhz":   c.FlagSet.Int("proc_freq", 1000, "InstanceArray's minimum processor frequency (Mhz)"),
-				"instance_array_processor_core_count": c.FlagSet.Int("proc_core_count", 1, "InstanceArray's minimum processor core count"),
-				"instance_array_disk_count":           c.FlagSet.Int("disks", 1, "InstanceArray's number of local drives"),
-				"instance_array_disk_size_mbytes":     c.FlagSet.Int("disk_size", 1, "InstanceArray's local disk sizes"),
-				"instance_array_boot_method":          c.FlagSet.String("boot", "", "InstanceArray's boot type:'pxe_iscsi','local_drives'"),
+				"infrastructure_id":                   c.FlagSet.Int("infra", _nilDefaultInt, "(Required) Infrastrucure ID"),
+				"instance_array_instance_count":       c.FlagSet.Int("instance_count", _nilDefaultInt, "(Required) Instance count of this instance array"),
+				"instance_array_label":                c.FlagSet.String("label", _nilDefaultStr, "InstanceArray's label"),
+				"instance_array_ram_gbytes":           c.FlagSet.Int("ram", _nilDefaultInt, "InstanceArray's minimum RAM (GB)"),
+				"instance_array_processor_count":      c.FlagSet.Int("proc", _nilDefaultInt, "InstanceArray's minimum processor count"),
+				"instance_array_processor_core_mhz":   c.FlagSet.Int("proc_freq", _nilDefaultInt, "InstanceArray's minimum processor frequency (Mhz)"),
+				"instance_array_processor_core_count": c.FlagSet.Int("proc_core_count", _nilDefaultInt, "InstanceArray's minimum processor core count"),
+				"instance_array_disk_count":           c.FlagSet.Int("disks", _nilDefaultInt, "InstanceArray's number of local drives"),
+				"instance_array_disk_size_mbytes":     c.FlagSet.Int("disk_size", _nilDefaultInt, "InstanceArray's local disk sizes"),
+				"instance_array_boot_method":          c.FlagSet.String("boot", _nilDefaultStr, "InstanceArray's boot type:'pxe_iscsi','local_drives'"),
 				"instance_array_firewall_managed":     c.FlagSet.Bool("managed_fw", true, "InstanceArray's firewall management on or off"),
-				"volume_template_id":                  c.FlagSet.Int("template", 0, "InstanceArray's volume template when booting from for local drives"),
+				"volume_template_id":                  c.FlagSet.Int("template", _nilDefaultInt, "InstanceArray's volume template when booting from for local drives"),
 				"return_id":                           c.FlagSet.Bool("return_id", false, "(Optional) Will print the ID of the created Instance Array. Useful for automating tasks."),
 			}
 		},
@@ -77,21 +77,20 @@ var InstanceArrayCmds = []Command{
 		FlagSet:      flag.NewFlagSet("instance_array", flag.ExitOnError),
 		InitFunc: func(c *Command) {
 			c.Arguments = map[string]interface{}{
-				"instance_array_id":                   c.FlagSet.Int("id", 0, "(Required) InstanceArray's id"),
-				"instance_array_instance_count":       c.FlagSet.Int("instance_count", 0, "Instance count of this instance array"),
-				"instance_array_label":                c.FlagSet.String("label", "", "(Required) InstanceArray's label"),
-				"instance_array_ram_gbytes":           c.FlagSet.Int("ram", 1, "InstanceArray's minimum RAM (GB)"),
-				"instance_array_processor_count":      c.FlagSet.Int("proc", 1, "InstanceArray's minimum processor count"),
-				"instance_array_processor_core_mhz":   c.FlagSet.Int("proc_freq", 1000, "InstanceArray's minimum processor frequency (Mhz)"),
-				"instance_array_processor_core_count": c.FlagSet.Int("proc_core_count", 1, "InstanceArray's minimum processor core count"),
-				"instance_array_disk_count":           c.FlagSet.Int("disks", 1, "InstanceArray's number of local drives"),
-				"instance_array_disk_size_mbytes":     c.FlagSet.Int("disk_size", 1, "InstanceArray's local disk sizes"),
-				"instance_array_boot_method":          c.FlagSet.String("boot", "", "InstanceArray's boot type:'pxe_iscsi','local_drives'"),
+				"instance_array_id":                   c.FlagSet.Int("id", _nilDefaultInt, "(Required) InstanceArray's id"),
+				"instance_array_instance_count":       c.FlagSet.Int("instance_count", _nilDefaultInt, "Instance count of this instance array"),
+				"instance_array_label":                c.FlagSet.String("label", _nilDefaultStr, "(Required) InstanceArray's label"),
+				"instance_array_ram_gbytes":           c.FlagSet.Int("ram", _nilDefaultInt, "InstanceArray's minimum RAM (GB)"),
+				"instance_array_processor_count":      c.FlagSet.Int("proc", _nilDefaultInt, "InstanceArray's minimum processor count"),
+				"instance_array_processor_core_mhz":   c.FlagSet.Int("proc_freq", _nilDefaultInt, "InstanceArray's minimum processor frequency (Mhz)"),
+				"instance_array_processor_core_count": c.FlagSet.Int("proc_core_count", _nilDefaultInt, "InstanceArray's minimum processor core count"),
+				"instance_array_disk_count":           c.FlagSet.Int("disks", _nilDefaultInt, "InstanceArray's number of local drives"),
+				"instance_array_disk_size_mbytes":     c.FlagSet.Int("disk_size", _nilDefaultInt, "InstanceArray's local disk sizes"),
+				"instance_array_boot_method":          c.FlagSet.String("boot", _nilDefaultStr, "InstanceArray's boot type:'pxe_iscsi','local_drives'"),
 				"instance_array_firewall_managed":     c.FlagSet.Bool("managed_fw", true, "InstanceArray's firewall management on or off"),
-				"volume_template_id":                  c.FlagSet.Int("template", 0, "InstanceArray's volume template when booting from for local drives"),
+				"volume_template_id":                  c.FlagSet.Int("template", _nilDefaultInt, "InstanceArray's volume template when booting from for local drives"),
 				"bSwapExistingInstancesHardware":      c.FlagSet.Bool("swap_existing_hardware", false, "If true, all the hardware of the Instance objects is swapped to match the new InstanceArray specifications"),
 				"bKeepDetachingDrives":                c.FlagSet.Bool("keep_detaching_drives", true, "If false and the number of Instance objects is reduced, then the detaching Drive objects will be deleted. If it's set to true, the detaching Drive objects will not be deleted."),
-				//		"objServerTypeMatches":                c.FlagSet.Int("server_type_id", 0, "If not null then the instances of this InstanceArray will be matched with the server configuration provided in the parameter (through the server_type_id property of a ServerType object). The InstanceArray properties detailing the minimum hardware configuration will be ignored."),
 			}
 		},
 		ExecuteFunc: instanceArrayEditCmd,
@@ -285,39 +284,39 @@ func instanceArrayDeleteCmd(c *Command, client MetalCloudClient) (string, error)
 func argsToInstanceArray(m map[string]interface{}) *metalcloud.InstanceArray {
 	ia := metalcloud.InstanceArray{}
 
-	if v := m["instance_array_instance_count"]; v != nil {
+	if v := m["instance_array_instance_count"]; v != nil && *v.(*int) != _nilDefaultInt {
 		ia.InstanceArrayInstanceCount = *v.(*int)
 	}
 
-	if v := m["instance_array_label"]; v != nil {
+	if v := m["instance_array_label"]; v != nil && *v.(*string) != _nilDefaultStr {
 		ia.InstanceArrayLabel = *v.(*string)
 	}
 
-	if v := m["instance_array_ram_gbytes"]; v != nil {
+	if v := m["instance_array_ram_gbytes"]; v != nil && *v.(*int) != _nilDefaultInt {
 		ia.InstanceArrayRAMGbytes = *v.(*int)
 	}
 
-	if v := m["instance_array_processor_count"]; v != nil {
+	if v := m["instance_array_processor_count"]; v != nil && *v.(*int) != _nilDefaultInt {
 		ia.InstanceArrayProcessorCount = *v.(*int)
 	}
 
-	if v := m["instance_array_processor_core_mhz"]; v != nil {
+	if v := m["instance_array_processor_core_mhz"]; v != nil && *v.(*int) != _nilDefaultInt {
 		ia.InstanceArrayProcessorCoreMHZ = *v.(*int)
 	}
 
-	if v := m["instance_array_processor_core_count"]; v != nil {
+	if v := m["instance_array_processor_core_count"]; v != nil && *v.(*int) != _nilDefaultInt {
 		ia.InstanceArrayProcessorCoreCount = *v.(*int)
 	}
 
-	if v := m["instance_array_disk_count"]; v != nil {
+	if v := m["instance_array_disk_count"]; v != nil && *v.(*int) != _nilDefaultInt {
 		ia.InstanceArrayDiskCount = *v.(*int)
 	}
 
-	if v := m["instance_array_disk_size_mbytes"]; v != nil {
+	if v := m["instance_array_disk_size_mbytes"]; v != nil && *v.(*int) != _nilDefaultInt {
 		ia.InstanceArrayDiskSizeMBytes = *v.(*int)
 	}
 
-	if v := m["instance_array_boot_method"]; v != nil {
+	if v := m["instance_array_boot_method"]; v != nil && *v.(*string) != _nilDefaultStr {
 		ia.InstanceArrayBootMethod = *v.(*string)
 	}
 
@@ -325,7 +324,7 @@ func argsToInstanceArray(m map[string]interface{}) *metalcloud.InstanceArray {
 		ia.InstanceArrayFirewallManaged = *v.(*bool)
 	}
 
-	if v := m["volume_template_id"]; v != nil {
+	if v := m["volume_template_id"]; v != nil && *v.(*int) != _nilDefaultInt {
 		ia.VolumeTemplateID = *v.(*int)
 	}
 
@@ -334,39 +333,39 @@ func argsToInstanceArray(m map[string]interface{}) *metalcloud.InstanceArray {
 
 func argsToInstanceArrayOperation(m map[string]interface{}, iao *metalcloud.InstanceArrayOperation) {
 
-	if v := m["instance_array_instance_count"]; v != nil {
+	if v := m["instance_array_instance_count"]; v != nil && *v.(*int) != _nilDefaultInt {
 		iao.InstanceArrayInstanceCount = *v.(*int)
 	}
 
-	if v := m["instance_array_label"]; v != nil {
+	if v := m["instance_array_label"]; v != nil && *v.(*string) != _nilDefaultStr {
 		iao.InstanceArrayLabel = *v.(*string)
 	}
 
-	if v := m["instance_array_ram_gbytes"]; v != nil {
+	if v := m["instance_array_ram_gbytes"]; v != nil && *v.(*int) != _nilDefaultInt {
 		iao.InstanceArrayRAMGbytes = *v.(*int)
 	}
 
-	if v := m["instance_array_processor_count"]; v != nil {
+	if v := m["instance_array_processor_count"]; v != nil && *v.(*int) != _nilDefaultInt {
 		iao.InstanceArrayProcessorCount = *v.(*int)
 	}
 
-	if v := m["instance_array_processor_core_mhz"]; v != nil {
+	if v := m["instance_array_processor_core_mhz"]; v != nil && *v.(*int) != _nilDefaultInt {
 		iao.InstanceArrayProcessorCoreMHZ = *v.(*int)
 	}
 
-	if v := m["instance_array_processor_core_count"]; v != nil {
+	if v := m["instance_array_processor_core_count"]; v != nil && *v.(*int) != _nilDefaultInt {
 		iao.InstanceArrayProcessorCoreCount = *v.(*int)
 	}
 
-	if v := m["instance_array_disk_count"]; v != nil {
+	if v := m["instance_array_disk_count"]; v != nil && *v.(*int) != _nilDefaultInt {
 		iao.InstanceArrayDiskCount = *v.(*int)
 	}
 
-	if v := m["instance_array_disk_size_mbytes"]; v != nil {
+	if v := m["instance_array_disk_size_mbytes"]; v != nil && *v.(*int) != _nilDefaultInt {
 		iao.InstanceArrayDiskSizeMBytes = *v.(*int)
 	}
 
-	if v := m["instance_array_boot_method"]; v != nil {
+	if v := m["instance_array_boot_method"]; v != nil && *v.(*string) != _nilDefaultStr {
 		iao.InstanceArrayBootMethod = *v.(*string)
 	}
 
@@ -374,7 +373,7 @@ func argsToInstanceArrayOperation(m map[string]interface{}, iao *metalcloud.Inst
 		iao.InstanceArrayFirewallManaged = *v.(*bool)
 	}
 
-	if v := m["volume_template_id"]; v != nil {
+	if v := m["volume_template_id"]; v != nil && *v.(*int) != _nilDefaultInt {
 		iao.VolumeTemplateID = *v.(*int)
 	}
 }

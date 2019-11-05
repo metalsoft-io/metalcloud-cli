@@ -89,15 +89,17 @@ func TestInstanceArrayEdit(t *testing.T) {
 	}
 
 	iao := metalcloud.InstanceArrayOperation{
-		InstanceArrayID:    11,
-		InstanceArrayLabel: "testia",
+		InstanceArrayID:         11,
+		InstanceArrayLabel:      "testia",
+		InstanceArrayBootMethod: "pxe",
 	}
 
 	ia := metalcloud.InstanceArray{
-		InstanceArrayID:        11,
-		InstanceArrayLabel:     "testia",
-		InfrastructureID:       infra.InfrastructureID,
-		InstanceArrayOperation: &iao,
+		InstanceArrayID:         11,
+		InstanceArrayLabel:      "testia",
+		InstanceArrayBootMethod: "pxe",
+		InfrastructureID:        infra.InfrastructureID,
+		InstanceArrayOperation:  &iao,
 	}
 
 	client := mock_metalcloud.NewMockMetalCloudClient(ctrl)
@@ -136,6 +138,8 @@ func TestInstanceArrayEdit(t *testing.T) {
 	Expect(ret).To(Equal(""))
 	Expect(err).To(BeNil())
 
+	//verify that untouched params stay untouched
+	Expect(expectedOperationObject.InstanceArrayBootMethod).To(Equal(ia.InstanceArrayBootMethod))
 }
 
 func TestInstanceArrayListCmd(t *testing.T) {
