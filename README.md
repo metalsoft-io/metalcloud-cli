@@ -141,31 +141,31 @@ revert infrastructure - Revert all changes of an infrastructure. (alternatively 
 
 create instance_array - Creates an instance array. (alternatively use "new ia")
   -boot string
-        InstanceArray's boot type:'pxe_iscsi','local_drives'
+        InstanceArray's boot type:'pxe_iscsi','local_drives' (default "__NIL__")
   -disk_size int
-        InstanceArray's local disk sizes (default 1)
+        InstanceArray's local disk sizes (default -14234)
   -disks int
-        InstanceArray's number of local drives (default 1)
+        InstanceArray's number of local drives (default -14234)
   -infra int
-        (Required) Infrastrucure ID
+        (Required) Infrastrucure ID (default -14234)
   -instance_count int
-        (Required) Instance count of this instance array (default 1)
+        (Required) Instance count of this instance array (default -14234)
   -label string
-        InstanceArray's label
+        InstanceArray's label (default "__NIL__")
   -managed_fw
         InstanceArray's firewall management on or off (default true)
   -proc int
-        InstanceArray's minimum processor count (default 1)
+        InstanceArray's minimum processor count (default -14234)
   -proc_core_count int
-        InstanceArray's minimum processor core count (default 1)
+        InstanceArray's minimum processor core count (default -14234)
   -proc_freq int
-        InstanceArray's minimum processor frequency (Mhz) (default 1000)
+        InstanceArray's minimum processor frequency (Mhz) (default -14234)
   -ram int
-        InstanceArray's minimum RAM (GB) (default 1)
+        InstanceArray's minimum RAM (GB) (default -14234)
   -return_id
         (Optional) Will print the ID of the created Instance Array. Useful for automating tasks.
   -template int
-        InstanceArray's volume template when booting from for local drives
+        InstanceArray's volume template when booting from for local drives (default -14234)
 
 list instance_array - Lists all instance arrays of an infrastructure. (alternatively use "ls ia")
   -format string
@@ -181,53 +181,53 @@ delete instance_array - Delete instance array. (alternatively use "rm ia")
 
 edit instance_array - Edits an instance array. (alternatively use "alter ia")
   -boot string
-        InstanceArray's boot type:'pxe_iscsi','local_drives'
+        InstanceArray's boot type:'pxe_iscsi','local_drives' (default "__NIL__")
   -disk_size int
-        InstanceArray's local disk sizes (default 1)
+        InstanceArray's local disk sizes (default -14234)
   -disks int
-        InstanceArray's number of local drives (default 1)
+        InstanceArray's number of local drives (default -14234)
   -id int
-        (Required) InstanceArray's id
+        (Required) InstanceArray's id (default -14234)
   -instance_count int
-        Instance count of this instance array
+        Instance count of this instance array (default -14234)
   -keep_detaching_drives
         If false and the number of Instance objects is reduced, then the detaching Drive objects will be deleted. If it's set to true, the detaching Drive objects will not be deleted. (default true)
   -label string
-        (Required) InstanceArray's label
+        (Required) InstanceArray's label (default "__NIL__")
   -managed_fw
         InstanceArray's firewall management on or off (default true)
   -proc int
-        InstanceArray's minimum processor count (default 1)
+        InstanceArray's minimum processor count (default -14234)
   -proc_core_count int
-        InstanceArray's minimum processor core count (default 1)
+        InstanceArray's minimum processor core count (default -14234)
   -proc_freq int
-        InstanceArray's minimum processor frequency (Mhz) (default 1000)
+        InstanceArray's minimum processor frequency (Mhz) (default -14234)
   -ram int
-        InstanceArray's minimum RAM (GB) (default 1)
+        InstanceArray's minimum RAM (GB) (default -14234)
   -swap_existing_hardware
         If true, all the hardware of the Instance objects is swapped to match the new InstanceArray specifications
   -template int
-        InstanceArray's volume template when booting from for local drives
+        InstanceArray's volume template when booting from for local drives (default -14234)
 
 create drive_array - Creates a drive array. (alternatively use "new da")
   -count int
-        DriveArrays's drive count. Use this only for unconnected DriveArrays. (default 1)
+        DriveArrays's drive count. Use this only for unconnected DriveArrays. (default -14234)
   -expand_with_ia
         Auto-expand when the connected instance array expands (default true)
   -ia int
-        (Required) The id of the instance array it is attached to. It can be zero for unattached Drive Arrays
+        (Required) The id of the instance array it is attached to. It can be zero for unattached Drive Arrays (default -14234)
   -infra int
-        (Required) Infrastrucure ID
+        (Required) Infrastrucure ID (default -14234)
   -label string
-        (Required) The label of the drive array
+        (Required) The label of the drive array (default "__NIL__")
   -return_id
         (Optional) Will print the ID of the created Drive Array. Useful for automating tasks.
   -size int
-        (Optional, default = 40960) Drive arrays's size in MBytes (default 40960)
+        (Optional, default = 40960) Drive arrays's size in MBytes (default -14234)
   -template int
-        DriveArrays's volume template to clone when creating Drives
+        DriveArrays's volume template to clone when creating Drives (default -14234)
   -type string
-        Possible values: iscsi_ssd, iscsi_hdd
+        Possible values: iscsi_ssd, iscsi_hdd (default "__NIL__")
 
 edit drive_array - Edit a drive array. (alternatively use "alter da")
   -count int
