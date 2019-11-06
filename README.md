@@ -103,7 +103,7 @@ create infrastructure - Creates an infrastructure. (alternatively use "new infra
 
 list infrastructure - Lists all infrastructures. (alternatively use "ls infra")
   -format string
-        The output format. Supproted values are 'json','csv'. The default format is human readable.
+        The output format. Supported values are 'json','csv'. The default format is human readable.
 
 delete infrastructure - Delete an infrastructure. (alternatively use "rm infra")
   -autoconfirm
@@ -129,7 +129,7 @@ deploy infrastructure - Deploy an infrastructure. (alternatively use "apply infr
 
 get infrastructure - Get an infrastructure. (alternatively use "show infra")
   -format string
-        The output format. Supproted values are 'json','csv'. The default format is human readable.
+        The output format. Supported values are 'json','csv'. The default format is human readable.
   -id int
         (Required) Infrastructure's id
 
@@ -169,7 +169,7 @@ create instance_array - Creates an instance array. (alternatively use "new ia")
 
 list instance_array - Lists all instance arrays of an infrastructure. (alternatively use "ls ia")
   -format string
-        The output format. Supproted values are 'json','csv'. The default format is human readable.
+        The output format. Supported values are 'json','csv'. The default format is human readable.
   -infra int
         (Required) Infrastrucure ID
 
@@ -249,7 +249,7 @@ edit drive_array - Edit a drive array. (alternatively use "alter da")
 
 list drive_array - Lists all drive arrays of an infrastructure. (alternatively use "ls da")
   -format string
-        The output format. Supproted values are 'json','csv'. The default format is human readable.
+        The output format. Supported values are 'json','csv'. The default format is human readable.
   -infra int
         (Required) Infrastrucure ID
 

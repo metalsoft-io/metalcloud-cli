@@ -127,9 +127,11 @@ func initClient() (MetalCloudClient, error) {
 func getCommands() []Command {
 	var commands []Command
 
-	commands = append(commands, InfrastructureCmds...)
-	commands = append(commands, InstanceArrayCmds...)
-	commands = append(commands, DriveArrayCmds...)
+	commands = append(commands, infrastructureCmds...)
+	commands = append(commands, instanceArrayCmds...)
+	commands = append(commands, driveArrayCmds...)
+	commands = append(commands, volumeTemplateyCmds...)
+	commands = append(commands, firewallRuleCmds...)
 
 	return commands
 }

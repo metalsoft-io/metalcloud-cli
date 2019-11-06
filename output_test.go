@@ -1,6 +1,11 @@
 package main
 
-import "testing"
+import (
+	"encoding/json"
+	"testing"
+
+	. "github.com/onsi/gomega"
+)
 
 func TestGetTableHeader(t *testing.T) {
 
@@ -138,6 +143,7 @@ func TestGetTableAsString(t *testing.T) {
 }
 
 func TestGetTableAsJSONString(t *testing.T) {
+	RegisterTestingT(t)
 	schema := []SchemaField{
 		SchemaField{
 			FieldName: "ID",
@@ -157,37 +163,27 @@ func TestGetTableAsJSONString(t *testing.T) {
 		},
 	}
 
-	expected :=
-		`[
-	{
-		"ID": 6,
-		"INST.": 2.1,
-		"LABEL": "st11r444"
-	},
-	{
-		"ID": 6,
-		"INST.": 2.1,
-		"LABEL": "st11r444"
-	},
-	{
-		"ID": 6,
-		"INST.": 2.1,
-		"LABEL": "st11r444"
-	}
-]`
 	data := [][]interface{}{
 		{4, "str", 20.1},
 		{5, "st11r", 22.1},
 		{6, "st11r444", 2.1},
 	}
 
-	actual, err := GetTableAsJSONString(data, schema)
+	ret, err := GetTableAsJSONString(data, schema)
 	if err != nil {
 		t.Errorf("%s", err)
 	}
-	if actual != expected {
-		t.Errorf("Delimiter is not correct, \nexpected:\n%s\nwas:\n%s", expected, actual)
-	}
+
+	var m []interface{}
+
+	err = json.Unmarshal([]byte(ret), &m)
+	Expect(err).To(BeNil())
+
+	Expect(int(m[0].(map[string]interface{})["ID"].(float64))).To(Equal(data[0][0]))
+	Expect(m[0].(map[string]interface{})["LABEL"]).To(Equal(data[0][1]))
+	Expect(m[2].(map[string]interface{})["LABEL"]).To(Equal(data[2][1]))
+	Expect(float64(m[2].(map[string]interface{})["INST."].(float64))).To(Equal(data[2][2]))
+
 }
 
 func TestGetTableAsCSVString(t *testing.T) {

@@ -19,6 +19,8 @@ const (
 	TypeDateTime = iota
 	//TypeInterface is printed as %v
 	TypeInterface = iota
+	//TypeBool is printed as %v
+	TypeBool = iota
 )
 
 //SchemaField defines a field in a table
@@ -149,6 +151,10 @@ func (ms *MultiSorter) OrderBy(fieldNames ...string) *MultiSorter {
 				}
 
 				return ta.Before(tb)
+			}
+		case TypeBool:
+			ms.less[k] = func(a, b interface{}, field *SchemaField) bool {
+				return a.(bool) != b.(bool)
 			}
 		default:
 			fmt.Printf("could not find type %d", field.FieldType)

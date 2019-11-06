@@ -9,8 +9,8 @@ import (
 	metalcloud "github.com/bigstepinc/metal-cloud-sdk-go"
 )
 
-//InstanceArrayCmds commands affecting instance arrays
-var InstanceArrayCmds = []Command{
+//instanceArrayCmds commands affecting instance arrays
+var instanceArrayCmds = []Command{
 
 	Command{
 		Description:  "Creates an instance array.",
@@ -48,7 +48,7 @@ var InstanceArrayCmds = []Command{
 		InitFunc: func(c *Command) {
 			c.Arguments = map[string]interface{}{
 				"infrastructure_id": c.FlagSet.Int("infra", 0, "(Required) Infrastrucure ID"),
-				"format":            c.FlagSet.String("format", "", "The output format. Supproted values are 'json','csv'. The default format is human readable."),
+				"format":            c.FlagSet.String("format", "", "The output format. Supported values are 'json','csv'. The default format is human readable."),
 			}
 		},
 		ExecuteFunc: instanceArrayListCmd,
@@ -112,10 +112,14 @@ func instanceArrayCreateCmd(c *Command, client MetalCloudClient) (string, error)
 	}
 
 	retIA, err := client.InstanceArrayCreate(*infrastructureID.(*int), *ia)
+	if err != nil {
+		return "", err
+	}
 
-	if c.Arguments["return_id"] != nil && *c.Arguments["return_id"].(*bool) == true {
+	if c.Arguments["return_id"] != nil && *c.Arguments["return_id"].(*bool) {
 		return fmt.Sprintf("%d", retIA.InstanceArrayID), nil
 	}
+
 	return "", err
 }
 

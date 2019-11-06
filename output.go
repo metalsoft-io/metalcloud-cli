@@ -88,9 +88,9 @@ func printTable(data [][]interface{}, schema []SchemaField) {
 //GetTableAsJSONString returns a MarshalIndent string for the given data
 func GetTableAsJSONString(data [][]interface{}, schema []SchemaField) (string, error) {
 	dataAsMap := make([]interface{}, len(data))
-	rowAsMap := make(map[string]interface{}, len(schema))
 
 	for k, row := range data {
+		rowAsMap := make(map[string]interface{}, len(schema))
 		for i, field := range schema {
 			rowAsMap[field.FieldName] = row[i]
 		}

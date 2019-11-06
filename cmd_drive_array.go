@@ -9,8 +9,8 @@ import (
 	metalcloud "github.com/bigstepinc/metal-cloud-sdk-go"
 )
 
-//DriveArrayCmds commands affecting instance arrays
-var DriveArrayCmds = []Command{
+//driveArrayCmds commands affecting instance arrays
+var driveArrayCmds = []Command{
 
 	Command{
 		Description:  "Creates a drive array.",
@@ -65,7 +65,7 @@ var DriveArrayCmds = []Command{
 		InitFunc: func(c *Command) {
 			c.Arguments = map[string]interface{}{
 				"infrastructure_id": c.FlagSet.Int("infra", 0, "(Required) Infrastrucure ID"),
-				"format":            c.FlagSet.String("format", "", "The output format. Supproted values are 'json','csv'. The default format is human readable."),
+				"format":            c.FlagSet.String("format", "", "The output format. Supported values are 'json','csv'. The default format is human readable."),
 			}
 		},
 		ExecuteFunc: driveArrayListCmd,
@@ -110,6 +110,9 @@ func driveArrayCreateCmd(c *Command, client MetalCloudClient) (string, error) {
 	}
 
 	retDA, err := client.DriveArrayCreate(*infrastructureID.(*int), *da)
+	if err != nil {
+		return "", err
+	}
 
 	if c.Arguments["return_id"] != nil && *c.Arguments["return_id"].(*bool) == true {
 		return fmt.Sprintf("%d", retDA.DriveArrayID), nil

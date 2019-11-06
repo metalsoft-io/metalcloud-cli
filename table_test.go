@@ -1,9 +1,15 @@
 package main
 
 import (
+	"encoding/json"
+	"fmt"
 	"reflect"
 	"testing"
 	"time"
+
+	metalcloud "github.com/bigstepinc/metal-cloud-sdk-go"
+
+	. "github.com/onsi/gomega"
 )
 
 func TestTableSortWithSchema(t *testing.T) {
@@ -110,4 +116,151 @@ func TestDefaultTimeFormat(t *testing.T) {
 		t.Error("Date was not parsed correctly")
 	}
 
+}
+
+func TestGetTableAsJSONRegressionTest1(t *testing.T) {
+	RegisterTestingT(t)
+	fw1 := metalcloud.FirewallRule{
+		FirewallRuleDescription:    "test desc",
+		FirewallRuleProtocol:       "tcp",
+		FirewallRulePortRangeStart: 22,
+		FirewallRulePortRangeEnd:   23,
+	}
+
+	fw2 := metalcloud.FirewallRule{
+		FirewallRuleProtocol:       "udp",
+		FirewallRulePortRangeStart: 22,
+		FirewallRulePortRangeEnd:   22,
+	}
+
+	fw3 := metalcloud.FirewallRule{
+		FirewallRuleProtocol:                  "tcp",
+		FirewallRulePortRangeStart:            22,
+		FirewallRulePortRangeEnd:              22,
+		FirewallRuleSourceIPAddressRangeStart: "192.168.0.1",
+		FirewallRuleSourceIPAddressRangeEnd:   "192.168.0.1",
+	}
+
+	fw4 := metalcloud.FirewallRule{
+		FirewallRuleProtocol:                  "tcp",
+		FirewallRulePortRangeStart:            22,
+		FirewallRulePortRangeEnd:              22,
+		FirewallRuleSourceIPAddressRangeStart: "192.168.0.1",
+		FirewallRuleSourceIPAddressRangeEnd:   "192.168.0.100",
+	}
+
+	iao := metalcloud.InstanceArrayOperation{
+		InstanceArrayID:           11,
+		InstanceArrayLabel:        "testia-edited",
+		InstanceArrayDeployType:   "edit",
+		InstanceArrayDeployStatus: "not_started",
+		InstanceArrayFirewallRules: []metalcloud.FirewallRule{
+			fw1,
+			fw2,
+			fw3,
+			fw4,
+		},
+	}
+
+	ia := metalcloud.InstanceArray{
+		InstanceArrayID:            11,
+		InstanceArrayLabel:         "testia",
+		InfrastructureID:           100,
+		InstanceArrayOperation:     &iao,
+		InstanceArrayServiceStatus: "active",
+		InstanceArrayFirewallRules: []metalcloud.FirewallRule{
+			fw1,
+			fw2,
+			fw3,
+			fw4,
+		},
+	}
+
+	list := ia.InstanceArrayOperation.InstanceArrayFirewallRules
+	data := [][]interface{}{}
+	idx := 0
+
+	for _, fw := range list {
+
+		portRange := "any"
+
+		if fw.FirewallRulePortRangeStart != 0 {
+			portRange = fmt.Sprintf("%d", fw.FirewallRulePortRangeStart)
+		}
+
+		if fw.FirewallRulePortRangeStart != fw.FirewallRulePortRangeEnd {
+			portRange += fmt.Sprintf("-%d", fw.FirewallRulePortRangeEnd)
+		}
+
+		sourceIPRange := "any"
+
+		if fw.FirewallRuleSourceIPAddressRangeStart != "" {
+			sourceIPRange = fw.FirewallRuleSourceIPAddressRangeStart
+		}
+
+		if fw.FirewallRuleSourceIPAddressRangeStart != fw.FirewallRuleSourceIPAddressRangeEnd {
+			sourceIPRange += fmt.Sprintf("-%s", fw.FirewallRuleSourceIPAddressRangeEnd)
+		}
+
+		data = append(data, []interface{}{
+			idx,
+			fw.FirewallRuleProtocol,
+			portRange,
+			sourceIPRange,
+			fw.FirewallRuleEnabled,
+			fw.FirewallRuleDescription,
+		})
+
+		idx++
+
+	}
+
+	schema := []SchemaField{
+		SchemaField{
+			FieldName: "INDEX",
+			FieldType: TypeInt,
+			FieldSize: 6,
+		},
+		SchemaField{
+			FieldName: "PROTOCOL",
+			FieldType: TypeString,
+			FieldSize: 10,
+		},
+		SchemaField{
+			FieldName: "PORT",
+			FieldType: TypeString,
+			FieldSize: 10,
+		},
+		SchemaField{
+			FieldName: "SOURCE",
+			FieldType: TypeString,
+			FieldSize: 20,
+		},
+
+		SchemaField{
+			FieldName: "ENABLED",
+			FieldType: TypeBool,
+			FieldSize: 10,
+		},
+		SchemaField{
+			FieldName: "DESC.",
+			FieldType: TypeString,
+			FieldSize: 50,
+		},
+	}
+
+	Expect(data[0][0]).NotTo(Equal(data[0][1]))
+	Expect(data[0][1]).NotTo(Equal(data[0][2]))
+	Expect(data[0][1]).NotTo(Equal(data[0][2]))
+
+	ret, err := GetTableAsJSONString(data, schema)
+	Expect(err).To(BeNil())
+
+	var m []interface{}
+	err = json.Unmarshal([]byte(ret), &m)
+	Expect(err).To(BeNil())
+
+	Expect(m[0].(map[string]interface{})["INDEX"]).ToNot(Equal(m[1].(map[string]interface{})["INDEX"]))
+	Expect(m[0].(map[string]interface{})["INDEX"]).ToNot(Equal(m[2].(map[string]interface{})["INDEX"]))
+	Expect(m[1].(map[string]interface{})["INDEX"]).ToNot(Equal(m[2].(map[string]interface{})["INDEX"]))
 }

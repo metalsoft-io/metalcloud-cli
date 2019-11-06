@@ -10,8 +10,8 @@ import (
 	metalcloud "github.com/bigstepinc/metal-cloud-sdk-go"
 )
 
-//InfrastructureCmds commands affecting infrastructures
-var InfrastructureCmds = []Command{
+//infrastructureCmds commands affecting infrastructures
+var infrastructureCmds = []Command{
 
 	Command{
 		Description:  "Creates an infrastructure.",
@@ -38,7 +38,7 @@ var InfrastructureCmds = []Command{
 		FlagSet:      flag.NewFlagSet("list infrastructure", flag.ExitOnError),
 		InitFunc: func(c *Command) {
 			c.Arguments = map[string]interface{}{
-				"format": c.FlagSet.String("format", "", "The output format. Supproted values are 'json','csv'. The default format is human readable."),
+				"format": c.FlagSet.String("format", "", "The output format. Supported values are 'json','csv'. The default format is human readable."),
 			}
 		},
 		ExecuteFunc: infrastructureListCmd,
@@ -88,7 +88,7 @@ var InfrastructureCmds = []Command{
 		InitFunc: func(c *Command) {
 			c.Arguments = map[string]interface{}{
 				"infrastructure_id": c.FlagSet.Int("id", 0, "(Required) Infrastructure's id"),
-				"format":            c.FlagSet.String("format", "", "The output format. Supproted values are 'json','csv'. The default format is human readable."),
+				"format":            c.FlagSet.String("format", "", "The output format. Supported values are 'json','csv'. The default format is human readable."),
 			}
 		},
 		ExecuteFunc: infrastructureGetCmd,
@@ -130,7 +130,7 @@ func infrastructureCreateCmd(c *Command, client MetalCloudClient) (string, error
 		return "", err
 	}
 
-	if c.Arguments["return_id"] != nil && *c.Arguments["return_id"].(*bool) == true {
+	if c.Arguments["return_id"] != nil && *c.Arguments["return_id"].(*bool) {
 		return fmt.Sprintf("%d", retInfra.InfrastructureID), nil
 	}
 

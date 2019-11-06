@@ -2,6 +2,7 @@ package main
 
 import (
 	"encoding/json"
+	"fmt"
 	"testing"
 
 	metalcloud "github.com/bigstepinc/metal-cloud-sdk-go"
@@ -52,6 +53,61 @@ func TestInstanceArrayCreate(t *testing.T) {
 	Expect(objSubmitted["instance_array_label"]).To(Equal(s))
 	Expect(err).To(BeNil())
 
+}
+
+func TestInstanceArrayCreateCmd2(t *testing.T) {
+	RegisterTestingT(t)
+	ctrl := gomock.NewController(t)
+
+	infra := metalcloud.Infrastructure{
+		InfrastructureID:    10002,
+		InfrastructureLabel: "testinfra",
+	}
+
+	ia := metalcloud.InstanceArray{
+		InstanceArrayLabel:          "testia",
+		InstanceArrayInstanceCount:  10,
+		InstanceArrayProcessorCount: 10,
+	}
+
+	client := mock_metalcloud.NewMockMetalCloudClient(ctrl)
+
+	client.EXPECT().
+		InfrastructureGet(infra.InfrastructureID).
+		Return(&infra, nil).
+		AnyTimes()
+
+	cmd := Command{
+		Arguments: map[string]interface{}{
+			"infrastructure_id":              &infra.InfrastructureID,
+			"instance_array_label":           &ia.InstanceArrayLabel,
+			"instance_array_instance_count":  &ia.InstanceArrayInstanceCount,
+			"instance_array_processor_count": &ia.InstanceArrayProcessorCount,
+		},
+	}
+
+	retIA := ia
+	retIA.InstanceArrayID = 1222
+
+	client.EXPECT().
+		InstanceArrayCreate(infra.InfrastructureID, ia).
+		Return(&retIA, nil).
+		AnyTimes()
+
+	//check with no return_id
+	ret, err := instanceArrayCreateCmd(&cmd, client)
+
+	Expect(ret).To(Equal(""))
+	Expect(err).To(BeNil())
+
+	bTrue := true
+	cmd.Arguments["return_id"] = &bTrue
+
+	//check with return_id
+	ret, err = instanceArrayCreateCmd(&cmd, client)
+
+	Expect(ret).To(Equal(fmt.Sprintf("%d", retIA.InstanceArrayID)))
+	Expect(err).To(BeNil())
 }
 
 func TestInstanceArrayListCmdHumanReadable(t *testing.T) {
