@@ -39,7 +39,8 @@ To create an instance array in that infrastructure, get the ID of the infrastruc
 metalcloud-cli create instance_array -infra 12345 -label master -proc 1 -proc_core_count 8 -ram 16
 ```
 
-To view the id of the previously created drive array use
+To view the id of the previously created drive array:
+
 ```
 metalcloud-cli list instance_array -infra 12345
 +-------+---------------------+---------------------+-----------+
@@ -50,15 +51,16 @@ metalcloud-cli list instance_array -infra 12345
 Total: 1 Instance Arrays
 ```
 
-To create a drive array and attach it to the previous instance array
+To create a drive array and attach it to the previous instance array:
+
 ```
 metalcloud-cli create drive_array -infra 12345 -label master-da -ia 54321
 ```
 
 To view the current status of the infrastructure
+
 ```
-metalcloud-cli get infrastructure -infra 12345
-alex@Alexandrus-MacBook-Pro metalcloud-cli $ ./metalcloud-cli get infrastructure -id 26345
+metalcloud-cli get infrastructure -id 12345
 Infrastructures I have access to (as test@test.com)
 +-------+----------------+-------------------------------+-----------------------------------------------------------------------+-----------+
 | ID    | OBJECT_TYPE    | LABEL                         | DETAILS                                                               | STATUS    |

@@ -226,7 +226,7 @@ func infrastructureListCmd(c *Command, client MetalCloudClient) (string, error) 
 		sb.WriteString(ret)
 
 	default:
-		sb.WriteString(fmt.Sprintf("Infrastructures I have access to (as %s)\n", user))
+		sb.WriteString(fmt.Sprintf("Infrastructures I have access to (as %s) in datacenter %s\n", user, GetDatacenter()))
 
 		TableSorter(schema).OrderBy(
 			schema[3].FieldName,
