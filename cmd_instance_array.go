@@ -21,7 +21,7 @@ var instanceArrayCmds = []Command{
 		FlagSet:      flag.NewFlagSet("instance_array", flag.ExitOnError),
 		InitFunc: func(c *Command) {
 			c.Arguments = map[string]interface{}{
-				"infrastructure_id":                   c.FlagSet.Int("infra", _nilDefaultInt, "(Required) Infrastrucure ID"),
+				"infrastructure_id_or_label":          c.FlagSet.String("infra", _nilDefaultStr, "(Required) Infrastructure's id or label. Note that the 'label' this be ambiguous in certain situations."),
 				"instance_array_instance_count":       c.FlagSet.Int("instance_count", _nilDefaultInt, "(Required) Instance count of this instance array"),
 				"instance_array_label":                c.FlagSet.String("label", _nilDefaultStr, "InstanceArray's label"),
 				"instance_array_ram_gbytes":           c.FlagSet.Int("ram", _nilDefaultInt, "InstanceArray's minimum RAM (GB)"),
@@ -99,10 +99,9 @@ var instanceArrayCmds = []Command{
 
 func instanceArrayCreateCmd(c *Command, client MetalCloudClient) (string, error) {
 
-	infrastructureID := c.Arguments["infrastructure_id"]
-
-	if infrastructureID == nil || *infrastructureID.(*int) == 0 {
-		return "", fmt.Errorf("-infra <infrastructure_id> is required")
+	retInfra, err := getInfrastructureFromCommand(c, client)
+	if err != nil {
+		return "", err
 	}
 
 	ia := argsToInstanceArray(c.Arguments)
@@ -111,7 +110,7 @@ func instanceArrayCreateCmd(c *Command, client MetalCloudClient) (string, error)
 		return "", fmt.Errorf("-label <instance_array_label> is required")
 	}
 
-	retIA, err := client.InstanceArrayCreate(*infrastructureID.(*int), *ia)
+	retIA, err := client.InstanceArrayCreate(retInfra.InfrastructureID, *ia)
 	if err != nil {
 		return "", err
 	}
