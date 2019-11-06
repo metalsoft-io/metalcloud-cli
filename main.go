@@ -115,13 +115,14 @@ func initClient() (MetalCloudClient, error) {
 	apiKey := os.Getenv("METALCLOUD_API_KEY")
 	user := os.Getenv("METALCLOUD_USER_EMAIL")
 	endpoint := os.Getenv("METALCLOUD_ENDPOINT")
+	loggingEnabled := os.Getenv("METALCLOUD_LOGGING_ENABLED") == "true"
 
 	err := validateAPIKey(apiKey)
 	if err != nil {
 		return nil, err
 	}
 
-	return metalcloud.GetMetalcloudClient(user, apiKey, endpoint, false)
+	return metalcloud.GetMetalcloudClient(user, apiKey, endpoint, loggingEnabled)
 }
 
 func getCommands() []Command {

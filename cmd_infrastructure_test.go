@@ -108,7 +108,7 @@ func TestInfrastructureDeployCmd(t *testing.T) {
 	cmd := Command{
 		Arguments: map[string]interface{}{
 			"infrastructure_id":             &infra.InfrastructureID,
-			"allow_data_loss":               &bTrue,
+			"allow_data_loss":               &bFalse,
 			"hard_shutdown_after_timeout":   &bTrue,
 			"attempt_soft_shutdown":         &bFalse,
 			"soft_shutdown_timeout_seconds": &timeout,
@@ -122,7 +122,7 @@ func TestInfrastructureDeployCmd(t *testing.T) {
 	}
 
 	client.EXPECT().
-		InfrastructureDeploy(infra.InfrastructureID, expectedShutdownOptions, true, false).
+		InfrastructureDeploy(infra.InfrastructureID, expectedShutdownOptions, false, false).
 		Return(nil).
 		Times(1)
 
