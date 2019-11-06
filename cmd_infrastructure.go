@@ -87,8 +87,9 @@ var infrastructureCmds = []Command{
 		FlagSet:      flag.NewFlagSet("get infrastructure", flag.ExitOnError),
 		InitFunc: func(c *Command) {
 			c.Arguments = map[string]interface{}{
-				"infrastructure_id": c.FlagSet.Int("id", 0, "(Required) Infrastructure's id"),
-				"format":            c.FlagSet.String("format", "", "The output format. Supported values are 'json','csv'. The default format is human readable."),
+				"infrastructure_id":    c.FlagSet.Int("id", _nilDefaultInt, "(Either -id or -label must be passed) Infrastructure's id"),
+				"infrastructure_label": c.FlagSet.String("label", _nilDefaultStr, "(Either -id or -label must be passed) Infrastructure's label. Note that this could be ambiguous in certain situations."),
+				"format":               c.FlagSet.String("format", "", "The output format. Supported values are 'json','csv'. The default format is human readable."),
 			}
 		},
 		ExecuteFunc: infrastructureGetCmd,
@@ -399,20 +400,19 @@ func infrastructureGetCmd(c *Command, client MetalCloudClient) (string, error) {
 		},
 	}
 
-	infrastructureID := c.Arguments["infrastructure_id"]
-
-	if infrastructureID == nil || *infrastructureID.(*int) == 0 {
-		return "", fmt.Errorf("-id <infrastructure_id> is required")
+	infrastructureID, err := getInfrastructureIDFromCommand(c, client)
+	if err != nil {
+		return "", err
 	}
 
-	retInfra, err := client.InfrastructureGet(*infrastructureID.(*int))
+	retInfra, err := client.InfrastructureGet(infrastructureID)
 	if err != nil {
 		return "", err
 	}
 
 	data := [][]interface{}{}
 
-	iaList, err := client.InstanceArrays(*infrastructureID.(*int))
+	iaList, err := client.InstanceArrays(infrastructureID)
 	if err != nil {
 		return "", err
 	}
@@ -436,7 +436,7 @@ func infrastructureGetCmd(c *Command, client MetalCloudClient) (string, error) {
 
 	}
 
-	daList, err := client.DriveArrays(*infrastructureID.(*int))
+	daList, err := client.DriveArrays(infrastructureID)
 	if err != nil {
 		return "", err
 	}
@@ -497,4 +497,42 @@ func infrastructureGetCmd(c *Command, client MetalCloudClient) (string, error) {
 	}
 
 	return sb.String(), nil
+}
+
+func getInfrastructureIDFromCommand(c *Command, client MetalCloudClient) (int, error) {
+
+	infrastructureID := 0
+	if c.Arguments["infrastructure_id"] != nil && *c.Arguments["infrastructure_id"].(*int) != _nilDefaultInt {
+		return *c.Arguments["infrastructure_id"].(*int), nil
+	}
+
+	if c.Arguments["infrastructure_id"] == nil || *c.Arguments["infrastructure_id"].(*int) == _nilDefaultInt {
+		if c.Arguments["infrastructure_label"] == nil || *c.Arguments["infrastructure_label"].(*string) == _nilDefaultStr {
+			return 0, fmt.Errorf("either -id <infrastructure_id> or -label <infrastructure_label> is required")
+		}
+
+		ret, err := client.Infrastructures()
+		if err != nil {
+			return 0, err
+		}
+
+		for _, infra := range *ret {
+			if infra.InfrastructureLabel == *c.Arguments["infrastructure_label"].(*string) {
+
+				if infrastructureID != 0 {
+					//if we found this infrastructure label, with the same name again, we throw an error
+					return 0, fmt.Errorf("Infrastructures %d and %d both have the same label %s", infrastructureID, infra.InfrastructureID, *c.Arguments["infrastructure_label"].(*string))
+				}
+
+				infrastructureID = infra.InfrastructureID
+				//we let the search go on to avoid ambiguous situationss
+			}
+		}
+
+		if infrastructureID == 0 {
+			return 0, fmt.Errorf("Could not find infrastructure with label %s", *c.Arguments["infrastructure_label"].(*string))
+		}
+	}
+
+	return infrastructureID, nil
 }
