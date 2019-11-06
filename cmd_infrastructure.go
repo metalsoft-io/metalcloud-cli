@@ -405,6 +405,11 @@ func infrastructureGetCmd(c *Command, client MetalCloudClient) (string, error) {
 		return "", fmt.Errorf("-id <infrastructure_id> is required")
 	}
 
+	retInfra, err := client.InfrastructureGet(*infrastructureID.(*int))
+	if err != nil {
+		return "", err
+	}
+
 	data := [][]interface{}{}
 
 	iaList, err := client.InstanceArrays(*infrastructureID.(*int))
@@ -481,13 +486,11 @@ func infrastructureGetCmd(c *Command, client MetalCloudClient) (string, error) {
 
 	default:
 
-		sb.WriteString(fmt.Sprintf("Infrastructures I have access to (as %s)\n", GetUserEmail()))
-		/*
-			TableSorter(schema).OrderBy(
-				schema[3].FieldName,
-				schema[0].FieldName,
-				schema[1].FieldName).Sort(data)
-		*/
+		sb.WriteString(fmt.Sprintf("Infrastructure %s (%d) - datacenter %s owner %s\n",
+			retInfra.InfrastructureLabel,
+			retInfra.InfrastructureID,
+			retInfra.DatacenterName,
+			retInfra.UserEmailOwner))
 		sb.WriteString(GetTableAsString(data, schema))
 
 		sb.WriteString(fmt.Sprintf("Total: %d elements\n\n", len(data)))
