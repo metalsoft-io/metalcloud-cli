@@ -294,7 +294,7 @@ func infrastructureDeployCmd(c *Command, client MetalCloudClient) (string, error
 
 	confirm := false
 
-	if c.Arguments["autoconfirm"] != nil && *c.Arguments["autoconfirm"].(*bool) == true {
+	if c.Arguments["autoconfirm"] != nil && *c.Arguments["autoconfirm"].(*bool) {
 		confirm = true
 	} else {
 

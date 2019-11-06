@@ -149,6 +149,8 @@ func validateAPIKey(apiKey string) error {
 }
 
 func requestConfirmation(s string) bool {
+
+	fmt.Printf(s)
 	reader := bufio.NewReader(os.Stdin)
 	yes, _ := reader.ReadString('\n')
 
