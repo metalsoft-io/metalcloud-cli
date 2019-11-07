@@ -94,7 +94,7 @@ func TestFirewallRuleListCmd(t *testing.T) {
 		},
 	}
 
-	ret, err := firewallRulesListCmd(&cmd, client)
+	ret, err := firewallRuleListCmd(&cmd, client)
 	Expect(err).To(BeNil())
 
 	var m []interface{}
@@ -120,7 +120,7 @@ func TestFirewallRuleListCmd(t *testing.T) {
 		},
 	}
 
-	ret, err = firewallRulesListCmd(&cmd, client)
+	ret, err = firewallRuleListCmd(&cmd, client)
 	Expect(err).To(BeNil())
 	Expect(ret).NotTo(BeEmpty())
 
@@ -134,7 +134,7 @@ func TestFirewallRuleListCmd(t *testing.T) {
 		},
 	}
 
-	ret, err = firewallRulesListCmd(&cmd, client)
+	ret, err = firewallRuleListCmd(&cmd, client)
 	Expect(err).To(BeNil())
 	Expect(ret).NotTo(BeEmpty())
 
@@ -144,5 +144,261 @@ func TestFirewallRuleListCmd(t *testing.T) {
 	Expect(csv[1][0]).To(Equal(fmt.Sprintf("%d", 0)))
 	Expect(csv[1][2]).To(Equal("22-23"))
 	Expect(csv[2][1]).To(Equal(fw2.FirewallRuleProtocol))
+
+}
+
+func TestFirewallRuleAddCmd(t *testing.T) {
+	RegisterTestingT(t)
+	ctrl := gomock.NewController(t)
+
+	infra := metalcloud.Infrastructure{
+		InfrastructureID:    10002,
+		InfrastructureLabel: "testinfra",
+	}
+
+	fw1 := metalcloud.FirewallRule{
+		FirewallRuleDescription:    "test desc",
+		FirewallRuleProtocol:       "tcp",
+		FirewallRulePortRangeStart: 22,
+		FirewallRulePortRangeEnd:   23,
+	}
+
+	fw2 := metalcloud.FirewallRule{
+		FirewallRuleProtocol:       "udp",
+		FirewallRulePortRangeStart: 22,
+		FirewallRulePortRangeEnd:   22,
+	}
+
+	fw3 := metalcloud.FirewallRule{
+		FirewallRuleProtocol:                  "tcp",
+		FirewallRulePortRangeStart:            22,
+		FirewallRulePortRangeEnd:              22,
+		FirewallRuleSourceIPAddressRangeStart: "192.168.0.1",
+		FirewallRuleSourceIPAddressRangeEnd:   "192.168.0.1",
+	}
+
+	fw4 := metalcloud.FirewallRule{
+		FirewallRuleProtocol:                  "tcp",
+		FirewallRulePortRangeStart:            22,
+		FirewallRulePortRangeEnd:              22,
+		FirewallRuleSourceIPAddressRangeStart: "192.168.0.1",
+		FirewallRuleSourceIPAddressRangeEnd:   "192.168.0.100",
+	}
+
+	iao := metalcloud.InstanceArrayOperation{
+		InstanceArrayID:           11,
+		InstanceArrayLabel:        "testia-edited",
+		InstanceArrayDeployType:   "edit",
+		InstanceArrayDeployStatus: "not_started",
+		InstanceArrayFirewallRules: []metalcloud.FirewallRule{
+			fw1,
+			fw2,
+			fw3,
+		},
+	}
+
+	ia := metalcloud.InstanceArray{
+		InstanceArrayID:            11,
+		InstanceArrayLabel:         "testia",
+		InfrastructureID:           infra.InfrastructureID,
+		InstanceArrayOperation:     &iao,
+		InstanceArrayServiceStatus: "active",
+		InstanceArrayFirewallRules: []metalcloud.FirewallRule{
+			fw1,
+			fw2,
+			fw3,
+			fw4,
+		},
+	}
+
+	client := mock_metalcloud.NewMockMetalCloudClient(ctrl)
+
+	client.EXPECT().
+		InstanceArrayGet(ia.InstanceArrayID).
+		Return(&ia, nil).
+		AnyTimes()
+
+	//test json
+	protocol := "tcp"
+	port := "22-34"
+	source := "192.172.10.10-192.172.10.15"
+	cmd := Command{
+		Arguments: map[string]interface{}{
+			"firewall_rule_protocol":          &protocol,
+			"firewall_rule_port":              &port,
+			"firewall_rule_source_ip_address": &source,
+			"instance_array_id":               &ia.InstanceArrayID,
+		},
+	}
+
+	expectedIAO := iao
+
+	fw := metalcloud.FirewallRule{
+		FirewallRuleProtocol:                  "tcp",
+		FirewallRulePortRangeStart:            22,
+		FirewallRulePortRangeEnd:              34,
+		FirewallRuleSourceIPAddressRangeStart: "192.172.10.10",
+		FirewallRuleSourceIPAddressRangeEnd:   "192.172.10.15",
+	}
+
+	expectedIAO.InstanceArrayFirewallRules = append(expectedIAO.InstanceArrayFirewallRules, fw)
+
+	client.EXPECT().
+		InstanceArrayEdit(ia.InstanceArrayID, expectedIAO, nil, nil, nil, nil).
+		Return(&ia, nil).
+		AnyTimes()
+
+	_, err := firewallRuleAddCmd(&cmd, client)
+	Expect(err).To(BeNil())
+
+}
+
+func TestFirewallRuleRemoveCmd(t *testing.T) {
+	RegisterTestingT(t)
+	ctrl := gomock.NewController(t)
+
+	infra := metalcloud.Infrastructure{
+		InfrastructureID:    10002,
+		InfrastructureLabel: "testinfra",
+	}
+
+	fw1 := metalcloud.FirewallRule{
+		FirewallRuleDescription:    "test desc",
+		FirewallRuleProtocol:       "tcp",
+		FirewallRulePortRangeStart: 22,
+		FirewallRulePortRangeEnd:   23,
+	}
+
+	fw2 := metalcloud.FirewallRule{
+		FirewallRuleProtocol:       "udp",
+		FirewallRulePortRangeStart: 22,
+		FirewallRulePortRangeEnd:   22,
+	}
+
+	fw3 := metalcloud.FirewallRule{
+		FirewallRuleProtocol:                  "tcp",
+		FirewallRulePortRangeStart:            22,
+		FirewallRulePortRangeEnd:              22,
+		FirewallRuleSourceIPAddressRangeStart: "192.168.0.1",
+		FirewallRuleSourceIPAddressRangeEnd:   "192.168.0.1",
+	}
+
+	fw4 := metalcloud.FirewallRule{
+		FirewallRuleProtocol:                  "tcp",
+		FirewallRulePortRangeStart:            22,
+		FirewallRulePortRangeEnd:              22,
+		FirewallRuleSourceIPAddressRangeStart: "192.168.0.1",
+		FirewallRuleSourceIPAddressRangeEnd:   "192.168.0.100",
+	}
+
+	iao := metalcloud.InstanceArrayOperation{
+		InstanceArrayID:           11,
+		InstanceArrayLabel:        "testia-edited",
+		InstanceArrayDeployType:   "edit",
+		InstanceArrayDeployStatus: "not_started",
+		InstanceArrayFirewallRules: []metalcloud.FirewallRule{
+			fw1,
+			fw2,
+			fw3,
+			fw4,
+		},
+	}
+
+	ia := metalcloud.InstanceArray{
+		InstanceArrayID:            11,
+		InstanceArrayLabel:         "testia",
+		InfrastructureID:           infra.InfrastructureID,
+		InstanceArrayOperation:     &iao,
+		InstanceArrayServiceStatus: "active",
+		InstanceArrayFirewallRules: []metalcloud.FirewallRule{
+			fw1,
+			fw2,
+			fw3,
+			fw4,
+		},
+	}
+
+	client := mock_metalcloud.NewMockMetalCloudClient(ctrl)
+
+	client.EXPECT().
+		InstanceArrayGet(ia.InstanceArrayID).
+		Return(&ia, nil).
+		AnyTimes()
+
+	//test json
+	protocol := "tcp"
+	port := "22"
+	source := "192.168.0.1"
+	cmd := Command{
+		Arguments: map[string]interface{}{
+			"firewall_rule_protocol":          &protocol,
+			"firewall_rule_port":              &port,
+			"firewall_rule_source_ip_address": &source,
+			"instance_array_id":               &ia.InstanceArrayID,
+		},
+	}
+
+	expectedIAO := iao
+
+	expectedIAO.InstanceArrayFirewallRules = []metalcloud.FirewallRule{
+		fw1,
+		fw2, //we skipped fw3 which should be deleted
+		fw4,
+	}
+
+	client.EXPECT().
+		InstanceArrayEdit(ia.InstanceArrayID, expectedIAO, nil, nil, nil, nil).
+		Return(&ia, nil).
+		AnyTimes()
+
+	_, err := firewallRuleDeleteCmd(&cmd, client)
+	Expect(err).To(BeNil())
+
+}
+
+func TestPortStringToRange(t *testing.T) {
+	RegisterTestingT(t)
+
+	s, e, err := portStringToRange("12")
+	Expect(err).To(BeNil())
+	Expect(s).To(Equal(12))
+	Expect(e).To(Equal(12))
+
+	s, e, err = portStringToRange("12-35")
+	Expect(err).To(BeNil())
+	Expect(s).To(Equal(12))
+	Expect(e).To(Equal(35))
+
+	s, e, err = portStringToRange("-35")
+	Expect(err).NotTo(BeNil())
+
+	s, e, err = portStringToRange("44-")
+	Expect(err).NotTo(BeNil())
+
+	s, e, err = portStringToRange("44&33")
+	Expect(err).NotTo(BeNil())
+}
+
+func TestAddressStringToRange(t *testing.T) {
+	RegisterTestingT(t)
+
+	s, e, err := addressStringToRange("192.168.0.1")
+	Expect(err).To(BeNil())
+	Expect(s).To(Equal("192.168.0.1"))
+	Expect(e).To(Equal("192.168.0.1"))
+
+	s, e, err = addressStringToRange("192.168.0.1-192.168.0.100")
+	Expect(err).To(BeNil())
+	Expect(s).To(Equal("192.168.0.1"))
+	Expect(e).To(Equal("192.168.0.100"))
+
+	s, e, err = addressStringToRange("192.168.0.1-")
+	Expect(err).NotTo(BeNil())
+
+	s, e, err = addressStringToRange("-192.168.0.1")
+	Expect(err).NotTo(BeNil())
+
+	s, e, err = addressStringToRange("-192.168.0.1--192.168.0.1")
+	Expect(err).NotTo(BeNil())
 
 }

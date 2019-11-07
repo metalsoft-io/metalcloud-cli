@@ -3,14 +3,18 @@ package main
 import (
 	"flag"
 	"fmt"
+	"regexp"
+	"strconv"
 	"strings"
+
+	metalcloud "github.com/bigstepinc/metal-cloud-sdk-go"
 )
 
 var firewallRuleCmds = []Command{
 
 	Command{
 		Description:  "Lists instance array firewall rules",
-		Subject:      "firewall_rules",
+		Subject:      "firewall_rule",
 		AltSubject:   "fw",
 		Predicate:    "list",
 		AltPredicate: "ls",
@@ -21,11 +25,50 @@ var firewallRuleCmds = []Command{
 				"format":            c.FlagSet.String("format", _nilDefaultStr, "The output format. Supported values are 'json','csv'. The default format is human readable."),
 			}
 		},
-		ExecuteFunc: firewallRulesListCmd,
+		ExecuteFunc: firewallRuleListCmd,
+	},
+	Command{
+		Description:  "Add instance array firewall rule",
+		Subject:      "firewall_rule",
+		AltSubject:   "fw",
+		Predicate:    "add",
+		AltPredicate: "new",
+		FlagSet:      flag.NewFlagSet("add firewall rules", flag.ExitOnError),
+		InitFunc: func(c *Command) {
+			c.Arguments = map[string]interface{}{
+				"instance_array_id":                   c.FlagSet.Int("ia", _nilDefaultInt, "(Required) The instance array id"),
+				"firewall_rule_protocol":              c.FlagSet.String("protocol", _nilDefaultStr, "The protocol of the firewall rule. Possible values: all, icmp, tcp, udp."),
+				"firewall_rule_ip_address_type":       c.FlagSet.String("ip_address_type", "ipv4", "The IP address type of the firewall rule. Possible values: ipv4, ipv6."),
+				"firewall_rule_port":                  c.FlagSet.String("port", _nilDefaultStr, "The port to filter on. It can also be a range with the start and end values separated by a dash."),
+				"firewall_rule_source_ip_address":     c.FlagSet.String("source", _nilDefaultStr, "The source address to filter on. It can also be a range with the start and end values separated by a dash."),
+				"firewall_rule_desination_ip_address": c.FlagSet.String("destination", _nilDefaultStr, "The destination address to filter on. It can also be a range with the start and end values separated by a dash."),
+				"firewall_rule_description":           c.FlagSet.String("description", _nilDefaultStr, "The firewall rule's description."),
+			}
+		},
+		ExecuteFunc: firewallRuleAddCmd,
+	},
+	Command{
+		Description:  "Remove instance array firewall rule",
+		Subject:      "firewall_rule",
+		AltSubject:   "fw",
+		Predicate:    "delete",
+		AltPredicate: "rm",
+		FlagSet:      flag.NewFlagSet("delete firewall rules", flag.ExitOnError),
+		InitFunc: func(c *Command) {
+			c.Arguments = map[string]interface{}{
+				"instance_array_id":                   c.FlagSet.Int("ia", _nilDefaultInt, "(Required) The instance array id"),
+				"firewall_rule_ip_address_type":       c.FlagSet.String("ip_address_type", "ipv4", "The IP address type of the firewall rule. Possible values: ipv4, ipv6."),
+				"firewall_rule_protocol":              c.FlagSet.String("protocol", _nilDefaultStr, "The protocol of the firewall rule. Possible values: all, icmp, tcp, udp."),
+				"firewall_rule_port":                  c.FlagSet.String("port", _nilDefaultStr, "The port to filter on. It can also be a range with the start and end values separated by a dash."),
+				"firewall_rule_source_ip_address":     c.FlagSet.String("source", _nilDefaultStr, "The source address to filter on. It can also be a range with the start and end values separated by a dash."),
+				"firewall_rule_desination_ip_address": c.FlagSet.String("destination", _nilDefaultStr, "The destination address to filter on. It can also be a range with the start and end values separated by a dash."),
+			}
+		},
+		ExecuteFunc: firewallRuleDeleteCmd,
 	},
 }
 
-func firewallRulesListCmd(c *Command, client MetalCloudClient) (string, error) {
+func firewallRuleListCmd(c *Command, client MetalCloudClient) (string, error) {
 
 	instanceArrayID := c.Arguments["instance_array_id"]
 
@@ -147,4 +190,184 @@ func firewallRulesListCmd(c *Command, client MetalCloudClient) (string, error) {
 	}
 
 	return sb.String(), nil
+}
+
+func firewallRuleAddCmd(c *Command, client MetalCloudClient) (string, error) {
+	instanceArrayID := c.Arguments["instance_array_id"]
+
+	if instanceArrayID == nil || *instanceArrayID.(*int) == 0 {
+		return "", fmt.Errorf("-ia <instance_array_id> is required")
+	}
+
+	retIA, err := client.InstanceArrayGet(*instanceArrayID.(*int))
+	if err != nil {
+		return "", err
+	}
+
+	fw := metalcloud.FirewallRule{}
+
+	if v := c.Arguments["firewall_rule_protocol"]; v != nil && *v.(*string) != _nilDefaultStr {
+		fw.FirewallRuleProtocol = *v.(*string)
+	}
+
+	if v := c.Arguments["firewall_rule_ip_address_type"]; v != nil && *v.(*string) != _nilDefaultStr {
+		fw.FirewallRuleIPAddressType = *v.(*string)
+	}
+
+	if v := c.Arguments["firewall_rule_port"]; v != nil && *v.(*string) != _nilDefaultStr {
+		fw.FirewallRulePortRangeStart, fw.FirewallRulePortRangeEnd, err = portStringToRange(*v.(*string))
+		if err != nil {
+			return "", err
+		}
+	}
+
+	if v := c.Arguments["firewall_rule_source_ip_address"]; v != nil && *v.(*string) != _nilDefaultStr {
+		fw.FirewallRuleSourceIPAddressRangeStart, fw.FirewallRuleSourceIPAddressRangeEnd, err = addressStringToRange(*v.(*string))
+		if err != nil {
+			return "", err
+		}
+	}
+
+	if v := c.Arguments["firewall_rule_desination_ip_address"]; v != nil && *v.(*string) != _nilDefaultStr {
+		fw.FirewallRuleDestinationIPAddressRangeStart, fw.FirewallRuleDestinationIPAddressRangeEnd, err = addressStringToRange(*v.(*string))
+		if err != nil {
+			return "", err
+		}
+	}
+
+	if v := c.Arguments["firewall_rule_description"]; v != nil && *v.(*string) != _nilDefaultStr {
+		fw.FirewallRuleDescription = *v.(*string)
+	}
+
+	retIA.InstanceArrayOperation.InstanceArrayFirewallRules = append(
+		retIA.InstanceArrayOperation.InstanceArrayFirewallRules,
+		fw)
+
+	bFalse := false
+	_, err = client.InstanceArrayEdit(retIA.InstanceArrayID, *retIA.InstanceArrayOperation, &bFalse, nil, nil, nil)
+
+	return "", err
+}
+
+func firewallRuleDeleteCmd(c *Command, client MetalCloudClient) (string, error) {
+	instanceArrayID := c.Arguments["instance_array_id"]
+
+	if instanceArrayID == nil || *instanceArrayID.(*int) == 0 {
+		return "", fmt.Errorf("-ia <instance_array_id> is required")
+	}
+
+	retIA, err := client.InstanceArrayGet(*instanceArrayID.(*int))
+	if err != nil {
+		return "", err
+	}
+
+	fw := metalcloud.FirewallRule{}
+
+	if v := c.Arguments["firewall_rule_protocol"]; v != nil && *v.(*string) != _nilDefaultStr {
+		fw.FirewallRuleProtocol = *v.(*string)
+	}
+
+	if v := c.Arguments["firewall_rule_ip_address_type"]; v != nil && *v.(*string) != _nilDefaultStr {
+		fw.FirewallRuleIPAddressType = *v.(*string)
+	}
+
+	if v := c.Arguments["firewall_rule_port"]; v != nil && *v.(*string) != _nilDefaultStr {
+		fw.FirewallRulePortRangeStart, fw.FirewallRulePortRangeEnd, err = portStringToRange(*v.(*string))
+		if err != nil {
+			return "", err
+		}
+	}
+
+	if v := c.Arguments["firewall_rule_source_ip_address"]; v != nil && *v.(*string) != _nilDefaultStr {
+		fw.FirewallRuleSourceIPAddressRangeStart, fw.FirewallRuleSourceIPAddressRangeEnd, err = addressStringToRange(*v.(*string))
+		if err != nil {
+			return "", err
+		}
+	}
+
+	if v := c.Arguments["firewall_rule_desination_ip_address"]; v != nil && *v.(*string) != _nilDefaultStr {
+		fw.FirewallRuleDestinationIPAddressRangeStart, fw.FirewallRuleDestinationIPAddressRangeEnd, err = addressStringToRange(*v.(*string))
+		if err != nil {
+			return "", err
+		}
+	}
+
+	newFW := []metalcloud.FirewallRule{}
+	found := false
+	for _, f := range retIA.InstanceArrayOperation.InstanceArrayFirewallRules {
+		if !fwRulesEqual(f, fw) {
+			newFW = append(newFW, f)
+		} else {
+			found = true
+		}
+	}
+
+	if !found {
+		return "", fmt.Errorf("No matching firewall rule was found %v", fw)
+	}
+
+	retIA.InstanceArrayOperation.InstanceArrayFirewallRules = newFW
+	bFalse := false
+	_, err = client.InstanceArrayEdit(retIA.InstanceArrayID, *retIA.InstanceArrayOperation, &bFalse, nil, nil, nil)
+
+	return "", err
+}
+
+func fwRulesEqual(a, b metalcloud.FirewallRule) bool {
+	return a.FirewallRuleProtocol == b.FirewallRuleProtocol &&
+		a.FirewallRulePortRangeStart == b.FirewallRulePortRangeStart &&
+		a.FirewallRulePortRangeEnd == b.FirewallRulePortRangeEnd &&
+		a.FirewallRuleSourceIPAddressRangeStart == b.FirewallRuleSourceIPAddressRangeStart &&
+		a.FirewallRuleSourceIPAddressRangeEnd == b.FirewallRuleSourceIPAddressRangeEnd &&
+		a.FirewallRuleDestinationIPAddressRangeStart == b.FirewallRuleDestinationIPAddressRangeStart &&
+		a.FirewallRuleDestinationIPAddressRangeEnd == b.FirewallRuleDestinationIPAddressRangeEnd
+}
+
+func portStringToRange(s string) (int, int, error) {
+	port, err := strconv.Atoi(s)
+
+	if err == nil && port > 0 {
+		return port, port, nil
+	}
+
+	re := regexp.MustCompile(`^(\d+)\-(\d+)$`)
+	matches := re.FindStringSubmatch(s)
+
+	if matches == nil {
+		return 0, 0, fmt.Errorf("Could not parse port definition %s", s)
+	}
+
+	startPort, err := strconv.Atoi(matches[1])
+
+	if err != nil && startPort > 0 {
+		return 0, 0, fmt.Errorf("Could not parse port definition %s", s)
+	}
+
+	endPort, err := strconv.Atoi(matches[2])
+	if err != nil && endPort > 0 {
+		return 0, 0, fmt.Errorf("Could not parse port definition %s", s)
+	}
+
+	return startPort, endPort, nil
+
+}
+
+func addressStringToRange(s string) (string, string, error) {
+
+	if s == "" {
+		return "", "", fmt.Errorf("address cannot be empty")
+	}
+
+	components := strings.Split(s, "-")
+
+	if len(components) == 1 && components[0] != "" {
+		return s, s, nil //single address, we return it
+	}
+
+	if len(components) != 2 || components[0] == "" || components[1] == "" {
+		return "", "", fmt.Errorf("cannot parse address %s", s)
+	}
+
+	return components[0], components[1], nil
+
 }
