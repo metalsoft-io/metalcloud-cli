@@ -6,17 +6,17 @@ language: go
 go:
 - 1.11.x
 env:
-  GO111MODULE="on"
-
+  matrix:
+  - GO111MODULE="on"
+  global:
+    secure: ZvVOaEMDBf+JJfRrZ8MZ2ZaFsLDDMnHJKDT4sV7VCiroQKXT5UK/Q0ZD8H1AO1JvXs8e2z/CJEBOXa+xezUy2Zdbh8xu+Apb7KD2IneUxDK5BW0iDCW7AcI2TZ2afCZNNXW0tNIoBaEXixW1veSklX5fSkatWO8JOZ2lvZbA/fLpcnkFFI7TxB10dgUwA++2rsaMA1MINmAdrQwvF1Pg7rzar+ZXGKVt7bbzYsHTTAYA/PS15IlFtRuN+fq9FVrtUKYJFiCQKccxb61tUBR1rQhFE/gYKfq2zR4KSiQxgtOzvA2lJbjjuUOIapCGpLyKkYSPaSBynuxFAhbub5+AO8ydRUw+cKpkCKHZu6SbxT49A6gya+993wMInDTN/brXKjTLp3lNONXbxEl7HSBZubPjuEAc8N7vUeXGhN71ePQiBKLEux2ui0pXb2xoFtH3zYpFgl6XX7N+ayxS4jE8cUgIo2IEIoRu8g0zCH28TKXH4SSWiT8GX1uRcIgi5kLuX1r1sCOqXBmOkAF6sDkOxRZ1mCMhhwLqPWocUNFNyql9URC7gJkjJfB9cJUeb8KN9egoqefG0LZCB42sDd9wQf2/TKXP/L8gXNAjKGT+VbHU8kLL2y2Whvjqs6Wy3MlcMU5yYwUv/VTK10zgKC0YrfjPmVgFg45pOwNdw4ldNW8=
 install:
-# This script is used by the Travis build to install a cookie for
-# go.googlesource.com so rate limits are higher when using `go get` to fetch
-# packages that live there.
-# See: https://github.com/golang/go/issues/12933
-#- bash scripts/gogetcookie.sh
-- go install 
+- go install
+- go get golang.org/x/tools/cmd/cover
+- go get github.com/mattn/goveralls
 script:
-- go test
+- go test -v -covermode=count -coverprofile=coverage.out
+- $HOME/gopath/bin/goveralls -coverprofile=coverage.out -service=travis-ci -repotoken $COVERALLS_TOKEN
 branches:
   only:
   - master
