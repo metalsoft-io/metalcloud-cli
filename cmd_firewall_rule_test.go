@@ -244,7 +244,7 @@ func TestFirewallRuleAddCmd(t *testing.T) {
 	expectedIAO.InstanceArrayFirewallRules = append(expectedIAO.InstanceArrayFirewallRules, fw)
 
 	client.EXPECT().
-		InstanceArrayEdit(ia.InstanceArrayID, expectedIAO, nil, nil, nil, nil).
+		InstanceArrayEdit(ia.InstanceArrayID, expectedIAO, gomock.Any(), nil, nil, nil).
 		Return(&ia, nil).
 		AnyTimes()
 
@@ -347,7 +347,7 @@ func TestFirewallRuleRemoveCmd(t *testing.T) {
 	}
 
 	client.EXPECT().
-		InstanceArrayEdit(ia.InstanceArrayID, expectedIAO, nil, nil, nil, nil).
+		InstanceArrayEdit(ia.InstanceArrayID, expectedIAO, gomock.Any(), nil, nil, nil).
 		Return(&ia, nil).
 		AnyTimes()
 
