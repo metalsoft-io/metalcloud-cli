@@ -1,7 +1,10 @@
 package main
 
 import (
+	"encoding/csv"
 	"encoding/json"
+	"fmt"
+	"strings"
 	"testing"
 
 	metalcloud "github.com/bigstepinc/metal-cloud-sdk-go"
@@ -16,26 +19,106 @@ func TestDriveArrayCreate(t *testing.T) {
 
 	client := mock_metalcloud.NewMockMetalCloudClient(ctrl)
 
+	i := 10
+	s := "test"
+	sEmpty := ""
+
+	//correct config
+	da := metalcloud.DriveArray{
+		DriveArrayLabel:  "test",
+		InstanceArrayID:  i,
+		VolumeTemplateID: i,
+	}
+
+	cmd := Command{
+		Arguments: map[string]interface{}{
+			"infrastructure_id":  &i,
+			"drive_array_label":  &da.DriveArrayLabel,
+			"volume_template_id": &i,
+			"instance_array_id":  &i,
+		},
+	}
+
+	//return error, see if it's thrown
+	client.EXPECT().
+		DriveArrayCreate(i, da).
+		Return(&da, fmt.Errorf("testerr")).
+		Times(1)
+
+	_, err := driveArrayCreateCmd(&cmd, client)
+	Expect(err).NotTo(BeNil())
+
+	//return success, check empty return
+	client.EXPECT().
+		DriveArrayCreate(i, da).
+		Return(&da, nil).
+		Times(1)
+
+	ret, err := driveArrayCreateCmd(&cmd, client)
+	Expect(ret).To(BeEmpty())
+	Expect(err).To(BeNil())
+
+	//return success, check id return
+	bTrue := true
+	cmd = Command{
+		Arguments: map[string]interface{}{
+			"infrastructure_id":  &i,
+			"drive_array_label":  &da.DriveArrayLabel,
+			"volume_template_id": &i,
+			"instance_array_id":  &i,
+			"return_id":          &bTrue,
+		},
+	}
+	retDA := da
+	retDA.DriveArrayID = 1001
+
+	client.EXPECT().
+		DriveArrayCreate(i, da).
+		Return(&retDA, nil).
+		Times(1)
+
+	ret, err = driveArrayCreateCmd(&cmd, client)
+	Expect(ret).To(Equal(fmt.Sprintf("%d", retDA.DriveArrayID)))
+	Expect(err).To(BeNil())
+
+	//test no infra id
+
+	errorArguments := []map[string]interface{}{
+		map[string]interface{}{
+			//"infrastructure_id": &i,
+			"volume_template_id": &s,
+			"instance_array_id":  &i,
+		},
+		map[string]interface{}{
+			"infrastructure_id": &i,
+			//"volume_template_id": &i,
+			"instance_array_id": &i,
+		},
+		map[string]interface{}{
+			"infrastructure_id":  &i,
+			"volume_template_id": &i,
+			//"instance_array_id":  &i,
+		},
+		map[string]interface{}{
+			"infrastructure_id":  &i,
+			"volume_template_id": &i,
+			"instance_array_id":  &i,
+			"drive_array_label":  &sEmpty,
+		},
+	}
+
 	client.EXPECT().
 		DriveArrayCreate(gomock.Any(), gomock.Any()).
 		Return(nil, nil).
 		AnyTimes()
 
-	i := 10
-	s := "test"
-	cmd := Command{
-		Arguments: map[string]interface{}{
-			"infrastructure_id":             &i,
-			"instance_array_instance_count": &i,
-			"volume_template_id":            &i,
-			"instance_array_ram_gbytes":     &i,
-			"instance_array_label":          &s,
-		},
+	//test all error scenarios
+	for _, a := range errorArguments {
+
+		_, err := driveArrayCreateCmd(&Command{Arguments: a}, client)
+
+		Expect(err).NotTo(BeNil())
 	}
-
-	ret, _ := driveArrayCreateCmd(&cmd, client)
-
-	Expect(ret).To(Equal(""))
 
 }
 
@@ -165,18 +248,82 @@ func TestDriveArrayEdit(t *testing.T) {
 	client.EXPECT().
 		DriveArrayEdit(da.DriveArrayID, expectedOperationObject).
 		Return(&da, nil).
-		AnyTimes()
+		Times(1)
 
 	ret, err := driveArrayEditCmd(&cmd, client)
 
 	Expect(ret).To(Equal(""))
 	Expect(err).To(BeNil())
 
+	//check missing values
+	errorArguments := []map[string]interface{}{
+		map[string]interface{}{
+			//"drive_array_id": &i,
+		},
+	}
+
+	//test all error scenarios
+	for _, a := range errorArguments {
+
+		_, err := driveArrayEditCmd(&Command{Arguments: a}, client)
+
+		Expect(err).NotTo(BeNil())
+	}
+
+	//check catches error at get
+	i = 100
+	cmd.Arguments["drive_array_id"] = &i
+
+	client.EXPECT().
+		DriveArrayGet(i).
+		Return(&da, fmt.Errorf("testerr")).
+		Times(1)
+
+	client.EXPECT().
+		DriveArrayEdit(i, gomock.Any()).
+		Return(nil, fmt.Errorf("testerr")).
+		Times(1)
+
+	_, err = driveArrayEditCmd(&cmd, client)
+	Expect(err).NotTo(BeNil())
+
+	//check catches error at edit
+	i = 101
+	cmd.Arguments["drive_array_id"] = &i
+
+	client.EXPECT().
+		DriveArrayGet(i).
+		Return(&da, nil).
+		Times(1)
+
+	client.EXPECT().
+		DriveArrayEdit(i, gomock.Any()).
+		Return(nil, fmt.Errorf("testerr")).
+		Times(1)
+
+	_, err = driveArrayEditCmd(&cmd, client)
+	Expect(err).NotTo(BeNil())
+
 }
 
 func TestDriveArrayListCmd(t *testing.T) {
 	RegisterTestingT(t)
 	ctrl := gomock.NewController(t)
+	client := mock_metalcloud.NewMockMetalCloudClient(ctrl)
+
+	//check missing params
+	errorArguments := []map[string]interface{}{
+		map[string]interface{}{
+			//"infrastructure_id": &i,
+		},
+	}
+
+	//test all missing params scenarios
+	for _, a := range errorArguments {
+
+		_, err := driveArrayListCmd(&Command{Arguments: a}, client)
+		Expect(err).NotTo(BeNil())
+	}
 
 	infra := metalcloud.Infrastructure{
 		InfrastructureID:    10002,
@@ -189,11 +336,20 @@ func TestDriveArrayListCmd(t *testing.T) {
 		InfrastructureID:   infra.InfrastructureID,
 	}
 
+	vt := metalcloud.VolumeTemplate{
+		VolumeTemplateID:                10,
+		VolumeTemplateSizeMBytes:        10,
+		VolumeTemplateLabel:             "testlabel",
+		VolumeTemplateDescription:       "testdesc",
+		VolumeTemplateDeprecationStatus: "not deprecated",
+	}
+
 	dao := metalcloud.DriveArrayOperation{
 		DriveArrayID:           10,
 		DriveArrayLabel:        "test-edited",
 		InstanceArrayID:        ia.InstanceArrayID,
 		InfrastructureID:       infra.InfrastructureID,
+		VolumeTemplateID:       vt.VolumeTemplateID,
 		DriveArrayCount:        101,
 		DriveArrayDeployType:   "edit",
 		DriveArrayDeployStatus: "not_started",
@@ -204,12 +360,11 @@ func TestDriveArrayListCmd(t *testing.T) {
 		DriveArrayLabel:         "test",
 		InstanceArrayID:         ia.InstanceArrayID,
 		InfrastructureID:        infra.InfrastructureID,
+		VolumeTemplateID:        vt.VolumeTemplateID,
 		DriveArrayCount:         101,
 		DriveArrayOperation:     &dao,
 		DriveArrayServiceStatus: "active",
 	}
-
-	client := mock_metalcloud.NewMockMetalCloudClient(ctrl)
 
 	client.EXPECT().
 		InfrastructureGet(infra.InfrastructureID).
@@ -224,6 +379,11 @@ func TestDriveArrayListCmd(t *testing.T) {
 	client.EXPECT().
 		InstanceArrayGet(da.InstanceArrayID).
 		Return(&ia, nil).
+		AnyTimes()
+
+	client.EXPECT().
+		VolumeTemplateGet(vt.VolumeTemplateID).
+		Return(&vt, nil).
 		AnyTimes()
 
 	format := "json"
@@ -256,6 +416,40 @@ func TestDriveArrayListCmd(t *testing.T) {
 	r := m[0].(map[string]interface{})
 	Expect(r["STATUS"].(string)).To(Equal("edited"))
 	Expect(r["LABEL"].(string)).To(Equal(dao.DriveArrayLabel))
+
+	//check the csv output
+	format = "csv"
+	cmd.Arguments["format"] = &format
+	ret, err = driveArrayListCmd(&cmd, client)
+	Expect(ret).To(Not(Equal("")))
+	Expect(err).To(BeNil())
+
+	reader := csv.NewReader(strings.NewReader(ret))
+
+	csv, err := reader.ReadAll()
+	Expect(err).To(BeNil())
+	Expect(csv[1][0]).To(Equal(fmt.Sprintf("%d", da.DriveArrayID)))
+	Expect(csv[1][1]).To(Equal(da.DriveArrayOperation.DriveArrayLabel))
+
+	//check the human readable output, just check for not empty
+
+	format = "text"
+	cmd.Arguments["format"] = &format
+	ret, err = driveArrayListCmd(&cmd, client)
+	Expect(ret).NotTo(BeEmpty())
+	Expect(err).To(BeNil())
+
+	//check that it catches drive array list error
+
+	i := 101
+	client.EXPECT().
+		DriveArrays(i).
+		Return(nil, fmt.Errorf("testerror")).
+		AnyTimes()
+
+	cmd.Arguments["infrastructure_id"] = &i
+	_, err = driveArrayListCmd(&cmd, client)
+	Expect(err).NotTo(BeNil())
 
 }
 

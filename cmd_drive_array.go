@@ -237,14 +237,12 @@ func driveArrayListCmd(c *Command, client MetalCloudClient) (string, error) {
 
 	var sb strings.Builder
 
-	format := c.Arguments["format"]
-	if format == nil {
-		var f string
-		f = ""
-		format = &f
+	format := "text"
+	if v := c.Arguments["format"]; v != _nilDefaultStr {
+		format = *v.(*string)
 	}
 
-	switch *format.(*string) {
+	switch format {
 	case "json", "JSON":
 		ret, err := GetTableAsJSONString(data, schema)
 		if err != nil {
@@ -400,15 +398,4 @@ func argsToDriveArrayOperation(m map[string]interface{}, dao *metalcloud.DriveAr
 		dao.InstanceArrayID = *v.(*int)
 	}
 
-}
-
-func copyDriveArrayToOperation(da metalcloud.DriveArray, dao *metalcloud.DriveArrayOperation) {
-	dao.DriveArrayID = da.DriveArrayID
-	dao.DriveArrayLabel = da.DriveArrayLabel
-	dao.VolumeTemplateID = da.VolumeTemplateID
-	dao.DriveArrayStorageType = da.DriveArrayStorageType
-	dao.DriveSizeMBytesDefault = da.DriveSizeMBytesDefault
-	dao.InstanceArrayID = da.InstanceArrayID
-	dao.DriveArrayExpandWithInstanceArray = da.DriveArrayExpandWithInstanceArray
-	dao.DriveArrayCount = da.DriveArrayCount
 }

@@ -38,6 +38,12 @@ func TestCheckForDuplicates(t *testing.T) {
 	}
 }
 
+func TestExecuteAllCommandInits(t *testing.T) {
+	for _, c := range getCommands() {
+		c.InitFunc(&c)
+	}
+}
+
 func TestSimpleArgument(t *testing.T) {
 
 	var executed = false

@@ -2,4 +2,5 @@
 set_envs.sh
 metalcloud-cli
 scripts/getgocookie.sh
-
+cover.out
+cover.html
