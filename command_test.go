@@ -11,11 +11,7 @@ func TestCheckForDuplicates(t *testing.T) {
 
 	var commands []Command
 
-	commands = append(commands, infrastructureCmds...)
-	commands = append(commands, instanceArrayCmds...)
-	commands = append(commands, driveArrayCmds...)
-	commands = append(commands, volumeTemplateyCmds...)
-	commands = append(commands, firewallRuleCmds...)
+	commands = getCommands()
 
 	for i := 0; i < len(commands); i++ {
 		for j := i + 1; j < len(commands); j++ {

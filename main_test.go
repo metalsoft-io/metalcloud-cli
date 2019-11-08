@@ -1,8 +1,10 @@
 package main
 
 import (
+	"flag"
 	"fmt"
 	"math/rand"
+	"os"
 	"testing"
 
 	. "github.com/onsi/gomega"
@@ -31,4 +33,97 @@ func TestValidateAPIKey(t *testing.T) {
 	Expect(validateAPIKey(badKey1)).NotTo(BeNil())
 	Expect(validateAPIKey(badKey2)).NotTo(BeNil())
 
+}
+
+func TestInitClient(t *testing.T) {
+
+	if _, err := initClient(); err == nil {
+		t.Errorf("Should have been able to test for missing env")
+	}
+
+	os.Setenv("METALCLOUD_USER_EMAIL", "user")
+
+	if _, err := initClient(); err == nil {
+		t.Errorf("Should have been able to test for missing env")
+	}
+
+	os.Setenv("METALCLOUD_API_KEY", fmt.Sprintf("%d:%s", rand.Intn(100), RandStringBytes(63)))
+
+	if _, err := initClient(); err == nil {
+		t.Errorf("Should have been able to test for missing env")
+	}
+
+	os.Setenv("METALCLOUD_ENDPOINT", "endpoint")
+
+	if _, err := initClient(); err == nil {
+		t.Errorf("Should have been able to test for missing env")
+	}
+
+	os.Setenv("METALCLOUD_DATACENTER", "dc")
+
+	if _, err := initClient(); err == nil {
+		t.Errorf("Should have been able to test for missing env")
+	}
+
+	client, err := initClient()
+	if client == nil || err == nil {
+		t.Errorf("cannot initialize metalcloud client %v", err)
+	}
+}
+
+func TestExecuteCommand(t *testing.T) {
+	RegisterTestingT(t)
+
+	execFuncExecuted := false
+	initFuncExecuted := false
+	commands := []Command{
+		Command{
+			Subject:      "tests",
+			AltSubject:   "s",
+			Predicate:    "testp",
+			AltPredicate: "p",
+			FlagSet:      flag.NewFlagSet(RandStringBytes(10), flag.ExitOnError),
+			InitFunc: func(c *Command) {
+				c.Arguments = map[string]interface{}{
+					"cmd": c.FlagSet.Int(RandStringBytes(10), 0, "Random param"),
+				}
+				initFuncExecuted = true
+			},
+			ExecuteFunc: func(c *Command, client MetalCloudClient) (string, error) {
+				execFuncExecuted = true
+				return "retstr", nil
+			},
+		},
+	}
+
+	//check with wrong commands first, should return err
+
+	err := executeCommand([]string{"", "test", "test"}, commands, nil)
+	Expect(err).NotTo(BeNil())
+
+	execFuncExecuted = false
+	initFuncExecuted = false
+
+	//should execute stuff help and not return error
+	err = executeCommand([]string{"", "p", "s"}, commands, nil)
+	Expect(err).To(BeNil())
+	Expect(execFuncExecuted).To(BeTrue())
+	Expect(initFuncExecuted).To(BeTrue())
+
+	execFuncExecuted = false
+	initFuncExecuted = false
+
+	//should execute stuff help and not return error
+	err = executeCommand([]string{"", "testp", "tests"}, commands, nil)
+	Expect(err).To(BeNil())
+	Expect(execFuncExecuted).To(BeTrue())
+	Expect(initFuncExecuted).To(BeTrue())
+
+}
+
+func TestGetDatacenter(t *testing.T) {
+	RegisterTestingT(t)
+	dc := RandStringBytes(10)
+	os.Setenv("METALCLOUD_DATACENTER", dc)
+	Expect(GetDatacenter()).To(Equal(dc))
 }

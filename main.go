@@ -43,8 +43,18 @@ func main() {
 		fmt.Printf("Could not initialize metal cloud client %s\n", err)
 		os.Exit(-1)
 	}
-	predicate := os.Args[1]
-	subject := os.Args[2]
+
+	err = executeCommand(os.Args, commands, client)
+
+	if err != nil {
+		fmt.Println(err)
+		os.Exit(-2)
+	}
+}
+
+func executeCommand(args []string, commands []Command, client MetalCloudClient) error {
+	predicate := args[1]
+	subject := args[2]
 
 	commandExecuted := false
 	for _, c := range commands {
@@ -53,19 +63,17 @@ func main() {
 		if (c.Subject == subject || c.AltSubject == subject) &&
 			(c.Predicate == predicate || c.AltPredicate == predicate) {
 
-			if len(os.Args) == 4 && os.Args[3] == "-h" {
+			if len(args) == 4 && args[3] == "-h" {
 				commandExecuted = true
 				printCommandHelp(c)
-				break
+				return nil
 			}
 
-			c.FlagSet.Parse(os.Args[3:])
+			c.FlagSet.Parse(args[3:])
 
 			ret, err := c.ExecuteFunc(&c, client)
 			if err != nil {
-
-				fmt.Printf("Error: %s. Use '%s %s -h' for syntax help.\n", err, predicate, subject)
-				os.Exit(-2)
+				return fmt.Errorf("%s. Use '%s %s -h' for syntax help", err, predicate, subject)
 			}
 
 			fmt.Print(ret)
@@ -76,9 +84,10 @@ func main() {
 	}
 
 	if !commandExecuted {
-		fmt.Printf("Error: %s %s is not a valid command. Use %s help for more details.\n", predicate, subject, os.Args[0])
-		os.Exit(-2)
+		return fmt.Errorf("%s %s is not a valid command. Use %s help for more details", predicate, subject, args[0])
 	}
+
+	return nil
 }
 
 func printCommandHelp(cmd Command) {
