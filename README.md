@@ -1,6 +1,7 @@
 # metalcloud-cli
 
 [![Build Status](https://travis-ci.org/bigstepinc/metalcloud-cli.svg?branch=master)](https://travis-ci.org/bigstepinc/metalcloud-cli)
+[![Coverage Status](https://coveralls.io/repos/github/bigstepinc/metalcloud-cli/badge.svg?branch=master)](https://coveralls.io/github/bigstepinc/metalcloud-cli?branch=master)
 
 This tool allows the manipulation of all Bigstep Metal Cloud elements via the command line.
 
@@ -93,19 +94,17 @@ metalcloud-cli ls infra
 This is the output of the `metalcloud-cli help` command:
 
 ```
-Syntax: ./metalcloud-cli <command> [args]
+Syntax: metalcloud-cli <command> [args]
 Accepted commands:
 create infrastructure - Creates an infrastructure. (alternatively use "new infra")
   -dc string
-        (Required) Infrastructure datacenter (default "uk-reading")
+        (Required) Infrastructure datacenter
   -label string
         (Required) Infrastructure's label
-  -return_id
-        (Optional) Will print the ID of the created infrastructure. Useful for automating tasks.
 
 list infrastructure - Lists all infrastructures. (alternatively use "ls infra")
   -format string
-        The output format. Supported values are 'json','csv'. The default format is human readable.
+        The output format. Supproted values are 'json','csv'. The default format is human readable.
 
 delete infrastructure - Delete an infrastructure. (alternatively use "rm infra")
   -autoconfirm
@@ -131,7 +130,7 @@ deploy infrastructure - Deploy an infrastructure. (alternatively use "apply infr
 
 get infrastructure - Get an infrastructure. (alternatively use "show infra")
   -format string
-        The output format. Supported values are 'json','csv'. The default format is human readable.
+        The output format. Supproted values are 'json','csv'. The default format is human readable.
   -id int
         (Required) Infrastructure's id
 
@@ -143,35 +142,33 @@ revert infrastructure - Revert all changes of an infrastructure. (alternatively 
 
 create instance_array - Creates an instance array. (alternatively use "new ia")
   -boot string
-        InstanceArray's boot type:'pxe_iscsi','local_drives' (default "__NIL__")
+        InstanceArray's boot type:'pxe_iscsi','local_drives'
   -disk_size int
-        InstanceArray's local disk sizes (default -14234)
+        InstanceArray's local disk sizes (default 1)
   -disks int
-        InstanceArray's number of local drives (default -14234)
+        InstanceArray's number of local drives (default 1)
   -infra int
-        (Required) Infrastrucure ID (default -14234)
+        (Required) Infrastrucure ID
   -instance_count int
-        (Required) Instance count of this instance array (default -14234)
+        (Required) Instance count of this instance array (default 1)
   -label string
-        InstanceArray's label (default "__NIL__")
+        InstanceArray's label
   -managed_fw
         InstanceArray's firewall management on or off (default true)
   -proc int
-        InstanceArray's minimum processor count (default -14234)
+        InstanceArray's minimum processor count (default 1)
   -proc_core_count int
-        InstanceArray's minimum processor core count (default -14234)
+        InstanceArray's minimum processor core count (default 1)
   -proc_freq int
-        InstanceArray's minimum processor frequency (Mhz) (default -14234)
+        InstanceArray's minimum processor frequency (Mhz) (default 1000)
   -ram int
-        InstanceArray's minimum RAM (GB) (default -14234)
-  -return_id
-        (Optional) Will print the ID of the created Instance Array. Useful for automating tasks.
-  -template int
-        InstanceArray's volume template when booting from for local drives (default -14234)
+        InstanceArray's minimum RAM (GB) (default 1)
+  -volume_template_id int
+        InstanceArray's volume template when booting from for local drives
 
 list instance_array - Lists all instance arrays of an infrastructure. (alternatively use "ls ia")
   -format string
-        The output format. Supported values are 'json','csv'. The default format is human readable.
+        The output format. Supproted values are 'json','csv'. The default format is human readable.
   -infra int
         (Required) Infrastrucure ID
 
@@ -183,53 +180,51 @@ delete instance_array - Delete instance array. (alternatively use "rm ia")
 
 edit instance_array - Edits an instance array. (alternatively use "alter ia")
   -boot string
-        InstanceArray's boot type:'pxe_iscsi','local_drives' (default "__NIL__")
+        InstanceArray's boot type:'pxe_iscsi','local_drives'
   -disk_size int
-        InstanceArray's local disk sizes (default -14234)
+        InstanceArray's local disk sizes (default 1)
   -disks int
-        InstanceArray's number of local drives (default -14234)
+        InstanceArray's number of local drives (default 1)
   -id int
-        (Required) InstanceArray's id (default -14234)
+        (Required) InstanceArray's id
   -instance_count int
-        Instance count of this instance array (default -14234)
+        Instance count of this instance array
   -keep_detaching_drives
         If false and the number of Instance objects is reduced, then the detaching Drive objects will be deleted. If it's set to true, the detaching Drive objects will not be deleted. (default true)
   -label string
-        (Required) InstanceArray's label (default "__NIL__")
+        (Required) InstanceArray's label
   -managed_fw
         InstanceArray's firewall management on or off (default true)
   -proc int
-        InstanceArray's minimum processor count (default -14234)
+        InstanceArray's minimum processor count (default 1)
   -proc_core_count int
-        InstanceArray's minimum processor core count (default -14234)
+        InstanceArray's minimum processor core count (default 1)
   -proc_freq int
-        InstanceArray's minimum processor frequency (Mhz) (default -14234)
+        InstanceArray's minimum processor frequency (Mhz) (default 1000)
   -ram int
-        InstanceArray's minimum RAM (GB) (default -14234)
+        InstanceArray's minimum RAM (GB) (default 1)
   -swap_existing_hardware
         If true, all the hardware of the Instance objects is swapped to match the new InstanceArray specifications
-  -template int
-        InstanceArray's volume template when booting from for local drives (default -14234)
+  -volume_template_id int
+        InstanceArray's volume template when booting from for local drives
 
 create drive_array - Creates a drive array. (alternatively use "new da")
   -count int
-        DriveArrays's drive count. Use this only for unconnected DriveArrays. (default -14234)
+        DriveArrays's drive count. Use this only for unconnected DriveArrays. (default 1)
   -expand_with_ia
         Auto-expand when the connected instance array expands (default true)
   -ia int
-        (Required) The id of the instance array it is attached to. It can be zero for unattached Drive Arrays (default -14234)
+        (Required) The id of the instance array it is attached to. It can be zero for unattached Drive Arrays
   -infra int
-        (Required) Infrastrucure ID (default -14234)
+        (Required) Infrastrucure ID
   -label string
-        (Required) The label of the drive array (default "__NIL__")
-  -return_id
-        (Optional) Will print the ID of the created Drive Array. Useful for automating tasks.
+        (Required) The label of the drive array
   -size int
-        (Optional, default = 40960) Drive arrays's size in MBytes (default -14234)
+        (Optional, default = 40960) Drive arrays's size in MBytes (default 40960)
   -template int
-        DriveArrays's volume template to clone when creating Drives (default -14234)
+        DriveArrays's volume template to clone when creating Drives
   -type string
-        Possible values: iscsi_ssd, iscsi_hdd (default "__NIL__")
+        Possible values: iscsi_ssd, iscsi_hdd
 
 edit drive_array - Edit a drive array. (alternatively use "alter da")
   -count int
@@ -244,14 +239,14 @@ edit drive_array - Edit a drive array. (alternatively use "alter da")
         (Required) The label of the drive array (default "__NIL__")
   -size int
         (Optional, default = 40960) Drive arrays's size in MBytes (default -14234)
-  -template int
-        DriveArrays's volume template to clone when creating Drives (default -14234)
   -type string
         Possible values: iscsi_ssd, iscsi_hdd (default "__NIL__")
+  -volume_template_id int
+        DriveArrays's volume template to clone when creating Drives (default -14234)
 
 list drive_array - Lists all drive arrays of an infrastructure. (alternatively use "ls da")
   -format string
-        The output format. Supported values are 'json','csv'. The default format is human readable.
+        The output format. Supproted values are 'json','csv'. The default format is human readable.
   -infra int
         (Required) Infrastrucure ID
 
