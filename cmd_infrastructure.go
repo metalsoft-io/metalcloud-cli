@@ -53,7 +53,7 @@ var infrastructureCmds = []Command{
 		FlagSet:      flag.NewFlagSet("delete infrastructure", flag.ExitOnError),
 		InitFunc: func(c *Command) {
 			c.Arguments = map[string]interface{}{
-				"infrastructure_id_or_label": c.FlagSet.String("infra", _nilDefaultStr, "(Required) Infrastructure's id or label. Note that the 'label' this be ambiguous in certain situations."),
+				"infrastructure_id_or_label": c.FlagSet.String("id", _nilDefaultStr, "(Required) Infrastructure's id or label. Note that using the 'label' might be ambiguous in certain situations."),
 				"autoconfirm":                c.FlagSet.Bool("autoconfirm", false, "(Flag) If set it does not ask for confirmation anymore"),
 			}
 		},
@@ -68,7 +68,7 @@ var infrastructureCmds = []Command{
 		FlagSet:      flag.NewFlagSet("deploy infrastructure", flag.ExitOnError),
 		InitFunc: func(c *Command) {
 			c.Arguments = map[string]interface{}{
-				"infrastructure_id_or_label":     c.FlagSet.String("infra", _nilDefaultStr, "(Required) Infrastructure's id or label. Note that the 'label' this be ambiguous in certain situations."),
+				"infrastructure_id_or_label":     c.FlagSet.String("id", _nilDefaultStr, "(Required) Infrastructure's id or label. Note that using the 'label' might be ambiguous in certain situations."),
 				"no_hard_shutdown_after_timeout": c.FlagSet.Bool("no_hard_shutdown_after_timeout", false, "(Flag) If set do not force a hard power off after timeout expired and the server is not powered off."),
 				"no_attempt_soft_shutdown":       c.FlagSet.Bool("no_attempt_soft_shutdown", false, "(Flag) If set,do not atempt a soft (ACPI) power off of all the servers in the infrastructure before the deploy"),
 				"soft_shutdown_timeout_seconds":  c.FlagSet.Int("soft_shutdown_timeout_seconds", 180, "(Optional, default 180) Timeout to wait if hard_shutdown_after_timeout is set."),
@@ -88,7 +88,7 @@ var infrastructureCmds = []Command{
 		FlagSet:      flag.NewFlagSet("get infrastructure", flag.ExitOnError),
 		InitFunc: func(c *Command) {
 			c.Arguments = map[string]interface{}{
-				"infrastructure_id_or_label": c.FlagSet.String("infra", _nilDefaultStr, "(Required) Infrastructure's id or label. Note that the 'label' this be ambiguous in certain situations."),
+				"infrastructure_id_or_label": c.FlagSet.String("id", _nilDefaultStr, "(Required) Infrastructure's id or label. Note that using the 'label' might be ambiguous in certain situations."),
 				"format":                     c.FlagSet.String("format", "", "The output format. Supported values are 'json','csv'. The default format is human readable."),
 			}
 		},
@@ -103,7 +103,7 @@ var infrastructureCmds = []Command{
 		FlagSet:      flag.NewFlagSet("deploy infrastructure", flag.ExitOnError),
 		InitFunc: func(c *Command) {
 			c.Arguments = map[string]interface{}{
-				"infrastructure_id_or_label": c.FlagSet.String("infra", _nilDefaultStr, "(Required) Infrastructure's id or label. Note that the 'label' this be ambiguous in certain situations."),
+				"infrastructure_id_or_label": c.FlagSet.String("id", _nilDefaultStr, "(Required) Infrastructure's id or label. Note that using the 'label' might be ambiguous in certain situations."),
 				"autoconfirm":                c.FlagSet.Bool("autoconfirm", false, "(Flag) If set it does not ask for confirmation anymore"),
 			}
 		},
@@ -159,7 +159,7 @@ func infrastructureListCmd(c *Command, client MetalCloudClient) (string, error) 
 		SchemaField{
 			FieldName: "OWNER",
 			FieldType: TypeString,
-			FieldSize: 30,
+			FieldSize: 35,
 		},
 		SchemaField{
 			FieldName: "REL.",
@@ -173,16 +173,6 @@ func infrastructureListCmd(c *Command, client MetalCloudClient) (string, error) 
 		},
 		SchemaField{
 			FieldName: "DATACENTER",
-			FieldType: TypeString,
-			FieldSize: 20,
-		},
-		SchemaField{
-			FieldName: "CREATED",
-			FieldType: TypeString,
-			FieldSize: 20,
-		},
-		SchemaField{
-			FieldName: "UPDATED",
 			FieldType: TypeString,
 			FieldSize: 20,
 		},
@@ -203,8 +193,6 @@ func infrastructureListCmd(c *Command, client MetalCloudClient) (string, error) 
 			relation,
 			i.InfrastructureServiceStatus,
 			i.DatacenterName,
-			i.InfrastructureCreatedTimestamp,
-			i.InfrastructureUpdatedTimestamp,
 		})
 
 	}

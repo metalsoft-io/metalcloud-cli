@@ -232,18 +232,21 @@ func TestDriveArrayEdit(t *testing.T) {
 		AnyTimes()
 
 	i := 10
+	i0 := 0
 	newlabel := "newlabel"
 	cmd := Command{
 		Arguments: map[string]interface{}{
 			"drive_array_id":     &da.DriveArrayID,
 			"drive_array_label":  &newlabel,
 			"volume_template_id": &i,
+			"instance_array_id":  &i0,
 		},
 	}
 
 	expectedOperationObject := dao
 	expectedOperationObject.DriveArrayLabel = "newlabel"
 	expectedOperationObject.VolumeTemplateID = i
+	expectedOperationObject.InstanceArrayID = i0
 
 	client.EXPECT().
 		DriveArrayEdit(da.DriveArrayID, expectedOperationObject).
