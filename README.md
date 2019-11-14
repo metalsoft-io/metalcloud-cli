@@ -142,7 +142,7 @@ Command: create instance_array     Creates an instance array. (alternatively use
 
 Command: list instance_array       Lists all instance arrays of an infrastructure. (alternatively use "ls ia")
 	  -format                    The output format. Supported values are 'json','csv'. The default format is human readable.
-	  -infra                     (Required) Infrastrucure ID
+	  -infra                     (Required) Infrastructure ID
 
 Command: delete instance_array     Delete instance array. (alternatively use "rm ia")
 	  -autoconfirm               If true it does not ask for confirmation anymore
@@ -168,7 +168,7 @@ Command: create drive_array        Creates a drive array. (alternatively use "ne
 	  -count                     DriveArrays's drive count. Use this only for unconnected DriveArrays.
 	  -expand_with_ia            Auto-expand when the connected instance array expands
 	  -ia                        (Required) The id of the instance array it is attached to. It can be zero for unattached Drive Arrays
-	  -infra                     (Required) Infrastrucure ID
+	  -infra                     (Required) Infrastructure ID
 	  -label                     (Required) The label of the drive array
 	  -return_id                 (Optional) Will print the ID of the created Drive Array. Useful for automating tasks.
 	  -size                      (Optional, default = 40960) Drive arrays's size in MBytes
@@ -187,7 +187,7 @@ Command: edit drive_array          Edit a drive array. (alternatively use "alter
 
 Command: list drive_array          Lists all drive arrays of an infrastructure. (alternatively use "ls da")
 	  -format                    The output format. Supported values are 'json','csv'. The default format is human readable.
-	  -infra                     (Required) Infrastrucure ID
+	  -infra                     (Required) Infrastructure ID
 
 Command: delete drive_array        Delete a drive array. (alternatively use "rm da")
 	  -autoconfirm               If true it does not ask for confirmation anymore

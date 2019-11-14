@@ -47,7 +47,7 @@ var instanceArrayCmds = []Command{
 		FlagSet:      flag.NewFlagSet("list instance_array", flag.ExitOnError),
 		InitFunc: func(c *Command) {
 			c.Arguments = map[string]interface{}{
-				"infrastructure_id": c.FlagSet.Int("infra", 0, "(Required) Infrastrucure ID"),
+				"infrastructure_id": c.FlagSet.Int("infra", 0, "(Required) Infrastructure ID"),
 				"format":            c.FlagSet.String("format", "", "The output format. Supported values are 'json','csv'. The default format is human readable."),
 			}
 		},
