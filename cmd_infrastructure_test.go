@@ -279,11 +279,6 @@ func TestInfrastructureGetCmd(t *testing.T) {
 	err = json.Unmarshal([]byte(ret), &m)
 
 	Expect(err).To(BeNil())
-
-	r = m[0].(map[string]interface{})
-	Expect(r["STATUS"].(string)).To(Equal("edited"))
-	Expect(r["LABEL"].(string)).To(Equal(iao.InstanceArrayLabel))
-
 }
 
 func TestInfrastructureListCmd(t *testing.T) {
@@ -353,8 +348,14 @@ func TestInfrastructureListCmd(t *testing.T) {
 
 	r := m[0].(map[string]interface{})
 
-	Expect(r["STATUS"].(string)).To(Equal(infra.InfrastructureServiceStatus))
-	Expect(r["LABEL"].(string)).To(Equal(infra.InfrastructureOperation.InfrastructureLabel))
+	Expect(r["STATUS"].(string)).To(SatisfyAny(
+		Equal(infra.InfrastructureServiceStatus),
+		Equal(infra2.InfrastructureServiceStatus),
+	))
+	Expect(r["LABEL"].(string)).To(SatisfyAny(
+		Equal(infra.InfrastructureOperation.InfrastructureLabel),
+		Equal(infra2.InfrastructureOperation.InfrastructureLabel),
+	))
 
 	//test csv return
 	format = "csv"
