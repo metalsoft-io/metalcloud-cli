@@ -416,16 +416,21 @@ func infrastructureGetCmd(c *Command, client MetalCloudClient) (string, error) {
 			if err != nil {
 				return "", err
 			}
-			volumeTemplateName = fmt.Sprintf("%s [#%d]", vt.VolumeTemplateDisplayName, vt.VolumeTemplateID)
+			volumeTemplateName = fmt.Sprintf("%s [#%d] ", vt.VolumeTemplateDisplayName, vt.VolumeTemplateID)
 		}
 
-		details := fmt.Sprintf("%d instances (%d RAM, %d cores, %d disks %s %s)",
+		fwMgmtDisabled := ""
+		if !ia.InstanceArrayFirewallManaged {
+			fwMgmtDisabled = " fw mgmt disabled"
+		}
+		details := fmt.Sprintf("%d instances (%d RAM, %d cores, %d disks %s %s%s)",
 			ia.InstanceArrayOperation.InstanceArrayInstanceCount,
 			ia.InstanceArrayOperation.InstanceArrayRAMGbytes,
 			ia.InstanceArrayOperation.InstanceArrayProcessorCount*ia.InstanceArrayProcessorCoreCount,
 			ia.InstanceArrayOperation.InstanceArrayDiskCount,
 			ia.InstanceArrayOperation.InstanceArrayBootMethod,
 			volumeTemplateName,
+			fwMgmtDisabled,
 		)
 
 		data = append(data, []interface{}{
