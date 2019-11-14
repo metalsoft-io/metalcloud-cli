@@ -62,15 +62,22 @@ func executeCommand(args []string, commands []Command, client MetalCloudClient) 
 	for _, c := range commands {
 		c.InitFunc(&c)
 
+		//disable default usage
+		c.FlagSet.Usage = func() {}
+
 		if (c.Subject == subject || c.AltSubject == subject) &&
 			(c.Predicate == predicate || c.AltPredicate == predicate) {
 
-			if len(args) == 4 && args[3] == "-h" {
-				commandExecuted = true
-				return fmt.Errorf(getCommandHelp(c))
+			for _, a := range args {
+				if a == "-h" || a == "-help" || a == "--help" {
+					return fmt.Errorf(getCommandHelp(c))
+				}
 			}
 
-			c.FlagSet.Parse(args[3:])
+			err := c.FlagSet.Parse(args[3:])
+			if err != nil {
+				return fmt.Errorf("%s Use '%s %s -h' for syntax help", err, predicate, subject)
+			}
 
 			ret, err := c.ExecuteFunc(&c, client)
 			if err != nil {
@@ -91,13 +98,18 @@ func executeCommand(args []string, commands []Command, client MetalCloudClient) 
 	return nil
 }
 
+func getArgumentHelp(f *flag.Flag) string {
+	//return fmt.Sprintf("\t  -%-25s %s\n", f.Name, f.Usage)
+	return fmt.Sprintf("\t  -%-25s %s\n", f.Name, f.Usage)
+}
+
 func getCommandHelp(cmd Command) string {
 	var sb strings.Builder
 
 	c := fmt.Sprintf("%s %s", cmd.Predicate, cmd.Subject)
 	sb.WriteString(fmt.Sprintf("Command: %-25s %s (alternatively use \"%s %s\")\n", c, cmd.Description, cmd.AltPredicate, cmd.AltSubject))
 	cmd.FlagSet.VisitAll(func(f *flag.Flag) {
-		sb.WriteString(fmt.Sprintf("\t  -%-25s %s\n", f.Name, f.Usage))
+		sb.WriteString(getArgumentHelp(f))
 	})
 
 	return sb.String()
