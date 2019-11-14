@@ -37,6 +37,21 @@ func TestValidateAPIKey(t *testing.T) {
 
 func TestInitClient(t *testing.T) {
 
+	envs := []string{
+		"METALCLOUD_USER_EMAIL",
+		"METALCLOUD_API_KEY",
+		"METALCLOUD_ENDPOINT",
+		"METALCLOUD_DATACENTER",
+	}
+	//remember the current env values, clear them during the test
+	currentEnvVals := map[string]string{}
+	for _, e := range envs {
+		if v, ok := os.LookupEnv(e); ok {
+			currentEnvVals[e] = v
+			os.Unsetenv(e)
+		}
+	}
+
 	if _, err := initClient(); err == nil {
 		t.Errorf("Should have been able to test for missing env")
 	}
@@ -69,6 +84,12 @@ func TestInitClient(t *testing.T) {
 	if client == nil || err == nil {
 		t.Errorf("cannot initialize metalcloud client %v", err)
 	}
+
+	//put back the env values
+	for k, v := range currentEnvVals {
+		os.Setenv(k, v)
+	}
+
 }
 
 func TestExecuteCommand(t *testing.T) {
@@ -91,7 +112,7 @@ func TestExecuteCommand(t *testing.T) {
 			},
 			ExecuteFunc: func(c *Command, client MetalCloudClient) (string, error) {
 				execFuncExecuted = true
-				return "retstr", nil
+				return "", nil
 			},
 		},
 	}

@@ -4,3 +4,4 @@ metalcloud-cli
 scripts/getgocookie.sh
 cover.out
 cover.html
+coverage.out

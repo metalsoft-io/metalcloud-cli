@@ -172,6 +172,11 @@ func infrastructureListCmd(c *Command, client MetalCloudClient) (string, error) 
 			FieldSize: 10,
 		},
 		SchemaField{
+			FieldName: "DATACENTER",
+			FieldType: TypeString,
+			FieldSize: 20,
+		},
+		SchemaField{
 			FieldName: "CREATED",
 			FieldType: TypeString,
 			FieldSize: 20,
@@ -193,10 +198,11 @@ func infrastructureListCmd(c *Command, client MetalCloudClient) (string, error) 
 		}
 		data = append(data, []interface{}{
 			i.InfrastructureID,
-			i.InfrastructureLabel,
+			i.InfrastructureOperation.InfrastructureLabel,
 			i.UserEmailOwner,
 			relation,
 			i.InfrastructureServiceStatus,
+			i.DatacenterName,
 			i.InfrastructureCreatedTimestamp,
 			i.InfrastructureUpdatedTimestamp,
 		})

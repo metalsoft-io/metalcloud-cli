@@ -1,7 +1,10 @@
 package main
 
 import (
+	"encoding/csv"
 	"encoding/json"
+	"fmt"
+	"strings"
 	"testing"
 
 	metalcloud "github.com/bigstepinc/metal-cloud-sdk-go"
@@ -283,6 +286,93 @@ func TestInfrastructureGetCmd(t *testing.T) {
 	Expect(r["STATUS"].(string)).To(Equal("edited"))
 	Expect(r["LABEL"].(string)).To(Equal(iao.InstanceArrayLabel))
 
+}
+
+func TestInfrastructureListCmd(t *testing.T) {
+	RegisterTestingT(t)
+	ctrl := gomock.NewController(t)
+
+	iao := metalcloud.InfrastructureOperation{
+		InfrastructureLabel: "testinfra-edited",
+	}
+
+	infra := metalcloud.Infrastructure{
+		InfrastructureID:            10002,
+		InfrastructureLabel:         "testinfra",
+		InfrastructureServiceStatus: "active",
+		InfrastructureOperation:     iao,
+	}
+
+	iao2 := metalcloud.InfrastructureOperation{
+		InfrastructureLabel: "testinfra-edited",
+	}
+
+	infra2 := metalcloud.Infrastructure{
+		InfrastructureID:            10003,
+		InfrastructureLabel:         "testinfra2",
+		InfrastructureServiceStatus: "ordered",
+		InfrastructureOperation:     iao2,
+	}
+
+	infraList := map[string]metalcloud.Infrastructure{
+		infra.InfrastructureLabel:  infra,
+		infra2.InfrastructureLabel: infra2,
+	}
+
+	client := mock_metalcloud.NewMockMetalCloudClient(ctrl)
+
+	client.EXPECT().
+		Infrastructures().
+		Return(&infraList, nil).
+		AnyTimes()
+
+	//test plaintext return
+	format := ""
+	cmd := Command{
+		Arguments: map[string]interface{}{
+			"format": &format,
+		},
+	}
+
+	ret, err := infrastructureListCmd(&cmd, client)
+	Expect(err).To(BeNil())
+	Expect(ret).To(Not(Equal("")))
+	Expect(ret).To(ContainSubstring(infra.InfrastructureOperation.InfrastructureLabel))
+	Expect(ret).To(ContainSubstring(infra2.InfrastructureOperation.InfrastructureLabel))
+
+	//test json return
+	format = "json"
+	cmd.Arguments["format"] = &format
+
+	ret, err = infrastructureListCmd(&cmd, client)
+	Expect(err).To(BeNil())
+	Expect(ret).To(Not(Equal("")))
+
+	var m []interface{}
+	err = json.Unmarshal([]byte(ret), &m)
+
+	Expect(err).To(BeNil())
+
+	r := m[0].(map[string]interface{})
+
+	Expect(r["STATUS"].(string)).To(Equal(infra.InfrastructureServiceStatus))
+	Expect(r["LABEL"].(string)).To(Equal(infra.InfrastructureOperation.InfrastructureLabel))
+
+	//test csv return
+	format = "csv"
+	cmd.Arguments["format"] = &format
+
+	ret, err = infrastructureListCmd(&cmd, client)
+	Expect(err).To(BeNil())
+	Expect(ret).To(Not(Equal("")))
+
+	reader := csv.NewReader(strings.NewReader(ret))
+
+	csv, err := reader.ReadAll()
+
+	Expect(csv[1][0]).To(Equal(fmt.Sprintf("%d", infra.InfrastructureID)))
+	Expect(csv[1][2]).To(Equal(infra.UserEmailOwner))
+	Expect(csv[2][1]).To(Equal(infra2.InfrastructureOperation.InfrastructureLabel))
 }
 
 func TestGetInfrastructureFromCommand(t *testing.T) {
