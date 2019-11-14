@@ -94,165 +94,128 @@ metalcloud-cli ls infra
 This is the output of the `metalcloud-cli help` command:
 
 ```
-Syntax: metalcloud-cli <command> [args]
+Syntax: ./metalcloud-cli <command> [args]
 Accepted commands:
-create infrastructure - Creates an infrastructure. (alternatively use "new infra")
-  -dc string
-        (Required) Infrastructure datacenter
-  -label string
-        (Required) Infrastructure's label
+Command: create infrastructure     Creates an infrastructure. (alternatively use "new infra")
+	  -dc                        (Required) Infrastructure datacenter
+	  -label                     (Required) Infrastructure's label
+	  -return_id                 (Flag) If set will print the ID of the created infrastructure. Useful for automating tasks.
 
-list infrastructure - Lists all infrastructures. (alternatively use "ls infra")
-  -format string
-        The output format. Supproted values are 'json','csv'. The default format is human readable.
+Command: list infrastructure       Lists all infrastructures. (alternatively use "ls infra")
+	  -format                    The output format. Supported values are 'json','csv'. The default format is human readable.
 
-delete infrastructure - Delete an infrastructure. (alternatively use "rm infra")
-  -autoconfirm
-        If true it does not ask for confirmation anymore
-  -id int
-        (Required) Infrastructure's id
+Command: delete infrastructure     Delete an infrastructure. (alternatively use "rm infra")
+	  -autoconfirm               (Flag) If set it does not ask for confirmation anymore
+	  -infra                     (Required) Infrastructure's id or label. Note that the 'label' this be ambiguous in certain situations.
 
-deploy infrastructure - Deploy an infrastructure. (alternatively use "apply infra")
-  -allow_data_loss
-        (Optional, default false) If false, deploy will throw error if data loss is expected.
-  -attempt_soft_shutdown
-        (Optional, default true) If needed, atempt a soft (ACPI) power off of all the servers in the infrastructure before the deploy (default true)
-  -autoconfirm
-        If true it does not ask for confirmation anymore
-  -hard_shutdown_after_timeout
-        (Optional, default true) Force a hard power off after timeout expired and the server is not powered off. (default true)
-  -id int
-        (Required) Infrastructure's id
-  -skip_ansible
-        (Optional, default false) If true, some automatic provisioning steps will be skipped. This parameter should generally be ignored.
-  -soft_shutdown_timeout_seconds int
-        (Optional, default 180) Timeout to wait if hard_shutdown_after_timeout is set. (default 180)
+Command: deploy infrastructure     Deploy an infrastructure. (alternatively use "apply infra")
+	  -allow_data_loss           (Flag) If set, deploy will throw error if data loss is expected.
+	  -autoconfirm               (Flag) If set operation procedes without asking for confirmation
+	  -infra                     (Required) Infrastructure's id or label. Note that the 'label' this be ambiguous in certain situations.
+	  -no_attempt_soft_shutdown  (Flag) If set,do not atempt a soft (ACPI) power off of all the servers in the infrastructure before the deploy
+	  -no_hard_shutdown_after_timeout (Flag) If set do not force a hard power off after timeout expired and the server is not powered off.
+	  -skip_ansible              (Flag) If set, some automatic provisioning steps will be skipped. This parameter should generally be ignored.
+	  -soft_shutdown_timeout_seconds (Optional, default 180) Timeout to wait if hard_shutdown_after_timeout is set.
 
-get infrastructure - Get an infrastructure. (alternatively use "show infra")
-  -format string
-        The output format. Supproted values are 'json','csv'. The default format is human readable.
-  -id int
-        (Required) Infrastructure's id
+Command: get infrastructure        Get an infrastructure. (alternatively use "show infra")
+	  -format                    The output format. Supported values are 'json','csv'. The default format is human readable.
+	  -infra                     (Required) Infrastructure's id or label. Note that the 'label' this be ambiguous in certain situations.
 
-revert infrastructure - Revert all changes of an infrastructure. (alternatively use "undo infra")
-  -autoconfirm
-        If true it does not ask for confirmation anymore
-  -id int
-        (Required) Infrastructure's id
+Command: revert infrastructure     Revert all changes of an infrastructure. (alternatively use "undo infra")
+	  -autoconfirm               (Flag) If set it does not ask for confirmation anymore
+	  -infra                     (Required) Infrastructure's id or label. Note that the 'label' this be ambiguous in certain situations.
 
-create instance_array - Creates an instance array. (alternatively use "new ia")
-  -boot string
-        InstanceArray's boot type:'pxe_iscsi','local_drives'
-  -disk_size int
-        InstanceArray's local disk sizes (default 1)
-  -disks int
-        InstanceArray's number of local drives (default 1)
-  -infra int
-        (Required) Infrastrucure ID
-  -instance_count int
-        (Required) Instance count of this instance array (default 1)
-  -label string
-        InstanceArray's label
-  -managed_fw
-        InstanceArray's firewall management on or off (default true)
-  -proc int
-        InstanceArray's minimum processor count (default 1)
-  -proc_core_count int
-        InstanceArray's minimum processor core count (default 1)
-  -proc_freq int
-        InstanceArray's minimum processor frequency (Mhz) (default 1000)
-  -ram int
-        InstanceArray's minimum RAM (GB) (default 1)
-  -volume_template_id int
-        InstanceArray's volume template when booting from for local drives
+Command: create instance_array     Creates an instance array. (alternatively use "new ia")
+	  -boot                      InstanceArray's boot type:'pxe_iscsi','local_drives'
+	  -disk_size                 InstanceArray's local disk sizes
+	  -disks                     InstanceArray's number of local drives
+	  -infra                     (Required) Infrastructure's id or label. Note that the 'label' this be ambiguous in certain situations.
+	  -instance_count            (Required) Instance count of this instance array
+	  -label                     InstanceArray's label
+	  -proc                      InstanceArray's minimum processor count
+	  -proc_core_count           InstanceArray's minimum processor core count
+	  -proc_freq                 InstanceArray's minimum processor frequency (Mhz)
+	  -ram                       InstanceArray's minimum RAM (GB)
+	  -return_id                 (Flag) If set will print the ID of the created Instance Array. Useful for automating tasks.
+	  -template                  InstanceArray's volume template when booting from for local drives
+	  -un_managed_fw             (Flag) If set InstanceArray's firewall management on or off
 
-list instance_array - Lists all instance arrays of an infrastructure. (alternatively use "ls ia")
-  -format string
-        The output format. Supproted values are 'json','csv'. The default format is human readable.
-  -infra int
-        (Required) Infrastrucure ID
+Command: list instance_array       Lists all instance arrays of an infrastructure. (alternatively use "ls ia")
+	  -format                    The output format. Supported values are 'json','csv'. The default format is human readable.
+	  -infra                     (Required) Infrastrucure ID
 
-delete instance_array - Delete instance array. (alternatively use "rm ia")
-  -autoconfirm
-        If true it does not ask for confirmation anymore
-  -id int
-        (Required) InstanceArray ID
+Command: delete instance_array     Delete instance array. (alternatively use "rm ia")
+	  -autoconfirm               If true it does not ask for confirmation anymore
+	  -id                        (Required) InstanceArray ID
 
-edit instance_array - Edits an instance array. (alternatively use "alter ia")
-  -boot string
-        InstanceArray's boot type:'pxe_iscsi','local_drives'
-  -disk_size int
-        InstanceArray's local disk sizes (default 1)
-  -disks int
-        InstanceArray's number of local drives (default 1)
-  -id int
-        (Required) InstanceArray's id
-  -instance_count int
-        Instance count of this instance array
-  -keep_detaching_drives
-        If false and the number of Instance objects is reduced, then the detaching Drive objects will be deleted. If it's set to true, the detaching Drive objects will not be deleted. (default true)
-  -label string
-        (Required) InstanceArray's label
-  -managed_fw
-        InstanceArray's firewall management on or off (default true)
-  -proc int
-        InstanceArray's minimum processor count (default 1)
-  -proc_core_count int
-        InstanceArray's minimum processor core count (default 1)
-  -proc_freq int
-        InstanceArray's minimum processor frequency (Mhz) (default 1000)
-  -ram int
-        InstanceArray's minimum RAM (GB) (default 1)
-  -swap_existing_hardware
-        If true, all the hardware of the Instance objects is swapped to match the new InstanceArray specifications
-  -volume_template_id int
-        InstanceArray's volume template when booting from for local drives
+Command: edit instance_array       Edits an instance array. (alternatively use "alter ia")
+	  -boot                      InstanceArray's boot type:'pxe_iscsi','local_drives'
+	  -disk_size                 InstanceArray's local disk sizes
+	  -disks                     InstanceArray's number of local drives
+	  -do_not_keep_detaching_drives (Flag) If set and the number of Instance objects is reduced, then the detaching Drive objects will be deleted. If it's set to true, the detaching Drive objects will not be deleted.
+	  -id                        (Required) InstanceArray's id
+	  -instance_count            Instance count of this instance array
+	  -label                     (Required) InstanceArray's label
+	  -proc                      InstanceArray's minimum processor count
+	  -proc_core_count           InstanceArray's minimum processor core count
+	  -proc_freq                 InstanceArray's minimum processor frequency (Mhz)
+	  -ram                       InstanceArray's minimum RAM (GB)
+	  -swap_existing_hardware    (Flag) If set all the hardware of the Instance objects is swapped to match the new InstanceArray specifications
+	  -template                  InstanceArray's volume template when booting from for local drives
+	  -unmanaged_fw              (Flag) If set InstanceArray's firewall management is off
 
-create drive_array - Creates a drive array. (alternatively use "new da")
-  -count int
-        DriveArrays's drive count. Use this only for unconnected DriveArrays. (default 1)
-  -expand_with_ia
-        Auto-expand when the connected instance array expands (default true)
-  -ia int
-        (Required) The id of the instance array it is attached to. It can be zero for unattached Drive Arrays
-  -infra int
-        (Required) Infrastrucure ID
-  -label string
-        (Required) The label of the drive array
-  -size int
-        (Optional, default = 40960) Drive arrays's size in MBytes (default 40960)
-  -template int
-        DriveArrays's volume template to clone when creating Drives
-  -type string
-        Possible values: iscsi_ssd, iscsi_hdd
+Command: create drive_array        Creates a drive array. (alternatively use "new da")
+	  -count                     DriveArrays's drive count. Use this only for unconnected DriveArrays.
+	  -expand_with_ia            Auto-expand when the connected instance array expands
+	  -ia                        (Required) The id of the instance array it is attached to. It can be zero for unattached Drive Arrays
+	  -infra                     (Required) Infrastrucure ID
+	  -label                     (Required) The label of the drive array
+	  -return_id                 (Optional) Will print the ID of the created Drive Array. Useful for automating tasks.
+	  -size                      (Optional, default = 40960) Drive arrays's size in MBytes
+	  -template                  DriveArrays's volume template to clone when creating Drives
+	  -type                      Possible values: iscsi_ssd, iscsi_hdd
 
-edit drive_array - Edit a drive array. (alternatively use "alter da")
-  -count int
-        DriveArrays's drive count. Use this only for unconnected DriveArrays. (default -14234)
-  -expand_with_ia
-        Auto-expand when the connected instance array expands (default true)
-  -ia int
-        (Required) The id of the instance array it is attached to. It can be zero for unattached Drive Arrays (default -14234)
-  -id int
-        (Required) Drive Array's ID (default -14234)
-  -label string
-        (Required) The label of the drive array (default "__NIL__")
-  -size int
-        (Optional, default = 40960) Drive arrays's size in MBytes (default -14234)
-  -type string
-        Possible values: iscsi_ssd, iscsi_hdd (default "__NIL__")
-  -volume_template_id int
-        DriveArrays's volume template to clone when creating Drives (default -14234)
+Command: edit drive_array          Edit a drive array. (alternatively use "alter da")
+	  -count                     DriveArrays's drive count. Use this only for unconnected DriveArrays.
+	  -expand_with_ia            Auto-expand when the connected instance array expands
+	  -ia                        (Required) The id of the instance array it is attached to. It can be zero for unattached Drive Arrays
+	  -id                        (Required) Drive Array's ID
+	  -label                     (Required) The label of the drive array
+	  -size                      (Optional, default = 40960) Drive arrays's size in MBytes
+	  -template                  DriveArrays's volume template to clone when creating Drives
+	  -type                      Possible values: iscsi_ssd, iscsi_hdd
 
-list drive_array - Lists all drive arrays of an infrastructure. (alternatively use "ls da")
-  -format string
-        The output format. Supproted values are 'json','csv'. The default format is human readable.
-  -infra int
-        (Required) Infrastrucure ID
+Command: list drive_array          Lists all drive arrays of an infrastructure. (alternatively use "ls da")
+	  -format                    The output format. Supported values are 'json','csv'. The default format is human readable.
+	  -infra                     (Required) Infrastrucure ID
 
-delete drive_array - Delete a drive array. (alternatively use "rm da")
-  -autoconfirm
-        If true it does not ask for confirmation anymore
-  -id int
-        (Required) DriveArray's ID
+Command: delete drive_array        Delete a drive array. (alternatively use "rm da")
+	  -autoconfirm               If true it does not ask for confirmation anymore
+	  -id                        (Required) DriveArray's ID
+
+Command: list volume_templates     Lists available volume templates (alternatively use "ls templates")
+	  -format                    The output format. Supported values are 'json','csv'. The default format is human readable.
+	  -local_only                Show only templates that support local install
+	  -pxe_only                  Show only templates that support pxe booting
+
+Command: list firewall_rule        Lists instance array firewall rules (alternatively use "ls fw")
+	  -format                    The output format. Supported values are 'json','csv'. The default format is human readable.
+	  -ia                        (Required) The instance array id
+
+Command: add firewall_rule         Add instance array firewall rule (alternatively use "new fw")
+	  -description               The firewall rule's description.
+	  -destination               The destination address to filter on. It can also be a range with the start and end values separated by a dash.
+	  -ia                        (Required) The instance array id
+	  -ip_address_type           The IP address type of the firewall rule. Possible values: ipv4, ipv6.
+	  -port                      The port to filter on. It can also be a range with the start and end values separated by a dash.
+	  -protocol                  The protocol of the firewall rule. Possible values: all, icmp, tcp, udp.
+	  -source                    The source address to filter on. It can also be a range with the start and end values separated by a dash.
+
+Command: delete firewall_rule      Remove instance array firewall rule (alternatively use "rm fw")
+	  -destination               The destination address to filter on. It can also be a range with the start and end values separated by a dash.
+	  -ia                        (Required) The instance array id
+	  -ip_address_type           The IP address type of the firewall rule. Possible values: ipv4, ipv6.
+	  -port                      The port to filter on. It can also be a range with the start and end values separated by a dash.
+	  -protocol                  The protocol of the firewall rule. Possible values: all, icmp, tcp, udp.
+	  -source                    The source address to filter on. It can also be a range with the start and end values separated by a dash.
 ```
