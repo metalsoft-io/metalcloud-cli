@@ -81,6 +81,10 @@ func firewallRuleListCmd(c *Command, client MetalCloudClient) (string, error) {
 		return "", err
 	}
 
+	if !retIA.InstanceArrayOperation.InstanceArrayFirewallManaged {
+		return "", fmt.Errorf("the instance array %s [#%d] has firewall management disabled", retIA.InstanceArrayLabel, retIA.InstanceArrayID)
+	}
+
 	schema := []SchemaField{
 		SchemaField{
 			FieldName: "INDEX",
