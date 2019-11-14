@@ -148,3 +148,45 @@ func TestGetDatacenter(t *testing.T) {
 	os.Setenv("METALCLOUD_DATACENTER", dc)
 	Expect(GetDatacenter()).To(Equal(dc))
 }
+
+func TestGetCommandHelp(t *testing.T) {
+	RegisterTestingT(t)
+	cmd := Command{
+		Description:  "Lists available volume templates",
+		Subject:      "tests",
+		AltSubject:   "s",
+		Predicate:    "testp",
+		AltPredicate: "p",
+		FlagSet:      flag.NewFlagSet(RandStringBytes(10), flag.ExitOnError),
+		InitFunc: func(c *Command) {
+			c.Arguments = map[string]interface{}{
+				"cmd": c.FlagSet.Int(RandStringBytes(10), 0, "Random param"),
+			}
+		},
+		ExecuteFunc: func(c *Command, client MetalCloudClient) (string, error) {
+			return "", nil
+		}}
+
+	cmd.InitFunc(&cmd)
+	s := getCommandHelp(cmd)
+	Expect(s).To(ContainSubstring(cmd.Description))
+	Expect(s).To(ContainSubstring("Random param"))
+
+}
+
+func TestGetHelp(t *testing.T) {
+	RegisterTestingT(t)
+	cmds := getCommands()
+
+	s := getHelp()
+	for _, c := range cmds {
+		Expect(s).To(ContainSubstring(c.Description))
+
+		c.FlagSet.VisitAll(func(f *flag.Flag) {
+			Expect(s).To(ContainSubstring(f.Name))
+			Expect(s).To(ContainSubstring(f.Usage))
+		})
+
+	}
+
+}

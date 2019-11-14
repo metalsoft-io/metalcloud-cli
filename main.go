@@ -31,7 +31,7 @@ func main() {
 	}
 
 	if os.Args[1] == "help" {
-		printHelp()
+		fmt.Println(getHelp())
 		os.Exit(0)
 	}
 
@@ -103,15 +103,17 @@ func getCommandHelp(cmd Command) string {
 	return sb.String()
 }
 
-func printHelp() {
+func getHelp() string {
+	var sb strings.Builder
 	cmds := getCommands()
 	for _, c := range cmds {
 		c.InitFunc(&c)
 	}
-	fmt.Printf("Syntax: %s <command> [args]\nAccepted commands:\n", os.Args[0])
+	sb.WriteString(fmt.Sprintf("Syntax: %s <command> [args]\nAccepted commands:\n", os.Args[0]))
 	for _, c := range cmds {
-		fmt.Println(getCommandHelp(c))
+		sb.WriteString(fmt.Sprintln(getCommandHelp(c)))
 	}
+	return sb.String()
 }
 
 func initClient() (MetalCloudClient, error) {
