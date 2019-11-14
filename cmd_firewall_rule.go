@@ -102,7 +102,16 @@ func firewallRuleListCmd(c *Command, client MetalCloudClient) (string, error) {
 			FieldType: TypeString,
 			FieldSize: 20,
 		},
-
+		SchemaField{
+			FieldName: "DEST",
+			FieldType: TypeString,
+			FieldSize: 20,
+		},
+		SchemaField{
+			FieldName: "TYPE",
+			FieldType: TypeString,
+			FieldSize: 5,
+		},
 		SchemaField{
 			FieldName: "ENABLED",
 			FieldType: TypeBool,
@@ -145,11 +154,23 @@ func firewallRuleListCmd(c *Command, client MetalCloudClient) (string, error) {
 			sourceIPRange += fmt.Sprintf("-%s", fw.FirewallRuleSourceIPAddressRangeEnd)
 		}
 
+		destinationIPRange := "any"
+
+		if fw.FirewallRuleDestinationIPAddressRangeStart != "" {
+			sourceIPRange = fw.FirewallRuleSourceIPAddressRangeStart
+		}
+
+		if fw.FirewallRuleDestinationIPAddressRangeStart != fw.FirewallRuleDestinationIPAddressRangeEnd {
+			sourceIPRange += fmt.Sprintf("-%s", fw.FirewallRuleDestinationIPAddressRangeEnd)
+		}
+
 		data = append(data, []interface{}{
 			idx,
 			fw.FirewallRuleProtocol,
 			portRange,
 			sourceIPRange,
+			destinationIPRange,
+			fw.FirewallRuleIPAddressType,
 			fw.FirewallRuleEnabled,
 			fw.FirewallRuleDescription,
 		})
