@@ -383,12 +383,12 @@ func infrastructureGetCmd(c *Command, client MetalCloudClient) (string, error) {
 		SchemaField{
 			FieldName: "LABEL",
 			FieldType: TypeString,
-			FieldSize: 30,
+			FieldSize: 25,
 		},
 		SchemaField{
 			FieldName: "DETAILS",
 			FieldType: TypeString,
-			FieldSize: 70,
+			FieldSize: 75,
 		},
 		SchemaField{
 			FieldName: "STATUS",
@@ -409,15 +409,30 @@ func infrastructureGetCmd(c *Command, client MetalCloudClient) (string, error) {
 		if ia.InstanceArrayServiceStatus != "ordered" && ia.InstanceArrayOperation.InstanceArrayDeployType == "edit" && ia.InstanceArrayOperation.InstanceArrayDeployStatus == "not_started" {
 			status = "edited"
 		}
+
+		volumeTemplateName := ""
+		if ia.InstanceArrayOperation.VolumeTemplateID != 0 {
+			vt, err := client.VolumeTemplateGet(ia.InstanceArrayOperation.VolumeTemplateID)
+			if err != nil {
+				return "", err
+			}
+			volumeTemplateName = fmt.Sprintf("%s [#%d]", vt.VolumeTemplateDisplayName, vt.VolumeTemplateID)
+		}
+
+		details := fmt.Sprintf("%d instances (%d RAM, %d cores, %d disks %s %s)",
+			ia.InstanceArrayOperation.InstanceArrayInstanceCount,
+			ia.InstanceArrayOperation.InstanceArrayRAMGbytes,
+			ia.InstanceArrayOperation.InstanceArrayProcessorCount*ia.InstanceArrayProcessorCoreCount,
+			ia.InstanceArrayOperation.InstanceArrayDiskCount,
+			ia.InstanceArrayOperation.InstanceArrayBootMethod,
+			volumeTemplateName,
+		)
+
 		data = append(data, []interface{}{
 			ia.InstanceArrayID,
 			"InstanceArray",
 			ia.InstanceArrayOperation.InstanceArrayLabel,
-			fmt.Sprintf("%d instances (%d RAM, %d cores, %d disks)",
-				ia.InstanceArrayOperation.InstanceArrayInstanceCount,
-				ia.InstanceArrayOperation.InstanceArrayRAMGbytes,
-				ia.InstanceArrayOperation.InstanceArrayProcessorCount*ia.InstanceArrayProcessorCoreCount,
-				ia.InstanceArrayOperation.InstanceArrayDiskCount),
+			details,
 			status,
 		})
 
@@ -433,16 +448,34 @@ func infrastructureGetCmd(c *Command, client MetalCloudClient) (string, error) {
 		if da.DriveArrayServiceStatus != "ordered" && da.DriveArrayOperation.DriveArrayDeployType == "edit" && da.DriveArrayOperation.DriveArrayDeployStatus == "not_started" {
 			status = "edited"
 		}
+
+		volumeTemplateName := ""
+		if da.DriveArrayOperation.VolumeTemplateID != 0 {
+			vt, err := client.VolumeTemplateGet(da.DriveArrayOperation.VolumeTemplateID)
+			if err != nil {
+				return "", err
+			}
+			volumeTemplateName = fmt.Sprintf("%s [#%d]", vt.VolumeTemplateDisplayName, vt.VolumeTemplateID)
+		}
+
+		attachedToInstanceArrayStr := ""
+		for _, ia := range *iaList {
+			if ia.InstanceArrayID == da.DriveArrayOperation.InstanceArrayID {
+				attachedToInstanceArrayStr = fmt.Sprintf("%s [#%d]", ia.InstanceArrayLabel, ia.InstanceArrayID)
+				break
+			}
+		}
+
 		data = append(data, []interface{}{
 			da.DriveArrayID,
 			"DriveArray",
 			da.DriveArrayOperation.DriveArrayLabel,
-			fmt.Sprintf("%d drives - %.1f GB %s (volume_template:%d) attached to: %d",
+			fmt.Sprintf("%d drives - %.1f GB %s %s attached to: %s",
 				da.DriveArrayOperation.DriveArrayCount,
 				float64(da.DriveArrayOperation.DriveSizeMBytesDefault/1024),
 				da.DriveArrayOperation.DriveArrayStorageType,
-				da.DriveArrayOperation.VolumeTemplateID,
-				da.DriveArrayOperation.InstanceArrayID),
+				volumeTemplateName,
+				attachedToInstanceArrayStr),
 			status,
 		})
 
