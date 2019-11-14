@@ -31,9 +31,9 @@ var instanceArrayCmds = []Command{
 				"instance_array_disk_count":           c.FlagSet.Int("disks", _nilDefaultInt, "InstanceArray's number of local drives"),
 				"instance_array_disk_size_mbytes":     c.FlagSet.Int("disk_size", _nilDefaultInt, "InstanceArray's local disk sizes"),
 				"instance_array_boot_method":          c.FlagSet.String("boot", _nilDefaultStr, "InstanceArray's boot type:'pxe_iscsi','local_drives'"),
-				"instance_array_firewall_managed":     c.FlagSet.Bool("managed_fw", true, "InstanceArray's firewall management on or off"),
+				"instance_array_firewall_not_managed": c.FlagSet.Bool("un_managed_fw", false, "(Flag) If set InstanceArray's firewall management on or off"),
 				"volume_template_id":                  c.FlagSet.Int("template", _nilDefaultInt, "InstanceArray's volume template when booting from for local drives"),
-				"return_id":                           c.FlagSet.Bool("return_id", false, "(Optional) Will print the ID of the created Instance Array. Useful for automating tasks."),
+				"return_id":                           c.FlagSet.Bool("return_id", false, "(Flag) If set will print the ID of the created Instance Array. Useful for automating tasks."),
 			}
 		},
 		ExecuteFunc: instanceArrayCreateCmd,
@@ -87,10 +87,10 @@ var instanceArrayCmds = []Command{
 				"instance_array_disk_count":           c.FlagSet.Int("disks", _nilDefaultInt, "InstanceArray's number of local drives"),
 				"instance_array_disk_size_mbytes":     c.FlagSet.Int("disk_size", _nilDefaultInt, "InstanceArray's local disk sizes"),
 				"instance_array_boot_method":          c.FlagSet.String("boot", _nilDefaultStr, "InstanceArray's boot type:'pxe_iscsi','local_drives'"),
-				"instance_array_firewall_managed":     c.FlagSet.Bool("managed_fw", true, "InstanceArray's firewall management on or off"),
+				"instance_array_firewall_not_managed": c.FlagSet.Bool("unmanaged_fw", false, "(Flag) If set InstanceArray's firewall management is off"),
 				"volume_template_id":                  c.FlagSet.Int("template", _nilDefaultInt, "InstanceArray's volume template when booting from for local drives"),
-				"bSwapExistingInstancesHardware":      c.FlagSet.Bool("swap_existing_hardware", false, "If true, all the hardware of the Instance objects is swapped to match the new InstanceArray specifications"),
-				"bKeepDetachingDrives":                c.FlagSet.Bool("keep_detaching_drives", true, "If false and the number of Instance objects is reduced, then the detaching Drive objects will be deleted. If it's set to true, the detaching Drive objects will not be deleted."),
+				"bSwapExistingInstancesHardware":      c.FlagSet.Bool("swap_existing_hardware", false, "(Flag) If set all the hardware of the Instance objects is swapped to match the new InstanceArray specifications"),
+				"no_bKeepDetachingDrives":             c.FlagSet.Bool("do_not_keep_detaching_drives", false, "(Flag) If set and the number of Instance objects is reduced, then the detaching Drive objects will be deleted. If it's set to true, the detaching Drive objects will not be deleted."),
 			}
 		},
 		ExecuteFunc: instanceArrayEditCmd,
@@ -138,8 +138,9 @@ func instanceArrayEditCmd(c *Command, client MetalCloudClient) (string, error) {
 	argsToInstanceArrayOperation(c.Arguments, retIA.InstanceArrayOperation)
 
 	var bKeepDetachingDrives *bool
-	if c.Arguments["bKeepDetachingDrives"] != nil {
-		bKeepDetachingDrives = c.Arguments["bKeepDetachingDrives"].(*bool)
+	if v := c.Arguments["not_bKeepDetachingDrives"]; v != nil {
+		bVal := !*v.(*bool)
+		bKeepDetachingDrives = &bVal
 	}
 
 	var bSwapExistingInstancesHardware *bool
@@ -323,8 +324,8 @@ func argsToInstanceArray(m map[string]interface{}) *metalcloud.InstanceArray {
 		ia.InstanceArrayBootMethod = *v.(*string)
 	}
 
-	if v := m["instance_array_firewall_managed"]; v != nil {
-		ia.InstanceArrayFirewallManaged = *v.(*bool)
+	if v := m["instance_array_firewall_not_managed"]; v != nil {
+		ia.InstanceArrayFirewallManaged = !(*v.(*bool))
 	}
 
 	if v := m["volume_template_id"]; v != nil && *v.(*int) != _nilDefaultInt {
@@ -372,8 +373,8 @@ func argsToInstanceArrayOperation(m map[string]interface{}, iao *metalcloud.Inst
 		iao.InstanceArrayBootMethod = *v.(*string)
 	}
 
-	if v := m["instance_array_firewall_managed"]; v != nil {
-		iao.InstanceArrayFirewallManaged = *v.(*bool)
+	if v := m["instance_array_firewall_not_managed"]; v != nil {
+		iao.InstanceArrayFirewallManaged = !*v.(*bool)
 	}
 
 	if v := m["volume_template_id"]; v != nil && *v.(*int) != _nilDefaultInt {

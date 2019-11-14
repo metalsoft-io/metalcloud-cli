@@ -25,7 +25,7 @@ var infrastructureCmds = []Command{
 			c.Arguments = map[string]interface{}{
 				"infrastructure_label": c.FlagSet.String("label", "", "(Required) Infrastructure's label"),
 				"datacenter":           c.FlagSet.String("dc", GetDatacenter(), "(Required) Infrastructure datacenter"),
-				"return_id":            c.FlagSet.Bool("return_id", false, "(Optional) Will print the ID of the created infrastructure. Useful for automating tasks."),
+				"return_id":            c.FlagSet.Bool("return_id", false, "(Flag) If set will print the ID of the created infrastructure. Useful for automating tasks."),
 			}
 		},
 		ExecuteFunc: infrastructureCreateCmd,
@@ -54,7 +54,7 @@ var infrastructureCmds = []Command{
 		InitFunc: func(c *Command) {
 			c.Arguments = map[string]interface{}{
 				"infrastructure_id_or_label": c.FlagSet.String("infra", _nilDefaultStr, "(Required) Infrastructure's id or label. Note that the 'label' this be ambiguous in certain situations."),
-				"autoconfirm":                c.FlagSet.Bool("autoconfirm", false, "If true it does not ask for confirmation anymore"),
+				"autoconfirm":                c.FlagSet.Bool("autoconfirm", false, "(Flag) If set it does not ask for confirmation anymore"),
 			}
 		},
 		ExecuteFunc: infrastructureDeleteCmd,
@@ -68,13 +68,13 @@ var infrastructureCmds = []Command{
 		FlagSet:      flag.NewFlagSet("deploy infrastructure", flag.ExitOnError),
 		InitFunc: func(c *Command) {
 			c.Arguments = map[string]interface{}{
-				"infrastructure_id_or_label":    c.FlagSet.String("infra", _nilDefaultStr, "(Required) Infrastructure's id or label. Note that the 'label' this be ambiguous in certain situations."),
-				"hard_shutdown_after_timeout":   c.FlagSet.Bool("hard_shutdown_after_timeout", true, "(Optional, default true) Force a hard power off after timeout expired and the server is not powered off."),
-				"attempt_soft_shutdown":         c.FlagSet.Bool("attempt_soft_shutdown", true, "(Optional, default true) If needed, atempt a soft (ACPI) power off of all the servers in the infrastructure before the deploy"),
-				"soft_shutdown_timeout_seconds": c.FlagSet.Int("soft_shutdown_timeout_seconds", 180, "(Optional, default 180) Timeout to wait if hard_shutdown_after_timeout is set."),
-				"allow_data_loss":               c.FlagSet.Bool("allow_data_loss", false, "(Optional, default false) If false, deploy will throw error if data loss is expected."),
-				"skip_ansible":                  c.FlagSet.Bool("skip_ansible", false, "(Optional, default false) If true, some automatic provisioning steps will be skipped. This parameter should generally be ignored."),
-				"autoconfirm":                   c.FlagSet.Bool("autoconfirm", false, "If true it does not ask for confirmation anymore"),
+				"infrastructure_id_or_label":     c.FlagSet.String("infra", _nilDefaultStr, "(Required) Infrastructure's id or label. Note that the 'label' this be ambiguous in certain situations."),
+				"no_hard_shutdown_after_timeout": c.FlagSet.Bool("no_hard_shutdown_after_timeout", false, "(Flag) If set do not force a hard power off after timeout expired and the server is not powered off."),
+				"no_attempt_soft_shutdown":       c.FlagSet.Bool("no_attempt_soft_shutdown", false, "(Flag) If set,do not atempt a soft (ACPI) power off of all the servers in the infrastructure before the deploy"),
+				"soft_shutdown_timeout_seconds":  c.FlagSet.Int("soft_shutdown_timeout_seconds", 180, "(Optional, default 180) Timeout to wait if hard_shutdown_after_timeout is set."),
+				"allow_data_loss":                c.FlagSet.Bool("allow_data_loss", false, "(Flag) If set, deploy will throw error if data loss is expected."),
+				"skip_ansible":                   c.FlagSet.Bool("skip_ansible", false, "(Flag) If set, some automatic provisioning steps will be skipped. This parameter should generally be ignored."),
+				"autoconfirm":                    c.FlagSet.Bool("autoconfirm", false, "(Flag) If set operation procedes without asking for confirmation"),
 			}
 		},
 		ExecuteFunc: infrastructureDeployCmd,
@@ -104,7 +104,7 @@ var infrastructureCmds = []Command{
 		InitFunc: func(c *Command) {
 			c.Arguments = map[string]interface{}{
 				"infrastructure_id_or_label": c.FlagSet.String("infra", _nilDefaultStr, "(Required) Infrastructure's id or label. Note that the 'label' this be ambiguous in certain situations."),
-				"autoconfirm":                c.FlagSet.Bool("autoconfirm", false, "If true it does not ask for confirmation anymore"),
+				"autoconfirm":                c.FlagSet.Bool("autoconfirm", false, "(Flag) If set it does not ask for confirmation anymore"),
 			}
 		},
 		ExecuteFunc: infrastructureRevertCmd,
@@ -311,9 +311,12 @@ func infrastructureDeployCmd(c *Command, client MetalCloudClient) (string, error
 		timeout = *c.Arguments["soft_shutdown_timeout_seconds"].(*int)
 	}
 
+	NoHardShutdownAfterTimeout := c.Arguments["no_hard_shutdown_after_timeout"] != nil && *c.Arguments["no_hard_shutdown_after_timeout"].(*bool)
+	NoAttemptSoftShutdown := c.Arguments["no_attempt_soft_shutdown"] != nil && *c.Arguments["no_attempt_soft_shutdown"].(*bool)
+
 	shutDownOptions := metalcloud.ShutdownOptions{
-		HardShutdownAfterTimeout:   c.Arguments["hard_shutdown_after_timeout"] != nil && *c.Arguments["hard_shutdown_after_timeout"].(*bool),
-		AttemptSoftShutdown:        c.Arguments["attempt_soft_shutdown"] != nil && *c.Arguments["attempt_soft_shutdown"].(*bool),
+		HardShutdownAfterTimeout:   !NoHardShutdownAfterTimeout,
+		AttemptSoftShutdown:        !NoAttemptSoftShutdown,
 		SoftShutdownTimeoutSeconds: timeout,
 	}
 

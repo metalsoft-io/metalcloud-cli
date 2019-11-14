@@ -113,16 +113,14 @@ func TestInfrastructureDeployCmd(t *testing.T) {
 		InstanceArrayGet(ia.InstanceArrayID).
 		Return(&ia, nil).
 		AnyTimes()
-
-	bFalse := false
+	//bFalse := true
 	bTrue := true
 	timeout := 256
 	cmd := Command{
 		Arguments: map[string]interface{}{
 			"infrastructure_id_or_label":    &infra.InfrastructureID,
-			"allow_data_loss":               &bFalse,
-			"hard_shutdown_after_timeout":   &bTrue,
-			"attempt_soft_shutdown":         &bFalse,
+			"allow_data_loss":               &bTrue,
+			"no_attempt_soft_shutdown":      &bTrue,
 			"soft_shutdown_timeout_seconds": &timeout,
 		},
 	}
@@ -134,7 +132,7 @@ func TestInfrastructureDeployCmd(t *testing.T) {
 	}
 
 	client.EXPECT().
-		InfrastructureDeploy(infra.InfrastructureID, expectedShutdownOptions, false, false).
+		InfrastructureDeploy(infra.InfrastructureID, expectedShutdownOptions, true, false).
 		Return(nil).
 		Times(1)
 

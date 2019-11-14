@@ -2,9 +2,11 @@ package main
 
 import (
 	"bufio"
+	"flag"
 	"fmt"
 	"os"
 	"regexp"
+	"strings"
 
 	metalcloud "github.com/bigstepinc/metal-cloud-sdk-go"
 )
@@ -65,15 +67,14 @@ func executeCommand(args []string, commands []Command, client MetalCloudClient) 
 
 			if len(args) == 4 && args[3] == "-h" {
 				commandExecuted = true
-				printCommandHelp(c)
-				return nil
+				return fmt.Errorf(getCommandHelp(c))
 			}
 
 			c.FlagSet.Parse(args[3:])
 
 			ret, err := c.ExecuteFunc(&c, client)
 			if err != nil {
-				return fmt.Errorf("%s. Use '%s %s -h' for syntax help", err, predicate, subject)
+				return fmt.Errorf("%s Use '%s %s -h' for syntax help", err, predicate, subject)
 			}
 
 			fmt.Print(ret)
@@ -90,9 +91,16 @@ func executeCommand(args []string, commands []Command, client MetalCloudClient) 
 	return nil
 }
 
-func printCommandHelp(cmd Command) {
-	fmt.Printf("%s %s - %s (alternatively use \"%s %s\")\n", cmd.Predicate, cmd.Subject, cmd.Description, cmd.AltPredicate, cmd.AltSubject)
-	cmd.FlagSet.PrintDefaults()
+func getCommandHelp(cmd Command) string {
+	var sb strings.Builder
+
+	c := fmt.Sprintf("%s %s", cmd.Predicate, cmd.Subject)
+	sb.WriteString(fmt.Sprintf("Command: %-25s %s (alternatively use \"%s %s\")\n", c, cmd.Description, cmd.AltPredicate, cmd.AltSubject))
+	cmd.FlagSet.VisitAll(func(f *flag.Flag) {
+		sb.WriteString(fmt.Sprintf("\t  -%-25s %s\n", f.Name, f.Usage))
+	})
+
+	return sb.String()
 }
 
 func printHelp() {
@@ -100,10 +108,9 @@ func printHelp() {
 	for _, c := range cmds {
 		c.InitFunc(&c)
 	}
-	fmt.Printf("Syntax: %s <command> [args]\nAccepted commands:", os.Args[0])
+	fmt.Printf("Syntax: %s <command> [args]\nAccepted commands:\n", os.Args[0])
 	for _, c := range cmds {
-		fmt.Println()
-		printCommandHelp(c)
+		fmt.Println(getCommandHelp(c))
 	}
 }
 
