@@ -112,6 +112,13 @@ func getCommandHelp(cmd Command) string {
 		sb.WriteString(getArgumentHelp(f))
 	})
 
+	h := flag.Flag{
+		Name:  "h",
+		Usage: "Show command help and exit.",
+	}
+
+	sb.WriteString(getArgumentHelp(&h))
+
 	return sb.String()
 }
 

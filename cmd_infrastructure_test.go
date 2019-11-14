@@ -369,9 +369,19 @@ func TestInfrastructureListCmd(t *testing.T) {
 
 	csv, err := reader.ReadAll()
 
-	Expect(csv[1][0]).To(Equal(fmt.Sprintf("%d", infra.InfrastructureID)))
-	Expect(csv[1][2]).To(Equal(infra.UserEmailOwner))
-	Expect(csv[2][1]).To(Equal(infra2.InfrastructureOperation.InfrastructureLabel))
+	Expect(csv[1][0]).To(SatisfyAny(
+		Equal(fmt.Sprintf("%d", infra.InfrastructureID)),
+		Equal(fmt.Sprintf("%d", infra2.InfrastructureID)),
+	))
+
+	Expect(csv[1][2]).To(SatisfyAny(
+		Equal(infra.UserEmailOwner),
+		Equal(infra2.UserEmailOwner),
+	))
+	Expect(csv[2][1]).To(SatisfyAny(
+		Equal(infra.InfrastructureOperation.InfrastructureLabel),
+		Equal(infra2.InfrastructureOperation.InfrastructureLabel),
+	))
 }
 
 func TestGetInfrastructureFromCommand(t *testing.T) {
