@@ -259,7 +259,7 @@ func TestAdjustFieldSizes(t *testing.T) {
 	AdjustFieldSizes(data, &schema)
 
 	Expect(schema[0].FieldSize).To(Equal(3))
-	Expect(schema[1].FieldSize).To(Equal(len(data[2][1].(string))))
-	Expect(schema[2].FieldSize).To(Equal(7))
+	Expect(schema[1].FieldSize).To(Equal(10))
+	Expect(schema[2].FieldSize).To(Equal(8))
 
 }
