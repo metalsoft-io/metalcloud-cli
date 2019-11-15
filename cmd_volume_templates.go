@@ -42,12 +42,12 @@ func volumeTemplatesListCmd(c *Command, client MetalCloudClient) (string, error)
 		SchemaField{
 			FieldName: "LABEL",
 			FieldType: TypeString,
-			FieldSize: 40,
+			FieldSize: 20,
 		},
 		SchemaField{
 			FieldName: "NAME",
 			FieldType: TypeString,
-			FieldSize: 35,
+			FieldSize: 20,
 		},
 		SchemaField{
 			FieldName: "SIZE",
@@ -57,7 +57,7 @@ func volumeTemplatesListCmd(c *Command, client MetalCloudClient) (string, error)
 		SchemaField{
 			FieldName: "STATUS",
 			FieldType: TypeString,
-			FieldSize: 25,
+			FieldSize: 20,
 		},
 		SchemaField{
 			FieldName: "FLAGS",
@@ -130,6 +130,8 @@ func volumeTemplatesListCmd(c *Command, client MetalCloudClient) (string, error)
 		TableSorter(schema).OrderBy(
 			schema[0].FieldName,
 			schema[1].FieldName).Sort(data)
+
+		AdjustFieldSizes(data, &schema)
 
 		sb.WriteString(GetTableAsString(data, schema))
 

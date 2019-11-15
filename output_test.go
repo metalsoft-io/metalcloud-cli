@@ -187,6 +187,7 @@ func TestGetTableAsJSONString(t *testing.T) {
 }
 
 func TestGetTableAsCSVString(t *testing.T) {
+
 	schema := []SchemaField{
 		SchemaField{
 			FieldName: "ID",
@@ -226,4 +227,39 @@ func TestGetTableAsCSVString(t *testing.T) {
 	if actual != expected {
 		t.Errorf("Delimiter is not correct, \nexpected:\n%s\nwas:\n%s", expected, actual)
 	}
+}
+
+func TestAdjustFieldSizes(t *testing.T) {
+	RegisterTestingT(t)
+	schema := []SchemaField{
+		SchemaField{
+			FieldName: "ID",
+			FieldType: TypeInt,
+			FieldSize: 3,
+		},
+		SchemaField{
+			FieldName: "LABEL",
+			FieldType: TypeString,
+			FieldSize: 5, //this is smaller than the largest
+		},
+		SchemaField{
+			FieldName:      "INST.",
+			FieldType:      TypeFloat,
+			FieldSize:      0,
+			FieldPrecision: 4,
+		},
+	}
+
+	data := [][]interface{}{
+		{4, "12345", 20.1},
+		{5, "12", 22.1},
+		{6, "123456789", 1.2345},
+	}
+
+	AdjustFieldSizes(data, &schema)
+
+	Expect(schema[0].FieldSize).To(Equal(3))
+	Expect(schema[1].FieldSize).To(Equal(len(data[2][1].(string))))
+	Expect(schema[2].FieldSize).To(Equal(7))
+
 }

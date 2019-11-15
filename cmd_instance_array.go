@@ -175,12 +175,12 @@ func instanceArrayListCmd(c *Command, client MetalCloudClient) (string, error) {
 		SchemaField{
 			FieldName: "LABEL",
 			FieldType: TypeString,
-			FieldSize: 20,
+			FieldSize: 15,
 		},
 		SchemaField{
 			FieldName: "STATUS",
 			FieldType: TypeString,
-			FieldSize: 20,
+			FieldSize: 10,
 		},
 		SchemaField{
 			FieldName: "INST_CNT",
@@ -226,7 +226,7 @@ func instanceArrayListCmd(c *Command, client MetalCloudClient) (string, error) {
 		sb.WriteString(ret)
 
 	default:
-
+		AdjustFieldSizes(data, &schema)
 		sb.WriteString(GetTableAsString(data, schema))
 		sb.WriteString(fmt.Sprintf("Total: %d Instance Arrays\n\n", len(*iaList)))
 

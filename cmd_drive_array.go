@@ -250,7 +250,7 @@ func driveArrayListCmd(c *Command, client MetalCloudClient) (string, error) {
 		sb.WriteString(ret)
 
 	default:
-
+		AdjustFieldSizes(data, &schema)
 		sb.WriteString(GetTableAsString(data, schema))
 		sb.WriteString(fmt.Sprintf("Total: %d Drive Arrays\n\n", len(*daList)))
 

@@ -209,6 +209,7 @@ func firewallRuleListCmd(c *Command, client MetalCloudClient) (string, error) {
 	default:
 		sb.WriteString(fmt.Sprintf("Instance Array %s (%d) [%s] has the following firewall rules:\n", retIA.InstanceArrayLabel, retIA.InstanceArrayID, status))
 
+		AdjustFieldSizes(data, &schema)
 		sb.WriteString(GetTableAsString(data, schema))
 
 		sb.WriteString(fmt.Sprintf("Total: %d firewall rules\n\n", len(list)))

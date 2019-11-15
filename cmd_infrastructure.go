@@ -154,12 +154,12 @@ func infrastructureListCmd(c *Command, client MetalCloudClient) (string, error) 
 		SchemaField{
 			FieldName: "LABEL",
 			FieldType: TypeString,
-			FieldSize: 40,
+			FieldSize: 15,
 		},
 		SchemaField{
 			FieldName: "OWNER",
 			FieldType: TypeString,
-			FieldSize: 35,
+			FieldSize: 20,
 		},
 		SchemaField{
 			FieldName: "REL.",
@@ -169,12 +169,12 @@ func infrastructureListCmd(c *Command, client MetalCloudClient) (string, error) 
 		SchemaField{
 			FieldName: "STATUS",
 			FieldType: TypeString,
-			FieldSize: 10,
+			FieldSize: 5,
 		},
 		SchemaField{
 			FieldName: "DATACENTER",
 			FieldType: TypeString,
-			FieldSize: 20,
+			FieldSize: 10,
 		},
 	}
 
@@ -227,6 +227,8 @@ func infrastructureListCmd(c *Command, client MetalCloudClient) (string, error) 
 			schema[3].FieldName,
 			schema[0].FieldName,
 			schema[1].FieldName).Sort(data)
+
+		AdjustFieldSizes(data, &schema)
 
 		sb.WriteString(GetTableAsString(data, schema))
 
@@ -371,17 +373,17 @@ func infrastructureGetCmd(c *Command, client MetalCloudClient) (string, error) {
 		SchemaField{
 			FieldName: "LABEL",
 			FieldType: TypeString,
-			FieldSize: 25,
+			FieldSize: 10,
 		},
 		SchemaField{
 			FieldName: "DETAILS",
 			FieldType: TypeString,
-			FieldSize: 75,
+			FieldSize: 50,
 		},
 		SchemaField{
 			FieldName: "STATUS",
 			FieldType: TypeString,
-			FieldSize: 10,
+			FieldSize: 5,
 		},
 	}
 
@@ -504,6 +506,9 @@ func infrastructureGetCmd(c *Command, client MetalCloudClient) (string, error) {
 			retInfra.InfrastructureID,
 			retInfra.DatacenterName,
 			retInfra.UserEmailOwner))
+
+		AdjustFieldSizes(data, &schema)
+
 		sb.WriteString(GetTableAsString(data, schema))
 
 		sb.WriteString(fmt.Sprintf("Total: %d elements\n\n", len(data)))

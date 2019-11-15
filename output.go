@@ -42,6 +42,43 @@ func GetTableRow(row []interface{}, schema []SchemaField) string {
 	return "|" + strings.Join(rowStr, "|") + "|"
 }
 
+// GetCellSize calculates how wide a cell is by converting it to string and measuring it's size
+func GetCellSize(d interface{}, field *SchemaField) int {
+	var s string
+	switch field.FieldType {
+	case TypeInt:
+		s = fmt.Sprintf("%d", d.(int))
+	case TypeString:
+		s = d.(string)
+	case TypeFloat:
+		s = fmt.Sprintf(fmt.Sprintf("%%.%df", field.FieldPrecision), d.(float64))
+	default:
+		s = fmt.Sprintf("%v", d)
+
+	}
+	return len(s)
+}
+
+//AdjustFieldSizes expands field sizes to match the widest cell
+func AdjustFieldSizes(data [][]interface{}, schema *[]SchemaField) {
+	rowSize := len(*schema)
+	for i := 0; i < rowSize; i++ {
+		f := (*schema)[i]
+		//iterate over the entire column
+		rowCount := len(data)
+		maxLen := f.FieldSize
+		for k := 0; k < rowCount; k++ {
+			cellSize := GetCellSize(data[k][i], &f)
+			if cellSize > maxLen {
+				maxLen = cellSize
+			}
+		}
+		if maxLen > f.FieldSize {
+			(*schema)[i].FieldSize = maxLen + 1 //we leave a little room to the right
+		}
+	}
+}
+
 // GetTableDelimiter returns a delimiter row for the schema
 func GetTableDelimiter(schema []SchemaField) string {
 	row := "+"
