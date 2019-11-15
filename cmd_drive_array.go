@@ -4,6 +4,7 @@ import (
 	"flag"
 	"fmt"
 	"os"
+	"strconv"
 	"strings"
 
 	metalcloud "github.com/bigstepinc/metal-cloud-sdk-go"
@@ -21,7 +22,7 @@ var driveArrayCmds = []Command{
 		FlagSet:      flag.NewFlagSet("drive_array", flag.ExitOnError),
 		InitFunc: func(c *Command) {
 			c.Arguments = map[string]interface{}{
-				"infrastructure_id":                         c.FlagSet.Int("infra", _nilDefaultInt, "(Required) Infrastructure ID"),
+				"infrastructure_id_or_label":                c.FlagSet.String("infra", _nilDefaultStr, "(Required) Infrastructure's id or label. Note that the 'label' this be ambiguous in certain situations."),
 				"instance_array_id":                         c.FlagSet.Int("ia", _nilDefaultInt, "(Required) The id of the instance array it is attached to. It can be zero for unattached Drive Arrays"),
 				"drive_array_label":                         c.FlagSet.String("label", _nilDefaultStr, "(Required) The label of the drive array"),
 				"drive_array_storage_type":                  c.FlagSet.String("type", _nilDefaultStr, "Possible values: iscsi_ssd, iscsi_hdd"),
@@ -43,7 +44,7 @@ var driveArrayCmds = []Command{
 		FlagSet:      flag.NewFlagSet("edit_drive_array", flag.ExitOnError),
 		InitFunc: func(c *Command) {
 			c.Arguments = map[string]interface{}{
-				"drive_array_id":                         c.FlagSet.Int("id", _nilDefaultInt, "(Required) Drive Array's ID"),
+				"drive_array_id_or_label":                c.FlagSet.Int("id", _nilDefaultInt, "(Required) Drive Array's ID or label. Note that using the label can be ambiguous and is slower."),
 				"instance_array_id":                      c.FlagSet.Int("ia", _nilDefaultInt, "(Required) The id of the instance array it is attached to. It can be zero for unattached Drive Arrays"),
 				"drive_array_label":                      c.FlagSet.String("label", _nilDefaultStr, "(Required) The label of the drive array"),
 				"drive_array_storage_type":               c.FlagSet.String("type", _nilDefaultStr, "Possible values: iscsi_ssd, iscsi_hdd"),
@@ -64,8 +65,8 @@ var driveArrayCmds = []Command{
 		FlagSet:      flag.NewFlagSet("list drive_array", flag.ExitOnError),
 		InitFunc: func(c *Command) {
 			c.Arguments = map[string]interface{}{
-				"infrastructure_id": c.FlagSet.Int("infra", 0, "(Required) Infrastructure ID"),
-				"format":            c.FlagSet.String("format", "", "The output format. Supported values are 'json','csv'. The default format is human readable."),
+				"infrastructure_id_or_label": c.FlagSet.String("infra", _nilDefaultStr, "(Required) Infrastructure's id or label. Note that the 'label' this be ambiguous in certain situations."),
+				"format":                     c.FlagSet.String("format", "", "The output format. Supported values are 'json','csv'. The default format is human readable."),
 			}
 		},
 		ExecuteFunc: driveArrayListCmd,
@@ -79,8 +80,8 @@ var driveArrayCmds = []Command{
 		FlagSet:      flag.NewFlagSet("delete drive_array", flag.ExitOnError),
 		InitFunc: func(c *Command) {
 			c.Arguments = map[string]interface{}{
-				"drive_array_id": c.FlagSet.Int("id", 0, "(Required) DriveArray's ID"),
-				"autoconfirm":    c.FlagSet.Bool("autoconfirm", false, "If true it does not ask for confirmation anymore"),
+				"drive_array_id_or_label": c.FlagSet.Int("id", _nilDefaultInt, "(Required) Drive Array's ID or label. Note that using the label can be ambiguous and is slower."),
+				"autoconfirm":             c.FlagSet.Bool("autoconfirm", false, "If true it does not ask for confirmation anymore"),
 			}
 		},
 		ExecuteFunc: driveArrayDeleteCmd,
@@ -89,10 +90,9 @@ var driveArrayCmds = []Command{
 
 func driveArrayCreateCmd(c *Command, client MetalCloudClient) (string, error) {
 
-	infrastructureID := c.Arguments["infrastructure_id"]
-
-	if infrastructureID == nil || *infrastructureID.(*int) == 0 {
-		return "", fmt.Errorf("-infra <infrastructure_id> is required")
+	infra, err := getInfrastructureFromCommand(c, client)
+	if err != nil {
+		return "", err
 	}
 
 	if c.Arguments["instance_array_id"] == nil {
@@ -109,7 +109,7 @@ func driveArrayCreateCmd(c *Command, client MetalCloudClient) (string, error) {
 		return "", fmt.Errorf("-label <drive_array_label> is required")
 	}
 
-	retDA, err := client.DriveArrayCreate(*infrastructureID.(*int), *da)
+	retDA, err := client.DriveArrayCreate(infra.InfrastructureID, *da)
 	if err != nil {
 		return "", err
 	}
@@ -123,13 +123,7 @@ func driveArrayCreateCmd(c *Command, client MetalCloudClient) (string, error) {
 
 func driveArrayEditCmd(c *Command, client MetalCloudClient) (string, error) {
 
-	id := c.Arguments["drive_array_id"]
-
-	if id == nil || *id.(*int) == 0 {
-		return "", fmt.Errorf("-id <drive_array_id> is required")
-	}
-
-	retDA, err := client.DriveArrayGet(*id.(*int))
+	retDA, err := getDriveArrayFromCommand(c, client)
 	if err != nil {
 		return "", err
 	}
@@ -138,20 +132,19 @@ func driveArrayEditCmd(c *Command, client MetalCloudClient) (string, error) {
 
 	argsToDriveArrayOperation(c.Arguments, dao)
 
-	_, err = client.DriveArrayEdit(*id.(*int), *dao)
+	_, err = client.DriveArrayEdit(retDA.DriveArrayID, *dao)
 
 	return "", err
 }
 
 func driveArrayListCmd(c *Command, client MetalCloudClient) (string, error) {
 
-	infrastructureID := c.Arguments["infrastructure_id"]
-
-	if infrastructureID == nil || *infrastructureID.(*int) == 0 {
-		return "", fmt.Errorf("-infra <infrastructure_id> is required")
+	infra, err := getInfrastructureFromCommand(c, client)
+	if err != nil {
+		return "", err
 	}
 
-	daList, err := client.DriveArrays(*infrastructureID.(*int))
+	daList, err := client.DriveArrays(infra.InfrastructureID)
 	if err != nil {
 		return "", err
 	}
@@ -268,20 +261,14 @@ func driveArrayListCmd(c *Command, client MetalCloudClient) (string, error) {
 
 func driveArrayDeleteCmd(c *Command, client MetalCloudClient) (string, error) {
 
-	driveArrayID := c.Arguments["drive_array_id"]
-
-	if driveArrayID == nil || *driveArrayID.(*int) == 0 {
-		return "", fmt.Errorf("-id <drive_array_id> is required")
-	}
-
-	retDA, err2 := client.DriveArrayGet(*driveArrayID.(*int))
-	if err2 != nil {
-		return "", err2
+	retDA, err := getDriveArrayFromCommand(c, client)
+	if err != nil {
+		return "", err
 	}
 
 	var retIA *metalcloud.InstanceArray
 	if retDA.InstanceArrayID != 0 {
-		retIA, err2 = client.InstanceArrayGet(retDA.InstanceArrayID)
+		retIA, err = client.InstanceArrayGet(retDA.InstanceArrayID)
 	}
 
 	retInfra, err2 := client.InfrastructureGet(retIA.InfrastructureID)
@@ -321,7 +308,7 @@ func driveArrayDeleteCmd(c *Command, client MetalCloudClient) (string, error) {
 		return "", fmt.Errorf("Operation not confirmed. Aborting")
 	}
 
-	err := client.DriveArrayDelete(*driveArrayID.(*int))
+	err = client.DriveArrayDelete(retDA.DriveArrayID)
 
 	return "", err
 }
@@ -398,4 +385,91 @@ func argsToDriveArrayOperation(m map[string]interface{}, dao *metalcloud.DriveAr
 		dao.InstanceArrayID = *v.(*int)
 	}
 
+}
+
+func getDriveArrayFromCommand(c *Command, client MetalCloudClient) (*metalcloud.DriveArray, error) {
+
+	if c.Arguments["drive_array_id_or_label"] == nil || c.Arguments["drive_array_id_or_label"] == _nilDefaultStr {
+		return nil, fmt.Errorf("Either a drive array ID or a drive array label must be provided")
+	}
+
+	if v := c.Arguments["drive_array_id_or_label"]; v != nil {
+
+		switch v := v.(type) {
+		case *int:
+			if *v != _nilDefaultInt {
+				return client.DriveArrayGet(*v)
+			}
+		case *string:
+
+			if *v != _nilDefaultStr {
+				id, err := strconv.Atoi(*v)
+				if err == nil {
+					return client.DriveArrayGet(id)
+				} //if error we assume it's a label and we simply carry on
+			}
+		}
+	}
+
+	labelToSearch := *c.Arguments["drive_array_id_or_label"].(*string)
+
+	var driveArrayToReturn *metalcloud.DriveArray
+
+	infras, err := client.Infrastructures()
+	if err != nil {
+		return nil, err
+	}
+
+	driveArrayList := []*metalcloud.DriveArray{}
+
+	for _, i := range *infras {
+
+		ret, err := client.DriveArrays(i.InfrastructureID)
+		if err != nil {
+			return nil, err
+		}
+
+		for _, ia := range *ret {
+			iaCopy := ia
+			driveArrayList = append(driveArrayList, &iaCopy)
+		}
+	}
+
+	for k, da := range driveArrayList {
+
+		if da.DriveArrayOperation.DriveArrayLabel == labelToSearch {
+
+			if driveArrayToReturn != nil {
+				var i1, i2 metalcloud.Infrastructure
+				for _, i := range *infras {
+					if i.InfrastructureID == driveArrayToReturn.InfrastructureID {
+						v := i
+						i1 = v
+					}
+
+					if i.InfrastructureID == da.InfrastructureID {
+						v := i
+						i2 = v
+					}
+				}
+
+				//if we found this infrastructure label, with the same name again, we throw an error
+				return nil, fmt.Errorf("Drive Arrays %d  (infrastructure %s #%d) and %d (infrastructure %s #%d) both have the same label %s",
+					driveArrayToReturn.DriveArrayID,
+					i1.InfrastructureLabel, i1.InfrastructureID,
+					da.DriveArrayID,
+					i2.InfrastructureLabel, i2.InfrastructureID,
+					labelToSearch)
+			}
+
+			driveArrayToReturn = driveArrayList[k]
+			//we let the search go on to check for ambiguous situationss
+		}
+	}
+
+	if driveArrayToReturn == nil {
+		return nil, fmt.Errorf("Could not find  drive_array with label %s", labelToSearch)
+	}
+
+	return driveArrayToReturn, nil
 }

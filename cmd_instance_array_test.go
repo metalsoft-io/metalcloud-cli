@@ -104,9 +104,9 @@ func TestInstanceArrayEdit(t *testing.T) {
 	newlabel := "newlabel"
 	cmd := Command{
 		Arguments: map[string]interface{}{
-			"instance_array_id":    &ia.InstanceArrayID,
-			"instance_array_label": &newlabel,
-			"volume_template_id":   &i,
+			"instance_array_id_or_label": &ia.InstanceArrayID,
+			"instance_array_label":       &newlabel,
+			"volume_template_id":         &i,
 		},
 	}
 
@@ -167,8 +167,8 @@ func TestInstanceArrayListCmd(t *testing.T) {
 	format := "json"
 	cmd := Command{
 		Arguments: map[string]interface{}{
-			"infrastructure_id": &infra.InfrastructureID,
-			"format":            &format,
+			"infrastructure_id_or_label": &infra.InfrastructureID,
+			"format":                     &format,
 		},
 	}
 
@@ -234,7 +234,7 @@ func TestInstanceArrayDeleteCmd(t *testing.T) {
 
 	cmd := Command{
 		Arguments: map[string]interface{}{
-			"instance_array_id": &ia.InstanceArrayID,
+			"instance_array_id_or_label": &ia.InstanceArrayID,
 		},
 	}
 
@@ -254,5 +254,186 @@ func TestInstanceArrayDeleteCmd(t *testing.T) {
 
 	Expect(err).To(BeNil())
 	Expect(ret).To(BeEmpty())
+
+}
+
+func TestGetInstanceArrayFromCommand(t *testing.T) {
+	RegisterTestingT(t)
+	ctrl := gomock.NewController(t)
+
+	infra := metalcloud.Infrastructure{
+		InfrastructureID:    10002,
+		InfrastructureLabel: "testinfra",
+	}
+
+	iao := metalcloud.InstanceArrayOperation{
+		InstanceArrayID:           11,
+		InstanceArrayLabel:        "testia",
+		InstanceArrayDeployType:   "edit",
+		InstanceArrayDeployStatus: "not_started",
+	}
+
+	ia := metalcloud.InstanceArray{
+		InstanceArrayID:            11,
+		InstanceArrayLabel:         "testia",
+		InfrastructureID:           infra.InfrastructureID,
+		InstanceArrayOperation:     &iao,
+		InstanceArrayServiceStatus: "active",
+	}
+
+	iao2 := metalcloud.InstanceArrayOperation{
+		InstanceArrayID:           11,
+		InstanceArrayLabel:        "testia2",
+		InstanceArrayDeployType:   "edit",
+		InstanceArrayDeployStatus: "not_started",
+	}
+
+	ia2 := metalcloud.InstanceArray{
+		InstanceArrayID:            11,
+		InstanceArrayLabel:         "testia2",
+		InfrastructureID:           infra.InfrastructureID,
+		InstanceArrayOperation:     &iao2,
+		InstanceArrayServiceStatus: "active",
+	}
+
+	iaList := map[string]metalcloud.InstanceArray{
+		ia.InstanceArrayLabel + ".vanilla":  ia,
+		ia2.InstanceArrayLabel + ".vanilla": ia2,
+	}
+
+	client := mock_metalcloud.NewMockMetalCloudClient(ctrl)
+
+	iList := map[string]metalcloud.Infrastructure{
+		infra.InfrastructureLabel: infra,
+	}
+
+	client.EXPECT().
+		Infrastructures().
+		Return(&iList, nil).
+		Times(1)
+
+	client.EXPECT().
+		InstanceArrays(infra.InfrastructureID).
+		Return(&iaList, nil).
+		AnyTimes()
+
+	client.EXPECT().
+		InstanceArrayGet(ia.InstanceArrayID).
+		Return(&ia, nil).
+		AnyTimes()
+
+	//check with int
+	cmd := Command{
+		Arguments: map[string]interface{}{
+			"instance_array_id_or_label": &ia.InstanceArrayID,
+			"infrastructure_id_or_label": &ia.InfrastructureID,
+		},
+	}
+
+	ret, err := getInstanceArrayFromCommand(&cmd, client)
+
+	Expect(err).To(BeNil())
+	Expect(ret.InstanceArrayID).To(Equal(ia.InstanceArrayID))
+
+	//check with label
+	cmd = Command{
+		Arguments: map[string]interface{}{
+			"instance_array_id_or_label": &ia.InstanceArrayLabel,
+			"infrastructure_id_or_label": &ia.InfrastructureID,
+		},
+	}
+
+	ret, err = getInstanceArrayFromCommand(&cmd, client)
+
+	Expect(err).To(BeNil())
+	Expect(ret.InstanceArrayID).To(Equal(ia.InstanceArrayID))
+
+}
+
+func TestGetInstanceArrayFromCommandWithDuplicates(t *testing.T) {
+	RegisterTestingT(t)
+	ctrl := gomock.NewController(t)
+
+	infra := metalcloud.Infrastructure{
+		InfrastructureID:    10002,
+		InfrastructureLabel: "testinfra",
+	}
+
+	iao := metalcloud.InstanceArrayOperation{
+		InstanceArrayID:           11,
+		InstanceArrayLabel:        "testia",
+		InstanceArrayDeployType:   "edit",
+		InstanceArrayDeployStatus: "not_started",
+	}
+
+	ia := metalcloud.InstanceArray{
+		InstanceArrayID:            11,
+		InstanceArrayLabel:         "testia",
+		InfrastructureID:           infra.InfrastructureID,
+		InstanceArrayOperation:     &iao,
+		InstanceArrayServiceStatus: "active",
+	}
+
+	infra2 := metalcloud.Infrastructure{
+		InfrastructureID:    10003,
+		InfrastructureLabel: "testinfra2",
+	}
+
+	iao2 := metalcloud.InstanceArrayOperation{
+		InstanceArrayID:           12,
+		InstanceArrayLabel:        "testia",
+		InstanceArrayDeployType:   "edit",
+		InstanceArrayDeployStatus: "not_started",
+	}
+
+	ia2 := metalcloud.InstanceArray{
+		InstanceArrayID:            12,
+		InstanceArrayLabel:         "testia",
+		InfrastructureID:           infra2.InfrastructureID,
+		InstanceArrayOperation:     &iao2,
+		InstanceArrayServiceStatus: "active",
+	}
+
+	iaList := map[string]metalcloud.InstanceArray{
+		ia.InstanceArrayLabel + ".vanilla": ia,
+	}
+
+	iaList2 := map[string]metalcloud.InstanceArray{
+		ia2.InstanceArrayLabel + ".vanilla": ia2,
+	}
+
+	iList := map[string]metalcloud.Infrastructure{
+		infra.InfrastructureLabel:  infra,
+		infra2.InfrastructureLabel: infra2,
+	}
+
+	client := mock_metalcloud.NewMockMetalCloudClient(ctrl)
+	client.EXPECT().
+		Infrastructures().
+		Return(&iList, nil).
+		Times(1)
+
+	client.EXPECT().
+		InstanceArrays(infra.InfrastructureID).
+		Return(&iaList, nil).
+		Times(1)
+
+	client.EXPECT().
+		InstanceArrays(infra2.InfrastructureID).
+		Return(&iaList2, nil).
+		Times(1)
+
+	//check with ambigous label
+	cmd := Command{
+		Arguments: map[string]interface{}{
+			"instance_array_id_or_label": &ia.InstanceArrayLabel,
+			"infrastructure_id_or_label": &ia.InfrastructureID,
+		},
+	}
+
+	_, err := getInstanceArrayFromCommand(&cmd, client)
+
+	Expect(err).ToNot(BeNil())
+	Expect(err.Error()).To(ContainSubstring("both have"))
 
 }

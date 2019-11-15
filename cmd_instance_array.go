@@ -4,6 +4,7 @@ import (
 	"flag"
 	"fmt"
 	"os"
+	"strconv"
 	"strings"
 
 	metalcloud "github.com/bigstepinc/metal-cloud-sdk-go"
@@ -47,8 +48,8 @@ var instanceArrayCmds = []Command{
 		FlagSet:      flag.NewFlagSet("list instance_array", flag.ExitOnError),
 		InitFunc: func(c *Command) {
 			c.Arguments = map[string]interface{}{
-				"infrastructure_id": c.FlagSet.Int("infra", 0, "(Required) Infrastructure ID"),
-				"format":            c.FlagSet.String("format", "", "The output format. Supported values are 'json','csv'. The default format is human readable."),
+				"infrastructure_id_or_label": c.FlagSet.String("infra", _nilDefaultStr, "(Required) Infrastructure's id or label. Note that the 'label' this be ambiguous in certain situations."),
+				"format":                     c.FlagSet.String("format", "", "The output format. Supported values are 'json','csv'. The default format is human readable."),
 			}
 		},
 		ExecuteFunc: instanceArrayListCmd,
@@ -62,8 +63,8 @@ var instanceArrayCmds = []Command{
 		FlagSet:      flag.NewFlagSet("list instance_array", flag.ExitOnError),
 		InitFunc: func(c *Command) {
 			c.Arguments = map[string]interface{}{
-				"instance_array_id": c.FlagSet.Int("id", 0, "(Required) InstanceArray ID"),
-				"autoconfirm":       c.FlagSet.Bool("autoconfirm", false, "If true it does not ask for confirmation anymore"),
+				"instance_array_id_or_label": c.FlagSet.String("id", _nilDefaultStr, "(Required) InstanceArray's id or label. Note that the label can be ambigous."),
+				"autoconfirm":                c.FlagSet.Bool("autoconfirm", false, "If true it does not ask for confirmation anymore"),
 			}
 		},
 		ExecuteFunc: instanceArrayDeleteCmd,
@@ -77,7 +78,7 @@ var instanceArrayCmds = []Command{
 		FlagSet:      flag.NewFlagSet("instance_array", flag.ExitOnError),
 		InitFunc: func(c *Command) {
 			c.Arguments = map[string]interface{}{
-				"instance_array_id":                   c.FlagSet.Int("id", _nilDefaultInt, "(Required) InstanceArray's id"),
+				"instance_array_id_or_label":          c.FlagSet.String("id", _nilDefaultStr, "(Required) InstanceArray's id or label. Note that the label can be ambigous."),
 				"instance_array_instance_count":       c.FlagSet.Int("instance_count", _nilDefaultInt, "Instance count of this instance array"),
 				"instance_array_label":                c.FlagSet.String("label", _nilDefaultStr, "(Required) InstanceArray's label"),
 				"instance_array_ram_gbytes":           c.FlagSet.Int("ram", _nilDefaultInt, "InstanceArray's minimum RAM (GB)"),
@@ -124,13 +125,7 @@ func instanceArrayCreateCmd(c *Command, client MetalCloudClient) (string, error)
 
 func instanceArrayEditCmd(c *Command, client MetalCloudClient) (string, error) {
 
-	instanceArrayID := c.Arguments["instance_array_id"]
-
-	if instanceArrayID == nil || *instanceArrayID.(*int) == 0 {
-		return "", fmt.Errorf("-id <instance_array_id> is required")
-	}
-
-	retIA, err := client.InstanceArrayGet(*instanceArrayID.(*int))
+	retIA, err := getInstanceArrayFromCommand(c, client)
 	if err != nil {
 		return "", err
 	}
@@ -148,7 +143,8 @@ func instanceArrayEditCmd(c *Command, client MetalCloudClient) (string, error) {
 		bSwapExistingInstancesHardware = c.Arguments["bSwapExistingInstancesHardware"].(*bool)
 	}
 
-	_, err = client.InstanceArrayEdit(*instanceArrayID.(*int),
+	_, err = client.InstanceArrayEdit(
+		retIA.InstanceArrayID,
 		*retIA.InstanceArrayOperation,
 		bSwapExistingInstancesHardware,
 		bKeepDetachingDrives,
@@ -160,13 +156,12 @@ func instanceArrayEditCmd(c *Command, client MetalCloudClient) (string, error) {
 
 func instanceArrayListCmd(c *Command, client MetalCloudClient) (string, error) {
 
-	infrastructureID := c.Arguments["infrastructure_id"]
-
-	if infrastructureID == nil || *infrastructureID.(*int) == 0 {
-		return "", fmt.Errorf("-infra <infrastructure_id> is required")
+	infra, err := getInfrastructureFromCommand(c, client)
+	if err != nil {
+		return "", err
 	}
 
-	iaList, err := client.InstanceArrays(*infrastructureID.(*int))
+	iaList, err := client.InstanceArrays(infra.InfrastructureID)
 	if err != nil {
 		return "", err
 	}
@@ -242,20 +237,14 @@ func instanceArrayListCmd(c *Command, client MetalCloudClient) (string, error) {
 
 func instanceArrayDeleteCmd(c *Command, client MetalCloudClient) (string, error) {
 
-	instanceArrayID := c.Arguments["instance_array_id"]
-
-	if instanceArrayID == nil || *instanceArrayID.(*int) == 0 {
-		return "", fmt.Errorf("-id <instance_array_id> is required")
+	retIA, err := getInstanceArrayFromCommand(c, client)
+	if err != nil {
+		return "", err
 	}
 
-	retIA, err2 := client.InstanceArrayGet(*instanceArrayID.(*int))
-	if err2 != nil {
-		return "", err2
-	}
-
-	retInfra, err2 := client.InfrastructureGet(retIA.InfrastructureID)
-	if err2 != nil {
-		return "", err2
+	retInfra, err := client.InfrastructureGet(retIA.InfrastructureID)
+	if err != nil {
+		return "", err
 	}
 
 	confirm := false
@@ -280,7 +269,7 @@ func instanceArrayDeleteCmd(c *Command, client MetalCloudClient) (string, error)
 		return "", fmt.Errorf("Operation not confirmed. Aborting")
 	}
 
-	err := client.InstanceArrayDelete(*instanceArrayID.(*int))
+	err = client.InstanceArrayDelete(retIA.InstanceArrayID)
 
 	return "", err
 }
@@ -404,4 +393,91 @@ func copyInstanceArrayInterfaceToOperation(i metalcloud.InstanceArrayInterface, 
 	io.InstanceArrayInterfaceLAGGIndexes = i.InstanceArrayInterfaceLAGGIndexes
 	io.InstanceArrayInterfaceIndex = i.InstanceArrayInterfaceIndex
 	io.NetworkID = i.NetworkID
+}
+
+func getInstanceArrayFromCommand(c *Command, client MetalCloudClient) (*metalcloud.InstanceArray, error) {
+
+	if c.Arguments["instance_array_id_or_label"] == nil || c.Arguments["instance_array_id_or_label"] == _nilDefaultStr {
+		return nil, fmt.Errorf("Either an instance array ID or an instance array label must be provided")
+	}
+
+	if c.Arguments["instance_array_id_or_label"] != nil {
+
+		switch v := c.Arguments["instance_array_id_or_label"].(type) {
+		case *int:
+			if *v != _nilDefaultInt {
+				return client.InstanceArrayGet(*v)
+			}
+		case *string:
+
+			if *v != _nilDefaultStr {
+				id, err := strconv.Atoi(*v)
+				if err == nil {
+					return client.InstanceArrayGet(id)
+				} //if error we assume it's a label and we simply carry on
+			}
+		}
+	}
+
+	labelToSearch := *c.Arguments["instance_array_id_or_label"].(*string)
+
+	var instanceArrayToReturn *metalcloud.InstanceArray
+
+	infras, err := client.Infrastructures()
+	if err != nil {
+		return nil, err
+	}
+
+	instanceArrayList := []*metalcloud.InstanceArray{}
+
+	for _, i := range *infras {
+
+		ret, err := client.InstanceArrays(i.InfrastructureID)
+		if err != nil {
+			return nil, err
+		}
+
+		for _, ia := range *ret {
+			iaCopy := ia
+			instanceArrayList = append(instanceArrayList, &iaCopy)
+		}
+	}
+
+	for k, ia := range instanceArrayList {
+
+		if ia.InstanceArrayOperation.InstanceArrayLabel == labelToSearch {
+
+			if instanceArrayToReturn != nil {
+				var i1, i2 metalcloud.Infrastructure
+
+				for _, i := range *infras {
+					if i.InfrastructureID == instanceArrayToReturn.InfrastructureID {
+						v := i
+						i1 = v
+					}
+
+					if i.InfrastructureID == ia.InfrastructureID {
+						v := i
+						i2 = v
+					}
+				}
+				//if we found this infrastructure label, with the same name again, we throw an error
+				return nil, fmt.Errorf("Instance Arrays %d (infrastructure %s #%d) and %d (infrastructure %s #%d) both have the same label %s",
+					instanceArrayToReturn.InstanceArrayID,
+					i1.InfrastructureLabel, i1.InfrastructureID,
+					ia.InfrastructureID,
+					i2.InfrastructureLabel, i2.InfrastructureID,
+					labelToSearch)
+			}
+
+			instanceArrayToReturn = instanceArrayList[k]
+			//we let the search go on to check for ambiguous situationss
+		}
+	}
+
+	if instanceArrayToReturn == nil {
+		return nil, fmt.Errorf("Could not find instance_array with label %s", labelToSearch)
+	}
+
+	return instanceArrayToReturn, nil
 }

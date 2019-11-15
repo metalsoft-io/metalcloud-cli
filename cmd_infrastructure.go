@@ -514,26 +514,28 @@ func infrastructureGetCmd(c *Command, client MetalCloudClient) (string, error) {
 
 func getInfrastructureFromCommand(c *Command, client MetalCloudClient) (*metalcloud.Infrastructure, error) {
 
-	if c.Arguments["infrastructure_id_or_label"] == nil || c.Arguments["infrastructure_id_or_label"] == _nilDefaultStr {
-		return nil, fmt.Errorf("Either an ID or a label must be provided")
+	if c.Arguments["infrastructure_id_or_label"] == nil {
+		return nil, fmt.Errorf("Either an infrastructure ID or an infrastructure label must be provided")
 	}
 
-	if c.Arguments["infrastructure_id_or_label"] != nil {
+	switch v := c.Arguments["infrastructure_id_or_label"].(type) {
 
-		switch v := c.Arguments["infrastructure_id_or_label"].(type) {
-		case *int:
-			if *v != _nilDefaultInt {
-				return client.InfrastructureGet(*v)
-			}
-		case *string:
-
-			if *v != _nilDefaultStr {
-				infrastructureID, err := strconv.Atoi(*v)
-				if err == nil {
-					return client.InfrastructureGet(infrastructureID)
-				} //if error we assume it's a label and we simply carry on
-			}
+	case *int:
+		if *v != _nilDefaultInt {
+			return client.InfrastructureGet(*v)
 		}
+
+	case *string:
+		infrastructureID, err := strconv.Atoi(*v)
+		if err == nil {
+			return client.InfrastructureGet(infrastructureID)
+		}
+		if *v == _nilDefaultStr {
+			return nil, fmt.Errorf("Either an infrastructure ID or an infrastructure label must be provided")
+		}
+	default:
+		return nil, fmt.Errorf("format not supported")
+
 	}
 
 	var infrastructure *metalcloud.Infrastructure
@@ -544,7 +546,7 @@ func getInfrastructureFromCommand(c *Command, client MetalCloudClient) (*metalcl
 	}
 
 	for k, i := range *ret {
-		if i.InfrastructureLabel == *c.Arguments["infrastructure_id_or_label"].(*string) {
+		if i.InfrastructureOperation.InfrastructureLabel == *c.Arguments["infrastructure_id_or_label"].(*string) {
 
 			if infrastructure != nil {
 				//if we found this infrastructure label, with the same name again, we throw an error
