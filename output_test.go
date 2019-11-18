@@ -37,6 +37,7 @@ func TestGetTableHeader(t *testing.T) {
 }
 
 func TestGetTableRow(t *testing.T) {
+	RegisterTestingT(t)
 	schema := []SchemaField{
 		SchemaField{
 			FieldName: "ID",
@@ -61,14 +62,12 @@ func TestGetTableRow(t *testing.T) {
 		},
 	}
 
-	expected := "| 10    | test                | 33.30 | map[test :test1 test2:test3]|"
 	row := []interface{}{10, "test", 33.3, map[string]string{"test": "test1", "test2": "test3"}}
 
 	actual := GetTableRow(row, schema)
 
-	if actual != expected {
-		t.Errorf("Row is not correct, \nexpected: %s\n     was: %s", expected, actual)
-	}
+	Expect(actual).To(ContainSubstring("test1"))
+	Expect(actual).To(ContainSubstring("test3"))
 }
 
 func TestGetTableDelimiter(t *testing.T) {
