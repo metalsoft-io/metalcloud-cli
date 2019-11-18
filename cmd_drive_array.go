@@ -44,7 +44,7 @@ var driveArrayCmds = []Command{
 		FlagSet:      flag.NewFlagSet("edit_drive_array", flag.ExitOnError),
 		InitFunc: func(c *Command) {
 			c.Arguments = map[string]interface{}{
-				"drive_array_id_or_label":                c.FlagSet.Int("id", _nilDefaultInt, "(Required) Drive Array's ID or label. Note that using the label can be ambiguous and is slower."),
+				"drive_array_id_or_label":                c.FlagSet.String("id", _nilDefaultStr, "(Required) Drive Array's ID or label. Note that using the label can be ambiguous and is slower."),
 				"instance_array_id":                      c.FlagSet.Int("ia", _nilDefaultInt, "(Required) The id of the instance array it is attached to. It can be zero for unattached Drive Arrays"),
 				"drive_array_label":                      c.FlagSet.String("label", _nilDefaultStr, "(Required) The label of the drive array"),
 				"drive_array_storage_type":               c.FlagSet.String("type", _nilDefaultStr, "Possible values: iscsi_ssd, iscsi_hdd"),
@@ -80,7 +80,7 @@ var driveArrayCmds = []Command{
 		FlagSet:      flag.NewFlagSet("delete drive_array", flag.ExitOnError),
 		InitFunc: func(c *Command) {
 			c.Arguments = map[string]interface{}{
-				"drive_array_id_or_label": c.FlagSet.Int("id", _nilDefaultInt, "(Required) Drive Array's ID or label. Note that using the label can be ambiguous and is slower."),
+				"drive_array_id_or_label": c.FlagSet.String("id", _nilDefaultStr, "(Required) Drive Array's ID or label. Note that using the label can be ambiguous and is slower."),
 				"autoconfirm":             c.FlagSet.Bool("autoconfirm", false, "If true it does not ask for confirmation anymore"),
 			}
 		},
