@@ -9,3 +9,4 @@ snap.login
 scripts/secrets
 scripts/secrets.tar.gz
 secrets
+dist
