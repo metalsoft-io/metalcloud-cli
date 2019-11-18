@@ -5,7 +5,13 @@ services:
 language: go
 go:
 - 1.11.x
+addons:
+  apt:
+    packages:
+    - rpm
+    - snapd
 env:
+  - PATH=/snap/bin:$PATH
   matrix:
   - GO111MODULE="on"
   global:
@@ -15,9 +21,11 @@ install:
 - go install
 - go get golang.org/x/tools/cmd/cover
 - go get github.com/mattn/goveralls
+- sudo snap install snapcraft --classic
 script:
 - go test -v -covermode=count -coverprofile=coverage.out
-- "$HOME/gopath/bin/goveralls -coverprofile=coverage.out -service=travis-ci -repotoken $COVERALLS_TOKEN"
+- "$HOME/gopath/bin/goveralls -coverprofile=coverage.out -service=travis-ci -repotoken
+  $COVERALLS_TOKEN"
 branches:
   only:
   - master
@@ -27,4 +35,15 @@ matrix:
   - go: tip
 before_install:
 - openssl aes-256-cbc -K $encrypted_822d5ce59246_key -iv $encrypted_822d5ce59246_iv
+  -in scripts/snap.login.enc -out scripts/snap.login -d
+- openssl aes-256-cbc -K $encrypted_822d5ce59246_key -iv $encrypted_822d5ce59246_iv
   -in scripts/getgocookie.sh.enc -out scripts/getgocookie.sh -d
+after_success:
+- test -n "$TRAVIS_TAG" && snapcraft login --with scripts/snap.login
+deploy:
+- provider: script
+  skip_cleanup: true
+  script: curl -sL https://git.io/goreleaser | bash
+  on:
+    tags: true
+    condition: "$TRAVIS_OS_NAME = linux"
