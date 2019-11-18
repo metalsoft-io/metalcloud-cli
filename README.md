@@ -7,7 +7,7 @@ This tool allows the manipulation of all Bigstep Metal Cloud elements via the co
 
 To install use:
 ```bash
-go install github.com/bigstepinc/metalcloud-cli
+go get github.com/bigstepinc/metalcloud-cli
 ```
 
 Configure credentials as environment variables:
