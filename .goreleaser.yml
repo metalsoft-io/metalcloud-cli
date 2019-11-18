@@ -162,11 +162,11 @@ nfpms:
     # Keys should be valid GOOSs or GOARCHs.
     # Values are the respective replacements.
     # Default is empty.
-    replacements:
-      amd64: 64-bit
-      386: 32-bit
-      darwin: macOS
-      linux: Tux
+   # replacements:
+   #   amd64: 64-bit
+   #  386: 32-bit
+   #   darwin: macOS
+   #   linux: 
 
     # Your app's vendor.
     # Default is empty.
