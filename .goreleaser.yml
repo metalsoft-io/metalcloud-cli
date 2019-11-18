@@ -193,24 +193,24 @@ nfpms:
       - rpm
 
     # Packages your package depends on.
-    dependencies:
-      - git
-      - zsh
+    #dependencies:
+    #  - git
+    #  - zsh
 
     # Packages your package recommends installing.
-    recommends:
-      - bzr
-      - gtk
+    #recommends:
+    #  - bzr
+    #  - gtk
 
     # Packages your package suggests installing.
-    suggests:
-      - cvs
-      - ksh
+    #suggests:
+    #  - cvs
+    #  - ksh
 
     # Packages that conflict with your package.
-    conflicts:
-      - svn
-      - bash
+    #conflicts:
+     # - svn
+     # - bash
 
     # Override default /usr/local/bin destination for binaries
     bindir: /usr/bin
@@ -222,54 +222,54 @@ nfpms:
     # Empty folders that should be created and managed by the packager
     # implementation.
     # Default is empty.
-    empty_folders:
-    - /var/log/foobar
+    #empty_folders:
+    #- /var/log/foobar
 
     # Files or directories to add to your package (beyond the binary).
     # Keys are source paths/globs to get the files from.
     # Values are the destination locations of the files in the package.
-    files:
-      "scripts/etc/init.d/": "/etc/init.d"
-      "path/**/glob": "/var/foo/glob"
+    #files:
+    #  "scripts/etc/init.d/": "/etc/init.d"
+    #  "path/**/glob": "/var/foo/glob"
 
     # Config files to add to your package. They are about the same as
     # the files keyword, except package managers treat them differently (while
     # uninstalling, mostly).
     # Keys are source paths/globs to get the files from.
     # Values are the destination locations of the files in the package.
-    config_files:
-      "tmp/app_generated.conf": "/etc/app.conf"
-      "conf/*.conf": "/etc/foo/"
+    #config_files:
+    #  "tmp/app_generated.conf": "/etc/app.conf"
+    #  "conf/*.conf": "/etc/foo/"
 
     # Scripts to execute during the installation of the package.
     # Keys are the possible targets during the installation process
     # Values are the paths to the scripts which will be executed
-    scripts:
-      preinstall: "scripts/preinstall.sh"
-      postinstall: "scripts/postinstall.sh"
-      preremove: "scripts/preremove.sh"
-      postremove: "scripts/postremove.sh"
+    #scripts:
+    #  preinstall: "scripts/preinstall.sh"
+    #  postinstall: "scripts/postinstall.sh"
+    #  preremove: "scripts/preremove.sh"
+    #  postremove: "scripts/postremove.sh"
 
     # Some attributes can be overrided per package format.
-    overrides:
-      deb:
-        conflicts:
-          - subversion
-        dependencies:
-          - git
-        suggests:
-          - gitk
-        recommends:
-          - tig
-        empty_folders:
-        - /var/log/bar
-      rpm:
-        replacements:
-          amd64: x86_64
-        name_template: "{{ .ProjectName }}-{{ .Version }}-{{ .Arch }}"
-        files:
-          "tmp/man.gz": "/usr/share/man/man8/app.8.gz"
-        config_files:
-          "tmp/app_generated.conf": "/etc/app-rpm.conf"
-        scripts:
-          preinstall: "scripts/preinstall-rpm.sh"
+    #overrides:
+    #  deb:
+    #    conflicts:
+    #      - subversion
+    #    dependencies:
+    #      - git
+    #    suggests:
+    #      - gitk
+    #    recommends:
+    #      - tig
+    #    empty_folders:
+    #    - /var/log/bar
+    #  rpm:
+    #    replacements:
+    #      amd64: x86_64
+    #    name_template: "{{ .ProjectName }}-{{ .Version }}-{{ .Arch }}"
+    #    files:
+    #      "tmp/man.gz": "/usr/share/man/man8/app.8.gz"
+    #    config_files:
+    #      "tmp/app_generated.conf": "/etc/app-rpm.conf"
+    #    scripts:
+    #      preinstall: "scripts/preinstall-rpm.sh"
