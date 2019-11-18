@@ -35,9 +35,9 @@ matrix:
   - go: tip
 before_install:
 - openssl aes-256-cbc -K $encrypted_822d5ce59246_key -iv $encrypted_822d5ce59246_iv
-  -in scripts/snap.login.enc -out scripts/snap.login -d
-- openssl aes-256-cbc -K $encrypted_822d5ce59246_key -iv $encrypted_822d5ce59246_iv
   -in scripts/getgocookie.sh.enc -out scripts/getgocookie.sh -d
+- openssl aes-256-cbc -K $encrypted_822d5ce59246_key -iv $encrypted_822d5ce59246_iv
+  -in scripts/snap.login.enc -out scripts/snap.login -d
 after_success:
 - test -n "$TRAVIS_TAG" && snapcraft login --with scripts/snap.login
 deploy:
