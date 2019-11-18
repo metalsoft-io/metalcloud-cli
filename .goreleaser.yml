@@ -84,7 +84,7 @@ brews:
 
     # Caveats for the user of your binary.
     # Default is empty.
-    caveats: "metalcloud-cli --help"
+    caveats: "metalcloud-cli help"
 
     # Your app's homepage.
     # Default is empty.
