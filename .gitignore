@@ -6,3 +6,6 @@ cover.out
 cover.html
 coverage.out
 snap.login
+scripts/secrets
+scripts/secrets.tar.gz
+secrets
