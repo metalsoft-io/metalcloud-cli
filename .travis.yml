@@ -12,10 +12,9 @@ addons:
     - snapd
 env:
   global:
+    - GO111MODULE="on"
+    - PATH=/snap/bin:$PATH
     secure: RSXMNFZ9gF0tDTmpj7lNPTcJKixK06G+KIHdHlXbjv/kUQboLLLHXSVJoIUaWiy7vSURuougsXkxgTT1ISEMj+0vpkEzlJEWVxzPqUSXMYsepSsFs6nUdDin8oywliqnw3aYCXqRof60CKrLBjkINWg73NGNp9qx1/8dfGLU50b4HlHOSE19xbrjiVrPPIVY7IT3t/He9P05yKQ7n0d6LA9t4WSofpOrrfuNZy+ZTwJWzPUwujCPkErOOaXPBWfM+DsQGNuzfdImE38jONnHXASpVyhJYtQeU26sjlyzs1uPr9gfXCCf7Sc2YHJE0wa5OLalh3CB6xyKUnWe1P3Y64EfryfFRzEX2aSyeXf8bO1oG0QyamBOblteKbL0rRLBgmihUHCPz1rJXhlMMAD6fAfuVE/iVW10BiNdDUh7dlbHjc5BHG/UNrxZwuI6YztSllmYApRzx6B5M9yS09Ab9L+WT9hsZo9uAe3mqvWgVfDjLgW+XC8VZQqRJxdaxXpBD8F/bKWxUXEh/tUtoFqR+QGewaGSyqPxZ0AAVHQ//pqf0iFNfk4yaguvUsjCgrN2byfosbHAw2QqJAQbYMmgAj/yMepPygM8rJoOsxg6ZcEUguftbJR66GEFWwwN73AlX3gQ1uHBQzi9NUhH98PTrhonuWtc/53srZk1UtxGWT0=
-- GO111MODULE="on"
-- PATH=/snap/bin:$PATH
-
 install:
 - bash scripts/getgocookie.sh
 - go install
