@@ -3,9 +3,27 @@
 [![Build Status](https://travis-ci.org/bigstepinc/metalcloud-cli.svg?branch=master)](https://travis-ci.org/bigstepinc/metalcloud-cli)
 [![Coverage Status](https://coveralls.io/repos/github/bigstepinc/metalcloud-cli/badge.svg?branch=master)](https://coveralls.io/github/bigstepinc/metalcloud-cli?branch=master)
 
-This tool allows the manipulation of all Bigstep Metal Cloud elements via the command line.
+This tool allows the manipulation of all Bigstep Metal Cloud elements via the command line. 
 
-To install use:
+## Installation
+
+To install on Mac OS X:
+```
+brew tap bigstepinc/homebrew-repo
+brew install metalcloud-cli
+```
+
+To install on any CentOS/Redhat Linux distribution:
+```
+$ sudo rpm -i https://github.com/bigstepinc/metalcloud-cli/releases/download/v1.0.3/metalcloud-cli_1.0.3_linux_amd64.rpm
+```
+
+To install on any Debian/Ubuntu distributions:
+```
+curl -sLO https://github.com/bigstepinc/metalcloud-cli/releases/download/v1.0.3/metalcloud-cli_1.0.3_linux_amd64.deb && sudo dpkg -i metalcloud-cli_1.0.3_linux_amd64.deb
+```
+
+To install using `go get` (this should also work on Windows):
 ```bash
 go get github.com/bigstepinc/metalcloud-cli
 ```
