@@ -8,6 +8,7 @@ import (
 	"strings"
 
 	metalcloud "github.com/bigstepinc/metal-cloud-sdk-go"
+	interfaces "github.com/bigstepinc/metalcloud-cli/interfaces"
 )
 
 //driveArrayCmds commands affecting instance arrays
@@ -88,7 +89,7 @@ var driveArrayCmds = []Command{
 	},
 }
 
-func driveArrayCreateCmd(c *Command, client MetalCloudClient) (string, error) {
+func driveArrayCreateCmd(c *Command, client interfaces.MetalCloudClient) (string, error) {
 
 	infra, err := getInfrastructureFromCommand(c, client)
 	if err != nil {
@@ -121,7 +122,7 @@ func driveArrayCreateCmd(c *Command, client MetalCloudClient) (string, error) {
 	return "", err
 }
 
-func driveArrayEditCmd(c *Command, client MetalCloudClient) (string, error) {
+func driveArrayEditCmd(c *Command, client interfaces.MetalCloudClient) (string, error) {
 
 	retDA, err := getDriveArrayFromCommand(c, client)
 	if err != nil {
@@ -137,7 +138,7 @@ func driveArrayEditCmd(c *Command, client MetalCloudClient) (string, error) {
 	return "", err
 }
 
-func driveArrayListCmd(c *Command, client MetalCloudClient) (string, error) {
+func driveArrayListCmd(c *Command, client interfaces.MetalCloudClient) (string, error) {
 
 	infra, err := getInfrastructureFromCommand(c, client)
 	if err != nil {
@@ -259,7 +260,7 @@ func driveArrayListCmd(c *Command, client MetalCloudClient) (string, error) {
 	return sb.String(), nil
 }
 
-func driveArrayDeleteCmd(c *Command, client MetalCloudClient) (string, error) {
+func driveArrayDeleteCmd(c *Command, client interfaces.MetalCloudClient) (string, error) {
 
 	retDA, err := getDriveArrayFromCommand(c, client)
 	if err != nil {
@@ -387,7 +388,7 @@ func argsToDriveArrayOperation(m map[string]interface{}, dao *metalcloud.DriveAr
 
 }
 
-func getDriveArrayFromCommand(c *Command, client MetalCloudClient) (*metalcloud.DriveArray, error) {
+func getDriveArrayFromCommand(c *Command, client interfaces.MetalCloudClient) (*metalcloud.DriveArray, error) {
 
 	if c.Arguments["drive_array_id_or_label"] == nil || c.Arguments["drive_array_id_or_label"] == _nilDefaultStr {
 		return nil, fmt.Errorf("Either a drive array ID or a drive array label must be provided")

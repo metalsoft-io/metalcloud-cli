@@ -5,10 +5,10 @@ import (
 	"flag"
 	"fmt"
 	"os"
-	"strconv"
 	"strings"
 
 	metalcloud "github.com/bigstepinc/metal-cloud-sdk-go"
+	interfaces "github.com/bigstepinc/metalcloud-cli/interfaces"
 )
 
 //infrastructureCmds commands affecting infrastructures
@@ -111,7 +111,7 @@ var infrastructureCmds = []Command{
 	},
 }
 
-func infrastructureCreateCmd(c *Command, client MetalCloudClient) (string, error) {
+func infrastructureCreateCmd(c *Command, client interfaces.MetalCloudClient) (string, error) {
 
 	infrastructureLabel := c.Arguments["infrastructure_label"]
 
@@ -138,7 +138,7 @@ func infrastructureCreateCmd(c *Command, client MetalCloudClient) (string, error
 	return "", nil
 }
 
-func infrastructureListCmd(c *Command, client MetalCloudClient) (string, error) {
+func infrastructureListCmd(c *Command, client interfaces.MetalCloudClient) (string, error) {
 
 	iList, err := client.Infrastructures()
 	if err != nil {
@@ -238,19 +238,21 @@ func infrastructureListCmd(c *Command, client MetalCloudClient) (string, error) 
 	return sb.String(), nil
 }
 
-func infrastructureDeleteCmd(c *Command, client MetalCloudClient) (string, error) {
+func infrastructureDeleteCmd(c *Command, client interfaces.MetalCloudClient) (string, error) {
 
-	retInfra, err := getInfrastructureFromCommand(c, client)
+	infrastructureID, err := getIDFromCommand(c, "infrastructure_id_or_label")
 	if err != nil {
 		return "", err
 	}
-
 	confirm := false
 
 	if c.Arguments["autoconfirm"] != nil && *c.Arguments["autoconfirm"].(*bool) == true {
 		confirm = true
 	} else {
-
+		retInfra, err := client.InfrastructureGet(infrastructureID)
+		if err != nil {
+			return "", err
+		}
 		confirmationMessage := fmt.Sprintf("Deleting infrastructure %s (%d). Are you sure? Type \"yes\" to continue:", retInfra.InfrastructureLabel, retInfra.InfrastructureID)
 
 		//this is simply so that we don't output a text on the command line under go test
@@ -265,14 +267,14 @@ func infrastructureDeleteCmd(c *Command, client MetalCloudClient) (string, error
 		return "", fmt.Errorf("Operation not confirmed. Aborting")
 	}
 
-	err = client.InfrastructureDelete(retInfra.InfrastructureID)
+	err = client.InfrastructureDelete(infrastructureID)
 
 	return "", err
 }
 
-func infrastructureDeployCmd(c *Command, client MetalCloudClient) (string, error) {
+func infrastructureDeployCmd(c *Command, client interfaces.MetalCloudClient) (string, error) {
 
-	retInfra, err := getInfrastructureFromCommand(c, client)
+	infrastructureID, err := getIDFromCommand(c, "infrastructure_id_or_label")
 	if err != nil {
 		return "", err
 	}
@@ -282,7 +284,10 @@ func infrastructureDeployCmd(c *Command, client MetalCloudClient) (string, error
 	if c.Arguments["autoconfirm"] != nil && *c.Arguments["autoconfirm"].(*bool) {
 		confirm = true
 	} else {
-
+		retInfra, err := client.InfrastructureGet(infrastructureID)
+		if err != nil {
+			return "", err
+		}
 		confirmationMessage := fmt.Sprintf("Deploying infrastructure %s (%d). Are you sure? Type \"yes\" to continue:", retInfra.InfrastructureLabel, retInfra.InfrastructureID)
 		//this is simply so that we don't output a text on the command line under go test
 		if strings.HasSuffix(os.Args[0], ".test") {
@@ -311,7 +316,7 @@ func infrastructureDeployCmd(c *Command, client MetalCloudClient) (string, error
 	}
 
 	err = client.InfrastructureDeploy(
-		retInfra.InfrastructureID,
+		infrastructureID,
 		shutDownOptions,
 		c.Arguments["allow_data_loss"] != nil && *c.Arguments["allow_data_loss"].(*bool),
 		c.Arguments["skip_ansible"] != nil && *c.Arguments["skip_ansible"].(*bool),
@@ -320,9 +325,9 @@ func infrastructureDeployCmd(c *Command, client MetalCloudClient) (string, error
 	return "", err
 }
 
-func infrastructureRevertCmd(c *Command, client MetalCloudClient) (string, error) {
+func infrastructureRevertCmd(c *Command, client interfaces.MetalCloudClient) (string, error) {
 
-	retInfra, err := getInfrastructureFromCommand(c, client)
+	infrastructureID, err := getIDFromCommand(c, "infrastructure_id_or_label")
 	if err != nil {
 		return "", err
 	}
@@ -332,7 +337,10 @@ func infrastructureRevertCmd(c *Command, client MetalCloudClient) (string, error
 	if c.Arguments["autoconfirm"] != nil && *c.Arguments["autoconfirm"].(*bool) == true {
 		confirm = true
 	} else {
-
+		retInfra, err := client.InfrastructureGet(infrastructureID)
+		if err != nil {
+			return "", err
+		}
 		fmt.Printf("Reverting infrastructure %s (%d) to the deployed state. Are you sure? Type \"yes\" to continue:", retInfra.InfrastructureLabel, retInfra.InfrastructureID)
 		reader := bufio.NewReader(os.Stdin)
 		yes, _ := reader.ReadString('\n')
@@ -346,12 +354,12 @@ func infrastructureRevertCmd(c *Command, client MetalCloudClient) (string, error
 		return "", fmt.Errorf("Operation not confirmed. Aborting")
 	}
 
-	err = client.InfrastructureOperationCancel(retInfra.InfrastructureID)
+	err = client.InfrastructureOperationCancel(infrastructureID)
 
 	return "", err
 }
 
-func infrastructureGetCmd(c *Command, client MetalCloudClient) (string, error) {
+func infrastructureGetCmd(c *Command, client interfaces.MetalCloudClient) (string, error) {
 
 	retInfra, err := getInfrastructureFromCommand(c, client)
 	if err != nil {
@@ -517,56 +525,13 @@ func infrastructureGetCmd(c *Command, client MetalCloudClient) (string, error) {
 	return sb.String(), nil
 }
 
-func getInfrastructureFromCommand(c *Command, client MetalCloudClient) (*metalcloud.Infrastructure, error) {
+func getInfrastructureFromCommand(c *Command, client interfaces.MetalCloudClient) (*metalcloud.Infrastructure, error) {
 
-	if c.Arguments["infrastructure_id_or_label"] == nil {
-		return nil, fmt.Errorf("Either an infrastructure ID or an infrastructure label must be provided")
-	}
+	infraID, err := getIDFromCommand(c, "infrastructure_id_or_label")
 
-	switch v := c.Arguments["infrastructure_id_or_label"].(type) {
-
-	case *int:
-		if *v != _nilDefaultInt {
-			return client.InfrastructureGet(*v)
-		}
-
-	case *string:
-		infrastructureID, err := strconv.Atoi(*v)
-		if err == nil {
-			return client.InfrastructureGet(infrastructureID)
-		}
-		if *v == _nilDefaultStr {
-			return nil, fmt.Errorf("Either an infrastructure ID or an infrastructure label must be provided")
-		}
-	default:
-		return nil, fmt.Errorf("format not supported")
-
-	}
-
-	var infrastructure *metalcloud.Infrastructure
-
-	ret, err := client.Infrastructures()
 	if err != nil {
 		return nil, err
 	}
 
-	for k, i := range *ret {
-		if i.InfrastructureOperation.InfrastructureLabel == *c.Arguments["infrastructure_id_or_label"].(*string) {
-
-			if infrastructure != nil {
-				//if we found this infrastructure label, with the same name again, we throw an error
-				return nil, fmt.Errorf("Infrastructures %d and %d both have the same label %s", infrastructure.InfrastructureID, i.InfrastructureID, *c.Arguments["infrastructure_id_or_label"].(*string))
-			}
-
-			infr := (*ret)[k]
-			infrastructure = &infr
-			//we let the search go on to check for ambiguous situationss
-		}
-	}
-
-	if infrastructure == nil {
-		return nil, fmt.Errorf("Could not find infrastructure with label %s", *c.Arguments["infrastructure_id_or_label"].(*string))
-	}
-
-	return infrastructure, nil
+	return client.InfrastructureGet(infraID)
 }

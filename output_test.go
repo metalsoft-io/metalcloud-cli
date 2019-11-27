@@ -247,12 +247,18 @@ func TestAdjustFieldSizes(t *testing.T) {
 			FieldSize:      0,
 			FieldPrecision: 4,
 		},
+		SchemaField{
+			FieldName:      "VERY LONG FIELD NAME",
+			FieldType:      TypeString,
+			FieldSize:      4,
+			FieldPrecision: 4,
+		},
 	}
 
 	data := [][]interface{}{
-		{4, "12345", 20.1},
-		{5, "12", 22.1},
-		{6, "123456789", 1.2345},
+		{4, "12345", 20.1, "tes"},
+		{5, "12", 22.1, "te"},
+		{6, "123456789", 1.2345, "t"},
 	}
 
 	AdjustFieldSizes(data, &schema)
@@ -260,5 +266,7 @@ func TestAdjustFieldSizes(t *testing.T) {
 	Expect(schema[0].FieldSize).To(Equal(3))
 	Expect(schema[1].FieldSize).To(Equal(10))
 	Expect(schema[2].FieldSize).To(Equal(8))
+	//test if expands with LABEl
+	Expect(schema[3].FieldSize).To(Equal(21))
 
 }

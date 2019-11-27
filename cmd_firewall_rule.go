@@ -8,6 +8,7 @@ import (
 	"strings"
 
 	metalcloud "github.com/bigstepinc/metal-cloud-sdk-go"
+	interfaces "github.com/bigstepinc/metalcloud-cli/interfaces"
 )
 
 var firewallRuleCmds = []Command{
@@ -68,7 +69,7 @@ var firewallRuleCmds = []Command{
 	},
 }
 
-func firewallRuleListCmd(c *Command, client MetalCloudClient) (string, error) {
+func firewallRuleListCmd(c *Command, client interfaces.MetalCloudClient) (string, error) {
 
 	instanceArrayID := c.Arguments["instance_array_id"]
 
@@ -218,7 +219,7 @@ func firewallRuleListCmd(c *Command, client MetalCloudClient) (string, error) {
 	return sb.String(), nil
 }
 
-func firewallRuleAddCmd(c *Command, client MetalCloudClient) (string, error) {
+func firewallRuleAddCmd(c *Command, client interfaces.MetalCloudClient) (string, error) {
 	instanceArrayID := c.Arguments["instance_array_id"]
 
 	if instanceArrayID == nil || *instanceArrayID.(*int) == 0 {
@@ -275,7 +276,7 @@ func firewallRuleAddCmd(c *Command, client MetalCloudClient) (string, error) {
 	return "", err
 }
 
-func firewallRuleDeleteCmd(c *Command, client MetalCloudClient) (string, error) {
+func firewallRuleDeleteCmd(c *Command, client interfaces.MetalCloudClient) (string, error) {
 	instanceArrayID := c.Arguments["instance_array_id"]
 
 	if instanceArrayID == nil || *instanceArrayID.(*int) == 0 {

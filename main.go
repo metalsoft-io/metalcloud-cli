@@ -9,6 +9,7 @@ import (
 	"strings"
 
 	metalcloud "github.com/bigstepinc/metal-cloud-sdk-go"
+	interfaces "github.com/bigstepinc/metalcloud-cli/interfaces"
 )
 
 //GetUserEmail returns the API key's owner
@@ -54,7 +55,7 @@ func main() {
 	}
 }
 
-func executeCommand(args []string, commands []Command, client MetalCloudClient) error {
+func executeCommand(args []string, commands []Command, client interfaces.MetalCloudClient) error {
 	predicate := args[1]
 	subject := args[2]
 
@@ -135,7 +136,7 @@ func getHelp() string {
 	return sb.String()
 }
 
-func initClient() (MetalCloudClient, error) {
+func initClient() (interfaces.MetalCloudClient, error) {
 	if v := os.Getenv("METALCLOUD_USER_EMAIL"); v == "" {
 		return nil, fmt.Errorf("METALCLOUD_USER_EMAIL must be set")
 	}

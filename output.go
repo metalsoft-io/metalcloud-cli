@@ -64,9 +64,16 @@ func AdjustFieldSizes(data [][]interface{}, schema *[]SchemaField) {
 	rowSize := len(*schema)
 	for i := 0; i < rowSize; i++ {
 		f := (*schema)[i]
+
 		//iterate over the entire column
 		rowCount := len(data)
+
 		maxLen := f.FieldSize
+
+		if len(f.FieldName) > maxLen {
+			maxLen = len(f.FieldName)
+		}
+
 		for k := 0; k < rowCount; k++ {
 			cellSize := GetCellSize(data[k][i], &f)
 			if cellSize > maxLen {

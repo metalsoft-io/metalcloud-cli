@@ -7,6 +7,7 @@ import (
 	"os"
 	"testing"
 
+	interfaces "github.com/bigstepinc/metalcloud-cli/interfaces"
 	. "github.com/onsi/gomega"
 )
 
@@ -110,7 +111,7 @@ func TestExecuteCommand(t *testing.T) {
 				}
 				initFuncExecuted = true
 			},
-			ExecuteFunc: func(c *Command, client MetalCloudClient) (string, error) {
+			ExecuteFunc: func(c *Command, client interfaces.MetalCloudClient) (string, error) {
 				execFuncExecuted = true
 				return "", nil
 			},
@@ -163,7 +164,7 @@ func TestGetCommandHelp(t *testing.T) {
 				"cmd": c.FlagSet.Int(RandStringBytes(10), 0, "Random param"),
 			}
 		},
-		ExecuteFunc: func(c *Command, client MetalCloudClient) (string, error) {
+		ExecuteFunc: func(c *Command, client interfaces.MetalCloudClient) (string, error) {
 			return "", nil
 		}}
 

@@ -4,7 +4,10 @@ import (
 	"flag"
 	"reflect"
 	"testing"
+
 	//. "github.com/onsi/gomega"
+	interfaces "github.com/bigstepinc/metalcloud-cli/interfaces"
+	. "github.com/onsi/gomega"
 )
 
 func TestCheckForDuplicates(t *testing.T) {
@@ -54,7 +57,7 @@ func TestSimpleArgument(t *testing.T) {
 				"instance_array_instance_label": c.FlagSet.String("label", "", "Instance array's label"),
 			}
 		},
-		ExecuteFunc: func(c *Command, client MetalCloudClient) (string, error) {
+		ExecuteFunc: func(c *Command, client interfaces.MetalCloudClient) (string, error) {
 			executed = true
 			return "retstr", nil
 		},
@@ -101,4 +104,41 @@ func TestSimpleArgument(t *testing.T) {
 	if !executed || ret != "retstr" {
 		t.Errorf("ExecuteFunction not called properly")
 	}
+}
+
+func TestGetIDFromCommand(t *testing.T) {
+	RegisterTestingT(t)
+
+	cmd := Command{
+		Subject:      "instance_array",
+		AltSubject:   "ia",
+		Predicate:    "create",
+		AltPredicate: "c",
+		FlagSet:      flag.NewFlagSet("instance_array", flag.ExitOnError),
+		InitFunc: func(c *Command) {
+			c.Arguments = map[string]interface{}{
+				"id_or_label": c.FlagSet.String("id_name", _nilDefaultStr, "id"),
+			}
+		},
+		ExecuteFunc: func(c *Command, client interfaces.MetalCloudClient) (string, error) {
+			return "", nil
+		},
+	}
+
+	cmd.InitFunc(&cmd)
+
+	argv := []string{
+		"-id_name", "3",
+	}
+
+	err := cmd.FlagSet.Parse(argv)
+	Expect(err).To(BeNil())
+
+	id, err := getIDFromCommand(&cmd, "id_or_label")
+	Expect(id).To(Equal(3))
+	Expect(err).To(BeNil())
+
+	id, err = getIDFromCommand(&cmd, "id_or_label_not_present")
+	Expect(err.Error()).To(ContainSubstring("id"))
+
 }

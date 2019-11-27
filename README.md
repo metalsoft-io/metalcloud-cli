@@ -255,3 +255,16 @@ Command: delete firewall_rule      Remove instance array firewall rule (alternat
 	  -source                    The source address to filter on. It can also be a range with the start and end values separated by a dash.
 	  -h                         Show command help and exit.
 ```
+
+Generating metalclient interface from the metalcloud-sdk-go:
+```
+go get github.com/vburenin/ifacemaker
+ifacemaker -f /Users/alex/go/src/github.com/bigstepinc/metal-cloud-sdk-go/drive_array.go -i MetalCloudClient -p metalcloud -s Client
+```
+
+
+Re-generating mock metalcloud client:
+
+```
+mockgen -source=interfaces/metal_cloud_client.go -destination=helpers/mock_client.go
+```

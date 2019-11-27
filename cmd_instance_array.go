@@ -4,10 +4,10 @@ import (
 	"flag"
 	"fmt"
 	"os"
-	"strconv"
 	"strings"
 
 	metalcloud "github.com/bigstepinc/metal-cloud-sdk-go"
+	interfaces "github.com/bigstepinc/metalcloud-cli/interfaces"
 )
 
 //instanceArrayCmds commands affecting instance arrays
@@ -98,7 +98,7 @@ var instanceArrayCmds = []Command{
 	},
 }
 
-func instanceArrayCreateCmd(c *Command, client MetalCloudClient) (string, error) {
+func instanceArrayCreateCmd(c *Command, client interfaces.MetalCloudClient) (string, error) {
 
 	retInfra, err := getInfrastructureFromCommand(c, client)
 	if err != nil {
@@ -123,7 +123,7 @@ func instanceArrayCreateCmd(c *Command, client MetalCloudClient) (string, error)
 	return "", err
 }
 
-func instanceArrayEditCmd(c *Command, client MetalCloudClient) (string, error) {
+func instanceArrayEditCmd(c *Command, client interfaces.MetalCloudClient) (string, error) {
 
 	retIA, err := getInstanceArrayFromCommand(c, client)
 	if err != nil {
@@ -154,7 +154,7 @@ func instanceArrayEditCmd(c *Command, client MetalCloudClient) (string, error) {
 	return "", err
 }
 
-func instanceArrayListCmd(c *Command, client MetalCloudClient) (string, error) {
+func instanceArrayListCmd(c *Command, client interfaces.MetalCloudClient) (string, error) {
 
 	infra, err := getInfrastructureFromCommand(c, client)
 	if err != nil {
@@ -235,7 +235,7 @@ func instanceArrayListCmd(c *Command, client MetalCloudClient) (string, error) {
 	return sb.String(), nil
 }
 
-func instanceArrayDeleteCmd(c *Command, client MetalCloudClient) (string, error) {
+func instanceArrayDeleteCmd(c *Command, client interfaces.MetalCloudClient) (string, error) {
 
 	retIA, err := getInstanceArrayFromCommand(c, client)
 	if err != nil {
@@ -395,89 +395,28 @@ func copyInstanceArrayInterfaceToOperation(i metalcloud.InstanceArrayInterface, 
 	io.NetworkID = i.NetworkID
 }
 
-func getInstanceArrayFromCommand(c *Command, client MetalCloudClient) (*metalcloud.InstanceArray, error) {
-
-	if c.Arguments["instance_array_id_or_label"] == nil || c.Arguments["instance_array_id_or_label"] == _nilDefaultStr {
+func getInstanceArrayIDFromCommand(c *Command) (metalcloud.ID, error) {
+	v := c.Arguments["instance_array_id_or_label"]
+	if v == nil {
 		return nil, fmt.Errorf("Either an instance array ID or an instance array label must be provided")
 	}
 
-	if c.Arguments["instance_array_id_or_label"] != nil {
-
-		switch v := c.Arguments["instance_array_id_or_label"].(type) {
-		case *int:
-			if *v != _nilDefaultInt {
-				return client.InstanceArrayGet(*v)
-			}
-		case *string:
-
-			if *v != _nilDefaultStr {
-				id, err := strconv.Atoi(*v)
-				if err == nil {
-					return client.InstanceArrayGet(id)
-				} //if error we assume it's a label and we simply carry on
-			}
-		}
+	switch v.(type) {
+	case *int:
+		return *c.Arguments["instance_array_id_or_label"].(*int), nil
+	case *string:
+		return *c.Arguments["instance_array_id_or_label"].(*string), nil
 	}
 
-	labelToSearch := *c.Arguments["instance_array_id_or_label"].(*string)
+	return nil, fmt.Errorf("could not determinte the type of the passed ID")
 
-	var instanceArrayToReturn *metalcloud.InstanceArray
+}
 
-	infras, err := client.Infrastructures()
+func getInstanceArrayFromCommand(c *Command, client interfaces.MetalCloudClient) (*metalcloud.InstanceArray, error) {
+	id, err := getIDFromCommand(c, "instance_array_id_or_label")
 	if err != nil {
 		return nil, err
 	}
 
-	instanceArrayList := []*metalcloud.InstanceArray{}
-
-	for _, i := range *infras {
-
-		ret, err := client.InstanceArrays(i.InfrastructureID)
-		if err != nil {
-			return nil, err
-		}
-
-		for _, ia := range *ret {
-			iaCopy := ia
-			instanceArrayList = append(instanceArrayList, &iaCopy)
-		}
-	}
-
-	for k, ia := range instanceArrayList {
-
-		if ia.InstanceArrayOperation.InstanceArrayLabel == labelToSearch {
-
-			if instanceArrayToReturn != nil {
-				var i1, i2 metalcloud.Infrastructure
-
-				for _, i := range *infras {
-					if i.InfrastructureID == instanceArrayToReturn.InfrastructureID {
-						v := i
-						i1 = v
-					}
-
-					if i.InfrastructureID == ia.InfrastructureID {
-						v := i
-						i2 = v
-					}
-				}
-				//if we found this infrastructure label, with the same name again, we throw an error
-				return nil, fmt.Errorf("Instance Arrays %d (infrastructure %s #%d) and %d (infrastructure %s #%d) both have the same label %s",
-					instanceArrayToReturn.InstanceArrayID,
-					i1.InfrastructureLabel, i1.InfrastructureID,
-					ia.InfrastructureID,
-					i2.InfrastructureLabel, i2.InfrastructureID,
-					labelToSearch)
-			}
-
-			instanceArrayToReturn = instanceArrayList[k]
-			//we let the search go on to check for ambiguous situationss
-		}
-	}
-
-	if instanceArrayToReturn == nil {
-		return nil, fmt.Errorf("Could not find instance_array with label %s", labelToSearch)
-	}
-
-	return instanceArrayToReturn, nil
+	return client.InstanceArrayGet(id)
 }

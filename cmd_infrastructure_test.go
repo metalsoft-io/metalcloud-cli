@@ -8,7 +8,7 @@ import (
 	"testing"
 
 	metalcloud "github.com/bigstepinc/metal-cloud-sdk-go"
-	mock_metalcloud "github.com/bigstepinc/metalcloud-cli/mock"
+	helper "github.com/bigstepinc/metalcloud-cli/helpers"
 	gomock "github.com/golang/mock/gomock"
 	. "github.com/onsi/gomega"
 )
@@ -37,7 +37,7 @@ func TestInfrastructureRevertCmd(t *testing.T) {
 		InstanceArrayServiceStatus: "active",
 	}
 
-	client := mock_metalcloud.NewMockMetalCloudClient(ctrl)
+	client := helper.NewMockMetalCloudClient(ctrl)
 
 	client.EXPECT().
 		InfrastructureGet(infra.InfrastructureID).
@@ -67,7 +67,7 @@ func TestInfrastructureRevertCmd(t *testing.T) {
 	}
 
 	client.EXPECT().
-		InfrastructureOperationCancel(infra.InfrastructureID).
+		InfrastructureOperationCancel(gomock.Any()).
 		Return(nil).
 		Times(1)
 
@@ -102,10 +102,10 @@ func TestInfrastructureDeployCmd(t *testing.T) {
 		InstanceArrayServiceStatus: "active",
 	}
 
-	client := mock_metalcloud.NewMockMetalCloudClient(ctrl)
+	client := helper.NewMockMetalCloudClient(ctrl)
 
 	client.EXPECT().
-		InfrastructureGet(infra.InfrastructureID).
+		InfrastructureGet(10002).
 		Return(&infra, nil).
 		AnyTimes()
 
@@ -132,7 +132,7 @@ func TestInfrastructureDeployCmd(t *testing.T) {
 	}
 
 	client.EXPECT().
-		InfrastructureDeploy(infra.InfrastructureID, expectedShutdownOptions, true, false).
+		InfrastructureDeploy(gomock.Any(), expectedShutdownOptions, true, false).
 		Return(nil).
 		Times(1)
 
@@ -174,10 +174,10 @@ func TestInfrastructureDeleteCmd(t *testing.T) {
 		InstanceArrayServiceStatus: "active",
 	}
 
-	client := mock_metalcloud.NewMockMetalCloudClient(ctrl)
+	client := helper.NewMockMetalCloudClient(ctrl)
 
 	client.EXPECT().
-		InfrastructureGet(infra.InfrastructureID).
+		InfrastructureGet(gomock.Any()).
 		Return(&infra, nil).
 		AnyTimes()
 
@@ -193,7 +193,7 @@ func TestInfrastructureDeleteCmd(t *testing.T) {
 	}
 
 	client.EXPECT().
-		InfrastructureDelete(infra.InfrastructureID).
+		InfrastructureDelete(gomock.Any()).
 		Return(nil).
 		Times(1)
 
@@ -218,7 +218,7 @@ func TestInfrastructureDeleteCmd(t *testing.T) {
 	ret, err = infrastructureDeleteCmd(&cmd, client)
 
 	Expect(err).NotTo(BeNil()) //should throw error indicating confirmation not given
-	Expect(err.Error()).To(ContainSubstring("ID"))
+	Expect(err.Error()).To(ContainSubstring("id is required"))
 
 }
 
@@ -281,16 +281,25 @@ func TestInfrastructureGetCmd(t *testing.T) {
 		DriveArrayServiceStatus: "active",
 	}
 
-	client := mock_metalcloud.NewMockMetalCloudClient(ctrl)
+	client := helper.NewMockMetalCloudClient(ctrl)
+
+	//given this return the other
+	e := map[interface{}]*metalcloud.Infrastructure{
+		infra.InfrastructureID:     &infra,
+		infra2.InfrastructureID:    &infra,
+		infra.InfrastructureLabel:  &infra,
+		infra2.InfrastructureLabel: &infra2,
+	}
 
 	client.EXPECT().
-		InfrastructureGet(infra.InfrastructureID).
-		Return(&infra, nil).
-		AnyTimes()
-
-	client.EXPECT().
-		InfrastructureGet(infra2.InfrastructureID).
-		Return(&infra2, nil).
+		InfrastructureGet(gomock.Any()).
+		DoAndReturn(
+			func(i metalcloud.ID) (*metalcloud.Infrastructure, error) {
+				if intf, ok := e[i]; ok {
+					return intf, nil
+				}
+				return nil, fmt.Errorf("could not find infra with id %v", i)
+			}).
 		AnyTimes()
 
 	client.EXPECT().
@@ -394,7 +403,7 @@ func TestInfrastructureListCmd(t *testing.T) {
 		infra2.InfrastructureLabel: infra2,
 	}
 
-	client := mock_metalcloud.NewMockMetalCloudClient(ctrl)
+	client := helper.NewMockMetalCloudClient(ctrl)
 
 	client.EXPECT().
 		Infrastructures().
@@ -500,21 +509,25 @@ func TestGetInfrastructureFromCommand(t *testing.T) {
 		InfrastructureOperation: io3,
 	}
 
-	client := mock_metalcloud.NewMockMetalCloudClient(ctrl)
+	client := helper.NewMockMetalCloudClient(ctrl)
+
+	//given this return the other
+	e := map[interface{}]*metalcloud.Infrastructure{
+		infra.InfrastructureID:     &infra,
+		infra2.InfrastructureID:    &infra,
+		infra.InfrastructureLabel:  &infra,
+		infra2.InfrastructureLabel: &infra2,
+	}
 
 	client.EXPECT().
-		InfrastructureGet(infra.InfrastructureID).
-		Return(&infra, nil).
-		AnyTimes()
-
-	client.EXPECT().
-		InfrastructureGet(infra2.InfrastructureID).
-		Return(&infra2, nil).
-		AnyTimes()
-
-	client.EXPECT().
-		InfrastructureGet(infra3.InfrastructureID).
-		Return(&infra2, nil).
+		InfrastructureGet(gomock.Any()).
+		DoAndReturn(
+			func(i metalcloud.ID) (*metalcloud.Infrastructure, error) {
+				if intf, ok := e[i]; ok {
+					return intf, nil
+				}
+				return nil, fmt.Errorf("could not find infra with id %v", i)
+			}).
 		AnyTimes()
 
 	infraListAmbigous := map[string]metalcloud.Infrastructure{
@@ -552,79 +565,5 @@ func TestGetInfrastructureFromCommand(t *testing.T) {
 	i, err = getInfrastructureFromCommand(&cmd, client)
 	Expect(err).To(BeNil())
 	Expect(i.InfrastructureID).To(Equal(infra2.InfrastructureID))
-
-}
-
-func TestGetInfrastructureFromCommandWithDuplicates(t *testing.T) {
-	RegisterTestingT(t)
-	ctrl := gomock.NewController(t)
-
-	io := metalcloud.InfrastructureOperation{
-		InfrastructureLabel: "testinfra",
-	}
-
-	infra := metalcloud.Infrastructure{
-		InfrastructureID:        10002,
-		InfrastructureLabel:     "testinfra",
-		InfrastructureOperation: io,
-	}
-
-	io2 := metalcloud.InfrastructureOperation{
-		InfrastructureLabel: "testinfra2",
-	}
-
-	infra2 := metalcloud.Infrastructure{
-		InfrastructureID:        10003,
-		InfrastructureLabel:     "testinfra2",
-		InfrastructureOperation: io2,
-	}
-
-	io3 := metalcloud.InfrastructureOperation{
-		InfrastructureLabel: "testinfra",
-	}
-
-	infra3 := metalcloud.Infrastructure{
-		InfrastructureID:        10004,
-		InfrastructureLabel:     "testinfra",
-		InfrastructureOperation: io3,
-	}
-
-	client := mock_metalcloud.NewMockMetalCloudClient(ctrl)
-
-	client.EXPECT().
-		InfrastructureGet(infra.InfrastructureID).
-		Return(&infra, nil).
-		AnyTimes()
-
-	client.EXPECT().
-		InfrastructureGet(infra2.InfrastructureID).
-		Return(&infra2, nil).
-		AnyTimes()
-
-	client.EXPECT().
-		InfrastructureGet(infra3.InfrastructureID).
-		Return(&infra2, nil).
-		AnyTimes()
-
-	infraListAmbigous := map[string]metalcloud.Infrastructure{
-		infra.InfrastructureLabel:        infra,
-		infra2.InfrastructureLabel:       infra2,
-		infra3.InfrastructureLabel + "1": infra3,
-	}
-
-	client.EXPECT().
-		Infrastructures().
-		Return(&infraListAmbigous, nil).
-		AnyTimes()
-
-	//check with ambiguous label
-	cmd := Command{
-		Arguments: map[string]interface{}{
-			"infrastructure_id_or_label": &infra.InfrastructureLabel,
-		},
-	}
-
-	_, err := getInfrastructureFromCommand(&cmd, client)
-	Expect(err).NotTo(BeNil())
 
 }

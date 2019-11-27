@@ -4,6 +4,8 @@ import (
 	"flag"
 	"fmt"
 	"strings"
+
+	interfaces "github.com/bigstepinc/metalcloud-cli/interfaces"
 )
 
 var volumeTemplateyCmds = []Command{
@@ -26,7 +28,7 @@ var volumeTemplateyCmds = []Command{
 	},
 }
 
-func volumeTemplatesListCmd(c *Command, client MetalCloudClient) (string, error) {
+func volumeTemplatesListCmd(c *Command, client interfaces.MetalCloudClient) (string, error) {
 
 	vList, err := client.VolumeTemplates()
 	if err != nil {

@@ -8,7 +8,7 @@ import (
 	"testing"
 
 	metalcloud "github.com/bigstepinc/metal-cloud-sdk-go"
-	mock_metalcloud "github.com/bigstepinc/metalcloud-cli/mock"
+	mock_metalcloud "github.com/bigstepinc/metalcloud-cli/helpers"
 	gomock "github.com/golang/mock/gomock"
 
 	. "github.com/onsi/gomega"
