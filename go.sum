@@ -1,5 +1,5 @@
-github.com/bigstepinc/metal-cloud-sdk-go v0.0.0-20191114103311-29331cb8932e h1:gVx0cKqYoxQRWC3wkp4fGyqs/9siCA/pepJJVPWkPtc=
-github.com/bigstepinc/metal-cloud-sdk-go v0.0.0-20191114103311-29331cb8932e/go.mod h1:azxXXG6UPYs49ZEXqcC1GeYdSBe1R5Wbg7Xgmntb5Jk=
+github.com/bigstepinc/metal-cloud-sdk-go v1.0.1 h1:fXzkKY8i1x48c/SGI8tEbK1hj6607J9UhJPmiyBsQXQ=
+github.com/bigstepinc/metal-cloud-sdk-go v1.0.1/go.mod h1:azxXXG6UPYs49ZEXqcC1GeYdSBe1R5Wbg7Xgmntb5Jk=
 github.com/fsnotify/fsnotify v1.4.7/go.mod h1:jwhsz4b93w/PPRr/qN1Yymfu8t87LnFCMoQvtojpjFo=
 github.com/golang/mock v1.3.1/go.mod h1:sBzyDLLjw3U8JLTeZvSv8jJB+tU5PVekmnlKIyFUx0Y=
 github.com/golang/protobuf v1.2.0/go.mod h1:6lQm79b+lXiMfvg/cZm0SGofjICqVBUtrP5yJMmIC1U=
