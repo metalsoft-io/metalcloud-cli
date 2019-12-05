@@ -100,7 +100,7 @@ var instanceArrayCmds = []Command{
 
 func instanceArrayCreateCmd(c *Command, client interfaces.MetalCloudClient) (string, error) {
 
-	retInfra, err := getInfrastructureFromCommand(c, client)
+	infraID, err := getInfrastructureIDFromCommand("infra", c, client)
 	if err != nil {
 		return "", err
 	}
@@ -111,7 +111,7 @@ func instanceArrayCreateCmd(c *Command, client interfaces.MetalCloudClient) (str
 		return "", fmt.Errorf("-label <instance_array_label> is required")
 	}
 
-	retIA, err := client.InstanceArrayCreate(retInfra.InfrastructureID, *ia)
+	retIA, err := client.InstanceArrayCreate(infraID, *ia)
 	if err != nil {
 		return "", err
 	}
@@ -125,7 +125,7 @@ func instanceArrayCreateCmd(c *Command, client interfaces.MetalCloudClient) (str
 
 func instanceArrayEditCmd(c *Command, client interfaces.MetalCloudClient) (string, error) {
 
-	retIA, err := getInstanceArrayFromCommand(c, client)
+	retIA, err := getInstanceArrayFromCommand("id", c, client)
 	if err != nil {
 		return "", err
 	}
@@ -156,7 +156,7 @@ func instanceArrayEditCmd(c *Command, client interfaces.MetalCloudClient) (strin
 
 func instanceArrayListCmd(c *Command, client interfaces.MetalCloudClient) (string, error) {
 
-	infra, err := getInfrastructureFromCommand(c, client)
+	infra, err := getInfrastructureFromCommand("infra", c, client)
 	if err != nil {
 		return "", err
 	}
@@ -237,7 +237,7 @@ func instanceArrayListCmd(c *Command, client interfaces.MetalCloudClient) (strin
 
 func instanceArrayDeleteCmd(c *Command, client interfaces.MetalCloudClient) (string, error) {
 
-	retIA, err := getInstanceArrayFromCommand(c, client)
+	retIA, err := getInstanceArrayFromCommand("id", c, client)
 	if err != nil {
 		return "", err
 	}
@@ -395,28 +395,18 @@ func copyInstanceArrayInterfaceToOperation(i metalcloud.InstanceArrayInterface, 
 	io.NetworkID = i.NetworkID
 }
 
-func getInstanceArrayIDFromCommand(c *Command) (metalcloud.ID, error) {
-	v := c.Arguments["instance_array_id_or_label"]
-	if v == nil {
-		return nil, fmt.Errorf("Either an instance array ID or an instance array label must be provided")
-	}
+func getInstanceArrayFromCommand(paramName string, c *Command, client interfaces.MetalCloudClient) (*metalcloud.InstanceArray, error) {
 
-	switch v.(type) {
-	case *int:
-		return *c.Arguments["instance_array_id_or_label"].(*int), nil
-	case *string:
-		return *c.Arguments["instance_array_id_or_label"].(*string), nil
-	}
-
-	return nil, fmt.Errorf("could not determinte the type of the passed ID")
-
-}
-
-func getInstanceArrayFromCommand(c *Command, client interfaces.MetalCloudClient) (*metalcloud.InstanceArray, error) {
-	id, err := getIDFromCommand(c, "instance_array_id_or_label")
+	m, err := getParam(c, "instance_array_id_or_label", paramName)
 	if err != nil {
 		return nil, err
 	}
 
-	return client.InstanceArrayGet(id)
+	id, label, isID := idOrLabel(m)
+
+	if isID {
+		return client.InstanceArrayGet(id)
+	}
+
+	return client.InstanceArrayGetByLabel(label)
 }

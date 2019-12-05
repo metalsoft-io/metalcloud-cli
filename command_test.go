@@ -1,7 +1,9 @@
 package main
 
 import (
+	"bytes"
 	"flag"
+	"fmt"
 	"reflect"
 	"testing"
 
@@ -106,8 +108,9 @@ func TestSimpleArgument(t *testing.T) {
 	}
 }
 
-func TestGetIDFromCommand(t *testing.T) {
+func TestConfirmFunc(t *testing.T) {
 	RegisterTestingT(t)
+	v1 := 10
 
 	cmd := Command{
 		Subject:      "instance_array",
@@ -117,7 +120,7 @@ func TestGetIDFromCommand(t *testing.T) {
 		FlagSet:      flag.NewFlagSet("instance_array", flag.ExitOnError),
 		InitFunc: func(c *Command) {
 			c.Arguments = map[string]interface{}{
-				"id_or_label": c.FlagSet.String("id_name", _nilDefaultStr, "id"),
+				"autoconfirm": c.FlagSet.Bool("autoconfirm", false, "autoconfirm text"),
 			}
 		},
 		ExecuteFunc: func(c *Command, client interfaces.MetalCloudClient) (string, error) {
@@ -127,18 +130,90 @@ func TestGetIDFromCommand(t *testing.T) {
 
 	cmd.InitFunc(&cmd)
 
+	var stdin bytes.Buffer
+	var stdout bytes.Buffer
+
+	SetConsoleIOChannel(&stdin, &stdout)
+
+	stdin.Write([]byte("yes\n"))
+
+	//check without autoconfirm
+	ok := confirmCommand(&cmd,
+		func() string {
+			return fmt.Sprintf("Reverting infrastructure %d to the deployed state. Are you sure? Type \"yes\" to continue:", v1)
+		},
+	)
+	Expect(ok).To(BeTrue())
+	s, err := stdout.ReadString(byte('\n'))
+	Expect(s).To(ContainSubstring("Reverting infrastructure"))
+
+	//check with autoconfirm
 	argv := []string{
-		"-id_name", "3",
+		"-autoconfirm",
 	}
 
-	err := cmd.FlagSet.Parse(argv)
+	err = cmd.FlagSet.Parse(argv)
 	Expect(err).To(BeNil())
 
-	id, err := getIDFromCommand(&cmd, "id_or_label")
-	Expect(id).To(Equal(3))
-	Expect(err).To(BeNil())
+	ok = confirmCommand(&cmd,
+		func() string {
+			return fmt.Sprintf("Reverting infrastructure %d to the deployed state. Are you sure? Type \"yes\" to continue:", v1)
+		},
+	)
+	Expect(ok).To(BeTrue())
 
-	id, err = getIDFromCommand(&cmd, "id_or_label_not_present")
-	Expect(err.Error()).To(ContainSubstring("id"))
+	s, err = stdout.ReadString(byte('\n'))
+	Expect(s).To(BeEmpty())
 
+}
+
+func TestGetIfNotDefaultOk(t *testing.T) {
+	RegisterTestingT(t)
+
+	i := 10
+	s := "test"
+	f := 10.2
+	m := map[string]interface{}{
+		"testInt":       &i,
+		"testString":    &s,
+		"testWrongType": &f,
+	}
+
+	v, ok := getPtrValueIfExistsOk(m, "testInt")
+	Expect(v).To(Equal((10)))
+	Expect(ok).To(BeTrue())
+
+	v, ok = getPtrValueIfExistsOk(m, "testString")
+	Expect(v).To(Equal(("test")))
+	Expect(ok).To(BeTrue())
+
+	v, ok = getPtrValueIfExistsOk(m, "testWrongString")
+	Expect(v).To(BeNil())
+	Expect(ok).To(BeFalse())
+
+	v, ok = getPtrValueIfExistsOk(m, "testWrongType")
+	Expect(v).To(BeNil())
+	Expect(ok).To(BeFalse())
+}
+
+func TestIdOrLabel(t *testing.T) {
+	RegisterTestingT(t)
+
+	i := "test"
+	id, label, isID := idOrLabel(&i)
+	Expect(id).To(Equal(0))
+	Expect(label).To(Equal("test"))
+	Expect(isID).To(BeFalse())
+
+	i = "100"
+	id, label, isID = idOrLabel(&i)
+	Expect(id).To(Equal(100))
+	Expect(label).To(Equal(""))
+	Expect(isID).To(BeTrue())
+
+	ii := 100
+	id, label, isID = idOrLabel(&ii)
+	Expect(id).To(Equal(100))
+	Expect(label).To(Equal(""))
+	Expect(isID).To(BeTrue())
 }

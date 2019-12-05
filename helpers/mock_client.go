@@ -2,13 +2,12 @@
 // Source: interfaces/metal_cloud_client.go
 
 // Package mock_interfaces is a generated GoMock package.
-package helpers
+package mock_interfaces
 
 import (
-	reflect "reflect"
-
 	metal_cloud_sdk_go "github.com/bigstepinc/metal-cloud-sdk-go"
 	gomock "github.com/golang/mock/gomock"
+	reflect "reflect"
 )
 
 // MockMetalCloudClient is a mock of MetalCloudClient interface
@@ -34,6 +33,154 @@ func (m *MockMetalCloudClient) EXPECT() *MockMetalCloudClientMockRecorder {
 	return m.recorder
 }
 
+// DriveArrays mocks base method
+func (m *MockMetalCloudClient) DriveArrays(infrastructureID int) (*map[string]metal_cloud_sdk_go.DriveArray, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "DriveArrays", infrastructureID)
+	ret0, _ := ret[0].(*map[string]metal_cloud_sdk_go.DriveArray)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// DriveArrays indicates an expected call of DriveArrays
+func (mr *MockMetalCloudClientMockRecorder) DriveArrays(infrastructureID interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "DriveArrays", reflect.TypeOf((*MockMetalCloudClient)(nil).DriveArrays), infrastructureID)
+}
+
+// DriveArraysByLabel mocks base method
+func (m *MockMetalCloudClient) DriveArraysByLabel(infrastructureLabel string) (*map[string]metal_cloud_sdk_go.DriveArray, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "DriveArraysByLabel", infrastructureLabel)
+	ret0, _ := ret[0].(*map[string]metal_cloud_sdk_go.DriveArray)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// DriveArraysByLabel indicates an expected call of DriveArraysByLabel
+func (mr *MockMetalCloudClientMockRecorder) DriveArraysByLabel(infrastructureLabel interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "DriveArraysByLabel", reflect.TypeOf((*MockMetalCloudClient)(nil).DriveArraysByLabel), infrastructureLabel)
+}
+
+// DriveArrayGet mocks base method
+func (m *MockMetalCloudClient) DriveArrayGet(driveArrayID int) (*metal_cloud_sdk_go.DriveArray, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "DriveArrayGet", driveArrayID)
+	ret0, _ := ret[0].(*metal_cloud_sdk_go.DriveArray)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// DriveArrayGet indicates an expected call of DriveArrayGet
+func (mr *MockMetalCloudClientMockRecorder) DriveArrayGet(driveArrayID interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "DriveArrayGet", reflect.TypeOf((*MockMetalCloudClient)(nil).DriveArrayGet), driveArrayID)
+}
+
+// DriveArrayGetByLabel mocks base method
+func (m *MockMetalCloudClient) DriveArrayGetByLabel(driveArrayLabel string) (*metal_cloud_sdk_go.DriveArray, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "DriveArrayGetByLabel", driveArrayLabel)
+	ret0, _ := ret[0].(*metal_cloud_sdk_go.DriveArray)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// DriveArrayGetByLabel indicates an expected call of DriveArrayGetByLabel
+func (mr *MockMetalCloudClientMockRecorder) DriveArrayGetByLabel(driveArrayLabel interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "DriveArrayGetByLabel", reflect.TypeOf((*MockMetalCloudClient)(nil).DriveArrayGetByLabel), driveArrayLabel)
+}
+
+// DriveArrayCreate mocks base method
+func (m *MockMetalCloudClient) DriveArrayCreate(infrastructureID int, driveArray metal_cloud_sdk_go.DriveArray) (*metal_cloud_sdk_go.DriveArray, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "DriveArrayCreate", infrastructureID, driveArray)
+	ret0, _ := ret[0].(*metal_cloud_sdk_go.DriveArray)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// DriveArrayCreate indicates an expected call of DriveArrayCreate
+func (mr *MockMetalCloudClientMockRecorder) DriveArrayCreate(infrastructureID, driveArray interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "DriveArrayCreate", reflect.TypeOf((*MockMetalCloudClient)(nil).DriveArrayCreate), infrastructureID, driveArray)
+}
+
+// DriveArrayCreateByLabel mocks base method
+func (m *MockMetalCloudClient) DriveArrayCreateByLabel(infrastructureLabel string, driveArray metal_cloud_sdk_go.DriveArray) (*metal_cloud_sdk_go.DriveArray, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "DriveArrayCreateByLabel", infrastructureLabel, driveArray)
+	ret0, _ := ret[0].(*metal_cloud_sdk_go.DriveArray)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// DriveArrayCreateByLabel indicates an expected call of DriveArrayCreateByLabel
+func (mr *MockMetalCloudClientMockRecorder) DriveArrayCreateByLabel(infrastructureLabel, driveArray interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "DriveArrayCreateByLabel", reflect.TypeOf((*MockMetalCloudClient)(nil).DriveArrayCreateByLabel), infrastructureLabel, driveArray)
+}
+
+// DriveArrayEdit mocks base method
+func (m *MockMetalCloudClient) DriveArrayEdit(driveArrayID int, driveArrayOperation metal_cloud_sdk_go.DriveArrayOperation) (*metal_cloud_sdk_go.DriveArray, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "DriveArrayEdit", driveArrayID, driveArrayOperation)
+	ret0, _ := ret[0].(*metal_cloud_sdk_go.DriveArray)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// DriveArrayEdit indicates an expected call of DriveArrayEdit
+func (mr *MockMetalCloudClientMockRecorder) DriveArrayEdit(driveArrayID, driveArrayOperation interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "DriveArrayEdit", reflect.TypeOf((*MockMetalCloudClient)(nil).DriveArrayEdit), driveArrayID, driveArrayOperation)
+}
+
+// DriveArrayEditByLabel mocks base method
+func (m *MockMetalCloudClient) DriveArrayEditByLabel(driveArrayLabel string, driveArrayOperation metal_cloud_sdk_go.DriveArrayOperation) (*metal_cloud_sdk_go.DriveArray, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "DriveArrayEditByLabel", driveArrayLabel, driveArrayOperation)
+	ret0, _ := ret[0].(*metal_cloud_sdk_go.DriveArray)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// DriveArrayEditByLabel indicates an expected call of DriveArrayEditByLabel
+func (mr *MockMetalCloudClientMockRecorder) DriveArrayEditByLabel(driveArrayLabel, driveArrayOperation interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "DriveArrayEditByLabel", reflect.TypeOf((*MockMetalCloudClient)(nil).DriveArrayEditByLabel), driveArrayLabel, driveArrayOperation)
+}
+
+// DriveArrayDelete mocks base method
+func (m *MockMetalCloudClient) DriveArrayDelete(driveArrayID int) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "DriveArrayDelete", driveArrayID)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// DriveArrayDelete indicates an expected call of DriveArrayDelete
+func (mr *MockMetalCloudClientMockRecorder) DriveArrayDelete(driveArrayID interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "DriveArrayDelete", reflect.TypeOf((*MockMetalCloudClient)(nil).DriveArrayDelete), driveArrayID)
+}
+
+// DriveArrayDeleteByLabel mocks base method
+func (m *MockMetalCloudClient) DriveArrayDeleteByLabel(driveArrayLabel string) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "DriveArrayDeleteByLabel", driveArrayLabel)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// DriveArrayDeleteByLabel indicates an expected call of DriveArrayDeleteByLabel
+func (mr *MockMetalCloudClientMockRecorder) DriveArrayDeleteByLabel(driveArrayLabel interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "DriveArrayDeleteByLabel", reflect.TypeOf((*MockMetalCloudClient)(nil).DriveArrayDeleteByLabel), driveArrayLabel)
+}
+
 // InfrastructureCreate mocks base method
 func (m *MockMetalCloudClient) InfrastructureCreate(infrastructure metal_cloud_sdk_go.Infrastructure) (*metal_cloud_sdk_go.Infrastructure, error) {
 	m.ctrl.T.Helper()
@@ -47,63 +194,6 @@ func (m *MockMetalCloudClient) InfrastructureCreate(infrastructure metal_cloud_s
 func (mr *MockMetalCloudClientMockRecorder) InfrastructureCreate(infrastructure interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "InfrastructureCreate", reflect.TypeOf((*MockMetalCloudClient)(nil).InfrastructureCreate), infrastructure)
-}
-
-// InfrastructureEdit mocks base method
-func (m *MockMetalCloudClient) InfrastructureEdit(infrastructureID metal_cloud_sdk_go.ID, infrastructureOperation metal_cloud_sdk_go.InfrastructureOperation) (*metal_cloud_sdk_go.Infrastructure, error) {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "InfrastructureEdit", infrastructureID, infrastructureOperation)
-	ret0, _ := ret[0].(*metal_cloud_sdk_go.Infrastructure)
-	ret1, _ := ret[1].(error)
-	return ret0, ret1
-}
-
-// InfrastructureEdit indicates an expected call of InfrastructureEdit
-func (mr *MockMetalCloudClientMockRecorder) InfrastructureEdit(infrastructureID, infrastructureOperation interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "InfrastructureEdit", reflect.TypeOf((*MockMetalCloudClient)(nil).InfrastructureEdit), infrastructureID, infrastructureOperation)
-}
-
-// InfrastructureDelete mocks base method
-func (m *MockMetalCloudClient) InfrastructureDelete(infrastructureID metal_cloud_sdk_go.ID) error {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "InfrastructureDelete", infrastructureID)
-	ret0, _ := ret[0].(error)
-	return ret0
-}
-
-// InfrastructureDelete indicates an expected call of InfrastructureDelete
-func (mr *MockMetalCloudClientMockRecorder) InfrastructureDelete(infrastructureID interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "InfrastructureDelete", reflect.TypeOf((*MockMetalCloudClient)(nil).InfrastructureDelete), infrastructureID)
-}
-
-// InfrastructureOperationCancel mocks base method
-func (m *MockMetalCloudClient) InfrastructureOperationCancel(infrastructureID metal_cloud_sdk_go.ID) error {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "InfrastructureOperationCancel", infrastructureID)
-	ret0, _ := ret[0].(error)
-	return ret0
-}
-
-// InfrastructureOperationCancel indicates an expected call of InfrastructureOperationCancel
-func (mr *MockMetalCloudClientMockRecorder) InfrastructureOperationCancel(infrastructureID interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "InfrastructureOperationCancel", reflect.TypeOf((*MockMetalCloudClient)(nil).InfrastructureOperationCancel), infrastructureID)
-}
-
-// InfrastructureDeploy mocks base method
-func (m *MockMetalCloudClient) InfrastructureDeploy(infrastructureID metal_cloud_sdk_go.ID, shutdownOptions metal_cloud_sdk_go.ShutdownOptions, allowDataLoss, skipAnsible bool) error {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "InfrastructureDeploy", infrastructureID, shutdownOptions, allowDataLoss, skipAnsible)
-	ret0, _ := ret[0].(error)
-	return ret0
-}
-
-// InfrastructureDeploy indicates an expected call of InfrastructureDeploy
-func (mr *MockMetalCloudClientMockRecorder) InfrastructureDeploy(infrastructureID, shutdownOptions, allowDataLoss, skipAnsible interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "InfrastructureDeploy", reflect.TypeOf((*MockMetalCloudClient)(nil).InfrastructureDeploy), infrastructureID, shutdownOptions, allowDataLoss, skipAnsible)
 }
 
 // Infrastructures mocks base method
@@ -121,8 +211,122 @@ func (mr *MockMetalCloudClientMockRecorder) Infrastructures() *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Infrastructures", reflect.TypeOf((*MockMetalCloudClient)(nil).Infrastructures))
 }
 
+// InfrastructureEdit mocks base method
+func (m *MockMetalCloudClient) InfrastructureEdit(infrastructureID int, infrastructureOperation metal_cloud_sdk_go.InfrastructureOperation) (*metal_cloud_sdk_go.Infrastructure, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "InfrastructureEdit", infrastructureID, infrastructureOperation)
+	ret0, _ := ret[0].(*metal_cloud_sdk_go.Infrastructure)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// InfrastructureEdit indicates an expected call of InfrastructureEdit
+func (mr *MockMetalCloudClientMockRecorder) InfrastructureEdit(infrastructureID, infrastructureOperation interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "InfrastructureEdit", reflect.TypeOf((*MockMetalCloudClient)(nil).InfrastructureEdit), infrastructureID, infrastructureOperation)
+}
+
+// InfrastructureEditByLabel mocks base method
+func (m *MockMetalCloudClient) InfrastructureEditByLabel(infrastructureLabel string, infrastructureOperation metal_cloud_sdk_go.InfrastructureOperation) (*metal_cloud_sdk_go.Infrastructure, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "InfrastructureEditByLabel", infrastructureLabel, infrastructureOperation)
+	ret0, _ := ret[0].(*metal_cloud_sdk_go.Infrastructure)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// InfrastructureEditByLabel indicates an expected call of InfrastructureEditByLabel
+func (mr *MockMetalCloudClientMockRecorder) InfrastructureEditByLabel(infrastructureLabel, infrastructureOperation interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "InfrastructureEditByLabel", reflect.TypeOf((*MockMetalCloudClient)(nil).InfrastructureEditByLabel), infrastructureLabel, infrastructureOperation)
+}
+
+// InfrastructureDelete mocks base method
+func (m *MockMetalCloudClient) InfrastructureDelete(infrastructureID int) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "InfrastructureDelete", infrastructureID)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// InfrastructureDelete indicates an expected call of InfrastructureDelete
+func (mr *MockMetalCloudClientMockRecorder) InfrastructureDelete(infrastructureID interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "InfrastructureDelete", reflect.TypeOf((*MockMetalCloudClient)(nil).InfrastructureDelete), infrastructureID)
+}
+
+// InfrastructureDeleteByLabel mocks base method
+func (m *MockMetalCloudClient) InfrastructureDeleteByLabel(infrastructureLabel string) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "InfrastructureDeleteByLabel", infrastructureLabel)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// InfrastructureDeleteByLabel indicates an expected call of InfrastructureDeleteByLabel
+func (mr *MockMetalCloudClientMockRecorder) InfrastructureDeleteByLabel(infrastructureLabel interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "InfrastructureDeleteByLabel", reflect.TypeOf((*MockMetalCloudClient)(nil).InfrastructureDeleteByLabel), infrastructureLabel)
+}
+
+// InfrastructureOperationCancel mocks base method
+func (m *MockMetalCloudClient) InfrastructureOperationCancel(infrastructureID int) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "InfrastructureOperationCancel", infrastructureID)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// InfrastructureOperationCancel indicates an expected call of InfrastructureOperationCancel
+func (mr *MockMetalCloudClientMockRecorder) InfrastructureOperationCancel(infrastructureID interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "InfrastructureOperationCancel", reflect.TypeOf((*MockMetalCloudClient)(nil).InfrastructureOperationCancel), infrastructureID)
+}
+
+// InfrastructureOperationCancelByLabel mocks base method
+func (m *MockMetalCloudClient) InfrastructureOperationCancelByLabel(infrastructureLabel string) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "InfrastructureOperationCancelByLabel", infrastructureLabel)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// InfrastructureOperationCancelByLabel indicates an expected call of InfrastructureOperationCancelByLabel
+func (mr *MockMetalCloudClientMockRecorder) InfrastructureOperationCancelByLabel(infrastructureLabel interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "InfrastructureOperationCancelByLabel", reflect.TypeOf((*MockMetalCloudClient)(nil).InfrastructureOperationCancelByLabel), infrastructureLabel)
+}
+
+// InfrastructureDeploy mocks base method
+func (m *MockMetalCloudClient) InfrastructureDeploy(infrastructureID int, shutdownOptions metal_cloud_sdk_go.ShutdownOptions, allowDataLoss, skipAnsible bool) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "InfrastructureDeploy", infrastructureID, shutdownOptions, allowDataLoss, skipAnsible)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// InfrastructureDeploy indicates an expected call of InfrastructureDeploy
+func (mr *MockMetalCloudClientMockRecorder) InfrastructureDeploy(infrastructureID, shutdownOptions, allowDataLoss, skipAnsible interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "InfrastructureDeploy", reflect.TypeOf((*MockMetalCloudClient)(nil).InfrastructureDeploy), infrastructureID, shutdownOptions, allowDataLoss, skipAnsible)
+}
+
+// InfrastructureDeployByLabel mocks base method
+func (m *MockMetalCloudClient) InfrastructureDeployByLabel(infrastructureLabel string, shutdownOptions metal_cloud_sdk_go.ShutdownOptions, allowDataLoss, skipAnsible bool) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "InfrastructureDeployByLabel", infrastructureLabel, shutdownOptions, allowDataLoss, skipAnsible)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// InfrastructureDeployByLabel indicates an expected call of InfrastructureDeployByLabel
+func (mr *MockMetalCloudClientMockRecorder) InfrastructureDeployByLabel(infrastructureLabel, shutdownOptions, allowDataLoss, skipAnsible interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "InfrastructureDeployByLabel", reflect.TypeOf((*MockMetalCloudClient)(nil).InfrastructureDeployByLabel), infrastructureLabel, shutdownOptions, allowDataLoss, skipAnsible)
+}
+
 // InfrastructureGet mocks base method
-func (m *MockMetalCloudClient) InfrastructureGet(infrastructureID metal_cloud_sdk_go.ID) (*metal_cloud_sdk_go.Infrastructure, error) {
+func (m *MockMetalCloudClient) InfrastructureGet(infrastructureID int) (*metal_cloud_sdk_go.Infrastructure, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "InfrastructureGet", infrastructureID)
 	ret0, _ := ret[0].(*metal_cloud_sdk_go.Infrastructure)
@@ -136,8 +340,23 @@ func (mr *MockMetalCloudClientMockRecorder) InfrastructureGet(infrastructureID i
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "InfrastructureGet", reflect.TypeOf((*MockMetalCloudClient)(nil).InfrastructureGet), infrastructureID)
 }
 
+// InfrastructureGetByLabel mocks base method
+func (m *MockMetalCloudClient) InfrastructureGetByLabel(infrastructureLabel string) (*metal_cloud_sdk_go.Infrastructure, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "InfrastructureGetByLabel", infrastructureLabel)
+	ret0, _ := ret[0].(*metal_cloud_sdk_go.Infrastructure)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// InfrastructureGetByLabel indicates an expected call of InfrastructureGetByLabel
+func (mr *MockMetalCloudClientMockRecorder) InfrastructureGetByLabel(infrastructureLabel interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "InfrastructureGetByLabel", reflect.TypeOf((*MockMetalCloudClient)(nil).InfrastructureGetByLabel), infrastructureLabel)
+}
+
 // InfrastructureUserLimits mocks base method
-func (m *MockMetalCloudClient) InfrastructureUserLimits(infrastructureID metal_cloud_sdk_go.ID) (*map[string]interface{}, error) {
+func (m *MockMetalCloudClient) InfrastructureUserLimits(infrastructureID int) (*map[string]interface{}, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "InfrastructureUserLimits", infrastructureID)
 	ret0, _ := ret[0].(*map[string]interface{})
@@ -151,78 +370,19 @@ func (mr *MockMetalCloudClientMockRecorder) InfrastructureUserLimits(infrastruct
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "InfrastructureUserLimits", reflect.TypeOf((*MockMetalCloudClient)(nil).InfrastructureUserLimits), infrastructureID)
 }
 
-// InstanceArrayGet mocks base method
-func (m *MockMetalCloudClient) InstanceArrayGet(instanceArrayID metal_cloud_sdk_go.ID) (*metal_cloud_sdk_go.InstanceArray, error) {
+// InfrastructureUserLimitsByLabel mocks base method
+func (m *MockMetalCloudClient) InfrastructureUserLimitsByLabel(infrastructureLabel string) (*map[string]interface{}, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "InstanceArrayGet", instanceArrayID)
-	ret0, _ := ret[0].(*metal_cloud_sdk_go.InstanceArray)
+	ret := m.ctrl.Call(m, "InfrastructureUserLimitsByLabel", infrastructureLabel)
+	ret0, _ := ret[0].(*map[string]interface{})
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
-// InstanceArrayGet indicates an expected call of InstanceArrayGet
-func (mr *MockMetalCloudClientMockRecorder) InstanceArrayGet(instanceArrayID interface{}) *gomock.Call {
+// InfrastructureUserLimitsByLabel indicates an expected call of InfrastructureUserLimitsByLabel
+func (mr *MockMetalCloudClientMockRecorder) InfrastructureUserLimitsByLabel(infrastructureLabel interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "InstanceArrayGet", reflect.TypeOf((*MockMetalCloudClient)(nil).InstanceArrayGet), instanceArrayID)
-}
-
-// InstanceArrays mocks base method
-func (m *MockMetalCloudClient) InstanceArrays(infrastructureID metal_cloud_sdk_go.ID) (*map[string]metal_cloud_sdk_go.InstanceArray, error) {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "InstanceArrays", infrastructureID)
-	ret0, _ := ret[0].(*map[string]metal_cloud_sdk_go.InstanceArray)
-	ret1, _ := ret[1].(error)
-	return ret0, ret1
-}
-
-// InstanceArrays indicates an expected call of InstanceArrays
-func (mr *MockMetalCloudClientMockRecorder) InstanceArrays(infrastructureID interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "InstanceArrays", reflect.TypeOf((*MockMetalCloudClient)(nil).InstanceArrays), infrastructureID)
-}
-
-// InstanceArrayCreate mocks base method
-func (m *MockMetalCloudClient) InstanceArrayCreate(infrastructureID metal_cloud_sdk_go.ID, instanceArray metal_cloud_sdk_go.InstanceArray) (*metal_cloud_sdk_go.InstanceArray, error) {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "InstanceArrayCreate", infrastructureID, instanceArray)
-	ret0, _ := ret[0].(*metal_cloud_sdk_go.InstanceArray)
-	ret1, _ := ret[1].(error)
-	return ret0, ret1
-}
-
-// InstanceArrayCreate indicates an expected call of InstanceArrayCreate
-func (mr *MockMetalCloudClientMockRecorder) InstanceArrayCreate(infrastructureID, instanceArray interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "InstanceArrayCreate", reflect.TypeOf((*MockMetalCloudClient)(nil).InstanceArrayCreate), infrastructureID, instanceArray)
-}
-
-// InstanceArrayEdit mocks base method
-func (m *MockMetalCloudClient) InstanceArrayEdit(instanceArrayID metal_cloud_sdk_go.ID, instanceArrayOperation metal_cloud_sdk_go.InstanceArrayOperation, bSwapExistingInstancesHardware, bKeepDetachingDrives *bool, objServerTypeMatches *[]metal_cloud_sdk_go.ServerType, arrInstancesToBeDeleted *[]int) (*metal_cloud_sdk_go.InstanceArray, error) {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "InstanceArrayEdit", instanceArrayID, instanceArrayOperation, bSwapExistingInstancesHardware, bKeepDetachingDrives, objServerTypeMatches, arrInstancesToBeDeleted)
-	ret0, _ := ret[0].(*metal_cloud_sdk_go.InstanceArray)
-	ret1, _ := ret[1].(error)
-	return ret0, ret1
-}
-
-// InstanceArrayEdit indicates an expected call of InstanceArrayEdit
-func (mr *MockMetalCloudClientMockRecorder) InstanceArrayEdit(instanceArrayID, instanceArrayOperation, bSwapExistingInstancesHardware, bKeepDetachingDrives, objServerTypeMatches, arrInstancesToBeDeleted interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "InstanceArrayEdit", reflect.TypeOf((*MockMetalCloudClient)(nil).InstanceArrayEdit), instanceArrayID, instanceArrayOperation, bSwapExistingInstancesHardware, bKeepDetachingDrives, objServerTypeMatches, arrInstancesToBeDeleted)
-}
-
-// InstanceArrayDelete mocks base method
-func (m *MockMetalCloudClient) InstanceArrayDelete(instanceArrayID metal_cloud_sdk_go.ID) error {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "InstanceArrayDelete", instanceArrayID)
-	ret0, _ := ret[0].(error)
-	return ret0
-}
-
-// InstanceArrayDelete indicates an expected call of InstanceArrayDelete
-func (mr *MockMetalCloudClientMockRecorder) InstanceArrayDelete(instanceArrayID interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "InstanceArrayDelete", reflect.TypeOf((*MockMetalCloudClient)(nil).InstanceArrayDelete), instanceArrayID)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "InfrastructureUserLimitsByLabel", reflect.TypeOf((*MockMetalCloudClient)(nil).InfrastructureUserLimitsByLabel), infrastructureLabel)
 }
 
 // InstanceArrayInterfaceAttachNetwork mocks base method
@@ -255,8 +415,184 @@ func (mr *MockMetalCloudClientMockRecorder) InstanceArrayInterfaceDetach(instanc
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "InstanceArrayInterfaceDetach", reflect.TypeOf((*MockMetalCloudClient)(nil).InstanceArrayInterfaceDetach), instanceArrayID, instanceArrayInterfaceIndex)
 }
 
+// InstanceArrayGet mocks base method
+func (m *MockMetalCloudClient) InstanceArrayGet(instanceArrayID int) (*metal_cloud_sdk_go.InstanceArray, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "InstanceArrayGet", instanceArrayID)
+	ret0, _ := ret[0].(*metal_cloud_sdk_go.InstanceArray)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// InstanceArrayGet indicates an expected call of InstanceArrayGet
+func (mr *MockMetalCloudClientMockRecorder) InstanceArrayGet(instanceArrayID interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "InstanceArrayGet", reflect.TypeOf((*MockMetalCloudClient)(nil).InstanceArrayGet), instanceArrayID)
+}
+
+// InstanceArrayGetByLabel mocks base method
+func (m *MockMetalCloudClient) InstanceArrayGetByLabel(instanceArrayLabel string) (*metal_cloud_sdk_go.InstanceArray, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "InstanceArrayGetByLabel", instanceArrayLabel)
+	ret0, _ := ret[0].(*metal_cloud_sdk_go.InstanceArray)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// InstanceArrayGetByLabel indicates an expected call of InstanceArrayGetByLabel
+func (mr *MockMetalCloudClientMockRecorder) InstanceArrayGetByLabel(instanceArrayLabel interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "InstanceArrayGetByLabel", reflect.TypeOf((*MockMetalCloudClient)(nil).InstanceArrayGetByLabel), instanceArrayLabel)
+}
+
+// InstanceArrays mocks base method
+func (m *MockMetalCloudClient) InstanceArrays(infrastructureID int) (*map[string]metal_cloud_sdk_go.InstanceArray, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "InstanceArrays", infrastructureID)
+	ret0, _ := ret[0].(*map[string]metal_cloud_sdk_go.InstanceArray)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// InstanceArrays indicates an expected call of InstanceArrays
+func (mr *MockMetalCloudClientMockRecorder) InstanceArrays(infrastructureID interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "InstanceArrays", reflect.TypeOf((*MockMetalCloudClient)(nil).InstanceArrays), infrastructureID)
+}
+
+// InstanceArraysByLabel mocks base method
+func (m *MockMetalCloudClient) InstanceArraysByLabel(infrastructureLabel string) (*map[string]metal_cloud_sdk_go.InstanceArray, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "InstanceArraysByLabel", infrastructureLabel)
+	ret0, _ := ret[0].(*map[string]metal_cloud_sdk_go.InstanceArray)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// InstanceArraysByLabel indicates an expected call of InstanceArraysByLabel
+func (mr *MockMetalCloudClientMockRecorder) InstanceArraysByLabel(infrastructureLabel interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "InstanceArraysByLabel", reflect.TypeOf((*MockMetalCloudClient)(nil).InstanceArraysByLabel), infrastructureLabel)
+}
+
+// InstanceArrayCreate mocks base method
+func (m *MockMetalCloudClient) InstanceArrayCreate(infrastructureID int, instanceArray metal_cloud_sdk_go.InstanceArray) (*metal_cloud_sdk_go.InstanceArray, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "InstanceArrayCreate", infrastructureID, instanceArray)
+	ret0, _ := ret[0].(*metal_cloud_sdk_go.InstanceArray)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// InstanceArrayCreate indicates an expected call of InstanceArrayCreate
+func (mr *MockMetalCloudClientMockRecorder) InstanceArrayCreate(infrastructureID, instanceArray interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "InstanceArrayCreate", reflect.TypeOf((*MockMetalCloudClient)(nil).InstanceArrayCreate), infrastructureID, instanceArray)
+}
+
+// InstanceArrayCreateByLabel mocks base method
+func (m *MockMetalCloudClient) InstanceArrayCreateByLabel(infrastructureLabel string, instanceArray metal_cloud_sdk_go.InstanceArray) (*metal_cloud_sdk_go.InstanceArray, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "InstanceArrayCreateByLabel", infrastructureLabel, instanceArray)
+	ret0, _ := ret[0].(*metal_cloud_sdk_go.InstanceArray)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// InstanceArrayCreateByLabel indicates an expected call of InstanceArrayCreateByLabel
+func (mr *MockMetalCloudClientMockRecorder) InstanceArrayCreateByLabel(infrastructureLabel, instanceArray interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "InstanceArrayCreateByLabel", reflect.TypeOf((*MockMetalCloudClient)(nil).InstanceArrayCreateByLabel), infrastructureLabel, instanceArray)
+}
+
+// InstanceArrayEdit mocks base method
+func (m *MockMetalCloudClient) InstanceArrayEdit(instanceArrayID int, instanceArrayOperation metal_cloud_sdk_go.InstanceArrayOperation, bSwapExistingInstancesHardware, bKeepDetachingDrives *bool, objServerTypeMatches *[]metal_cloud_sdk_go.ServerType, arrInstancesToBeDeleted *[]int) (*metal_cloud_sdk_go.InstanceArray, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "InstanceArrayEdit", instanceArrayID, instanceArrayOperation, bSwapExistingInstancesHardware, bKeepDetachingDrives, objServerTypeMatches, arrInstancesToBeDeleted)
+	ret0, _ := ret[0].(*metal_cloud_sdk_go.InstanceArray)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// InstanceArrayEdit indicates an expected call of InstanceArrayEdit
+func (mr *MockMetalCloudClientMockRecorder) InstanceArrayEdit(instanceArrayID, instanceArrayOperation, bSwapExistingInstancesHardware, bKeepDetachingDrives, objServerTypeMatches, arrInstancesToBeDeleted interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "InstanceArrayEdit", reflect.TypeOf((*MockMetalCloudClient)(nil).InstanceArrayEdit), instanceArrayID, instanceArrayOperation, bSwapExistingInstancesHardware, bKeepDetachingDrives, objServerTypeMatches, arrInstancesToBeDeleted)
+}
+
+// InstanceArrayEditByLabel mocks base method
+func (m *MockMetalCloudClient) InstanceArrayEditByLabel(instanceArrayLabel string, instanceArrayOperation metal_cloud_sdk_go.InstanceArrayOperation, bSwapExistingInstancesHardware, bKeepDetachingDrives *bool, objServerTypeMatches *[]metal_cloud_sdk_go.ServerType, arrInstancesToBeDeleted *[]int) (*metal_cloud_sdk_go.InstanceArray, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "InstanceArrayEditByLabel", instanceArrayLabel, instanceArrayOperation, bSwapExistingInstancesHardware, bKeepDetachingDrives, objServerTypeMatches, arrInstancesToBeDeleted)
+	ret0, _ := ret[0].(*metal_cloud_sdk_go.InstanceArray)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// InstanceArrayEditByLabel indicates an expected call of InstanceArrayEditByLabel
+func (mr *MockMetalCloudClientMockRecorder) InstanceArrayEditByLabel(instanceArrayLabel, instanceArrayOperation, bSwapExistingInstancesHardware, bKeepDetachingDrives, objServerTypeMatches, arrInstancesToBeDeleted interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "InstanceArrayEditByLabel", reflect.TypeOf((*MockMetalCloudClient)(nil).InstanceArrayEditByLabel), instanceArrayLabel, instanceArrayOperation, bSwapExistingInstancesHardware, bKeepDetachingDrives, objServerTypeMatches, arrInstancesToBeDeleted)
+}
+
+// InstanceArrayDelete mocks base method
+func (m *MockMetalCloudClient) InstanceArrayDelete(instanceArrayID int) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "InstanceArrayDelete", instanceArrayID)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// InstanceArrayDelete indicates an expected call of InstanceArrayDelete
+func (mr *MockMetalCloudClientMockRecorder) InstanceArrayDelete(instanceArrayID interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "InstanceArrayDelete", reflect.TypeOf((*MockMetalCloudClient)(nil).InstanceArrayDelete), instanceArrayID)
+}
+
+// InstanceArrayDeleteByLabel mocks base method
+func (m *MockMetalCloudClient) InstanceArrayDeleteByLabel(instanceArrayLabel string) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "InstanceArrayDeleteByLabel", instanceArrayLabel)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// InstanceArrayDeleteByLabel indicates an expected call of InstanceArrayDeleteByLabel
+func (mr *MockMetalCloudClientMockRecorder) InstanceArrayDeleteByLabel(instanceArrayLabel interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "InstanceArrayDeleteByLabel", reflect.TypeOf((*MockMetalCloudClient)(nil).InstanceArrayDeleteByLabel), instanceArrayLabel)
+}
+
+// GetUserEmail mocks base method
+func (m *MockMetalCloudClient) GetUserEmail() string {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetUserEmail")
+	ret0, _ := ret[0].(string)
+	return ret0
+}
+
+// GetUserEmail indicates an expected call of GetUserEmail
+func (mr *MockMetalCloudClientMockRecorder) GetUserEmail() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetUserEmail", reflect.TypeOf((*MockMetalCloudClient)(nil).GetUserEmail))
+}
+
+// GetEndpoint mocks base method
+func (m *MockMetalCloudClient) GetEndpoint() string {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetEndpoint")
+	ret0, _ := ret[0].(string)
+	return ret0
+}
+
+// GetEndpoint indicates an expected call of GetEndpoint
+func (mr *MockMetalCloudClientMockRecorder) GetEndpoint() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetEndpoint", reflect.TypeOf((*MockMetalCloudClient)(nil).GetEndpoint))
+}
+
 // NetworkGet mocks base method
-func (m *MockMetalCloudClient) NetworkGet(networkID metal_cloud_sdk_go.ID) (*metal_cloud_sdk_go.Network, error) {
+func (m *MockMetalCloudClient) NetworkGet(networkID int) (*metal_cloud_sdk_go.Network, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "NetworkGet", networkID)
 	ret0, _ := ret[0].(*metal_cloud_sdk_go.Network)
@@ -270,8 +606,23 @@ func (mr *MockMetalCloudClientMockRecorder) NetworkGet(networkID interface{}) *g
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "NetworkGet", reflect.TypeOf((*MockMetalCloudClient)(nil).NetworkGet), networkID)
 }
 
+// NetworkGetByLabel mocks base method
+func (m *MockMetalCloudClient) NetworkGetByLabel(networkLabel string) (*metal_cloud_sdk_go.Network, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "NetworkGetByLabel", networkLabel)
+	ret0, _ := ret[0].(*metal_cloud_sdk_go.Network)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// NetworkGetByLabel indicates an expected call of NetworkGetByLabel
+func (mr *MockMetalCloudClientMockRecorder) NetworkGetByLabel(networkLabel interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "NetworkGetByLabel", reflect.TypeOf((*MockMetalCloudClient)(nil).NetworkGetByLabel), networkLabel)
+}
+
 // Networks mocks base method
-func (m *MockMetalCloudClient) Networks(infrastructureID metal_cloud_sdk_go.ID) (*map[string]metal_cloud_sdk_go.Network, error) {
+func (m *MockMetalCloudClient) Networks(infrastructureID int) (*map[string]metal_cloud_sdk_go.Network, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "Networks", infrastructureID)
 	ret0, _ := ret[0].(*map[string]metal_cloud_sdk_go.Network)
@@ -285,8 +636,23 @@ func (mr *MockMetalCloudClientMockRecorder) Networks(infrastructureID interface{
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Networks", reflect.TypeOf((*MockMetalCloudClient)(nil).Networks), infrastructureID)
 }
 
+// NetworksByLabel mocks base method
+func (m *MockMetalCloudClient) NetworksByLabel(infrastructureLabel string) (*map[string]metal_cloud_sdk_go.Network, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "NetworksByLabel", infrastructureLabel)
+	ret0, _ := ret[0].(*map[string]metal_cloud_sdk_go.Network)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// NetworksByLabel indicates an expected call of NetworksByLabel
+func (mr *MockMetalCloudClientMockRecorder) NetworksByLabel(infrastructureLabel interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "NetworksByLabel", reflect.TypeOf((*MockMetalCloudClient)(nil).NetworksByLabel), infrastructureLabel)
+}
+
 // NetworkCreate mocks base method
-func (m *MockMetalCloudClient) NetworkCreate(infrastructureID metal_cloud_sdk_go.ID, network metal_cloud_sdk_go.Network) (*metal_cloud_sdk_go.Network, error) {
+func (m *MockMetalCloudClient) NetworkCreate(infrastructureID int, network metal_cloud_sdk_go.Network) (*metal_cloud_sdk_go.Network, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "NetworkCreate", infrastructureID, network)
 	ret0, _ := ret[0].(*metal_cloud_sdk_go.Network)
@@ -300,8 +666,23 @@ func (mr *MockMetalCloudClientMockRecorder) NetworkCreate(infrastructureID, netw
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "NetworkCreate", reflect.TypeOf((*MockMetalCloudClient)(nil).NetworkCreate), infrastructureID, network)
 }
 
+// NetworkCreateByLabel mocks base method
+func (m *MockMetalCloudClient) NetworkCreateByLabel(infrastructureLabel string, network metal_cloud_sdk_go.Network) (*metal_cloud_sdk_go.Network, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "NetworkCreateByLabel", infrastructureLabel, network)
+	ret0, _ := ret[0].(*metal_cloud_sdk_go.Network)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// NetworkCreateByLabel indicates an expected call of NetworkCreateByLabel
+func (mr *MockMetalCloudClientMockRecorder) NetworkCreateByLabel(infrastructureLabel, network interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "NetworkCreateByLabel", reflect.TypeOf((*MockMetalCloudClient)(nil).NetworkCreateByLabel), infrastructureLabel, network)
+}
+
 // NetworkEdit mocks base method
-func (m *MockMetalCloudClient) NetworkEdit(networkID metal_cloud_sdk_go.ID, networkOperation metal_cloud_sdk_go.NetworkOperation) (*metal_cloud_sdk_go.Network, error) {
+func (m *MockMetalCloudClient) NetworkEdit(networkID int, networkOperation metal_cloud_sdk_go.NetworkOperation) (*metal_cloud_sdk_go.Network, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "NetworkEdit", networkID, networkOperation)
 	ret0, _ := ret[0].(*metal_cloud_sdk_go.Network)
@@ -315,8 +696,23 @@ func (mr *MockMetalCloudClientMockRecorder) NetworkEdit(networkID, networkOperat
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "NetworkEdit", reflect.TypeOf((*MockMetalCloudClient)(nil).NetworkEdit), networkID, networkOperation)
 }
 
+// NetworkEditByLabel mocks base method
+func (m *MockMetalCloudClient) NetworkEditByLabel(networkLabel string, networkOperation metal_cloud_sdk_go.NetworkOperation) (*metal_cloud_sdk_go.Network, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "NetworkEditByLabel", networkLabel, networkOperation)
+	ret0, _ := ret[0].(*metal_cloud_sdk_go.Network)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// NetworkEditByLabel indicates an expected call of NetworkEditByLabel
+func (mr *MockMetalCloudClientMockRecorder) NetworkEditByLabel(networkLabel, networkOperation interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "NetworkEditByLabel", reflect.TypeOf((*MockMetalCloudClient)(nil).NetworkEditByLabel), networkLabel, networkOperation)
+}
+
 // NetworkDelete mocks base method
-func (m *MockMetalCloudClient) NetworkDelete(networkID metal_cloud_sdk_go.ID) error {
+func (m *MockMetalCloudClient) NetworkDelete(networkID int) error {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "NetworkDelete", networkID)
 	ret0, _ := ret[0].(error)
@@ -329,8 +725,22 @@ func (mr *MockMetalCloudClientMockRecorder) NetworkDelete(networkID interface{})
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "NetworkDelete", reflect.TypeOf((*MockMetalCloudClient)(nil).NetworkDelete), networkID)
 }
 
+// NetworkDeleteByLabel mocks base method
+func (m *MockMetalCloudClient) NetworkDeleteByLabel(networkLabel string) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "NetworkDeleteByLabel", networkLabel)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// NetworkDeleteByLabel indicates an expected call of NetworkDeleteByLabel
+func (mr *MockMetalCloudClientMockRecorder) NetworkDeleteByLabel(networkLabel interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "NetworkDeleteByLabel", reflect.TypeOf((*MockMetalCloudClient)(nil).NetworkDeleteByLabel), networkLabel)
+}
+
 // NetworkJoin mocks base method
-func (m *MockMetalCloudClient) NetworkJoin(networkID, networkToBeDeletedID metal_cloud_sdk_go.ID) error {
+func (m *MockMetalCloudClient) NetworkJoin(networkID, networkToBeDeletedID int) error {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "NetworkJoin", networkID, networkToBeDeletedID)
 	ret0, _ := ret[0].(error)
@@ -343,34 +753,18 @@ func (mr *MockMetalCloudClientMockRecorder) NetworkJoin(networkID, networkToBeDe
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "NetworkJoin", reflect.TypeOf((*MockMetalCloudClient)(nil).NetworkJoin), networkID, networkToBeDeletedID)
 }
 
-// ServerTypeGet mocks base method
-func (m *MockMetalCloudClient) ServerTypeGet(serverTypeID metal_cloud_sdk_go.ID) (*metal_cloud_sdk_go.ServerType, error) {
+// NetworkJoinByLabel mocks base method
+func (m *MockMetalCloudClient) NetworkJoinByLabel(networkLabel string, networkToBeDeletedID int) error {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "ServerTypeGet", serverTypeID)
-	ret0, _ := ret[0].(*metal_cloud_sdk_go.ServerType)
-	ret1, _ := ret[1].(error)
-	return ret0, ret1
+	ret := m.ctrl.Call(m, "NetworkJoinByLabel", networkLabel, networkToBeDeletedID)
+	ret0, _ := ret[0].(error)
+	return ret0
 }
 
-// ServerTypeGet indicates an expected call of ServerTypeGet
-func (mr *MockMetalCloudClientMockRecorder) ServerTypeGet(serverTypeID interface{}) *gomock.Call {
+// NetworkJoinByLabel indicates an expected call of NetworkJoinByLabel
+func (mr *MockMetalCloudClientMockRecorder) NetworkJoinByLabel(networkLabel, networkToBeDeletedID interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ServerTypeGet", reflect.TypeOf((*MockMetalCloudClient)(nil).ServerTypeGet), serverTypeID)
-}
-
-// ServerTypesMatches mocks base method
-func (m *MockMetalCloudClient) ServerTypesMatches(infrastructureID metal_cloud_sdk_go.ID, hardwareConfiguration metal_cloud_sdk_go.HardwareConfiguration, instanceArrayID *int, bAllowServerSwap bool) (*map[string]metal_cloud_sdk_go.ServerType, error) {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "ServerTypesMatches", infrastructureID, hardwareConfiguration, instanceArrayID, bAllowServerSwap)
-	ret0, _ := ret[0].(*map[string]metal_cloud_sdk_go.ServerType)
-	ret1, _ := ret[1].(error)
-	return ret0, ret1
-}
-
-// ServerTypesMatches indicates an expected call of ServerTypesMatches
-func (mr *MockMetalCloudClientMockRecorder) ServerTypesMatches(infrastructureID, hardwareConfiguration, instanceArrayID, bAllowServerSwap interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ServerTypesMatches", reflect.TypeOf((*MockMetalCloudClient)(nil).ServerTypesMatches), infrastructureID, hardwareConfiguration, instanceArrayID, bAllowServerSwap)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "NetworkJoinByLabel", reflect.TypeOf((*MockMetalCloudClient)(nil).NetworkJoinByLabel), networkLabel, networkToBeDeletedID)
 }
 
 // ServerTypesMatchHardwareConfiguration mocks base method
@@ -418,6 +812,66 @@ func (mr *MockMetalCloudClientMockRecorder) ServerTypes(datacenterName, bOnlyAva
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ServerTypes", reflect.TypeOf((*MockMetalCloudClient)(nil).ServerTypes), datacenterName, bOnlyAvailable)
 }
 
+// ServerTypeGet mocks base method
+func (m *MockMetalCloudClient) ServerTypeGet(serverTypeID int) (*metal_cloud_sdk_go.ServerType, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "ServerTypeGet", serverTypeID)
+	ret0, _ := ret[0].(*metal_cloud_sdk_go.ServerType)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// ServerTypeGet indicates an expected call of ServerTypeGet
+func (mr *MockMetalCloudClientMockRecorder) ServerTypeGet(serverTypeID interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ServerTypeGet", reflect.TypeOf((*MockMetalCloudClient)(nil).ServerTypeGet), serverTypeID)
+}
+
+// ServerTypeGetByLabel mocks base method
+func (m *MockMetalCloudClient) ServerTypeGetByLabel(serverTypeLabel string) (*metal_cloud_sdk_go.ServerType, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "ServerTypeGetByLabel", serverTypeLabel)
+	ret0, _ := ret[0].(*metal_cloud_sdk_go.ServerType)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// ServerTypeGetByLabel indicates an expected call of ServerTypeGetByLabel
+func (mr *MockMetalCloudClientMockRecorder) ServerTypeGetByLabel(serverTypeLabel interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ServerTypeGetByLabel", reflect.TypeOf((*MockMetalCloudClient)(nil).ServerTypeGetByLabel), serverTypeLabel)
+}
+
+// ServerTypesMatches mocks base method
+func (m *MockMetalCloudClient) ServerTypesMatches(infrastructureID int, hardwareConfiguration metal_cloud_sdk_go.HardwareConfiguration, instanceArrayID *int, bAllowServerSwap bool) (*map[string]metal_cloud_sdk_go.ServerType, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "ServerTypesMatches", infrastructureID, hardwareConfiguration, instanceArrayID, bAllowServerSwap)
+	ret0, _ := ret[0].(*map[string]metal_cloud_sdk_go.ServerType)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// ServerTypesMatches indicates an expected call of ServerTypesMatches
+func (mr *MockMetalCloudClientMockRecorder) ServerTypesMatches(infrastructureID, hardwareConfiguration, instanceArrayID, bAllowServerSwap interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ServerTypesMatches", reflect.TypeOf((*MockMetalCloudClient)(nil).ServerTypesMatches), infrastructureID, hardwareConfiguration, instanceArrayID, bAllowServerSwap)
+}
+
+// ServerTypesMatchesByLabel mocks base method
+func (m *MockMetalCloudClient) ServerTypesMatchesByLabel(infrastructureLabel string, hardwareConfiguration metal_cloud_sdk_go.HardwareConfiguration, instanceArrayID *int, bAllowServerSwap bool) (*map[string]metal_cloud_sdk_go.ServerType, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "ServerTypesMatchesByLabel", infrastructureLabel, hardwareConfiguration, instanceArrayID, bAllowServerSwap)
+	ret0, _ := ret[0].(*map[string]metal_cloud_sdk_go.ServerType)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// ServerTypesMatchesByLabel indicates an expected call of ServerTypesMatchesByLabel
+func (mr *MockMetalCloudClientMockRecorder) ServerTypesMatchesByLabel(infrastructureLabel, hardwareConfiguration, instanceArrayID, bAllowServerSwap interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ServerTypesMatchesByLabel", reflect.TypeOf((*MockMetalCloudClient)(nil).ServerTypesMatchesByLabel), infrastructureLabel, hardwareConfiguration, instanceArrayID, bAllowServerSwap)
+}
+
 // VolumeTemplates mocks base method
 func (m *MockMetalCloudClient) VolumeTemplates() (*map[string]metal_cloud_sdk_go.VolumeTemplate, error) {
 	m.ctrl.T.Helper()
@@ -434,7 +888,7 @@ func (mr *MockMetalCloudClientMockRecorder) VolumeTemplates() *gomock.Call {
 }
 
 // VolumeTemplateGet mocks base method
-func (m *MockMetalCloudClient) VolumeTemplateGet(volumeTemplateID metal_cloud_sdk_go.ID) (*metal_cloud_sdk_go.VolumeTemplate, error) {
+func (m *MockMetalCloudClient) VolumeTemplateGet(volumeTemplateID int) (*metal_cloud_sdk_go.VolumeTemplate, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "VolumeTemplateGet", volumeTemplateID)
 	ret0, _ := ret[0].(*metal_cloud_sdk_go.VolumeTemplate)
@@ -448,76 +902,17 @@ func (mr *MockMetalCloudClientMockRecorder) VolumeTemplateGet(volumeTemplateID i
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "VolumeTemplateGet", reflect.TypeOf((*MockMetalCloudClient)(nil).VolumeTemplateGet), volumeTemplateID)
 }
 
-// DriveArrays mocks base method
-func (m *MockMetalCloudClient) DriveArrays(infrastructureID metal_cloud_sdk_go.ID) (*map[string]metal_cloud_sdk_go.DriveArray, error) {
+// VolumeTemplateGetByLabel mocks base method
+func (m *MockMetalCloudClient) VolumeTemplateGetByLabel(volumeTemplateLabel string) (*metal_cloud_sdk_go.VolumeTemplate, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "DriveArrays", infrastructureID)
-	ret0, _ := ret[0].(*map[string]metal_cloud_sdk_go.DriveArray)
+	ret := m.ctrl.Call(m, "VolumeTemplateGetByLabel", volumeTemplateLabel)
+	ret0, _ := ret[0].(*metal_cloud_sdk_go.VolumeTemplate)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
-// DriveArrays indicates an expected call of DriveArrays
-func (mr *MockMetalCloudClientMockRecorder) DriveArrays(infrastructureID interface{}) *gomock.Call {
+// VolumeTemplateGetByLabel indicates an expected call of VolumeTemplateGetByLabel
+func (mr *MockMetalCloudClientMockRecorder) VolumeTemplateGetByLabel(volumeTemplateLabel interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "DriveArrays", reflect.TypeOf((*MockMetalCloudClient)(nil).DriveArrays), infrastructureID)
-}
-
-// DriveArrayGet mocks base method
-func (m *MockMetalCloudClient) DriveArrayGet(driveArrayID metal_cloud_sdk_go.ID) (*metal_cloud_sdk_go.DriveArray, error) {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "DriveArrayGet", driveArrayID)
-	ret0, _ := ret[0].(*metal_cloud_sdk_go.DriveArray)
-	ret1, _ := ret[1].(error)
-	return ret0, ret1
-}
-
-// DriveArrayGet indicates an expected call of DriveArrayGet
-func (mr *MockMetalCloudClientMockRecorder) DriveArrayGet(driveArrayID interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "DriveArrayGet", reflect.TypeOf((*MockMetalCloudClient)(nil).DriveArrayGet), driveArrayID)
-}
-
-// DriveArrayCreate mocks base method
-func (m *MockMetalCloudClient) DriveArrayCreate(infrastructureID metal_cloud_sdk_go.ID, driveArray metal_cloud_sdk_go.DriveArray) (*metal_cloud_sdk_go.DriveArray, error) {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "DriveArrayCreate", infrastructureID, driveArray)
-	ret0, _ := ret[0].(*metal_cloud_sdk_go.DriveArray)
-	ret1, _ := ret[1].(error)
-	return ret0, ret1
-}
-
-// DriveArrayCreate indicates an expected call of DriveArrayCreate
-func (mr *MockMetalCloudClientMockRecorder) DriveArrayCreate(infrastructureID, driveArray interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "DriveArrayCreate", reflect.TypeOf((*MockMetalCloudClient)(nil).DriveArrayCreate), infrastructureID, driveArray)
-}
-
-// DriveArrayEdit mocks base method
-func (m *MockMetalCloudClient) DriveArrayEdit(driveArrayID metal_cloud_sdk_go.ID, driveArrayOperation metal_cloud_sdk_go.DriveArrayOperation) (*metal_cloud_sdk_go.DriveArray, error) {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "DriveArrayEdit", driveArrayID, driveArrayOperation)
-	ret0, _ := ret[0].(*metal_cloud_sdk_go.DriveArray)
-	ret1, _ := ret[1].(error)
-	return ret0, ret1
-}
-
-// DriveArrayEdit indicates an expected call of DriveArrayEdit
-func (mr *MockMetalCloudClientMockRecorder) DriveArrayEdit(driveArrayID, driveArrayOperation interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "DriveArrayEdit", reflect.TypeOf((*MockMetalCloudClient)(nil).DriveArrayEdit), driveArrayID, driveArrayOperation)
-}
-
-// DriveArrayDelete mocks base method
-func (m *MockMetalCloudClient) DriveArrayDelete(driveArrayID metal_cloud_sdk_go.ID) error {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "DriveArrayDelete", driveArrayID)
-	ret0, _ := ret[0].(error)
-	return ret0
-}
-
-// DriveArrayDelete indicates an expected call of DriveArrayDelete
-func (mr *MockMetalCloudClientMockRecorder) DriveArrayDelete(driveArrayID interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "DriveArrayDelete", reflect.TypeOf((*MockMetalCloudClient)(nil).DriveArrayDelete), driveArrayID)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "VolumeTemplateGetByLabel", reflect.TypeOf((*MockMetalCloudClient)(nil).VolumeTemplateGetByLabel), volumeTemplateLabel)
 }

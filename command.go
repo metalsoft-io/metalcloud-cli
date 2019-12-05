@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"strconv"
 
-	metalcloud "github.com/bigstepinc/metal-cloud-sdk-go"
 	interfaces "github.com/bigstepinc/metalcloud-cli/interfaces"
 )
 
@@ -32,22 +31,85 @@ func sameCommand(a *Command, b *Command) bool {
 const _nilDefaultStr = "__NIL__"
 const _nilDefaultInt = -14234
 
-func getIDFromCommand(c *Command, label string) (metalcloud.ID, error) {
-	v := c.Arguments[label]
+//confirms command
+func confirmCommand(c *Command, f func() string) bool {
 
-	if v == nil {
-		return nil, fmt.Errorf("id is required")
+	if c.Arguments["autoconfirm"] != nil && *c.Arguments["autoconfirm"].(*bool) == true {
+		return true
 	}
 
+	return requestConfirmation(f())
+}
+
+//getPtrValueIfExistsOk returns a string or an int from a map of pointers if the key exists
+func getPtrValueIfExistsOk(m map[string]interface{}, key string) (interface{}, bool) {
+
+	if v := m[key]; v != nil {
+		switch v.(type) {
+		case *int:
+			if *v.(*int) != _nilDefaultInt {
+				return *v.(*int), true
+			}
+		case *string:
+			if *v.(*string) != _nilDefaultStr {
+				return *v.(*string), true
+			}
+		}
+	}
+	return nil, false
+}
+
+//getIDFromStringOk returns the id and true if valid number
+func getIDFromStringOk(s string) (int, bool) {
+	i, err := strconv.Atoi(s)
+	return i, err == nil
+}
+
+//verifyParam returns error if param is not present
+func getParam(c *Command, label string, name string) (interface{}, error) {
+	v := c.Arguments[label]
+	if v == nil {
+		return nil, fmt.Errorf("-%s cannot be nil", name)
+	}
 	switch v.(type) {
 	case *int:
-		return *c.Arguments[label].(*int), nil
-	case *string:
-		if id, err := strconv.Atoi(*v.(*string)); err == nil {
-			return id, nil
+		if *v.(*int) <= 0 {
+			return nil, fmt.Errorf("-%s cannot be <=0", name)
 		}
-		return *c.Arguments[label].(*string), nil
+		if *v.(*int) == _nilDefaultInt {
+			return nil, fmt.Errorf("-%s is required", name)
+		}
+	case *string:
+		if *v.(*string) == "" {
+			return nil, fmt.Errorf("-%s cannot be empty", name)
+		}
+		if *v.(*string) == _nilDefaultStr {
+			return nil, fmt.Errorf("-%s is required", name)
+		}
 	}
+	return v, nil
+}
 
-	return nil, fmt.Errorf("could not determinte the type of the passed ID")
+//idOrLabel returns an int or a string contained in the interface. The last param is true if int is returned.
+func idOrLabel(v interface{}) (int, string, bool) {
+	switch v.(type) {
+	case *int:
+		return *v.(*int), "", true
+	case *string:
+		if i, ok := getIDFromStringOk(*v.(*string)); ok {
+			return i, "", true
+		}
+		return 0, *v.(*string), false
+	}
+	return -1, "", false
+}
+
+type getIDOrDoFunc func(i string) (int, error)
+
+func getIDOrDo(v interface{}, f getIDOrDoFunc) (int, error) {
+	id, label, isID := idOrLabel(v)
+	if !isID {
+		return f(label)
+	}
+	return id, nil
 }

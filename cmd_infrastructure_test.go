@@ -218,8 +218,6 @@ func TestInfrastructureDeleteCmd(t *testing.T) {
 	ret, err = infrastructureDeleteCmd(&cmd, client)
 
 	Expect(err).NotTo(BeNil()) //should throw error indicating confirmation not given
-	Expect(err.Error()).To(ContainSubstring("id is required"))
-
 }
 
 func TestInfrastructureGetCmd(t *testing.T) {
@@ -284,21 +282,35 @@ func TestInfrastructureGetCmd(t *testing.T) {
 	client := helper.NewMockMetalCloudClient(ctrl)
 
 	//given this return the other
-	e := map[interface{}]*metalcloud.Infrastructure{
-		infra.InfrastructureID:     &infra,
-		infra2.InfrastructureID:    &infra,
-		infra.InfrastructureLabel:  &infra,
-		infra2.InfrastructureLabel: &infra2,
+	infraListByID := map[interface{}]*metalcloud.Infrastructure{
+		infra.InfrastructureID:  &infra,
+		infra2.InfrastructureID: &infra,
 	}
 
 	client.EXPECT().
 		InfrastructureGet(gomock.Any()).
 		DoAndReturn(
-			func(i metalcloud.ID) (*metalcloud.Infrastructure, error) {
-				if intf, ok := e[i]; ok {
+			func(i int) (*metalcloud.Infrastructure, error) {
+				if intf, ok := infraListByID[i]; ok {
 					return intf, nil
 				}
 				return nil, fmt.Errorf("could not find infra with id %v", i)
+			}).
+		AnyTimes()
+
+	infraListByLabel := map[interface{}]*metalcloud.Infrastructure{
+		infra.InfrastructureLabel:  &infra,
+		infra2.InfrastructureLabel: &infra2,
+	}
+
+	client.EXPECT().
+		InfrastructureGetByLabel(gomock.Any()).
+		DoAndReturn(
+			func(label string) (*metalcloud.Infrastructure, error) {
+				if intf, ok := infraListByLabel[label]; ok {
+					return intf, nil
+				}
+				return nil, fmt.Errorf("could not find infra with label %v", label)
 			}).
 		AnyTimes()
 
@@ -346,16 +358,6 @@ func TestInfrastructureGetCmd(t *testing.T) {
 	Expect(r["LABEL"].(string)).To(Equal(iao.InstanceArrayLabel))
 
 	//test with label instead of id
-
-	infraList := map[string]metalcloud.Infrastructure{
-		infra.InfrastructureLabel:  infra,
-		infra2.InfrastructureLabel: infra2,
-	}
-
-	client.EXPECT().
-		Infrastructures().
-		Return(&infraList, nil).
-		AnyTimes()
 
 	cmd = Command{
 		Arguments: map[string]interface{}{
@@ -473,97 +475,4 @@ func TestInfrastructureListCmd(t *testing.T) {
 		Equal(infra.InfrastructureOperation.InfrastructureLabel),
 		Equal(infra2.InfrastructureOperation.InfrastructureLabel),
 	))
-}
-
-func TestGetInfrastructureFromCommand(t *testing.T) {
-	RegisterTestingT(t)
-	ctrl := gomock.NewController(t)
-
-	io := metalcloud.InfrastructureOperation{
-		InfrastructureLabel: "testinfra",
-	}
-
-	infra := metalcloud.Infrastructure{
-		InfrastructureID:        10002,
-		InfrastructureLabel:     "testinfra",
-		InfrastructureOperation: io,
-	}
-
-	io2 := metalcloud.InfrastructureOperation{
-		InfrastructureLabel: "testinfra2",
-	}
-
-	infra2 := metalcloud.Infrastructure{
-		InfrastructureID:        10003,
-		InfrastructureLabel:     "testinfra2",
-		InfrastructureOperation: io2,
-	}
-
-	io3 := metalcloud.InfrastructureOperation{
-		InfrastructureLabel: "testinfra3",
-	}
-
-	infra3 := metalcloud.Infrastructure{
-		InfrastructureID:        10004,
-		InfrastructureLabel:     "testinfra3",
-		InfrastructureOperation: io3,
-	}
-
-	client := helper.NewMockMetalCloudClient(ctrl)
-
-	//given this return the other
-	e := map[interface{}]*metalcloud.Infrastructure{
-		infra.InfrastructureID:     &infra,
-		infra2.InfrastructureID:    &infra,
-		infra.InfrastructureLabel:  &infra,
-		infra2.InfrastructureLabel: &infra2,
-	}
-
-	client.EXPECT().
-		InfrastructureGet(gomock.Any()).
-		DoAndReturn(
-			func(i metalcloud.ID) (*metalcloud.Infrastructure, error) {
-				if intf, ok := e[i]; ok {
-					return intf, nil
-				}
-				return nil, fmt.Errorf("could not find infra with id %v", i)
-			}).
-		AnyTimes()
-
-	infraListAmbigous := map[string]metalcloud.Infrastructure{
-		infra.InfrastructureLabel:        infra,
-		infra2.InfrastructureLabel:       infra2,
-		infra3.InfrastructureLabel + "1": infra3,
-	}
-
-	client.EXPECT().
-		Infrastructures().
-		Return(&infraListAmbigous, nil).
-		AnyTimes()
-
-	//check with id
-	cmd := Command{
-		Arguments: map[string]interface{}{
-			"infrastructure_id_or_label": &infra.InfrastructureID,
-		},
-	}
-
-	i, err := getInfrastructureFromCommand(&cmd, client)
-	Expect(err).To(BeNil())
-	Expect(i.InfrastructureID).To(Equal(infra.InfrastructureID))
-
-	//check with wrong label
-	blablah := "asdasdasdasd"
-	cmd.Arguments["infrastructure_id_or_label"] = &blablah
-
-	i, err = getInfrastructureFromCommand(&cmd, client)
-	Expect(err).NotTo(BeNil())
-
-	//check with correct label
-	cmd.Arguments["infrastructure_id_or_label"] = &infra2.InfrastructureLabel
-
-	i, err = getInfrastructureFromCommand(&cmd, client)
-	Expect(err).To(BeNil())
-	Expect(i.InfrastructureID).To(Equal(infra2.InfrastructureID))
-
 }

@@ -1,7 +1,6 @@
 package main
 
 import (
-	"bufio"
 	"flag"
 	"fmt"
 	"os"
@@ -238,22 +237,39 @@ func infrastructureListCmd(c *Command, client interfaces.MetalCloudClient) (stri
 	return sb.String(), nil
 }
 
-func infrastructureDeleteCmd(c *Command, client interfaces.MetalCloudClient) (string, error) {
+type infrastructureConfirmAndDoFunc func(infraID int, c *Command, client interfaces.MetalCloudClient) (string, error)
 
-	infrastructureID, err := getIDFromCommand(c, "infrastructure_id_or_label")
+//infrastructureConfirmAndDo asks for confirmation and executes the given function
+func infrastructureConfirmAndDo(operation string, c *Command, client interfaces.MetalCloudClient, f infrastructureConfirmAndDoFunc) (string, error) {
+
+	m, err := getParam(c, "infrastructure_id_or_label", "infra")
 	if err != nil {
 		return "", err
 	}
+
+	infraID, err := getIDOrDo(m, func(label string) (int, error) {
+		ia, err := client.InfrastructureGetByLabel(label)
+		if err != nil {
+			return 0, err
+		}
+		return ia.InfrastructureID, nil
+	})
+	if err != nil {
+		return "", err
+	}
+
 	confirm := false
 
 	if c.Arguments["autoconfirm"] != nil && *c.Arguments["autoconfirm"].(*bool) == true {
 		confirm = true
 	} else {
-		retInfra, err := client.InfrastructureGet(infrastructureID)
+
+		retInfra, err := client.InfrastructureGet(infraID)
 		if err != nil {
 			return "", err
 		}
-		confirmationMessage := fmt.Sprintf("Deleting infrastructure %s (%d). Are you sure? Type \"yes\" to continue:", retInfra.InfrastructureLabel, retInfra.InfrastructureID)
+
+		confirmationMessage := fmt.Sprintf("%s infrastructure %s (%d). Are you sure? Type \"yes\" to continue:", operation, retInfra.InfrastructureLabel, retInfra.InfrastructureID)
 
 		//this is simply so that we don't output a text on the command line under go test
 		if strings.HasSuffix(os.Args[0], ".test") {
@@ -267,101 +283,55 @@ func infrastructureDeleteCmd(c *Command, client interfaces.MetalCloudClient) (st
 		return "", fmt.Errorf("Operation not confirmed. Aborting")
 	}
 
-	err = client.InfrastructureDelete(infrastructureID)
+	return f(infraID, c, client)
+}
 
-	return "", err
+func infrastructureDeleteCmd(c *Command, client interfaces.MetalCloudClient) (string, error) {
+	return infrastructureConfirmAndDo("Delete", c, client,
+		func(infraID int, c *Command, client interfaces.MetalCloudClient) (string, error) {
+			return "", client.InfrastructureDelete(infraID)
+		})
 }
 
 func infrastructureDeployCmd(c *Command, client interfaces.MetalCloudClient) (string, error) {
 
-	infrastructureID, err := getIDFromCommand(c, "infrastructure_id_or_label")
-	if err != nil {
-		return "", err
-	}
+	return infrastructureConfirmAndDo("Deploy", c, client,
+		func(infraID int, c *Command, client interfaces.MetalCloudClient) (string, error) {
 
-	confirm := false
+			timeout := 180
+			if c.Arguments["soft_shutdown_timeout_seconds"] != nil {
+				timeout = *c.Arguments["soft_shutdown_timeout_seconds"].(*int)
+			}
 
-	if c.Arguments["autoconfirm"] != nil && *c.Arguments["autoconfirm"].(*bool) {
-		confirm = true
-	} else {
-		retInfra, err := client.InfrastructureGet(infrastructureID)
-		if err != nil {
-			return "", err
-		}
-		confirmationMessage := fmt.Sprintf("Deploying infrastructure %s (%d). Are you sure? Type \"yes\" to continue:", retInfra.InfrastructureLabel, retInfra.InfrastructureID)
-		//this is simply so that we don't output a text on the command line under go test
-		if strings.HasSuffix(os.Args[0], ".test") {
-			confirmationMessage = ""
-		}
+			NoHardShutdownAfterTimeout := c.Arguments["no_hard_shutdown_after_timeout"] != nil && *c.Arguments["no_hard_shutdown_after_timeout"].(*bool)
+			NoAttemptSoftShutdown := c.Arguments["no_attempt_soft_shutdown"] != nil && *c.Arguments["no_attempt_soft_shutdown"].(*bool)
 
-		confirm = requestConfirmation(confirmationMessage)
-	}
+			shutDownOptions := metalcloud.ShutdownOptions{
+				HardShutdownAfterTimeout:   !NoHardShutdownAfterTimeout,
+				AttemptSoftShutdown:        !NoAttemptSoftShutdown,
+				SoftShutdownTimeoutSeconds: timeout,
+			}
 
-	if !confirm {
-		return "", fmt.Errorf("Operation not confirmed. Aborting")
-	}
-
-	timeout := 180
-	if c.Arguments["soft_shutdown_timeout_seconds"] != nil {
-		timeout = *c.Arguments["soft_shutdown_timeout_seconds"].(*int)
-	}
-
-	NoHardShutdownAfterTimeout := c.Arguments["no_hard_shutdown_after_timeout"] != nil && *c.Arguments["no_hard_shutdown_after_timeout"].(*bool)
-	NoAttemptSoftShutdown := c.Arguments["no_attempt_soft_shutdown"] != nil && *c.Arguments["no_attempt_soft_shutdown"].(*bool)
-
-	shutDownOptions := metalcloud.ShutdownOptions{
-		HardShutdownAfterTimeout:   !NoHardShutdownAfterTimeout,
-		AttemptSoftShutdown:        !NoAttemptSoftShutdown,
-		SoftShutdownTimeoutSeconds: timeout,
-	}
-
-	err = client.InfrastructureDeploy(
-		infrastructureID,
-		shutDownOptions,
-		c.Arguments["allow_data_loss"] != nil && *c.Arguments["allow_data_loss"].(*bool),
-		c.Arguments["skip_ansible"] != nil && *c.Arguments["skip_ansible"].(*bool),
-	)
-
-	return "", err
+			return "", client.InfrastructureDeploy(
+				infraID,
+				shutDownOptions,
+				c.Arguments["allow_data_loss"] != nil && *c.Arguments["allow_data_loss"].(*bool),
+				c.Arguments["skip_ansible"] != nil && *c.Arguments["skip_ansible"].(*bool),
+			)
+		})
 }
 
 func infrastructureRevertCmd(c *Command, client interfaces.MetalCloudClient) (string, error) {
 
-	infrastructureID, err := getIDFromCommand(c, "infrastructure_id_or_label")
-	if err != nil {
-		return "", err
-	}
-
-	confirm := false
-
-	if c.Arguments["autoconfirm"] != nil && *c.Arguments["autoconfirm"].(*bool) == true {
-		confirm = true
-	} else {
-		retInfra, err := client.InfrastructureGet(infrastructureID)
-		if err != nil {
-			return "", err
-		}
-		fmt.Printf("Reverting infrastructure %s (%d) to the deployed state. Are you sure? Type \"yes\" to continue:", retInfra.InfrastructureLabel, retInfra.InfrastructureID)
-		reader := bufio.NewReader(os.Stdin)
-		yes, _ := reader.ReadString('\n')
-
-		if yes == "yes\n" {
-			confirm = true
-		}
-	}
-
-	if !confirm {
-		return "", fmt.Errorf("Operation not confirmed. Aborting")
-	}
-
-	err = client.InfrastructureOperationCancel(infrastructureID)
-
-	return "", err
+	return infrastructureConfirmAndDo("Deploy", c, client,
+		func(infraID int, c *Command, client interfaces.MetalCloudClient) (string, error) {
+			return "", client.InfrastructureOperationCancel(infraID)
+		})
 }
 
 func infrastructureGetCmd(c *Command, client interfaces.MetalCloudClient) (string, error) {
 
-	retInfra, err := getInfrastructureFromCommand(c, client)
+	retInfra, err := getInfrastructureFromCommand("id", c, client)
 	if err != nil {
 		return "", err
 	}
@@ -525,13 +495,39 @@ func infrastructureGetCmd(c *Command, client interfaces.MetalCloudClient) (strin
 	return sb.String(), nil
 }
 
-func getInfrastructureFromCommand(c *Command, client interfaces.MetalCloudClient) (*metalcloud.Infrastructure, error) {
+//getInfrastructureIDFromCommand returns an InfrastructureID using the infrastructure_id_or_label argument, without executing infratructureGet.
+//The function call GetByLabel to get the actual ID when a label is passed but it saves one call to infrastructureGet when only the id is needed.
+func getInfrastructureIDFromCommand(paramName string, c *Command, client interfaces.MetalCloudClient) (int, error) {
+	m, err := getParam(c, "infrastructure_id_or_label", paramName)
+	if err != nil {
+		return 0, err
+	}
 
-	infraID, err := getIDFromCommand(c, "infrastructure_id_or_label")
+	id, label, isID := idOrLabel(m)
 
+	if !isID {
+		retInfra, err := client.InfrastructureGetByLabel(label)
+		if err != nil {
+			return retInfra.InfrastructureID, nil
+		}
+	}
+
+	return id, nil
+}
+
+//getInfrastructureFromCommand returns an Infrastructure object using the infrastructure_id_or_label argument
+func getInfrastructureFromCommand(paramName string, c *Command, client interfaces.MetalCloudClient) (*metalcloud.Infrastructure, error) {
+
+	m, err := getParam(c, "infrastructure_id_or_label", paramName)
 	if err != nil {
 		return nil, err
 	}
 
-	return client.InfrastructureGet(infraID)
+	id, label, isID := idOrLabel(m)
+
+	if isID {
+		return client.InfrastructureGet(id)
+	}
+
+	return client.InfrastructureGetByLabel(label)
 }

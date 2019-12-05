@@ -261,7 +261,7 @@ Command: delete firewall_rule      Remove instance array firewall rule (alternat
 Generating metalclient interface from the metalcloud-sdk-go:
 ```
 go get github.com/vburenin/ifacemaker
-ifacemaker -f /Users/alex/go/src/github.com/bigstepinc/metal-cloud-sdk-go/drive_array.go -i MetalCloudClient -p metalcloud -s Client
+ifacemaker -f '/Users/alex/go/src/github.com/bigstepinc/metal-cloud-sdk-go/*.go' -i MetalCloudClient -p metalcloud -s Client
 ```
 
 

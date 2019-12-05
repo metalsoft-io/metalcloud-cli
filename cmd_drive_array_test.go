@@ -40,12 +40,17 @@ func TestDriveArrayCreate(t *testing.T) {
 		Return(&infra, nil).
 		AnyTimes()
 
+	client.EXPECT().
+		InfrastructureGetByLabel(infra.InfrastructureLabel).
+		Return(&infra, nil).
+		AnyTimes()
+
 	cmd := Command{
 		Arguments: map[string]interface{}{
-			"infrastructure_id_or_label": &infra.InfrastructureID,
-			"drive_array_label":          &da.DriveArrayLabel,
-			"volume_template_id":         &i,
-			"instance_array_id":          &i,
+			"infrastructure_id_or_label":  &infra.InfrastructureID,
+			"drive_array_label":           &da.DriveArrayLabel,
+			"volume_template_id_or_label": &i,
+			"instance_array_id_or_label":  &i,
 		},
 	}
 
@@ -72,11 +77,11 @@ func TestDriveArrayCreate(t *testing.T) {
 	bTrue := true
 	cmd = Command{
 		Arguments: map[string]interface{}{
-			"infrastructure_id_or_label": &infra.InfrastructureID,
-			"drive_array_label":          &da.DriveArrayLabel,
-			"volume_template_id":         &i,
-			"instance_array_id":          &i,
-			"return_id":                  &bTrue,
+			"infrastructure_id_or_label":  &infra.InfrastructureID,
+			"drive_array_label":           &da.DriveArrayLabel,
+			"volume_template_id_or_label": &i,
+			"instance_array_id_or_label":  &i,
+			"return_id":                   &bTrue,
 		},
 	}
 	retDA := da
@@ -94,26 +99,30 @@ func TestDriveArrayCreate(t *testing.T) {
 	//test no infra id
 
 	errorArguments := []map[string]interface{}{
+		//no infrastructure_id_or_label
 		map[string]interface{}{
 			//"infrastructure_id_or_label": &i,
-			"volume_template_id": &s,
-			"instance_array_id":  &i,
+			"volume_template_id_or_label": &s,
+			"instance_array_id_or_label":  &i,
 		},
+		//no volume template
 		map[string]interface{}{
 			"infrastructure_id_or_label": &infra.InfrastructureID,
-			//"volume_template_id": &i,
-			"instance_array_id": &i,
+			//"volume_template_id_or_label": &i,
+			"instance_array_id_or_label": &i,
 		},
+		//no instance_array id
 		map[string]interface{}{
-			"infrastructure_id_or_label": &infra.InfrastructureID,
-			"volume_template_id":         &i,
-			//"instance_array_id":  &i,
+			"infrastructure_id_or_label":  &infra.InfrastructureID,
+			"volume_template_id_or_label": &i,
+			//"instance_array_id_or_label":  &i,
 		},
+		//empty label
 		map[string]interface{}{
-			"infrastructure_id_or_label": &infra.InfrastructureID,
-			"volume_template_id":         &i,
-			"instance_array_id":          &i,
-			"drive_array_label":          &sEmpty,
+			"infrastructure_id_or_label":  &infra.InfrastructureID,
+			"volume_template_id_or_label": &i,
+			"instance_array_id_or_label":  &i,
+			"drive_array_label":           &sEmpty,
 		},
 	}
 
@@ -246,10 +255,10 @@ func TestDriveArrayEdit(t *testing.T) {
 	newlabel := "newlabel"
 	cmd := Command{
 		Arguments: map[string]interface{}{
-			"drive_array_id_or_label": &da.DriveArrayID,
-			"drive_array_label":       &newlabel,
-			"volume_template_id":      &i,
-			"instance_array_id":       &i0,
+			"drive_array_id_or_label":     &da.DriveArrayID,
+			"drive_array_label":           &newlabel,
+			"volume_template_id_or_label": &i,
+			"instance_array_id_or_label":  &i0,
 		},
 	}
 
@@ -418,8 +427,8 @@ func TestDriveArrayListCmd(t *testing.T) {
 
 	ret, err := driveArrayListCmd(&cmd, client)
 
-	Expect(ret).To(Not(Equal("")))
 	Expect(err).To(BeNil())
+	Expect(ret).To(Not(Equal("")))
 
 	var m []interface{}
 	err = json.Unmarshal([]byte(ret), &m)
@@ -599,7 +608,12 @@ func TestGetDriveArrayFromCommand(t *testing.T) {
 	client.EXPECT().
 		DriveArrayGet(da.DriveArrayID).
 		Return(&da, nil).
-		AnyTimes()
+		Times(1)
+
+	client.EXPECT().
+		DriveArrayGetByLabel(da.DriveArrayOperation.DriveArrayLabel).
+		Return(&da, nil).
+		Times(1)
 
 	//check with int
 	cmd := Command{
@@ -624,96 +638,5 @@ func TestGetDriveArrayFromCommand(t *testing.T) {
 
 	Expect(err).To(BeNil())
 	Expect(ret.DriveArrayID).To(Equal(da.DriveArrayOperation.DriveArrayID))
-
-}
-
-func TestGetDriveArrayFromCommandWithDuplicates(t *testing.T) {
-	RegisterTestingT(t)
-	ctrl := gomock.NewController(t)
-
-	infra := metalcloud.Infrastructure{
-		InfrastructureID:    10002,
-		InfrastructureLabel: "testinfra",
-	}
-	dao := metalcloud.DriveArrayOperation{
-		DriveArrayID:           10,
-		DriveArrayLabel:        "test",
-		InfrastructureID:       infra.InfrastructureID,
-		DriveArrayCount:        101,
-		DriveArrayDeployType:   "edit",
-		DriveArrayDeployStatus: "not_started",
-	}
-	da := metalcloud.DriveArray{
-		DriveArrayID:            10,
-		DriveArrayLabel:         "test",
-		InfrastructureID:        infra.InfrastructureID,
-		DriveArrayCount:         101,
-		DriveArrayOperation:     &dao,
-		DriveArrayServiceStatus: "active",
-	}
-
-	daList := map[string]metalcloud.DriveArray{
-		da.DriveArrayLabel + ".vanilla": da,
-	}
-
-	infra2 := metalcloud.Infrastructure{
-		InfrastructureID:    10003,
-		InfrastructureLabel: "testinfra2",
-	}
-
-	dao2 := metalcloud.DriveArrayOperation{
-		DriveArrayID:           11,
-		DriveArrayLabel:        "test",
-		InfrastructureID:       infra2.InfrastructureID,
-		DriveArrayCount:        101,
-		DriveArrayDeployType:   "edit",
-		DriveArrayDeployStatus: "not_started",
-	}
-
-	da2 := metalcloud.DriveArray{
-		DriveArrayID:            11,
-		DriveArrayLabel:         "test",
-		InfrastructureID:        infra2.InfrastructureID,
-		DriveArrayCount:         101,
-		DriveArrayOperation:     &dao2,
-		DriveArrayServiceStatus: "active",
-	}
-
-	daList2 := map[string]metalcloud.DriveArray{
-		da2.DriveArrayLabel + ".vanilla": da2,
-	}
-
-	iList := map[string]metalcloud.Infrastructure{
-		infra.InfrastructureLabel:  infra,
-		infra2.InfrastructureLabel: infra2,
-	}
-
-	client := mock_metalcloud.NewMockMetalCloudClient(ctrl)
-	client.EXPECT().
-		Infrastructures().
-		Return(&iList, nil).
-		Times(1)
-
-	client.EXPECT().
-		DriveArrays(infra.InfrastructureID).
-		Return(&daList, nil).
-		Times(1)
-
-	client.EXPECT().
-		DriveArrays(infra2.InfrastructureID).
-		Return(&daList2, nil).
-		Times(1)
-
-	//check with ambigous label
-	cmd := Command{
-		Arguments: map[string]interface{}{
-			"drive_array_id_or_label": &da.DriveArrayLabel,
-		},
-	}
-
-	_, err := getDriveArrayFromCommand(&cmd, client)
-
-	Expect(err).ToNot(BeNil())
-	Expect(err.Error()).To(ContainSubstring("both have"))
 
 }

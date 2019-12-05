@@ -322,7 +322,7 @@ func TestGetInstanceArrayFromCommand(t *testing.T) {
 		},
 	}
 
-	ret, err := getInstanceArrayFromCommand(&cmd, client)
+	ret, err := getInstanceArrayFromCommand("id", &cmd, client)
 
 	Expect(err).To(BeNil())
 	Expect(ret.InstanceArrayID).To(Equal(ia.InstanceArrayID))
@@ -330,7 +330,7 @@ func TestGetInstanceArrayFromCommand(t *testing.T) {
 	//check with label
 
 	client.EXPECT().
-		InstanceArrayGet(ia.InstanceArrayLabel).
+		InstanceArrayGetByLabel(ia.InstanceArrayLabel).
 		Return(&ia, nil).
 		Times(1)
 
@@ -341,7 +341,7 @@ func TestGetInstanceArrayFromCommand(t *testing.T) {
 		},
 	}
 
-	ret, err = getInstanceArrayFromCommand(&cmd, client)
+	ret, err = getInstanceArrayFromCommand("id", &cmd, client)
 
 	Expect(err).To(BeNil())
 	Expect(ret.InstanceArrayID).To(Equal(ia.InstanceArrayID))
