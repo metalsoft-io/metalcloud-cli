@@ -82,6 +82,14 @@ type MetalCloudClient interface {
 	InstanceArrayDelete(instanceArrayID int) error
 	//InstanceArrayDeleteByLabel deletes an instance array. Requires deploy.
 	InstanceArrayDeleteByLabel(instanceArrayLabel string) error
+	//InstanceArrayInstances retrieves a list of all the metalcloud.Instance objects associated with a specified metalcloud.InstanceArray.
+	InstanceArrayInstances(instanceArrayID int) (*map[string]metalcloud.Instance, error)
+	//InstanceArrayInstancesByLabel retrieves a list of all the metalcloud.Instance objects associated with a specified metalcloud.InstanceArray.
+	InstanceArrayInstancesByLabel(instanceArrayLabel string) (*map[string]metalcloud.Instance, error)
+	//InstanceGet returns a specific instance by id
+	InstanceGet(instanceID int) (*metalcloud.Instance, error)
+	//InstanceGetByLabel returns a specific instance by id
+	InstanceGetByLabel(instanceLabel string) (*metalcloud.Instance, error)
 	//GetUserEmail returns the user configured for this connection
 	GetUserEmail() string
 	//GetEndpoint returns the endpoint configured for this connection
@@ -120,9 +128,9 @@ type MetalCloudClient interface {
 	ServerTypeGet(serverTypeID int) (*metalcloud.ServerType, error)
 	//ServerTypeGetByLabel retrieves a server type by id
 	ServerTypeGetByLabel(serverTypeLabel string) (*metalcloud.ServerType, error)
-	//ServerTypesMatches matches available servers with a certain Instance&#39;s configuration, using the properties specified in the objHardwareConfiguration object, and returns the number of compatible servers for each server_type_id.
+	//ServerTypesMatches matches available servers with a certain metalcloud.Instance&#39;s configuration, using the properties specified in the objHardwareConfiguration object, and returns the number of compatible servers for each server_type_id.
 	ServerTypesMatches(infrastructureID int, hardwareConfiguration metalcloud.HardwareConfiguration, instanceArrayID *int, bAllowServerSwap bool) (*map[string]metalcloud.ServerType, error)
-	//ServerTypesMatchesByLabel matches available servers with a certain Instance&#39;s configuration, using the properties specified in the objHardwareConfiguration object, and returns the number of compatible servers for each server_type_id.
+	//ServerTypesMatchesByLabel matches available servers with a certain metalcloud.Instance&#39;s configuration, using the properties specified in the objHardwareConfiguration object, and returns the number of compatible servers for each server_type_id.
 	ServerTypesMatchesByLabel(infrastructureLabel string, hardwareConfiguration metalcloud.HardwareConfiguration, instanceArrayID *int, bAllowServerSwap bool) (*map[string]metalcloud.ServerType, error)
 	//VolumeTemplates retrives the list of available templates
 	VolumeTemplates() (*map[string]metalcloud.VolumeTemplate, error)

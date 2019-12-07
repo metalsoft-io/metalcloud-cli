@@ -96,6 +96,22 @@ var instanceArrayCmds = []Command{
 		},
 		ExecuteFunc: instanceArrayEditCmd,
 	},
+	Command{
+		Description:  "Get an instance array.",
+		Subject:      "instance_array",
+		AltSubject:   "ia",
+		Predicate:    "get",
+		AltPredicate: "show",
+		FlagSet:      flag.NewFlagSet("get instance array", flag.ExitOnError),
+		InitFunc: func(c *Command) {
+			c.Arguments = map[string]interface{}{
+				"instance_array_id_or_label": c.FlagSet.String("id", _nilDefaultStr, "(Required) Instance array's id or label. Note that using the 'label' might be ambiguous in certain situations."),
+				"show_credentials":           c.FlagSet.Bool("show_credentials", false, "(Flag) If set returns the instances' credentials"),
+				"format":                     c.FlagSet.String("format", "", "The output format. Supported values are 'json','csv'. The default format is human readable."),
+			}
+		},
+		ExecuteFunc: instanceArrayGetCmd,
+	},
 }
 
 func instanceArrayCreateCmd(c *Command, client interfaces.MetalCloudClient) (string, error) {
@@ -272,6 +288,170 @@ func instanceArrayDeleteCmd(c *Command, client interfaces.MetalCloudClient) (str
 	err = client.InstanceArrayDelete(retIA.InstanceArrayID)
 
 	return "", err
+}
+
+func instanceArrayGetCmd(c *Command, client interfaces.MetalCloudClient) (string, error) {
+
+	retIA, err := getInstanceArrayFromCommand("id", c, client)
+	if err != nil {
+		return "", err
+	}
+
+	schema := []SchemaField{
+
+		SchemaField{
+			FieldName: "ID",
+			FieldType: TypeInt,
+			FieldSize: 6,
+		},
+		SchemaField{
+			FieldName: "SUBDOMAIN",
+			FieldType: TypeString,
+			FieldSize: 10,
+		},
+		SchemaField{
+			FieldName: "WAN_IP",
+			FieldType: TypeString,
+			FieldSize: 10,
+		},
+		SchemaField{
+			FieldName: "DETAILS",
+			FieldType: TypeString,
+			FieldSize: 10,
+		},
+		SchemaField{
+			FieldName: "STATUS",
+			FieldType: TypeString,
+			FieldSize: 5,
+		},
+	}
+
+	data := [][]interface{}{}
+
+	iList, err := client.InstanceArrayInstances(retIA.InstanceArrayID)
+	if err != nil {
+		return "", err
+	}
+
+	for _, i := range *iList {
+		status := i.InstanceServiceStatus
+		if i.InstanceServiceStatus != "ordered" && i.InstanceOperation.InstanceDeployType == "edit" && i.InstanceOperation.InstanceDeployStatus == "not_started" {
+			status = "edited"
+		}
+
+		volumeTemplateName := ""
+		if i.InstanceOperation.TemplateIDOrigin != 0 {
+			vt, err := client.VolumeTemplateGet(i.InstanceOperation.TemplateIDOrigin)
+			if err != nil {
+				return "", err
+			}
+			volumeTemplateName = fmt.Sprintf("%s [#%d] ", vt.VolumeTemplateDisplayName, vt.VolumeTemplateID)
+		}
+
+		serverType := ""
+		if i.ServerTypeID != 0 {
+			st, err := client.ServerTypeGet(i.ServerTypeID)
+			if err != nil {
+				return "", err
+			}
+			serverType = st.ServerTypeDisplayName
+		}
+
+		details := fmt.Sprintf("%s (#%d) %s",
+			serverType,
+			i.ServerID,
+			volumeTemplateName,
+		)
+
+		wanIP := ""
+		for _, p := range i.InstanceInterfaces {
+			if p.NetworkID != 0 {
+
+				n, err := client.NetworkGet(p.NetworkID)
+				if err != nil {
+					return "", err
+				}
+
+				if n.NetworkType == "wan" {
+					for _, iip := range p.InstanceInterfaceIPs {
+						if iip.IPType == "ipv4" {
+							wanIP = iip.IPHumanReadable
+							break
+						}
+					}
+				}
+			}
+			if wanIP != "" {
+				break
+			}
+		}
+		credentials := ""
+
+		if c.Arguments["show_credentials"] != nil && *c.Arguments["show_credentials"].(*bool) {
+
+			schema = append(schema, SchemaField{
+				FieldName: "CREDENTIALS",
+				FieldType: TypeString,
+				FieldSize: 5,
+			})
+
+			if v := i.InstanceCredentials.SSH; v != nil && v.Username != "" {
+				credentials = fmt.Sprintf("SSH (%d) user: %s pass: %s", v.Port, v.Username, v.InitialPassword)
+			}
+
+			if v := i.InstanceCredentials.RDP; v != nil && v.Username != "" {
+				credentials = fmt.Sprintf("RDP( %d) user: %s pass: %s", v.Port, v.Username, v.InitialPassword)
+			}
+
+		}
+
+		data = append(data, []interface{}{
+			i.InstanceID,
+			i.InstanceSubdomainPermanent,
+			wanIP,
+			details,
+			status,
+			credentials,
+		})
+	}
+
+	var sb strings.Builder
+
+	format := c.Arguments["format"]
+	if format == nil {
+		var f string
+		f = ""
+		format = &f
+	}
+
+	switch *format.(*string) {
+	case "json", "JSON":
+		ret, err := GetTableAsJSONString(data, schema)
+		if err != nil {
+			return "", err
+		}
+		sb.WriteString(ret)
+	case "csv", "CSV":
+		ret, err := GetTableAsCSVString(data, schema)
+		if err != nil {
+			return "", err
+		}
+		sb.WriteString(ret)
+
+	default:
+
+		sb.WriteString(fmt.Sprintf("IntanceArray %s (%d):\n",
+			retIA.InstanceArrayLabel,
+			retIA.InstanceArrayID))
+
+		AdjustFieldSizes(data, &schema)
+
+		sb.WriteString(GetTableAsString(data, schema))
+
+		sb.WriteString(fmt.Sprintf("Total: %d elements\n\n", len(data)))
+	}
+
+	return sb.String(), nil
 }
 
 func argsToInstanceArray(m map[string]interface{}) *metalcloud.InstanceArray {

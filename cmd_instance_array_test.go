@@ -1,8 +1,10 @@
 package main
 
 import (
+	"encoding/csv"
 	"encoding/json"
 	"fmt"
+	"strings"
 	"testing"
 
 	metalcloud "github.com/bigstepinc/metal-cloud-sdk-go"
@@ -345,5 +347,163 @@ func TestGetInstanceArrayFromCommand(t *testing.T) {
 
 	Expect(err).To(BeNil())
 	Expect(ret.InstanceArrayID).To(Equal(ia.InstanceArrayID))
+
+}
+
+func TestInstanceArrayGet(t *testing.T) {
+	RegisterTestingT(t)
+	ctrl := gomock.NewController(t)
+	client := mock_metalcloud.NewMockMetalCloudClient(ctrl)
+
+	ia := metalcloud.InstanceArray{
+		InstanceArrayID:            11,
+		InstanceArrayLabel:         "testia",
+		InfrastructureID:           0,
+		InstanceArrayOperation:     nil,
+		InstanceArrayServiceStatus: "active",
+	}
+
+	ips := []metalcloud.IP{
+		metalcloud.IP{
+			IPType:          "ipv4",
+			IPHumanReadable: "192.168.1.1",
+		},
+	}
+
+	n := metalcloud.Network{
+		NetworkID:   105,
+		NetworkType: "wan",
+	}
+
+	itfs := []metalcloud.InstanceInterface{
+		metalcloud.InstanceInterface{
+			InstanceInterfaceLabel: "ef0",
+			InstanceInterfaceIPs:   ips,
+			NetworkID:              105,
+		},
+	}
+
+	creds := metalcloud.InstanceCredentials{
+		SSH: &metalcloud.SSH{
+			Port:            22,
+			Username:        "root",
+			InitialPassword: "asda';l321",
+		},
+	}
+
+	io := metalcloud.InstanceOperation{
+		InstanceID:                 100,
+		InstanceLabel:              "instance-100",
+		InstanceSubdomain:          "instance-100.asdasd.asdasd.asd",
+		InstanceSubdomainPermanent: "instance-100.bigstep.io",
+		ServerTypeID:               106,
+	}
+
+	i := metalcloud.Instance{
+		InstanceID:                 100,
+		InstanceLabel:              "instance-100",
+		InstanceSubdomain:          "instance-100.asdasd.asdasd.asd",
+		InstanceSubdomainPermanent: "instance-100.bigstep.io",
+		InstanceInterfaces:         itfs,
+		ServerTypeID:               106,
+		InstanceOperation:          io,
+		InstanceCredentials:        creds,
+	}
+
+	ilist := map[string]metalcloud.Instance{
+		"instance-100": i,
+	}
+
+	st := metalcloud.ServerType{
+		ServerTypeID:          106,
+		ServerTypeDisplayName: "M.40.256.12D",
+	}
+
+	client.EXPECT().
+		InstanceArrayInstances((ia.InstanceArrayID)).
+		Return(&ilist, nil).
+		AnyTimes()
+
+	client.EXPECT().
+		InstanceArrayGet((ia.InstanceArrayID)).
+		Return(&ia, nil).
+		AnyTimes()
+
+	client.EXPECT().
+		NetworkGet((itfs[0].NetworkID)).
+		Return(&n, nil).
+		AnyTimes()
+
+	client.EXPECT().
+		ServerTypeGet((ilist["instance-100"].ServerTypeID)).
+		Return(&st, nil).
+		AnyTimes()
+
+	//test with text output
+	format := "text"
+	cmd := Command{
+		Arguments: map[string]interface{}{
+			"instance_array_id_or_label": &ia.InstanceArrayID,
+			"format":                     &format,
+		},
+	}
+
+	ret, err := instanceArrayGetCmd(&cmd, client)
+	Expect(err).To(BeNil())
+	Expect(ret).To(ContainSubstring(ips[0].IPHumanReadable))
+	Expect(ret).To(ContainSubstring(ilist["instance-100"].InstanceSubdomainPermanent))
+	Expect(ret).To(ContainSubstring(st.ServerTypeDisplayName))
+
+	//test with credentials
+	bTrue := true
+	cmd = Command{
+		Arguments: map[string]interface{}{
+			"instance_array_id_or_label": &ia.InstanceArrayID,
+			"format":                     &format,
+			"show_credentials":           &bTrue,
+		},
+	}
+
+	ret, err = instanceArrayGetCmd(&cmd, client)
+	Expect(err).To(BeNil())
+	Expect(ret).To(ContainSubstring(ips[0].IPHumanReadable))
+	Expect(ret).To(ContainSubstring(ilist["instance-100"].InstanceSubdomainPermanent))
+	Expect(ret).To(ContainSubstring(st.ServerTypeDisplayName))
+	Expect(ret).To(ContainSubstring(creds.SSH.Username))
+	Expect(ret).To(ContainSubstring(creds.SSH.InitialPassword))
+
+	//test with json output
+	format = "json"
+	cmd.Arguments["format"] = &format
+
+	ret, err = instanceArrayGetCmd(&cmd, client)
+	Expect(err).To(BeNil())
+
+	var m []interface{}
+	err = json.Unmarshal([]byte(ret), &m)
+	Expect(err).To(BeNil())
+
+	r := m[0].(map[string]interface{})
+	Expect(r["ID"]).To(Equal(float64(ilist["instance-100"].InstanceID)))
+	Expect(r["SUBDOMAIN"]).To(Equal(ilist["instance-100"].InstanceSubdomainPermanent))
+	Expect(r["WAN_IP"]).To(Equal(ips[0].IPHumanReadable))
+	Expect(r["DETAILS"]).To(ContainSubstring(st.ServerTypeDisplayName))
+
+	//test with csv
+
+	format = "csv"
+	cmd.Arguments["format"] = &format
+
+	ret, err = instanceArrayGetCmd(&cmd, client)
+	Expect(err).To(BeNil())
+	Expect(ret).To(Not(Equal("")))
+
+	reader := csv.NewReader(strings.NewReader(ret))
+
+	csv, err := reader.ReadAll()
+
+	Expect(csv[1][0]).To(Equal(fmt.Sprintf("%d", i.InstanceID)))
+	Expect(csv[1][1]).To(Equal(i.InstanceSubdomainPermanent))
+	Expect(csv[1][2]).To(Equal(ips[0].IPHumanReadable))
 
 }

@@ -323,7 +323,7 @@ func infrastructureDeployCmd(c *Command, client interfaces.MetalCloudClient) (st
 
 func infrastructureRevertCmd(c *Command, client interfaces.MetalCloudClient) (string, error) {
 
-	return infrastructureConfirmAndDo("Deploy", c, client,
+	return infrastructureConfirmAndDo("Revert", c, client,
 		func(infraID int, c *Command, client interfaces.MetalCloudClient) (string, error) {
 			return "", client.InfrastructureOperationCancel(infraID)
 		})

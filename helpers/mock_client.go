@@ -563,6 +563,66 @@ func (mr *MockMetalCloudClientMockRecorder) InstanceArrayDeleteByLabel(instanceA
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "InstanceArrayDeleteByLabel", reflect.TypeOf((*MockMetalCloudClient)(nil).InstanceArrayDeleteByLabel), instanceArrayLabel)
 }
 
+// InstanceArrayInstances mocks base method
+func (m *MockMetalCloudClient) InstanceArrayInstances(instanceArrayID int) (*map[string]metal_cloud_sdk_go.Instance, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "InstanceArrayInstances", instanceArrayID)
+	ret0, _ := ret[0].(*map[string]metal_cloud_sdk_go.Instance)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// InstanceArrayInstances indicates an expected call of InstanceArrayInstances
+func (mr *MockMetalCloudClientMockRecorder) InstanceArrayInstances(instanceArrayID interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "InstanceArrayInstances", reflect.TypeOf((*MockMetalCloudClient)(nil).InstanceArrayInstances), instanceArrayID)
+}
+
+// InstanceArrayInstancesByLabel mocks base method
+func (m *MockMetalCloudClient) InstanceArrayInstancesByLabel(instanceArrayLabel string) (*map[string]metal_cloud_sdk_go.Instance, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "InstanceArrayInstancesByLabel", instanceArrayLabel)
+	ret0, _ := ret[0].(*map[string]metal_cloud_sdk_go.Instance)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// InstanceArrayInstancesByLabel indicates an expected call of InstanceArrayInstancesByLabel
+func (mr *MockMetalCloudClientMockRecorder) InstanceArrayInstancesByLabel(instanceArrayLabel interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "InstanceArrayInstancesByLabel", reflect.TypeOf((*MockMetalCloudClient)(nil).InstanceArrayInstancesByLabel), instanceArrayLabel)
+}
+
+// InstanceGet mocks base method
+func (m *MockMetalCloudClient) InstanceGet(instanceID int) (*metal_cloud_sdk_go.Instance, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "InstanceGet", instanceID)
+	ret0, _ := ret[0].(*metal_cloud_sdk_go.Instance)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// InstanceGet indicates an expected call of InstanceGet
+func (mr *MockMetalCloudClientMockRecorder) InstanceGet(instanceID interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "InstanceGet", reflect.TypeOf((*MockMetalCloudClient)(nil).InstanceGet), instanceID)
+}
+
+// InstanceGetByLabel mocks base method
+func (m *MockMetalCloudClient) InstanceGetByLabel(instanceLabel string) (*metal_cloud_sdk_go.Instance, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "InstanceGetByLabel", instanceLabel)
+	ret0, _ := ret[0].(*metal_cloud_sdk_go.Instance)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// InstanceGetByLabel indicates an expected call of InstanceGetByLabel
+func (mr *MockMetalCloudClientMockRecorder) InstanceGetByLabel(instanceLabel interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "InstanceGetByLabel", reflect.TypeOf((*MockMetalCloudClient)(nil).InstanceGetByLabel), instanceLabel)
+}
+
 // GetUserEmail mocks base method
 func (m *MockMetalCloudClient) GetUserEmail() string {
 	m.ctrl.T.Helper()
