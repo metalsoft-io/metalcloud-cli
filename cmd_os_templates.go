@@ -594,7 +594,7 @@ func templateGetCmd(c *Command, client interfaces.MetalCloudClient) (string, err
 			FieldSize: 5,
 		})
 
-		credentials = fmt.Sprintf("user:%s passwd:%s (change_password_after_install:%v)",
+		credentials = fmt.Sprintf("user:%s (port %d) passwd:%s (change_password_after_install:%v)",
 			template.OSTemplateCredentials.InitialUser,
 			template.OSTemplateCredentials.InitialSSHPort,
 			template.OSTemplateCredentials.InitialPassword,
