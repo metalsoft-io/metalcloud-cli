@@ -27,6 +27,13 @@ var types = [...]string{
 	"HardwareConfiguration",
 	"ShutdownOptions",
 	"Instance",
+	"Secret",
+	"Variable",
+	"User",
+	"OSAsset",
+	"OSTemplate",
+	"ServerSearchResult",
+	"Server",
 }
 
 const packageName = "metalcloud"
@@ -40,7 +47,7 @@ func main() {
 
 	s, err := ioutil.ReadFile(*input)
 	if err != nil {
-		fmt.Fprintf(os.Stderr, "s", err)
+		fmt.Fprintf(os.Stderr, "%s", err)
 		os.Exit(-1)
 	}
 
@@ -66,7 +73,7 @@ func main() {
 
 	err = ioutil.WriteFile(*input, s, 0644)
 	if err != nil {
-		fmt.Fprintf(os.Stderr, "s", err)
+		fmt.Fprintf(os.Stderr, "%s", err)
 		os.Exit(-1)
 	}
 

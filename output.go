@@ -229,3 +229,11 @@ func GetTableAsCSVString(data [][]interface{}, schema []SchemaField) (string, er
 
 	return buf.String(), nil
 }
+
+func truncateString(s string, length int) string {
+	str := s
+	if len(str) > 0 {
+		return str[:18] + "..."
+	}
+	return ""
+}

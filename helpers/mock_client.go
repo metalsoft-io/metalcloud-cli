@@ -827,6 +827,287 @@ func (mr *MockMetalCloudClientMockRecorder) NetworkJoinByLabel(networkLabel, net
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "NetworkJoinByLabel", reflect.TypeOf((*MockMetalCloudClient)(nil).NetworkJoinByLabel), networkLabel, networkToBeDeletedID)
 }
 
+// OSAssetCreate mocks base method
+func (m *MockMetalCloudClient) OSAssetCreate(osAsset metal_cloud_sdk_go.OSAsset) (*metal_cloud_sdk_go.OSAsset, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "OSAssetCreate", osAsset)
+	ret0, _ := ret[0].(*metal_cloud_sdk_go.OSAsset)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// OSAssetCreate indicates an expected call of OSAssetCreate
+func (mr *MockMetalCloudClientMockRecorder) OSAssetCreate(osAsset interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "OSAssetCreate", reflect.TypeOf((*MockMetalCloudClient)(nil).OSAssetCreate), osAsset)
+}
+
+// OSAssetDelete mocks base method
+func (m *MockMetalCloudClient) OSAssetDelete(osAssetID int) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "OSAssetDelete", osAssetID)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// OSAssetDelete indicates an expected call of OSAssetDelete
+func (mr *MockMetalCloudClientMockRecorder) OSAssetDelete(osAssetID interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "OSAssetDelete", reflect.TypeOf((*MockMetalCloudClient)(nil).OSAssetDelete), osAssetID)
+}
+
+// OSAssetUpdate mocks base method
+func (m *MockMetalCloudClient) OSAssetUpdate(osAssetID int, osAsset metal_cloud_sdk_go.OSAsset) (*metal_cloud_sdk_go.OSAsset, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "OSAssetUpdate", osAssetID, osAsset)
+	ret0, _ := ret[0].(*metal_cloud_sdk_go.OSAsset)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// OSAssetUpdate indicates an expected call of OSAssetUpdate
+func (mr *MockMetalCloudClientMockRecorder) OSAssetUpdate(osAssetID, osAsset interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "OSAssetUpdate", reflect.TypeOf((*MockMetalCloudClient)(nil).OSAssetUpdate), osAssetID, osAsset)
+}
+
+// OSAssetGet mocks base method
+func (m *MockMetalCloudClient) OSAssetGet(osAssetID int) (*metal_cloud_sdk_go.OSAsset, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "OSAssetGet", osAssetID)
+	ret0, _ := ret[0].(*metal_cloud_sdk_go.OSAsset)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// OSAssetGet indicates an expected call of OSAssetGet
+func (mr *MockMetalCloudClientMockRecorder) OSAssetGet(osAssetID interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "OSAssetGet", reflect.TypeOf((*MockMetalCloudClient)(nil).OSAssetGet), osAssetID)
+}
+
+// OSAssets mocks base method
+func (m *MockMetalCloudClient) OSAssets() (*map[string]metal_cloud_sdk_go.OSAsset, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "OSAssets")
+	ret0, _ := ret[0].(*map[string]metal_cloud_sdk_go.OSAsset)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// OSAssets indicates an expected call of OSAssets
+func (mr *MockMetalCloudClientMockRecorder) OSAssets() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "OSAssets", reflect.TypeOf((*MockMetalCloudClient)(nil).OSAssets))
+}
+
+// OSTemplateCreate mocks base method
+func (m *MockMetalCloudClient) OSTemplateCreate(osTemplate metal_cloud_sdk_go.OSTemplate) (*metal_cloud_sdk_go.OSTemplate, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "OSTemplateCreate", osTemplate)
+	ret0, _ := ret[0].(*metal_cloud_sdk_go.OSTemplate)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// OSTemplateCreate indicates an expected call of OSTemplateCreate
+func (mr *MockMetalCloudClientMockRecorder) OSTemplateCreate(osTemplate interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "OSTemplateCreate", reflect.TypeOf((*MockMetalCloudClient)(nil).OSTemplateCreate), osTemplate)
+}
+
+// OSTemplateDelete mocks base method
+func (m *MockMetalCloudClient) OSTemplateDelete(osTemplateID int) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "OSTemplateDelete", osTemplateID)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// OSTemplateDelete indicates an expected call of OSTemplateDelete
+func (mr *MockMetalCloudClientMockRecorder) OSTemplateDelete(osTemplateID interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "OSTemplateDelete", reflect.TypeOf((*MockMetalCloudClient)(nil).OSTemplateDelete), osTemplateID)
+}
+
+// OSTemplateUpdate mocks base method
+func (m *MockMetalCloudClient) OSTemplateUpdate(osTemplateID int, osTemplate metal_cloud_sdk_go.OSTemplate) (*metal_cloud_sdk_go.OSTemplate, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "OSTemplateUpdate", osTemplateID, osTemplate)
+	ret0, _ := ret[0].(*metal_cloud_sdk_go.OSTemplate)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// OSTemplateUpdate indicates an expected call of OSTemplateUpdate
+func (mr *MockMetalCloudClientMockRecorder) OSTemplateUpdate(osTemplateID, osTemplate interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "OSTemplateUpdate", reflect.TypeOf((*MockMetalCloudClient)(nil).OSTemplateUpdate), osTemplateID, osTemplate)
+}
+
+// OSTemplateGet mocks base method
+func (m *MockMetalCloudClient) OSTemplateGet(osTemplateID int, decryptPasswd bool) (*metal_cloud_sdk_go.OSTemplate, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "OSTemplateGet", osTemplateID, decryptPasswd)
+	ret0, _ := ret[0].(*metal_cloud_sdk_go.OSTemplate)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// OSTemplateGet indicates an expected call of OSTemplateGet
+func (mr *MockMetalCloudClientMockRecorder) OSTemplateGet(osTemplateID, decryptPasswd interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "OSTemplateGet", reflect.TypeOf((*MockMetalCloudClient)(nil).OSTemplateGet), osTemplateID, decryptPasswd)
+}
+
+// OSTemplates mocks base method
+func (m *MockMetalCloudClient) OSTemplates() (*map[string]metal_cloud_sdk_go.OSTemplate, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "OSTemplates")
+	ret0, _ := ret[0].(*map[string]metal_cloud_sdk_go.OSTemplate)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// OSTemplates indicates an expected call of OSTemplates
+func (mr *MockMetalCloudClientMockRecorder) OSTemplates() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "OSTemplates", reflect.TypeOf((*MockMetalCloudClient)(nil).OSTemplates))
+}
+
+// OSTemplateOSAssets mocks base method
+func (m *MockMetalCloudClient) OSTemplateOSAssets(osTemplateID int) (*map[string]metal_cloud_sdk_go.OSTemplate, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "OSTemplateOSAssets", osTemplateID)
+	ret0, _ := ret[0].(*map[string]metal_cloud_sdk_go.OSTemplate)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// OSTemplateOSAssets indicates an expected call of OSTemplateOSAssets
+func (mr *MockMetalCloudClientMockRecorder) OSTemplateOSAssets(osTemplateID interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "OSTemplateOSAssets", reflect.TypeOf((*MockMetalCloudClient)(nil).OSTemplateOSAssets), osTemplateID)
+}
+
+// OSTemplateAddOSAsset mocks base method
+func (m *MockMetalCloudClient) OSTemplateAddOSAsset(osTemplateID, osAssetID int, path string) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "OSTemplateAddOSAsset", osTemplateID, osAssetID, path)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// OSTemplateAddOSAsset indicates an expected call of OSTemplateAddOSAsset
+func (mr *MockMetalCloudClientMockRecorder) OSTemplateAddOSAsset(osTemplateID, osAssetID, path interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "OSTemplateAddOSAsset", reflect.TypeOf((*MockMetalCloudClient)(nil).OSTemplateAddOSAsset), osTemplateID, osAssetID, path)
+}
+
+// SecretCreate mocks base method
+func (m *MockMetalCloudClient) SecretCreate(secret metal_cloud_sdk_go.Secret) (*metal_cloud_sdk_go.Secret, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "SecretCreate", secret)
+	ret0, _ := ret[0].(*metal_cloud_sdk_go.Secret)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// SecretCreate indicates an expected call of SecretCreate
+func (mr *MockMetalCloudClientMockRecorder) SecretCreate(secret interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SecretCreate", reflect.TypeOf((*MockMetalCloudClient)(nil).SecretCreate), secret)
+}
+
+// SecretDelete mocks base method
+func (m *MockMetalCloudClient) SecretDelete(secretID int) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "SecretDelete", secretID)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// SecretDelete indicates an expected call of SecretDelete
+func (mr *MockMetalCloudClientMockRecorder) SecretDelete(secretID interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SecretDelete", reflect.TypeOf((*MockMetalCloudClient)(nil).SecretDelete), secretID)
+}
+
+// SecretUpdate mocks base method
+func (m *MockMetalCloudClient) SecretUpdate(secretID int, secret metal_cloud_sdk_go.Secret) (*metal_cloud_sdk_go.Secret, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "SecretUpdate", secretID, secret)
+	ret0, _ := ret[0].(*metal_cloud_sdk_go.Secret)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// SecretUpdate indicates an expected call of SecretUpdate
+func (mr *MockMetalCloudClientMockRecorder) SecretUpdate(secretID, secret interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SecretUpdate", reflect.TypeOf((*MockMetalCloudClient)(nil).SecretUpdate), secretID, secret)
+}
+
+// SecretGet mocks base method
+func (m *MockMetalCloudClient) SecretGet(secretID int) (*metal_cloud_sdk_go.Secret, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "SecretGet", secretID)
+	ret0, _ := ret[0].(*metal_cloud_sdk_go.Secret)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// SecretGet indicates an expected call of SecretGet
+func (mr *MockMetalCloudClientMockRecorder) SecretGet(secretID interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SecretGet", reflect.TypeOf((*MockMetalCloudClient)(nil).SecretGet), secretID)
+}
+
+// Secrets mocks base method
+func (m *MockMetalCloudClient) Secrets(usage string) (*map[string]metal_cloud_sdk_go.Secret, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "Secrets", usage)
+	ret0, _ := ret[0].(*map[string]metal_cloud_sdk_go.Secret)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// Secrets indicates an expected call of Secrets
+func (mr *MockMetalCloudClientMockRecorder) Secrets(usage interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Secrets", reflect.TypeOf((*MockMetalCloudClient)(nil).Secrets), usage)
+}
+
+// ServersSearch mocks base method
+func (m *MockMetalCloudClient) ServersSearch(filter string) (*[]metal_cloud_sdk_go.ServerSearchResult, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "ServersSearch", filter)
+	ret0, _ := ret[0].(*[]metal_cloud_sdk_go.ServerSearchResult)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// ServersSearch indicates an expected call of ServersSearch
+func (mr *MockMetalCloudClientMockRecorder) ServersSearch(filter interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ServersSearch", reflect.TypeOf((*MockMetalCloudClient)(nil).ServersSearch), filter)
+}
+
+// ServerGet mocks base method
+func (m *MockMetalCloudClient) ServerGet(serverID int, decryptPasswd bool) (*metal_cloud_sdk_go.Server, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "ServerGet", serverID, decryptPasswd)
+	ret0, _ := ret[0].(*metal_cloud_sdk_go.Server)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// ServerGet indicates an expected call of ServerGet
+func (mr *MockMetalCloudClientMockRecorder) ServerGet(serverID, decryptPasswd interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ServerGet", reflect.TypeOf((*MockMetalCloudClient)(nil).ServerGet), serverID, decryptPasswd)
+}
+
 // ServerTypesMatchHardwareConfiguration mocks base method
 func (m *MockMetalCloudClient) ServerTypesMatchHardwareConfiguration(datacenterName string, hardwareConfiguration metal_cloud_sdk_go.HardwareConfiguration) (*map[int]metal_cloud_sdk_go.ServerType, error) {
 	m.ctrl.T.Helper()
@@ -930,6 +1211,125 @@ func (m *MockMetalCloudClient) ServerTypesMatchesByLabel(infrastructureLabel str
 func (mr *MockMetalCloudClientMockRecorder) ServerTypesMatchesByLabel(infrastructureLabel, hardwareConfiguration, instanceArrayID, bAllowServerSwap interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ServerTypesMatchesByLabel", reflect.TypeOf((*MockMetalCloudClient)(nil).ServerTypesMatchesByLabel), infrastructureLabel, hardwareConfiguration, instanceArrayID, bAllowServerSwap)
+}
+
+// UserGet mocks base method
+func (m *MockMetalCloudClient) UserGet(userID int) (*metal_cloud_sdk_go.User, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "UserGet", userID)
+	ret0, _ := ret[0].(*metal_cloud_sdk_go.User)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// UserGet indicates an expected call of UserGet
+func (mr *MockMetalCloudClientMockRecorder) UserGet(userID interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UserGet", reflect.TypeOf((*MockMetalCloudClient)(nil).UserGet), userID)
+}
+
+// UserGetByEmail mocks base method
+func (m *MockMetalCloudClient) UserGetByEmail(userLabel string) (*metal_cloud_sdk_go.User, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "UserGetByEmail", userLabel)
+	ret0, _ := ret[0].(*metal_cloud_sdk_go.User)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// UserGetByEmail indicates an expected call of UserGetByEmail
+func (mr *MockMetalCloudClientMockRecorder) UserGetByEmail(userLabel interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UserGetByEmail", reflect.TypeOf((*MockMetalCloudClient)(nil).UserGetByEmail), userLabel)
+}
+
+// UserEmailToUserID mocks base method
+func (m *MockMetalCloudClient) UserEmailToUserID(userEmail string) (*int, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "UserEmailToUserID", userEmail)
+	ret0, _ := ret[0].(*int)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// UserEmailToUserID indicates an expected call of UserEmailToUserID
+func (mr *MockMetalCloudClientMockRecorder) UserEmailToUserID(userEmail interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UserEmailToUserID", reflect.TypeOf((*MockMetalCloudClient)(nil).UserEmailToUserID), userEmail)
+}
+
+// VariableCreate mocks base method
+func (m *MockMetalCloudClient) VariableCreate(variable metal_cloud_sdk_go.Variable) (*metal_cloud_sdk_go.Variable, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "VariableCreate", variable)
+	ret0, _ := ret[0].(*metal_cloud_sdk_go.Variable)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// VariableCreate indicates an expected call of VariableCreate
+func (mr *MockMetalCloudClientMockRecorder) VariableCreate(variable interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "VariableCreate", reflect.TypeOf((*MockMetalCloudClient)(nil).VariableCreate), variable)
+}
+
+// VariableDelete mocks base method
+func (m *MockMetalCloudClient) VariableDelete(variableID int) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "VariableDelete", variableID)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// VariableDelete indicates an expected call of VariableDelete
+func (mr *MockMetalCloudClientMockRecorder) VariableDelete(variableID interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "VariableDelete", reflect.TypeOf((*MockMetalCloudClient)(nil).VariableDelete), variableID)
+}
+
+// VariableUpdate mocks base method
+func (m *MockMetalCloudClient) VariableUpdate(variableID int, variable metal_cloud_sdk_go.Variable) (*metal_cloud_sdk_go.Variable, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "VariableUpdate", variableID, variable)
+	ret0, _ := ret[0].(*metal_cloud_sdk_go.Variable)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// VariableUpdate indicates an expected call of VariableUpdate
+func (mr *MockMetalCloudClientMockRecorder) VariableUpdate(variableID, variable interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "VariableUpdate", reflect.TypeOf((*MockMetalCloudClient)(nil).VariableUpdate), variableID, variable)
+}
+
+// VariableGet mocks base method
+func (m *MockMetalCloudClient) VariableGet(variableID int) (*metal_cloud_sdk_go.Variable, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "VariableGet", variableID)
+	ret0, _ := ret[0].(*metal_cloud_sdk_go.Variable)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// VariableGet indicates an expected call of VariableGet
+func (mr *MockMetalCloudClientMockRecorder) VariableGet(variableID interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "VariableGet", reflect.TypeOf((*MockMetalCloudClient)(nil).VariableGet), variableID)
+}
+
+// Variables mocks base method
+func (m *MockMetalCloudClient) Variables(usage string) (*map[string]metal_cloud_sdk_go.Variable, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "Variables", usage)
+	ret0, _ := ret[0].(*map[string]metal_cloud_sdk_go.Variable)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// Variables indicates an expected call of Variables
+func (mr *MockMetalCloudClientMockRecorder) Variables(usage interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Variables", reflect.TypeOf((*MockMetalCloudClient)(nil).Variables), usage)
 }
 
 // VolumeTemplates mocks base method

@@ -13,7 +13,7 @@ var volumeTemplateyCmds = []Command{
 	Command{
 		Description:  "Lists available volume templates",
 		Subject:      "volume_templates",
-		AltSubject:   "templates",
+		AltSubject:   "vt",
 		Predicate:    "list",
 		AltPredicate: "ls",
 		FlagSet:      flag.NewFlagSet("list volume templates", flag.ExitOnError),

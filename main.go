@@ -9,12 +9,17 @@ import (
 	"bufio"
 	"flag"
 	"fmt"
+	"io"
 	"os"
 	"regexp"
 	"strings"
 
 	metalcloud "github.com/bigstepinc/metal-cloud-sdk-go"
 	interfaces "github.com/bigstepinc/metalcloud-cli/interfaces"
+
+	"syscall"
+
+	"golang.org/x/crypto/ssh/terminal"
 )
 
 //GetUserEmail returns the API key's owner
@@ -178,12 +183,17 @@ func getCommands() []Command {
 	commands = append(commands, driveArrayCmds...)
 	commands = append(commands, volumeTemplateyCmds...)
 	commands = append(commands, firewallRuleCmds...)
+	commands = append(commands, secretsCmds...)
+	commands = append(commands, variablesCmds...)
+	commands = append(commands, osAssetsCmds...)
+	commands = append(commands, osTemplatesCmds...)
+	commands = append(commands, serversCmds...)
 
 	return commands
 }
 
 func validateAPIKey(apiKey string) error {
-	const pattern = "^\\d+\\:[0-9a-zA-Z]{63}$"
+	const pattern = "^\\d+\\:[0-9a-zA-Z]{63,65}$"
 
 	matched, _ := regexp.MatchString(pattern, apiKey)
 
@@ -201,4 +211,32 @@ func requestConfirmation(s string) bool {
 	yes, _ := reader.ReadString('\n')
 
 	return yes == "yes\n"
+}
+
+func readInputFromPipe() []byte {
+
+	reader := bufio.NewReader(GetStdin())
+	var content []byte
+
+	for {
+		input, err := reader.ReadByte()
+		if err != nil && err == io.EOF {
+			break
+		}
+		content = append(content, input)
+	}
+
+	return content
+}
+
+func requestInputSilent(s string) []byte {
+
+	fmt.Fprintf(GetStdout(), s)
+
+	content, err := terminal.ReadPassword(int(syscall.Stdin))
+	if err != nil {
+		fmt.Fprintf(GetStdout(), err.Error())
+	}
+
+	return content
 }

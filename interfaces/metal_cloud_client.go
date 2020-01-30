@@ -118,6 +118,44 @@ type MetalCloudClient interface {
 	NetworkJoin(networkID int, networkToBeDeletedID int) error
 	//NetworkJoinByLabel merges two specified metalcloud.Network objects.
 	NetworkJoinByLabel(networkLabel string, networkToBeDeletedID int) error
+	//OSAssetCreate creates a osAsset object
+	OSAssetCreate(osAsset metalcloud.OSAsset) (*metalcloud.OSAsset, error)
+	//OSAssetDelete permanently destroys a metalcloud.OSAsset.
+	OSAssetDelete(osAssetID int) error
+	//OSAssetUpdate updates a osAsset
+	OSAssetUpdate(osAssetID int, osAsset metalcloud.OSAsset) (*metalcloud.OSAsset, error)
+	//OSAssetGet returns a metalcloud.OSAsset specified by nOSAssetID. The metalcloud.OSAsset's protected value is never returned.
+	OSAssetGet(osAssetID int) (*metalcloud.OSAsset, error)
+	//OSAssets retrieves a list of all the metalcloud.OSAsset objects which a specified metalcloud.User is allowed to see through ownership or delegation. The metalcloud.OSAsset objects never return the actual protected metalcloud.OSAsset value.
+	OSAssets() (*map[string]metalcloud.OSAsset, error)
+	//OSTemplateCreate creates a osTemplate object
+	OSTemplateCreate(osTemplate metalcloud.OSTemplate) (*metalcloud.OSTemplate, error)
+	//OSTemplateDelete permanently destroys a metalcloud.OSTemplate.
+	OSTemplateDelete(osTemplateID int) error
+	//OSTemplateUpdate updates a osTemplate
+	OSTemplateUpdate(osTemplateID int, osTemplate metalcloud.OSTemplate) (*metalcloud.OSTemplate, error)
+	//OSTemplateGet returns a metalcloud.OSTemplate specified by nOSTemplateID. The metalcloud.OSTemplate's protected value is never returned.
+	OSTemplateGet(osTemplateID int, decryptPasswd bool) (*metalcloud.OSTemplate, error)
+	//OSTemplates retrieves a list of all the metalcloud.OSTemplate objects which a specified metalcloud.User is allowed to see through ownership or delegation. The metalcloud.OSTemplate objects never return the actual protected metalcloud.OSTemplate value.
+	OSTemplates() (*map[string]metalcloud.OSTemplate, error)
+	//OSTemplateOSAssets returns the OSAssets assigned to an metalcloud.OSTemplate.
+	OSTemplateOSAssets(osTemplateID int) (*map[string]metalcloud.OSTemplate, error)
+	//OSTemplateAddOSAsset returns the OSAssets assigned to an metalcloud.OSTemplate.
+	OSTemplateAddOSAsset(osTemplateID int, osAssetID int, path string) error
+	//SecretCreate creates a secret
+	SecretCreate(secret metalcloud.Secret) (*metalcloud.Secret, error)
+	//SecretDelete Permanently destroys a metalcloud.Secret.
+	SecretDelete(secretID int) error
+	//SecretUpdate This function allows updating the secret_usage, secret_label and secret_base64 of a metalcloud.Secret
+	SecretUpdate(secretID int, secret metalcloud.Secret) (*metalcloud.Secret, error)
+	//SecretGet returns a metalcloud.Secret specified by nSecretID. The secret's protected value is never returned.
+	SecretGet(secretID int) (*metalcloud.Secret, error)
+	//Secrets retrieves a list of all the metalcloud.Secret objects which a specified metalcloud.User is allowed to see through ownership or delegation. The secret objects never return the actual protected secret value.
+	Secrets(usage string) (*map[string]metalcloud.Secret, error)
+	//ServersSearch searches for servers matching certain filter
+	ServersSearch(filter string) (*[]metalcloud.ServerSearchResult, error)
+	//ServerGet returns a server's details
+	ServerGet(serverID int, decryptPasswd bool) (*metalcloud.Server, error)
 	//ServerTypesMatchHardwareConfiguration Retrieves a list of server types that match the provided hardware configuration. The function does not check for availability, only compatibility, so physical servers associated with the returned server types might be unavailable.
 	ServerTypesMatchHardwareConfiguration(datacenterName string, hardwareConfiguration metalcloud.HardwareConfiguration) (*map[int]metalcloud.ServerType, error)
 	//ServerTypeDatacenter retrieves all the server type IDs for servers found in a specified Datacenter
@@ -132,6 +170,22 @@ type MetalCloudClient interface {
 	ServerTypesMatches(infrastructureID int, hardwareConfiguration metalcloud.HardwareConfiguration, instanceArrayID *int, bAllowServerSwap bool) (*map[string]metalcloud.ServerType, error)
 	//ServerTypesMatchesByLabel matches available servers with a certain metalcloud.Instance&#39;s configuration, using the properties specified in the objHardwareConfiguration object, and returns the number of compatible servers for each server_type_id.
 	ServerTypesMatchesByLabel(infrastructureLabel string, hardwareConfiguration metalcloud.HardwareConfiguration, instanceArrayID *int, bAllowServerSwap bool) (*map[string]metalcloud.ServerType, error)
+	//UserGet describes returns user account specifications.
+	UserGet(userID int) (*metalcloud.User, error)
+	//UserGetByEmail describes returns user account specifications.
+	UserGetByEmail(userLabel string) (*metalcloud.User, error)
+	//UserEmailToUserID returns the user id of an user given an email
+	UserEmailToUserID(userEmail string) (*int, error)
+	//VariableCreate creates a variable object
+	VariableCreate(variable metalcloud.Variable) (*metalcloud.Variable, error)
+	//VariableDelete permanently destroys a metalcloud.Variable.
+	VariableDelete(variableID int) error
+	//VariableUpdate updates a variable
+	VariableUpdate(variableID int, variable metalcloud.Variable) (*metalcloud.Variable, error)
+	//VariableGet returns a metalcloud.Variable specified by nVariableID. The metalcloud.Variable's protected value is never returned.
+	VariableGet(variableID int) (*metalcloud.Variable, error)
+	//Variables retrieves a list of all the metalcloud.Variable objects which a specified metalcloud.User is allowed to see through ownership or delegation. The metalcloud.Variable objects never return the actual protected metalcloud.Variable value.
+	Variables(usage string) (*map[string]metalcloud.Variable, error)
 	//VolumeTemplates retrives the list of available templates
 	VolumeTemplates() (*map[string]metalcloud.VolumeTemplate, error)
 	//VolumeTemplateGet returns the specified volume template
