@@ -33,6 +33,49 @@ func (m *MockMetalCloudClient) EXPECT() *MockMetalCloudClientMockRecorder {
 	return m.recorder
 }
 
+// InfrastructureDeployCustomStageAddIntoRunlevel mocks base method
+func (m *MockMetalCloudClient) InfrastructureDeployCustomStageAddIntoRunlevel(infraID, stageID, runLevel int, stageRunMoment string) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "InfrastructureDeployCustomStageAddIntoRunlevel", infraID, stageID, runLevel, stageRunMoment)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// InfrastructureDeployCustomStageAddIntoRunlevel indicates an expected call of InfrastructureDeployCustomStageAddIntoRunlevel
+func (mr *MockMetalCloudClientMockRecorder) InfrastructureDeployCustomStageAddIntoRunlevel(infraID, stageID, runLevel, stageRunMoment interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "InfrastructureDeployCustomStageAddIntoRunlevel", reflect.TypeOf((*MockMetalCloudClient)(nil).InfrastructureDeployCustomStageAddIntoRunlevel), infraID, stageID, runLevel, stageRunMoment)
+}
+
+// InfrastructureDeployCustomStageDeleteIntoRunlevel mocks base method
+func (m *MockMetalCloudClient) InfrastructureDeployCustomStageDeleteIntoRunlevel(infraID, stageID, runLevel int, stageRunMoment string) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "InfrastructureDeployCustomStageDeleteIntoRunlevel", infraID, stageID, runLevel, stageRunMoment)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// InfrastructureDeployCustomStageDeleteIntoRunlevel indicates an expected call of InfrastructureDeployCustomStageDeleteIntoRunlevel
+func (mr *MockMetalCloudClientMockRecorder) InfrastructureDeployCustomStageDeleteIntoRunlevel(infraID, stageID, runLevel, stageRunMoment interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "InfrastructureDeployCustomStageDeleteIntoRunlevel", reflect.TypeOf((*MockMetalCloudClient)(nil).InfrastructureDeployCustomStageDeleteIntoRunlevel), infraID, stageID, runLevel, stageRunMoment)
+}
+
+// InfrastructureDeployCustomStages mocks base method
+func (m *MockMetalCloudClient) InfrastructureDeployCustomStages(infraID int, stageDefinitionType string) (*[]metal_cloud_sdk_go.WorkflowStageAssociation, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "InfrastructureDeployCustomStages", infraID, stageDefinitionType)
+	ret0, _ := ret[0].(*[]metal_cloud_sdk_go.WorkflowStageAssociation)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// InfrastructureDeployCustomStages indicates an expected call of InfrastructureDeployCustomStages
+func (mr *MockMetalCloudClientMockRecorder) InfrastructureDeployCustomStages(infraID, stageDefinitionType interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "InfrastructureDeployCustomStages", reflect.TypeOf((*MockMetalCloudClient)(nil).InfrastructureDeployCustomStages), infraID, stageDefinitionType)
+}
+
 // DriveArrays mocks base method
 func (m *MockMetalCloudClient) DriveArrays(infrastructureID int) (*map[string]metal_cloud_sdk_go.DriveArray, error) {
 	m.ctrl.T.Helper()
@@ -1211,6 +1254,80 @@ func (m *MockMetalCloudClient) ServerTypesMatchesByLabel(infrastructureLabel str
 func (mr *MockMetalCloudClientMockRecorder) ServerTypesMatchesByLabel(infrastructureLabel, hardwareConfiguration, instanceArrayID, bAllowServerSwap interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ServerTypesMatchesByLabel", reflect.TypeOf((*MockMetalCloudClient)(nil).ServerTypesMatchesByLabel), infrastructureLabel, hardwareConfiguration, instanceArrayID, bAllowServerSwap)
+}
+
+// StageDefinitionCreate mocks base method
+func (m *MockMetalCloudClient) StageDefinitionCreate(stageDefinition metal_cloud_sdk_go.StageDefinition) (*metal_cloud_sdk_go.StageDefinition, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "StageDefinitionCreate", stageDefinition)
+	ret0, _ := ret[0].(*metal_cloud_sdk_go.StageDefinition)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// StageDefinitionCreate indicates an expected call of StageDefinitionCreate
+func (mr *MockMetalCloudClientMockRecorder) StageDefinitionCreate(stageDefinition interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "StageDefinitionCreate", reflect.TypeOf((*MockMetalCloudClient)(nil).StageDefinitionCreate), stageDefinition)
+}
+
+// StageDefinitionDelete mocks base method
+func (m *MockMetalCloudClient) StageDefinitionDelete(stageDefinitionID int) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "StageDefinitionDelete", stageDefinitionID)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// StageDefinitionDelete indicates an expected call of StageDefinitionDelete
+func (mr *MockMetalCloudClientMockRecorder) StageDefinitionDelete(stageDefinitionID interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "StageDefinitionDelete", reflect.TypeOf((*MockMetalCloudClient)(nil).StageDefinitionDelete), stageDefinitionID)
+}
+
+// StageDefinitionUpdate mocks base method
+func (m *MockMetalCloudClient) StageDefinitionUpdate(stageDefinitionID int, stageDefinition metal_cloud_sdk_go.StageDefinition) (*metal_cloud_sdk_go.StageDefinition, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "StageDefinitionUpdate", stageDefinitionID, stageDefinition)
+	ret0, _ := ret[0].(*metal_cloud_sdk_go.StageDefinition)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// StageDefinitionUpdate indicates an expected call of StageDefinitionUpdate
+func (mr *MockMetalCloudClientMockRecorder) StageDefinitionUpdate(stageDefinitionID, stageDefinition interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "StageDefinitionUpdate", reflect.TypeOf((*MockMetalCloudClient)(nil).StageDefinitionUpdate), stageDefinitionID, stageDefinition)
+}
+
+// StageDefinitionGet mocks base method
+func (m *MockMetalCloudClient) StageDefinitionGet(stageDefinitionID int) (*metal_cloud_sdk_go.StageDefinition, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "StageDefinitionGet", stageDefinitionID)
+	ret0, _ := ret[0].(*metal_cloud_sdk_go.StageDefinition)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// StageDefinitionGet indicates an expected call of StageDefinitionGet
+func (mr *MockMetalCloudClientMockRecorder) StageDefinitionGet(stageDefinitionID interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "StageDefinitionGet", reflect.TypeOf((*MockMetalCloudClient)(nil).StageDefinitionGet), stageDefinitionID)
+}
+
+// StageDefinitions mocks base method
+func (m *MockMetalCloudClient) StageDefinitions() (*map[string]metal_cloud_sdk_go.StageDefinition, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "StageDefinitions")
+	ret0, _ := ret[0].(*map[string]metal_cloud_sdk_go.StageDefinition)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// StageDefinitions indicates an expected call of StageDefinitions
+func (mr *MockMetalCloudClientMockRecorder) StageDefinitions() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "StageDefinitions", reflect.TypeOf((*MockMetalCloudClient)(nil).StageDefinitions))
 }
 
 // UserGet mocks base method

@@ -34,6 +34,8 @@ var types = [...]string{
 	"OSTemplate",
 	"ServerSearchResult",
 	"Server",
+	"StageDefinition",
+	"WorkflowStageAssociation",
 }
 
 const packageName = "metalcloud"

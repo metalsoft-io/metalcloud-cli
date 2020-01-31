@@ -10,6 +10,12 @@ import metalcloud "github.com/bigstepinc/metal-cloud-sdk-go"
 
 // MetalCloudClient interface used for mocking and abstracting the backend
 type MetalCloudClient interface {
+	//InfrastructureDeployCustomStageAddIntoRunlevel adds a stage into a runlevel
+	InfrastructureDeployCustomStageAddIntoRunlevel(infraID int, stageID int, runLevel int, stageRunMoment string) error
+	//InfrastructureDeployCustomStageDeleteIntoRunlevel delete a stage into a runlevel
+	InfrastructureDeployCustomStageDeleteIntoRunlevel(infraID int, stageID int, runLevel int, stageRunMoment string) error
+	//InfrastructureDeployCustomStages retrieves a list of all the metalcloud.StageDefinition objects which a specified metalcloud.User is allowed to see through ownership or delegation. The stageDefinition objects never return the actual protected stageDefinition value.
+	InfrastructureDeployCustomStages(infraID int, stageDefinitionType string) (*[]metalcloud.WorkflowStageAssociation, error)
 	//DriveArrays retrieves the list of drives arrays of an infrastructure
 	DriveArrays(infrastructureID int) (*map[string]metalcloud.DriveArray, error)
 	//DriveArraysByLabel retrieves the list of drives arrays of an infrastructure
@@ -170,6 +176,16 @@ type MetalCloudClient interface {
 	ServerTypesMatches(infrastructureID int, hardwareConfiguration metalcloud.HardwareConfiguration, instanceArrayID *int, bAllowServerSwap bool) (*map[string]metalcloud.ServerType, error)
 	//ServerTypesMatchesByLabel matches available servers with a certain metalcloud.Instance&#39;s configuration, using the properties specified in the objHardwareConfiguration object, and returns the number of compatible servers for each server_type_id.
 	ServerTypesMatchesByLabel(infrastructureLabel string, hardwareConfiguration metalcloud.HardwareConfiguration, instanceArrayID *int, bAllowServerSwap bool) (*map[string]metalcloud.ServerType, error)
+	//StageDefinitionCreate creates a stageDefinition
+	StageDefinitionCreate(stageDefinition metalcloud.StageDefinition) (*metalcloud.StageDefinition, error)
+	//StageDefinitionDelete Permanently destroys a metalcloud.StageDefinition.
+	StageDefinitionDelete(stageDefinitionID int) error
+	//StageDefinitionUpdate This function allows updating the stageDefinition_usage, stageDefinition_label and stageDefinition_base64 of a metalcloud.StageDefinition
+	StageDefinitionUpdate(stageDefinitionID int, stageDefinition metalcloud.StageDefinition) (*metalcloud.StageDefinition, error)
+	//StageDefinitionGet returns a metalcloud.StageDefinition specified by nStageDefinitionID. The stageDefinition's protected value is never returned.
+	StageDefinitionGet(stageDefinitionID int) (*metalcloud.StageDefinition, error)
+	//StageDefinitions retrieves a list of all the metalcloud.StageDefinition objects which a specified metalcloud.User is allowed to see through ownership or delegation. The stageDefinition objects never return the actual protected stageDefinition value.
+	StageDefinitions() (*map[string]metalcloud.StageDefinition, error)
 	//UserGet describes returns user account specifications.
 	UserGet(userID int) (*metalcloud.User, error)
 	//UserGetByEmail describes returns user account specifications.

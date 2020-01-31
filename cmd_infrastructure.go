@@ -108,6 +108,21 @@ var infrastructureCmds = []Command{
 		},
 		ExecuteFunc: infrastructureRevertCmd,
 	},
+	Command{
+		Description:  "list stages of a workflow",
+		Subject:      "infrastructure",
+		AltSubject:   "infra",
+		Predicate:    "list_stages",
+		AltPredicate: "show_workflow",
+		FlagSet:      flag.NewFlagSet("list stages of a workflow", flag.ExitOnError),
+		InitFunc: func(c *Command) {
+			c.Arguments = map[string]interface{}{
+				"infrastructure_id_or_label": c.FlagSet.String("id", _nilDefaultStr, "The infrastructure's id"),
+				"type":                       c.FlagSet.String("type", _nilDefaultStr, "stage definition type. possible values: pre_deploy, post_deploy"),
+			}
+		},
+		ExecuteFunc: listWorkflowStagesCmd,
+	},
 }
 
 func infrastructureCreateCmd(c *Command, client interfaces.MetalCloudClient) (string, error) {
@@ -490,6 +505,121 @@ func infrastructureGetCmd(c *Command, client interfaces.MetalCloudClient) (strin
 		sb.WriteString(GetTableAsString(data, schema))
 
 		sb.WriteString(fmt.Sprintf("Total: %d elements\n\n", len(data)))
+	}
+
+	return sb.String(), nil
+}
+
+func listWorkflowStagesCmd(c *Command, client interfaces.MetalCloudClient) (string, error) {
+
+	t := *c.Arguments["type"].(*string)
+	if t == _nilDefaultStr {
+		t = "post_deploy"
+	}
+
+	retInfra, err := getInfrastructureFromCommand("id", c, client)
+	if err != nil {
+		return "", err
+	}
+
+	list, err := client.InfrastructureDeployCustomStages(retInfra.InfrastructureID, t)
+
+	if err != nil {
+		return "", err
+	}
+
+	schema := []SchemaField{
+		SchemaField{
+			FieldName: "ID",
+			FieldType: TypeInt,
+			FieldSize: 6,
+		},
+		SchemaField{
+			FieldName: "INFRASTRUCTRE",
+			FieldType: TypeString,
+			FieldSize: 5,
+		},
+		SchemaField{
+			FieldName: "STAGE",
+			FieldType: TypeString,
+			FieldSize: 4,
+		},
+		SchemaField{
+			FieldName: "TYPE",
+			FieldType: TypeString,
+			FieldSize: 4,
+		},
+		SchemaField{
+			FieldName: "RUNLEVEL",
+			FieldType: TypeInt,
+			FieldSize: 5,
+		},
+		SchemaField{
+			FieldName: "OUTPUT",
+			FieldType: TypeString,
+			FieldSize: 20,
+		},
+	}
+
+	data := [][]interface{}{}
+	for _, s := range *list {
+
+		infra, err := client.InfrastructureGet(s.InfrastructureID)
+		if err != nil {
+			return "", err
+		}
+
+		stage, err := client.StageDefinitionGet(s.StageDefinitionID)
+		if err != nil {
+			return "", err
+		}
+
+		data = append(data, []interface{}{
+			s.InfrastructureDeployCustomStageID,
+			infra.InfrastructureLabel,
+			stage.StageDefinitionLabel,
+			s.InfrastructureDeployCustomStageType,
+			s.InfrastructureDeployCustomStageRunLevel,
+			s.InfrastructureDeployCustomStageExecOutputJSON,
+		})
+
+	}
+
+	var sb strings.Builder
+
+	format := c.Arguments["format"]
+	if format == nil {
+		var f string
+		f = ""
+		format = &f
+	}
+
+	switch *format.(*string) {
+	case "json", "JSON":
+		ret, err := GetTableAsJSONString(data, schema)
+		if err != nil {
+			return "", err
+		}
+		sb.WriteString(ret)
+	case "csv", "CSV":
+		ret, err := GetTableAsCSVString(data, schema)
+		if err != nil {
+			return "", err
+		}
+		sb.WriteString(ret)
+
+	default:
+		sb.WriteString(fmt.Sprintf("Stage Definitions:\n"))
+
+		TableSorter(schema).OrderBy(
+			schema[0].FieldName,
+			schema[1].FieldName).Sort(data)
+
+		AdjustFieldSizes(data, &schema)
+
+		sb.WriteString(GetTableAsString(data, schema))
+
+		sb.WriteString(fmt.Sprintf("Total: %d \n\n", len(*list)))
 	}
 
 	return sb.String(), nil

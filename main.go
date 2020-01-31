@@ -7,6 +7,7 @@ package main
 
 import (
 	"bufio"
+	"bytes"
 	"flag"
 	"fmt"
 	"io"
@@ -188,6 +189,7 @@ func getCommands() []Command {
 	commands = append(commands, osAssetsCmds...)
 	commands = append(commands, osTemplatesCmds...)
 	commands = append(commands, serversCmds...)
+	commands = append(commands, stageDefinitionsCmds...)
 
 	return commands
 }
@@ -253,4 +255,18 @@ func requestConfirmation(s string) bool {
 	yes := string(requestInput(s))
 	yes = strings.Trim(yes, "\r\n ")
 	return yes == "yes"
+}
+
+func requestInputFromFile(path string) ([]byte, error) {
+
+	file, err := os.Open(path)
+	if err != nil {
+		return nil, err
+	}
+
+	buf := new(bytes.Buffer)
+	buf.ReadFrom(file)
+	file.Close()
+
+	return buf.Bytes(), nil
 }
