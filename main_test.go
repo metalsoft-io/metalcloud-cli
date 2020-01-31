@@ -27,7 +27,7 @@ func TestValidateAPIKey(t *testing.T) {
 	Expect(len(RandStringBytes(64))).To(Equal(64))
 	goodKey := fmt.Sprintf("%d:%s", rand.Intn(100), RandStringBytes(63))
 
-	badKey1 := fmt.Sprintf("%d:%s", rand.Intn(100), RandStringBytes(67))
+	badKey1 := fmt.Sprintf("asdasd:asd%s", RandStringBytes(67))
 	badKey2 := fmt.Sprintf(":%s", RandStringBytes(63))
 
 	Expect(validateAPIKey(goodKey)).To(BeNil())
