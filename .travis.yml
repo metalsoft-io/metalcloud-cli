@@ -46,5 +46,5 @@ deploy:
   script: curl -sL https://git.io/goreleaser | bash -s -- "--skip-validate"
   on:
     tags: true
-    condition: "$TRAVIS_OS_NAME = linux"
+    #condition: "$TRAVIS_OS_NAME = linux"
 dd: 
