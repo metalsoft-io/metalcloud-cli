@@ -5,6 +5,7 @@ import (
 	"flag"
 	"fmt"
 	"os"
+	"runtime"
 	"strings"
 
 	metalcloud "github.com/bigstepinc/metal-cloud-sdk-go"
@@ -172,7 +173,11 @@ func secretCreateCmd(c *Command, client interfaces.MetalCloudClient) (string, er
 	if v := c.Arguments["read_content_from_pipe"]; *v.(*bool) {
 		content = readInputFromPipe()
 	} else {
-		content = requestInputSilent("Secret content:")
+		if runtime.GOOS == "windows" {
+			content = requestInput("Secret content:")
+		} else {
+			content = requestInputSilent("Secret content:")
+		}
 
 	}
 
