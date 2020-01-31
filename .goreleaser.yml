@@ -149,7 +149,7 @@ nfpms:
   -
     # ID of the nfpm config, must be unique.
     # Defaults to "default".
-    #id: foo
+    id: metalcloud-cli-linux
 
     # Name of the package.
     # Defaults to `ProjectName`.
