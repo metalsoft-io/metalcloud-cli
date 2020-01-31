@@ -131,8 +131,10 @@ func serversListCmd(c *Command, client interfaces.MetalCloudClient) (string, err
 				s.InstanceArrayID,
 				s.InfrastructureID)
 		}
-
-		productName := truncateString(s.ServerProductName, 18)
+		productName := s.ServerProductName
+		if len(s.ServerProductName) > 21 {
+			productName = truncateString(s.ServerProductName, 18)
+		}
 
 		data = append(data, []interface{}{
 			s.ServerID,
@@ -305,8 +307,10 @@ func serverGetCmd(c *Command, client interfaces.MetalCloudClient) (string, error
 			(*searchRes)[0].InfrastructureID)
 	}
 
-	productName := truncateString(server.ServerProductName, 18)
-
+	productName := server.ServerProductName
+	if len(server.ServerProductName) > 21 {
+		productName = truncateString(server.ServerProductName, 18)
+	}
 	credentials := ""
 
 	if showCredentials {
