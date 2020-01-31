@@ -87,23 +87,6 @@ var stageDefinitionsCmds = []Command{
 				"stage_id_or_name":           c.FlagSet.String("id", _nilDefaultStr, "stage's id or name"),
 				"infrastructure_id_or_label": c.FlagSet.String("infra_id", _nilDefaultStr, "The infrastructure's id"),
 				"runlevel":                   c.FlagSet.Int("runlevel", _nilDefaultInt, "The runlevel"),
-				"runmoment":                  c.FlagSet.String("moment", _nilDefaultStr, "When to run the stage"),
-			}
-		},
-		ExecuteFunc: stageDefinitionAddToWorkflowCmd,
-	},
-	Command{
-		Description:  "Add stage into workflow",
-		Subject:      "stage",
-		AltSubject:   "stage_definition",
-		Predicate:    "add",
-		AltPredicate: "add_to_infrastructure",
-		FlagSet:      flag.NewFlagSet("add stage", flag.ExitOnError),
-		InitFunc: func(c *Command) {
-			c.Arguments = map[string]interface{}{
-				"stage_id_or_name":           c.FlagSet.String("id", _nilDefaultStr, "stage's id or name"),
-				"infrastructure_id_or_label": c.FlagSet.String("infra_id", _nilDefaultStr, "The infrastructure's id"),
-				"runlevel":                   c.FlagSet.Int("runlevel", _nilDefaultInt, "The runlevel"),
 				"group":                      c.FlagSet.String("group", _nilDefaultStr, "When to run the stage"),
 			}
 		},
