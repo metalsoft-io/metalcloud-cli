@@ -193,7 +193,7 @@ func getCommands() []Command {
 }
 
 func validateAPIKey(apiKey string) error {
-	const pattern = "^\\d+\\:[0-9a-zA-Z]{63,65}$"
+	const pattern = "^\\d+\\:[0-9a-zA-Z]*$"
 
 	matched, _ := regexp.MatchString(pattern, apiKey)
 
