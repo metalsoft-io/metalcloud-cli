@@ -7,15 +7,18 @@ before:
     # you may remove this if you don't need go generate
     #- go generate ./...
 builds:
-- env:
-  - CGO_ENABLED=0
-   # GOOS list to build for.
-    # For more info refer to: https://golang.org/doc/install/source#environment
-    # Defaults are darwin and linux.
-- goos:
-  - linux
-  - darwin
-  - windows
+-
+  id: metalcloud-cli
+  env:
+    - CGO_ENABLED=0
+    # GOOS list to build for.
+      # For more info refer to: https://golang.org/doc/install/source#environment
+      # Defaults are darwin and linux.
+  goos:
+    - linux
+    - darwin
+    - windows
+
 archives:
 - replacements:
     darwin: Darwin
