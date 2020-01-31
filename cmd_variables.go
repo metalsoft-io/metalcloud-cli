@@ -172,7 +172,7 @@ func variableCreateCmd(c *Command, client interfaces.MetalCloudClient) (string, 
 	if v := c.Arguments["read_content_from_pipe"]; *v.(*bool) {
 		content = readInputFromPipe()
 	} else {
-		content = requestInputSilent("Variable content:")
+		content = requestInput("Variable content:")
 
 	}
 

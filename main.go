@@ -204,15 +204,6 @@ func validateAPIKey(apiKey string) error {
 	return nil
 }
 
-func requestConfirmation(s string) bool {
-
-	fmt.Fprintf(GetStdout(), s)
-	reader := bufio.NewReader(GetStdin())
-	yes, _ := reader.ReadString('\n')
-
-	return yes == "yes\n"
-}
-
 func readInputFromPipe() []byte {
 
 	reader := bufio.NewReader(GetStdin())
@@ -232,11 +223,34 @@ func readInputFromPipe() []byte {
 func requestInputSilent(s string) []byte {
 
 	fmt.Fprintf(GetStdout(), s)
+	oldState, err := terminal.MakeRaw(0)
+	if err != nil {
+		panic(err)
+	}
 
 	content, err := terminal.ReadPassword(int(syscall.Stdin))
 	if err != nil {
 		fmt.Fprintf(GetStdout(), err.Error())
 	}
 
+	defer terminal.Restore(0, oldState)
+
 	return content
+}
+
+func requestInput(s string) []byte {
+
+	fmt.Fprintf(GetStdout(), s)
+	reader := bufio.NewReader(GetStdin())
+	content, err := reader.ReadBytes('\n')
+	if err != nil {
+		fmt.Fprintf(GetStdout(), err.Error())
+	}
+	return content
+}
+
+func requestConfirmation(s string) bool {
+	yes := string(requestInput(s))
+	yes = strings.Trim(yes, "\r\n ")
+	return yes == "yes"
 }
