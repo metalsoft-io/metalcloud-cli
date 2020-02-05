@@ -100,6 +100,7 @@ type MetalCloudClient interface {
 	GetUserEmail() string
 	//GetEndpoint returns the endpoint configured for this connection
 	GetEndpoint() string
+	GetUserID() int
 	//NetworkGet retrieves a network object
 	NetworkGet(networkID int) (*metalcloud.Network, error)
 	//NetworkGetByLabel retrieves a network object
@@ -145,7 +146,7 @@ type MetalCloudClient interface {
 	//OSTemplates retrieves a list of all the metalcloud.OSTemplate objects which a specified metalcloud.User is allowed to see through ownership or delegation. The metalcloud.OSTemplate objects never return the actual protected metalcloud.OSTemplate value.
 	OSTemplates() (*map[string]metalcloud.OSTemplate, error)
 	//OSTemplateOSAssets returns the OSAssets assigned to an metalcloud.OSTemplate.
-	OSTemplateOSAssets(osTemplateID int) (*map[string]metalcloud.OSTemplate, error)
+	OSTemplateOSAssets(osTemplateID int) (*map[string]metalcloud.OSAsset, error)
 	//OSTemplateAddOSAsset returns the OSAssets assigned to an metalcloud.OSTemplate.
 	OSTemplateAddOSAsset(osTemplateID int, osAssetID int, path string) error
 	//SecretCreate creates a secret

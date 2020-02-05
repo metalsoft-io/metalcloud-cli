@@ -27,6 +27,7 @@ var variablesCmds = []Command{
 			}
 		},
 		ExecuteFunc: variablesListCmd,
+		Endpoint:    ExtendedEndpoint,
 	},
 	Command{
 		Description:  "Create variable",
@@ -44,6 +45,7 @@ var variablesCmds = []Command{
 			}
 		},
 		ExecuteFunc: variableCreateCmd,
+		Endpoint:    ExtendedEndpoint,
 	},
 	Command{
 		Description:  "Delete variable",
@@ -59,6 +61,7 @@ var variablesCmds = []Command{
 			}
 		},
 		ExecuteFunc: variableDeleteCmd,
+		Endpoint:    ExtendedEndpoint,
 	},
 }
 

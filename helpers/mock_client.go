@@ -694,6 +694,20 @@ func (mr *MockMetalCloudClientMockRecorder) GetEndpoint() *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetEndpoint", reflect.TypeOf((*MockMetalCloudClient)(nil).GetEndpoint))
 }
 
+// GetUserID mocks base method
+func (m *MockMetalCloudClient) GetUserID() int {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetUserID")
+	ret0, _ := ret[0].(int)
+	return ret0
+}
+
+// GetUserID indicates an expected call of GetUserID
+func (mr *MockMetalCloudClientMockRecorder) GetUserID() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetUserID", reflect.TypeOf((*MockMetalCloudClient)(nil).GetUserID))
+}
+
 // NetworkGet mocks base method
 func (m *MockMetalCloudClient) NetworkGet(networkID int) (*metal_cloud_sdk_go.Network, error) {
 	m.ctrl.T.Helper()
@@ -1019,10 +1033,10 @@ func (mr *MockMetalCloudClientMockRecorder) OSTemplates() *gomock.Call {
 }
 
 // OSTemplateOSAssets mocks base method
-func (m *MockMetalCloudClient) OSTemplateOSAssets(osTemplateID int) (*map[string]metal_cloud_sdk_go.OSTemplate, error) {
+func (m *MockMetalCloudClient) OSTemplateOSAssets(osTemplateID int) (*map[string]metal_cloud_sdk_go.OSAsset, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "OSTemplateOSAssets", osTemplateID)
-	ret0, _ := ret[0].(*map[string]metal_cloud_sdk_go.OSTemplate)
+	ret0, _ := ret[0].(*map[string]metal_cloud_sdk_go.OSAsset)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }

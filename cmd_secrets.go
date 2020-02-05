@@ -28,6 +28,7 @@ var secretsCmds = []Command{
 			}
 		},
 		ExecuteFunc: secretsListCmd,
+		Endpoint:    ExtendedEndpoint,
 	},
 	Command{
 		Description:  "Create secret",
@@ -45,6 +46,7 @@ var secretsCmds = []Command{
 			}
 		},
 		ExecuteFunc: secretCreateCmd,
+		Endpoint:    ExtendedEndpoint,
 	},
 	Command{
 		Description:  "Delete secret",
@@ -60,6 +62,7 @@ var secretsCmds = []Command{
 			}
 		},
 		ExecuteFunc: secretDeleteCmd,
+		Endpoint:    ExtendedEndpoint,
 	},
 }
 

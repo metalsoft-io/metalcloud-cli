@@ -26,6 +26,7 @@ var stageDefinitionsCmds = []Command{
 			}
 		},
 		ExecuteFunc: stageDefinitionsListCmd,
+		Endpoint:    ExtendedEndpoint,
 	},
 	Command{
 		Description:  "Create stage definition",
@@ -59,6 +60,7 @@ var stageDefinitionsCmds = []Command{
 			}
 		},
 		ExecuteFunc: stageDefinitionCreateCmd,
+		Endpoint:    ExtendedEndpoint,
 	},
 	Command{
 		Description:  "Delete stage definition",
@@ -74,6 +76,7 @@ var stageDefinitionsCmds = []Command{
 			}
 		},
 		ExecuteFunc: stageDefinitionDeleteCmd,
+		Endpoint:    ExtendedEndpoint,
 	},
 	Command{
 		Description:  "Add stage into workflow",
@@ -91,6 +94,7 @@ var stageDefinitionsCmds = []Command{
 			}
 		},
 		ExecuteFunc: stageDefinitionAddToWorkflowCmd,
+		Endpoint:    ExtendedEndpoint,
 	},
 }
 

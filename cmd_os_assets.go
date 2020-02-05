@@ -27,6 +27,7 @@ var osAssetsCmds = []Command{
 			}
 		},
 		ExecuteFunc: assetsListCmd,
+		Endpoint:    ExtendedEndpoint,
 	},
 	Command{
 		Description:  "Create asset",
@@ -46,6 +47,7 @@ var osAssetsCmds = []Command{
 			}
 		},
 		ExecuteFunc: assetCreateCmd,
+		Endpoint:    ExtendedEndpoint,
 	},
 	Command{
 		Description:  "Delete asset",
@@ -61,6 +63,7 @@ var osAssetsCmds = []Command{
 			}
 		},
 		ExecuteFunc: assetDeleteCmd,
+		Endpoint:    ExtendedEndpoint,
 	},
 	Command{
 		Description:  "Add (associate) asset to template",
@@ -77,6 +80,22 @@ var osAssetsCmds = []Command{
 			}
 		},
 		ExecuteFunc: associateAssetCmd,
+		Endpoint:    ExtendedEndpoint,
+	},
+	Command{
+		Description:  "List associated assets",
+		Subject:      "assets",
+		AltSubject:   "assets",
+		Predicate:    "associated",
+		AltPredicate: "template",
+		FlagSet:      flag.NewFlagSet("associated assets", flag.ExitOnError),
+		InitFunc: func(c *Command) {
+			c.Arguments = map[string]interface{}{
+				"template_id_or_name": c.FlagSet.String("id", _nilDefaultStr, "Template's id or name"),
+			}
+		},
+		ExecuteFunc: templateListAssociatedAssetsCmd,
+		Endpoint:    ExtendedEndpoint,
 	},
 }
 
@@ -222,7 +241,7 @@ func assetCreateCmd(c *Command, client interfaces.MetalCloudClient) (string, err
 
 	ret, err := client.OSAssetCreate(obj)
 
-	if err!=nil{
+	if err != nil {
 		return "", err
 	}
 	if c.Arguments["return_id"] != nil && *c.Arguments["return_id"].(*bool) {
@@ -313,4 +332,110 @@ func associateAssetCmd(c *Command, client interfaces.MetalCloudClient) (string, 
 	}
 
 	return "", client.OSTemplateAddOSAsset(template.VolumeTemplateID, asset.OSAssetID, path)
+}
+
+func templateListAssociatedAssetsCmd(c *Command, client interfaces.MetalCloudClient) (string, error) {
+
+	ret, err := getOSTemplateFromCommand("id", c, client, false)
+	if err != nil {
+		return "", err
+	}
+
+	list, err := client.OSTemplateOSAssets(ret.VolumeTemplateID)
+
+	if err != nil {
+		return "", err
+	}
+
+	schema := []SchemaField{
+		SchemaField{
+			FieldName: "PATH",
+			FieldType: TypeString,
+			FieldSize: 5,
+		},
+		SchemaField{
+			FieldName: "ID",
+			FieldType: TypeInt,
+			FieldSize: 2,
+		},
+		SchemaField{
+			FieldName: "FILENAME",
+			FieldType: TypeString,
+			FieldSize: 20,
+		},
+		SchemaField{
+			FieldName: "FILE_SIZE_BYTES",
+			FieldType: TypeInt,
+			FieldSize: 4,
+		},
+		SchemaField{
+			FieldName: "FILE_MIME",
+			FieldType: TypeString,
+			FieldSize: 20,
+		},
+		SchemaField{
+			FieldName: "USAGE",
+			FieldType: TypeString,
+			FieldSize: 5,
+		},
+		SchemaField{
+			FieldName: "SOURCE_URL",
+			FieldType: TypeString,
+			FieldSize: 5,
+		},
+	}
+
+	data := [][]interface{}{}
+	for path, s := range *list {
+
+		data = append(data, []interface{}{
+			path,
+			s.OSAssetID,
+			s.OSAssetFileName,
+			s.OSAssetFileSizeBytes,
+			s.OSAssetFileMime,
+			s.OSAssetUsage,
+			s.OSAssetSourceURL,
+		})
+
+	}
+
+	var sb strings.Builder
+
+	format := c.Arguments["format"]
+	if format == nil {
+		var f string
+		f = ""
+		format = &f
+	}
+
+	switch *format.(*string) {
+	case "json", "JSON":
+		ret, err := GetTableAsJSONString(data, schema)
+		if err != nil {
+			return "", err
+		}
+		sb.WriteString(ret)
+	case "csv", "CSV":
+		ret, err := GetTableAsCSVString(data, schema)
+		if err != nil {
+			return "", err
+		}
+		sb.WriteString(ret)
+
+	default:
+		sb.WriteString(fmt.Sprintf("Assets associated to template (%s #%d)\n", ret.VolumeTemplateLabel, ret.VolumeTemplateID))
+
+		TableSorter(schema).OrderBy(
+			schema[0].FieldName,
+			schema[1].FieldName).Sort(data)
+
+		AdjustFieldSizes(data, &schema)
+
+		sb.WriteString(GetTableAsString(data, schema))
+
+		sb.WriteString(fmt.Sprintf("Total: %d assets\n\n", len(*list)))
+	}
+
+	return sb.String(), nil
 }

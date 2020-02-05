@@ -179,14 +179,16 @@ func initClients() (map[string]interfaces.MetalCloudClient, error) {
 	endpointSuffixes := map[string]string{
 		DeveloperEndpoint: "/api/developer/developer",
 		ExtendedEndpoint:  "/metal-cloud/extended",
-		UserEndpoint:      "/metal-cloud/extended",
-		"":                "/metal-cloud/extended",
+		UserEndpoint:      "/metal-cloud",
+		"":                "/metal-cloud",
 	}
 
 	for clientName, suffix := range endpointSuffixes {
-		if clientName == DeveloperEndpoint && !isAdmin() {
+
+		if (clientName == DeveloperEndpoint || clientName == ExtendedEndpoint) && !isAdmin() {
 			continue
 		}
+
 		client, err := initClient(suffix)
 		if err != nil {
 			return nil, err

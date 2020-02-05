@@ -27,6 +27,7 @@ var osTemplatesCmds = []Command{
 			}
 		},
 		ExecuteFunc: templatesListCmd,
+		Endpoint:    ExtendedEndpoint,
 	},
 	Command{
 		Description:  "Create template",
@@ -59,6 +60,7 @@ var osTemplatesCmds = []Command{
 			}
 		},
 		ExecuteFunc: templateCreateCmd,
+		Endpoint:    ExtendedEndpoint,
 	},
 	Command{
 		Description:  "Edit template",
@@ -91,6 +93,7 @@ var osTemplatesCmds = []Command{
 			}
 		},
 		ExecuteFunc: templateEditCmd,
+		Endpoint:    ExtendedEndpoint,
 	},
 	Command{
 		Description:  "Get template",
@@ -107,6 +110,7 @@ var osTemplatesCmds = []Command{
 			}
 		},
 		ExecuteFunc: templateGetCmd,
+		Endpoint:    ExtendedEndpoint,
 	},
 	Command{
 		Description:  "Delete template",
@@ -122,6 +126,7 @@ var osTemplatesCmds = []Command{
 			}
 		},
 		ExecuteFunc: templateDeleteCmd,
+		Endpoint:    ExtendedEndpoint,
 	},
 }
 
@@ -429,8 +434,8 @@ func templateCreateCmd(c *Command, client interfaces.MetalCloudClient) (string, 
 	}
 
 	ret, err := client.OSTemplateCreate(*updatedObj)
-	if err!=nil{
-		return "",err
+	if err != nil {
+		return "", err
 	}
 	if c.Arguments["return_id"] != nil && *c.Arguments["return_id"].(*bool) {
 		return fmt.Sprintf("%d", ret.VolumeTemplateID), nil

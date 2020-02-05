@@ -24,6 +24,7 @@ var serversCmds = []Command{
 			}
 		},
 		ExecuteFunc: serversListCmd,
+		Endpoint:    ExtendedEndpoint,
 	},
 
 	Command{
