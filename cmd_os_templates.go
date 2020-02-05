@@ -55,6 +55,7 @@ var osTemplatesCmds = []Command{
 				"initial_ssh_port":             c.FlagSet.Int("initial_ssh_port", _nilDefaultInt, "Template's initial ssh port, used to verify install."),
 				"change_password_after_deploy": c.FlagSet.Bool("change_password_after_deploy", false, "Option to change the initial_user password on the installed OS after deploy."),
 				"repo_url":                     c.FlagSet.String("repo_url", _nilDefaultStr, "Template description"),
+				"return_id":                    c.FlagSet.Bool("return_id", false, "(Flag) If set will print the ID of the created infrastructure. Useful for automating tasks."),
 			}
 		},
 		ExecuteFunc: templateCreateCmd,
@@ -293,6 +294,10 @@ func updateTemplateFromCommand(obj metalcloud.OSTemplate, c *Command, client int
 
 	if v := c.Arguments["label"]; v != nil && *v.(*string) != _nilDefaultStr {
 		obj.VolumeTemplateLabel = *v.(*string)
+	} else {
+		if checkRequired {
+			return nil, fmt.Errorf("label is required")
+		}
 	}
 
 	if v := c.Arguments["display_name"]; v != nil && *v.(*string) != _nilDefaultStr {
@@ -422,7 +427,13 @@ func templateCreateCmd(c *Command, client interfaces.MetalCloudClient) (string, 
 	if err != nil {
 		return "", err
 	}
-	_, err = client.OSTemplateCreate(*updatedObj)
+
+	ret, err := client.OSTemplateCreate(*updatedObj)
+
+	if c.Arguments["return_id"] != nil && *c.Arguments["return_id"].(*bool) {
+		return fmt.Sprintf("%d", ret.VolumeTemplateID), nil
+	}
+
 	return "", err
 }
 
@@ -548,11 +559,6 @@ func templateGetCmd(c *Command, client interfaces.MetalCloudClient) (string, err
 		SchemaField{
 			FieldName: "OS",
 			FieldType: TypeString,
-			FieldSize: 5,
-		},
-		SchemaField{
-			FieldName: "USER_ID",
-			FieldType: TypeInt,
 			FieldSize: 5,
 		},
 		SchemaField{

@@ -40,6 +40,7 @@ var variablesCmds = []Command{
 				"name":                   c.FlagSet.String("name", _nilDefaultStr, "Variable's name"),
 				"usage":                  c.FlagSet.String("usage", _nilDefaultStr, "Variable's usage"),
 				"read_content_from_pipe": c.FlagSet.Bool("pipe", false, "Read variable's content read from pipe instead of terminal input"),
+				"return_id":              c.FlagSet.Bool("return_id", false, "(Flag) If set will print the ID of the created infrastructure. Useful for automating tasks."),
 			}
 		},
 		ExecuteFunc: variableCreateCmd,
@@ -179,7 +180,11 @@ func variableCreateCmd(c *Command, client interfaces.MetalCloudClient) (string, 
 	b, err := json.Marshal(content)
 	variable.VariableJSON = string(b)
 
-	_, err = client.VariableCreate(variable)
+	ret, err := client.VariableCreate(variable)
+
+	if c.Arguments["return_id"] != nil && *c.Arguments["return_id"].(*bool) {
+		return fmt.Sprintf("%d", ret.VariableID), nil
+	}
 
 	return "", err
 }

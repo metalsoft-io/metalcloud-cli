@@ -11,6 +11,7 @@ import (
 	"flag"
 	"fmt"
 	"io"
+	"log"
 	"os"
 	"regexp"
 	"strings"
@@ -22,6 +23,15 @@ import (
 
 	"golang.org/x/crypto/ssh/terminal"
 )
+
+//UserEndpoint exposes regular user functions
+const UserEndpoint = "user"
+
+//ExtendedEndpoint exposes power functions
+const ExtendedEndpoint = "extended"
+
+//DeveloperEndpoint exposes admin functions
+const DeveloperEndpoint = "developer"
 
 //GetUserEmail returns the API key's owner
 func GetUserEmail() string {
@@ -35,9 +45,13 @@ func GetDatacenter() string {
 
 func main() {
 
-	commands := getCommands()
-
 	SetConsoleIOChannel(os.Stdin, os.Stdout)
+
+	clients, err := initClients()
+	if err != nil {
+		fmt.Fprintf(GetStdout(), "Could not initialize metal cloud client %s\n", err)
+		os.Exit(-1)
+	}
 
 	if len(os.Args) < 2 {
 		fmt.Fprintf(GetStdout(), "Error: Syntax error. Use %s help for more details.\n", os.Args[0])
@@ -45,7 +59,7 @@ func main() {
 	}
 
 	if os.Args[1] == "help" {
-		fmt.Fprintf(GetStdout(), "%s\n", getHelp())
+		fmt.Fprintf(GetStdout(), "%s\n", getHelp(clients))
 		os.Exit(0)
 	}
 
@@ -54,13 +68,9 @@ func main() {
 		os.Exit(-1)
 	}
 
-	client, err := initClient()
-	if err != nil {
-		fmt.Fprintf(GetStdout(), "Could not initialize metal cloud client %s\n", err)
-		os.Exit(-1)
-	}
+	commands := getCommands(clients)
 
-	err = executeCommand(os.Args, commands, client)
+	err = executeCommand(os.Args, commands, clients)
 
 	if err != nil {
 		fmt.Fprintf(GetStdout(), "%s\n", err)
@@ -68,7 +78,7 @@ func main() {
 	}
 }
 
-func executeCommand(args []string, commands []Command, client interfaces.MetalCloudClient) error {
+func executeCommand(args []string, commands []Command, clients map[string]interfaces.MetalCloudClient) error {
 	predicate := args[1]
 	subject := args[2]
 
@@ -91,6 +101,11 @@ func executeCommand(args []string, commands []Command, client interfaces.MetalCl
 			err := c.FlagSet.Parse(args[3:])
 			if err != nil {
 				return fmt.Errorf("%s Use '%s %s -h' for syntax help", err, predicate, subject)
+			}
+
+			client, ok := clients[c.Endpoint]
+			if !ok {
+				return fmt.Errorf("Client not set for endpoint %s on command %s %s", c.Endpoint, predicate, subject)
 			}
 
 			ret, err := c.ExecuteFunc(&c, client)
@@ -136,9 +151,9 @@ func getCommandHelp(cmd Command) string {
 	return sb.String()
 }
 
-func getHelp() string {
+func getHelp(clients map[string]interfaces.MetalCloudClient) string {
 	var sb strings.Builder
-	cmds := getCommands()
+	cmds := getCommands(clients)
 	for _, c := range cmds {
 		c.InitFunc(&c)
 	}
@@ -149,24 +164,66 @@ func getHelp() string {
 	return sb.String()
 }
 
-func initClient() (interfaces.MetalCloudClient, error) {
+func isLoggingEnabled() bool {
+	return os.Getenv("METALCLOUD_LOGGING_ENABLED") == "true"
+
+}
+
+func isAdmin() bool {
+	return os.Getenv("METALCLOUD_ADMIN") == "true"
+}
+
+func initClients() (map[string]interfaces.MetalCloudClient, error) {
+
+	clients := map[string]interfaces.MetalCloudClient{}
+	endpointSuffixes := map[string]string{
+		DeveloperEndpoint: "/api/developer/developer",
+		ExtendedEndpoint:  "/metal-cloud/extended",
+		UserEndpoint:      "/metal-cloud",
+		"":                "/metal-cloud/extended",
+	}
+
+	for clientName, suffix := range endpointSuffixes {
+		if clientName == DeveloperEndpoint && !isAdmin() {
+			continue
+		}
+		client, err := initClient(suffix)
+		if err != nil {
+			return nil, err
+		}
+		clients[clientName] = client
+
+		if isLoggingEnabled() {
+			log.Printf("Initialized client for endoint %s to %s\n", clientName, client.GetEndpoint())
+		}
+	}
+	return clients, nil
+}
+
+func initClient(endpointSuffix string) (interfaces.MetalCloudClient, error) {
 	if v := os.Getenv("METALCLOUD_USER_EMAIL"); v == "" {
 		return nil, fmt.Errorf("METALCLOUD_USER_EMAIL must be set")
 	}
+
 	if v := os.Getenv("METALCLOUD_API_KEY"); v == "" {
 		return nil, fmt.Errorf("METALCLOUD_API_KEY must be set")
 	}
+
 	if v := os.Getenv("METALCLOUD_ENDPOINT"); v == "" {
 		return nil, fmt.Errorf("METALCLOUD_ENDPOINT must be set")
 	}
+
 	if v := os.Getenv("METALCLOUD_DATACENTER"); v == "" {
 		return nil, fmt.Errorf("METALCLOUD_DATACENTER must be set")
 	}
 
 	apiKey := os.Getenv("METALCLOUD_API_KEY")
 	user := os.Getenv("METALCLOUD_USER_EMAIL")
-	endpoint := os.Getenv("METALCLOUD_ENDPOINT")
-	loggingEnabled := os.Getenv("METALCLOUD_LOGGING_ENABLED") == "true"
+
+	endpointHost := strings.TrimRight(os.Getenv("METALCLOUD_ENDPOINT"), "/")
+	endpoint := fmt.Sprintf("%s%s", endpointHost, endpointSuffix)
+
+	loggingEnabled := isLoggingEnabled()
 
 	err := validateAPIKey(apiKey)
 	if err != nil {
@@ -174,24 +231,42 @@ func initClient() (interfaces.MetalCloudClient, error) {
 	}
 
 	return metalcloud.GetMetalcloudClient(user, apiKey, endpoint, loggingEnabled)
+
 }
 
-func getCommands() []Command {
-	var commands []Command
+func fitlerCommandSet(commandSet []Command, clients map[string]interfaces.MetalCloudClient) []Command {
+	filteredCommands := []Command{}
+	for _, command := range commandSet {
+		if _, ok := clients[command.Endpoint]; ok {
+			filteredCommands = append(filteredCommands, command)
+		}
+	}
+	return filteredCommands
+}
 
-	commands = append(commands, infrastructureCmds...)
-	commands = append(commands, instanceArrayCmds...)
-	commands = append(commands, driveArrayCmds...)
-	commands = append(commands, volumeTemplateyCmds...)
-	commands = append(commands, firewallRuleCmds...)
-	commands = append(commands, secretsCmds...)
-	commands = append(commands, variablesCmds...)
-	commands = append(commands, osAssetsCmds...)
-	commands = append(commands, osTemplatesCmds...)
-	commands = append(commands, serversCmds...)
-	commands = append(commands, stageDefinitionsCmds...)
+func getCommands(clients map[string]interfaces.MetalCloudClient) []Command {
 
-	return commands
+	commands := [][]Command{
+		infrastructureCmds,
+		instanceArrayCmds,
+		driveArrayCmds,
+		volumeTemplateyCmds,
+		firewallRuleCmds,
+		secretsCmds,
+		variablesCmds,
+		osAssetsCmds,
+		osTemplatesCmds,
+		serversCmds,
+		stageDefinitionsCmds,
+	}
+
+	filteredCommands := []Command{}
+	for _, commandSet := range commands {
+		commands := fitlerCommandSet(commandSet, clients)
+		filteredCommands = append(filteredCommands, commands...)
+	}
+
+	return filteredCommands
 }
 
 func validateAPIKey(apiKey string) error {
@@ -200,7 +275,7 @@ func validateAPIKey(apiKey string) error {
 	matched, _ := regexp.MatchString(pattern, apiKey)
 
 	if !matched {
-		return fmt.Errorf("API Key is not valid. It should start with a number followed by a semicolon and 63 alphanumeric characters <id>:<63 chars> ")
+		return fmt.Errorf("API Key is not valid. It should start with a number followed by a semicolon followed by alphanumeric characters <id>:<chars> ")
 	}
 
 	return nil

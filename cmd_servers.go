@@ -41,6 +41,7 @@ var serversCmds = []Command{
 			}
 		},
 		ExecuteFunc: serverGetCmd,
+		Endpoint:    DeveloperEndpoint,
 	},
 }
 
@@ -283,9 +284,13 @@ func serverGetCmd(c *Command, client interfaces.MetalCloudClient) (string, error
 
 	data := [][]interface{}{}
 
-	serverType, err := client.ServerTypeGet(server.ServerTypeID)
-	if err != nil {
-		return "", err
+	serverTypeName := "<no_server_type>"
+	if server.ServerTypeID != 0 {
+		serverType, err := client.ServerTypeGet(server.ServerTypeID)
+		if err != nil {
+			return "", err
+		}
+		serverTypeName = serverType.ServerTypeDisplayName
 	}
 
 	allocation := ""
@@ -339,7 +344,7 @@ func serverGetCmd(c *Command, client interfaces.MetalCloudClient) (string, error
 	data = append(data, []interface{}{
 		server.ServerID,
 		server.DatacenterName,
-		(*serverType).ServerTypeName,
+		serverTypeName,
 		server.ServerStatus,
 		server.ServerVendor,
 		productName,
@@ -380,7 +385,7 @@ func serverGetCmd(c *Command, client interfaces.MetalCloudClient) (string, error
 		sb.WriteString("---------------\n")
 		sb.WriteString(fmt.Sprintf("#%d %s %s\n",
 			server.ServerID,
-			serverType.ServerTypeName,
+			serverTypeName,
 			server.DatacenterName))
 
 		sb.WriteString(fmt.Sprintf("%s %s\n%s %s\n\n",

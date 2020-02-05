@@ -19,6 +19,7 @@ type Command struct {
 	Arguments    map[string]interface{}
 	InitFunc     func(c *Command)
 	ExecuteFunc  func(c *Command, client interfaces.MetalCloudClient) (string, error)
+	Endpoint     string
 }
 
 func sameCommand(a *Command, b *Command) bool {

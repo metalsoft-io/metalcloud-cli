@@ -42,6 +42,7 @@ var osAssetsCmds = []Command{
 				"mime":                   c.FlagSet.String("mime", _nilDefaultStr, "Required. Asset's mime type. Possible values: \"text/plain\",\"application/octet-stream\""),
 				"url":                    c.FlagSet.String("url", _nilDefaultStr, "Asset's source url. If present it will not read content anymore"),
 				"read_content_from_pipe": c.FlagSet.Bool("pipe", false, "Read secret's content read from pipe instead of terminal input"),
+				"return_id":              c.FlagSet.Bool("return_id", false, "(Flag) If set will print the ID of the created infrastructure. Useful for automating tasks."),
 			}
 		},
 		ExecuteFunc: assetCreateCmd,
@@ -219,7 +220,11 @@ func assetCreateCmd(c *Command, client interfaces.MetalCloudClient) (string, err
 		obj.OSAssetContentsBase64 = base64.StdEncoding.EncodeToString([]byte(content))
 	}
 
-	_, err := client.OSAssetCreate(obj)
+	ret, err := client.OSAssetCreate(obj)
+
+	if c.Arguments["return_id"] != nil && *c.Arguments["return_id"].(*bool) {
+		return fmt.Sprintf("%d", ret.OSAssetID), nil
+	}
 
 	return "", err
 }

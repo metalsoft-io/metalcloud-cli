@@ -7,7 +7,9 @@ import (
 	"os"
 	"testing"
 
+	mock_metalcloud "github.com/bigstepinc/metalcloud-cli/helpers"
 	interfaces "github.com/bigstepinc/metalcloud-cli/interfaces"
+	gomock "github.com/golang/mock/gomock"
 	. "github.com/onsi/gomega"
 )
 
@@ -53,35 +55,35 @@ func TestInitClient(t *testing.T) {
 		}
 	}
 
-	if _, err := initClient(); err == nil {
+	if _, err := initClient("METALCLOUD_ENDPOINT"); err == nil {
 		t.Errorf("Should have been able to test for missing env")
 	}
 
 	os.Setenv("METALCLOUD_USER_EMAIL", "user")
 
-	if _, err := initClient(); err == nil {
+	if _, err := initClient("METALCLOUD_ENDPOINT"); err == nil {
 		t.Errorf("Should have been able to test for missing env")
 	}
 
 	os.Setenv("METALCLOUD_API_KEY", fmt.Sprintf("%d:%s", rand.Intn(100), RandStringBytes(63)))
 
-	if _, err := initClient(); err == nil {
+	if _, err := initClient("METALCLOUD_ENDPOINT"); err == nil {
 		t.Errorf("Should have been able to test for missing env")
 	}
 
 	os.Setenv("METALCLOUD_ENDPOINT", "endpoint")
 
-	if _, err := initClient(); err == nil {
+	if _, err := initClient("METALCLOUD_ENDPOINT"); err == nil {
 		t.Errorf("Should have been able to test for missing env")
 	}
 
 	os.Setenv("METALCLOUD_DATACENTER", "dc")
 
-	if _, err := initClient(); err == nil {
+	if _, err := initClient("METALCLOUD_ENDPOINT"); err == nil {
 		t.Errorf("Should have been able to test for missing env")
 	}
 
-	client, err := initClient()
+	client, err := initClient("METALCLOUD_ENDPOINT")
 	if client == nil || err == nil {
 		t.Errorf("cannot initialize metalcloud client %v", err)
 	}
@@ -93,11 +95,57 @@ func TestInitClient(t *testing.T) {
 
 }
 
+func TestInitClients(t *testing.T) {
+	RegisterTestingT(t)
+
+	envs := []string{
+		"METALCLOUD_USER_EMAIL",
+		"METALCLOUD_API_KEY",
+		"METALCLOUD_ENDPOINT",
+		"METALCLOUD_ADMIN",
+		"METALCLOUD_DATACENTER",
+	}
+
+	currentEnvVals := map[string]string{}
+	for _, e := range envs {
+		if v, ok := os.LookupEnv(e); ok {
+			currentEnvVals[e] = v
+			os.Unsetenv(e)
+		}
+	}
+
+	os.Setenv("METALCLOUD_USER_EMAIL", "user@user.com")
+	os.Setenv("METALCLOUD_DATACENTER", "test")
+	os.Setenv("METALCLOUD_API_KEY", fmt.Sprintf("%d:%s", rand.Intn(100), RandStringBytes(63)))
+	os.Setenv("METALCLOUD_ENDPOINT", "http://test1/1")
+
+	clients, err := initClients()
+	Expect(err).To(BeNil())
+	Expect(clients).To(Not(BeNil()))
+	Expect(clients[UserEndpoint]).To(Not(BeNil()))
+	Expect(clients[ExtendedEndpoint]).To(Not(BeNil()))
+	Expect(clients[DeveloperEndpoint]).To(BeNil())
+
+	os.Setenv("METALCLOUD_ADMIN", "true")
+
+	clients, err = initClients()
+	Expect(clients).To(Not(BeNil()))
+	Expect(clients[UserEndpoint]).To(Not(BeNil()))
+	Expect(clients[ExtendedEndpoint]).To(Not(BeNil()))
+	Expect(clients[DeveloperEndpoint]).To(Not(BeNil()))
+
+	//put back the env values
+	for k, v := range currentEnvVals {
+		os.Setenv(k, v)
+	}
+}
+
 func TestExecuteCommand(t *testing.T) {
 	RegisterTestingT(t)
 
 	execFuncExecuted := false
 	initFuncExecuted := false
+	execFuncExecutedOnDeveloperEndpoint := false
 	commands := []Command{
 		Command{
 			Subject:      "tests",
@@ -113,21 +161,28 @@ func TestExecuteCommand(t *testing.T) {
 			},
 			ExecuteFunc: func(c *Command, client interfaces.MetalCloudClient) (string, error) {
 				execFuncExecuted = true
+				execFuncExecutedOnDeveloperEndpoint = client.GetEndpoint() == "developer"
 				return "", nil
 			},
 		},
 	}
 
+	ctrl := gomock.NewController(t)
+	client := mock_metalcloud.NewMockMetalCloudClient(ctrl)
+	client.EXPECT().GetEndpoint().Return("user").AnyTimes()
+	clients := map[string]interfaces.MetalCloudClient{
+		UserEndpoint: client,
+		"":           client,
+	}
 	//check with wrong commands first, should return err
-
-	err := executeCommand([]string{"", "test", "test"}, commands, nil)
+	err := executeCommand([]string{"", "test", "test"}, commands, clients)
 	Expect(err).NotTo(BeNil())
 
 	execFuncExecuted = false
 	initFuncExecuted = false
 
 	//should execute stuff help and not return error
-	err = executeCommand([]string{"", "p", "s"}, commands, nil)
+	err = executeCommand([]string{"", "p", "s"}, commands, clients)
 	Expect(err).To(BeNil())
 	Expect(execFuncExecuted).To(BeTrue())
 	Expect(initFuncExecuted).To(BeTrue())
@@ -136,10 +191,27 @@ func TestExecuteCommand(t *testing.T) {
 	initFuncExecuted = false
 
 	//should execute stuff help and not return error
-	err = executeCommand([]string{"", "testp", "tests"}, commands, nil)
+	err = executeCommand([]string{"", "testp", "tests"}, commands, clients)
 	Expect(err).To(BeNil())
 	Expect(execFuncExecuted).To(BeTrue())
 	Expect(initFuncExecuted).To(BeTrue())
+	Expect(execFuncExecutedOnDeveloperEndpoint).To(BeFalse())
+
+	//should refuse to execute call on unset endpoint
+	commands[0].Endpoint = DeveloperEndpoint
+	err = executeCommand([]string{"", "testp", "tests"}, commands, clients)
+	Expect(err).NotTo(BeNil())
+
+	//check with correct endpoint
+	devClient := mock_metalcloud.NewMockMetalCloudClient(ctrl)
+	devClient.EXPECT().GetEndpoint().Return("developer").Times(1)
+
+	//should execute the call if endoint set, on the right endpoint
+	clients[DeveloperEndpoint] = devClient
+
+	err = executeCommand([]string{"", "testp", "tests"}, commands, clients)
+	Expect(err).To(BeNil())
+	Expect(execFuncExecutedOnDeveloperEndpoint).To(BeTrue())
 
 }
 
@@ -177,9 +249,14 @@ func TestGetCommandHelp(t *testing.T) {
 
 func TestGetHelp(t *testing.T) {
 	RegisterTestingT(t)
-	cmds := getCommands()
+	ctrl := gomock.NewController(t)
+	client := mock_metalcloud.NewMockMetalCloudClient(ctrl)
+	clients := map[string]interfaces.MetalCloudClient{
+		"": client,
+	}
+	cmds := getCommands(clients)
 
-	s := getHelp()
+	s := getHelp(clients)
 	for _, c := range cmds {
 		Expect(s).To(ContainSubstring(c.Description))
 

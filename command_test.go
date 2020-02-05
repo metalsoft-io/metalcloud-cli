@@ -8,7 +8,9 @@ import (
 	"testing"
 
 	//. "github.com/onsi/gomega"
+	mock_metalcloud "github.com/bigstepinc/metalcloud-cli/helpers"
 	interfaces "github.com/bigstepinc/metalcloud-cli/interfaces"
+	gomock "github.com/golang/mock/gomock"
 	. "github.com/onsi/gomega"
 )
 
@@ -16,7 +18,13 @@ func TestCheckForDuplicates(t *testing.T) {
 
 	var commands []Command
 
-	commands = getCommands()
+	ctrl := gomock.NewController(t)
+	client := mock_metalcloud.NewMockMetalCloudClient(ctrl)
+	client.EXPECT().GetEndpoint().Return("user").AnyTimes()
+	clients := map[string]interfaces.MetalCloudClient{
+		"": client,
+	}
+	commands = getCommands(clients)
 
 	for i := 0; i < len(commands); i++ {
 		for j := i + 1; j < len(commands); j++ {
