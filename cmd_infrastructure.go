@@ -291,7 +291,10 @@ func infrastructureConfirmAndDo(operation string, c *Command, client interfaces.
 			confirmationMessage = ""
 		}
 
-		confirm = requestConfirmation(confirmationMessage)
+		confirm, err = requestConfirmation(confirmationMessage)
+		if err != nil {
+			return "", err
+		}
 	}
 
 	if !confirm {

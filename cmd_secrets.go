@@ -174,15 +174,23 @@ func secretCreateCmd(c *Command, client interfaces.MetalCloudClient) (string, er
 	}
 
 	content := []byte{}
+	var err error
 	if v := c.Arguments["read_content_from_pipe"]; *v.(*bool) {
-		content = readInputFromPipe()
+		content, err = readInputFromPipe()
 	} else {
 		if runtime.GOOS == "windows" {
-			content = requestInput("Secret content:")
+			content, err = requestInput("Secret content:")
 		} else {
-			content = requestInputSilent("Secret content:")
+			content, err = requestInputSilent("Secret content:")
 		}
+	}
 
+	if err != nil {
+		return "", err
+	}
+
+	if len(content) == 0 {
+		return "", fmt.Errorf("Content cannot be empty")
 	}
 
 	secret.SecretBase64 = base64.StdEncoding.EncodeToString([]byte(content))
@@ -220,7 +228,11 @@ func secretDeleteCmd(c *Command, client interfaces.MetalCloudClient) (string, er
 			confirmationMessage = ""
 		}
 
-		confirm = requestConfirmation(confirmationMessage)
+		confirm, err = requestConfirmation(confirmationMessage)
+		if err != nil {
+			return "", err
+		}
+
 	}
 
 	if !confirm {

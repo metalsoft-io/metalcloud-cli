@@ -279,8 +279,13 @@ func stageDefinitionCreateCmd(c *Command, client interfaces.MetalCloudClient) (s
 		req.Options = metalcloud.WebFetchAAPIOptions{}
 
 		content := []byte{}
+		var err error
 		if v := c.Arguments["http_request_body_from_pipe"]; *v.(*bool) {
-			content = readInputFromPipe()
+			content, err = readInputFromPipe()
+			if err != nil {
+				return "", err
+			}
+
 		} else {
 			v := c.Arguments["http_request_body_filename"]
 			if *v.(*string) != _nilDefaultStr {
@@ -376,7 +381,11 @@ func stageDefinitionDeleteCmd(c *Command, client interfaces.MetalCloudClient) (s
 			confirmationMessage = ""
 		}
 
-		confirm = requestConfirmation(confirmationMessage)
+		confirm, err = requestConfirmation(confirmationMessage)
+		if err != nil {
+			return "", err
+		}
+
 	}
 
 	if !confirm {

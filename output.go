@@ -23,7 +23,7 @@ var consoleIOChannelInstance ConsoleIOChannel
 var once sync.Once
 
 //GetConsoleIOChannel returns the console channel singleton
-func GetConsoleIOChannel() ConsoleIOChannel {
+func GetConsoleIOChannel() *ConsoleIOChannel {
 	once.Do(func() {
 
 		consoleIOChannelInstance = ConsoleIOChannel{
@@ -32,7 +32,7 @@ func GetConsoleIOChannel() ConsoleIOChannel {
 		}
 	})
 
-	return consoleIOChannelInstance
+	return &consoleIOChannelInstance
 }
 
 //GetStdout returns the configured output channel
@@ -47,8 +47,9 @@ func GetStdin() io.Reader {
 
 //SetConsoleIOChannel configures the stdin and stdout to be used by all io with
 func SetConsoleIOChannel(in io.Reader, out io.Writer) {
-	consoleIOChannelInstance.Stdin = in
-	consoleIOChannelInstance.Stdout = out
+	channel := GetConsoleIOChannel()
+	channel.Stdin = in
+	channel.Stdout = out
 }
 
 //GetTableHeader returns the row for header (all cells strings but of the length specified in the schema)

@@ -174,12 +174,20 @@ func variableCreateCmd(c *Command, client interfaces.MetalCloudClient) (string, 
 		variable.VariableUsage = *v.(*string)
 	}
 
+	var err error
 	content := []byte{}
 	if v := c.Arguments["read_content_from_pipe"]; *v.(*bool) {
-		content = readInputFromPipe()
+		content, err = readInputFromPipe()
 	} else {
-		content = requestInput("Variable content:")
+		content, err = requestInput("Variable content:")
+	}
 
+	if err != nil {
+		return "", err
+	}
+
+	if len(content) == 0 {
+		return "", fmt.Errorf("Content cannot be empty")
 	}
 
 	b, err := json.Marshal(content)
@@ -218,7 +226,11 @@ func variableDeleteCmd(c *Command, client interfaces.MetalCloudClient) (string, 
 			confirmationMessage = ""
 		}
 
-		confirm = requestConfirmation(confirmationMessage)
+		confirm, err = requestConfirmation(confirmationMessage)
+		if err != nil {
+			return "", err
+		}
+
 	}
 
 	if !confirm {

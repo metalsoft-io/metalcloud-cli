@@ -363,7 +363,7 @@ func driveArrayDeleteCmd(c *Command, client interfaces.MetalCloudClient) (string
 		return "", err2
 	}
 
-	confirm := confirmCommand(c, func() string {
+	confirm, err := confirmCommand(c, func() string {
 
 		var confirmationMessage string
 
@@ -385,6 +385,9 @@ func driveArrayDeleteCmd(c *Command, client interfaces.MetalCloudClient) (string
 
 		return confirmationMessage
 	})
+	if err != nil {
+		return "", err
+	}
 
 	if confirm {
 		return "", client.DriveArrayDelete(retDA.DriveArrayID)

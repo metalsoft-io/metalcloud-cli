@@ -33,10 +33,10 @@ const _nilDefaultStr = "__NIL__"
 const _nilDefaultInt = -14234
 
 //confirms command
-func confirmCommand(c *Command, f func() string) bool {
+func confirmCommand(c *Command, f func() string) (bool, error) {
 
 	if c.Arguments["autoconfirm"] != nil && *c.Arguments["autoconfirm"].(*bool) == true {
-		return true
+		return true, nil
 	}
 
 	return requestConfirmation(f())

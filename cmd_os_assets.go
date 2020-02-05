@@ -230,10 +230,17 @@ func assetCreateCmd(c *Command, client interfaces.MetalCloudClient) (string, err
 	} else {
 
 		if v := c.Arguments["read_content_from_pipe"]; *v.(*bool) {
-			content = readInputFromPipe()
+			_content, err := readInputFromPipe()
+			if err != nil {
+				return "", err
+			}
+			content = _content
 		} else {
-			content = requestInputSilent("Asset content:")
-
+			_content, err := requestInputSilent("Asset content:")
+			if err != nil {
+				return "", err
+			}
+			content = _content
 		}
 
 		obj.OSAssetContentsBase64 = base64.StdEncoding.EncodeToString([]byte(content))
@@ -272,7 +279,10 @@ func assetDeleteCmd(c *Command, client interfaces.MetalCloudClient) (string, err
 			confirmationMessage = ""
 		}
 
-		confirm = requestConfirmation(confirmationMessage)
+		confirm, err = requestConfirmation(confirmationMessage)
+		if err != nil {
+			return "", err
+		}
 	}
 
 	if !confirm {

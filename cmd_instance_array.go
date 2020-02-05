@@ -278,7 +278,10 @@ func instanceArrayDeleteCmd(c *Command, client interfaces.MetalCloudClient) (str
 			confirmationMessage = ""
 		}
 
-		confirm = requestConfirmation(confirmationMessage)
+		confirm, err = requestConfirmation(confirmationMessage)
+		if err != nil {
+			return "", err
+		}
 	}
 
 	if !confirm {

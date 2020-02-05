@@ -477,7 +477,11 @@ func templateDeleteCmd(c *Command, client interfaces.MetalCloudClient) (string, 
 			confirmationMessage = ""
 		}
 
-		confirm = requestConfirmation(confirmationMessage)
+		confirm, err = requestConfirmation(confirmationMessage)
+		if err != nil {
+			return "", err
+		}
+
 	}
 
 	if !confirm {

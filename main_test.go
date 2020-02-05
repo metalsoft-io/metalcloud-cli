@@ -1,6 +1,7 @@
 package main
 
 import (
+	"bytes"
 	"flag"
 	"fmt"
 	"math/rand"
@@ -123,7 +124,7 @@ func TestInitClients(t *testing.T) {
 	Expect(err).To(BeNil())
 	Expect(clients).To(Not(BeNil()))
 	Expect(clients[UserEndpoint]).To(Not(BeNil()))
-	Expect(clients[ExtendedEndpoint]).To(Not(BeNil()))
+	Expect(clients[ExtendedEndpoint]).To(BeNil())
 	Expect(clients[DeveloperEndpoint]).To(BeNil())
 
 	os.Setenv("METALCLOUD_ADMIN", "true")
@@ -264,7 +265,52 @@ func TestGetHelp(t *testing.T) {
 			Expect(s).To(ContainSubstring(f.Name))
 			Expect(s).To(ContainSubstring(f.Usage))
 		})
-
 	}
+}
+
+func TestRequestInputString(t *testing.T) {
+	RegisterTestingT(t)
+	var stdin bytes.Buffer
+	var stdout bytes.Buffer
+
+	SetConsoleIOChannel(&stdin, &stdout)
+
+	stdin.WriteString("test")
+
+	//check without autoconfirm
+	ret, err := requestInputString("test")
+	Expect(ret).To(Equal("test"))
+	Expect(err).To(BeNil())
+}
+
+func TestRequestInput(t *testing.T) {
+	RegisterTestingT(t)
+	var stdin bytes.Buffer
+	var stdout bytes.Buffer
+
+	SetConsoleIOChannel(&stdin, &stdout)
+
+	bytes := []byte{13, 100, 20}
+	stdin.Write(bytes)
+
+	//check without autoconfirm
+	ret, err := requestInput("test")
+	Expect(ret).To(Equal(bytes))
+	Expect(err).To(BeNil())
+}
+
+func TestRequestConfirmation(t *testing.T) {
+	RegisterTestingT(t)
+	var stdin bytes.Buffer
+	var stdout bytes.Buffer
+
+	SetConsoleIOChannel(&stdin, &stdout)
+
+	stdin.WriteString("yes\n")
+
+	//check without autoconfirm
+	ok, err := requestConfirmation("test")
+	Expect(ok).To(BeTrue())
+	Expect(err).To(BeNil())
 
 }

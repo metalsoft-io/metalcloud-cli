@@ -24,6 +24,7 @@ func TestCheckForDuplicates(t *testing.T) {
 	clients := map[string]interfaces.MetalCloudClient{
 		"": client,
 	}
+
 	commands = getCommands(clients)
 
 	for i := 0; i < len(commands); i++ {
@@ -146,12 +147,14 @@ func TestConfirmFunc(t *testing.T) {
 	stdin.Write([]byte("yes\n"))
 
 	//check without autoconfirm
-	ok := confirmCommand(&cmd,
+	ok, err := confirmCommand(&cmd,
 		func() string {
 			return fmt.Sprintf("Reverting infrastructure %d to the deployed state. Are you sure? Type \"yes\" to continue:", v1)
 		},
 	)
+	Expect(err).To(BeNil())
 	Expect(ok).To(BeTrue())
+
 	s, err := stdout.ReadString(byte('\n'))
 	Expect(s).To(ContainSubstring("Reverting infrastructure"))
 
@@ -163,11 +166,12 @@ func TestConfirmFunc(t *testing.T) {
 	err = cmd.FlagSet.Parse(argv)
 	Expect(err).To(BeNil())
 
-	ok = confirmCommand(&cmd,
+	ok, err = confirmCommand(&cmd,
 		func() string {
 			return fmt.Sprintf("Reverting infrastructure %d to the deployed state. Are you sure? Type \"yes\" to continue:", v1)
 		},
 	)
+	Expect(err).To(BeNil())
 	Expect(ok).To(BeTrue())
 
 	s, err = stdout.ReadString(byte('\n'))

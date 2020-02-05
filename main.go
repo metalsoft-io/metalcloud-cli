@@ -11,7 +11,6 @@ import (
 	"flag"
 	"fmt"
 	"io"
-	"log"
 	"os"
 	"regexp"
 	"strings"
@@ -194,10 +193,6 @@ func initClients() (map[string]interfaces.MetalCloudClient, error) {
 			return nil, err
 		}
 		clients[clientName] = client
-
-		if isLoggingEnabled() {
-			log.Printf("Initialized client for endoint %s to %s\n", clientName, client.GetEndpoint())
-		}
 	}
 	return clients, nil
 }
@@ -283,7 +278,7 @@ func validateAPIKey(apiKey string) error {
 	return nil
 }
 
-func readInputFromPipe() []byte {
+func readInputFromPipe() ([]byte, error) {
 
 	reader := bufio.NewReader(GetStdin())
 	var content []byte
@@ -296,43 +291,59 @@ func readInputFromPipe() []byte {
 		content = append(content, input)
 	}
 
-	return content
+	return content, nil
 }
 
-func requestInputSilent(s string) []byte {
+func requestInputSilent(s string) ([]byte, error) {
 
 	fmt.Fprintf(GetStdout(), s)
 	oldState, err := terminal.MakeRaw(0)
 	if err != nil {
-		panic(err)
+		return []byte{}, err
 	}
 
 	content, err := terminal.ReadPassword(int(syscall.Stdin))
 	if err != nil {
-		fmt.Fprintf(GetStdout(), err.Error())
+		return []byte{}, err
 	}
 
 	defer terminal.Restore(0, oldState)
-	fmt.Fprintf(GetStdout(), "\n")
-
-	return content
+	return content, nil
 }
 
-func requestInput(s string) []byte {
+func requestInput(s string) ([]byte, error) {
 
 	fmt.Fprintf(GetStdout(), s)
 	reader := bufio.NewReader(GetStdin())
 	content, err := reader.ReadBytes('\n')
-	if err != nil {
-		fmt.Fprintf(GetStdout(), err.Error())
+
+	if err != nil && err != io.EOF {
+		return content, err
 	}
-	return content
+
+	return content, nil
 }
 
-func requestConfirmation(s string) bool {
-	yes := string(requestInput(s))
-	yes = strings.Trim(yes, "\r\n ")
-	return yes == "yes"
+func requestInputString(s string) (string, error) {
+
+	fmt.Fprintf(GetStdout(), s)
+	reader := bufio.NewReader(GetStdin())
+	content, err := reader.ReadString('\n')
+
+	if err != nil && err != io.EOF {
+		return content, err
+	}
+
+	return content, nil
+}
+
+func requestConfirmation(s string) (bool, error) {
+	yes, err := requestInput(s)
+	if err != nil {
+		return false, err
+	}
+
+	return strings.Trim(string(yes), "\r\n ") == "yes", nil
 }
 
 func requestInputFromFile(path string) ([]byte, error) {
