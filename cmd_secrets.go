@@ -185,6 +185,9 @@ func secretCreateCmd(c *Command, client interfaces.MetalCloudClient) (string, er
 	secret.SecretBase64 = base64.StdEncoding.EncodeToString([]byte(content))
 
 	ret, err := client.SecretCreate(secret)
+	if err != nil {
+		return "", err
+	}
 
 	if c.Arguments["return_id"] != nil && *c.Arguments["return_id"].(*bool) {
 		return fmt.Sprintf("%d", ret.SecretID), nil

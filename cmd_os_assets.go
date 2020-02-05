@@ -222,6 +222,9 @@ func assetCreateCmd(c *Command, client interfaces.MetalCloudClient) (string, err
 
 	ret, err := client.OSAssetCreate(obj)
 
+	if err!=nil{
+		return "", err
+	}
 	if c.Arguments["return_id"] != nil && *c.Arguments["return_id"].(*bool) {
 		return fmt.Sprintf("%d", ret.OSAssetID), nil
 	}

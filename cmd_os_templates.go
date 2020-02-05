@@ -429,7 +429,9 @@ func templateCreateCmd(c *Command, client interfaces.MetalCloudClient) (string, 
 	}
 
 	ret, err := client.OSTemplateCreate(*updatedObj)
-
+	if err!=nil{
+		return "",err
+	}
 	if c.Arguments["return_id"] != nil && *c.Arguments["return_id"].(*bool) {
 		return fmt.Sprintf("%d", ret.VolumeTemplateID), nil
 	}

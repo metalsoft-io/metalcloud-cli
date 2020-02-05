@@ -33,7 +33,7 @@ go get github.com/bigstepinc/metalcloud-cli
 Configure credentials as environment variables:
 ```bash
 export METALCLOUD_API_KEY="<your key>"
-export METALCLOUD_ENDPOINT="https://api.bigstep.com/metal-cloud"
+export METALCLOUD_ENDPOINT="https://api.bigstep.com"
 export METALCLOUD_USER_EMAIL="<your email>"
 export METALCLOUD_DATACENTER="uk-reading"
 ```
@@ -117,4 +117,10 @@ metalcloud-cli ls infra
 Most commands also take a label instead of an id as a parameter. For example:
 ```
 metalcloud-cli show infra -id complex-demo
+```
+
+## Admin commands
+To enable admin commands use the following environment variable:
+```bash
+export METALCLOUD_ADMIN="true"
 ```

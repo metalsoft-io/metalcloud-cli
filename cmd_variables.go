@@ -163,6 +163,8 @@ func variableCreateCmd(c *Command, client interfaces.MetalCloudClient) (string, 
 
 	if v := c.Arguments["name"]; v != nil && *v.(*string) != _nilDefaultStr {
 		variable.VariableName = *v.(*string)
+	} else {
+		return "", fmt.Errorf("name is required")
 	}
 
 	if v := c.Arguments["usage"]; v != nil && *v.(*string) != _nilDefaultStr {
@@ -181,6 +183,9 @@ func variableCreateCmd(c *Command, client interfaces.MetalCloudClient) (string, 
 	variable.VariableJSON = string(b)
 
 	ret, err := client.VariableCreate(variable)
+	if err != nil {
+		return "", err
+	}
 
 	if c.Arguments["return_id"] != nil && *c.Arguments["return_id"].(*bool) {
 		return fmt.Sprintf("%d", ret.VariableID), nil

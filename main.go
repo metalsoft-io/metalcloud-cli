@@ -179,7 +179,7 @@ func initClients() (map[string]interfaces.MetalCloudClient, error) {
 	endpointSuffixes := map[string]string{
 		DeveloperEndpoint: "/api/developer/developer",
 		ExtendedEndpoint:  "/metal-cloud/extended",
-		UserEndpoint:      "/metal-cloud",
+		UserEndpoint:      "/metal-cloud/extended",
 		"":                "/metal-cloud/extended",
 	}
 
@@ -311,6 +311,7 @@ func requestInputSilent(s string) []byte {
 	}
 
 	defer terminal.Restore(0, oldState)
+	fmt.Fprintf(GetStdout(), "\n")
 
 	return content
 }
