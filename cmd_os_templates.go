@@ -395,7 +395,7 @@ func updateTemplateFromCommand(obj metalcloud.OSTemplate, c *Command, client int
 	if v := c.Arguments["initial_user"]; v != nil && *v.(*string) != _nilDefaultStr {
 		creds := metalcloud.OSTemplateCredentials{}
 		obj.OSTemplateCredentials = &creds
-		obj.OSTemplateCredentials.InitialUser = *v.(*string)
+		obj.OSTemplateCredentials.OSTemplateInitialUser = *v.(*string)
 	} else {
 		if checkRequired {
 			return nil, fmt.Errorf("initial_user is required")
@@ -403,7 +403,7 @@ func updateTemplateFromCommand(obj metalcloud.OSTemplate, c *Command, client int
 	}
 
 	if v := c.Arguments["initial_password"]; v != nil && *v.(*string) != _nilDefaultStr {
-		obj.OSTemplateCredentials.InitialPassword = *v.(*string)
+		obj.OSTemplateCredentials.OSTemplateInitialPassword = *v.(*string)
 	} else {
 		if checkRequired {
 			return nil, fmt.Errorf("initial_password is required")
@@ -411,7 +411,7 @@ func updateTemplateFromCommand(obj metalcloud.OSTemplate, c *Command, client int
 	}
 
 	if v := c.Arguments["initial_ssh_port"]; v != nil && *v.(*int) != _nilDefaultInt {
-		obj.OSTemplateCredentials.InitialSSHPort = *v.(*int)
+		obj.OSTemplateCredentials.OSTemplateInitialSSHPort = *v.(*int)
 	} else {
 		if checkRequired {
 			return nil, fmt.Errorf("initial_ssh_port is required")
@@ -419,7 +419,7 @@ func updateTemplateFromCommand(obj metalcloud.OSTemplate, c *Command, client int
 	}
 
 	if v := c.Arguments["change_password_after_deploy"]; v != nil && *v.(*bool) {
-		obj.OSTemplateCredentials.ChangePasswordAfterDeploy = true
+		obj.OSTemplateCredentials.OSTemplateChangePasswordAfterDeploy = true
 	}
 
 	if v := c.Arguments["repo_url"]; v != nil && *v.(*string) != _nilDefaultStr {
@@ -615,10 +615,10 @@ func templateGetCmd(c *Command, client interfaces.MetalCloudClient) (string, err
 		})
 
 		credentials = fmt.Sprintf("user:%s (port %d) passwd:%s (change_password_after_install:%v)",
-			template.OSTemplateCredentials.InitialUser,
-			template.OSTemplateCredentials.InitialSSHPort,
-			template.OSTemplateCredentials.InitialPassword,
-			template.OSTemplateCredentials.ChangePasswordAfterDeploy)
+			template.OSTemplateCredentials.OSTemplateInitialUser,
+			template.OSTemplateCredentials.OSTemplateInitialSSHPort,
+			template.OSTemplateCredentials.OSTemplateInitialPassword,
+			template.OSTemplateCredentials.OSTemplateChangePasswordAfterDeploy)
 
 	}
 	osDetails := ""
