@@ -21,9 +21,8 @@ var osTemplatesCmds = []Command{
 		FlagSet:      flag.NewFlagSet("list templates", flag.ExitOnError),
 		InitFunc: func(c *Command) {
 			c.Arguments = map[string]interface{}{
-				"format":           c.FlagSet.String("format", _nilDefaultStr, "The output format. Supported values are 'json','csv'. The default format is human readable."),
-				"usage":            c.FlagSet.String("usage", _nilDefaultStr, "Template's usage"),
-				"show_credentials": c.FlagSet.Bool("show_credentials", false, "(Flag) If set returns the templates initial ssh credentials"),
+				"format": c.FlagSet.String("format", _nilDefaultStr, "The output format. Supported values are 'json','csv'. The default format is human readable."),
+				"usage":  c.FlagSet.String("usage", _nilDefaultStr, "Template's usage"),
 			}
 		},
 		ExecuteFunc: templatesListCmd,
@@ -110,7 +109,7 @@ var osTemplatesCmds = []Command{
 			}
 		},
 		ExecuteFunc: templateGetCmd,
-		Endpoint:    ExtendedEndpoint,
+		Endpoint:    DeveloperEndpoint,
 	},
 	Command{
 		Description:  "Delete template",
@@ -307,6 +306,10 @@ func updateTemplateFromCommand(obj metalcloud.OSTemplate, c *Command, client int
 
 	if v := c.Arguments["display_name"]; v != nil && *v.(*string) != _nilDefaultStr {
 		obj.VolumeTemplateDisplayName = *v.(*string)
+	} else {
+		if checkRequired {
+			return nil, fmt.Errorf("name is required")
+		}
 	}
 
 	if v := c.Arguments["size"]; v != nil && *v.(*int) != _nilDefaultInt {
