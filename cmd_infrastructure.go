@@ -257,12 +257,12 @@ type infrastructureConfirmAndDoFunc func(infraID int, c *Command, client interfa
 //infrastructureConfirmAndDo asks for confirmation and executes the given function
 func infrastructureConfirmAndDo(operation string, c *Command, client interfaces.MetalCloudClient, f infrastructureConfirmAndDoFunc) (string, error) {
 
-	m, err := getParam(c, "infrastructure_id_or_label", "infra")
+	val, err := getParam(c, "infrastructure_id_or_label", "infra")
 	if err != nil {
 		return "", err
 	}
 
-	infraID, err := getIDOrDo(m, func(label string) (int, error) {
+	infraID, err := getIDOrDo(*val.(*string), func(label string) (int, error) {
 		ia, err := client.InfrastructureGetByLabel(label)
 		if err != nil {
 			return 0, err
@@ -626,26 +626,6 @@ func listWorkflowStagesCmd(c *Command, client interfaces.MetalCloudClient) (stri
 	}
 
 	return sb.String(), nil
-}
-
-//getInfrastructureIDFromCommand returns an InfrastructureID using the infrastructure_id_or_label argument, without executing infratructureGet.
-//The function call GetByLabel to get the actual ID when a label is passed but it saves one call to infrastructureGet when only the id is needed.
-func getInfrastructureIDFromCommand(paramName string, c *Command, client interfaces.MetalCloudClient) (int, error) {
-	m, err := getParam(c, "infrastructure_id_or_label", paramName)
-	if err != nil {
-		return 0, err
-	}
-
-	id, label, isID := idOrLabel(m)
-
-	if !isID {
-		retInfra, err := client.InfrastructureGetByLabel(label)
-		if err != nil {
-			return retInfra.InfrastructureID, nil
-		}
-	}
-
-	return id, nil
 }
 
 //getInfrastructureFromCommand returns an Infrastructure object using the infrastructure_id_or_label argument

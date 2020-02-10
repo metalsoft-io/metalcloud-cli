@@ -92,27 +92,28 @@ func driveArrayCreateCmd(c *Command, client interfaces.MetalCloudClient) (string
 
 	da := argsToDriveArray(c.Arguments)
 
-	infraID, err := getInfrastructureIDFromCommand("infra", c, client)
+	infra, err := getInfrastructureFromCommand("infra", c, client)
 	if err != nil {
 		return "", err
 	}
 
-	if v := c.Arguments["instance_array_id_or_label"]; v != nil && v != _nilDefaultStr {
+	if v, ok := getStringParamOk(c.Arguments["instance_array_id_or_label"]); ok {
+
 		iaID, err := getIDOrDo(v, func(label string) (int, error) {
 			ia, err := client.InstanceArrayGetByLabel(label)
 			if err != nil {
 				return 0, err
 			}
 			return ia.InstanceArrayID, nil
-		},
-		)
+		})
+
 		if err != nil {
 			return "", err
 		}
 		da.InstanceArrayID = iaID
 	}
 
-	if v := c.Arguments["volume_template_id_or_label"]; v != nil && v != _nilDefaultStr {
+	if v, ok := getStringParamOk(c.Arguments["volume_template_id_or_label"]); ok {
 		vtID, err := getIDOrDo(v, func(label string) (int, error) {
 			vt, err := client.VolumeTemplateGetByLabel(label)
 			if err != nil {
@@ -131,12 +132,12 @@ func driveArrayCreateCmd(c *Command, client interfaces.MetalCloudClient) (string
 		return "", fmt.Errorf("-label <drive_array_label> is required")
 	}
 
-	retDA, err := client.DriveArrayCreate(infraID, *da)
+	retDA, err := client.DriveArrayCreate(infra.InfrastructureID, *da)
 	if err != nil {
 		return "", err
 	}
 
-	if c.Arguments["return_id"] != nil && *c.Arguments["return_id"].(*bool) == true {
+	if getBoolParam(c.Arguments["return_id"]) {
 		return fmt.Sprintf("%d", retDA.DriveArrayID), nil
 	}
 
@@ -152,59 +153,46 @@ func driveArrayEditCmd(c *Command, client interfaces.MetalCloudClient) (string, 
 
 	dao := retDA.DriveArrayOperation
 
-	iaID, err := getIDOrDo(c.Arguments["instance_array_id_or_label"],
-		func(label string) (int, error) {
-			ia, err := client.InstanceArrayGetByLabel(label)
-			if err != nil {
-				return 0, err
-			}
-			return ia.InstanceArrayID, nil
-		},
-	)
-	if err != nil {
-		return "", err
+	if v, ok := getStringParamOk(c.Arguments["instance_array_id_or_label"]); ok {
+		iaID, err := getIDOrDo(v,
+			func(label string) (int, error) {
+				ia, err := client.InstanceArrayGetByLabel(label)
+				if err != nil {
+					return 0, err
+				}
+				return ia.InstanceArrayID, nil
+			},
+		)
+		if err != nil {
+			return "", err
+		}
+
+		dao.InstanceArrayID = iaID
 	}
 
-	dao.InstanceArrayID = iaID
+	if v, ok := getStringParamOk(c.Arguments["volume_template_id_or_label"]); ok {
+		vtID, err := getIDOrDo(v,
+			func(label string) (int, error) {
+				vt, err := client.VolumeTemplateGetByLabel(label)
+				if err != nil {
+					return 0, err
+				}
+				return vt.VolumeTemplateID, nil
+			},
+		)
+		if err != nil {
+			return "", err
+		}
 
-	vtID, err := getIDOrDo(c.Arguments["volume_template_id_or_label"],
-		func(label string) (int, error) {
-			vt, err := client.VolumeTemplateGetByLabel(label)
-			if err != nil {
-				return 0, err
-			}
-			return vt.VolumeTemplateID, nil
-		},
-	)
-	if err != nil {
-		return "", err
+		dao.VolumeTemplateID = vtID
 	}
 
-	dao.VolumeTemplateID = vtID
-
-	if v := c.Arguments["drive_array_id"]; v != nil && *v.(*int) != _nilDefaultInt {
-		dao.DriveArrayID = *v.(*int)
-	}
-
-	if v := c.Arguments["drive_array_label"]; v != nil && *v.(*string) != _nilDefaultStr {
-		dao.DriveArrayLabel = *v.(*string)
-	}
-
-	if v := c.Arguments["drive_array_storage_type"]; v != nil && *v.(*string) != _nilDefaultStr {
-		dao.DriveArrayStorageType = *v.(*string)
-	}
-
-	if v := c.Arguments["drive_array_count"]; v != nil && *v.(*int) != _nilDefaultInt {
-		dao.DriveArrayCount = *v.(*int)
-	}
-
-	if v := c.Arguments["drive_size_mbytes_default"]; v != nil && *v.(*int) != _nilDefaultInt {
-		dao.DriveSizeMBytesDefault = *v.(*int)
-	}
-
-	if v := c.Arguments["drive_array_expand_with_instance_array"]; v != nil {
-		dao.DriveArrayExpandWithInstanceArray = *v.(*bool)
-	}
+	updateIfIntParamSet(c.Arguments["drive_array_id"], &dao.DriveArrayID)
+	updateIfStringParamSet(c.Arguments["drive_array_label"], &dao.DriveArrayLabel)
+	updateIfStringParamSet(c.Arguments["drive_array_storage_type"], &dao.DriveArrayStorageType)
+	updateIfIntParamSet(c.Arguments["drive_array_count"], &dao.DriveArrayCount)
+	updateIfIntParamSet(c.Arguments["drive_size_mbytes_default"], &dao.DriveSizeMBytesDefault)
+	updateIfBoolParamSet(c.Arguments["drive_array_expand_with_instance_array"], &dao.DriveArrayExpandWithInstanceArray)
 
 	_, err = client.DriveArrayEdit(retDA.DriveArrayID, *dao)
 
@@ -213,12 +201,12 @@ func driveArrayEditCmd(c *Command, client interfaces.MetalCloudClient) (string, 
 
 func driveArrayListCmd(c *Command, client interfaces.MetalCloudClient) (string, error) {
 
-	m, err := getParam(c, "infrastructure_id_or_label", "infra")
+	infraIDStr, err := getParam(c, "infrastructure_id_or_label", "infra")
 	if err != nil {
 		return "", err
 	}
 
-	infraID, err := getIDOrDo(m, func(label string) (int, error) {
+	infraID, err := getIDOrDo(*infraIDStr.(*string), func(label string) (int, error) {
 		ia, err := client.InfrastructureGetByLabel(label)
 		if err != nil {
 			return 0, err
@@ -397,33 +385,14 @@ func driveArrayDeleteCmd(c *Command, client interfaces.MetalCloudClient) (string
 }
 
 func argsToDriveArray(m map[string]interface{}) *metalcloud.DriveArray {
-	obj := metalcloud.DriveArray{}
-
-	if v := m["drive_array_id"]; v != nil && *v.(*int) != _nilDefaultInt {
-		obj.DriveArrayID = *v.(*int)
+	return &metalcloud.DriveArray{
+		DriveArrayID:                      getIntParam(m["drive_array_id"]),
+		DriveArrayLabel:                   getStringParam(m["drive_array_label"]),
+		DriveArrayStorageType:             getStringParam(m["drive_array_storage_type"]),
+		DriveArrayCount:                   getIntParam(m["drive_array_count"]),
+		DriveSizeMBytesDefault:            getIntParam(m["drive_size_mbytes_default"]),
+		DriveArrayExpandWithInstanceArray: getBoolParam(m["drive_array_no_expand_with_instance_array"]),
 	}
-
-	if v := m["drive_array_label"]; v != nil && *v.(*string) != _nilDefaultStr {
-		obj.DriveArrayLabel = *v.(*string)
-	}
-
-	if v := m["drive_array_storage_type"]; v != nil && *v.(*string) != _nilDefaultStr {
-		obj.DriveArrayStorageType = *v.(*string)
-	}
-
-	if v := m["drive_array_count"]; v != nil && *v.(*int) != _nilDefaultInt {
-		obj.DriveArrayCount = *v.(*int)
-	}
-
-	if v := m["drive_size_mbytes_default"]; v != nil && *v.(*int) != _nilDefaultInt {
-		obj.DriveSizeMBytesDefault = *v.(*int)
-	}
-
-	if v := m["drive_array_no_expand_with_instance_array"]; v != nil && *v.(*bool) {
-		obj.DriveArrayExpandWithInstanceArray = !*v.(*bool)
-	}
-
-	return &obj
 }
 
 func getDriveArrayFromCommand(c *Command, client interfaces.MetalCloudClient) (*metalcloud.DriveArray, error) {

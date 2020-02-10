@@ -116,7 +116,7 @@ var instanceArrayCmds = []Command{
 
 func instanceArrayCreateCmd(c *Command, client interfaces.MetalCloudClient) (string, error) {
 
-	infraID, err := getInfrastructureIDFromCommand("infra", c, client)
+	infra, err := getInfrastructureFromCommand("infra", c, client)
 	if err != nil {
 		return "", err
 	}
@@ -127,7 +127,7 @@ func instanceArrayCreateCmd(c *Command, client interfaces.MetalCloudClient) (str
 		return "", fmt.Errorf("-label <instance_array_label> is required")
 	}
 
-	retIA, err := client.InstanceArrayCreate(infraID, *ia)
+	retIA, err := client.InstanceArrayCreate(infra.InfrastructureID, *ia)
 	if err != nil {
 		return "", err
 	}

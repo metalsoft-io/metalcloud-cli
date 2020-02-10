@@ -91,6 +91,13 @@ func getParam(c *Command, label string, name string) (interface{}, error) {
 	return v, nil
 }
 
+func idOrLabelString(v string) (int, string, bool) {
+	if i, ok := getIDFromStringOk(v); ok {
+		return i, "", true
+	}
+	return 0, v, false
+}
+
 //idOrLabel returns an int or a string contained in the interface. The last param is true if int is returned.
 func idOrLabel(v interface{}) (int, string, bool) {
 	switch v.(type) {
@@ -107,10 +114,67 @@ func idOrLabel(v interface{}) (int, string, bool) {
 
 type getIDOrDoFunc func(i string) (int, error)
 
-func getIDOrDo(v interface{}, f getIDOrDoFunc) (int, error) {
-	id, label, isID := idOrLabel(v)
+func getIDOrDo(idOrLabel string, f getIDOrDoFunc) (int, error) {
+	id, label, isID := idOrLabelString(idOrLabel)
 	if !isID {
 		return f(label)
 	}
 	return id, nil
+}
+
+func getIntParam(v interface{}) int {
+	if v != nil && *v.(*int) != _nilDefaultInt {
+		return *v.(*int)
+	}
+	return 0
+}
+
+func getStringParam(v interface{}) string {
+	if v != nil && *v.(*string) != _nilDefaultStr {
+		return *v.(*string)
+	}
+	return ""
+}
+
+func getBoolParam(v interface{}) bool {
+	return v != nil && *v.(*bool)
+}
+
+func getStringParamOk(v interface{}) (string, bool) {
+	if v != nil && *v.(*string) != _nilDefaultStr {
+		return *v.(*string), true
+	}
+	return "", false
+}
+
+func getIntParamOk(v interface{}) (int, bool) {
+	if v != nil && *v.(*int) != _nilDefaultInt {
+		return *v.(*int), true
+	}
+	return 0, false
+}
+
+func getBoolParamOk(v interface{}) (bool, bool) {
+	if v == nil {
+		return false, false
+	}
+	return v != nil && *v.(*bool), true
+}
+
+func updateIfIntParamSet(v interface{}, p *int) {
+	if v, ok := getIntParamOk(v); ok {
+		*p = v
+	}
+}
+
+func updateIfStringParamSet(v interface{}, p *string) {
+	if v, ok := getStringParamOk(v); ok {
+		*p = v
+	}
+}
+
+func updateIfBoolParamSet(v interface{}, p *bool) {
+	if v, ok := getBoolParamOk(v); ok {
+		*p = v
+	}
 }

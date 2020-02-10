@@ -19,7 +19,7 @@ func TestDriveArrayCreate(t *testing.T) {
 
 	client := mock_metalcloud.NewMockMetalCloudClient(ctrl)
 
-	i := 10
+	i := 1005
 	s := "test"
 	sEmpty := ""
 
@@ -35,6 +35,11 @@ func TestDriveArrayCreate(t *testing.T) {
 		InfrastructureLabel: "test",
 	}
 
+	ia := metalcloud.InstanceArray{
+		InstanceArrayID:    1005,
+		InstanceArrayLabel: "test2",
+	}
+
 	client.EXPECT().
 		InfrastructureGet(infra.InfrastructureID).
 		Return(&infra, nil).
@@ -45,12 +50,18 @@ func TestDriveArrayCreate(t *testing.T) {
 		Return(&infra, nil).
 		AnyTimes()
 
+	client.EXPECT().
+		InstanceArrayGetByLabel(ia.InstanceArrayID).
+		Return(&ia, nil).
+		AnyTimes()
+
+	ii := "1005"
 	cmd := Command{
 		Arguments: map[string]interface{}{
 			"infrastructure_id_or_label":  &infra.InfrastructureID,
 			"drive_array_label":           &da.DriveArrayLabel,
-			"volume_template_id_or_label": &i,
-			"instance_array_id_or_label":  &i,
+			"volume_template_id_or_label": &ii,
+			"instance_array_id_or_label":  &ii,
 		},
 	}
 
@@ -79,8 +90,8 @@ func TestDriveArrayCreate(t *testing.T) {
 		Arguments: map[string]interface{}{
 			"infrastructure_id_or_label":  &infra.InfrastructureID,
 			"drive_array_label":           &da.DriveArrayLabel,
-			"volume_template_id_or_label": &i,
-			"instance_array_id_or_label":  &i,
+			"volume_template_id_or_label": &ii,
+			"instance_array_id_or_label":  &ii,
 			"return_id":                   &bTrue,
 		},
 	}
@@ -103,25 +114,25 @@ func TestDriveArrayCreate(t *testing.T) {
 		map[string]interface{}{
 			//"infrastructure_id_or_label": &i,
 			"volume_template_id_or_label": &s,
-			"instance_array_id_or_label":  &i,
+			"instance_array_id_or_label":  &ii,
 		},
 		//no volume template
 		map[string]interface{}{
 			"infrastructure_id_or_label": &infra.InfrastructureID,
 			//"volume_template_id_or_label": &i,
-			"instance_array_id_or_label": &i,
+			"instance_array_id_or_label": &ii,
 		},
 		//no instance_array id
 		map[string]interface{}{
 			"infrastructure_id_or_label":  &infra.InfrastructureID,
-			"volume_template_id_or_label": &i,
+			"volume_template_id_or_label": &ii,
 			//"instance_array_id_or_label":  &i,
 		},
 		//empty label
 		map[string]interface{}{
 			"infrastructure_id_or_label":  &infra.InfrastructureID,
-			"volume_template_id_or_label": &i,
-			"instance_array_id_or_label":  &i,
+			"volume_template_id_or_label": &ii,
+			"instance_array_id_or_label":  &ii,
 			"drive_array_label":           &sEmpty,
 		},
 	}
@@ -251,14 +262,16 @@ func TestDriveArrayEdit(t *testing.T) {
 		AnyTimes()
 
 	i := 10
+	is := "10"
 	i0 := 0
+	i0s := "0"
 	newlabel := "newlabel"
 	cmd := Command{
 		Arguments: map[string]interface{}{
 			"drive_array_id_or_label":     &da.DriveArrayID,
 			"drive_array_label":           &newlabel,
-			"volume_template_id_or_label": &i,
-			"instance_array_id_or_label":  &i0,
+			"volume_template_id_or_label": &is,
+			"instance_array_id_or_label":  &i0s,
 		},
 	}
 
@@ -409,9 +422,10 @@ func TestDriveArrayListCmd(t *testing.T) {
 		AnyTimes()
 
 	format := "json"
+	id := fmt.Sprintf("%d", infra.InfrastructureID)
 	cmd := Command{
 		Arguments: map[string]interface{}{
-			"infrastructure_id_or_label": &infra.InfrastructureID,
+			"infrastructure_id_or_label": &id,
 			"format":                     &format,
 		},
 	}
@@ -474,7 +488,8 @@ func TestDriveArrayListCmd(t *testing.T) {
 		Return(nil, fmt.Errorf("testerror")).
 		AnyTimes()
 
-	cmd.Arguments["infrastructure_id_or_label"] = &i
+	id = fmt.Sprintf("%d", i)
+	cmd.Arguments["infrastructure_id_or_label"] = &id
 
 	_, err = driveArrayListCmd(&cmd, client)
 	Expect(err).NotTo(BeNil())

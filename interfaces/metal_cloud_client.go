@@ -100,6 +100,7 @@ type MetalCloudClient interface {
 	GetUserEmail() string
 	//GetEndpoint returns the endpoint configured for this connection
 	GetEndpoint() string
+	//GetUserID returns the ID of the user extracted from the API key
 	GetUserID() int
 	//NetworkGet retrieves a network object
 	NetworkGet(networkID int) (*metalcloud.Network, error)

@@ -59,9 +59,10 @@ func TestInfrastructureRevertCmd(t *testing.T) {
 		AnyTimes()
 
 	autoconfirm := true
+	id := fmt.Sprintf("%d", infra.InfrastructureID)
 	cmd := Command{
 		Arguments: map[string]interface{}{
-			"infrastructure_id_or_label": &infra.InfrastructureID,
+			"infrastructure_id_or_label": &id,
 			"autoconfirm":                &autoconfirm,
 		},
 	}
@@ -116,9 +117,10 @@ func TestInfrastructureDeployCmd(t *testing.T) {
 	//bFalse := true
 	bTrue := true
 	timeout := 256
+	id := fmt.Sprintf("%d", infra.InfrastructureID)
 	cmd := Command{
 		Arguments: map[string]interface{}{
-			"infrastructure_id_or_label":    &infra.InfrastructureID,
+			"infrastructure_id_or_label":    &id,
 			"allow_data_loss":               &bTrue,
 			"no_attempt_soft_shutdown":      &bTrue,
 			"soft_shutdown_timeout_seconds": &timeout,
@@ -186,9 +188,10 @@ func TestInfrastructureDeleteCmd(t *testing.T) {
 		Return(&ia, nil).
 		AnyTimes()
 
+	id := fmt.Sprintf("%d", infra.InfrastructureID)
 	cmd := Command{
 		Arguments: map[string]interface{}{
-			"infrastructure_id_or_label": &infra.InfrastructureID,
+			"infrastructure_id_or_label": &id,
 		},
 	}
 
