@@ -211,6 +211,9 @@ func instanceArrayListCmd(c *Command, client interfaces.MetalCloudClient) (strin
 		if ia.InstanceArrayServiceStatus != "ordered" && ia.InstanceArrayOperation.InstanceArrayDeployType == "edit" && ia.InstanceArrayOperation.InstanceArrayDeployStatus == "not_started" {
 			status = "edited"
 		}
+		if ia.InstanceArrayServiceStatus != "ordered" && ia.InstanceArrayOperation.InstanceArrayDeployType == "delete" && ia.InstanceArrayOperation.InstanceArrayDeployStatus == "not_started" {
+			status = "marked for delete"
+		}
 		data = append(data, []interface{}{
 			ia.InstanceArrayID,
 			ia.InstanceArrayOperation.InstanceArrayLabel,

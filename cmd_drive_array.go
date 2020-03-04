@@ -274,6 +274,10 @@ func driveArrayListCmd(c *Command, client interfaces.MetalCloudClient) (string, 
 			status = "edited"
 		}
 
+		if da.DriveArrayServiceStatus != "ordered" && da.DriveArrayOperation.DriveArrayDeployType == "delete" && da.DriveArrayOperation.DriveArrayDeployStatus == "not_started" {
+			status = "marked for delete"
+		}
+
 		volumeTemplateName := ""
 		if da.VolumeTemplateID != 0 {
 			vt, err := client.VolumeTemplateGet(da.DriveArrayOperation.VolumeTemplateID)
@@ -283,8 +287,9 @@ func driveArrayListCmd(c *Command, client interfaces.MetalCloudClient) (string, 
 
 			volumeTemplateName = fmt.Sprintf("%s (#%d)", vt.VolumeTemplateDisplayName, vt.VolumeTemplateID)
 		}
+
 		instanceArrayLabel := ""
-		if da.InstanceArrayID != 0 {
+		if da.DriveArrayOperation.InstanceArrayID != 0 {
 			ia, err := client.InstanceArrayGet(da.DriveArrayOperation.InstanceArrayID)
 			if err != nil {
 				return "", err

@@ -54,7 +54,7 @@ var osTemplatesCmds = []Command{
 				"initial_password":             c.FlagSet.String("initial_password", _nilDefaultStr, "Template's initial password, used to verify install."),
 				"initial_ssh_port":             c.FlagSet.Int("initial_ssh_port", _nilDefaultInt, "Template's initial ssh port, used to verify install."),
 				"change_password_after_deploy": c.FlagSet.Bool("change_password_after_deploy", false, "Option to change the initial_user password on the installed OS after deploy."),
-				"repo_url":                     c.FlagSet.String("repo_url", _nilDefaultStr, "Template description"),
+				"repo_url":                     c.FlagSet.String("repo_url", _nilDefaultStr, "Template's location the repository"),
 				"return_id":                    c.FlagSet.Bool("return_id", false, "(Flag) If set will print the ID of the created infrastructure. Useful for automating tasks."),
 			}
 		},
@@ -367,7 +367,7 @@ func updateTemplateFromCommand(obj metalcloud.OSTemplate, c *Command, client int
 
 	//Boot options
 	if v := c.Arguments["os_template_architecture"]; v != nil && *v.(*string) != _nilDefaultStr {
-		obj.OSTemplateArchitecture = *v.(*string)
+		obj.OSTemplatePreBootArchitecture = *v.(*string)
 
 	} else {
 		if checkRequired {
@@ -520,7 +520,11 @@ func getOSTemplateFromCommand(paramName string, c *Command, client interfaces.Me
 		}
 	}
 
-	return nil, fmt.Errorf("Could not locate secret with id/name %v", *v.(*interface{}))
+	if isID {
+		return nil, fmt.Errorf("template %d not found", id)
+	} else {
+		return nil, fmt.Errorf("template %s not found", label)
+	}
 }
 
 func templateGetCmd(c *Command, client interfaces.MetalCloudClient) (string, error) {
