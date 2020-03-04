@@ -522,9 +522,9 @@ func getOSTemplateFromCommand(paramName string, c *Command, client interfaces.Me
 
 	if isID {
 		return nil, fmt.Errorf("template %d not found", id)
-	} else {
-		return nil, fmt.Errorf("template %s not found", label)
 	}
+
+	return nil, fmt.Errorf("template %s not found", label)
 }
 
 func templateGetCmd(c *Command, client interfaces.MetalCloudClient) (string, error) {
