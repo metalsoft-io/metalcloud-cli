@@ -240,15 +240,15 @@ type MetalCloudClient interface {
 	//WorkflowStages retrieves a list of all the StageDefinitions objects in this workflow
 	WorkflowStages(workflowID int) (*[]metalcloud.WorkflowStageDefinitionReference, error)
 	//WorkflowStageGet returns a metalcloud.StageDefinition specified by workflowStageID.
-	WorkflowStageGet(workflowStageID int) (*metalcloud.StageDefinition, error)
+	WorkflowStageGet(workflowStageID int) (*metalcloud.WorkflowStageDefinitionReference, error)
 	//WorkflowStageAddAsNewRunLevel adds a new stage in this workflow
 	WorkflowStageAddAsNewRunLevel(workflowID int, stageDefinitionID int, destinationRunLevel int) error
 	//WorkflowStageAddIntoRunLevel adds a new stage in this workflow
 	WorkflowStageAddIntoRunLevel(workflowID int, stageDefinitionID int, destinationRunLevel int) error
-	//WorkflowDeleteFromRunLevel removes a  stage in this workflow from a runlevel
-	WorkflowDeleteFromRunLevel(workflowID int, stageDefinitionID int, destinationRunLevel int) error
 	//WorkflowMoveAsNewRunLevel moves a stage in this workflow from a runlevel to another
 	WorkflowMoveAsNewRunLevel(workflowID int, stageDefinitionID int, sourceRunLevel int, destinationRunLevel int) error
 	//WorkflowMoveIntoRunLevel moves a stage in this workflow from a runlevel to another
 	WorkflowMoveIntoRunLevel(workflowID int, stageDefinitionID int, sourceRunLevel int, destinationRunLevel int) error
+	//WorkflowStageDelete deletes a stage from a workflow entirelly
+	WorkflowStageDelete(workflowStageID int) error
 }

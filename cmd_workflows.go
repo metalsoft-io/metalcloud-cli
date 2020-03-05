@@ -3,6 +3,7 @@ package main
 import (
 	"flag"
 	"fmt"
+	"os"
 	"strings"
 
 	metalcloud "github.com/bigstepinc/metal-cloud-sdk-go"
@@ -79,6 +80,38 @@ var workflowCmds = []Command{
 		},
 		ExecuteFunc: workflowCreateCmd,
 		Endpoint:    DeveloperEndpoint,
+	},
+	Command{
+		Description:  "Delete a workflow",
+		Subject:      "workflow",
+		AltSubject:   "workflow",
+		Predicate:    "delete",
+		AltPredicate: "rm",
+		FlagSet:      flag.NewFlagSet("delete workflow", flag.ExitOnError),
+		InitFunc: func(c *Command) {
+			c.Arguments = map[string]interface{}{
+				"workflow_id_or_name": c.FlagSet.String("id", _nilDefaultStr, "Workflow's id or name"),
+				"autoconfirm":         c.FlagSet.Bool("autoconfirm", false, "If true it does not ask for confirmation anymore"),
+			}
+		},
+		ExecuteFunc: workflowDeleteCmd,
+		Endpoint:    ExtendedEndpoint,
+	},
+	Command{
+		Description:  "Delete a stage from a workflow",
+		Subject:      "stage",
+		AltSubject:   "stage",
+		Predicate:    "delete",
+		AltPredicate: "rm_stage",
+		FlagSet:      flag.NewFlagSet("delete workflow stage", flag.ExitOnError),
+		InitFunc: func(c *Command) {
+			c.Arguments = map[string]interface{}{
+				"workflow_stage_id": c.FlagSet.Int("id", _nilDefaultInt, "Workflow's stage id "),
+				"autoconfirm":       c.FlagSet.Bool("autoconfirm", false, "If true it does not ask for confirmation anymore"),
+			}
+		},
+		ExecuteFunc: workflowDeleteStageCmd,
+		Endpoint:    ExtendedEndpoint,
 	},
 }
 
@@ -190,7 +223,7 @@ func workflowGetCmd(c *Command, client interfaces.MetalCloudClient) (string, err
 		return "", err
 	}
 
-	runlevels := map[int][]*metalcloud.StageDefinition{}
+	runlevels := map[int][]string{}
 
 	for _, s := range *list {
 		stageDef, err := client.StageDefinitionGet(s.StageDefinitionID)
@@ -198,22 +231,20 @@ func workflowGetCmd(c *Command, client interfaces.MetalCloudClient) (string, err
 			return "", err
 		}
 
-		runlevels[s.WorkflowStageRunLevel] = append(runlevels[s.WorkflowStageRunLevel], stageDef)
+		stageDescription := fmt.Sprintf("%s(#%d)-[WSI:# %d]",
+			stageDef.StageDefinitionTitle,
+			stageDef.StageDefinitionID,
+			s.WorkflowStageID,
+		)
+		runlevels[s.WorkflowStageRunLevel] = append(runlevels[s.WorkflowStageRunLevel], stageDescription)
 	}
 
 	data := [][]interface{}{}
-	for k, stageDefs := range runlevels {
-
-		var stageDescriptions []string
-
-		for _, s := range stageDefs {
-			stageDescription := fmt.Sprintf("%s(%d)", s.StageDefinitionTitle, s.StageDefinitionID)
-			stageDescriptions = append(stageDescriptions, stageDescription)
-		}
+	for k, descriptions := range runlevels {
 
 		data = append(data, []interface{}{
 			k,
-			strings.Join(stageDescriptions, " "),
+			strings.Join(descriptions, " "),
 		})
 
 	}
@@ -253,6 +284,94 @@ func workflowCreateCmd(c *Command, client interfaces.MetalCloudClient) (string, 
 
 	return "", nil
 
+}
+
+func workflowDeleteCmd(c *Command, client interfaces.MetalCloudClient) (string, error) {
+
+	ret, err := getWorkflowFromCommand("id", c, client)
+	if err != nil {
+		return "", err
+	}
+	confirm := false
+
+	if c.Arguments["autoconfirm"] != nil && *c.Arguments["autoconfirm"].(*bool) == true {
+		confirm = true
+	} else {
+
+		confirmationMessage := fmt.Sprintf("Deleting workflow  %s (%d).  Are you sure? Type \"yes\" to continue:",
+			ret.WorkflowTitle,
+			ret.WorkflowID)
+
+		//this is simply so that we don't output a text on the command line under go test
+		if strings.HasSuffix(os.Args[0], ".test") {
+			confirmationMessage = ""
+		}
+
+		confirm, err = requestConfirmation(confirmationMessage)
+		if err != nil {
+			return "", err
+		}
+
+	}
+
+	if !confirm {
+		return "", fmt.Errorf("Operation not confirmed. Aborting")
+	}
+
+	err = client.WorkflowDelete(ret.WorkflowID)
+
+	return "", err
+}
+
+func workflowDeleteStageCmd(c *Command, client interfaces.MetalCloudClient) (string, error) {
+
+	workflowStageID, ok := getIntParamOk(c.Arguments["workflow_stage_id"])
+	if !ok {
+		return "", fmt.Errorf("-id is required (workflow-stage-id (WSI) number returned by get workflow")
+	}
+
+	workflowStage, err := client.WorkflowStageGet(workflowStageID)
+	if err != nil {
+		return "", err
+	}
+
+	confirm := getBoolParam(c.Arguments["autoconfirm"])
+
+	if !confirm {
+
+		wf, err := client.WorkflowGet(workflowStage.WorkflowID)
+		if err != nil {
+			return "", err
+		}
+
+		sd, err := client.StageDefinitionGet(workflowStage.StageDefinitionID)
+		if err != nil {
+			return "", err
+		}
+
+		confirmationMessage := fmt.Sprintf("Deleting stage %s (%d) from workflow %s (%d).  Are you sure? Type \"yes\" to continue:",
+			wf.WorkflowTitle, wf.WorkflowID,
+			sd.StageDefinitionTitle, sd.StageDefinitionID)
+
+		//this is simply so that we don't output a text on the command line under go test
+		if strings.HasSuffix(os.Args[0], ".test") {
+			confirmationMessage = ""
+		}
+
+		confirm, err = requestConfirmation(confirmationMessage)
+		if err != nil {
+			return "", err
+		}
+
+	}
+
+	if !confirm {
+		return "", fmt.Errorf("Operation not confirmed. Aborting")
+	}
+
+	err = client.WorkflowStageDelete(workflowStageID)
+
+	return "", err
 }
 
 func getWorkflowFromCommand(paramName string, c *Command, client interfaces.MetalCloudClient) (*metalcloud.Workflow, error) {

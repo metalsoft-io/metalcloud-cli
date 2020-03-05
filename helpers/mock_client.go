@@ -1713,10 +1713,10 @@ func (mr *MockMetalCloudClientMockRecorder) WorkflowStages(workflowID interface{
 }
 
 // WorkflowStageGet mocks base method
-func (m *MockMetalCloudClient) WorkflowStageGet(workflowStageID int) (*metal_cloud_sdk_go.StageDefinition, error) {
+func (m *MockMetalCloudClient) WorkflowStageGet(workflowStageID int) (*metal_cloud_sdk_go.WorkflowStageDefinitionReference, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "WorkflowStageGet", workflowStageID)
-	ret0, _ := ret[0].(*metal_cloud_sdk_go.StageDefinition)
+	ret0, _ := ret[0].(*metal_cloud_sdk_go.WorkflowStageDefinitionReference)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
@@ -1755,20 +1755,6 @@ func (mr *MockMetalCloudClientMockRecorder) WorkflowStageAddIntoRunLevel(workflo
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "WorkflowStageAddIntoRunLevel", reflect.TypeOf((*MockMetalCloudClient)(nil).WorkflowStageAddIntoRunLevel), workflowID, stageDefinitionID, destinationRunLevel)
 }
 
-// WorkflowDeleteFromRunLevel mocks base method
-func (m *MockMetalCloudClient) WorkflowDeleteFromRunLevel(workflowID, stageDefinitionID, destinationRunLevel int) error {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "WorkflowDeleteFromRunLevel", workflowID, stageDefinitionID, destinationRunLevel)
-	ret0, _ := ret[0].(error)
-	return ret0
-}
-
-// WorkflowDeleteFromRunLevel indicates an expected call of WorkflowDeleteFromRunLevel
-func (mr *MockMetalCloudClientMockRecorder) WorkflowDeleteFromRunLevel(workflowID, stageDefinitionID, destinationRunLevel interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "WorkflowDeleteFromRunLevel", reflect.TypeOf((*MockMetalCloudClient)(nil).WorkflowDeleteFromRunLevel), workflowID, stageDefinitionID, destinationRunLevel)
-}
-
 // WorkflowMoveAsNewRunLevel mocks base method
 func (m *MockMetalCloudClient) WorkflowMoveAsNewRunLevel(workflowID, stageDefinitionID, sourceRunLevel, destinationRunLevel int) error {
 	m.ctrl.T.Helper()
@@ -1795,4 +1781,18 @@ func (m *MockMetalCloudClient) WorkflowMoveIntoRunLevel(workflowID, stageDefinit
 func (mr *MockMetalCloudClientMockRecorder) WorkflowMoveIntoRunLevel(workflowID, stageDefinitionID, sourceRunLevel, destinationRunLevel interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "WorkflowMoveIntoRunLevel", reflect.TypeOf((*MockMetalCloudClient)(nil).WorkflowMoveIntoRunLevel), workflowID, stageDefinitionID, sourceRunLevel, destinationRunLevel)
+}
+
+// WorkflowStageDelete mocks base method
+func (m *MockMetalCloudClient) WorkflowStageDelete(workflowStageID int) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "WorkflowStageDelete", workflowStageID)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// WorkflowStageDelete indicates an expected call of WorkflowStageDelete
+func (mr *MockMetalCloudClientMockRecorder) WorkflowStageDelete(workflowStageID interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "WorkflowStageDelete", reflect.TypeOf((*MockMetalCloudClient)(nil).WorkflowStageDelete), workflowStageID)
 }

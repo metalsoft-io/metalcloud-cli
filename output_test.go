@@ -271,7 +271,7 @@ func TestAdjustFieldSizes(t *testing.T) {
 
 }
 
-func TestrenderTable(t *testing.T) {
+func TestRenderTable(t *testing.T) {
 	RegisterTestingT(t)
 	schema := []SchemaField{
 		SchemaField{
