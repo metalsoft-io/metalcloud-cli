@@ -84,7 +84,7 @@ var stageDefinitionsCmds = []Command{
 	},
 	Command{
 		Description:  "Add stage into infrastructure",
-		Subject:      "stage_def",
+		Subject:      "stage",
 		AltSubject:   "stage_definition",
 		Predicate:    "add_to_infra",
 		AltPredicate: "add_to_infrastructure",
@@ -102,24 +102,7 @@ var stageDefinitionsCmds = []Command{
 	},
 	Command{
 		Description:  "Add stage into workflow",
-		Subject:      "stage_def",
-		AltSubject:   "stage_definition",
-		Predicate:    "add",
-		AltPredicate: "add_to_workflow",
-		FlagSet:      flag.NewFlagSet("add stage", flag.ExitOnError),
-		InitFunc: func(c *Command) {
-			c.Arguments = map[string]interface{}{
-				"stage_id_or_name":     c.FlagSet.String("id", _nilDefaultStr, "stage's id or name"),
-				"workflow_id_or_label": c.FlagSet.String("workflow", _nilDefaultStr, "The workflow's id"),
-				"runlevel":             c.FlagSet.Int("runlevel", _nilDefaultInt, "The runlevel"),
-			}
-		},
-		ExecuteFunc: stageDefinitionAddToWorkflowCmd,
-		Endpoint:    ExtendedEndpoint,
-	},
-	Command{
-		Description:  "Delete a stage definition from a workflow",
-		Subject:      "stage_def",
+		Subject:      "stage",
 		AltSubject:   "stage_definition",
 		Predicate:    "add",
 		AltPredicate: "add_to_workflow",
@@ -491,5 +474,9 @@ func getStageDefinitionFromCommand(paramName string, c *Command, client interfac
 		}
 	}
 
-	return nil, fmt.Errorf("Could not locate stage definition with id/name %v", *v.(*interface{}))
+	if isID {
+		return nil, fmt.Errorf("Stage definition %d not found", id)
+	}
+
+	return nil, fmt.Errorf("Stage definition %s not found", label)
 }
