@@ -211,45 +211,13 @@ func infrastructureListCmd(c *Command, client interfaces.MetalCloudClient) (stri
 
 	}
 
-	var sb strings.Builder
+	TableSorter(schema).OrderBy(
+		schema[3].FieldName,
+		schema[0].FieldName,
+		schema[1].FieldName).Sort(data)
 
-	format := c.Arguments["format"]
-	if format == nil {
-		var f string
-		f = ""
-		format = &f
-	}
-
-	switch *format.(*string) {
-	case "json", "JSON":
-		ret, err := GetTableAsJSONString(data, schema)
-		if err != nil {
-			return "", err
-		}
-		sb.WriteString(ret)
-	case "csv", "CSV":
-		ret, err := GetTableAsCSVString(data, schema)
-		if err != nil {
-			return "", err
-		}
-		sb.WriteString(ret)
-
-	default:
-		sb.WriteString(fmt.Sprintf("Infrastructures I have access to (as %s) in datacenter %s\n", user, GetDatacenter()))
-
-		TableSorter(schema).OrderBy(
-			schema[3].FieldName,
-			schema[0].FieldName,
-			schema[1].FieldName).Sort(data)
-
-		AdjustFieldSizes(data, &schema)
-
-		sb.WriteString(GetTableAsString(data, schema))
-
-		sb.WriteString(fmt.Sprintf("Total: %d Infrastructures\n\n", len(*iList)))
-	}
-
-	return sb.String(), nil
+	topLine := fmt.Sprintf("Infrastructures I have access to (as %s) in datacenter %s\n", user, GetDatacenter())
+	return renderTable("Infrastructures", topLine, getStringParam(c.Arguments["format"]), data, schema)
 }
 
 type infrastructureConfirmAndDoFunc func(infraID int, c *Command, client interfaces.MetalCloudClient) (string, error)

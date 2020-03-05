@@ -37,13 +37,15 @@ var stageDefinitionsCmds = []Command{
 		FlagSet:      flag.NewFlagSet("create stage definition", flag.ExitOnError),
 		InitFunc: func(c *Command) {
 			c.Arguments = map[string]interface{}{
-				"label":                             c.FlagSet.String("label", _nilDefaultStr, "Stage Definitions's label"),
-				"icon":                              c.FlagSet.String("icon", _nilDefaultStr, "Icon image file in data URI format like this: data:image/png;base64,iVBOR="),
-				"title":                             c.FlagSet.String("title", _nilDefaultStr, "Stage Definitions's title"),
-				"description":                       c.FlagSet.String("description", _nilDefaultStr, "Stage Definitions's description"),
-				"type":                              c.FlagSet.String("type", _nilDefaultStr, "Stage Definitions's type. Possible values: AnsibleBundle, HTTPRequest"),
-				"vars":                              c.FlagSet.String("vars", _nilDefaultStr, "Stage Definitions's variables. These must be available in the execution context, otherwise the stage cannot run."),
-				"ansible_bundle_filename":           c.FlagSet.String("ansible_bundle_filename", _nilDefaultStr, "Ansible bundle's file path to load the bundle from. Must be a zip file. Required when type=AnsibleBundle"),
+				"label":       c.FlagSet.String("label", _nilDefaultStr, "Stage Definitions's label"),
+				"icon":        c.FlagSet.String("icon", _nilDefaultStr, "Icon image file in data URI format like this: data:image/png;base64,iVBOR="),
+				"title":       c.FlagSet.String("title", _nilDefaultStr, "Stage Definitions's title"),
+				"description": c.FlagSet.String("description", _nilDefaultStr, "Stage Definitions's description"),
+				"type":        c.FlagSet.String("type", _nilDefaultStr, "Stage Definitions's type. Possible values: HTTPRequest, AnsibleBundle, WorkflowReference"),
+				"vars":        c.FlagSet.String("vars", _nilDefaultStr, "Stage Definitions's variables. These must be available in the execution context, otherwise the stage cannot run."),
+
+				"ansible_bundle_filename": c.FlagSet.String("ansible_bundle_filename", _nilDefaultStr, "Ansible bundle's file path to load the bundle from. Must be a zip file. Required when type=AnsibleBundle"),
+
 				"http_request_url":                  c.FlagSet.String("http_request_url", _nilDefaultStr, "HTTP Requests's URL. Required when using type=HTTPRequest"),
 				"http_request_method":               c.FlagSet.String("http_request_method", _nilDefaultStr, "HTTP Requests's method. Required when using type=HTTPRequest"),
 				"http_request_body_filename":        c.FlagSet.String("http_request_body_filename", _nilDefaultStr, "HTTP Requests's content is read from this file. Can only be used when type=HTTPRequest"),
@@ -57,6 +59,8 @@ var stageDefinitionsCmds = []Command{
 				"http_request_no_compress":          c.FlagSet.Bool("http_request_no_compress", false, "HTTP Requests's compress disabled if set. Can only be used when type=HTTPRequest"),
 				"http_request_timeout":              c.FlagSet.Int("http_request_timeout", _nilDefaultInt, "HTTP Requests's timeout. Can only be used when type=HTTPRequest"),
 				"http_request_size":                 c.FlagSet.Int("http_request_size", _nilDefaultInt, "HTTP Requests's size. Can only be used when type=HTTPRequest"),
+
+				"workflow_id_or_label": c.FlagSet.String("workflow", _nilDefaultStr, "workflow to reference. Can only be used when type=WorkflowReference"),
 			}
 		},
 		ExecuteFunc: stageDefinitionCreateCmd,
@@ -79,10 +83,10 @@ var stageDefinitionsCmds = []Command{
 		Endpoint:    ExtendedEndpoint,
 	},
 	Command{
-		Description:  "Add stage into workflow",
+		Description:  "Add stage into infrastructure",
 		Subject:      "stage",
 		AltSubject:   "stage_definition",
-		Predicate:    "add",
+		Predicate:    "add_to_infra",
 		AltPredicate: "add_to_infrastructure",
 		FlagSet:      flag.NewFlagSet("add stage", flag.ExitOnError),
 		InitFunc: func(c *Command) {
@@ -91,6 +95,23 @@ var stageDefinitionsCmds = []Command{
 				"infrastructure_id_or_label": c.FlagSet.String("infra_id", _nilDefaultStr, "The infrastructure's id"),
 				"runlevel":                   c.FlagSet.Int("runlevel", _nilDefaultInt, "The runlevel"),
 				"group":                      c.FlagSet.String("group", _nilDefaultStr, "When to run the stage"),
+			}
+		},
+		ExecuteFunc: stageDefinitionAddToInfrastructureCmd,
+		Endpoint:    ExtendedEndpoint,
+	},
+	Command{
+		Description:  "Add stage into workflow",
+		Subject:      "stage",
+		AltSubject:   "stage_definition",
+		Predicate:    "add",
+		AltPredicate: "add_to_workflow",
+		FlagSet:      flag.NewFlagSet("add stage", flag.ExitOnError),
+		InitFunc: func(c *Command) {
+			c.Arguments = map[string]interface{}{
+				"stage_id_or_name":     c.FlagSet.String("id", _nilDefaultStr, "stage's id or name"),
+				"workflow_id_or_label": c.FlagSet.String("workflow", _nilDefaultStr, "The workflow's id"),
+				"runlevel":             c.FlagSet.Int("runlevel", _nilDefaultInt, "The runlevel"),
 			}
 		},
 		ExecuteFunc: stageDefinitionAddToWorkflowCmd,
@@ -181,44 +202,7 @@ func stageDefinitionsListCmd(c *Command, client interfaces.MetalCloudClient) (st
 
 	}
 
-	var sb strings.Builder
-
-	format := c.Arguments["format"]
-	if format == nil {
-		var f string
-		f = ""
-		format = &f
-	}
-
-	switch *format.(*string) {
-	case "json", "JSON":
-		ret, err := GetTableAsJSONString(data, schema)
-		if err != nil {
-			return "", err
-		}
-		sb.WriteString(ret)
-	case "csv", "CSV":
-		ret, err := GetTableAsCSVString(data, schema)
-		if err != nil {
-			return "", err
-		}
-		sb.WriteString(ret)
-
-	default:
-		sb.WriteString(fmt.Sprintf("Stage Definitions:"))
-
-		TableSorter(schema).OrderBy(
-			schema[0].FieldName,
-			schema[1].FieldName).Sort(data)
-
-		AdjustFieldSizes(data, &schema)
-
-		sb.WriteString(GetTableAsString(data, schema))
-
-		sb.WriteString(fmt.Sprintf("Total: %d stage definitions\n\n", len(*list)))
-	}
-
-	return sb.String(), nil
+	return renderTable("Stage Definitions", "", getStringParam(c.Arguments["format"]), data, schema)
 }
 
 func stageDefinitionCreateCmd(c *Command, client interfaces.MetalCloudClient) (string, error) {
@@ -353,6 +337,20 @@ func stageDefinitionCreateCmd(c *Command, client interfaces.MetalCloudClient) (s
 		}
 
 		stage.StageDefinition = req
+
+	case "WorkflowReference":
+
+		wf, err := getWorkflowFromCommand("workflow", c, client)
+		if err != nil {
+			return "", err
+		}
+
+		wr := metalcloud.WorkflowReference{
+			WorkflowID: wf.WorkflowID,
+			Type:       "WorkflowReference",
+		}
+
+		stage.StageDefinition = wr
 	}
 
 	_, err := client.StageDefinitionCreate(stage)
@@ -397,7 +395,7 @@ func stageDefinitionDeleteCmd(c *Command, client interfaces.MetalCloudClient) (s
 	return "", err
 }
 
-func stageDefinitionAddToWorkflowCmd(c *Command, client interfaces.MetalCloudClient) (string, error) {
+func stageDefinitionAddToInfrastructureCmd(c *Command, client interfaces.MetalCloudClient) (string, error) {
 
 	stage, err := getStageDefinitionFromCommand("id", c, client)
 	if err != nil {
@@ -420,6 +418,34 @@ func stageDefinitionAddToWorkflowCmd(c *Command, client interfaces.MetalCloudCli
 	}
 
 	err = client.InfrastructureDeployCustomStageAddIntoRunlevel(infra.InfrastructureID, stage.StageDefinitionID, runlevel, runmoment)
+
+	return "", err
+}
+
+func stageDefinitionAddToWorkflowCmd(c *Command, client interfaces.MetalCloudClient) (string, error) {
+
+	stage, err := getStageDefinitionFromCommand("id", c, client)
+	if err != nil {
+		return "", err
+	}
+
+	w, err := getWorkflowFromCommand("workflow", c, client)
+	if err != nil {
+		return "", err
+	}
+
+	runlevel := getIntParam(c.Arguments["runlevel"])
+
+	stages, err := client.WorkflowStages(w.WorkflowID)
+
+	for _, s := range *stages {
+		if s.WorkflowStageRunLevel == runlevel {
+			err = client.WorkflowStageAddIntoRunLevel(w.WorkflowID, stage.StageDefinitionID, runlevel)
+			return "", err
+		}
+	}
+
+	err = client.WorkflowStageAddAsNewRunLevel(w.WorkflowID, stage.StageDefinitionID, runlevel)
 
 	return "", err
 }

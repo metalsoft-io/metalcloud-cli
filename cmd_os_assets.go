@@ -150,8 +150,6 @@ func assetsListCmd(c *Command, client interfaces.MetalCloudClient) (string, erro
 		},
 	}
 
-	user := GetUserEmail()
-
 	data := [][]interface{}{}
 	for _, s := range *list {
 
@@ -167,44 +165,7 @@ func assetsListCmd(c *Command, client interfaces.MetalCloudClient) (string, erro
 
 	}
 
-	var sb strings.Builder
-
-	format := c.Arguments["format"]
-	if format == nil {
-		var f string
-		f = ""
-		format = &f
-	}
-
-	switch *format.(*string) {
-	case "json", "JSON":
-		ret, err := GetTableAsJSONString(data, schema)
-		if err != nil {
-			return "", err
-		}
-		sb.WriteString(ret)
-	case "csv", "CSV":
-		ret, err := GetTableAsCSVString(data, schema)
-		if err != nil {
-			return "", err
-		}
-		sb.WriteString(ret)
-
-	default:
-		sb.WriteString(fmt.Sprintf("Assets I have access to (as %s)\n", user))
-
-		TableSorter(schema).OrderBy(
-			schema[0].FieldName,
-			schema[1].FieldName).Sort(data)
-
-		AdjustFieldSizes(data, &schema)
-
-		sb.WriteString(GetTableAsString(data, schema))
-
-		sb.WriteString(fmt.Sprintf("Total: %d assets\n\n", len(*list)))
-	}
-
-	return sb.String(), nil
+	return renderTable("Assets", "", getStringParam(c.Arguments["format"]), data, schema)
 }
 
 func assetCreateCmd(c *Command, client interfaces.MetalCloudClient) (string, error) {

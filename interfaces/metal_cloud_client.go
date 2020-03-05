@@ -164,6 +164,21 @@ type MetalCloudClient interface {
 	ServersSearch(filter string) (*[]metalcloud.ServerSearchResult, error)
 	//ServerGet returns a server's details
 	ServerGet(serverID int, decryptPasswd bool) (*metalcloud.Server, error)
+	//ServerFirmwareComponentUpgrade Creates a firmware upgrading session for the specified component.
+	//If no strServerComponentFirmwareNewVersion or strFirmwareBinaryURL are provided the system will use the values from the database which should have been previously added
+	ServerFirmwareComponentUpgrade(serverID int, serverComponentID int, serverComponentFirmwareNewVersion string, firmwareBinaryURL string) error
+	//ServerFirmwareUpgrade creates a firmware upgrading session that affects all components from the specified server that have a target version set and are updatable.
+	ServerFirmwareUpgrade(serverID int) error
+	//ServerFirmwareComponentTargetVersionSet Sets a firmware target version for the upgrading process. The system will apply the upgrade at the next upgrading session.
+	ServerFirmwareComponentTargetVersionSet(serverComponentID int, serverComponentFirmwareNewVersion string) error
+	//ServerFirmwareComponentTargetVersionUpdate Updates for every component of the specified server the available firmware versions that can be used as target by the firmware upgrading process. The available versions are extracted from a vendor specific catalog.
+	ServerFirmwareComponentTargetVersionUpdate(serverComponentID int) error
+	//ServerFirmwareComponentTargetVersionAdd Adds a new available firmware version for a server component along with the url of the binary. If the version already exists the old url will be overwritten.
+	ServerFirmwareComponentTargetVersionAdd(serverComponentID int, version string, firmareBinaryURL string) error
+	//ServerComponentGet returns a server's component's details
+	ServerComponentGet(serverComponentID int) (*metalcloud.ServerComponent, error)
+	//ServerComponents searches for servers matching certain filter
+	ServerComponents(serverID int, filter string) (*[]metalcloud.ServerComponent, error)
 	//ServerTypesMatchHardwareConfiguration Retrieves a list of server types that match the provided hardware configuration. The function does not check for availability, only compatibility, so physical servers associated with the returned server types might be unavailable.
 	ServerTypesMatchHardwareConfiguration(datacenterName string, hardwareConfiguration metalcloud.HardwareConfiguration) (*map[int]metalcloud.ServerType, error)
 	//ServerTypeDatacenter retrieves all the server type IDs for servers found in a specified Datacenter
@@ -210,4 +225,30 @@ type MetalCloudClient interface {
 	VolumeTemplateGet(volumeTemplateID int) (*metalcloud.VolumeTemplate, error)
 	//VolumeTemplateGetByLabel returns the specified volume template
 	VolumeTemplateGetByLabel(volumeTemplateLabel string) (*metalcloud.VolumeTemplate, error)
+	//WorkflowCreate creates a workflow
+	WorkflowCreate(workflow metalcloud.Workflow) (*metalcloud.Workflow, error)
+	//WorkflowDelete Permanently destroys a metalcloud.Workflow.
+	WorkflowDelete(workflowID int) error
+	//WorkflowUpdate This function allows updating the workflow_usage, workflow_label and workflow_base64 of a metalcloud.Workflow
+	WorkflowUpdate(workflowID int, workflow metalcloud.Workflow) (*metalcloud.Workflow, error)
+	//WorkflowGet returns a metalcloud.Workflow specified by nWorkflowID. The workflow's protected value is never returned.
+	WorkflowGet(workflowID int) (*metalcloud.Workflow, error)
+	//Workflows retrieves a list of all the metalcloud.Workflow objects which a specified metalcloud.User is allowed to see through ownership or delegation.
+	Workflows() (*map[string]metalcloud.Workflow, error)
+	//WorkflowsWithUsage retrieves a list of all the metalcloud.Workflow objects which the current metalcloud.User is allowed to see through ownership or delegation with a specific usage.
+	WorkflowsWithUsage(usage string) (*map[string]metalcloud.Workflow, error)
+	//WorkflowStages retrieves a list of all the StageDefinitions objects in this workflow
+	WorkflowStages(workflowID int) (*[]metalcloud.WorkflowStageDefinitionReference, error)
+	//WorkflowStageGet returns a metalcloud.StageDefinition specified by workflowStageID.
+	WorkflowStageGet(workflowStageID int) (*metalcloud.StageDefinition, error)
+	//WorkflowStageAddAsNewRunLevel adds a new stage in this workflow
+	WorkflowStageAddAsNewRunLevel(workflowID int, stageDefinitionID int, destinationRunLevel int) error
+	//WorkflowStageAddIntoRunLevel adds a new stage in this workflow
+	WorkflowStageAddIntoRunLevel(workflowID int, stageDefinitionID int, destinationRunLevel int) error
+	//WorkflowDeleteFromRunLevel removes a  stage in this workflow from a runlevel
+	WorkflowDeleteFromRunLevel(workflowID int, stageDefinitionID int, destinationRunLevel int) error
+	//WorkflowMoveAsNewRunLevel moves a stage in this workflow from a runlevel to another
+	WorkflowMoveAsNewRunLevel(workflowID int, stageDefinitionID int, sourceRunLevel int, destinationRunLevel int) error
+	//WorkflowMoveIntoRunLevel moves a stage in this workflow from a runlevel to another
+	WorkflowMoveIntoRunLevel(workflowID int, stageDefinitionID int, sourceRunLevel int, destinationRunLevel int) error
 }

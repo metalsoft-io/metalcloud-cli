@@ -184,39 +184,8 @@ func firewallRuleListCmd(c *Command, client interfaces.MetalCloudClient) (string
 
 	}
 
-	var sb strings.Builder
-
-	format := c.Arguments["format"]
-	if format == nil {
-		var f string
-		f = ""
-		format = &f
-	}
-
-	switch *format.(*string) {
-	case "json", "JSON":
-		ret, err := GetTableAsJSONString(data, schema)
-		if err != nil {
-			return "", err
-		}
-		sb.WriteString(ret)
-	case "csv", "CSV":
-		ret, err := GetTableAsCSVString(data, schema)
-		if err != nil {
-			return "", err
-		}
-		sb.WriteString(ret)
-
-	default:
-		sb.WriteString(fmt.Sprintf("Instance Array %s (%d) [%s] has the following firewall rules:\n", retIA.InstanceArrayLabel, retIA.InstanceArrayID, status))
-
-		AdjustFieldSizes(data, &schema)
-		sb.WriteString(GetTableAsString(data, schema))
-
-		sb.WriteString(fmt.Sprintf("Total: %d firewall rules\n\n", len(list)))
-	}
-
-	return sb.String(), nil
+	topLine := fmt.Sprintf("Instance Array %s (%d) [%s] has the following firewall rules:\n", retIA.InstanceArrayLabel, retIA.InstanceArrayID, status)
+	return renderTable("Rules", topLine, getStringParam(c.Arguments["format"]), data, schema)
 }
 
 func firewallRuleAddCmd(c *Command, client interfaces.MetalCloudClient) (string, error) {

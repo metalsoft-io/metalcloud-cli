@@ -2,7 +2,6 @@ package main
 
 import (
 	"flag"
-	"fmt"
 	"strings"
 
 	interfaces "github.com/bigstepinc/metalcloud-cli/interfaces"
@@ -68,8 +67,6 @@ func volumeTemplatesListCmd(c *Command, client interfaces.MetalCloudClient) (str
 		},
 	}
 
-	user := GetUserEmail()
-
 	localOnly := c.Arguments["local_only"] != nil && *c.Arguments["local_only"].(*bool)
 	pxeOnly := c.Arguments["pxe_only"] != nil && *c.Arguments["pxe_only"].(*bool)
 
@@ -103,42 +100,5 @@ func volumeTemplatesListCmd(c *Command, client interfaces.MetalCloudClient) (str
 
 	}
 
-	var sb strings.Builder
-
-	format := c.Arguments["format"]
-	if format == nil {
-		var f string
-		f = ""
-		format = &f
-	}
-
-	switch *format.(*string) {
-	case "json", "JSON":
-		ret, err := GetTableAsJSONString(data, schema)
-		if err != nil {
-			return "", err
-		}
-		sb.WriteString(ret)
-	case "csv", "CSV":
-		ret, err := GetTableAsCSVString(data, schema)
-		if err != nil {
-			return "", err
-		}
-		sb.WriteString(ret)
-
-	default:
-		sb.WriteString(fmt.Sprintf("Volume templates I have access to (as %s)\n", user))
-
-		TableSorter(schema).OrderBy(
-			schema[0].FieldName,
-			schema[1].FieldName).Sort(data)
-
-		AdjustFieldSizes(data, &schema)
-
-		sb.WriteString(GetTableAsString(data, schema))
-
-		sb.WriteString(fmt.Sprintf("Total: %d volume templates\n\n", len(*vList)))
-	}
-
-	return sb.String(), nil
+	return renderTable("Volume templates", "", getStringParam(c.Arguments["format"]), data, schema)
 }

@@ -270,3 +270,53 @@ func TestAdjustFieldSizes(t *testing.T) {
 	Expect(schema[3].FieldSize).To(Equal(21))
 
 }
+
+func TestrenderTable(t *testing.T) {
+	RegisterTestingT(t)
+	schema := []SchemaField{
+		SchemaField{
+			FieldName: "ID",
+			FieldType: TypeInt,
+			FieldSize: 3,
+		},
+		SchemaField{
+			FieldName: "LABEL",
+			FieldType: TypeString,
+			FieldSize: 5,
+		},
+		SchemaField{
+			FieldName:      "INST.",
+			FieldType:      TypeFloat,
+			FieldSize:      0,
+			FieldPrecision: 4,
+		},
+		SchemaField{
+			FieldName:      "VERY LONG FIELD NAME",
+			FieldType:      TypeString,
+			FieldSize:      4,
+			FieldPrecision: 4,
+		},
+	}
+
+	data := [][]interface{}{
+		{4, "12345", 20.1, "tes"},
+		{5, "12", 22.1, "te"},
+		{6, "123456789", 1.2345, "t"},
+	}
+
+	s, err := renderTable("test", "", "", data, schema)
+
+	Expect(err).To(BeNil())
+	Expect(s).To(ContainSubstring("test"))
+	Expect(s).To(ContainSubstring("VERY LONG"))
+
+	s, err = renderTable("test", "", "json", data, schema)
+	Expect(err).To(BeNil())
+	var m []interface{}
+	err = json.Unmarshal([]byte(s), &m)
+	Expect(err).To(BeNil())
+
+	s, err = renderTable("test", "", "csv", data, schema)
+	Expect(err).To(BeNil())
+
+}

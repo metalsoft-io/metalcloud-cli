@@ -238,3 +238,42 @@ func truncateString(s string, length int) string {
 	}
 	return ""
 }
+
+func renderTable(tableName string, topLine string, format string, data [][]interface{}, schema []SchemaField) (string, error) {
+	var sb strings.Builder
+
+	switch format {
+	case "json", "JSON":
+		ret, err := GetTableAsJSONString(data, schema)
+		if err != nil {
+			return "", err
+		}
+		sb.WriteString(ret)
+	case "csv", "CSV":
+		ret, err := GetTableAsCSVString(data, schema)
+		if err != nil {
+			return "", err
+		}
+		sb.WriteString(ret)
+
+	default:
+		if topLine != "" {
+			sb.WriteString(fmt.Sprintf("%s\n", topLine))
+		} else {
+			user := GetUserEmail()
+			sb.WriteString(fmt.Sprintf("%s I have access to as user %s:\n", tableName, user))
+		}
+
+		TableSorter(schema).OrderBy(
+			schema[0].FieldName,
+			schema[1].FieldName).Sort(data)
+
+		AdjustFieldSizes(data, &schema)
+
+		sb.WriteString(GetTableAsString(data, schema))
+
+		sb.WriteString(fmt.Sprintf("Total: %d %s\n\n", len(data), tableName))
+	}
+
+	return sb.String(), nil
+}

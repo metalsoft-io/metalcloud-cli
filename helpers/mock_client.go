@@ -1165,6 +1165,106 @@ func (mr *MockMetalCloudClientMockRecorder) ServerGet(serverID, decryptPasswd in
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ServerGet", reflect.TypeOf((*MockMetalCloudClient)(nil).ServerGet), serverID, decryptPasswd)
 }
 
+// ServerFirmwareComponentUpgrade mocks base method
+func (m *MockMetalCloudClient) ServerFirmwareComponentUpgrade(serverID, serverComponentID int, serverComponentFirmwareNewVersion, firmwareBinaryURL string) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "ServerFirmwareComponentUpgrade", serverID, serverComponentID, serverComponentFirmwareNewVersion, firmwareBinaryURL)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// ServerFirmwareComponentUpgrade indicates an expected call of ServerFirmwareComponentUpgrade
+func (mr *MockMetalCloudClientMockRecorder) ServerFirmwareComponentUpgrade(serverID, serverComponentID, serverComponentFirmwareNewVersion, firmwareBinaryURL interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ServerFirmwareComponentUpgrade", reflect.TypeOf((*MockMetalCloudClient)(nil).ServerFirmwareComponentUpgrade), serverID, serverComponentID, serverComponentFirmwareNewVersion, firmwareBinaryURL)
+}
+
+// ServerFirmwareUpgrade mocks base method
+func (m *MockMetalCloudClient) ServerFirmwareUpgrade(serverID int) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "ServerFirmwareUpgrade", serverID)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// ServerFirmwareUpgrade indicates an expected call of ServerFirmwareUpgrade
+func (mr *MockMetalCloudClientMockRecorder) ServerFirmwareUpgrade(serverID interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ServerFirmwareUpgrade", reflect.TypeOf((*MockMetalCloudClient)(nil).ServerFirmwareUpgrade), serverID)
+}
+
+// ServerFirmwareComponentTargetVersionSet mocks base method
+func (m *MockMetalCloudClient) ServerFirmwareComponentTargetVersionSet(serverComponentID int, serverComponentFirmwareNewVersion string) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "ServerFirmwareComponentTargetVersionSet", serverComponentID, serverComponentFirmwareNewVersion)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// ServerFirmwareComponentTargetVersionSet indicates an expected call of ServerFirmwareComponentTargetVersionSet
+func (mr *MockMetalCloudClientMockRecorder) ServerFirmwareComponentTargetVersionSet(serverComponentID, serverComponentFirmwareNewVersion interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ServerFirmwareComponentTargetVersionSet", reflect.TypeOf((*MockMetalCloudClient)(nil).ServerFirmwareComponentTargetVersionSet), serverComponentID, serverComponentFirmwareNewVersion)
+}
+
+// ServerFirmwareComponentTargetVersionUpdate mocks base method
+func (m *MockMetalCloudClient) ServerFirmwareComponentTargetVersionUpdate(serverComponentID int) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "ServerFirmwareComponentTargetVersionUpdate", serverComponentID)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// ServerFirmwareComponentTargetVersionUpdate indicates an expected call of ServerFirmwareComponentTargetVersionUpdate
+func (mr *MockMetalCloudClientMockRecorder) ServerFirmwareComponentTargetVersionUpdate(serverComponentID interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ServerFirmwareComponentTargetVersionUpdate", reflect.TypeOf((*MockMetalCloudClient)(nil).ServerFirmwareComponentTargetVersionUpdate), serverComponentID)
+}
+
+// ServerFirmwareComponentTargetVersionAdd mocks base method
+func (m *MockMetalCloudClient) ServerFirmwareComponentTargetVersionAdd(serverComponentID int, version, firmareBinaryURL string) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "ServerFirmwareComponentTargetVersionAdd", serverComponentID, version, firmareBinaryURL)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// ServerFirmwareComponentTargetVersionAdd indicates an expected call of ServerFirmwareComponentTargetVersionAdd
+func (mr *MockMetalCloudClientMockRecorder) ServerFirmwareComponentTargetVersionAdd(serverComponentID, version, firmareBinaryURL interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ServerFirmwareComponentTargetVersionAdd", reflect.TypeOf((*MockMetalCloudClient)(nil).ServerFirmwareComponentTargetVersionAdd), serverComponentID, version, firmareBinaryURL)
+}
+
+// ServerComponentGet mocks base method
+func (m *MockMetalCloudClient) ServerComponentGet(serverComponentID int) (*metal_cloud_sdk_go.ServerComponent, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "ServerComponentGet", serverComponentID)
+	ret0, _ := ret[0].(*metal_cloud_sdk_go.ServerComponent)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// ServerComponentGet indicates an expected call of ServerComponentGet
+func (mr *MockMetalCloudClientMockRecorder) ServerComponentGet(serverComponentID interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ServerComponentGet", reflect.TypeOf((*MockMetalCloudClient)(nil).ServerComponentGet), serverComponentID)
+}
+
+// ServerComponents mocks base method
+func (m *MockMetalCloudClient) ServerComponents(serverID int, filter string) (*[]metal_cloud_sdk_go.ServerComponent, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "ServerComponents", serverID, filter)
+	ret0, _ := ret[0].(*[]metal_cloud_sdk_go.ServerComponent)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// ServerComponents indicates an expected call of ServerComponents
+func (mr *MockMetalCloudClientMockRecorder) ServerComponents(serverID, filter interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ServerComponents", reflect.TypeOf((*MockMetalCloudClient)(nil).ServerComponents), serverID, filter)
+}
+
 // ServerTypesMatchHardwareConfiguration mocks base method
 func (m *MockMetalCloudClient) ServerTypesMatchHardwareConfiguration(datacenterName string, hardwareConfiguration metal_cloud_sdk_go.HardwareConfiguration) (*map[int]metal_cloud_sdk_go.ServerType, error) {
 	m.ctrl.T.Helper()
@@ -1506,4 +1606,193 @@ func (m *MockMetalCloudClient) VolumeTemplateGetByLabel(volumeTemplateLabel stri
 func (mr *MockMetalCloudClientMockRecorder) VolumeTemplateGetByLabel(volumeTemplateLabel interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "VolumeTemplateGetByLabel", reflect.TypeOf((*MockMetalCloudClient)(nil).VolumeTemplateGetByLabel), volumeTemplateLabel)
+}
+
+// WorkflowCreate mocks base method
+func (m *MockMetalCloudClient) WorkflowCreate(workflow metal_cloud_sdk_go.Workflow) (*metal_cloud_sdk_go.Workflow, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "WorkflowCreate", workflow)
+	ret0, _ := ret[0].(*metal_cloud_sdk_go.Workflow)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// WorkflowCreate indicates an expected call of WorkflowCreate
+func (mr *MockMetalCloudClientMockRecorder) WorkflowCreate(workflow interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "WorkflowCreate", reflect.TypeOf((*MockMetalCloudClient)(nil).WorkflowCreate), workflow)
+}
+
+// WorkflowDelete mocks base method
+func (m *MockMetalCloudClient) WorkflowDelete(workflowID int) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "WorkflowDelete", workflowID)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// WorkflowDelete indicates an expected call of WorkflowDelete
+func (mr *MockMetalCloudClientMockRecorder) WorkflowDelete(workflowID interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "WorkflowDelete", reflect.TypeOf((*MockMetalCloudClient)(nil).WorkflowDelete), workflowID)
+}
+
+// WorkflowUpdate mocks base method
+func (m *MockMetalCloudClient) WorkflowUpdate(workflowID int, workflow metal_cloud_sdk_go.Workflow) (*metal_cloud_sdk_go.Workflow, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "WorkflowUpdate", workflowID, workflow)
+	ret0, _ := ret[0].(*metal_cloud_sdk_go.Workflow)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// WorkflowUpdate indicates an expected call of WorkflowUpdate
+func (mr *MockMetalCloudClientMockRecorder) WorkflowUpdate(workflowID, workflow interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "WorkflowUpdate", reflect.TypeOf((*MockMetalCloudClient)(nil).WorkflowUpdate), workflowID, workflow)
+}
+
+// WorkflowGet mocks base method
+func (m *MockMetalCloudClient) WorkflowGet(workflowID int) (*metal_cloud_sdk_go.Workflow, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "WorkflowGet", workflowID)
+	ret0, _ := ret[0].(*metal_cloud_sdk_go.Workflow)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// WorkflowGet indicates an expected call of WorkflowGet
+func (mr *MockMetalCloudClientMockRecorder) WorkflowGet(workflowID interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "WorkflowGet", reflect.TypeOf((*MockMetalCloudClient)(nil).WorkflowGet), workflowID)
+}
+
+// Workflows mocks base method
+func (m *MockMetalCloudClient) Workflows() (*map[string]metal_cloud_sdk_go.Workflow, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "Workflows")
+	ret0, _ := ret[0].(*map[string]metal_cloud_sdk_go.Workflow)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// Workflows indicates an expected call of Workflows
+func (mr *MockMetalCloudClientMockRecorder) Workflows() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Workflows", reflect.TypeOf((*MockMetalCloudClient)(nil).Workflows))
+}
+
+// WorkflowsWithUsage mocks base method
+func (m *MockMetalCloudClient) WorkflowsWithUsage(usage string) (*map[string]metal_cloud_sdk_go.Workflow, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "WorkflowsWithUsage", usage)
+	ret0, _ := ret[0].(*map[string]metal_cloud_sdk_go.Workflow)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// WorkflowsWithUsage indicates an expected call of WorkflowsWithUsage
+func (mr *MockMetalCloudClientMockRecorder) WorkflowsWithUsage(usage interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "WorkflowsWithUsage", reflect.TypeOf((*MockMetalCloudClient)(nil).WorkflowsWithUsage), usage)
+}
+
+// WorkflowStages mocks base method
+func (m *MockMetalCloudClient) WorkflowStages(workflowID int) (*[]metal_cloud_sdk_go.WorkflowStageDefinitionReference, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "WorkflowStages", workflowID)
+	ret0, _ := ret[0].(*[]metal_cloud_sdk_go.WorkflowStageDefinitionReference)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// WorkflowStages indicates an expected call of WorkflowStages
+func (mr *MockMetalCloudClientMockRecorder) WorkflowStages(workflowID interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "WorkflowStages", reflect.TypeOf((*MockMetalCloudClient)(nil).WorkflowStages), workflowID)
+}
+
+// WorkflowStageGet mocks base method
+func (m *MockMetalCloudClient) WorkflowStageGet(workflowStageID int) (*metal_cloud_sdk_go.StageDefinition, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "WorkflowStageGet", workflowStageID)
+	ret0, _ := ret[0].(*metal_cloud_sdk_go.StageDefinition)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// WorkflowStageGet indicates an expected call of WorkflowStageGet
+func (mr *MockMetalCloudClientMockRecorder) WorkflowStageGet(workflowStageID interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "WorkflowStageGet", reflect.TypeOf((*MockMetalCloudClient)(nil).WorkflowStageGet), workflowStageID)
+}
+
+// WorkflowStageAddAsNewRunLevel mocks base method
+func (m *MockMetalCloudClient) WorkflowStageAddAsNewRunLevel(workflowID, stageDefinitionID, destinationRunLevel int) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "WorkflowStageAddAsNewRunLevel", workflowID, stageDefinitionID, destinationRunLevel)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// WorkflowStageAddAsNewRunLevel indicates an expected call of WorkflowStageAddAsNewRunLevel
+func (mr *MockMetalCloudClientMockRecorder) WorkflowStageAddAsNewRunLevel(workflowID, stageDefinitionID, destinationRunLevel interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "WorkflowStageAddAsNewRunLevel", reflect.TypeOf((*MockMetalCloudClient)(nil).WorkflowStageAddAsNewRunLevel), workflowID, stageDefinitionID, destinationRunLevel)
+}
+
+// WorkflowStageAddIntoRunLevel mocks base method
+func (m *MockMetalCloudClient) WorkflowStageAddIntoRunLevel(workflowID, stageDefinitionID, destinationRunLevel int) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "WorkflowStageAddIntoRunLevel", workflowID, stageDefinitionID, destinationRunLevel)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// WorkflowStageAddIntoRunLevel indicates an expected call of WorkflowStageAddIntoRunLevel
+func (mr *MockMetalCloudClientMockRecorder) WorkflowStageAddIntoRunLevel(workflowID, stageDefinitionID, destinationRunLevel interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "WorkflowStageAddIntoRunLevel", reflect.TypeOf((*MockMetalCloudClient)(nil).WorkflowStageAddIntoRunLevel), workflowID, stageDefinitionID, destinationRunLevel)
+}
+
+// WorkflowDeleteFromRunLevel mocks base method
+func (m *MockMetalCloudClient) WorkflowDeleteFromRunLevel(workflowID, stageDefinitionID, destinationRunLevel int) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "WorkflowDeleteFromRunLevel", workflowID, stageDefinitionID, destinationRunLevel)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// WorkflowDeleteFromRunLevel indicates an expected call of WorkflowDeleteFromRunLevel
+func (mr *MockMetalCloudClientMockRecorder) WorkflowDeleteFromRunLevel(workflowID, stageDefinitionID, destinationRunLevel interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "WorkflowDeleteFromRunLevel", reflect.TypeOf((*MockMetalCloudClient)(nil).WorkflowDeleteFromRunLevel), workflowID, stageDefinitionID, destinationRunLevel)
+}
+
+// WorkflowMoveAsNewRunLevel mocks base method
+func (m *MockMetalCloudClient) WorkflowMoveAsNewRunLevel(workflowID, stageDefinitionID, sourceRunLevel, destinationRunLevel int) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "WorkflowMoveAsNewRunLevel", workflowID, stageDefinitionID, sourceRunLevel, destinationRunLevel)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// WorkflowMoveAsNewRunLevel indicates an expected call of WorkflowMoveAsNewRunLevel
+func (mr *MockMetalCloudClientMockRecorder) WorkflowMoveAsNewRunLevel(workflowID, stageDefinitionID, sourceRunLevel, destinationRunLevel interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "WorkflowMoveAsNewRunLevel", reflect.TypeOf((*MockMetalCloudClient)(nil).WorkflowMoveAsNewRunLevel), workflowID, stageDefinitionID, sourceRunLevel, destinationRunLevel)
+}
+
+// WorkflowMoveIntoRunLevel mocks base method
+func (m *MockMetalCloudClient) WorkflowMoveIntoRunLevel(workflowID, stageDefinitionID, sourceRunLevel, destinationRunLevel int) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "WorkflowMoveIntoRunLevel", workflowID, stageDefinitionID, sourceRunLevel, destinationRunLevel)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// WorkflowMoveIntoRunLevel indicates an expected call of WorkflowMoveIntoRunLevel
+func (mr *MockMetalCloudClientMockRecorder) WorkflowMoveIntoRunLevel(workflowID, stageDefinitionID, sourceRunLevel, destinationRunLevel interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "WorkflowMoveIntoRunLevel", reflect.TypeOf((*MockMetalCloudClient)(nil).WorkflowMoveIntoRunLevel), workflowID, stageDefinitionID, sourceRunLevel, destinationRunLevel)
 }

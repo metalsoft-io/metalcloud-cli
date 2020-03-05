@@ -308,35 +308,7 @@ func driveArrayListCmd(c *Command, client interfaces.MetalCloudClient) (string, 
 			volumeTemplateName})
 	}
 
-	var sb strings.Builder
-
-	format := "text"
-	if v := c.Arguments["format"]; v != _nilDefaultStr {
-		format = *v.(*string)
-	}
-
-	switch format {
-	case "json", "JSON":
-		ret, err := GetTableAsJSONString(data, schema)
-		if err != nil {
-			return "", err
-		}
-		sb.WriteString(ret)
-	case "csv", "CSV":
-		ret, err := GetTableAsCSVString(data, schema)
-		if err != nil {
-			return "", err
-		}
-		sb.WriteString(ret)
-
-	default:
-		AdjustFieldSizes(data, &schema)
-		sb.WriteString(GetTableAsString(data, schema))
-		sb.WriteString(fmt.Sprintf("Total: %d Drive Arrays\n\n", len(*daList)))
-
-	}
-
-	return sb.String(), nil
+	return renderTable("Drive Arrays", "", getStringParam(c.Arguments["format"]), data, schema)
 }
 
 func driveArrayDeleteCmd(c *Command, client interfaces.MetalCloudClient) (string, error) {

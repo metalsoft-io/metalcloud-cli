@@ -162,44 +162,7 @@ func serversListCmd(c *Command, client interfaces.MetalCloudClient) (string, err
 
 	}
 
-	var sb strings.Builder
-
-	format := c.Arguments["format"]
-	if format == nil {
-		var f string
-		f = ""
-		format = &f
-	}
-
-	switch *format.(*string) {
-	case "json", "JSON":
-		ret, err := GetTableAsJSONString(data, schema)
-		if err != nil {
-			return "", err
-		}
-		sb.WriteString(ret)
-	case "csv", "CSV":
-		ret, err := GetTableAsCSVString(data, schema)
-		if err != nil {
-			return "", err
-		}
-		sb.WriteString(ret)
-
-	default:
-		sb.WriteString(fmt.Sprintf("Matching Servers for filter %s\n", filter))
-
-		TableSorter(schema).OrderBy(
-			schema[0].FieldName,
-			schema[1].FieldName).Sort(data)
-
-		AdjustFieldSizes(data, &schema)
-
-		sb.WriteString(GetTableAsString(data, schema))
-
-		sb.WriteString(fmt.Sprintf("Total: %d servers\n\n", len(*list)))
-	}
-
-	return sb.String(), nil
+	return renderTable("Servers", "", getStringParam(c.Arguments["format"]), data, schema)
 }
 
 func serverGetCmd(c *Command, client interfaces.MetalCloudClient) (string, error) {
