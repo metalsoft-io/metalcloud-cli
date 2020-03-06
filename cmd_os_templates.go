@@ -131,11 +131,6 @@ var osTemplatesCmds = []Command{
 
 func templatesListCmd(c *Command, client interfaces.MetalCloudClient) (string, error) {
 
-	usage := *c.Arguments["usage"].(*string)
-	if usage == _nilDefaultStr {
-		usage = ""
-	}
-
 	list, err := client.OSTemplates()
 
 	if err != nil {
@@ -209,16 +204,16 @@ func templatesListCmd(c *Command, client interfaces.MetalCloudClient) (string, e
 	for _, s := range *list {
 
 		installBootloader := ""
-		if s.OSAssetIDBootloaderLocalInstall != 0 {
-			asset, err := client.OSAssetGet(s.OSAssetIDBootloaderLocalInstall)
+		if s.OSAssetBootloaderLocalInstall != 0 {
+			asset, err := client.OSAssetGet(s.OSAssetBootloaderLocalInstall)
 			if err != nil {
 				return "", err
 			}
 			installBootloader = asset.OSAssetFileName
 		}
 		osBootloader := ""
-		if s.OSAssetIDBootloaderOSBoot != 0 {
-			asset, err := client.OSAssetGet(s.OSAssetIDBootloaderOSBoot)
+		if s.OSAssetBootloaderOSBoot != 0 {
+			asset, err := client.OSAssetGet(s.OSAssetBootloaderOSBoot)
 			if err != nil {
 				return "", err
 			}
@@ -341,7 +336,7 @@ func updateTemplateFromCommand(obj metalcloud.OSTemplate, c *Command, client int
 		if err != nil {
 			return nil, err
 		}
-		obj.OSAssetIDBootloaderLocalInstall = localInstallAsset.OSAssetID
+		obj.OSAssetBootloaderLocalInstall = localInstallAsset.OSAssetID
 	}
 
 	if v := c.Arguments["os_asset_id_bootloader_os_boot_id_or_name"]; v != nil && *v.(*string) != _nilDefaultStr {
@@ -349,7 +344,7 @@ func updateTemplateFromCommand(obj metalcloud.OSTemplate, c *Command, client int
 		if err != nil {
 			return nil, err
 		}
-		obj.OSAssetIDBootloaderOSBoot = osBootBootloaderAsset.OSAssetID
+		obj.OSAssetBootloaderOSBoot = osBootBootloaderAsset.OSAssetID
 	}
 
 	//Credentials
@@ -597,16 +592,16 @@ func templateGetCmd(c *Command, client interfaces.MetalCloudClient) (string, err
 	}
 
 	installBootloader := ""
-	if template.OSAssetIDBootloaderLocalInstall != 0 {
-		asset, err := client.OSAssetGet(template.OSAssetIDBootloaderLocalInstall)
+	if template.OSAssetBootloaderLocalInstall != 0 {
+		asset, err := client.OSAssetGet(template.OSAssetBootloaderLocalInstall)
 		if err != nil {
 			return "", err
 		}
 		installBootloader = asset.OSAssetFileName
 	}
 	osBootloader := ""
-	if template.OSAssetIDBootloaderOSBoot != 0 {
-		asset, err := client.OSAssetGet(template.OSAssetIDBootloaderOSBoot)
+	if template.OSAssetBootloaderOSBoot != 0 {
+		asset, err := client.OSAssetGet(template.OSAssetBootloaderOSBoot)
 		if err != nil {
 			return "", err
 		}
