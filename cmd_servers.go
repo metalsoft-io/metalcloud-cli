@@ -48,10 +48,7 @@ var serversCmds = []Command{
 
 func serversListCmd(c *Command, client interfaces.MetalCloudClient) (string, error) {
 
-	filter := *c.Arguments["filter"].(*string)
-	if filter == _nilDefaultStr {
-		filter = "*"
-	}
+	filter := getStringParam(c.Arguments["filter"])
 
 	list, err := client.ServersSearch(filter)
 

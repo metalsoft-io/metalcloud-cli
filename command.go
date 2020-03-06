@@ -8,6 +8,12 @@ import (
 	interfaces "github.com/bigstepinc/metalcloud-cli/interfaces"
 )
 
+//CommandExecuteFunc a function type a command can take for executing the content
+type CommandExecuteFunc = func(c *Command, client interfaces.MetalCloudClient) (string, error)
+
+//CommandInitFunc a function type a command can take for initializing the command
+type CommandInitFunc = func(c *Command)
+
 //Command defines a command, arguments, description etc
 type Command struct {
 	Description  string
@@ -17,8 +23,8 @@ type Command struct {
 	AltPredicate string
 	FlagSet      *flag.FlagSet
 	Arguments    map[string]interface{}
-	InitFunc     func(c *Command)
-	ExecuteFunc  func(c *Command, client interfaces.MetalCloudClient) (string, error)
+	InitFunc     CommandInitFunc
+	ExecuteFunc  CommandExecuteFunc
 	Endpoint     string
 }
 

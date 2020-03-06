@@ -61,6 +61,8 @@ var stageDefinitionsCmds = []Command{
 				"http_request_size":                 c.FlagSet.Int("http_request_size", _nilDefaultInt, "HTTP Requests's size. Can only be used when type=HTTPRequest"),
 
 				"workflow_id_or_label": c.FlagSet.String("workflow", _nilDefaultStr, "workflow to reference. Can only be used when type=WorkflowReference"),
+
+				"return_id": c.FlagSet.Bool("return_id", false, "(Flag) If set will print the ID of the created object. Useful for automating tasks."),
 			}
 		},
 		ExecuteFunc: stageDefinitionCreateCmd,
@@ -264,17 +266,15 @@ func stageDefinitionCreateCmd(c *Command, client interfaces.MetalCloudClient) (s
 
 		content := []byte{}
 		var err error
-		if v := c.Arguments["http_request_body_from_pipe"]; *v.(*bool) {
+		if getBoolParam(c.Arguments["http_request_body_from_pipe"]) {
 			content, err = readInputFromPipe()
 			if err != nil {
 				return "", err
 			}
 
 		} else {
-			v := c.Arguments["http_request_body_filename"]
-			if *v.(*string) != _nilDefaultStr {
+			if filename, ok := getStringParamOk(c.Arguments["http_request_body_filename"]); ok {
 
-				filename := *v.(*string)
 				c, err := requestInputFromFile(filename)
 				if err != nil {
 					return "", err
@@ -351,9 +351,15 @@ func stageDefinitionCreateCmd(c *Command, client interfaces.MetalCloudClient) (s
 		}
 
 		stage.StageDefinition = wr
+	default:
+		return "", fmt.Errorf("Unknown stage definition type %s", stage.StageDefinitionType)
 	}
 
-	_, err := client.StageDefinitionCreate(stage)
+	ret, err := client.StageDefinitionCreate(stage)
+
+	if getBoolParam(c.Arguments["return_id"]) {
+		return fmt.Sprintf("%d", ret.StageDefinitionID), nil
+	}
 
 	return "", err
 }

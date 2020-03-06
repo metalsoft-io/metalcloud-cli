@@ -101,11 +101,6 @@ var osAssetsCmds = []Command{
 
 func assetsListCmd(c *Command, client interfaces.MetalCloudClient) (string, error) {
 
-	usage := *c.Arguments["usage"].(*string)
-	if usage == _nilDefaultStr {
-		usage = ""
-	}
-
 	list, err := client.OSAssets()
 
 	if err != nil {
@@ -169,28 +164,19 @@ func assetsListCmd(c *Command, client interfaces.MetalCloudClient) (string, erro
 }
 
 func assetCreateCmd(c *Command, client interfaces.MetalCloudClient) (string, error) {
-	obj := metalcloud.OSAsset{}
-
-	if v := c.Arguments["filename"]; v != nil && *v.(*string) != _nilDefaultStr {
-		obj.OSAssetFileName = *v.(*string)
-	}
-
-	if v := c.Arguments["usage"]; v != nil && *v.(*string) != _nilDefaultStr {
-		obj.OSAssetUsage = *v.(*string)
-	}
-
-	if v := c.Arguments["mime"]; v != nil && *v.(*string) != _nilDefaultStr {
-		obj.OSAssetFileMime = *v.(*string)
+	obj := metalcloud.OSAsset{
+		OSAssetFileName: getStringParam(c.Arguments["filename"]),
+		OSAssetUsage:    getStringParam(c.Arguments["usage"]),
+		OSAssetFileMime: getStringParam(c.Arguments["mime"]),
 	}
 
 	content := []byte{}
 
-	if v := c.Arguments["url"]; v != nil && *v.(*string) != _nilDefaultStr {
-		obj.OSAssetSourceURL = *v.(*string)
-
+	if v, ok := getStringParamOk(c.Arguments["url"]); ok {
+		obj.OSAssetSourceURL = v
 	} else {
 
-		if v := c.Arguments["read_content_from_pipe"]; *v.(*bool) {
+		if getBoolParam(c.Arguments["read_content_from_pipe"]) {
 			_content, err := readInputFromPipe()
 			if err != nil {
 				return "", err
@@ -212,7 +198,8 @@ func assetCreateCmd(c *Command, client interfaces.MetalCloudClient) (string, err
 	if err != nil {
 		return "", err
 	}
-	if c.Arguments["return_id"] != nil && *c.Arguments["return_id"].(*bool) {
+
+	if getBoolParam(c.Arguments["return_id"]) {
 		return fmt.Sprintf("%d", ret.OSAssetID), nil
 	}
 
@@ -225,11 +212,8 @@ func assetDeleteCmd(c *Command, client interfaces.MetalCloudClient) (string, err
 	if err != nil {
 		return "", err
 	}
-	confirm := false
 
-	if c.Arguments["autoconfirm"] != nil && *c.Arguments["autoconfirm"].(*bool) == true {
-		confirm = true
-	} else {
+	confirm, err := confirmCommand(c, func() string {
 
 		confirmationMessage := fmt.Sprintf("Deleting asset  %s (%d).  Are you sure? Type \"yes\" to continue:",
 			retS.OSAssetFileName,
@@ -240,17 +224,16 @@ func assetDeleteCmd(c *Command, client interfaces.MetalCloudClient) (string, err
 			confirmationMessage = ""
 		}
 
-		confirm, err = requestConfirmation(confirmationMessage)
-		if err != nil {
-			return "", err
-		}
+		return confirmationMessage
+	})
+
+	if err != nil {
+		return "", err
 	}
 
-	if !confirm {
-		return "", fmt.Errorf("Operation not confirmed. Aborting")
+	if confirm {
+		err = client.OSAssetDelete(retS.OSAssetID)
 	}
-
-	err = client.OSAssetDelete(retS.OSAssetID)
 
 	return "", err
 }

@@ -1,10 +1,8 @@
 package main
 
 import (
-	"encoding/csv"
-	"encoding/json"
-	"fmt"
-	"strings"
+	"io/ioutil"
+	"syscall"
 	"testing"
 
 	metalcloud "github.com/bigstepinc/metal-cloud-sdk-go"
@@ -52,149 +50,92 @@ func TestStageDefinitionsListCmd(t *testing.T) {
 		Return(&list, nil).
 		AnyTimes()
 
-	//test json
-	format := "json"
-	cmd := Command{
-		Arguments: map[string]interface{}{
-			"format": &format,
-		},
+	expectedFirstRow := map[string]interface{}{
+		"ID":    10,
+		"LABEL": "test",
 	}
-
-	ret, err := stageDefinitionsListCmd(&cmd, client)
-	Expect(err).To(BeNil())
-
-	var m []interface{}
-	err = json.Unmarshal([]byte(ret), &m)
-
-	Expect(err).To(BeNil())
-
-	r := m[0].(map[string]interface{})
-	//Expect(int(r["ID"].(float64))).To(Equal(11))
-	//Expect(r["LABEL"].(string)).To(Equal(stage1.StageDefinitionLabel))
-	Expect(r).NotTo(BeNil())
-	//test plaintext
-	format = ""
-	cmd = Command{
-		Arguments: map[string]interface{}{
-			"format": &format,
-		},
-	}
-
-	ret, err = stageDefinitionsListCmd(&cmd, client)
-	Expect(err).To(BeNil())
-	Expect(ret).NotTo(BeEmpty())
-
-	//test csv
-	format = "csv"
-
-	cmd = Command{
-		Arguments: map[string]interface{}{
-			"format": &format,
-		},
-	}
-
-	ret, err = stageDefinitionsListCmd(&cmd, client)
-	Expect(err).To(BeNil())
-	Expect(ret).NotTo(BeEmpty())
-
-	reader := csv.NewReader(strings.NewReader(ret))
-
-	csv, err := reader.ReadAll()
-	Expect(csv[1][0]).To(Equal(fmt.Sprintf("%d", 10)))
-	Expect(csv[1][1]).To(Equal("test"))
+	testListCommand(stageDefinitionsListCmd, client, expectedFirstRow, t)
 
 }
 
-/*
-func TestStageDefinitionsGetCmd(t *testing.T) {
-	RegisterTestingT(t)
-
-	ctrl := gomock.NewController(t)
-
-	ab := metalcloud.AnsibleBundle{
-		AnsibleBundleArchiveFilename: "asdads",
-	}
+func TestStageDefinitionCreateCmdAnsible(t *testing.T) {
+	client := mock_metalcloud.NewMockMetalCloudClient(gomock.NewController(t))
 
 	stage1 := metalcloud.StageDefinition{
 		StageDefinitionID:    10,
 		StageDefinitionLabel: "test",
-		StageDefinition:      ab,
+		StageDefinition:      metalcloud.AnsibleBundle{},
 		StageDefinitionType:  "AnsibleBundle",
 	}
 
+	client.EXPECT().
+		StageDefinitionCreate(gomock.Any()).
+		Return(&stage1, nil).
+		MinTimes(1)
+
+	f, err := ioutil.TempFile("/tmp", "testansible.zip")
+	if err != nil {
+		panic(err)
+	}
+	defer syscall.Unlink(f.Name())
+
+	cases := []CommandTestCase{
+		{
+			name: "ansibleBundle1",
+			cmd: MakeCommand(map[string]interface{}{
+				"label":                       "test",
+				"title":                       "test",
+				"type":                        stage1.StageDefinitionType,
+				"ansible_bundle_filename":     f.Name,
+				"http_request_body_from_pipe": true,
+			}),
+			good: true,
+			id:   stage1.StageDefinitionID,
+		},
+		{
+			name: "missing label",
+			cmd:  MakeCommand(map[string]interface{}{}),
+			good: false,
+		},
+	}
+
+	testCreateCommand(stageDefinitionCreateCmd, cases, client, t)
+}
+
+func TestStageDefinitionCreateHTTPRequestCmd(t *testing.T) {
+
+	client := mock_metalcloud.NewMockMetalCloudClient(gomock.NewController(t))
 	req := metalcloud.HTTPRequest{
 		URL: "http://asdad/asdasd/ass",
 	}
-
-	stage2 := metalcloud.StageDefinition{
+	stage := metalcloud.StageDefinition{
 		StageDefinitionID:    11,
 		StageDefinitionLabel: "test2",
 		StageDefinition:      req,
 		StageDefinitionType:  "HTTPRequest",
 	}
 
-	list := map[string]metalcloud.StageDefinition{
-		"test1": stage1,
-		"test2": stage2,
-	}
-
-	client := mock_metalcloud.NewMockMetalCloudClient(ctrl)
-
 	client.EXPECT().
-		StageDefinitions().
-		Return(&list, nil).
-		AnyTimes()
+		StageDefinitionCreate(gomock.Any()).
+		Return(&stage, nil).
+		MinTimes(1)
 
-	//test json
-	format := "json"
-	cmd := Command{
-		Arguments: map[string]interface{}{
-			"format": &format,
+	cases := []CommandTestCase{
+		{
+			name: "httpRequest1",
+			cmd: MakeCommand(map[string]interface{}{
+				"label":               "test",
+				"title":               "test",
+				"type":                stage.StageDefinitionType,
+				"http_request_url":    req.URL,
+				"http_request_method": "get",
+			}),
+			good: true,
+			id:   stage.StageDefinitionID,
 		},
 	}
+	badTestCases := GenerateCommandTestCases(map[string]interface{}{"label": "test", "type": "HTTPRequest", "title": "test"})
+	cases = append(cases, badTestCases...)
 
-	ret, err := stageDefinitionGetCmd(&cmd, client)
-	Expect(err).To(BeNil())
-
-	var m []interface{}
-	err = json.Unmarshal([]byte(ret), &m)
-
-	Expect(err).To(BeNil())
-
-	r := m[0].(map[string]interface{})
-	//Expect(int(r["ID"].(float64))).To(Equal(11))
-	//Expect(r["LABEL"].(string)).To(Equal(stage1.StageDefinitionLabel))
-	Expect(r).NotTo(BeNil())
-	//test plaintext
-	format = ""
-	cmd = Command{
-		Arguments: map[string]interface{}{
-			"format": &format,
-		},
-	}
-
-	ret, err = stageDefinitionsListCmd(&cmd, client)
-	Expect(err).To(BeNil())
-	Expect(ret).NotTo(BeEmpty())
-
-	//test csv
-	format = "csv"
-
-	cmd = Command{
-		Arguments: map[string]interface{}{
-			"format": &format,
-		},
-	}
-
-	ret, err = stageDefinitionsListCmd(&cmd, client)
-	Expect(err).To(BeNil())
-	Expect(ret).NotTo(BeEmpty())
-
-	reader := csv.NewReader(strings.NewReader(ret))
-
-	csv, err := reader.ReadAll()
-	Expect(csv[1][0]).To(Equal(fmt.Sprintf("%d", 10)))
-	Expect(csv[1][1]).To(Equal("test"))
-
+	testCreateCommand(stageDefinitionCreateCmd, cases, client, t)
 }
-*/

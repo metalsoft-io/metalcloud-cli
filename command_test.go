@@ -5,6 +5,7 @@ import (
 	"flag"
 	"fmt"
 	"reflect"
+	"strings"
 	"testing"
 
 	//. "github.com/onsi/gomega"
@@ -228,4 +229,204 @@ func TestIdOrLabel(t *testing.T) {
 	Expect(id).To(Equal(100))
 	Expect(label).To(Equal(""))
 	Expect(isID).To(BeTrue())
+}
+
+//checks the various outputs
+func testListCommand(f CommandExecuteFunc, client interfaces.MetalCloudClient, firstRow map[string]interface{}, t *testing.T) {
+	RegisterTestingT(t)
+
+	//test plaintext
+	cmd := MakeCommand(map[string]interface{}{})
+
+	ret, err := f(&cmd, client)
+	Expect(err).To(BeNil())
+
+	//test json output
+	cmd = MakeCommand(map[string]interface{}{"format": "json"})
+
+	ret, err = f(&cmd, client)
+	Expect(err).To(BeNil())
+
+	Expect(JSONFirstRowEquals(ret, firstRow)).To(BeNil())
+
+	//test csv output
+	cmd = MakeCommand(map[string]interface{}{"format": "csv"})
+
+	ret, err = f(&cmd, client)
+	Expect(err).To(BeNil())
+
+	//this is not reliable as the first row sometimes changes.
+	//Expect(CSVFirstRowEquals(ret, firstRow)).To(BeNil())
+}
+
+type CommandTestCase struct {
+	name string
+	cmd  Command
+	good bool
+	id   int
+}
+
+//KeysOfMapAsString returns the keys of a map as a string separated by " "
+func KeysOfMapAsString(m map[string]interface{}) string {
+	keys := []string{}
+	for k := range m {
+		keys = append(keys, k)
+	}
+	return strings.Join(keys, " ")
+}
+
+//MakeCommand utility function that creates a command from a kv map
+func MakeCommand(arguments map[string]interface{}) Command {
+	cmd := Command{
+		Arguments: map[string]interface{}{},
+	}
+
+	for k, v := range arguments {
+		switch v.(type) {
+		case int:
+			x := v.(int)
+			cmd.Arguments[k] = &x
+		case string:
+			x := v.(string)
+			cmd.Arguments[k] = &x
+		case bool:
+			x := v.(bool)
+			cmd.Arguments[k] = &x
+		}
+	}
+
+	return cmd
+}
+
+//GenerateCommandTestCases generate commands with wrong arguments by cycling through all of them
+func GenerateCommandTestCases(arguments map[string]interface{}) []CommandTestCase {
+	cmds := []CommandTestCase{}
+
+	//turn keys to array
+	keys := []string{}
+	for k := range arguments {
+		keys = append(keys, k)
+	}
+
+	l := len(arguments)
+	if l == 1 {
+		return []CommandTestCase{
+			{
+				name: KeysOfMapAsString(arguments),
+				cmd:  MakeCommand(arguments),
+				good: false,
+			},
+		}
+	}
+
+	for i := 0; i < l; i++ {
+		//add all the arguments list
+		args := map[string]interface{}{}
+		for j := 0; j < l; j++ {
+			if i == j {
+				continue
+			}
+			args[keys[j]] = arguments[keys[j]]
+		}
+
+		newCmds := GenerateCommandTestCases(args)
+		newCmds = append(newCmds,
+			CommandTestCase{
+				name: KeysOfMapAsString(args),
+				cmd:  MakeCommand(args),
+				good: false,
+			})
+
+		for _, newCmd := range newCmds {
+			duplicate := false
+			for _, v := range cmds {
+				if reflect.DeepEqual(v.cmd.Arguments, newCmd.cmd.Arguments) {
+					duplicate = true
+				}
+			}
+			if !duplicate {
+				cmds = append(cmds, newCmd)
+			}
+		}
+
+	}
+
+	return cmds
+}
+
+//checks command with and without return_id
+func testCreateCommand(f CommandExecuteFunc, cases []CommandTestCase, client interfaces.MetalCloudClient, t *testing.T) {
+
+	for _, c := range cases {
+		t.Run(c.name, func(t *testing.T) {
+			//test without return id
+			_, err := f(&c.cmd, client)
+			if c.good {
+
+				if err != nil {
+					t.Errorf("error thrown: %v", err)
+				}
+
+			} else {
+				if err == nil {
+					t.Errorf("Should have thrown error")
+				}
+			}
+
+			//test with return id
+			cmdWithReturn := c.cmd
+			bTrue := true
+			cmdWithReturn.Arguments["return_id"] = &bTrue
+			ret, err := f(&c.cmd, client)
+			if c.good {
+				if ret != fmt.Sprintf("%d", c.id) {
+					t.Error("id not returned")
+				}
+				if err != nil {
+					t.Errorf("error thrown: %v", err)
+				}
+
+			} else {
+				if err == nil {
+					t.Errorf("Should have thrown error")
+				}
+			}
+		})
+	}
+
+}
+
+func testDeleteCommand(f CommandExecuteFunc, cmd Command, client interfaces.MetalCloudClient, t *testing.T) {
+	var stdin bytes.Buffer
+	var stdout bytes.Buffer
+
+	SetConsoleIOChannel(&stdin, &stdout)
+	internalCmd := cmd
+	//test with no autoconfirm should throw error
+	bTrue := false
+	internalCmd.Arguments["autoconfirm"] = &bTrue
+
+	_, err := f(&internalCmd, client)
+	if err != nil {
+		t.Errorf("error thrown: %v", err)
+	}
+
+	//test with  autoconfirm should not throw error
+
+	bTrue = true
+	internalCmd.Arguments["autoconfirm"] = &bTrue
+
+	_, err = f(&internalCmd, client)
+	if err != nil {
+		t.Errorf("error thrown: %v", err)
+	}
+
+}
+
+func TestMakeWrongCommand(t *testing.T) {
+	RegisterTestingT(t)
+	cmds := GenerateCommandTestCases(map[string]interface{}{"1": 1, "2": 2, "3": 3, "4": 4})
+
+	Expect(len(cmds)).To(Equal(14))
+
 }
