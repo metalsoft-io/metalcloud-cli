@@ -40,6 +40,8 @@ var types = [...]string{
 	"WorkflowStageAssociation",
 	"WorkflowStageDefinitionReference",
 	"WorkflowReference",
+	"Drive",
+	"Snapshot",
 }
 
 const packageName = "metalcloud"

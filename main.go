@@ -58,7 +58,7 @@ func main() {
 	}
 
 	if os.Args[1] == "help" {
-		fmt.Fprintf(GetStdout(), "%s\n", getHelp(clients))
+		fmt.Fprintf(GetStdout(), "%s\n", getHelp(clients, false))
 		os.Exit(0)
 	}
 
@@ -93,7 +93,7 @@ func executeCommand(args []string, commands []Command, clients map[string]interf
 
 			for _, a := range args {
 				if a == "-h" || a == "-help" || a == "--help" {
-					return fmt.Errorf(getCommandHelp(c))
+					return fmt.Errorf(getCommandHelp(c, true))
 				}
 			}
 
@@ -120,6 +120,7 @@ func executeCommand(args []string, commands []Command, clients map[string]interf
 	}
 
 	if !commandExecuted {
+
 		return fmt.Errorf("%s %s is not a valid command. Use %s help for more details", predicate, subject, args[0])
 	}
 
@@ -131,26 +132,31 @@ func getArgumentHelp(f *flag.Flag) string {
 	return fmt.Sprintf("\t  -%-25s %s\n", f.Name, f.Usage)
 }
 
-func getCommandHelp(cmd Command) string {
+func getCommandHelp(cmd Command, showArguments bool) string {
 	var sb strings.Builder
 
 	c := fmt.Sprintf("%s %s", cmd.Predicate, cmd.Subject)
-	sb.WriteString(fmt.Sprintf("Command: %-25s %s (alternatively use \"%s %s\")\n", c, cmd.Description, cmd.AltPredicate, cmd.AltSubject))
-	cmd.FlagSet.VisitAll(func(f *flag.Flag) {
-		sb.WriteString(getArgumentHelp(f))
-	})
 
-	h := flag.Flag{
-		Name:  "h",
-		Usage: "Show command help and exit.",
+	if showArguments {
+		sb.WriteString(fmt.Sprintf("Command: %-25s %s (alternatively use \"%s %s\")\n", c, cmd.Description, cmd.AltPredicate, cmd.AltSubject))
+		cmd.FlagSet.VisitAll(func(f *flag.Flag) {
+			sb.WriteString(getArgumentHelp(f))
+		})
+
+		h := flag.Flag{
+			Name:  "h",
+			Usage: "Show command help and exit.",
+		}
+
+		sb.WriteString(getArgumentHelp(&h))
+	} else {
+		sb.WriteString(fmt.Sprintf("\t%-25s %-25s (alternatively use \"%s %s\")", c, cmd.Description, cmd.AltPredicate, cmd.AltSubject))
 	}
-
-	sb.WriteString(getArgumentHelp(&h))
 
 	return sb.String()
 }
 
-func getHelp(clients map[string]interfaces.MetalCloudClient) string {
+func getHelp(clients map[string]interfaces.MetalCloudClient, showArguments bool) string {
 	var sb strings.Builder
 	cmds := getCommands(clients)
 	for _, c := range cmds {
@@ -158,7 +164,7 @@ func getHelp(clients map[string]interfaces.MetalCloudClient) string {
 	}
 	sb.WriteString(fmt.Sprintf("Syntax: %s <command> [args]\nAccepted commands:\n", os.Args[0]))
 	for _, c := range cmds {
-		sb.WriteString(fmt.Sprintln(getCommandHelp(c)))
+		sb.WriteString(fmt.Sprintln(getCommandHelp(c, false)))
 	}
 	return sb.String()
 }
@@ -246,7 +252,9 @@ func getCommands(clients map[string]interfaces.MetalCloudClient) []Command {
 	commands := [][]Command{
 		infrastructureCmds,
 		instanceArrayCmds,
+		instanceCmds,
 		driveArrayCmds,
+		driveSnapshotCmds,
 		volumeTemplateyCmds,
 		firewallRuleCmds,
 		secretsCmds,

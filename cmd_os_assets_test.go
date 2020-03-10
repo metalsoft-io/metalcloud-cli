@@ -87,5 +87,5 @@ func TestDeleteAssetCmd(t *testing.T) {
 		MinTimes(1)
 
 	cmd := MakeCommand(map[string]interface{}{"asset_id_or_name": asset.OSAssetID})
-	testDeleteCommand(assetDeleteCmd, cmd, client, t)
+	testCommandWithConfirmation(assetDeleteCmd, cmd, client, t)
 }

@@ -89,3 +89,31 @@ func TestVolumeTemplatesListCmd(t *testing.T) {
 	Expect(csv[1][1]).To(Equal(vt.VolumeTemplateLabel))
 
 }
+
+func TestVolumeTemplateCmd(t *testing.T) {
+
+	client := mock_metalcloud.NewMockMetalCloudClient(gomock.NewController(t))
+
+	vt := metalcloud.VolumeTemplate{
+		VolumeTemplateID: 10,
+	}
+
+	client.EXPECT().
+		VolumeTemplateCreate(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).
+		Return(&vt, nil).
+		MinTimes(1)
+
+	cases := []CommandTestCase{
+		{
+			name: "good1",
+			cmd: MakeCommand(map[string]interface{}{
+				"drive_id": 11,
+				"label":    "ass",
+			}),
+			good: true,
+			id:   vt.VolumeTemplateID,
+		},
+	}
+
+	testCreateCommand(volumeTemplateCreateCmd, cases, client, t)
+}

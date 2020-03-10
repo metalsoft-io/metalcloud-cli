@@ -107,6 +107,7 @@ var instanceArrayCmds = []Command{
 			c.Arguments = map[string]interface{}{
 				"instance_array_id_or_label": c.FlagSet.String("id", _nilDefaultStr, "(Required) Instance array's id or label. Note that using the 'label' might be ambiguous in certain situations."),
 				"show_credentials":           c.FlagSet.Bool("show_credentials", false, "(Flag) If set returns the instances' credentials"),
+				"show_power_status":          c.FlagSet.Bool("show_power_status", false, "(Flag) If set returns the instances' power status"),
 				"format":                     c.FlagSet.String("format", "", "The output format. Supported values are 'json','csv'. The default format is human readable."),
 			}
 		},
@@ -361,10 +362,17 @@ func instanceArrayGetCmd(c *Command, client interfaces.MetalCloudClient) (string
 				break
 			}
 		}
-		credentials := ""
+
+		dataRow := []interface{}{
+			i.InstanceID,
+			i.InstanceSubdomainPermanent,
+			wanIP,
+			details,
+			status,
+		}
 
 		if c.Arguments["show_credentials"] != nil && *c.Arguments["show_credentials"].(*bool) {
-
+			credentials := ""
 			schema = append(schema, SchemaField{
 				FieldName: "CREDENTIALS",
 				FieldType: TypeString,
@@ -379,55 +387,42 @@ func instanceArrayGetCmd(c *Command, client interfaces.MetalCloudClient) (string
 				credentials = fmt.Sprintf("RDP( %d) user: %s pass: %s", v.Port, v.Username, v.InitialPassword)
 			}
 
+			dataRow = append(dataRow, credentials)
 		}
 
-		data = append(data, []interface{}{
-			i.InstanceID,
-			i.InstanceSubdomainPermanent,
-			wanIP,
-			details,
-			status,
-			credentials,
-		})
-	}
+		if getBoolParam(c.Arguments["show_power_status"]) {
+			powerStatus := ""
+			schema = append(schema, SchemaField{
+				FieldName: "POWER",
+				FieldType: TypeString,
+				FieldSize: 5,
+			})
 
-	var sb strings.Builder
+			pwr, err := client.InstanceServerPowerGet(i.InstanceID)
+			if err != nil {
+				powerStatus = err.Error()
+			} else {
+				powerStatus = *pwr
+			}
 
-	format := c.Arguments["format"]
-	if format == nil {
-		var f string
-		f = ""
-		format = &f
-	}
-
-	switch *format.(*string) {
-	case "json", "JSON":
-		ret, err := GetTableAsJSONString(data, schema)
-		if err != nil {
-			return "", err
+			dataRow = append(dataRow, powerStatus)
 		}
-		sb.WriteString(ret)
-	case "csv", "CSV":
-		ret, err := GetTableAsCSVString(data, schema)
-		if err != nil {
-			return "", err
-		}
-		sb.WriteString(ret)
 
-	default:
+		data = append(data, dataRow)
 
-		sb.WriteString(fmt.Sprintf("IntanceArray %s (%d):\n",
-			retIA.InstanceArrayLabel,
-			retIA.InstanceArrayID))
-
-		AdjustFieldSizes(data, &schema)
-
-		sb.WriteString(GetTableAsString(data, schema))
-
-		sb.WriteString(fmt.Sprintf("Total: %d elements\n\n", len(data)))
 	}
 
-	return sb.String(), nil
+	infra, err := client.InfrastructureGet(retIA.InfrastructureID)
+	if err != nil {
+		return "", err
+	}
+	subtitle := fmt.Sprintf("Instances of instance array %s (#%d) of infrastructure %s (#%d):",
+		retIA.InstanceArrayLabel,
+		retIA.InstanceArrayID,
+		infra.InfrastructureLabel,
+		infra.InfrastructureID)
+
+	return renderTable("Instances", subtitle, getStringParam(c.Arguments["format"]), data, schema)
 }
 
 func argsToInstanceArray(m map[string]interface{}) *metalcloud.InstanceArray {

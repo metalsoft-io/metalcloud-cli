@@ -259,6 +259,26 @@ func testListCommand(f CommandExecuteFunc, client interfaces.MetalCloudClient, f
 	//Expect(CSVFirstRowEquals(ret, firstRow)).To(BeNil())
 }
 
+//checks the various outputs
+func testGetCommand(f CommandExecuteFunc, cases []CommandTestCase, client interfaces.MetalCloudClient, firstRow map[string]interface{}, t *testing.T) {
+	for _, c := range cases {
+		t.Run(c.name, func(t *testing.T) {
+			_, err := f(&c.cmd, client)
+			if c.good {
+
+				if err != nil {
+					t.Errorf("error thrown: %v", err)
+				}
+
+			} else {
+				if err == nil {
+					t.Errorf("Should have thrown error")
+				}
+			}
+		})
+	}
+}
+
 type CommandTestCase struct {
 	name string
 	cmd  Command
@@ -396,7 +416,7 @@ func testCreateCommand(f CommandExecuteFunc, cases []CommandTestCase, client int
 
 }
 
-func testDeleteCommand(f CommandExecuteFunc, cmd Command, client interfaces.MetalCloudClient, t *testing.T) {
+func testCommandWithConfirmation(f CommandExecuteFunc, cmd Command, client interfaces.MetalCloudClient, t *testing.T) {
 	var stdin bytes.Buffer
 	var stdout bytes.Buffer
 

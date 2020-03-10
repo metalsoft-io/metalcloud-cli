@@ -655,3 +655,52 @@ func TestGetDriveArrayFromCommand(t *testing.T) {
 	Expect(ret.DriveArrayID).To(Equal(da.DriveArrayOperation.DriveArrayID))
 
 }
+
+func TestDriveArrayGetCmd(t *testing.T) {
+	RegisterTestingT(t)
+	ctrl := gomock.NewController(t)
+
+	da := metalcloud.DriveArray{
+
+		DriveArrayID:    10,
+		DriveArrayCount: 1,
+	}
+
+	client := mock_metalcloud.NewMockMetalCloudClient(ctrl)
+
+	client.EXPECT().
+		DriveArrayGet(gomock.Any()).
+		Return(&da, nil).
+		AnyTimes()
+
+	dlist := map[string]metalcloud.Drive{
+		"da-1": metalcloud.Drive{
+			DriveID: 112,
+		},
+	}
+
+	client.EXPECT().
+		DriveArrayDrives(gomock.Any()).
+		Return(&dlist, nil).
+		AnyTimes()
+
+	expectedFirstRow := map[string]interface{}{
+		"ID": 112,
+	}
+
+	cases := []CommandTestCase{
+		{
+			name: "good1",
+			cmd:  MakeCommand(map[string]interface{}{"drive_array_id_or_label": 10}),
+			good: true,
+		},
+		{
+			name: "no id",
+			cmd:  MakeCommand(map[string]interface{}{}),
+			good: false,
+		},
+	}
+
+	testGetCommand(driveArrayGetCmd, cases, client, expectedFirstRow, t)
+
+}

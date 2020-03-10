@@ -86,6 +86,21 @@ var driveArrayCmds = []Command{
 		},
 		ExecuteFunc: driveArrayDeleteCmd,
 	},
+	Command{
+		Description:  "Gets a drive array.",
+		Subject:      "drive_array",
+		AltSubject:   "da",
+		Predicate:    "get",
+		AltPredicate: "show",
+		FlagSet:      flag.NewFlagSet("show drive_array", flag.ExitOnError),
+		InitFunc: func(c *Command) {
+			c.Arguments = map[string]interface{}{
+				"drive_array_id_or_label": c.FlagSet.String("id", _nilDefaultStr, "(Required) Drive Array's ID or label. Note that using the label can be ambiguous and is slower."),
+				"format":                  c.FlagSet.String("format", "", "The output format. Supported values are 'json','csv'. The default format is human readable."),
+			}
+		},
+		ExecuteFunc: driveArrayGetCmd,
+	},
 }
 
 func driveArrayCreateCmd(c *Command, client interfaces.MetalCloudClient) (string, error) {
@@ -359,6 +374,106 @@ func driveArrayDeleteCmd(c *Command, client interfaces.MetalCloudClient) (string
 	}
 
 	return "", fmt.Errorf("Operation not confirmed. Aborting")
+}
+
+func driveArrayGetCmd(c *Command, client interfaces.MetalCloudClient) (string, error) {
+
+	retDA, err := getDriveArrayFromCommand(c, client)
+	if err != nil {
+		return "", err
+	}
+
+	schema := []SchemaField{
+		SchemaField{
+			FieldName: "ID",
+			FieldType: TypeInt,
+			FieldSize: 6,
+		},
+		SchemaField{
+			FieldName: "LABEL",
+			FieldType: TypeString,
+			FieldSize: 30,
+		},
+		SchemaField{
+			FieldName: "STATUS",
+			FieldType: TypeString,
+			FieldSize: 10,
+		},
+		SchemaField{
+			FieldName: "SIZE (MB)",
+			FieldType: TypeInt,
+			FieldSize: 10,
+		},
+		SchemaField{
+			FieldName: "TYPE",
+			FieldType: TypeString,
+			FieldSize: 10,
+		},
+		SchemaField{
+			FieldName: "ATTACHED TO",
+			FieldType: TypeString,
+			FieldSize: 30,
+		},
+		SchemaField{
+			FieldName: "TEMPLATE",
+			FieldType: TypeString,
+			FieldSize: 25,
+		},
+		SchemaField{
+			FieldName: "DETAILS",
+			FieldType: TypeString,
+			FieldSize: 25,
+		},
+	}
+
+	drives, err := client.DriveArrayDrives(retDA.DriveArrayID)
+	if err != nil {
+		return "", err
+	}
+
+	data := [][]interface{}{}
+	for _, d := range *drives {
+
+		template := ""
+		if d.TemplateIDOrigin != 0 {
+			vt, err := client.VolumeTemplateGet(d.TemplateIDOrigin)
+			if err != nil {
+				return "", err
+			}
+			template = fmt.Sprintf("%s(#%d)", vt.VolumeTemplateDisplayName, vt.VolumeTemplateID)
+
+		}
+
+		details := ""
+
+		if d.DriveOperatingSystem != nil {
+			details = fmt.Sprintf("%s ", d.DriveOperatingSystem.OperatingSystemType)
+		}
+
+		if d.DriveFileSystem != nil {
+			details = fmt.Sprintf("%s %s", details, d.DriveFileSystem.DriveFilesystemType)
+		}
+
+		data = append(data, []interface{}{
+			d.DriveID,
+			d.DriveLabel,
+			d.DriveServiceStatus,
+			d.DriveSizeMBytes,
+			d.DriveStorageType,
+			fmt.Sprintf("instance-%d", d.InstanceID),
+			template,
+			details,
+		})
+
+	}
+
+	subtitle := fmt.Sprintf("Drive Array #%d", retDA.DriveArrayID)
+	if retDA.InstanceArrayID != 0 {
+		subtitle = fmt.Sprintf("%s attached to instance array %d", subtitle, retDA.InstanceArrayID)
+	}
+	subtitle = fmt.Sprintf("%s has the following drives:", subtitle)
+
+	return renderTable("Drives", subtitle, getStringParam(c.Arguments["format"]), data, schema)
 }
 
 func argsToDriveArray(m map[string]interface{}) *metalcloud.DriveArray {

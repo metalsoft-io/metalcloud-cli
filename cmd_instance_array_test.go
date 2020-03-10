@@ -418,6 +418,10 @@ func TestInstanceArrayGet(t *testing.T) {
 		ServerTypeID:          106,
 		ServerTypeDisplayName: "M.40.256.12D",
 	}
+	infra := metalcloud.Infrastructure{
+		InfrastructureID:    10,
+		InfrastructureLabel: "test",
+	}
 
 	client.EXPECT().
 		InstanceArrayInstances((ia.InstanceArrayID)).
@@ -437,6 +441,11 @@ func TestInstanceArrayGet(t *testing.T) {
 	client.EXPECT().
 		ServerTypeGet((ilist["instance-100"].ServerTypeID)).
 		Return(&st, nil).
+		AnyTimes()
+
+	client.EXPECT().
+		InfrastructureGet(gomock.Any()).
+		Return(&infra, nil).
 		AnyTimes()
 
 	//test with text output

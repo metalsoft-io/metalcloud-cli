@@ -242,7 +242,7 @@ func TestGetCommandHelp(t *testing.T) {
 		}}
 
 	cmd.InitFunc(&cmd)
-	s := getCommandHelp(cmd)
+	s := getCommandHelp(cmd, true)
 	Expect(s).To(ContainSubstring(cmd.Description))
 	Expect(s).To(ContainSubstring("Random param"))
 
@@ -257,14 +257,10 @@ func TestGetHelp(t *testing.T) {
 	}
 	cmds := getCommands(clients)
 
-	s := getHelp(clients)
+	s := getHelp(clients, true)
 	for _, c := range cmds {
+		t.Logf("%+v", c)
 		Expect(s).To(ContainSubstring(c.Description))
-
-		c.FlagSet.VisitAll(func(f *flag.Flag) {
-			Expect(s).To(ContainSubstring(f.Name))
-			Expect(s).To(ContainSubstring(f.Usage))
-		})
 	}
 }
 

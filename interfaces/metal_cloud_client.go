@@ -32,10 +32,24 @@ type MetalCloudClient interface {
 	DriveArrayEdit(driveArrayID int, driveArrayOperation metalcloud.DriveArrayOperation) (*metalcloud.DriveArray, error)
 	//DriveArrayEditByLabel alters a deployed drive array. Requires deploy.
 	DriveArrayEditByLabel(driveArrayLabel string, driveArrayOperation metalcloud.DriveArrayOperation) (*metalcloud.DriveArray, error)
-	//DriveArrayDelete deletes a Drive Array with specified id
+	//DriveArrayDelete deletes a metalcloud.Drive Array with specified id
 	DriveArrayDelete(driveArrayID int) error
-	//DriveArrayDeleteByLabel deletes a Drive Array with specified id
+	//DriveArrayDeleteByLabel deletes a metalcloud.Drive Array with specified id
 	DriveArrayDeleteByLabel(driveArrayLabel string) error
+	//DriveArrayDrives returns the drives of a drive array
+	DriveArrayDrives(driveArray int) (*map[string]metalcloud.Drive, error)
+	//DriveArrayDrivesByLabel returns the drives of a drive array
+	DriveArrayDrivesByLabel(driveArrLabel string) (*map[string]metalcloud.Drive, error)
+	//DriveSnapshotCreate creates a drive snapshot
+	DriveSnapshotCreate(driveID int) (*metalcloud.Snapshot, error)
+	//DriveSnapshotDelete creates a drive snapshot
+	DriveSnapshotDelete(driveSnapshotID int) error
+	//DriveSnapshotRollback rolls a metalcloud.Drive back to a specified DriveSnapshot. The specified snapshot is not destroyed and can be reused.
+	DriveSnapshotRollback(driveSnapshotID int) error
+	//DriveSnapshotGet gets a drive snapshot
+	DriveSnapshotGet(driveSnapshotID int) (*metalcloud.Snapshot, error)
+	//DriveSnapshots retrieves a list of all the snapshot objects
+	DriveSnapshots(driveID int) (*map[string]metalcloud.Snapshot, error)
 	//InfrastructureCreate creates an infrastructure
 	InfrastructureCreate(infrastructure metalcloud.Infrastructure) (*metalcloud.Infrastructure, error)
 	//Infrastructures returns a list of infrastructures
@@ -96,6 +110,18 @@ type MetalCloudClient interface {
 	InstanceGet(instanceID int) (*metalcloud.Instance, error)
 	//InstanceGetByLabel returns a specific instance by id
 	InstanceGetByLabel(instanceLabel string) (*metalcloud.Instance, error)
+	//InstanceServerPowerSet reboots or powers on an instance
+	InstanceServerPowerSet(instanceID int, operation string) error
+	//InstanceServerPowerSetByLabel reboots or powers on an instance
+	InstanceServerPowerSetByLabel(instanceLabel string, operation string) error
+	//InstanceServerPowerGet returns the power status of an instance
+	InstanceServerPowerGet(instanceID int) (*string, error)
+	//InstanceServerPowerGetByLabel returns the power status of an instance
+	InstanceServerPowerGetByLabel(instanceLabel string) (*string, error)
+	//InstanceServerPowerGetBatch returns the power status of multiple instances
+	InstanceServerPowerGetBatch(infrastructureID int, instanceIDs []int) (*map[string]string, error)
+	//InstanceServerPowerGetBatchByLabel returns the power status of multiple instances
+	InstanceServerPowerGetBatchByLabel(infrastructureLabel string, instanceIDs []int) (*map[string]string, error)
 	//GetUserEmail returns the user configured for this connection
 	GetUserEmail() string
 	//GetEndpoint returns the endpoint configured for this connection
@@ -225,6 +251,10 @@ type MetalCloudClient interface {
 	VolumeTemplateGet(volumeTemplateID int) (*metalcloud.VolumeTemplate, error)
 	//VolumeTemplateGetByLabel returns the specified volume template
 	VolumeTemplateGetByLabel(volumeTemplateLabel string) (*metalcloud.VolumeTemplate, error)
+	//VolumeTemplateCreate creates a private volume template from a drive
+	VolumeTemplateCreate(driveID int, label string, description string, displayName string, bootType string, deprecationStatus bool, bootMethodsSupported string, volumeTemplateTags []string) (*metalcloud.VolumeTemplate, error)
+	//VolumeTemplateCreateByLabel creates a private volume template from a drive
+	VolumeTemplateCreateByLabel(driveLabel string, label string, description string, displayName string, bootType string, deprecationStatus bool, bootMethodsSupported string, volumeTemplateTags []string) (*metalcloud.VolumeTemplate, error)
 	//WorkflowCreate creates a workflow
 	WorkflowCreate(workflow metalcloud.Workflow) (*metalcloud.Workflow, error)
 	//WorkflowDelete Permanently destroys a metalcloud.Workflow.
