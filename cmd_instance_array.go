@@ -371,13 +371,8 @@ func instanceArrayGetCmd(c *Command, client interfaces.MetalCloudClient) (string
 			status,
 		}
 
-		if c.Arguments["show_credentials"] != nil && *c.Arguments["show_credentials"].(*bool) {
+		if getBoolParam(c.Arguments["show_credentials"]) {
 			credentials := ""
-			schema = append(schema, SchemaField{
-				FieldName: "CREDENTIALS",
-				FieldType: TypeString,
-				FieldSize: 5,
-			})
 
 			if v := i.InstanceCredentials.SSH; v != nil && v.Username != "" {
 				credentials = fmt.Sprintf("SSH (%d) user: %s pass: %s", v.Port, v.Username, v.InitialPassword)
@@ -392,11 +387,6 @@ func instanceArrayGetCmd(c *Command, client interfaces.MetalCloudClient) (string
 
 		if getBoolParam(c.Arguments["show_power_status"]) {
 			powerStatus := ""
-			schema = append(schema, SchemaField{
-				FieldName: "POWER",
-				FieldType: TypeString,
-				FieldSize: 5,
-			})
 
 			pwr, err := client.InstanceServerPowerGet(i.InstanceID)
 			if err != nil {
@@ -410,6 +400,24 @@ func instanceArrayGetCmd(c *Command, client interfaces.MetalCloudClient) (string
 
 		data = append(data, dataRow)
 
+	}
+
+	if getBoolParam(c.Arguments["show_credentials"]) {
+
+		schema = append(schema, SchemaField{
+			FieldName: "CREDENTIALS",
+			FieldType: TypeString,
+			FieldSize: 5,
+		})
+	}
+
+	if getBoolParam(c.Arguments["show_power_status"]) {
+
+		schema = append(schema, SchemaField{
+			FieldName: "POWER",
+			FieldType: TypeString,
+			FieldSize: 5,
+		})
 	}
 
 	infra, err := client.InfrastructureGet(retIA.InfrastructureID)

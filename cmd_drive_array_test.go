@@ -704,3 +704,5 @@ func TestDriveArrayGetCmd(t *testing.T) {
 	testGetCommand(driveArrayGetCmd, cases, client, expectedFirstRow, t)
 
 }
+
+
