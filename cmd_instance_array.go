@@ -15,11 +15,11 @@ var instanceArrayCmds = []Command{
 
 	Command{
 		Description:  "Creates an instance array.",
-		Subject:      "instance_array",
+		Subject:      "instance-array",
 		AltSubject:   "ia",
 		Predicate:    "create",
 		AltPredicate: "new",
-		FlagSet:      flag.NewFlagSet("instance_array", flag.ExitOnError),
+		FlagSet:      flag.NewFlagSet("instance-array", flag.ExitOnError),
 		InitFunc: func(c *Command) {
 			c.Arguments = map[string]interface{}{
 				"infrastructure_id_or_label":          c.FlagSet.String("infra", _nilDefaultStr, "(Required) Infrastructure's id or label. Note that the 'label' this be ambiguous in certain situations."),
@@ -41,7 +41,7 @@ var instanceArrayCmds = []Command{
 	},
 	Command{
 		Description:  "Lists all instance arrays of an infrastructure.",
-		Subject:      "instance_array",
+		Subject:      "instance-array",
 		AltSubject:   "ia",
 		Predicate:    "list",
 		AltPredicate: "ls",
@@ -56,7 +56,7 @@ var instanceArrayCmds = []Command{
 	},
 	Command{
 		Description:  "Delete instance array.",
-		Subject:      "instance_array",
+		Subject:      "instance-array",
 		AltSubject:   "ia",
 		Predicate:    "delete",
 		AltPredicate: "rm",
@@ -71,7 +71,7 @@ var instanceArrayCmds = []Command{
 	},
 	Command{
 		Description:  "Edits an instance array.",
-		Subject:      "instance_array",
+		Subject:      "instance-array",
 		AltSubject:   "ia",
 		Predicate:    "edit",
 		AltPredicate: "alter",
@@ -98,7 +98,7 @@ var instanceArrayCmds = []Command{
 	},
 	Command{
 		Description:  "Get an instance array.",
-		Subject:      "instance_array",
+		Subject:      "instance-array",
 		AltSubject:   "ia",
 		Predicate:    "get",
 		AltPredicate: "show",

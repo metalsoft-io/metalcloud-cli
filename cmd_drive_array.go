@@ -15,11 +15,11 @@ var driveArrayCmds = []Command{
 
 	Command{
 		Description:  "Creates a drive array.",
-		Subject:      "drive_array",
+		Subject:      "drive-array",
 		AltSubject:   "da",
 		Predicate:    "create",
 		AltPredicate: "new",
-		FlagSet:      flag.NewFlagSet("drive_array", flag.ExitOnError),
+		FlagSet:      flag.NewFlagSet("drive-array", flag.ExitOnError),
 		InitFunc: func(c *Command) {
 			c.Arguments = map[string]interface{}{
 				"infrastructure_id_or_label":                c.FlagSet.String("infra", _nilDefaultStr, "(Required) Infrastructure's id or label. Note that the 'label' this be ambiguous in certain situations."),
@@ -37,7 +37,7 @@ var driveArrayCmds = []Command{
 	},
 	Command{
 		Description:  "Edit a drive array.",
-		Subject:      "drive_array",
+		Subject:      "drive-array",
 		AltSubject:   "da",
 		Predicate:    "edit",
 		AltPredicate: "alter",
@@ -58,7 +58,7 @@ var driveArrayCmds = []Command{
 	},
 	Command{
 		Description:  "Lists all drive arrays of an infrastructure.",
-		Subject:      "drive_array",
+		Subject:      "drive-array",
 		AltSubject:   "da",
 		Predicate:    "list",
 		AltPredicate: "ls",
@@ -73,7 +73,7 @@ var driveArrayCmds = []Command{
 	},
 	Command{
 		Description:  "Delete a drive array.",
-		Subject:      "drive_array",
+		Subject:      "drive-array",
 		AltSubject:   "da",
 		Predicate:    "delete",
 		AltPredicate: "rm",
@@ -88,7 +88,7 @@ var driveArrayCmds = []Command{
 	},
 	Command{
 		Description:  "Gets a drive array.",
-		Subject:      "drive_array",
+		Subject:      "drive-array",
 		AltSubject:   "da",
 		Predicate:    "get",
 		AltPredicate: "show",

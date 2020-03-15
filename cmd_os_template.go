@@ -14,7 +14,7 @@ var osTemplatesCmds = []Command{
 
 	Command{
 		Description:  "Lists available Templates",
-		Subject:      "os_template",
+		Subject:      "os-template",
 		AltSubject:   "template",
 		Predicate:    "list",
 		AltPredicate: "ls",
@@ -30,7 +30,7 @@ var osTemplatesCmds = []Command{
 	},
 	Command{
 		Description:  "Create template",
-		Subject:      "os_template",
+		Subject:      "os-template",
 		AltSubject:   "template",
 		Predicate:    "create",
 		AltPredicate: "new",
@@ -63,7 +63,7 @@ var osTemplatesCmds = []Command{
 	},
 	Command{
 		Description:  "Edit template",
-		Subject:      "os_template",
+		Subject:      "os-template",
 		AltSubject:   "template",
 		Predicate:    "update",
 		AltPredicate: "edit",
@@ -96,7 +96,7 @@ var osTemplatesCmds = []Command{
 	},
 	Command{
 		Description:  "Get template",
-		Subject:      "os_template",
+		Subject:      "os-template",
 		AltSubject:   "template",
 		Predicate:    "get",
 		AltPredicate: "show",
@@ -113,7 +113,7 @@ var osTemplatesCmds = []Command{
 	},
 	Command{
 		Description:  "Delete template",
-		Subject:      "os_template",
+		Subject:      "os-template",
 		AltSubject:   "template",
 		Predicate:    "delete",
 		AltPredicate: "rm",

@@ -15,7 +15,7 @@ var workflowCmds = []Command{
 	Command{
 		Description:  "Lists available workflows",
 		Subject:      "workflow",
-		AltSubject:   "workflows",
+		AltSubject:   "wf",
 		Predicate:    "list",
 		AltPredicate: "ls",
 		FlagSet:      flag.NewFlagSet("list workflows", flag.ExitOnError),

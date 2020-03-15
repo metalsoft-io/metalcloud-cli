@@ -14,7 +14,7 @@ var driveSnapshotCmds = []Command{
 
 	Command{
 		Description:  "Creates a drive snapshot.",
-		Subject:      "drive_snapshot",
+		Subject:      "drive-snapshot",
 		AltSubject:   "snapshot",
 		Predicate:    "create",
 		AltPredicate: "new",
@@ -29,7 +29,7 @@ var driveSnapshotCmds = []Command{
 	},
 	Command{
 		Description:  "Lists drive snapshots",
-		Subject:      "drive_snapshot",
+		Subject:      "drive-snapshot",
 		AltSubject:   "snapshot",
 		Predicate:    "list",
 		AltPredicate: "ls",
@@ -44,7 +44,7 @@ var driveSnapshotCmds = []Command{
 	},
 	Command{
 		Description:  "Delete snapshot",
-		Subject:      "drive_snapshot",
+		Subject:      "drive-snapshot",
 		AltSubject:   "snapshot",
 		Predicate:    "delete",
 		AltPredicate: "rm",
@@ -59,7 +59,7 @@ var driveSnapshotCmds = []Command{
 	},
 	Command{
 		Description:  "Rollback snapshot",
-		Subject:      "drive_snapshot",
+		Subject:      "drive-snapshot",
 		AltSubject:   "snapshot",
 		Predicate:    "rollback",
 		AltPredicate: "rollback",

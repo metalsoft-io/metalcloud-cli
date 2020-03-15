@@ -33,8 +33,8 @@ var instanceCmds = []Command{
 	Command{
 		Description:  "Show an instance's credentials",
 		Subject:      "instance",
-		AltSubject:   "inst",
-		Predicate:    "show_credentials",
+		AltSubject:   "instance",
+		Predicate:    "credentials",
 		AltPredicate: "creds",
 		FlagSet:      flag.NewFlagSet("instance credentials", flag.ExitOnError),
 		InitFunc: func(c *Command) {

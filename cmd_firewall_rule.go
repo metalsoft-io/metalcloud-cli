@@ -15,7 +15,7 @@ var firewallRuleCmds = []Command{
 
 	Command{
 		Description:  "Lists instance array firewall rules",
-		Subject:      "firewall_rule",
+		Subject:      "firewall-rule",
 		AltSubject:   "fw",
 		Predicate:    "list",
 		AltPredicate: "ls",
@@ -30,7 +30,7 @@ var firewallRuleCmds = []Command{
 	},
 	Command{
 		Description:  "Add instance array firewall rule",
-		Subject:      "firewall_rule",
+		Subject:      "firewall-rule",
 		AltSubject:   "fw",
 		Predicate:    "add",
 		AltPredicate: "new",
@@ -50,7 +50,7 @@ var firewallRuleCmds = []Command{
 	},
 	Command{
 		Description:  "Remove instance array firewall rule",
-		Subject:      "firewall_rule",
+		Subject:      "firewall-rule",
 		AltSubject:   "fw",
 		Predicate:    "delete",
 		AltPredicate: "rm",

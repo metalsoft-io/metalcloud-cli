@@ -15,8 +15,8 @@ var stageDefinitionsCmds = []Command{
 
 	Command{
 		Description:  "Lists available stage definitions",
-		Subject:      "stage_definition",
-		AltSubject:   "stage_def",
+		Subject:      "stage-definition",
+		AltSubject:   "stagedef",
 		Predicate:    "list",
 		AltPredicate: "ls",
 		FlagSet:      flag.NewFlagSet("list stage definitions", flag.ExitOnError),
@@ -30,8 +30,8 @@ var stageDefinitionsCmds = []Command{
 	},
 	Command{
 		Description:  "Create stage definition",
-		Subject:      "stage_definition",
-		AltSubject:   "stage_def",
+		Subject:      "stage-definition",
+		AltSubject:   "stagedef",
 		Predicate:    "create",
 		AltPredicate: "new",
 		FlagSet:      flag.NewFlagSet("create stage definition", flag.ExitOnError),
@@ -70,8 +70,8 @@ var stageDefinitionsCmds = []Command{
 	},
 	Command{
 		Description:  "Delete stage definition",
-		Subject:      "stage_definition",
-		AltSubject:   "stage_def",
+		Subject:      "stage-definition",
+		AltSubject:   "stagedef",
 		Predicate:    "delete",
 		AltPredicate: "rm",
 		FlagSet:      flag.NewFlagSet("delete stage", flag.ExitOnError),
@@ -86,10 +86,10 @@ var stageDefinitionsCmds = []Command{
 	},
 	Command{
 		Description:  "Add stage into infrastructure",
-		Subject:      "stage",
-		AltSubject:   "stage_definition",
-		Predicate:    "add_to_infra",
-		AltPredicate: "add_to_infrastructure",
+		Subject:      "stage-definition",
+		AltSubject:   "stagedef",
+		Predicate:    "add-to-infrastructure",
+		AltPredicate: "addtoinfra",
 		FlagSet:      flag.NewFlagSet("add stage", flag.ExitOnError),
 		InitFunc: func(c *Command) {
 			c.Arguments = map[string]interface{}{
@@ -104,10 +104,10 @@ var stageDefinitionsCmds = []Command{
 	},
 	Command{
 		Description:  "Add stage into workflow",
-		Subject:      "stage",
-		AltSubject:   "stage_definition",
-		Predicate:    "add",
-		AltPredicate: "add_to_workflow",
+		Subject:      "stage-definition",
+		AltSubject:   "stagedef",
+		Predicate:    "add-to-workflow",
+		AltPredicate: "addtowf",
 		FlagSet:      flag.NewFlagSet("add stage", flag.ExitOnError),
 		InitFunc: func(c *Command) {
 			c.Arguments = map[string]interface{}{
@@ -124,7 +124,7 @@ var stageDefinitionsCmds = []Command{
 		Subject:      "stage",
 		AltSubject:   "stage",
 		Predicate:    "delete",
-		AltPredicate: "rm_stage",
+		AltPredicate: "rm",
 		FlagSet:      flag.NewFlagSet("delete workflow stage", flag.ExitOnError),
 		InitFunc: func(c *Command) {
 			c.Arguments = map[string]interface{}{

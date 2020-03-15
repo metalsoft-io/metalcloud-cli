@@ -12,7 +12,7 @@ var volumeTemplateyCmds = []Command{
 
 	Command{
 		Description:  "Lists available volume templates",
-		Subject:      "volume_templates",
+		Subject:      "volume-template",
 		AltSubject:   "vt",
 		Predicate:    "list",
 		AltPredicate: "ls",
@@ -28,7 +28,7 @@ var volumeTemplateyCmds = []Command{
 	},
 	Command{
 		Description:  "Create volume templates",
-		Subject:      "volume_template",
+		Subject:      "volume-template",
 		AltSubject:   "vt",
 		Predicate:    "create",
 		AltPredicate: "new",

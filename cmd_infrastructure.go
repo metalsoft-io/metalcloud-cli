@@ -68,11 +68,11 @@ var infrastructureCmds = []Command{
 		InitFunc: func(c *Command) {
 			c.Arguments = map[string]interface{}{
 				"infrastructure_id_or_label":     c.FlagSet.String("id", _nilDefaultStr, "(Required) Infrastructure's id or label. Note that using the 'label' might be ambiguous in certain situations."),
-				"no_hard_shutdown_after_timeout": c.FlagSet.Bool("no_hard_shutdown_after_timeout", false, "(Flag) If set do not force a hard power off after timeout expired and the server is not powered off."),
-				"no_attempt_soft_shutdown":       c.FlagSet.Bool("no_attempt_soft_shutdown", false, "(Flag) If set,do not atempt a soft (ACPI) power off of all the servers in the infrastructure before the deploy"),
-				"soft_shutdown_timeout_seconds":  c.FlagSet.Int("soft_shutdown_timeout_seconds", 180, "(Optional, default 180) Timeout to wait if hard_shutdown_after_timeout is set."),
-				"allow_data_loss":                c.FlagSet.Bool("allow_data_loss", false, "(Flag) If set, deploy will throw error if data loss is expected."),
-				"skip_ansible":                   c.FlagSet.Bool("skip_ansible", false, "(Flag) If set, some automatic provisioning steps will be skipped. This parameter should generally be ignored."),
+				"no_hard_shutdown_after_timeout": c.FlagSet.Bool("no-hard-shutdown-after-timeout", false, "(Flag) If set do not force a hard power off after timeout expired and the server is not powered off."),
+				"no_attempt_soft_shutdown":       c.FlagSet.Bool("no-attempt-soft-shutdown", false, "(Flag) If set,do not atempt a soft (ACPI) power off of all the servers in the infrastructure before the deploy"),
+				"soft_shutdown_timeout_seconds":  c.FlagSet.Int("soft-shutdown-timeout-seconds", 180, "(Optional, default 180) Timeout to wait if hard_shutdown_after_timeout is set."),
+				"allow_data_loss":                c.FlagSet.Bool("allow-data-loss", false, "(Flag) If set, deploy will throw error if data loss is expected."),
+				"skip_ansible":                   c.FlagSet.Bool("skip-ansible", false, "(Flag) If set, some automatic provisioning steps will be skipped. This parameter should generally be ignored."),
 				"autoconfirm":                    c.FlagSet.Bool("autoconfirm", false, "(Flag) If set operation procedes without asking for confirmation"),
 			}
 		},

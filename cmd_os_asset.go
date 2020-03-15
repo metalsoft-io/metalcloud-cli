@@ -15,8 +15,8 @@ var osAssetsCmds = []Command{
 
 	Command{
 		Description:  "Lists available Assets",
-		Subject:      "assets",
-		AltSubject:   "assets",
+		Subject:      "asset",
+		AltSubject:   "asset",
 		Predicate:    "list",
 		AltPredicate: "ls",
 		FlagSet:      flag.NewFlagSet("list secrets", flag.ExitOnError),
@@ -84,10 +84,10 @@ var osAssetsCmds = []Command{
 	},
 	Command{
 		Description:  "List associated assets",
-		Subject:      "assets",
-		AltSubject:   "assets",
-		Predicate:    "associated",
-		AltPredicate: "template",
+		Subject:      "asset",
+		AltSubject:   "asset",
+		Predicate:    "list_associated",
+		AltPredicate: "assoc",
 		FlagSet:      flag.NewFlagSet("associated assets", flag.ExitOnError),
 		InitFunc: func(c *Command) {
 			c.Arguments = map[string]interface{}{
