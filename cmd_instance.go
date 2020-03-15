@@ -17,7 +17,7 @@ var instanceCmds = []Command{
 		Description:  "Control power an instance",
 		Subject:      "instance",
 		AltSubject:   "instance",
-		Predicate:    "power_control",
+		Predicate:    "power-control",
 		AltPredicate: "pwr",
 		FlagSet:      flag.NewFlagSet("instance_array", flag.ExitOnError),
 		InitFunc: func(c *Command) {
