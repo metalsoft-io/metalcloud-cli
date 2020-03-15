@@ -20,15 +20,15 @@ var volumeTemplateyCmds = []Command{
 		InitFunc: func(c *Command) {
 			c.Arguments = map[string]interface{}{
 				"format":     c.FlagSet.String("format", _nilDefaultStr, "The output format. Supported values are 'json','csv'. The default format is human readable."),
-				"local_only": c.FlagSet.Bool("local_only", false, "Show only templates that support local install"),
-				"pxe_only":   c.FlagSet.Bool("pxe_only", false, "Show only templates that support pxe booting"),
+				"local_only": c.FlagSet.Bool("local-only", false, "Show only templates that support local install"),
+				"pxe_only":   c.FlagSet.Bool("pxe-only", false, "Show only templates that support pxe booting"),
 			}
 		},
 		ExecuteFunc: volumeTemplatesListCmd,
 	},
 	Command{
 		Description:  "Create volume templates",
-		Subject:      "volume_templates",
+		Subject:      "volume_template",
 		AltSubject:   "vt",
 		Predicate:    "create",
 		AltPredicate: "new",
@@ -39,11 +39,11 @@ var volumeTemplateyCmds = []Command{
 				"label":                  c.FlagSet.String("label", _nilDefaultStr, "(Required) The label of the volume template"),
 				"description":            c.FlagSet.String("description", _nilDefaultStr, "(Required) The description of the volume template"),
 				"display_name":           c.FlagSet.String("name", _nilDefaultStr, "(Required) The display name of the volume template"),
-				"boot_type":              c.FlagSet.String("boot_type", _nilDefaultStr, "(Required) The boot_type of the volume template. Possible values: 'uefi_only','legacy_only','hybrid' "),
-				"boot_methods_supported": c.FlagSet.String("boot_methods_supported", _nilDefaultStr, "The boot_methods_supported of the volume template. Defaults to 'pxe_iscsi'."),
+				"boot_type":              c.FlagSet.String("boot-type", _nilDefaultStr, "(Required) The boot_type of the volume template. Possible values: 'uefi_only','legacy_only','hybrid' "),
+				"boot_methods_supported": c.FlagSet.String("boot-methods-supported", _nilDefaultStr, "The boot_methods_supported of the volume template. Defaults to 'pxe_iscsi'."),
 				"deprecated":             c.FlagSet.Bool("deprecated", false, "(Flag) set to true if this template is deprecated"),
 				"tags":                   c.FlagSet.String("tags", _nilDefaultStr, "The tags of the volume template, comma separated."),
-				"return_id":              c.FlagSet.Bool("return_id", false, "(Optional) Will print the ID of the created Drive Array. Useful for automating tasks."),
+				"return_id":              c.FlagSet.Bool("return-id", false, "(Optional) Will print the ID of the created Drive Array. Useful for automating tasks."),
 			}
 		},
 		ExecuteFunc: volumeTemplateCreateCmd,

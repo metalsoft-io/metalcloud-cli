@@ -23,18 +23,18 @@ var instanceArrayCmds = []Command{
 		InitFunc: func(c *Command) {
 			c.Arguments = map[string]interface{}{
 				"infrastructure_id_or_label":          c.FlagSet.String("infra", _nilDefaultStr, "(Required) Infrastructure's id or label. Note that the 'label' this be ambiguous in certain situations."),
-				"instance_array_instance_count":       c.FlagSet.Int("instance_count", _nilDefaultInt, "(Required) Instance count of this instance array"),
+				"instance_array_instance_count":       c.FlagSet.Int("instance-count", _nilDefaultInt, "(Required) Instance count of this instance array"),
 				"instance_array_label":                c.FlagSet.String("label", _nilDefaultStr, "InstanceArray's label"),
 				"instance_array_ram_gbytes":           c.FlagSet.Int("ram", _nilDefaultInt, "InstanceArray's minimum RAM (GB)"),
 				"instance_array_processor_count":      c.FlagSet.Int("proc", _nilDefaultInt, "InstanceArray's minimum processor count"),
-				"instance_array_processor_core_mhz":   c.FlagSet.Int("proc_freq", _nilDefaultInt, "InstanceArray's minimum processor frequency (Mhz)"),
-				"instance_array_processor_core_count": c.FlagSet.Int("proc_core_count", _nilDefaultInt, "InstanceArray's minimum processor core count"),
+				"instance_array_processor_core_mhz":   c.FlagSet.Int("proc-freq", _nilDefaultInt, "InstanceArray's minimum processor frequency (Mhz)"),
+				"instance_array_processor_core_count": c.FlagSet.Int("proc-core-count", _nilDefaultInt, "InstanceArray's minimum processor core count"),
 				"instance_array_disk_count":           c.FlagSet.Int("disks", _nilDefaultInt, "InstanceArray's number of local drives"),
-				"instance_array_disk_size_mbytes":     c.FlagSet.Int("disk_size", _nilDefaultInt, "InstanceArray's local disks' size in MB"),
+				"instance_array_disk_size_mbytes":     c.FlagSet.Int("disk-size", _nilDefaultInt, "InstanceArray's local disks' size in MB"),
 				"instance_array_boot_method":          c.FlagSet.String("boot", _nilDefaultStr, "InstanceArray's boot type:'pxe_iscsi','local_drives'"),
-				"instance_array_firewall_not_managed": c.FlagSet.Bool("firewall_management_disabled", false, "(Flag) If set InstanceArray's firewall management on or off"),
+				"instance_array_firewall_not_managed": c.FlagSet.Bool("firewall-management-disabled", false, "(Flag) If set InstanceArray's firewall management on or off"),
 				"volume_template_id":                  c.FlagSet.Int("template", _nilDefaultInt, "InstanceArray's volume template when booting from for local drives"),
-				"return_id":                           c.FlagSet.Bool("return_id", false, "(Flag) If set will print the ID of the created Instance Array. Useful for automating tasks."),
+				"return_id":                           c.FlagSet.Bool("return-id", false, "(Flag) If set will print the ID of the created Instance Array. Useful for automating tasks."),
 			}
 		},
 		ExecuteFunc: instanceArrayCreateCmd,
@@ -79,19 +79,19 @@ var instanceArrayCmds = []Command{
 		InitFunc: func(c *Command) {
 			c.Arguments = map[string]interface{}{
 				"instance_array_id_or_label":          c.FlagSet.String("id", _nilDefaultStr, "(Required) InstanceArray's id or label. Note that the label can be ambigous."),
-				"instance_array_instance_count":       c.FlagSet.Int("instance_count", _nilDefaultInt, "Instance count of this instance array"),
+				"instance_array_instance_count":       c.FlagSet.Int("instance-count", _nilDefaultInt, "Instance count of this instance array"),
 				"instance_array_label":                c.FlagSet.String("label", _nilDefaultStr, "(Required) InstanceArray's label"),
 				"instance_array_ram_gbytes":           c.FlagSet.Int("ram", _nilDefaultInt, "InstanceArray's minimum RAM (GB)"),
 				"instance_array_processor_count":      c.FlagSet.Int("proc", _nilDefaultInt, "InstanceArray's minimum processor count"),
-				"instance_array_processor_core_mhz":   c.FlagSet.Int("proc_freq", _nilDefaultInt, "InstanceArray's minimum processor frequency (Mhz)"),
-				"instance_array_processor_core_count": c.FlagSet.Int("proc_core_count", _nilDefaultInt, "InstanceArray's minimum processor core count"),
+				"instance_array_processor_core_mhz":   c.FlagSet.Int("proc-freq", _nilDefaultInt, "InstanceArray's minimum processor frequency (Mhz)"),
+				"instance_array_processor_core_count": c.FlagSet.Int("proc-core-count", _nilDefaultInt, "InstanceArray's minimum processor core count"),
 				"instance_array_disk_count":           c.FlagSet.Int("disks", _nilDefaultInt, "InstanceArray's number of local drives"),
-				"instance_array_disk_size_mbytes":     c.FlagSet.Int("disk_size", _nilDefaultInt, "InstanceArray's local disks' size in MB"),
+				"instance_array_disk_size_mbytes":     c.FlagSet.Int("disk-size", _nilDefaultInt, "InstanceArray's local disks' size in MB"),
 				"instance_array_boot_method":          c.FlagSet.String("boot", _nilDefaultStr, "InstanceArray's boot type:'pxe_iscsi','local_drives'"),
-				"instance_array_firewall_not_managed": c.FlagSet.Bool("firewall_management_disabled", false, "(Flag) If set InstanceArray's firewall management is off"),
+				"instance_array_firewall_not_managed": c.FlagSet.Bool("firewall-management-disabled", false, "(Flag) If set InstanceArray's firewall management is off"),
 				"volume_template_id":                  c.FlagSet.Int("template", _nilDefaultInt, "InstanceArray's volume template when booting from for local drives"),
-				"bSwapExistingInstancesHardware":      c.FlagSet.Bool("swap_existing_hardware", false, "(Flag) If set all the hardware of the Instance objects is swapped to match the new InstanceArray specifications"),
-				"no_bKeepDetachingDrives":             c.FlagSet.Bool("do_not_keep_detaching_drives", false, "(Flag) If set and the number of Instance objects is reduced, then the detaching Drive objects will be deleted. If it's set to true, the detaching Drive objects will not be deleted."),
+				"bSwapExistingInstancesHardware":      c.FlagSet.Bool("swap-existing-hardware", false, "(Flag) If set all the hardware of the Instance objects is swapped to match the new InstanceArray specifications"),
+				"no_bKeepDetachingDrives":             c.FlagSet.Bool("do-not-keep-detaching-drives", false, "(Flag) If set and the number of Instance objects is reduced, then the detaching Drive objects will be deleted. If it's set to true, the detaching Drive objects will not be deleted."),
 			}
 		},
 		ExecuteFunc: instanceArrayEditCmd,
@@ -106,8 +106,8 @@ var instanceArrayCmds = []Command{
 		InitFunc: func(c *Command) {
 			c.Arguments = map[string]interface{}{
 				"instance_array_id_or_label": c.FlagSet.String("id", _nilDefaultStr, "(Required) Instance array's id or label. Note that using the 'label' might be ambiguous in certain situations."),
-				"show_credentials":           c.FlagSet.Bool("show_credentials", false, "(Flag) If set returns the instances' credentials"),
-				"show_power_status":          c.FlagSet.Bool("show_power_status", false, "(Flag) If set returns the instances' power status"),
+				"show_credentials":           c.FlagSet.Bool("show-credentials", false, "(Flag) If set returns the instances' credentials"),
+				"show_power_status":          c.FlagSet.Bool("show-power-status", false, "(Flag) If set returns the instances' power status"),
 				"format":                     c.FlagSet.String("format", "", "The output format. Supported values are 'json','csv'. The default format is human readable."),
 			}
 		},

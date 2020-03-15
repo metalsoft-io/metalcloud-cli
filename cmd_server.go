@@ -12,7 +12,7 @@ var serversCmds = []Command{
 
 	Command{
 		Description:  "Lists available servers",
-		Subject:      "servers",
+		Subject:      "server",
 		AltSubject:   "srv",
 		Predicate:    "list",
 		AltPredicate: "ls",
@@ -38,7 +38,7 @@ var serversCmds = []Command{
 			c.Arguments = map[string]interface{}{
 				"id":               c.FlagSet.Int("id", _nilDefaultInt, "Server's ID"),
 				"format":           c.FlagSet.String("format", _nilDefaultStr, "The output format. Supported values are 'json','csv'. The default format is human readable."),
-				"show_credentials": c.FlagSet.Bool("show_credentials", false, "(Flag) If set returns the servers' IPMI credentials"),
+				"show_credentials": c.FlagSet.Bool("show-credentials", false, "(Flag) If set returns the servers' IPMI credentials"),
 			}
 		},
 		ExecuteFunc: serverGetCmd,

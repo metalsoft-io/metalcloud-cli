@@ -183,7 +183,7 @@ func TestExecuteCommand(t *testing.T) {
 	initFuncExecuted = false
 
 	//should execute stuff help and not return error
-	err = executeCommand([]string{"", "p", "s"}, commands, clients)
+	err = executeCommand([]string{"", "s", "p"}, commands, clients)
 	Expect(err).To(BeNil())
 	Expect(execFuncExecuted).To(BeTrue())
 	Expect(initFuncExecuted).To(BeTrue())
@@ -192,7 +192,7 @@ func TestExecuteCommand(t *testing.T) {
 	initFuncExecuted = false
 
 	//should execute stuff help and not return error
-	err = executeCommand([]string{"", "testp", "tests"}, commands, clients)
+	err = executeCommand([]string{"", "tests", "testp"}, commands, clients)
 	Expect(err).To(BeNil())
 	Expect(execFuncExecuted).To(BeTrue())
 	Expect(initFuncExecuted).To(BeTrue())
@@ -200,7 +200,7 @@ func TestExecuteCommand(t *testing.T) {
 
 	//should refuse to execute call on unset endpoint
 	commands[0].Endpoint = DeveloperEndpoint
-	err = executeCommand([]string{"", "testp", "tests"}, commands, clients)
+	err = executeCommand([]string{"", "tests", "testp"}, commands, clients)
 	Expect(err).NotTo(BeNil())
 
 	//check with correct endpoint
@@ -210,7 +210,7 @@ func TestExecuteCommand(t *testing.T) {
 	//should execute the call if endoint set, on the right endpoint
 	clients[DeveloperEndpoint] = devClient
 
-	err = executeCommand([]string{"", "testp", "tests"}, commands, clients)
+	err = executeCommand([]string{"", "tests", "testp"}, commands, clients)
 	Expect(err).To(BeNil())
 	Expect(execFuncExecutedOnDeveloperEndpoint).To(BeTrue())
 
@@ -259,7 +259,6 @@ func TestGetHelp(t *testing.T) {
 
 	s := getHelp(clients, true)
 	for _, c := range cmds {
-		t.Logf("%+v", c)
 		Expect(s).To(ContainSubstring(c.Description))
 	}
 }

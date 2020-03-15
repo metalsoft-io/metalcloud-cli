@@ -29,22 +29,6 @@ var workflowCmds = []Command{
 		Endpoint:    DeveloperEndpoint,
 	},
 	Command{
-		Description:  "Lists available workflows",
-		Subject:      "workflow",
-		AltSubject:   "workflows",
-		Predicate:    "list",
-		AltPredicate: "ls",
-		FlagSet:      flag.NewFlagSet("list workflows", flag.ExitOnError),
-		InitFunc: func(c *Command) {
-			c.Arguments = map[string]interface{}{
-				"usage":  c.FlagSet.String("usage", _nilDefaultStr, "Workflow usage. One of infrastructure, network_equipment, server, free_standing, storage_pool, user, os_template."),
-				"format": c.FlagSet.String("format", _nilDefaultStr, "The output format. Supported values are 'json','csv'. The default format is human readable."),
-			}
-		},
-		ExecuteFunc: workflowsListCmd,
-		Endpoint:    DeveloperEndpoint,
-	},
-	Command{
 		Description:  "Get workflow details",
 		Subject:      "workflow",
 		AltSubject:   "wf",
@@ -75,43 +59,11 @@ var workflowCmds = []Command{
 				"description":         c.FlagSet.String("description", _nilDefaultStr, "Workflow's description"),
 				"deprecated":          c.FlagSet.Bool("deprecated", false, "Flag. Workflow's deprecation status. Default false"),
 				"icon_asset_data_uri": c.FlagSet.String("icon", _nilDefaultStr, "Workflow's icon data"),
-				"return_id":           c.FlagSet.Bool("return_id", false, "(Flag) If set will print the ID of the created workflow. Useful for automating tasks."),
+				"return_id":           c.FlagSet.Bool("return-id", false, "(Flag) If set will print the ID of the created workflow. Useful for automating tasks."),
 			}
 		},
 		ExecuteFunc: workflowCreateCmd,
 		Endpoint:    DeveloperEndpoint,
-	},
-	Command{
-		Description:  "Delete a workflow",
-		Subject:      "workflow",
-		AltSubject:   "workflow",
-		Predicate:    "delete",
-		AltPredicate: "rm",
-		FlagSet:      flag.NewFlagSet("delete workflow", flag.ExitOnError),
-		InitFunc: func(c *Command) {
-			c.Arguments = map[string]interface{}{
-				"workflow_id_or_name": c.FlagSet.String("id", _nilDefaultStr, "Workflow's id or name"),
-				"autoconfirm":         c.FlagSet.Bool("autoconfirm", false, "If true it does not ask for confirmation anymore"),
-			}
-		},
-		ExecuteFunc: workflowDeleteCmd,
-		Endpoint:    ExtendedEndpoint,
-	},
-	Command{
-		Description:  "Delete a stage from a workflow",
-		Subject:      "stage",
-		AltSubject:   "stage",
-		Predicate:    "delete",
-		AltPredicate: "rm_stage",
-		FlagSet:      flag.NewFlagSet("delete workflow stage", flag.ExitOnError),
-		InitFunc: func(c *Command) {
-			c.Arguments = map[string]interface{}{
-				"workflow_stage_id": c.FlagSet.Int("id", _nilDefaultInt, "Workflow's stage id "),
-				"autoconfirm":       c.FlagSet.Bool("autoconfirm", false, "If true it does not ask for confirmation anymore"),
-			}
-		},
-		ExecuteFunc: workflowDeleteStageCmd,
-		Endpoint:    ExtendedEndpoint,
 	},
 }
 
@@ -319,57 +271,6 @@ func workflowDeleteCmd(c *Command, client interfaces.MetalCloudClient) (string, 
 	}
 
 	err = client.WorkflowDelete(ret.WorkflowID)
-
-	return "", err
-}
-
-func workflowDeleteStageCmd(c *Command, client interfaces.MetalCloudClient) (string, error) {
-
-	workflowStageID, ok := getIntParamOk(c.Arguments["workflow_stage_id"])
-	if !ok {
-		return "", fmt.Errorf("-id is required (workflow-stage-id (WSI) number returned by get workflow")
-	}
-
-	workflowStage, err := client.WorkflowStageGet(workflowStageID)
-	if err != nil {
-		return "", err
-	}
-
-	confirm := getBoolParam(c.Arguments["autoconfirm"])
-
-	if !confirm {
-
-		wf, err := client.WorkflowGet(workflowStage.WorkflowID)
-		if err != nil {
-			return "", err
-		}
-
-		sd, err := client.StageDefinitionGet(workflowStage.StageDefinitionID)
-		if err != nil {
-			return "", err
-		}
-
-		confirmationMessage := fmt.Sprintf("Deleting stage %s (%d) from workflow %s (%d).  Are you sure? Type \"yes\" to continue:",
-			wf.WorkflowTitle, wf.WorkflowID,
-			sd.StageDefinitionTitle, sd.StageDefinitionID)
-
-		//this is simply so that we don't output a text on the command line under go test
-		if strings.HasSuffix(os.Args[0], ".test") {
-			confirmationMessage = ""
-		}
-
-		confirm, err = requestConfirmation(confirmationMessage)
-		if err != nil {
-			return "", err
-		}
-
-	}
-
-	if !confirm {
-		return "", fmt.Errorf("Operation not confirmed. Aborting")
-	}
-
-	err = client.WorkflowStageDelete(workflowStageID)
 
 	return "", err
 }

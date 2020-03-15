@@ -78,64 +78,65 @@ func main() {
 }
 
 func executeCommand(args []string, commands []Command, clients map[string]interfaces.MetalCloudClient) error {
-	predicate := args[1]
-	subject := args[2]
+	predicate := args[2]
+	subject := args[1]
 
-	commandExecuted := false
-	for _, c := range commands {
-		c.InitFunc(&c)
+	cmd := locateCommand(predicate, subject, commands)
 
-		//disable default usage
-		c.FlagSet.Usage = func() {}
+	if cmd == nil {
+		return fmt.Errorf("%s %s is not a valid command. Use %s help for more details", predicate, subject, args[0])
+	}
 
-		if (c.Subject == subject || c.AltSubject == subject) &&
-			(c.Predicate == predicate || c.AltPredicate == predicate) {
+	cmd.InitFunc(cmd)
 
-			for _, a := range args {
-				if a == "-h" || a == "-help" || a == "--help" {
-					return fmt.Errorf(getCommandHelp(c, true))
-				}
-			}
+	//disable default usage
+	cmd.FlagSet.Usage = func() {}
 
-			err := c.FlagSet.Parse(args[3:])
-			if err != nil {
-				return fmt.Errorf("%s Use '%s %s -h' for syntax help", err, predicate, subject)
-			}
-
-			client, ok := clients[c.Endpoint]
-			if !ok {
-				return fmt.Errorf("Client not set for endpoint %s on command %s %s", c.Endpoint, predicate, subject)
-			}
-
-			ret, err := c.ExecuteFunc(&c, client)
-			if err != nil {
-				return fmt.Errorf("%s Use '%s %s -h' for syntax help", err, predicate, subject)
-			}
-
-			fmt.Fprintf(GetStdout(), ret)
-
-			commandExecuted = true
-			break
+	for _, a := range args {
+		if a == "-h" || a == "-help" || a == "--help" {
+			return fmt.Errorf(getCommandHelp(*cmd, true))
 		}
 	}
 
-	if !commandExecuted {
-
-		return fmt.Errorf("%s %s is not a valid command. Use %s help for more details", predicate, subject, args[0])
+	err := cmd.FlagSet.Parse(args[3:])
+	if err != nil {
+		return fmt.Errorf("%s Use '%s %s -h' for syntax help", err, predicate, subject)
 	}
+
+	client, ok := clients[cmd.Endpoint]
+	if !ok {
+		return fmt.Errorf("Client not set for endpoint %s on command %s %s", cmd.Endpoint, predicate, subject)
+	}
+
+	ret, err := cmd.ExecuteFunc(cmd, client)
+	if err != nil {
+		return fmt.Errorf("%s Use '%s %s -h' for syntax help", err, predicate, subject)
+	}
+
+	fmt.Fprintf(GetStdout(), ret)
 
 	return nil
 }
 
+//identifies command, returns nil if no matching command found
+func locateCommand(predicate string, subject string, commands []Command) *Command {
+	for _, c := range commands {
+		if (c.Subject == subject || c.AltSubject == subject) &&
+			(c.Predicate == predicate || c.AltPredicate == predicate) {
+			return &c
+		}
+	}
+	return nil
+}
+
 func getArgumentHelp(f *flag.Flag) string {
-	//return fmt.Sprintf("\t  -%-25s %s\n", f.Name, f.Usage)
 	return fmt.Sprintf("\t  -%-25s %s\n", f.Name, f.Usage)
 }
 
 func getCommandHelp(cmd Command, showArguments bool) string {
 	var sb strings.Builder
 
-	c := fmt.Sprintf("%s %s", cmd.Predicate, cmd.Subject)
+	c := fmt.Sprintf("%s %s", cmd.Subject, cmd.Predicate)
 
 	if showArguments {
 		sb.WriteString(fmt.Sprintf("Command: %-25s %s (alternatively use \"%s %s\")\n", c, cmd.Description, cmd.AltPredicate, cmd.AltSubject))

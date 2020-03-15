@@ -43,7 +43,7 @@ var osAssetsCmds = []Command{
 				"mime":                   c.FlagSet.String("mime", _nilDefaultStr, "Required. Asset's mime type. Possible values: \"text/plain\",\"application/octet-stream\""),
 				"url":                    c.FlagSet.String("url", _nilDefaultStr, "Asset's source url. If present it will not read content anymore"),
 				"read_content_from_pipe": c.FlagSet.Bool("pipe", false, "Read secret's content read from pipe instead of terminal input"),
-				"return_id":              c.FlagSet.Bool("return_id", false, "(Flag) If set will print the ID of the created infrastructure. Useful for automating tasks."),
+				"return_id":              c.FlagSet.Bool("return-id", false, "(Flag) If set will print the ID of the created infrastructure. Useful for automating tasks."),
 			}
 		},
 		ExecuteFunc: assetCreateCmd,
@@ -75,7 +75,7 @@ var osAssetsCmds = []Command{
 		InitFunc: func(c *Command) {
 			c.Arguments = map[string]interface{}{
 				"asset_id_or_name":    c.FlagSet.String("id", _nilDefaultStr, "Asset's id or filename"),
-				"template_id_or_name": c.FlagSet.String("template_id", _nilDefaultStr, "Template's id or name"),
+				"template_id_or_name": c.FlagSet.String("template-id", _nilDefaultStr, "Template's id or name"),
 				"path":                c.FlagSet.String("path", _nilDefaultStr, "Path to associate asset to"),
 			}
 		},

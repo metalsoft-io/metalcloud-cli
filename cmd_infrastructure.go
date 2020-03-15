@@ -23,8 +23,8 @@ var infrastructureCmds = []Command{
 		InitFunc: func(c *Command) {
 			c.Arguments = map[string]interface{}{
 				"infrastructure_label": c.FlagSet.String("label", "", "(Required) Infrastructure's label"),
-				"datacenter":           c.FlagSet.String("dc", GetDatacenter(), "(Required) Infrastructure datacenter"),
-				"return_id":            c.FlagSet.Bool("return_id", false, "(Flag) If set will print the ID of the created infrastructure. Useful for automating tasks."),
+				"datacenter":           c.FlagSet.String("datacenter", GetDatacenter(), "(Required) Infrastructure datacenter"),
+				"return_id":            c.FlagSet.Bool("return-id", false, "(Flag) If set will print the ID of the created infrastructure. Useful for automating tasks."),
 			}
 		},
 		ExecuteFunc: infrastructureCreateCmd,

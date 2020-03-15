@@ -28,9 +28,9 @@ var driveArrayCmds = []Command{
 				"drive_array_storage_type":                  c.FlagSet.String("type", _nilDefaultStr, "Possible values: iscsi_ssd, iscsi_hdd"),
 				"drive_size_mbytes_default":                 c.FlagSet.Int("size", _nilDefaultInt, "(Optional, default = 40960) Drive arrays's size in MBytes"),
 				"drive_array_count":                         c.FlagSet.Int("count", _nilDefaultInt, "DriveArrays's drive count. Use this only for unconnected DriveArrays."),
-				"drive_array_no_expand_with_instance_array": c.FlagSet.Bool("no_expand_with_ia", false, "(Flag) If set, auto-expand when the connected instance array expands is disabled"),
+				"drive_array_no_expand_with_instance_array": c.FlagSet.Bool("no-expand-with-ia", false, "(Flag) If set, auto-expand when the connected instance array expands is disabled"),
 				"volume_template_id_or_label":               c.FlagSet.String("template", _nilDefaultStr, "DriveArrays's volume template to clone when creating Drives"),
-				"return_id":                                 c.FlagSet.Bool("return_id", false, "(Optional) Will print the ID of the created Drive Array. Useful for automating tasks."),
+				"return_id":                                 c.FlagSet.Bool("return-id", false, "(Optional) Will print the ID of the created Drive Array. Useful for automating tasks."),
 			}
 		},
 		ExecuteFunc: driveArrayCreateCmd,
@@ -50,7 +50,7 @@ var driveArrayCmds = []Command{
 				"drive_array_storage_type":               c.FlagSet.String("type", _nilDefaultStr, "Possible values: iscsi_ssd, iscsi_hdd"),
 				"drive_size_mbytes_default":              c.FlagSet.Int("size", _nilDefaultInt, "(Optional, default = 40960) Drive arrays's size in MBytes"),
 				"drive_array_count":                      c.FlagSet.Int("count", _nilDefaultInt, "DriveArrays's drive count. Use this only for unconnected DriveArrays."),
-				"drive_array_expand_with_instance_array": c.FlagSet.Bool("expand_with_ia", true, "Auto-expand when the connected instance array expands"),
+				"drive_array_expand_with_instance_array": c.FlagSet.Bool("expand-with-ia", true, "Auto-expand when the connected instance array expands"),
 				"volume_template_id_or_label":            c.FlagSet.String("template", _nilDefaultStr, "DriveArrays's volume template to clone when creating Drives"),
 			}
 		},
@@ -96,6 +96,7 @@ var driveArrayCmds = []Command{
 		InitFunc: func(c *Command) {
 			c.Arguments = map[string]interface{}{
 				"drive_array_id_or_label": c.FlagSet.String("id", _nilDefaultStr, "(Required) Drive Array's ID or label. Note that using the label can be ambiguous and is slower."),
+				"show_credentials":        c.FlagSet.Bool("show_credentials", false, "(Flag) If set returns the drives' credentials"),
 				"format":                  c.FlagSet.String("format", "", "The output format. Supported values are 'json','csv'. The default format is human readable."),
 			}
 		},
@@ -454,7 +455,7 @@ func driveArrayGetCmd(c *Command, client interfaces.MetalCloudClient) (string, e
 			details = fmt.Sprintf("%s %s", details, d.DriveFileSystem.DriveFilesystemType)
 		}
 
-		data = append(data, []interface{}{
+		dataRow := []interface{}{
 			d.DriveID,
 			d.DriveLabel,
 			d.DriveServiceStatus,
@@ -463,8 +464,29 @@ func driveArrayGetCmd(c *Command, client interfaces.MetalCloudClient) (string, e
 			fmt.Sprintf("instance-%d", d.InstanceID),
 			template,
 			details,
-		})
+		}
 
+		if getBoolParam(c.Arguments["show_credentials"]) {
+
+			credentials := fmt.Sprintf("Target: %s Port:%d IQN:%s LUN ID:%d",
+				d.DriveCredentials.ISCSI.StorageIPAddress,
+				d.DriveCredentials.ISCSI.StoragePort,
+				d.DriveCredentials.ISCSI.TargetIQN,
+				d.DriveCredentials.ISCSI.LunID)
+
+			dataRow = append(dataRow, credentials)
+		}
+
+		data = append(data, dataRow)
+
+	}
+
+	if getBoolParam(c.Arguments["show_credentials"]) {
+		schema = append(schema, SchemaField{
+			FieldName: "CREDENTIALS",
+			FieldType: TypeString,
+			FieldSize: 5,
+		})
 	}
 
 	subtitle := fmt.Sprintf("Drive Array #%d", retDA.DriveArrayID)

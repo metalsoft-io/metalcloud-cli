@@ -14,22 +14,22 @@ var driveSnapshotCmds = []Command{
 
 	Command{
 		Description:  "Creates a drive snapshot.",
-		Subject:      "snapshot",
-		AltSubject:   "drive_snapshot",
+		Subject:      "drive_snapshot",
+		AltSubject:   "snapshot",
 		Predicate:    "create",
 		AltPredicate: "new",
 		FlagSet:      flag.NewFlagSet("drive snapshots create", flag.ExitOnError),
 		InitFunc: func(c *Command) {
 			c.Arguments = map[string]interface{}{
 				"drive_id":  c.FlagSet.Int("id", _nilDefaultInt, "(Required) The id of the drive to create a snapshot from"),
-				"return_id": c.FlagSet.Bool("return_id", false, "(Optional) Will print the ID of the created Drive Array. Useful for automating tasks."),
+				"return_id": c.FlagSet.Bool("return-id", false, "(Optional) Will print the ID of the created Drive Array. Useful for automating tasks."),
 			}
 		},
 		ExecuteFunc: driveSnapshotCreateCmd,
 	},
 	Command{
 		Description:  "Lists drive snapshots",
-		Subject:      "snapshots",
+		Subject:      "drive_snapshot",
 		AltSubject:   "snapshot",
 		Predicate:    "list",
 		AltPredicate: "ls",
@@ -44,8 +44,8 @@ var driveSnapshotCmds = []Command{
 	},
 	Command{
 		Description:  "Delete snapshot",
-		Subject:      "snapshot",
-		AltSubject:   "drive_snapshot",
+		Subject:      "drive_snapshot",
+		AltSubject:   "snapshot",
 		Predicate:    "delete",
 		AltPredicate: "rm",
 		FlagSet:      flag.NewFlagSet("drive snapshots delete", flag.ExitOnError),
@@ -59,8 +59,8 @@ var driveSnapshotCmds = []Command{
 	},
 	Command{
 		Description:  "Rollback snapshot",
-		Subject:      "snapshot",
-		AltSubject:   "drive_snapshot",
+		Subject:      "drive_snapshot",
+		AltSubject:   "snapshot",
 		Predicate:    "rollback",
 		AltPredicate: "rollback",
 		FlagSet:      flag.NewFlagSet("drive snapshots rollback", flag.ExitOnError),

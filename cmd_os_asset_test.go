@@ -35,7 +35,7 @@ func TestAssetsListCmd(t *testing.T) {
 		"USAGE": "test",
 	}
 
-	testListCommand(assetsListCmd, client, expectedFirstRow, t)
+	testListCommand(assetsListCmd, nil, client, expectedFirstRow, t)
 
 }
 

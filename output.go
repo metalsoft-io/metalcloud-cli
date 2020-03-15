@@ -264,10 +264,6 @@ func renderTable(tableName string, topLine string, format string, data [][]inter
 			sb.WriteString(fmt.Sprintf("%s I have access to as user %s:\n", tableName, user))
 		}
 
-		TableSorter(schema).OrderBy(
-			schema[0].FieldName,
-			schema[1].FieldName).Sort(data)
-
 		AdjustFieldSizes(data, &schema)
 
 		sb.WriteString(GetTableAsString(data, schema))
@@ -276,4 +272,85 @@ func renderTable(tableName string, topLine string, format string, data [][]inter
 	}
 
 	return sb.String(), nil
+}
+
+//transposeTable turns columns into rows. It assumes an uniform length table
+func transposeTable(data [][]interface{}) [][]interface{} {
+
+	dataT := [][]interface{}{}
+
+	if len(data) == 0 {
+		return dataT
+	}
+
+	tableLength := len(data)
+	rowLength := len(data[0])
+
+	for j := 0; j < rowLength; j++ {
+
+		newRow := []interface{}{}
+
+		for i := 0; i < tableLength; i++ {
+
+			newRow = append(newRow, data[i][j])
+		}
+
+		dataT = append(dataT, newRow)
+	}
+
+	return dataT
+}
+
+func convertToStringTable(data [][]interface{}) [][]interface{} {
+	dataS := [][]interface{}{}
+
+	for _, row := range data {
+		newRow := []interface{}{}
+		for _, v := range row {
+			if v == nil {
+				v = " "
+			}
+			newRow = append(newRow, fmt.Sprintf("%v", v))
+		}
+		dataS = append(dataS, newRow)
+	}
+	return dataS
+}
+
+//renderTransposedTable renders the text format as a key-value table. json and csv formats remain the same as render table
+func renderTransposedTable(tableName string, topLine string, format string, data [][]interface{}, schema []SchemaField) (string, error) {
+
+	if format != "" {
+		return renderTable(tableName, topLine, format, data, schema)
+	}
+
+	headerRow := []interface{}{}
+	for _, s := range schema {
+		headerRow = append(headerRow, s.FieldName)
+	}
+
+	dataAsStrings := convertToStringTable(data)
+	newData := [][]interface{}{}
+	newData = append(newData, headerRow)
+	for _, row := range dataAsStrings {
+		newData = append(newData, row)
+	}
+
+	dataTransposed := transposeTable(newData)
+
+	newSchema := []SchemaField{
+		SchemaField{
+			FieldName: "KEY",
+			FieldType: TypeString,
+			FieldSize: 5,
+		},
+		SchemaField{
+			FieldName: "VALUE",
+			FieldType: TypeString,
+			FieldSize: 5,
+		},
+	}
+
+	return renderTable(tableName, topLine, format, dataTransposed, newSchema)
+
 }

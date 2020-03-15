@@ -54,7 +54,8 @@ func TestStageDefinitionsListCmd(t *testing.T) {
 		"ID":    10,
 		"LABEL": "test",
 	}
-	testListCommand(stageDefinitionsListCmd, client, expectedFirstRow, t)
+
+	testListCommand(stageDefinitionsListCmd, nil, client, expectedFirstRow, t)
 
 }
 

@@ -15,8 +15,8 @@ var variablesCmds = []Command{
 
 	Command{
 		Description:  "Lists available variables",
-		Subject:      "variables",
-		AltSubject:   "vars",
+		Subject:      "variable",
+		AltSubject:   "var",
 		Predicate:    "list",
 		AltPredicate: "ls",
 		FlagSet:      flag.NewFlagSet("list variables", flag.ExitOnError),
@@ -41,7 +41,7 @@ var variablesCmds = []Command{
 				"name":                   c.FlagSet.String("name", _nilDefaultStr, "Variable's name"),
 				"usage":                  c.FlagSet.String("usage", _nilDefaultStr, "Variable's usage"),
 				"read_content_from_pipe": c.FlagSet.Bool("pipe", false, "Read variable's content read from pipe instead of terminal input"),
-				"return_id":              c.FlagSet.Bool("return_id", false, "(Flag) If set will print the ID of the created infrastructure. Useful for automating tasks."),
+				"return_id":              c.FlagSet.Bool("return-id", false, "(Flag) If set will print the ID of the created infrastructure. Useful for automating tasks."),
 			}
 		},
 		ExecuteFunc: variableCreateCmd,

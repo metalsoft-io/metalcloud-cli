@@ -14,8 +14,8 @@ var osTemplatesCmds = []Command{
 
 	Command{
 		Description:  "Lists available Templates",
-		Subject:      "templates",
-		AltSubject:   "templates",
+		Subject:      "os_template",
+		AltSubject:   "template",
 		Predicate:    "list",
 		AltPredicate: "ls",
 		FlagSet:      flag.NewFlagSet("list templates", flag.ExitOnError),
@@ -30,32 +30,32 @@ var osTemplatesCmds = []Command{
 	},
 	Command{
 		Description:  "Create template",
-		Subject:      "template",
+		Subject:      "os_template",
 		AltSubject:   "template",
 		Predicate:    "create",
 		AltPredicate: "new",
 		FlagSet:      flag.NewFlagSet("create template", flag.ExitOnError),
 		InitFunc: func(c *Command) {
 			c.Arguments = map[string]interface{}{
-				"label":                    c.FlagSet.String("label", _nilDefaultStr, "Template's label"),
-				"display_name":             c.FlagSet.String("name", _nilDefaultStr, "Template's display name"),
+				"label":                    c.FlagSet.String("label", _nilDefaultStr, "(Required) Template's label"),
+				"display_name":             c.FlagSet.String("display-name", _nilDefaultStr, "(Required) Template's display name"),
 				"size":                     c.FlagSet.Int("size", _nilDefaultInt, "Template's size (bytes)"),
-				"local_disk_supported":     c.FlagSet.Bool("local_disk_supported", false, "Template supports local disk install. Default false"),
-				"boot_methods_supported":   c.FlagSet.String("boot_methods_supported", _nilDefaultStr, "Template boot methods supported. Defaults to pxe_iscsi."),
-				"boot_type":                c.FlagSet.String("boot_type", _nilDefaultStr, "Template boot type. Possible values: 'uefi_only','legacy_only','hybrid' "),
+				"local_disk_supported":     c.FlagSet.Bool("local-disk-supported", false, "Template supports local disk install. Default false"),
+				"boot_methods_supported":   c.FlagSet.String("boot-methods-supported", _nilDefaultStr, "Template boot methods supported. Defaults to pxe_iscsi."),
+				"boot_type":                c.FlagSet.String("boot-type", _nilDefaultStr, "Template boot type. Possible values: 'uefi_only','legacy_only','hybrid' "),
 				"description":              c.FlagSet.String("description", _nilDefaultStr, "Template description"),
-				"os_type":                  c.FlagSet.String("os_type", _nilDefaultStr, "Template operating system type. For example, Ubuntu or CentOS."),
-				"os_version":               c.FlagSet.String("os_version", _nilDefaultStr, "Template operating system version."),
-				"os_architecture":          c.FlagSet.String("os_architecture", _nilDefaultStr, "Template operating system architecture.Possible values: none, unknown, x86, x86_64."),
-				"os_template_architecture": c.FlagSet.String("template_architecture", _nilDefaultStr, "Template's architecture. Possible values 'uefi','pcx86' "),
-				"os_asset_id_bootloader_local_install_id_or_name": c.FlagSet.String("install_bootloader_asset", _nilDefaultStr, "Template's bootloader asset id during install"),
-				"os_asset_id_bootloader_os_boot_id_or_name":       c.FlagSet.String("os_boot_bootloader_asset", _nilDefaultStr, "Template's bootloader asset id during regular server boot"),
-				"initial_user":                 c.FlagSet.String("initial_user", _nilDefaultStr, "Template's initial username, used to verify install."),
-				"initial_password":             c.FlagSet.String("initial_password", _nilDefaultStr, "Template's initial password, used to verify install."),
-				"initial_ssh_port":             c.FlagSet.Int("initial_ssh_port", _nilDefaultInt, "Template's initial ssh port, used to verify install."),
-				"change_password_after_deploy": c.FlagSet.Bool("change_password_after_deploy", false, "Option to change the initial_user password on the installed OS after deploy."),
-				"repo_url":                     c.FlagSet.String("repo_url", _nilDefaultStr, "Template's location the repository"),
-				"return_id":                    c.FlagSet.Bool("return_id", false, "(Flag) If set will print the ID of the created infrastructure. Useful for automating tasks."),
+				"os_type":                  c.FlagSet.String("os-type", _nilDefaultStr, "Template operating system type. For example, Ubuntu or CentOS."),
+				"os_version":               c.FlagSet.String("os-version", _nilDefaultStr, "Template operating system version."),
+				"os_architecture":          c.FlagSet.String("os-architecture", _nilDefaultStr, "Template operating system architecture.Possible values: none, unknown, x86, x86_64."),
+				"os_template_architecture": c.FlagSet.String("template-architecture", _nilDefaultStr, "Template's architecture. Possible values 'uefi','pcx86' "),
+				"os_asset_id_bootloader_local_install_id_or_name": c.FlagSet.String("install-bootloader-asset", _nilDefaultStr, "Template's bootloader asset id during install"),
+				"os_asset_id_bootloader_os_boot_id_or_name":       c.FlagSet.String("os-boot-bootloader-asset", _nilDefaultStr, "Template's bootloader asset id during regular server boot"),
+				"initial_user":                 c.FlagSet.String("initial-user", _nilDefaultStr, "Template's initial username, used to verify install."),
+				"initial_password":             c.FlagSet.String("initial-password", _nilDefaultStr, "Template's initial password, used to verify install."),
+				"initial_ssh_port":             c.FlagSet.Int("initial-ssh-port", _nilDefaultInt, "Template's initial ssh port, used to verify install."),
+				"change_password_after_deploy": c.FlagSet.Bool("change-password-after-deploy", false, "Option to change the initial_user password on the installed OS after deploy."),
+				"repo_url":                     c.FlagSet.String("repo-url", _nilDefaultStr, "Template's location the repository"),
+				"return_id":                    c.FlagSet.Bool("return-id", false, "(Flag) If set will print the ID of the created infrastructure. Useful for automating tasks."),
 			}
 		},
 		ExecuteFunc: templateCreateCmd,
@@ -63,7 +63,7 @@ var osTemplatesCmds = []Command{
 	},
 	Command{
 		Description:  "Edit template",
-		Subject:      "template",
+		Subject:      "os_template",
 		AltSubject:   "template",
 		Predicate:    "update",
 		AltPredicate: "edit",
@@ -72,23 +72,23 @@ var osTemplatesCmds = []Command{
 			c.Arguments = map[string]interface{}{
 				"template_id_or_name":      c.FlagSet.String("id", _nilDefaultStr, "Template's id or label"),
 				"label":                    c.FlagSet.String("label", _nilDefaultStr, "Template's label"),
-				"display_name":             c.FlagSet.String("name", _nilDefaultStr, "Template's display name"),
+				"display_name":             c.FlagSet.String("display-name", _nilDefaultStr, "Template's display name"),
 				"size":                     c.FlagSet.Int("size", _nilDefaultInt, "Template's size (bytes)"),
-				"local_disk_supported":     c.FlagSet.Bool("local_disk_supported", false, "Template supports local disk install. Default false"),
-				"boot_methods_supported":   c.FlagSet.String("boot_methods_supported", _nilDefaultStr, "Template boot methods supported. Defaults to pxe_iscsi."),
-				"boot_type":                c.FlagSet.String("boot_type", _nilDefaultStr, "Template boot type. Possible values: 'uefi_only','legacy_only','hybrid' "),
+				"local_disk_supported":     c.FlagSet.Bool("local-disk-supported", false, "Template supports local disk install. Default false"),
+				"boot_methods_supported":   c.FlagSet.String("boot-methods-supported", _nilDefaultStr, "Template boot methods supported. Defaults to pxe_iscsi."),
+				"boot_type":                c.FlagSet.String("boot-type", _nilDefaultStr, "Template boot type. Possible values: 'uefi_only','legacy_only','hybrid' "),
 				"description":              c.FlagSet.String("description", _nilDefaultStr, "Template description"),
-				"os_type":                  c.FlagSet.String("os_type", _nilDefaultStr, "Template operating system type. For example, Ubuntu or CentOS."),
-				"os_version":               c.FlagSet.String("os_version", _nilDefaultStr, "Template operating system version."),
-				"os_architecture":          c.FlagSet.String("os_architecture", _nilDefaultStr, "Template operating system architecture.Possible values: none, unknown, x86, x86_64."),
+				"os_type":                  c.FlagSet.String("os-type", _nilDefaultStr, "Template operating system type. For example, Ubuntu or CentOS."),
+				"os_version":               c.FlagSet.String("os-version", _nilDefaultStr, "Template operating system version."),
+				"os_architecture":          c.FlagSet.String("os-architecture", _nilDefaultStr, "Template operating system architecture.Possible values: none, unknown, x86, x86_64."),
 				"os_template_architecture": c.FlagSet.String("template_architecture", _nilDefaultStr, "Template's architecture. Possible values 'uefi','pcx86' "),
-				"os_asset_id_bootloader_local_install_id_or_name": c.FlagSet.String("install_bootloader_asset", _nilDefaultStr, "Template's bootloader asset id during install"),
-				"os_asset_id_bootloader_os_boot_id_or_name":       c.FlagSet.String("os_boot_bootloader_asset", _nilDefaultStr, "Template's bootloader asset id during regular server boot"),
-				"initial_user":                 c.FlagSet.String("initial_user", _nilDefaultStr, "Template's initial username, used to verify install."),
-				"initial_password":             c.FlagSet.String("initial_password", _nilDefaultStr, "Template's initial password, used to verify install."),
-				"initial_ssh_port":             c.FlagSet.Int("initial_ssh_port", _nilDefaultInt, "Template's initial ssh port, used to verify install."),
-				"change_password_after_deploy": c.FlagSet.Bool("change_password_after_deploy", false, "Option to change the initial_user password on the installed OS after deploy."),
-				"repo_url":                     c.FlagSet.String("repo_url", _nilDefaultStr, "Template description"),
+				"os_asset_id_bootloader_local_install_id_or_name": c.FlagSet.String("install-bootloader-asset", _nilDefaultStr, "Template's bootloader asset id during install"),
+				"os_asset_id_bootloader_os_boot_id_or_name":       c.FlagSet.String("os-boot-bootloader-asset", _nilDefaultStr, "Template's bootloader asset id during regular server boot"),
+				"initial_user":                 c.FlagSet.String("initial-user", _nilDefaultStr, "Template's initial username, used to verify install."),
+				"initial_password":             c.FlagSet.String("initial-password", _nilDefaultStr, "Template's initial password, used to verify install."),
+				"initial_ssh_port":             c.FlagSet.Int("initial-ssh-port", _nilDefaultInt, "Template's initial ssh port, used to verify install."),
+				"change_password_after_deploy": c.FlagSet.Bool("change-password-after-deploy", false, "Option to change the initial_user password on the installed OS after deploy."),
+				"repo_url":                     c.FlagSet.String("repo-url", _nilDefaultStr, "Template description"),
 			}
 		},
 		ExecuteFunc: templateEditCmd,
@@ -96,7 +96,7 @@ var osTemplatesCmds = []Command{
 	},
 	Command{
 		Description:  "Get template",
-		Subject:      "template",
+		Subject:      "os_template",
 		AltSubject:   "template",
 		Predicate:    "get",
 		AltPredicate: "show",
@@ -105,7 +105,7 @@ var osTemplatesCmds = []Command{
 			c.Arguments = map[string]interface{}{
 				"template_id_or_name": c.FlagSet.String("id", _nilDefaultStr, "Asset's id or name"),
 				"format":              c.FlagSet.String("format", _nilDefaultStr, "The output format. Supported values are 'json','csv'. The default format is human readable."),
-				"show_credentials":    c.FlagSet.Bool("show_credentials", false, "(Flag) If set returns the templates initial ssh credentials"),
+				"show_credentials":    c.FlagSet.Bool("show-credentials", false, "(Flag) If set returns the templates initial ssh credentials"),
 			}
 		},
 		ExecuteFunc: templateGetCmd,
@@ -113,7 +113,7 @@ var osTemplatesCmds = []Command{
 	},
 	Command{
 		Description:  "Delete template",
-		Subject:      "template",
+		Subject:      "os_template",
 		AltSubject:   "template",
 		Predicate:    "delete",
 		AltPredicate: "rm",
@@ -264,7 +264,7 @@ func updateTemplateFromCommand(obj metalcloud.OSTemplate, c *Command, client int
 		obj.VolumeTemplateDisplayName = *v.(*string)
 	} else {
 		if checkRequired {
-			return nil, fmt.Errorf("name is required")
+			return nil, fmt.Errorf("display_name is required")
 		}
 	}
 

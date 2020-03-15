@@ -15,8 +15,8 @@ var stageDefinitionsCmds = []Command{
 
 	Command{
 		Description:  "Lists available stage definitions",
-		Subject:      "stage_defs",
-		AltSubject:   "stage_definitions",
+		Subject:      "stage_definition",
+		AltSubject:   "stage_def",
 		Predicate:    "list",
 		AltPredicate: "ls",
 		FlagSet:      flag.NewFlagSet("list stage definitions", flag.ExitOnError),
@@ -30,8 +30,8 @@ var stageDefinitionsCmds = []Command{
 	},
 	Command{
 		Description:  "Create stage definition",
-		Subject:      "stage_def",
-		AltSubject:   "stage_definition",
+		Subject:      "stage_definition",
+		AltSubject:   "stage_def",
 		Predicate:    "create",
 		AltPredicate: "new",
 		FlagSet:      flag.NewFlagSet("create stage definition", flag.ExitOnError),
@@ -46,23 +46,23 @@ var stageDefinitionsCmds = []Command{
 
 				"ansible_bundle_filename": c.FlagSet.String("ansible_bundle_filename", _nilDefaultStr, "Ansible bundle's file path to load the bundle from. Must be a zip file. Required when type=AnsibleBundle"),
 
-				"http_request_url":                  c.FlagSet.String("http_request_url", _nilDefaultStr, "HTTP Requests's URL. Required when using type=HTTPRequest"),
-				"http_request_method":               c.FlagSet.String("http_request_method", _nilDefaultStr, "HTTP Requests's method. Required when using type=HTTPRequest"),
-				"http_request_body_filename":        c.FlagSet.String("http_request_body_filename", _nilDefaultStr, "HTTP Requests's content is read from this file. Can only be used when type=HTTPRequest"),
-				"http_request_body_from_pipe":       c.FlagSet.Bool("http_request_body_from_pipe", false, "HTTP Requests's content is read from stdin. Can only be used when type=HTTPRequest"),
-				"http_request_header_accept":        c.FlagSet.String("http_request_header_accept", _nilDefaultStr, "HTTP Requests's Accept header. Can only be used when type=HTTPRequest"),
-				"http_request_header_authorization": c.FlagSet.String("http_request_header_authorization", _nilDefaultStr, "HTTP Requests's Authorization header. Can only be used when type=HTTPRequest"),
-				"http_request_header_cookie":        c.FlagSet.String("http_request_header_cookie", _nilDefaultStr, "HTTP Requests's Cookie header. Can only be used when type=HTTPRequest"),
-				"http_request_header_user_agent":    c.FlagSet.String("http_request_header_user_agent", _nilDefaultStr, "HTTP Requests's User-Agent header. Can only be used when type=HTTPRequest"),
-				"http_request_redirect":             c.FlagSet.String("http_request_redirect", _nilDefaultStr, "HTTP Requests's method. Can only be used when type=HTTPRequest"),
-				"http_request_follow":               c.FlagSet.Int("http_request_follow", _nilDefaultInt, "HTTP Requests's follow. Can only be used when type=HTTPRequest"),
-				"http_request_no_compress":          c.FlagSet.Bool("http_request_no_compress", false, "HTTP Requests's compress disabled if set. Can only be used when type=HTTPRequest"),
-				"http_request_timeout":              c.FlagSet.Int("http_request_timeout", _nilDefaultInt, "HTTP Requests's timeout. Can only be used when type=HTTPRequest"),
-				"http_request_size":                 c.FlagSet.Int("http_request_size", _nilDefaultInt, "HTTP Requests's size. Can only be used when type=HTTPRequest"),
+				"http_request_url":                  c.FlagSet.String("http-request-url", _nilDefaultStr, "HTTP Requests's URL. Required when using type=HTTPRequest"),
+				"http_request_method":               c.FlagSet.String("http-request-method", _nilDefaultStr, "HTTP Requests's method. Required when using type=HTTPRequest"),
+				"http_request_body_filename":        c.FlagSet.String("http-request-body-filename", _nilDefaultStr, "HTTP Requests's content is read from this file. Can only be used when type=HTTPRequest"),
+				"http_request_body_from_pipe":       c.FlagSet.Bool("http-request-body-from-pipe", false, "HTTP Requests's content is read from stdin. Can only be used when type=HTTPRequest"),
+				"http_request_header_accept":        c.FlagSet.String("http-request-header-accept", _nilDefaultStr, "HTTP Requests's Accept header. Can only be used when type=HTTPRequest"),
+				"http_request_header_authorization": c.FlagSet.String("http-request-header-authorization", _nilDefaultStr, "HTTP Requests's Authorization header. Can only be used when type=HTTPRequest"),
+				"http_request_header_cookie":        c.FlagSet.String("http-request-header-cookie", _nilDefaultStr, "HTTP Requests's Cookie header. Can only be used when type=HTTPRequest"),
+				"http_request_header_user_agent":    c.FlagSet.String("http-request-header-user-agent", _nilDefaultStr, "HTTP Requests's User-Agent header. Can only be used when type=HTTPRequest"),
+				"http_request_redirect":             c.FlagSet.String("http-request-redirect", _nilDefaultStr, "HTTP Requests's method. Can only be used when type=HTTPRequest"),
+				"http_request_follow":               c.FlagSet.Int("http-request-follow", _nilDefaultInt, "HTTP Requests's follow. Can only be used when type=HTTPRequest"),
+				"http_request_no_compress":          c.FlagSet.Bool("http-request-no-compress", false, "HTTP Requests's compress disabled if set. Can only be used when type=HTTPRequest"),
+				"http_request_timeout":              c.FlagSet.Int("http-request-timeout", _nilDefaultInt, "HTTP Requests's timeout. Can only be used when type=HTTPRequest"),
+				"http_request_size":                 c.FlagSet.Int("http-request-size", _nilDefaultInt, "HTTP Requests's size. Can only be used when type=HTTPRequest"),
 
 				"workflow_id_or_label": c.FlagSet.String("workflow", _nilDefaultStr, "workflow to reference. Can only be used when type=WorkflowReference"),
 
-				"return_id": c.FlagSet.Bool("return_id", false, "(Flag) If set will print the ID of the created object. Useful for automating tasks."),
+				"return_id": c.FlagSet.Bool("return-id", false, "(Flag) If set will print the ID of the created object. Useful for automating tasks."),
 			}
 		},
 		ExecuteFunc: stageDefinitionCreateCmd,
@@ -70,8 +70,8 @@ var stageDefinitionsCmds = []Command{
 	},
 	Command{
 		Description:  "Delete stage definition",
-		Subject:      "stage_def",
-		AltSubject:   "stage_definition",
+		Subject:      "stage_definition",
+		AltSubject:   "stage_def",
 		Predicate:    "delete",
 		AltPredicate: "rm",
 		FlagSet:      flag.NewFlagSet("delete stage", flag.ExitOnError),
@@ -94,7 +94,7 @@ var stageDefinitionsCmds = []Command{
 		InitFunc: func(c *Command) {
 			c.Arguments = map[string]interface{}{
 				"stage_id_or_name":           c.FlagSet.String("id", _nilDefaultStr, "stage's id or name"),
-				"infrastructure_id_or_label": c.FlagSet.String("infra_id", _nilDefaultStr, "The infrastructure's id"),
+				"infrastructure_id_or_label": c.FlagSet.String("infra", _nilDefaultStr, "The infrastructure's id"),
 				"runlevel":                   c.FlagSet.Int("runlevel", _nilDefaultInt, "The runlevel"),
 				"group":                      c.FlagSet.String("group", _nilDefaultStr, "When to run the stage"),
 			}
@@ -117,6 +117,22 @@ var stageDefinitionsCmds = []Command{
 			}
 		},
 		ExecuteFunc: stageDefinitionAddToWorkflowCmd,
+		Endpoint:    ExtendedEndpoint,
+	},
+	Command{
+		Description:  "Delete a stage from a workflow",
+		Subject:      "stage",
+		AltSubject:   "stage",
+		Predicate:    "delete",
+		AltPredicate: "rm_stage",
+		FlagSet:      flag.NewFlagSet("delete workflow stage", flag.ExitOnError),
+		InitFunc: func(c *Command) {
+			c.Arguments = map[string]interface{}{
+				"workflow_stage_id": c.FlagSet.Int("id", _nilDefaultInt, "Workflow's stage id "),
+				"autoconfirm":       c.FlagSet.Bool("autoconfirm", false, "If true it does not ask for confirmation anymore"),
+			}
+		},
+		ExecuteFunc: workflowDeleteStageCmd,
 		Endpoint:    ExtendedEndpoint,
 	},
 }
@@ -452,6 +468,57 @@ func stageDefinitionAddToWorkflowCmd(c *Command, client interfaces.MetalCloudCli
 	}
 
 	err = client.WorkflowStageAddAsNewRunLevel(w.WorkflowID, stage.StageDefinitionID, runlevel)
+
+	return "", err
+}
+
+func workflowDeleteStageCmd(c *Command, client interfaces.MetalCloudClient) (string, error) {
+
+	workflowStageID, ok := getIntParamOk(c.Arguments["workflow_stage_id"])
+	if !ok {
+		return "", fmt.Errorf("-id is required (workflow-stage-id (WSI) number returned by get workflow")
+	}
+
+	workflowStage, err := client.WorkflowStageGet(workflowStageID)
+	if err != nil {
+		return "", err
+	}
+
+	confirm := getBoolParam(c.Arguments["autoconfirm"])
+
+	if !confirm {
+
+		wf, err := client.WorkflowGet(workflowStage.WorkflowID)
+		if err != nil {
+			return "", err
+		}
+
+		sd, err := client.StageDefinitionGet(workflowStage.StageDefinitionID)
+		if err != nil {
+			return "", err
+		}
+
+		confirmationMessage := fmt.Sprintf("Deleting stage %s (%d) from workflow %s (%d).  Are you sure? Type \"yes\" to continue:",
+			wf.WorkflowTitle, wf.WorkflowID,
+			sd.StageDefinitionTitle, sd.StageDefinitionID)
+
+		//this is simply so that we don't output a text on the command line under go test
+		if strings.HasSuffix(os.Args[0], ".test") {
+			confirmationMessage = ""
+		}
+
+		confirm, err = requestConfirmation(confirmationMessage)
+		if err != nil {
+			return "", err
+		}
+
+	}
+
+	if !confirm {
+		return "", fmt.Errorf("Operation not confirmed. Aborting")
+	}
+
+	err = client.WorkflowStageDelete(workflowStageID)
 
 	return "", err
 }

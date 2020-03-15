@@ -321,7 +321,6 @@ func TestRenderTable(t *testing.T) {
 
 	s, err = renderTable("test", "", "csv", data, schema)
 	Expect(err).To(BeNil())
-
 }
 
 func JSONUnmarshal(jsonString string) ([]interface{}, error) {
@@ -378,4 +377,91 @@ func CSVFirstRowEquals(csvString string, testVals map[string]interface{}) error 
 	}
 
 	return nil
+}
+
+func TestTransposeTable(t *testing.T) {
+	RegisterTestingT(t)
+	data := [][]interface{}{
+		{11, 12, 13},
+		{21, 22, 23},
+		{31, 32, 33},
+	}
+
+	dataT := transposeTable(data)
+
+	expectedDataT := [][]interface{}{
+		{11, 21, 31},
+		{12, 22, 32},
+		{13, 23, 33},
+	}
+
+	Expect(dataT).Should(Equal(expectedDataT))
+}
+
+func TestConvertToStringTable(t *testing.T) {
+	RegisterTestingT(t)
+	data := [][]interface{}{
+		{11, "12", 13.4},
+		{21, "22", 23.3},
+		{31, "32", 33.4},
+	}
+
+	dataT := convertToStringTable(data)
+
+	expectedDataT := [][]interface{}{
+		{"11", "12", "13.4"},
+		{"21", "22", "23.3"},
+		{"31", "32", "33.4"},
+	}
+
+	Expect(dataT).Should(Equal(expectedDataT))
+}
+
+func TestRenderTransposedTable(t *testing.T) {
+	RegisterTestingT(t)
+	schema := []SchemaField{
+		SchemaField{
+			FieldName: "ID",
+			FieldType: TypeInt,
+			FieldSize: 3,
+		},
+		SchemaField{
+			FieldName: "LABEL",
+			FieldType: TypeString,
+			FieldSize: 5,
+		},
+		SchemaField{
+			FieldName:      "INST.",
+			FieldType:      TypeFloat,
+			FieldSize:      0,
+			FieldPrecision: 4,
+		},
+		SchemaField{
+			FieldName:      "VERY LONG FIELD NAME",
+			FieldType:      TypeString,
+			FieldSize:      4,
+			FieldPrecision: 4,
+		},
+	}
+
+	data := [][]interface{}{
+		{4, "12345", 20.1, "tes"},
+	}
+
+	s, err := renderTransposedTable("test", "", "", data, schema)
+
+	Expect(err).To(BeNil())
+	Expect(s).To(ContainSubstring("KEY"))
+	Expect(s).To(ContainSubstring("VALUE"))
+	Expect(s).To(ContainSubstring("12345"))
+	Expect(s).To(ContainSubstring("20.1"))
+
+	s, err = renderTransposedTable("test", "", "json", data, schema)
+	Expect(err).To(BeNil())
+	var m []interface{}
+	err = json.Unmarshal([]byte(s), &m)
+	Expect(err).To(BeNil())
+
+	s, err = renderTransposedTable("test", "", "csv", data, schema)
+	Expect(err).To(BeNil())
 }

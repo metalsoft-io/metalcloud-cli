@@ -232,27 +232,34 @@ func TestIdOrLabel(t *testing.T) {
 }
 
 //checks the various outputs
-func testListCommand(f CommandExecuteFunc, client interfaces.MetalCloudClient, firstRow map[string]interface{}, t *testing.T) {
-	RegisterTestingT(t)
+func testListCommand(f CommandExecuteFunc, cmd *Command, client interfaces.MetalCloudClient, firstRow map[string]interface{}, t *testing.T) {
+	//RegisterTestingT(t)
+
+	c := cmd
+	if cmd == nil {
+		emptyCmd := MakeEmptyCommand()
+		c = &emptyCmd
+	}
 
 	//test plaintext
-	cmd := MakeCommand(map[string]interface{}{})
-
-	ret, err := f(&cmd, client)
+	ret, err := f(c, client)
 	Expect(err).To(BeNil())
 
 	//test json output
-	cmd = MakeCommand(map[string]interface{}{"format": "json"})
+	cmdWithFormat := c
+	format := "json"
+	cmdWithFormat.Arguments["format"] = &format
 
-	ret, err = f(&cmd, client)
+	ret, err = f(cmdWithFormat, client)
 	Expect(err).To(BeNil())
-
+	t.Logf("%+v", ret)
 	Expect(JSONFirstRowEquals(ret, firstRow)).To(BeNil())
 
 	//test csv output
-	cmd = MakeCommand(map[string]interface{}{"format": "csv"})
+	format = "csv"
+	cmdWithFormat.Arguments["format"] = &format
 
-	ret, err = f(&cmd, client)
+	ret, err = f(cmdWithFormat, client)
 	Expect(err).To(BeNil())
 
 	//this is not reliable as the first row sometimes changes.
@@ -316,6 +323,10 @@ func MakeCommand(arguments map[string]interface{}) Command {
 	}
 
 	return cmd
+}
+
+func MakeEmptyCommand() Command {
+	return MakeCommand(map[string]interface{}{})
 }
 
 //GenerateCommandTestCases generate commands with wrong arguments by cycling through all of them

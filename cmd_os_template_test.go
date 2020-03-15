@@ -45,6 +45,6 @@ func TestOSTemplatesListCmd(t *testing.T) {
 		"LABEL": "test",
 	}
 
-	testListCommand(templatesListCmd, client, expectedFirstRow, t)
+	testListCommand(templatesListCmd, nil, client, expectedFirstRow, t)
 
 }
