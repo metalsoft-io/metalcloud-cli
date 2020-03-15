@@ -84,7 +84,7 @@ func executeCommand(args []string, commands []Command, clients map[string]interf
 	cmd := locateCommand(predicate, subject, commands)
 
 	if cmd == nil {
-		return fmt.Errorf("%s %s is not a valid command. Use %s help for more details", predicate, subject, args[0])
+		return fmt.Errorf("%s %s is not a valid command. Use %s help for more details", subject, predicate, args[0])
 	}
 
 	cmd.InitFunc(cmd)
@@ -139,7 +139,7 @@ func getCommandHelp(cmd Command, showArguments bool) string {
 	c := fmt.Sprintf("%s %s", cmd.Subject, cmd.Predicate)
 
 	if showArguments {
-		sb.WriteString(fmt.Sprintf("Command: %-25s %s (alternatively use \"%s %s\")\n", c, cmd.Description, cmd.AltPredicate, cmd.AltSubject))
+		sb.WriteString(fmt.Sprintf("Command: %-40s %s (alternatively use \"%s %s\")\n", c, cmd.Description, cmd.AltSubject, cmd.AltPredicate))
 		cmd.FlagSet.VisitAll(func(f *flag.Flag) {
 			sb.WriteString(getArgumentHelp(f))
 		})
@@ -151,7 +151,7 @@ func getCommandHelp(cmd Command, showArguments bool) string {
 
 		sb.WriteString(getArgumentHelp(&h))
 	} else {
-		sb.WriteString(fmt.Sprintf("\t%-25s %-25s (alternatively use \"%s %s\")", c, cmd.Description, cmd.AltPredicate, cmd.AltSubject))
+		sb.WriteString(fmt.Sprintf("\t%-40s %-24s", c, cmd.Description))
 	}
 
 	return sb.String()

@@ -65,6 +65,22 @@ var workflowCmds = []Command{
 		ExecuteFunc: workflowCreateCmd,
 		Endpoint:    DeveloperEndpoint,
 	},
+	Command{
+		Description:  "Delete a stage from a workflow",
+		Subject:      "workflow",
+		AltSubject:   "wf",
+		Predicate:    "delete-stage",
+		AltPredicate: "rm-stage",
+		FlagSet:      flag.NewFlagSet("delete workflow stage", flag.ExitOnError),
+		InitFunc: func(c *Command) {
+			c.Arguments = map[string]interface{}{
+				"workflow_stage_id": c.FlagSet.Int("id", _nilDefaultInt, "Workflow's stage id "),
+				"autoconfirm":       c.FlagSet.Bool("autoconfirm", false, "If true it does not ask for confirmation anymore"),
+			}
+		},
+		ExecuteFunc: workflowDeleteStageCmd,
+		Endpoint:    ExtendedEndpoint,
+	},
 }
 
 func workflowsListCmd(c *Command, client interfaces.MetalCloudClient) (string, error) {
@@ -271,6 +287,57 @@ func workflowDeleteCmd(c *Command, client interfaces.MetalCloudClient) (string, 
 	}
 
 	err = client.WorkflowDelete(ret.WorkflowID)
+
+	return "", err
+}
+
+func workflowDeleteStageCmd(c *Command, client interfaces.MetalCloudClient) (string, error) {
+
+	workflowStageID, ok := getIntParamOk(c.Arguments["workflow_stage_id"])
+	if !ok {
+		return "", fmt.Errorf("-id is required (workflow-stage-id (WSI) number returned by get workflow")
+	}
+
+	workflowStage, err := client.WorkflowStageGet(workflowStageID)
+	if err != nil {
+		return "", err
+	}
+
+	confirm := getBoolParam(c.Arguments["autoconfirm"])
+
+	if !confirm {
+
+		wf, err := client.WorkflowGet(workflowStage.WorkflowID)
+		if err != nil {
+			return "", err
+		}
+
+		sd, err := client.StageDefinitionGet(workflowStage.StageDefinitionID)
+		if err != nil {
+			return "", err
+		}
+
+		confirmationMessage := fmt.Sprintf("Deleting stage %s (%d) from workflow %s (%d).  Are you sure? Type \"yes\" to continue:",
+			wf.WorkflowTitle, wf.WorkflowID,
+			sd.StageDefinitionTitle, sd.StageDefinitionID)
+
+		//this is simply so that we don't output a text on the command line under go test
+		if strings.HasSuffix(os.Args[0], ".test") {
+			confirmationMessage = ""
+		}
+
+		confirm, err = requestConfirmation(confirmationMessage)
+		if err != nil {
+			return "", err
+		}
+
+	}
+
+	if !confirm {
+		return "", fmt.Errorf("Operation not confirmed. Aborting")
+	}
+
+	err = client.WorkflowStageDelete(workflowStageID)
 
 	return "", err
 }

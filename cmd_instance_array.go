@@ -108,6 +108,7 @@ var instanceArrayCmds = []Command{
 				"instance_array_id_or_label": c.FlagSet.String("id", _nilDefaultStr, "(Required) Instance array's id or label. Note that using the 'label' might be ambiguous in certain situations."),
 				"show_credentials":           c.FlagSet.Bool("show-credentials", false, "(Flag) If set returns the instances' credentials"),
 				"show_power_status":          c.FlagSet.Bool("show-power-status", false, "(Flag) If set returns the instances' power status"),
+				"show_iscsi_credentials":     c.FlagSet.Bool("show-iscsi-credentials", false, "(Flag) If set returns the instances' iscsi credentials"),
 				"format":                     c.FlagSet.String("format", "", "The output format. Supported values are 'json','csv'. The default format is human readable."),
 			}
 		},
@@ -303,6 +304,33 @@ func instanceArrayGetCmd(c *Command, client interfaces.MetalCloudClient) (string
 		},
 	}
 
+	if getBoolParam(c.Arguments["show_credentials"]) {
+
+		schema = append(schema, SchemaField{
+			FieldName: "CREDENTIALS",
+			FieldType: TypeString,
+			FieldSize: 5,
+		})
+	}
+
+	if getBoolParam(c.Arguments["show_power_status"]) {
+
+		schema = append(schema, SchemaField{
+			FieldName: "POWER",
+			FieldType: TypeString,
+			FieldSize: 5,
+		})
+	}
+
+	if getBoolParam(c.Arguments["show_iscsi_credentials"]) {
+
+		schema = append(schema, SchemaField{
+			FieldName: "ISCSI",
+			FieldType: TypeString,
+			FieldSize: 5,
+		})
+	}
+
 	data := [][]interface{}{}
 
 	iList, err := client.InstanceArrayInstances(retIA.InstanceArrayID)
@@ -398,26 +426,16 @@ func instanceArrayGetCmd(c *Command, client interfaces.MetalCloudClient) (string
 			dataRow = append(dataRow, powerStatus)
 		}
 
+		if getBoolParam(c.Arguments["show_iscsi_credentials"]) {
+			iscsiCreds := ""
+			if v := i.InstanceCredentials.ISCSI; v != nil {
+				iscsiCreds = fmt.Sprintf("Initiator IQN: %s Username: %s Password: %s ", v.InitiatorIQN, v.Username, v.Password)
+			}
+			dataRow = append(dataRow, iscsiCreds)
+		}
+
 		data = append(data, dataRow)
 
-	}
-
-	if getBoolParam(c.Arguments["show_credentials"]) {
-
-		schema = append(schema, SchemaField{
-			FieldName: "CREDENTIALS",
-			FieldType: TypeString,
-			FieldSize: 5,
-		})
-	}
-
-	if getBoolParam(c.Arguments["show_power_status"]) {
-
-		schema = append(schema, SchemaField{
-			FieldName: "POWER",
-			FieldType: TypeString,
-			FieldSize: 5,
-		})
 	}
 
 	infra, err := client.InfrastructureGet(retIA.InfrastructureID)

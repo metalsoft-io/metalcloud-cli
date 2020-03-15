@@ -96,7 +96,7 @@ var driveArrayCmds = []Command{
 		InitFunc: func(c *Command) {
 			c.Arguments = map[string]interface{}{
 				"drive_array_id_or_label": c.FlagSet.String("id", _nilDefaultStr, "(Required) Drive Array's ID or label. Note that using the label can be ambiguous and is slower."),
-				"show_credentials":        c.FlagSet.Bool("show_credentials", false, "(Flag) If set returns the drives' credentials"),
+				"show_credentials":        c.FlagSet.Bool("show-credentials", false, "(Flag) If set returns the drives' credentials"),
 				"format":                  c.FlagSet.String("format", "", "The output format. Supported values are 'json','csv'. The default format is human readable."),
 			}
 		},
