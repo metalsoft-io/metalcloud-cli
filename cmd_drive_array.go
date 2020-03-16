@@ -96,7 +96,7 @@ var driveArrayCmds = []Command{
 		InitFunc: func(c *Command) {
 			c.Arguments = map[string]interface{}{
 				"drive_array_id_or_label": c.FlagSet.String("id", _nilDefaultStr, "(Required) Drive Array's ID or label. Note that using the label can be ambiguous and is slower."),
-				"show_credentials":        c.FlagSet.Bool("show-credentials", false, "(Flag) If set returns the drives' credentials"),
+				"show_iscsi_credentials":  c.FlagSet.Bool("show-iscsi-credentials", false, "(Flag) If set returns the drives' iscsi credentials"),
 				"format":                  c.FlagSet.String("format", "", "The output format. Supported values are 'json','csv'. The default format is human readable."),
 			}
 		},
@@ -466,7 +466,7 @@ func driveArrayGetCmd(c *Command, client interfaces.MetalCloudClient) (string, e
 			details,
 		}
 
-		if getBoolParam(c.Arguments["show_credentials"]) {
+		if getBoolParam(c.Arguments["show_iscsi_credentials"]) {
 
 			credentials := fmt.Sprintf("Target: %s Port:%d IQN:%s LUN ID:%d",
 				d.DriveCredentials.ISCSI.StorageIPAddress,
@@ -481,7 +481,7 @@ func driveArrayGetCmd(c *Command, client interfaces.MetalCloudClient) (string, e
 
 	}
 
-	if getBoolParam(c.Arguments["show_credentials"]) {
+	if getBoolParam(c.Arguments["show_iscsi_credentials"]) {
 		schema = append(schema, SchemaField{
 			FieldName: "CREDENTIALS",
 			FieldType: TypeString,
