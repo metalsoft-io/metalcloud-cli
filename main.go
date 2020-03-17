@@ -100,17 +100,17 @@ func executeCommand(args []string, commands []Command, clients map[string]interf
 
 	err := cmd.FlagSet.Parse(args[3:])
 	if err != nil {
-		return fmt.Errorf("%s Use '%s %s -h' for syntax help", err, predicate, subject)
+		return fmt.Errorf("%s Use '%s %s -h' for syntax help", err, subject, predicate)
 	}
 
 	client, ok := clients[cmd.Endpoint]
 	if !ok {
-		return fmt.Errorf("Client not set for endpoint %s on command %s %s", cmd.Endpoint, predicate, subject)
+		return fmt.Errorf("Client not set for endpoint %s on command %s %s", cmd.Endpoint, subject, predicate)
 	}
 
 	ret, err := cmd.ExecuteFunc(cmd, client)
 	if err != nil {
-		return fmt.Errorf("%s Use '%s %s -h' for syntax help", err, predicate, subject)
+		return fmt.Errorf("%s Use '%s %s -h' for syntax help", err, subject, predicate)
 	}
 
 	fmt.Fprintf(GetStdout(), ret)
