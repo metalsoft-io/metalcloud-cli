@@ -234,7 +234,7 @@ func GetTableAsCSVString(data [][]interface{}, schema []SchemaField) (string, er
 func truncateString(s string, length int) string {
 	str := s
 	if len(str) > 0 {
-		return str[:18] + "..."
+		return str[:length] + "..."
 	}
 	return ""
 }

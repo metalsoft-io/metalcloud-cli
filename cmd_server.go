@@ -24,7 +24,7 @@ var serversCmds = []Command{
 			}
 		},
 		ExecuteFunc: serversListCmd,
-		Endpoint:    ExtendedEndpoint,
+		Endpoint:    DeveloperEndpoint,
 	},
 
 	Command{
@@ -98,11 +98,6 @@ func serversListCmd(c *Command, client interfaces.MetalCloudClient) (string, err
 			FieldSize: 5,
 		},
 		SchemaField{
-			FieldName: "DISKS",
-			FieldType: TypeString,
-			FieldSize: 5,
-		},
-		SchemaField{
 			FieldName: "TAGS",
 			FieldType: TypeString,
 			FieldSize: 4,
@@ -124,15 +119,26 @@ func serversListCmd(c *Command, client interfaces.MetalCloudClient) (string, err
 
 		allocation := ""
 		if s.ServerStatus == "used" || s.ServerStatus == "used_registering" {
-			allocation = fmt.Sprintf("%s (#%d) IA:#%d Infra:#%d",
-				s.InstanceLabel,
-				s.InstanceID,
-				s.InstanceArrayID,
-				s.InfrastructureID)
+			users := strings.Join(s.UserEmail[0], ",")
+			if len(users) > 30 {
+				users = truncateString(users, 27)
+			}
+			allocation = fmt.Sprintf("%s %s (#%d) IA:#%d Infra:#%d",
+				users,
+				s.InstanceLabel[0],
+				s.InstanceID[0],
+				s.InstanceArrayID[0],
+				s.InfrastructureID[0])
 		}
 		productName := s.ServerProductName
 		if len(s.ServerProductName) > 21 {
 			productName = truncateString(s.ServerProductName, 18)
+		}
+		diskDescription := ""
+		if s.ServerDiskCount > 0 {
+			diskDescription = fmt.Sprintf(" %d x %d GB %s", s.ServerDiskCount,
+				s.ServerDiskSizeMbytes/1000,
+				s.ServerDiskType)
 		}
 
 		data = append(data, []interface{}{
@@ -143,15 +149,13 @@ func serversListCmd(c *Command, client interfaces.MetalCloudClient) (string, err
 			s.ServerVendor,
 			productName,
 			s.ServerSerialNumber,
-			fmt.Sprintf("%d GB RAM %d x %s (%d cores) ",
+			fmt.Sprintf("%d GB RAM %d x %s (%d cores)%s",
 				s.ServerRAMGbytes,
 				s.ServerProcessorCount,
 				s.ServerProcessorName,
-				s.ServerProcessorCoreCount),
-			fmt.Sprintf("%d x %d GB [%s]",
-				s.ServerDiskCount,
-				s.ServerDiskSizeMbytes/1000,
-				s.ServerDiskType),
+				s.ServerProcessorCoreCount,
+				diskDescription,
+			),
 			strings.Join(s.ServerTags, ","),
 			s.ServerIPMIHost,
 			allocation,
