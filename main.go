@@ -23,6 +23,13 @@ import (
 	"golang.org/x/crypto/ssh/terminal"
 )
 
+var (
+	version string
+	date    string
+	commit  string
+	builtBy string
+)
+
 //UserEndpoint exposes regular user functions
 const UserEndpoint = "user"
 
@@ -265,6 +272,7 @@ func getCommands(clients map[string]interfaces.MetalCloudClient) []Command {
 		serversCmds,
 		stageDefinitionsCmds,
 		workflowCmds,
+		versionCmds,
 	}
 
 	filteredCommands := []Command{}
