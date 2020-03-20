@@ -19,12 +19,14 @@ var serversCmds = []Command{
 		FlagSet:      flag.NewFlagSet("list servers", flag.ExitOnError),
 		InitFunc: func(c *Command) {
 			c.Arguments = map[string]interface{}{
-				"format": c.FlagSet.String("format", _nilDefaultStr, "The output format. Supported values are 'json','csv'. The default format is human readable."),
-				"filter": c.FlagSet.String("filter", "*", "filter to use when searching for servers. Check the documentation for examples. Defaults to '*'"),
+				"format":           c.FlagSet.String("format", _nilDefaultStr, "The output format. Supported values are 'json','csv'. The default format is human readable."),
+				"filter":           c.FlagSet.String("filter", "*", "filter to use when searching for servers. Check the documentation for examples. Defaults to '*'"),
+				"show_credentials": c.FlagSet.Bool("show-credentials", false, "(Flag) If set returns the servers' IPMI credentials. (Slow for large queries)"),
 			}
 		},
 		ExecuteFunc: serversListCmd,
-		Endpoint:    ExtendedEndpoint,
+		// Endpoint:    ExtendedEndpoint,
+		Endpoint: DeveloperEndpoint,
 	},
 
 	Command{
@@ -119,6 +121,24 @@ func serversListCmd(c *Command, client interfaces.MetalCloudClient) (string, err
 		},
 	}
 
+	showCredentials := false
+	if c.Arguments["show_credentials"] != nil && *c.Arguments["show_credentials"].(*bool) {
+		showCredentials = true
+
+		schema = append(schema, SchemaField{
+			FieldName: "IPMI_USER",
+			FieldType: TypeString,
+			FieldSize: 5,
+		})
+
+		schema = append(schema, SchemaField{
+			FieldName: "IPMI_PASS",
+			FieldType: TypeString,
+			FieldSize: 5,
+		})
+
+	}
+
 	data := [][]interface{}{}
 	for _, s := range *list {
 
@@ -135,6 +155,21 @@ func serversListCmd(c *Command, client interfaces.MetalCloudClient) (string, err
 			productName = truncateString(s.ServerProductName, 18)
 		}
 
+		credentials_user := ""
+		credentials_pass := ""
+
+		if showCredentials {
+
+			server, err := client.ServerGet(s.ServerID, showCredentials)
+
+			if err != nil {
+				return "", err
+			}
+
+			credentials_user = fmt.Sprintf("%s", server.ServerIPMInternalUsername)
+			credentials_pass = fmt.Sprintf("%s", server.ServerIPMInternalPassword)
+
+		}
 		data = append(data, []interface{}{
 			s.ServerID,
 			s.DatacenterName,
@@ -155,6 +190,8 @@ func serversListCmd(c *Command, client interfaces.MetalCloudClient) (string, err
 			strings.Join(s.ServerTags, ","),
 			s.ServerIPMIHost,
 			allocation,
+			credentials_user,
+			credentials_pass,
 		})
 
 	}
