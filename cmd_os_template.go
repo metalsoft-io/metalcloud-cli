@@ -327,7 +327,7 @@ func updateTemplateFromCommand(obj metalcloud.OSTemplate, c *Command, client int
 
 	} else {
 		if checkRequired {
-			return nil, fmt.Errorf("template_architecture is required")
+			return nil, fmt.Errorf("template-architecture is required")
 		}
 	}
 

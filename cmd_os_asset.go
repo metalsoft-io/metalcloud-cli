@@ -86,7 +86,7 @@ var osAssetsCmds = []Command{
 		Description:  "List associated assets",
 		Subject:      "asset",
 		AltSubject:   "asset",
-		Predicate:    "list_associated",
+		Predicate:    "list-associated",
 		AltPredicate: "assoc",
 		FlagSet:      flag.NewFlagSet("associated assets", flag.ExitOnError),
 		InitFunc: func(c *Command) {

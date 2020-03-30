@@ -160,8 +160,8 @@ func serversListCmd(c *Command, client interfaces.MetalCloudClient) (string, err
 				s.ServerDiskType)
 		}
 
-		credentials_user := ""
-		credentials_pass := ""
+		credentialsUser := ""
+		credentialsPass := ""
 
 		if showCredentials {
 
@@ -171,8 +171,8 @@ func serversListCmd(c *Command, client interfaces.MetalCloudClient) (string, err
 				return "", err
 			}
 
-			credentials_user = fmt.Sprintf("%s", server.ServerIPMInternalUsername)
-			credentials_pass = fmt.Sprintf("%s", server.ServerIPMInternalPassword)
+			credentialsUser = fmt.Sprintf("%s", server.ServerIPMInternalUsername)
+			credentialsPass = fmt.Sprintf("%s", server.ServerIPMInternalPassword)
 
 		}
 		data = append(data, []interface{}{
@@ -193,8 +193,8 @@ func serversListCmd(c *Command, client interfaces.MetalCloudClient) (string, err
 			strings.Join(s.ServerTags, ","),
 			s.ServerIPMIHost,
 			allocation,
-			credentials_user,
-			credentials_pass,
+			credentialsUser,
+			credentialsPass,
 		})
 
 	}

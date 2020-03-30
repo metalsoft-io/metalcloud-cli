@@ -112,8 +112,8 @@ var infrastructureCmds = []Command{
 		Description:  "list stages of a workflow",
 		Subject:      "infrastructure",
 		AltSubject:   "infra",
-		Predicate:    "list_stages",
-		AltPredicate: "show_workflow",
+		Predicate:    "workflow-stages",
+		AltPredicate: "workflow-stages",
 		FlagSet:      flag.NewFlagSet("list stages of a workflow", flag.ExitOnError),
 		InitFunc: func(c *Command) {
 			c.Arguments = map[string]interface{}{
