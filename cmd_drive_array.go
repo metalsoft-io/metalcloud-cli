@@ -335,11 +335,15 @@ func driveArrayDeleteCmd(c *Command, client interfaces.MetalCloudClient) (string
 	}
 
 	var retIA *metalcloud.InstanceArray
+
 	if retDA.InstanceArrayID != 0 {
 		retIA, err = client.InstanceArrayGet(retDA.InstanceArrayID)
+		if err != nil {
+			return "", err
+		}
 	}
 
-	retInfra, err2 := client.InfrastructureGet(retIA.InfrastructureID)
+	retInfra, err2 := client.InfrastructureGet(retDA.InfrastructureID)
 	if err2 != nil {
 		return "", err2
 	}
