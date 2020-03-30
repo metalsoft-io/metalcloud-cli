@@ -37,17 +37,16 @@ var osTemplatesCmds = []Command{
 		FlagSet:      flag.NewFlagSet("create template", flag.ExitOnError),
 		InitFunc: func(c *Command) {
 			c.Arguments = map[string]interface{}{
-				"label":                    c.FlagSet.String("label", _nilDefaultStr, "(Required) Template's label"),
-				"display_name":             c.FlagSet.String("display-name", _nilDefaultStr, "(Required) Template's display name"),
-				"size":                     c.FlagSet.Int("size", _nilDefaultInt, "Template's size (bytes)"),
-				"local_disk_supported":     c.FlagSet.Bool("local-disk-supported", false, "Template supports local disk install. Default false"),
-				"boot_methods_supported":   c.FlagSet.String("boot-methods-supported", _nilDefaultStr, "Template boot methods supported. Defaults to pxe_iscsi."),
-				"boot_type":                c.FlagSet.String("boot-type", _nilDefaultStr, "Template boot type. Possible values: 'uefi_only','legacy_only','hybrid' "),
-				"description":              c.FlagSet.String("description", _nilDefaultStr, "Template description"),
-				"os_type":                  c.FlagSet.String("os-type", _nilDefaultStr, "Template operating system type. For example, Ubuntu or CentOS."),
-				"os_version":               c.FlagSet.String("os-version", _nilDefaultStr, "Template operating system version."),
-				"os_architecture":          c.FlagSet.String("os-architecture", _nilDefaultStr, "Template operating system architecture.Possible values: none, unknown, x86, x86_64."),
-				"os_template_architecture": c.FlagSet.String("template-architecture", _nilDefaultStr, "Template's architecture. Possible values 'uefi','pcx86' "),
+				"label":                  c.FlagSet.String("label", _nilDefaultStr, "(Required) Template's label"),
+				"display_name":           c.FlagSet.String("display-name", _nilDefaultStr, "(Required) Template's display name"),
+				"size":                   c.FlagSet.Int("size", _nilDefaultInt, "Template's size (bytes)"),
+				"local_disk_supported":   c.FlagSet.Bool("local-disk-supported", false, "Template supports local disk install. Default false"),
+				"boot_methods_supported": c.FlagSet.String("boot-methods-supported", _nilDefaultStr, "Template boot methods supported. Defaults to pxe_iscsi."),
+				"boot_type":              c.FlagSet.String("boot-type", _nilDefaultStr, "Template boot type. Possible values: 'uefi_only','legacy_only','hybrid' "),
+				"description":            c.FlagSet.String("description", _nilDefaultStr, "Template description"),
+				"os_type":                c.FlagSet.String("os-type", _nilDefaultStr, "Template operating system type. For example, Ubuntu or CentOS."),
+				"os_version":             c.FlagSet.String("os-version", _nilDefaultStr, "Template operating system version."),
+				"os_architecture":        c.FlagSet.String("os-architecture", _nilDefaultStr, "Template operating system architecture.Possible values: none, unknown, x86, x86_64."),
 				"os_asset_id_bootloader_local_install_id_or_name": c.FlagSet.String("install-bootloader-asset", _nilDefaultStr, "Template's bootloader asset id during install"),
 				"os_asset_id_bootloader_os_boot_id_or_name":       c.FlagSet.String("os-boot-bootloader-asset", _nilDefaultStr, "Template's bootloader asset id during regular server boot"),
 				"initial_user":                 c.FlagSet.String("initial-user", _nilDefaultStr, "Template's initial username, used to verify install."),
@@ -70,23 +69,22 @@ var osTemplatesCmds = []Command{
 		FlagSet:      flag.NewFlagSet("update template", flag.ExitOnError),
 		InitFunc: func(c *Command) {
 			c.Arguments = map[string]interface{}{
-				"template_id_or_name":      c.FlagSet.String("id", _nilDefaultStr, "Template's id or label"),
-				"label":                    c.FlagSet.String("label", _nilDefaultStr, "Template's label"),
-				"display_name":             c.FlagSet.String("display-name", _nilDefaultStr, "Template's display name"),
-				"size":                     c.FlagSet.Int("size", _nilDefaultInt, "Template's size (bytes)"),
-				"local_disk_supported":     c.FlagSet.Bool("local-disk-supported", false, "Template supports local disk install. Default false"),
-				"boot_methods_supported":   c.FlagSet.String("boot-methods-supported", _nilDefaultStr, "Template boot methods supported. Defaults to pxe_iscsi."),
-				"boot_type":                c.FlagSet.String("boot-type", _nilDefaultStr, "Template boot type. Possible values: 'uefi_only','legacy_only','hybrid' "),
-				"description":              c.FlagSet.String("description", _nilDefaultStr, "Template description"),
-				"os_type":                  c.FlagSet.String("os-type", _nilDefaultStr, "Template operating system type. For example, Ubuntu or CentOS."),
-				"os_version":               c.FlagSet.String("os-version", _nilDefaultStr, "Template operating system version."),
-				"os_architecture":          c.FlagSet.String("os-architecture", _nilDefaultStr, "Template operating system architecture.Possible values: none, unknown, x86, x86_64."),
-				"os_template_architecture": c.FlagSet.String("template_architecture", _nilDefaultStr, "Template's architecture. Possible values 'uefi','pcx86' "),
+				"template_id_or_name":    c.FlagSet.String("id", _nilDefaultStr, "Template's id or label"),
+				"label":                  c.FlagSet.String("label", _nilDefaultStr, "Template's label"),
+				"display_name":           c.FlagSet.String("display-name", _nilDefaultStr, "(Required) Template's display name"),
+				"size":                   c.FlagSet.Int("size", _nilDefaultInt, "Template's size (bytes)"),
+				"local_disk_supported":   c.FlagSet.Bool("local-disk-supported", false, "Template supports local disk install. Default false"),
+				"boot_methods_supported": c.FlagSet.String("boot-methods-supported", _nilDefaultStr, "Template boot methods supported. Defaults to pxe_iscsi."),
+				"boot_type":              c.FlagSet.String("boot-type", _nilDefaultStr, "(Required) Template boot type. Possible values: 'uefi_only','legacy_only','hybrid' "),
+				"description":            c.FlagSet.String("description", _nilDefaultStr, "Template description"),
+				"os_type":                c.FlagSet.String("os-type", _nilDefaultStr, "(Required) Template operating system type. For example, Ubuntu or CentOS."),
+				"os_version":             c.FlagSet.String("os-version", _nilDefaultStr, "(Required) Template operating system version."),
+				"os_architecture":        c.FlagSet.String("os-architecture", _nilDefaultStr, "(Required) Template operating system architecture.Possible values: none, unknown, x86, x86_64."),
 				"os_asset_id_bootloader_local_install_id_or_name": c.FlagSet.String("install-bootloader-asset", _nilDefaultStr, "Template's bootloader asset id during install"),
 				"os_asset_id_bootloader_os_boot_id_or_name":       c.FlagSet.String("os-boot-bootloader-asset", _nilDefaultStr, "Template's bootloader asset id during regular server boot"),
-				"initial_user":                 c.FlagSet.String("initial-user", _nilDefaultStr, "Template's initial username, used to verify install."),
-				"initial_password":             c.FlagSet.String("initial-password", _nilDefaultStr, "Template's initial password, used to verify install."),
-				"initial_ssh_port":             c.FlagSet.Int("initial-ssh-port", _nilDefaultInt, "Template's initial ssh port, used to verify install."),
+				"initial_user":                 c.FlagSet.String("initial-user", _nilDefaultStr, "(Required) Template's initial username, used to verify install."),
+				"initial_password":             c.FlagSet.String("initial-password", _nilDefaultStr, "(Required) Template's initial password, used to verify install."),
+				"initial_ssh_port":             c.FlagSet.Int("initial-ssh-port", _nilDefaultInt, "(Required) Template's initial ssh port, used to verify install."),
 				"change_password_after_deploy": c.FlagSet.Bool("change-password-after-deploy", false, "Option to change the initial_user password on the installed OS after deploy."),
 				"repo_url":                     c.FlagSet.String("repo-url", _nilDefaultStr, "Template description"),
 			}
@@ -264,7 +262,7 @@ func updateTemplateFromCommand(obj metalcloud.OSTemplate, c *Command, client int
 		obj.VolumeTemplateDisplayName = *v.(*string)
 	} else {
 		if checkRequired {
-			return nil, fmt.Errorf("display_name is required")
+			return nil, fmt.Errorf("display-name is required")
 		}
 	}
 
@@ -286,7 +284,7 @@ func updateTemplateFromCommand(obj metalcloud.OSTemplate, c *Command, client int
 		obj.VolumeTemplateBootType = *v.(*string)
 	} else {
 		if checkRequired {
-			return nil, fmt.Errorf("boot_type is required")
+			return nil, fmt.Errorf("boot-type is required")
 		}
 	}
 
@@ -301,7 +299,7 @@ func updateTemplateFromCommand(obj metalcloud.OSTemplate, c *Command, client int
 		obj.VolumeTemplateOperatingSystem.OperatingSystemType = *v.(*string)
 	} else {
 		if checkRequired {
-			return nil, fmt.Errorf("os_type is required")
+			return nil, fmt.Errorf("os-type is required")
 		}
 	}
 
@@ -309,7 +307,7 @@ func updateTemplateFromCommand(obj metalcloud.OSTemplate, c *Command, client int
 		obj.VolumeTemplateOperatingSystem.OperatingSystemVersion = *v.(*string)
 	} else {
 		if checkRequired {
-			return nil, fmt.Errorf("os_version is required")
+			return nil, fmt.Errorf("os-version is required")
 		}
 	}
 
@@ -317,19 +315,11 @@ func updateTemplateFromCommand(obj metalcloud.OSTemplate, c *Command, client int
 		obj.VolumeTemplateOperatingSystem.OperatingSystemArchitecture = *v.(*string)
 	} else {
 		if checkRequired {
-			return nil, fmt.Errorf("os_architecture is required")
+			return nil, fmt.Errorf("os-architecture is required")
 		}
 	}
 
 	//Boot options
-	if v := c.Arguments["os_template_architecture"]; v != nil && *v.(*string) != _nilDefaultStr {
-		obj.OSTemplatePreBootArchitecture = *v.(*string)
-
-	} else {
-		if checkRequired {
-			return nil, fmt.Errorf("template-architecture is required")
-		}
-	}
 
 	if v := c.Arguments["os_asset_id_bootloader_local_install_id_or_name"]; v != nil && *v.(*string) != _nilDefaultStr {
 		localInstallAsset, err := getOSAssetFromCommand("install_bootloader_asset", "os_asset_id_bootloader_local_install_id_or_name", c, client)
@@ -354,7 +344,7 @@ func updateTemplateFromCommand(obj metalcloud.OSTemplate, c *Command, client int
 		obj.OSTemplateCredentials.OSTemplateInitialUser = *v.(*string)
 	} else {
 		if checkRequired {
-			return nil, fmt.Errorf("initial_user is required")
+			return nil, fmt.Errorf("initial-user is required")
 		}
 	}
 
@@ -362,7 +352,7 @@ func updateTemplateFromCommand(obj metalcloud.OSTemplate, c *Command, client int
 		obj.OSTemplateCredentials.OSTemplateInitialPassword = *v.(*string)
 	} else {
 		if checkRequired {
-			return nil, fmt.Errorf("initial_password is required")
+			return nil, fmt.Errorf("initial-password is required")
 		}
 	}
 
@@ -370,7 +360,7 @@ func updateTemplateFromCommand(obj metalcloud.OSTemplate, c *Command, client int
 		obj.OSTemplateCredentials.OSTemplateInitialSSHPort = *v.(*int)
 	} else {
 		if checkRequired {
-			return nil, fmt.Errorf("initial_ssh_port is required")
+			return nil, fmt.Errorf("initial-ssh-port is required")
 		}
 	}
 
