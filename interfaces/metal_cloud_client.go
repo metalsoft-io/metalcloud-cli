@@ -95,13 +95,21 @@ type MetalCloudClient interface {
 	//InstanceArrayCreateByLabel creates an instance array (colletion of identical instances). Requires Deploy.
 	InstanceArrayCreateByLabel(infrastructureLabel string, instanceArray metalcloud.InstanceArray) (*metalcloud.InstanceArray, error)
 	//InstanceArrayEdit alterns a deployed instance array. Requires deploy.
-	InstanceArrayEdit(instanceArrayID int, instanceArrayOperation metalcloud.InstanceArrayOperation, bSwapExistingInstancesHardware *bool, bKeepDetachingDrives *bool, objServerTypeMatches *[]metalcloud.ServerType, arrInstancesToBeDeleted *[]int) (*metalcloud.InstanceArray, error)
+	InstanceArrayEdit(instanceArrayID int, instanceArrayOperation metalcloud.InstanceArrayOperation, bSwapExistingInstancesHardware *bool, bKeepDetachingDrives *bool, objServerTypeMatches *metalcloud.ServerTypeMatches, arrInstancesToBeDeleted *[]int) (*metalcloud.InstanceArray, error)
 	//InstanceArrayEditByLabel alterns a deployed instance array. Requires deploy.
-	InstanceArrayEditByLabel(instanceArrayLabel string, instanceArrayOperation metalcloud.InstanceArrayOperation, bSwapExistingInstancesHardware *bool, bKeepDetachingDrives *bool, objServerTypeMatches *[]metalcloud.ServerType, arrInstancesToBeDeleted *[]int) (*metalcloud.InstanceArray, error)
+	InstanceArrayEditByLabel(instanceArrayLabel string, instanceArrayOperation metalcloud.InstanceArrayOperation, bSwapExistingInstancesHardware *bool, bKeepDetachingDrives *bool, objServerTypeMatches *metalcloud.ServerTypeMatches, arrInstancesToBeDeleted *[]int) (*metalcloud.InstanceArray, error)
 	//InstanceArrayDelete deletes an instance array. Requires deploy.
 	InstanceArrayDelete(instanceArrayID int) error
 	//InstanceArrayDeleteByLabel deletes an instance array. Requires deploy.
 	InstanceArrayDeleteByLabel(instanceArrayLabel string) error
+	//InstanceArrayStop stops a specified metalcloud.InstanceArray.
+	InstanceArrayStop(instanceArrayID int) (*metalcloud.InstanceArray, error)
+	//InstanceArrayStopByLabel stops a specified metalcloud.InstanceArray.
+	InstanceArrayStopByLabel(instanceArrayLabel string) (*metalcloud.InstanceArray, error)
+	//InstanceArrayStart starts a specified metalcloud.InstanceArray.
+	InstanceArrayStart(instanceArrayID int) (*metalcloud.InstanceArray, error)
+	//InstanceArrayStartByLabel starts a specified metalcloud.InstanceArray.
+	InstanceArrayStartByLabel(instanceArrayLabel string) (*metalcloud.InstanceArray, error)
 	//InstanceArrayInstances retrieves a list of all the metalcloud.Instance objects associated with a specified metalcloud.InstanceArray.
 	InstanceArrayInstances(instanceArrayID int) (*map[string]metalcloud.Instance, error)
 	//InstanceArrayInstancesByLabel retrieves a list of all the metalcloud.Instance objects associated with a specified metalcloud.InstanceArray.

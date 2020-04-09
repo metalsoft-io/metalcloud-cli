@@ -42,6 +42,8 @@ var types = [...]string{
 	"WorkflowReference",
 	"Drive",
 	"Snapshot",
+	"ServerTypeMatches",
+	"ServerTypeMatch",
 }
 
 const packageName = "metalcloud"

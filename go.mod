@@ -3,7 +3,7 @@ module github.com/bigstepinc/metalcloud-cli
 go 1.12
 
 require (
-	github.com/bigstepinc/metal-cloud-sdk-go v1.2.4
+	github.com/bigstepinc/metal-cloud-sdk-go v1.2.6
 	github.com/golang/mock v1.3.1
 	github.com/golang/protobuf v1.3.2 // indirect
 	github.com/kr/pretty v0.1.0 // indirect

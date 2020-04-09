@@ -25,6 +25,7 @@ var instanceArrayCmds = []Command{
 				"infrastructure_id_or_label":          c.FlagSet.String("infra", _nilDefaultStr, "(Required) Infrastructure's id or label. Note that the 'label' this be ambiguous in certain situations."),
 				"instance_array_instance_count":       c.FlagSet.Int("instance-count", _nilDefaultInt, "(Required) Instance count of this instance array"),
 				"instance_array_label":                c.FlagSet.String("label", _nilDefaultStr, "InstanceArray's label"),
+				"server_type":                         c.FlagSet.String("server-type", _nilDefaultStr, "InstanceArray's server type."),
 				"instance_array_ram_gbytes":           c.FlagSet.Int("ram", _nilDefaultInt, "InstanceArray's minimum RAM (GB)"),
 				"instance_array_processor_count":      c.FlagSet.Int("proc", _nilDefaultInt, "InstanceArray's minimum processor count"),
 				"instance_array_processor_core_mhz":   c.FlagSet.Int("proc-freq", _nilDefaultInt, "InstanceArray's minimum processor frequency (Mhz)"),
@@ -33,7 +34,9 @@ var instanceArrayCmds = []Command{
 				"instance_array_disk_size_mbytes":     c.FlagSet.Int("disk-size", _nilDefaultInt, "InstanceArray's local disks' size in MB"),
 				"instance_array_boot_method":          c.FlagSet.String("boot", _nilDefaultStr, "InstanceArray's boot type:'pxe_iscsi','local_drives'"),
 				"instance_array_firewall_not_managed": c.FlagSet.Bool("firewall-management-disabled", false, "(Flag) If set InstanceArray's firewall management on or off"),
-				"volume_template_id":                  c.FlagSet.Int("template", _nilDefaultInt, "InstanceArray's volume template when booting from for local drives"),
+				"volume_template_id":                  c.FlagSet.Int("local-install-template", _nilDefaultInt, "InstanceArray's volume template when booting from for local drives"),
+				"da_volume_template":                  c.FlagSet.String("drive-array-template", _nilDefaultStr, "The attached DriveArray's  volume template when booting from iscsi drives"),
+				"da_volume_disk_size":                 c.FlagSet.Int("drive-array-disk-size", _nilDefaultInt, "The attached DriveArray's  volume size (in MB) when booting from iscsi drives, If ommited the default size of the volume template will be used."),
 				"return_id":                           c.FlagSet.Bool("return-id", false, "(Flag) If set will print the ID of the created Instance Array. Useful for automating tasks."),
 			}
 		},
@@ -89,7 +92,7 @@ var instanceArrayCmds = []Command{
 				"instance_array_disk_size_mbytes":     c.FlagSet.Int("disk-size", _nilDefaultInt, "InstanceArray's local disks' size in MB"),
 				"instance_array_boot_method":          c.FlagSet.String("boot", _nilDefaultStr, "InstanceArray's boot type:'pxe_iscsi','local_drives'"),
 				"instance_array_firewall_not_managed": c.FlagSet.Bool("firewall-management-disabled", false, "(Flag) If set InstanceArray's firewall management is off"),
-				"volume_template_id":                  c.FlagSet.Int("template", _nilDefaultInt, "InstanceArray's volume template when booting from for local drives"),
+				"volume_template_id":                  c.FlagSet.Int("local-install-template", _nilDefaultInt, "InstanceArray's volume template when booting from for local drives"),
 				"bSwapExistingInstancesHardware":      c.FlagSet.Bool("swap-existing-hardware", false, "(Flag) If set all the hardware of the Instance objects is swapped to match the new InstanceArray specifications"),
 				"no_bKeepDetachingDrives":             c.FlagSet.Bool("do-not-keep-detaching-drives", false, "(Flag) If set and the number of Instance objects is reduced, then the detaching Drive objects will be deleted. If it's set to true, the detaching Drive objects will not be deleted."),
 			}
@@ -132,6 +135,54 @@ func instanceArrayCreateCmd(c *Command, client interfaces.MetalCloudClient) (str
 	retIA, err := client.InstanceArrayCreate(infra.InfrastructureID, *ia)
 	if err != nil {
 		return "", err
+	}
+
+	if serverTypeLabel, ok := getStringParamOk(c.Arguments["server_type"]); ok {
+
+		serverType, err := client.ServerTypeGetByLabel(serverTypeLabel)
+		if err != nil {
+			return "", err
+		}
+
+		stMatches := metalcloud.ServerTypeMatches{
+			ServerTypes: map[int]metalcloud.ServerTypeMatch{
+				serverType.ServerTypeID: metalcloud.ServerTypeMatch{
+					ServerCount: retIA.InstanceArrayInstanceCount,
+				},
+			},
+		}
+		retIA.InstanceArrayProcessorCoreCount = serverType.ServerProcessorCoreCount
+		retIA.InstanceArrayProcessorCount = serverType.ServerProcessorCount
+		retIA.InstanceArrayRAMGbytes = serverType.ServerRAMGbytes
+
+		bFalse := false
+		_, err = client.InstanceArrayEdit(retIA.InstanceArrayID, *retIA.InstanceArrayOperation, &bFalse, &bFalse, &stMatches, nil)
+		if err != nil {
+			return "", err
+		}
+	}
+
+	if driveArrayVolumeTemplateLabel, ok := getStringParamOk(c.Arguments["da_volume_template"]); ok {
+		volumeTemplate, err := client.VolumeTemplateGetByLabel(driveArrayVolumeTemplateLabel)
+		if err != nil {
+			return "", err
+		}
+
+		driveSize := getIntParam(c.Arguments["da_volume_disk_size"])
+		if driveSize == 0 {
+			driveSize = volumeTemplate.VolumeTemplateSizeMBytes
+		}
+
+		da := metalcloud.DriveArray{
+			VolumeTemplateID:                  volumeTemplate.VolumeTemplateID,
+			DriveSizeMBytesDefault:            driveSize,
+			InstanceArrayID:                   retIA.InstanceArrayID,
+			DriveArrayExpandWithInstanceArray: true,
+		}
+		_, err = client.DriveArrayCreate(retIA.InfrastructureID, da)
+		if err != nil {
+			return "", err
+		}
 	}
 
 	if c.Arguments["return_id"] != nil && *c.Arguments["return_id"].(*bool) {

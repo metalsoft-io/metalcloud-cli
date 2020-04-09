@@ -45,6 +45,24 @@ var instanceCmds = []Command{
 		},
 		ExecuteFunc: instanceCredentialsCmd,
 	},
+	/*
+		Command{
+			Description:  "Instance change server type",
+			Subject:      "instance",
+			AltSubject:   "instance",
+			Predicate:    "server-type-change",
+			AltPredicate: "st-change",
+			FlagSet:      flag.NewFlagSet("instance credentials", flag.ExitOnError),
+			InitFunc: func(c *Command) {
+				c.Arguments = map[string]interface{}{
+					"instance_id": c.FlagSet.Int("id", _nilDefaultInt, "(Required) Instances's id . Note that the 'label' this be ambiguous in certain situations."),
+					"server_type": c.FlagSet.String("server-type", _nilDefaultStr, "(Required) Server type id or label."),
+					"autoconfirm": c.FlagSet.Bool("autoconfirm", false, "If true it does not ask for confirmation anymore"),
+				}
+			},
+			ExecuteFunc: instanceServerTypeChangeCmd,
+		},
+	*/
 }
 
 func instancePowerControlCmd(c *Command, client interfaces.MetalCloudClient) (string, error) {
@@ -83,7 +101,7 @@ func instancePowerControlCmd(c *Command, client interfaces.MetalCloudClient) (st
 			op = "Turning off (hard)"
 		case "reset":
 			op = "Rebooting"
-		case "sort":
+		case "soft":
 			op = "Shutting down"
 		}
 
@@ -326,3 +344,83 @@ func getIPsAsStringArray(ips []metalcloud.IP) []string {
 	}
 	return sList
 }
+
+/*
+func instanceServerTypeChangeCmd(c *Command, client interfaces.MetalCloudClient) (string, error) {
+
+	instanceID, ok := getIntParamOk(c.Arguments["instance_id"])
+	if !ok {
+		return "", fmt.Errorf("-id is required (drive id)")
+	}
+	serverType, ok := getStringParamOk(c.Arguments["server_type"])
+	if !ok {
+		return "", fmt.Errorf("-server-type is required")
+	}
+
+	instance, err := client.InstanceGet(instanceID)
+	if err != nil {
+		return "", err
+	}
+
+	ia, err := client.InstanceArrayGet(instance.InstanceArrayID)
+	if err != nil {
+		return "", err
+	}
+
+	infra, err := client.InfrastructureGet(ia.InfrastructureID)
+	if err != nil {
+		return "", err
+	}
+
+	currentSt, err := client.ServerTypeGet(instance.ServerTypeID)
+	if err != nil {
+		return "", err
+	}
+
+	newSt, err := client.ServerTypeGetByLabel(serverType)
+	if err != nil {
+		return "", err
+	}
+
+	confirm, err := confirmCommand(c, func() string {
+
+		confirmationMessage := fmt.Sprintf("Changing server type of instance %s (%d) of instance array %s (#%d) infrastructure %s (#%d)\n %s (#%d) -> %s (#%d)\n:.  Are you sure? Type \"yes\" to continue:",
+			instance.InstanceLabel,
+			instance.InstanceID,
+			ia.InstanceArrayLabel,
+			ia.InstanceArrayID,
+			infra.InfrastructureLabel,
+			infra.InfrastructureID,
+			currentSt.ServerTypeLabel,
+			currentSt.ServerTypeID,
+			newSt.ServerTypeLabel,
+			newSt.ServerTypeID,
+		)
+
+		//this is simply so that we don't output a text on the command line under go test
+		if strings.HasSuffix(os.Args[0], ".test") {
+			confirmationMessage = ""
+		}
+
+		return confirmationMessage
+
+	})
+
+	if err != nil {
+		return "", err
+	}
+
+	if confirm {
+		err = client.InstanceServerPowerSet(instanceID, "soft")
+		if err != nil {
+			return "", err
+		}
+
+		client.InstanceStart
+
+
+	}
+
+	return "", err
+}
+*/
