@@ -47,7 +47,7 @@ func TestWorkflowsGetCmd(t *testing.T) {
 		AnyTimes()
 
 	stages := []metalcloud.WorkflowStageDefinitionReference{
-		metalcloud.WorkflowStageDefinitionReference{
+		{
 			WorkflowStageID:       103,
 			WorkflowID:            10,
 			StageDefinitionID:     30,

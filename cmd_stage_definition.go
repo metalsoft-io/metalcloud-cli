@@ -13,7 +13,7 @@ import (
 
 var stageDefinitionsCmds = []Command{
 
-	Command{
+	{
 		Description:  "Lists available stage definitions",
 		Subject:      "stage-definition",
 		AltSubject:   "stagedef",
@@ -28,7 +28,7 @@ var stageDefinitionsCmds = []Command{
 		ExecuteFunc: stageDefinitionsListCmd,
 		Endpoint:    ExtendedEndpoint,
 	},
-	Command{
+	{
 		Description:  "Create stage definition",
 		Subject:      "stage-definition",
 		AltSubject:   "stagedef",
@@ -68,7 +68,7 @@ var stageDefinitionsCmds = []Command{
 		ExecuteFunc: stageDefinitionCreateCmd,
 		Endpoint:    ExtendedEndpoint,
 	},
-	Command{
+	{
 		Description:  "Delete stage definition",
 		Subject:      "stage-definition",
 		AltSubject:   "stagedef",
@@ -84,7 +84,7 @@ var stageDefinitionsCmds = []Command{
 		ExecuteFunc: stageDefinitionDeleteCmd,
 		Endpoint:    ExtendedEndpoint,
 	},
-	Command{
+	{
 		Description:  "Add stage into infrastructure",
 		Subject:      "stage-definition",
 		AltSubject:   "stagedef",
@@ -102,7 +102,7 @@ var stageDefinitionsCmds = []Command{
 		ExecuteFunc: stageDefinitionAddToInfrastructureCmd,
 		Endpoint:    ExtendedEndpoint,
 	},
-	Command{
+	{
 		Description:  "Add stage into workflow",
 		Subject:      "stage-definition",
 		AltSubject:   "stagedef",
@@ -130,47 +130,47 @@ func stageDefinitionsListCmd(c *Command, client interfaces.MetalCloudClient) (st
 	}
 
 	schema := []SchemaField{
-		SchemaField{
+		{
 			FieldName: "ID",
 			FieldType: TypeInt,
 			FieldSize: 6,
 		},
-		SchemaField{
+		{
 			FieldName: "LABEL",
 			FieldType: TypeString,
 			FieldSize: 6,
 		},
-		SchemaField{
+		{
 			FieldName: "TITLE",
 			FieldType: TypeString,
 			FieldSize: 5,
 		},
-		SchemaField{
+		{
 			FieldName: "DESCRIPTION",
 			FieldType: TypeString,
 			FieldSize: 5,
 		},
-		SchemaField{
+		{
 			FieldName: "TYPE",
 			FieldType: TypeString,
 			FieldSize: 5,
 		},
-		SchemaField{
+		{
 			FieldName: "VARS_REQUIRED",
 			FieldType: TypeString,
 			FieldSize: 5,
 		},
-		SchemaField{
+		{
 			FieldName: "DEF.",
 			FieldType: TypeString,
 			FieldSize: 5,
 		},
-		SchemaField{
+		{
 			FieldName: "CREATED",
 			FieldType: TypeString,
 			FieldSize: 5,
 		},
-		SchemaField{
+		{
 			FieldName: "UPDATED",
 			FieldType: TypeString,
 			FieldSize: 4,
@@ -203,6 +203,9 @@ func stageDefinitionsListCmd(c *Command, client interfaces.MetalCloudClient) (st
 		})
 
 	}
+
+	TableSorter(schema).OrderBy(
+		schema[1].FieldName).Sort(data)
 
 	return renderTable("Stage Definitions", "", getStringParam(c.Arguments["format"]), data, schema)
 }

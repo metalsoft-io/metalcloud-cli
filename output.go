@@ -339,12 +339,12 @@ func renderTransposedTable(tableName string, topLine string, format string, data
 	dataTransposed := transposeTable(newData)
 
 	newSchema := []SchemaField{
-		SchemaField{
+		{
 			FieldName: "KEY",
 			FieldType: TypeString,
 			FieldSize: 5,
 		},
-		SchemaField{
+		{
 			FieldName: "VALUE",
 			FieldType: TypeString,
 			FieldSize: 5,

@@ -9,7 +9,7 @@ import (
 
 var versionCmds = []Command{
 
-	Command{
+	{
 		Description:  "Show version",
 		Subject:      "version",
 		AltSubject:   "version",

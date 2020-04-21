@@ -148,7 +148,7 @@ func TestExecuteCommand(t *testing.T) {
 	initFuncExecuted := false
 	execFuncExecutedOnDeveloperEndpoint := false
 	commands := []Command{
-		Command{
+		{
 			Subject:      "tests",
 			AltSubject:   "s",
 			Predicate:    "testp",

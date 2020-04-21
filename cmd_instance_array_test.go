@@ -364,7 +364,7 @@ func TestInstanceArrayGet(t *testing.T) {
 	}
 
 	ips := []metalcloud.IP{
-		metalcloud.IP{
+		{
 			IPType:          "ipv4",
 			IPHumanReadable: "192.168.1.1",
 		},
@@ -376,7 +376,7 @@ func TestInstanceArrayGet(t *testing.T) {
 	}
 
 	itfs := []metalcloud.InstanceInterface{
-		metalcloud.InstanceInterface{
+		{
 			InstanceInterfaceLabel: "ef0",
 			InstanceInterfaceIPs:   ips,
 			NetworkID:              105,

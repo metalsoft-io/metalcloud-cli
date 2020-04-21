@@ -10,7 +10,7 @@ import (
 
 var volumeTemplateyCmds = []Command{
 
-	Command{
+	{
 		Description:  "Lists available volume templates",
 		Subject:      "volume-template",
 		AltSubject:   "vt",
@@ -26,7 +26,7 @@ var volumeTemplateyCmds = []Command{
 		},
 		ExecuteFunc: volumeTemplatesListCmd,
 	},
-	Command{
+	{
 		Description:  "Create volume templates",
 		Subject:      "volume-template",
 		AltSubject:   "vt",
@@ -58,32 +58,32 @@ func volumeTemplatesListCmd(c *Command, client interfaces.MetalCloudClient) (str
 	}
 
 	schema := []SchemaField{
-		SchemaField{
+		{
 			FieldName: "ID",
 			FieldType: TypeInt,
 			FieldSize: 6,
 		},
-		SchemaField{
+		{
 			FieldName: "LABEL",
 			FieldType: TypeString,
 			FieldSize: 20,
 		},
-		SchemaField{
+		{
 			FieldName: "NAME",
 			FieldType: TypeString,
 			FieldSize: 20,
 		},
-		SchemaField{
+		{
 			FieldName: "SIZE",
 			FieldType: TypeInt,
 			FieldSize: 6,
 		},
-		SchemaField{
+		{
 			FieldName: "STATUS",
 			FieldType: TypeString,
 			FieldSize: 20,
 		},
-		SchemaField{
+		{
 			FieldName: "FLAGS",
 			FieldType: TypeString,
 			FieldSize: 10,
@@ -122,6 +122,8 @@ func volumeTemplatesListCmd(c *Command, client interfaces.MetalCloudClient) (str
 		})
 
 	}
+
+	TableSorter(schema).OrderBy(schema[0].FieldName).Sort(data)
 
 	return renderTable("Volume templates", "", getStringParam(c.Arguments["format"]), data, schema)
 }

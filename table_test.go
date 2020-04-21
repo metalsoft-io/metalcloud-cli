@@ -24,17 +24,17 @@ func TestTableSortWithSchema(t *testing.T) {
 	}
 
 	schema := []SchemaField{
-		SchemaField{
+		{
 			FieldName: "ID",
 			FieldType: TypeInt,
 			FieldSize: 6,
 		},
-		SchemaField{
+		{
 			FieldName: "LABEL",
 			FieldType: TypeString,
 			FieldSize: 20,
 		},
-		SchemaField{
+		{
 			FieldName:      "INST.",
 			FieldType:      TypeFloat,
 			FieldSize:      6,
@@ -68,17 +68,17 @@ func TestTableSortWithSchemaWithDateTime(t *testing.T) {
 	}
 
 	schema := []SchemaField{
-		SchemaField{
+		{
 			FieldName: "ID",
 			FieldType: TypeInt,
 			FieldSize: 6,
 		},
-		SchemaField{
+		{
 			FieldName: "LABEL",
 			FieldType: TypeString,
 			FieldSize: 20,
 		},
-		SchemaField{
+		{
 			FieldName:   "DATE",
 			FieldType:   TypeDateTime,
 			FieldSize:   6,
@@ -216,33 +216,33 @@ func TestGetTableAsJSONRegressionTest1(t *testing.T) {
 	}
 
 	schema := []SchemaField{
-		SchemaField{
+		{
 			FieldName: "INDEX",
 			FieldType: TypeInt,
 			FieldSize: 6,
 		},
-		SchemaField{
+		{
 			FieldName: "PROTOCOL",
 			FieldType: TypeString,
 			FieldSize: 10,
 		},
-		SchemaField{
+		{
 			FieldName: "PORT",
 			FieldType: TypeString,
 			FieldSize: 10,
 		},
-		SchemaField{
+		{
 			FieldName: "SOURCE",
 			FieldType: TypeString,
 			FieldSize: 20,
 		},
 
-		SchemaField{
+		{
 			FieldName: "ENABLED",
 			FieldType: TypeBool,
 			FieldSize: 10,
 		},
-		SchemaField{
+		{
 			FieldName: "DESC.",
 			FieldType: TypeString,
 			FieldSize: 50,

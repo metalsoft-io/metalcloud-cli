@@ -12,7 +12,7 @@ import (
 
 var osTemplatesCmds = []Command{
 
-	Command{
+	{
 		Description:  "Lists available Templates",
 		Subject:      "os-template",
 		AltSubject:   "template",
@@ -28,7 +28,7 @@ var osTemplatesCmds = []Command{
 		ExecuteFunc: templatesListCmd,
 		Endpoint:    ExtendedEndpoint,
 	},
-	Command{
+	{
 		Description:  "Create template",
 		Subject:      "os-template",
 		AltSubject:   "template",
@@ -61,7 +61,7 @@ var osTemplatesCmds = []Command{
 		ExecuteFunc: templateCreateCmd,
 		Endpoint:    ExtendedEndpoint,
 	},
-	Command{
+	{
 		Description:  "Edit template",
 		Subject:      "os-template",
 		AltSubject:   "template",
@@ -93,7 +93,7 @@ var osTemplatesCmds = []Command{
 		ExecuteFunc: templateEditCmd,
 		Endpoint:    ExtendedEndpoint,
 	},
-	Command{
+	{
 		Description:  "Get template",
 		Subject:      "os-template",
 		AltSubject:   "template",
@@ -108,9 +108,9 @@ var osTemplatesCmds = []Command{
 			}
 		},
 		ExecuteFunc: templateGetCmd,
-		Endpoint:    DeveloperEndpoint,
+		Endpoint:    ExtendedEndpoint,
 	},
-	Command{
+	{
 		Description:  "Delete template",
 		Subject:      "os-template",
 		AltSubject:   "template",
@@ -137,62 +137,62 @@ func templatesListCmd(c *Command, client interfaces.MetalCloudClient) (string, e
 	}
 
 	schema := []SchemaField{
-		SchemaField{
+		{
 			FieldName: "ID",
 			FieldType: TypeInt,
 			FieldSize: 2,
 		},
-		SchemaField{
+		{
 			FieldName: "LABEL",
 			FieldType: TypeString,
 			FieldSize: 5,
 		},
-		SchemaField{
+		{
 			FieldName: "NAME",
 			FieldType: TypeString,
 			FieldSize: 5,
 		},
-		SchemaField{
+		{
 			FieldName: "DESCRIPTION",
 			FieldType: TypeString,
 			FieldSize: 5,
 		},
-		SchemaField{
+		{
 			FieldName: "SIZE_MBYTES",
 			FieldType: TypeInt,
 			FieldSize: 5,
 		},
-		SchemaField{
+		{
 			FieldName: "BOOT_METHODS",
 			FieldType: TypeString,
 			FieldSize: 5,
 		},
-		SchemaField{
+		{
 			FieldName: "OS",
 			FieldType: TypeString,
 			FieldSize: 5,
 		},
-		SchemaField{
+		{
 			FieldName: "INSTALL_BOOTLOADER",
 			FieldType: TypeString,
 			FieldSize: 5,
 		},
-		SchemaField{
+		{
 			FieldName: "OS_BOOTLOADER",
 			FieldType: TypeString,
 			FieldSize: 5,
 		},
-		SchemaField{
+		{
 			FieldName: "USER_ID",
 			FieldType: TypeInt,
 			FieldSize: 5,
 		},
-		SchemaField{
+		{
 			FieldName: "CREATED",
 			FieldType: TypeString,
 			FieldSize: 5,
 		},
-		SchemaField{
+		{
 			FieldName: "UPDATED",
 			FieldType: TypeString,
 			FieldSize: 5,
@@ -245,6 +245,8 @@ func templatesListCmd(c *Command, client interfaces.MetalCloudClient) (string, e
 		})
 
 	}
+
+	TableSorter(schema).OrderBy(schema[0].FieldName).Sort(data)
 
 	return renderTable("Templates", "", getStringParam(c.Arguments["format"]), data, schema)
 }
@@ -491,62 +493,62 @@ func templateGetCmd(c *Command, client interfaces.MetalCloudClient) (string, err
 	}
 
 	schema := []SchemaField{
-		SchemaField{
+		{
 			FieldName: "ID",
 			FieldType: TypeInt,
 			FieldSize: 2,
 		},
-		SchemaField{
+		{
 			FieldName: "LABEL",
 			FieldType: TypeString,
 			FieldSize: 5,
 		},
-		SchemaField{
+		{
 			FieldName: "NAME",
 			FieldType: TypeString,
 			FieldSize: 5,
 		},
-		SchemaField{
+		{
 			FieldName: "DESCRIPTION",
 			FieldType: TypeString,
 			FieldSize: 5,
 		},
-		SchemaField{
+		{
 			FieldName: "SIZE_MBYTES",
 			FieldType: TypeInt,
 			FieldSize: 5,
 		},
-		SchemaField{
+		{
 			FieldName: "BOOT_METHODS",
 			FieldType: TypeString,
 			FieldSize: 5,
 		},
-		SchemaField{
+		{
 			FieldName: "OS",
 			FieldType: TypeString,
 			FieldSize: 5,
 		},
-		SchemaField{
+		{
 			FieldName: "USER_ID",
 			FieldType: TypeInt,
 			FieldSize: 5,
 		},
-		SchemaField{
+		{
 			FieldName: "INSTALL_BOOTLOADER",
 			FieldType: TypeString,
 			FieldSize: 5,
 		},
-		SchemaField{
+		{
 			FieldName: "OS_BOOTLOADER",
 			FieldType: TypeString,
 			FieldSize: 5,
 		},
-		SchemaField{
+		{
 			FieldName: "CREATED",
 			FieldType: TypeString,
 			FieldSize: 5,
 		},
-		SchemaField{
+		{
 			FieldName: "UPDATED",
 			FieldType: TypeString,
 			FieldSize: 5,

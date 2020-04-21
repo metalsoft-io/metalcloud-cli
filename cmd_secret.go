@@ -14,7 +14,7 @@ import (
 
 var secretsCmds = []Command{
 
-	Command{
+	{
 		Description:  "Lists available secrets",
 		Subject:      "secrets",
 		AltSubject:   "sec",
@@ -30,7 +30,7 @@ var secretsCmds = []Command{
 		ExecuteFunc: secretsListCmd,
 		Endpoint:    ExtendedEndpoint,
 	},
-	Command{
+	{
 		Description:  "Create secret",
 		Subject:      "secret",
 		AltSubject:   "sec",
@@ -48,7 +48,7 @@ var secretsCmds = []Command{
 		ExecuteFunc: secretCreateCmd,
 		Endpoint:    ExtendedEndpoint,
 	},
-	Command{
+	{
 		Description:  "Delete secret",
 		Subject:      "secret",
 		AltSubject:   "sec",
@@ -80,27 +80,27 @@ func secretsListCmd(c *Command, client interfaces.MetalCloudClient) (string, err
 	}
 
 	schema := []SchemaField{
-		SchemaField{
+		{
 			FieldName: "ID",
 			FieldType: TypeInt,
 			FieldSize: 6,
 		},
-		SchemaField{
+		{
 			FieldName: "NAME",
 			FieldType: TypeString,
 			FieldSize: 20,
 		},
-		SchemaField{
+		{
 			FieldName: "USAGE",
 			FieldType: TypeString,
 			FieldSize: 20,
 		},
-		SchemaField{
+		{
 			FieldName: "CREATED",
 			FieldType: TypeString,
 			FieldSize: 20,
 		},
-		SchemaField{
+		{
 			FieldName: "UPDATED",
 			FieldType: TypeString,
 			FieldSize: 20,
@@ -119,6 +119,8 @@ func secretsListCmd(c *Command, client interfaces.MetalCloudClient) (string, err
 		})
 
 	}
+
+	TableSorter(schema).OrderBy(schema[0].FieldName).Sort(data)
 
 	return renderTable("Secrets", "", getStringParam(c.Arguments["format"]), data, schema)
 }

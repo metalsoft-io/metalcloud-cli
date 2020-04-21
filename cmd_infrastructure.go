@@ -13,7 +13,7 @@ import (
 //infrastructureCmds commands affecting infrastructures
 var infrastructureCmds = []Command{
 
-	Command{
+	{
 		Description:  "Creates an infrastructure.",
 		Subject:      "infrastructure",
 		AltSubject:   "infra",
@@ -29,7 +29,7 @@ var infrastructureCmds = []Command{
 		},
 		ExecuteFunc: infrastructureCreateCmd,
 	},
-	Command{
+	{
 		Description:  "Lists all infrastructures.",
 		Subject:      "infrastructure",
 		AltSubject:   "infra",
@@ -43,7 +43,7 @@ var infrastructureCmds = []Command{
 		},
 		ExecuteFunc: infrastructureListCmd,
 	},
-	Command{
+	{
 		Description:  "Delete an infrastructure.",
 		Subject:      "infrastructure",
 		AltSubject:   "infra",
@@ -58,7 +58,7 @@ var infrastructureCmds = []Command{
 		},
 		ExecuteFunc: infrastructureDeleteCmd,
 	},
-	Command{
+	{
 		Description:  "Deploy an infrastructure.",
 		Subject:      "infrastructure",
 		AltSubject:   "infra",
@@ -78,7 +78,7 @@ var infrastructureCmds = []Command{
 		},
 		ExecuteFunc: infrastructureDeployCmd,
 	},
-	Command{
+	{
 		Description:  "Get an infrastructure.",
 		Subject:      "infrastructure",
 		AltSubject:   "infra",
@@ -93,7 +93,7 @@ var infrastructureCmds = []Command{
 		},
 		ExecuteFunc: infrastructureGetCmd,
 	},
-	Command{
+	{
 		Description:  "Revert all changes of an infrastructure.",
 		Subject:      "infrastructure",
 		AltSubject:   "infra",
@@ -108,7 +108,7 @@ var infrastructureCmds = []Command{
 		},
 		ExecuteFunc: infrastructureRevertCmd,
 	},
-	Command{
+	{
 		Description:  "list stages of a workflow",
 		Subject:      "infrastructure",
 		AltSubject:   "infra",
@@ -160,32 +160,32 @@ func infrastructureListCmd(c *Command, client interfaces.MetalCloudClient) (stri
 	}
 
 	schema := []SchemaField{
-		SchemaField{
+		{
 			FieldName: "ID",
 			FieldType: TypeInt,
 			FieldSize: 6,
 		},
-		SchemaField{
+		{
 			FieldName: "LABEL",
 			FieldType: TypeString,
 			FieldSize: 15,
 		},
-		SchemaField{
+		{
 			FieldName: "OWNER",
 			FieldType: TypeString,
 			FieldSize: 20,
 		},
-		SchemaField{
+		{
 			FieldName: "REL.",
 			FieldType: TypeString,
 			FieldSize: 10,
 		},
-		SchemaField{
+		{
 			FieldName: "STATUS",
 			FieldType: TypeString,
 			FieldSize: 5,
 		},
-		SchemaField{
+		{
 			FieldName: "DATACENTER",
 			FieldType: TypeString,
 			FieldSize: 10,
@@ -217,6 +217,7 @@ func infrastructureListCmd(c *Command, client interfaces.MetalCloudClient) (stri
 		schema[1].FieldName).Sort(data)
 
 	topLine := fmt.Sprintf("Infrastructures I have access to (as %s) in datacenter %s\n", user, GetDatacenter())
+
 	return renderTable("Infrastructures", topLine, getStringParam(c.Arguments["format"]), data, schema)
 }
 
@@ -324,27 +325,27 @@ func infrastructureGetCmd(c *Command, client interfaces.MetalCloudClient) (strin
 
 	schema := []SchemaField{
 
-		SchemaField{
+		{
 			FieldName: "ID",
 			FieldType: TypeInt,
 			FieldSize: 6,
 		},
-		SchemaField{
+		{
 			FieldName: "OBJECT_TYPE",
 			FieldType: TypeString,
 			FieldSize: 15,
 		},
-		SchemaField{
+		{
 			FieldName: "LABEL",
 			FieldType: TypeString,
 			FieldSize: 10,
 		},
-		SchemaField{
+		{
 			FieldName: "DETAILS",
 			FieldType: TypeString,
 			FieldSize: 50,
 		},
-		SchemaField{
+		{
 			FieldName: "STATUS",
 			FieldType: TypeString,
 			FieldSize: 5,
@@ -500,32 +501,32 @@ func listWorkflowStagesCmd(c *Command, client interfaces.MetalCloudClient) (stri
 	}
 
 	schema := []SchemaField{
-		SchemaField{
+		{
 			FieldName: "ID",
 			FieldType: TypeInt,
 			FieldSize: 6,
 		},
-		SchemaField{
+		{
 			FieldName: "INFRASTRUCTRE",
 			FieldType: TypeString,
 			FieldSize: 5,
 		},
-		SchemaField{
+		{
 			FieldName: "STAGE",
 			FieldType: TypeString,
 			FieldSize: 4,
 		},
-		SchemaField{
+		{
 			FieldName: "TYPE",
 			FieldType: TypeString,
 			FieldSize: 4,
 		},
-		SchemaField{
+		{
 			FieldName: "RUNLEVEL",
 			FieldType: TypeInt,
 			FieldSize: 5,
 		},
-		SchemaField{
+		{
 			FieldName: "OUTPUT",
 			FieldType: TypeString,
 			FieldSize: 20,

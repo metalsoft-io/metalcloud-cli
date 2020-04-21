@@ -13,7 +13,7 @@ import (
 //instanceArrayCmds commands affecting instance arrays
 var instanceArrayCmds = []Command{
 
-	Command{
+	{
 		Description:  "Creates an instance array.",
 		Subject:      "instance-array",
 		AltSubject:   "ia",
@@ -42,7 +42,7 @@ var instanceArrayCmds = []Command{
 		},
 		ExecuteFunc: instanceArrayCreateCmd,
 	},
-	Command{
+	{
 		Description:  "Lists all instance arrays of an infrastructure.",
 		Subject:      "instance-array",
 		AltSubject:   "ia",
@@ -57,7 +57,7 @@ var instanceArrayCmds = []Command{
 		},
 		ExecuteFunc: instanceArrayListCmd,
 	},
-	Command{
+	{
 		Description:  "Delete instance array.",
 		Subject:      "instance-array",
 		AltSubject:   "ia",
@@ -72,7 +72,7 @@ var instanceArrayCmds = []Command{
 		},
 		ExecuteFunc: instanceArrayDeleteCmd,
 	},
-	Command{
+	{
 		Description:  "Edits an instance array.",
 		Subject:      "instance-array",
 		AltSubject:   "ia",
@@ -99,7 +99,7 @@ var instanceArrayCmds = []Command{
 		},
 		ExecuteFunc: instanceArrayEditCmd,
 	},
-	Command{
+	{
 		Description:  "Get an instance array.",
 		Subject:      "instance-array",
 		AltSubject:   "ia",
@@ -146,7 +146,7 @@ func instanceArrayCreateCmd(c *Command, client interfaces.MetalCloudClient) (str
 
 		stMatches := metalcloud.ServerTypeMatches{
 			ServerTypes: map[int]metalcloud.ServerTypeMatch{
-				serverType.ServerTypeID: metalcloud.ServerTypeMatch{
+				serverType.ServerTypeID: {
 					ServerCount: retIA.InstanceArrayInstanceCount,
 				},
 			},
@@ -236,22 +236,22 @@ func instanceArrayListCmd(c *Command, client interfaces.MetalCloudClient) (strin
 	}
 
 	schema := []SchemaField{
-		SchemaField{
+		{
 			FieldName: "ID",
 			FieldType: TypeInt,
 			FieldSize: 6,
 		},
-		SchemaField{
+		{
 			FieldName: "LABEL",
 			FieldType: TypeString,
 			FieldSize: 15,
 		},
-		SchemaField{
+		{
 			FieldName: "STATUS",
 			FieldType: TypeString,
 			FieldSize: 10,
 		},
-		SchemaField{
+		{
 			FieldName: "INST_CNT",
 			FieldType: TypeInt,
 			FieldSize: 10,
@@ -273,6 +273,8 @@ func instanceArrayListCmd(c *Command, client interfaces.MetalCloudClient) (strin
 			status,
 			ia.InstanceArrayOperation.InstanceArrayInstanceCount})
 	}
+
+	TableSorter(schema).OrderBy(schema[0].FieldName).Sort(data)
 
 	return renderTable("Instance Arrays", "", getStringParam(c.Arguments["format"]), data, schema)
 }
@@ -328,27 +330,27 @@ func instanceArrayGetCmd(c *Command, client interfaces.MetalCloudClient) (string
 
 	schema := []SchemaField{
 
-		SchemaField{
+		{
 			FieldName: "ID",
 			FieldType: TypeInt,
 			FieldSize: 6,
 		},
-		SchemaField{
+		{
 			FieldName: "SUBDOMAIN",
 			FieldType: TypeString,
 			FieldSize: 10,
 		},
-		SchemaField{
+		{
 			FieldName: "WAN_IP",
 			FieldType: TypeString,
 			FieldSize: 10,
 		},
-		SchemaField{
+		{
 			FieldName: "DETAILS",
 			FieldType: TypeString,
 			FieldSize: 10,
 		},
-		SchemaField{
+		{
 			FieldName: "STATUS",
 			FieldType: TypeString,
 			FieldSize: 5,
@@ -498,6 +500,8 @@ func instanceArrayGetCmd(c *Command, client interfaces.MetalCloudClient) (string
 		retIA.InstanceArrayID,
 		infra.InfrastructureLabel,
 		infra.InfrastructureID)
+
+	TableSorter(schema).OrderBy(schema[0].FieldName).Sort(data)
 
 	return renderTable("Instances", subtitle, getStringParam(c.Arguments["format"]), data, schema)
 }

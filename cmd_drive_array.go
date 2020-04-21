@@ -13,7 +13,7 @@ import (
 //driveArrayCmds commands affecting instance arrays
 var driveArrayCmds = []Command{
 
-	Command{
+	{
 		Description:  "Creates a drive array.",
 		Subject:      "drive-array",
 		AltSubject:   "da",
@@ -35,7 +35,7 @@ var driveArrayCmds = []Command{
 		},
 		ExecuteFunc: driveArrayCreateCmd,
 	},
-	Command{
+	{
 		Description:  "Edit a drive array.",
 		Subject:      "drive-array",
 		AltSubject:   "da",
@@ -56,7 +56,7 @@ var driveArrayCmds = []Command{
 		},
 		ExecuteFunc: driveArrayEditCmd,
 	},
-	Command{
+	{
 		Description:  "Lists all drive arrays of an infrastructure.",
 		Subject:      "drive-array",
 		AltSubject:   "da",
@@ -71,7 +71,7 @@ var driveArrayCmds = []Command{
 		},
 		ExecuteFunc: driveArrayListCmd,
 	},
-	Command{
+	{
 		Description:  "Delete a drive array.",
 		Subject:      "drive-array",
 		AltSubject:   "da",
@@ -86,7 +86,7 @@ var driveArrayCmds = []Command{
 		},
 		ExecuteFunc: driveArrayDeleteCmd,
 	},
-	Command{
+	{
 		Description:  "Gets a drive array.",
 		Subject:      "drive-array",
 		AltSubject:   "da",
@@ -240,42 +240,42 @@ func driveArrayListCmd(c *Command, client interfaces.MetalCloudClient) (string, 
 	}
 
 	schema := []SchemaField{
-		SchemaField{
+		{
 			FieldName: "ID",
 			FieldType: TypeInt,
 			FieldSize: 6,
 		},
-		SchemaField{
+		{
 			FieldName: "LABEL",
 			FieldType: TypeString,
 			FieldSize: 30,
 		},
-		SchemaField{
+		{
 			FieldName: "STATUS",
 			FieldType: TypeString,
 			FieldSize: 10,
 		},
-		SchemaField{
+		{
 			FieldName: "SIZE (MB)",
 			FieldType: TypeInt,
 			FieldSize: 10,
 		},
-		SchemaField{
+		{
 			FieldName: "TYPE",
 			FieldType: TypeString,
 			FieldSize: 10,
 		},
-		SchemaField{
+		{
 			FieldName: "ATTACHED TO",
 			FieldType: TypeString,
 			FieldSize: 30,
 		},
-		SchemaField{
+		{
 			FieldName: "DRV_CNT",
 			FieldType: TypeInt,
 			FieldSize: 10,
 		},
-		SchemaField{
+		{
 			FieldName: "TEMPLATE",
 			FieldType: TypeString,
 			FieldSize: 25,
@@ -323,6 +323,8 @@ func driveArrayListCmd(c *Command, client interfaces.MetalCloudClient) (string, 
 			da.DriveArrayOperation.DriveArrayCount,
 			volumeTemplateName})
 	}
+
+	TableSorter(schema).OrderBy(schema[0].FieldName).Sort(data)
 
 	return renderTable("Drive Arrays", "", getStringParam(c.Arguments["format"]), data, schema)
 }
@@ -389,42 +391,42 @@ func driveArrayGetCmd(c *Command, client interfaces.MetalCloudClient) (string, e
 	}
 
 	schema := []SchemaField{
-		SchemaField{
+		{
 			FieldName: "ID",
 			FieldType: TypeInt,
 			FieldSize: 6,
 		},
-		SchemaField{
+		{
 			FieldName: "LABEL",
 			FieldType: TypeString,
 			FieldSize: 30,
 		},
-		SchemaField{
+		{
 			FieldName: "STATUS",
 			FieldType: TypeString,
 			FieldSize: 10,
 		},
-		SchemaField{
+		{
 			FieldName: "SIZE (MB)",
 			FieldType: TypeInt,
 			FieldSize: 10,
 		},
-		SchemaField{
+		{
 			FieldName: "TYPE",
 			FieldType: TypeString,
 			FieldSize: 10,
 		},
-		SchemaField{
+		{
 			FieldName: "ATTACHED TO",
 			FieldType: TypeString,
 			FieldSize: 30,
 		},
-		SchemaField{
+		{
 			FieldName: "TEMPLATE",
 			FieldType: TypeString,
 			FieldSize: 25,
 		},
-		SchemaField{
+		{
 			FieldName: "DETAILS",
 			FieldType: TypeString,
 			FieldSize: 25,
@@ -499,6 +501,7 @@ func driveArrayGetCmd(c *Command, client interfaces.MetalCloudClient) (string, e
 	}
 	subtitle = fmt.Sprintf("%s has the following drives:", subtitle)
 
+	TableSorter(schema).OrderBy(schema[0].FieldName).Sort(data)
 	return renderTable("Drives", subtitle, getStringParam(c.Arguments["format"]), data, schema)
 }
 

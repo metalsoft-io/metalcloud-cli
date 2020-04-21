@@ -13,7 +13,7 @@ import (
 
 var firewallRuleCmds = []Command{
 
-	Command{
+	{
 		Description:  "Lists instance array firewall rules",
 		Subject:      "firewall-rule",
 		AltSubject:   "fw",
@@ -28,7 +28,7 @@ var firewallRuleCmds = []Command{
 		},
 		ExecuteFunc: firewallRuleListCmd,
 	},
-	Command{
+	{
 		Description:  "Add instance array firewall rule",
 		Subject:      "firewall-rule",
 		AltSubject:   "fw",
@@ -48,7 +48,7 @@ var firewallRuleCmds = []Command{
 		},
 		ExecuteFunc: firewallRuleAddCmd,
 	},
-	Command{
+	{
 		Description:  "Remove instance array firewall rule",
 		Subject:      "firewall-rule",
 		AltSubject:   "fw",
@@ -87,42 +87,42 @@ func firewallRuleListCmd(c *Command, client interfaces.MetalCloudClient) (string
 	}
 
 	schema := []SchemaField{
-		SchemaField{
+		{
 			FieldName: "INDEX",
 			FieldType: TypeInt,
 			FieldSize: 6,
 		},
-		SchemaField{
+		{
 			FieldName: "PROTOCOL",
 			FieldType: TypeString,
 			FieldSize: 10,
 		},
-		SchemaField{
+		{
 			FieldName: "PORT",
 			FieldType: TypeString,
 			FieldSize: 10,
 		},
-		SchemaField{
+		{
 			FieldName: "SOURCE",
 			FieldType: TypeString,
 			FieldSize: 20,
 		},
-		SchemaField{
+		{
 			FieldName: "DEST",
 			FieldType: TypeString,
 			FieldSize: 20,
 		},
-		SchemaField{
+		{
 			FieldName: "TYPE",
 			FieldType: TypeString,
 			FieldSize: 5,
 		},
-		SchemaField{
+		{
 			FieldName: "ENABLED",
 			FieldType: TypeBool,
 			FieldSize: 10,
 		},
-		SchemaField{
+		{
 			FieldName: "DESC.",
 			FieldType: TypeString,
 			FieldSize: 50,
@@ -185,6 +185,9 @@ func firewallRuleListCmd(c *Command, client interfaces.MetalCloudClient) (string
 	}
 
 	topLine := fmt.Sprintf("Instance Array %s (%d) [%s] has the following firewall rules:\n", retIA.InstanceArrayLabel, retIA.InstanceArrayID, status)
+
+	TableSorter(schema).OrderBy(schema[0].FieldName).Sort(data)
+
 	return renderTable("Rules", topLine, getStringParam(c.Arguments["format"]), data, schema)
 }
 

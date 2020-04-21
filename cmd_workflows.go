@@ -12,7 +12,7 @@ import (
 
 var workflowCmds = []Command{
 
-	Command{
+	{
 		Description:  "Lists available workflows",
 		Subject:      "workflow",
 		AltSubject:   "wf",
@@ -28,7 +28,7 @@ var workflowCmds = []Command{
 		ExecuteFunc: workflowsListCmd,
 		Endpoint:    DeveloperEndpoint,
 	},
-	Command{
+	{
 		Description:  "Get workflow details",
 		Subject:      "workflow",
 		AltSubject:   "wf",
@@ -44,7 +44,7 @@ var workflowCmds = []Command{
 		ExecuteFunc: workflowGetCmd,
 		Endpoint:    DeveloperEndpoint,
 	},
-	Command{
+	{
 		Description:  "Create workflow ",
 		Subject:      "workflow",
 		AltSubject:   "wf",
@@ -65,7 +65,7 @@ var workflowCmds = []Command{
 		ExecuteFunc: workflowCreateCmd,
 		Endpoint:    DeveloperEndpoint,
 	},
-	Command{
+	{
 		Description:  "Delete a stage from a workflow",
 		Subject:      "workflow",
 		AltSubject:   "wf",
@@ -94,47 +94,47 @@ func workflowsListCmd(c *Command, client interfaces.MetalCloudClient) (string, e
 	}
 
 	schema := []SchemaField{
-		SchemaField{
+		{
 			FieldName: "ID",
 			FieldType: TypeInt,
 			FieldSize: 6,
 		},
-		SchemaField{
+		{
 			FieldName: "LABEL",
 			FieldType: TypeString,
 			FieldSize: 6,
 		},
-		SchemaField{
+		{
 			FieldName: "USAGE",
 			FieldType: TypeString,
 			FieldSize: 5,
 		},
-		SchemaField{
+		{
 			FieldName: "DESCRIPTION",
 			FieldType: TypeString,
 			FieldSize: 5,
 		},
-		SchemaField{
+		{
 			FieldName: "TITLE",
 			FieldType: TypeString,
 			FieldSize: 5,
 		},
-		SchemaField{
+		{
 			FieldName: "OWNER",
 			FieldType: TypeString,
 			FieldSize: 5,
 		},
-		SchemaField{
+		{
 			FieldName: "DEPRECATED",
 			FieldType: TypeBool,
 			FieldSize: 5,
 		},
-		SchemaField{
+		{
 			FieldName: "CREATED",
 			FieldType: TypeString,
 			FieldSize: 5,
 		},
-		SchemaField{
+		{
 			FieldName: "UPDATED",
 			FieldType: TypeString,
 			FieldSize: 4,
@@ -163,6 +163,8 @@ func workflowsListCmd(c *Command, client interfaces.MetalCloudClient) (string, e
 
 	}
 
+	TableSorter(schema).OrderBy(schema[0].FieldName).Sort(data)
+
 	return renderTable("Workflows", "", getStringParam(c.Arguments["format"]), data, schema)
 }
 
@@ -174,12 +176,12 @@ func workflowGetCmd(c *Command, client interfaces.MetalCloudClient) (string, err
 	}
 
 	schema := []SchemaField{
-		SchemaField{
+		{
 			FieldName: "RUNLEVEL",
 			FieldType: TypeInt,
 			FieldSize: 6,
 		},
-		SchemaField{
+		{
 			FieldName: "STAGES",
 			FieldType: TypeString,
 			FieldSize: 6,
@@ -216,6 +218,8 @@ func workflowGetCmd(c *Command, client interfaces.MetalCloudClient) (string, err
 		})
 
 	}
+
+	TableSorter(schema).OrderBy(schema[0].FieldName).Sort(data)
 
 	topLine := fmt.Sprintf("Workflow %s (%d) has the following stages:", wf.WorkflowLabel, wf.WorkflowID)
 	return renderTable("Stages", topLine, getStringParam(c.Arguments["format"]), data, schema)

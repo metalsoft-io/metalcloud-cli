@@ -111,25 +111,25 @@ func TestDriveArrayCreate(t *testing.T) {
 
 	errorArguments := []map[string]interface{}{
 		//no infrastructure_id_or_label
-		map[string]interface{}{
+		{
 			//"infrastructure_id_or_label": &i,
 			"volume_template_id_or_label": &s,
 			"instance_array_id_or_label":  &ii,
 		},
 		//no volume template
-		map[string]interface{}{
+		{
 			"infrastructure_id_or_label": &infra.InfrastructureID,
 			//"volume_template_id_or_label": &i,
 			"instance_array_id_or_label": &ii,
 		},
 		//no instance_array id
-		map[string]interface{}{
+		{
 			"infrastructure_id_or_label":  &infra.InfrastructureID,
 			"volume_template_id_or_label": &ii,
 			//"instance_array_id_or_label":  &i,
 		},
 		//empty label
-		map[string]interface{}{
+		{
 			"infrastructure_id_or_label":  &infra.InfrastructureID,
 			"volume_template_id_or_label": &ii,
 			"instance_array_id_or_label":  &ii,
@@ -292,7 +292,7 @@ func TestDriveArrayEdit(t *testing.T) {
 
 	//check missing values
 	errorArguments := []map[string]interface{}{
-		map[string]interface{}{
+		{
 			//"drive_array_id": &i,
 		},
 	}
@@ -348,7 +348,7 @@ func TestDriveArrayListCmd(t *testing.T) {
 
 	//check missing params
 	errorArguments := []map[string]interface{}{
-		map[string]interface{}{
+		{
 			//"infrastructure_id": &i,
 		},
 	}
@@ -674,7 +674,7 @@ func TestDriveArrayGetCmd(t *testing.T) {
 		AnyTimes()
 
 	dlist := map[string]metalcloud.Drive{
-		"da-1": metalcloud.Drive{
+		"da-1": {
 			DriveID: 112,
 		},
 	}
@@ -704,5 +704,3 @@ func TestDriveArrayGetCmd(t *testing.T) {
 	testGetCommand(driveArrayGetCmd, cases, client, expectedFirstRow, t)
 
 }
-
-

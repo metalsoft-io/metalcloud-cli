@@ -10,7 +10,7 @@ import (
 
 var serversCmds = []Command{
 
-	Command{
+	{
 		Description:  "Lists available servers",
 		Subject:      "server",
 		AltSubject:   "srv",
@@ -28,7 +28,7 @@ var serversCmds = []Command{
 		Endpoint:    DeveloperEndpoint,
 	},
 
-	Command{
+	{
 		Description:  "Get server details",
 		Subject:      "server",
 		AltSubject:   "srv",
@@ -58,57 +58,57 @@ func serversListCmd(c *Command, client interfaces.MetalCloudClient) (string, err
 	}
 
 	schema := []SchemaField{
-		SchemaField{
+		{
 			FieldName: "ID",
 			FieldType: TypeInt,
 			FieldSize: 6,
 		},
-		SchemaField{
+		{
 			FieldName: "DATACENTER_NAME",
 			FieldType: TypeString,
 			FieldSize: 6,
 		},
-		SchemaField{
+		{
 			FieldName: "SERVER_TYPE",
 			FieldType: TypeString,
 			FieldSize: 6,
 		},
-		SchemaField{
+		{
 			FieldName: "STATUS",
 			FieldType: TypeString,
 			FieldSize: 5,
 		},
-		SchemaField{
+		{
 			FieldName: "VENDOR",
 			FieldType: TypeString,
 			FieldSize: 5,
 		},
-		SchemaField{
+		{
 			FieldName: "PRODUCT_NAME",
 			FieldType: TypeString,
 			FieldSize: 5,
 		},
-		SchemaField{
+		{
 			FieldName: "SERIAL_NUMBER",
 			FieldType: TypeString,
 			FieldSize: 5,
 		},
-		SchemaField{
+		{
 			FieldName: "CONFIG.",
 			FieldType: TypeString,
 			FieldSize: 5,
 		},
-		SchemaField{
+		{
 			FieldName: "TAGS",
 			FieldType: TypeString,
 			FieldSize: 4,
 		},
-		SchemaField{
+		{
 			FieldName: "IPMI_HOST",
 			FieldType: TypeString,
 			FieldSize: 5,
 		},
-		SchemaField{
+		{
 			FieldName: "ALLOCATED_TO.",
 			FieldType: TypeString,
 			FieldSize: 5,
@@ -221,62 +221,62 @@ func serverGetCmd(c *Command, client interfaces.MetalCloudClient) (string, error
 	}
 
 	schema := []SchemaField{
-		SchemaField{
+		{
 			FieldName: "ID",
 			FieldType: TypeInt,
 			FieldSize: 6,
 		},
-		SchemaField{
+		{
 			FieldName: "DATACENTER_NAME",
 			FieldType: TypeString,
 			FieldSize: 6,
 		},
-		SchemaField{
+		{
 			FieldName: "SERVER_TYPE",
 			FieldType: TypeString,
 			FieldSize: 6,
 		},
-		SchemaField{
+		{
 			FieldName: "STATUS",
 			FieldType: TypeString,
 			FieldSize: 5,
 		},
-		SchemaField{
+		{
 			FieldName: "VENDOR",
 			FieldType: TypeString,
 			FieldSize: 5,
 		},
-		SchemaField{
+		{
 			FieldName: "PRODUCT_NAME",
 			FieldType: TypeString,
 			FieldSize: 5,
 		},
-		SchemaField{
+		{
 			FieldName: "SERIAL_NUMBER",
 			FieldType: TypeString,
 			FieldSize: 5,
 		},
-		SchemaField{
+		{
 			FieldName: "CONFIG.",
 			FieldType: TypeString,
 			FieldSize: 5,
 		},
-		SchemaField{
+		{
 			FieldName: "DISKS",
 			FieldType: TypeString,
 			FieldSize: 5,
 		},
-		SchemaField{
+		{
 			FieldName: "TAGS",
 			FieldType: TypeString,
 			FieldSize: 4,
 		},
-		SchemaField{
+		{
 			FieldName: "IPMI_HOST",
 			FieldType: TypeString,
 			FieldSize: 5,
 		},
-		SchemaField{
+		{
 			FieldName: "ALLOCATED_TO.",
 			FieldType: TypeString,
 			FieldSize: 5,

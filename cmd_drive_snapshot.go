@@ -12,7 +12,7 @@ import (
 //driveArrayCmds commands affecting instance arrays
 var driveSnapshotCmds = []Command{
 
-	Command{
+	{
 		Description:  "Creates a drive snapshot.",
 		Subject:      "drive-snapshot",
 		AltSubject:   "snapshot",
@@ -27,7 +27,7 @@ var driveSnapshotCmds = []Command{
 		},
 		ExecuteFunc: driveSnapshotCreateCmd,
 	},
-	Command{
+	{
 		Description:  "Lists drive snapshots",
 		Subject:      "drive-snapshot",
 		AltSubject:   "snapshot",
@@ -42,7 +42,7 @@ var driveSnapshotCmds = []Command{
 		},
 		ExecuteFunc: driveSnapshotListCmd,
 	},
-	Command{
+	{
 		Description:  "Delete snapshot",
 		Subject:      "drive-snapshot",
 		AltSubject:   "snapshot",
@@ -57,7 +57,7 @@ var driveSnapshotCmds = []Command{
 		},
 		ExecuteFunc: driveSnapshotDeleteCmd,
 	},
-	Command{
+	{
 		Description:  "Rollback snapshot",
 		Subject:      "drive-snapshot",
 		AltSubject:   "snapshot",
@@ -101,22 +101,22 @@ func driveSnapshotListCmd(c *Command, client interfaces.MetalCloudClient) (strin
 	}
 
 	schema := []SchemaField{
-		SchemaField{
+		{
 			FieldName: "ID",
 			FieldType: TypeInt,
 			FieldSize: 6,
 		},
-		SchemaField{
+		{
 			FieldName: "LABEL",
 			FieldType: TypeString,
 			FieldSize: 30,
 		},
-		SchemaField{
+		{
 			FieldName: "DRIVE_ID",
 			FieldType: TypeInt,
 			FieldSize: 10,
 		},
-		SchemaField{
+		{
 			FieldName: "CREATED",
 			FieldType: TypeString,
 			FieldSize: 10,
@@ -140,7 +140,10 @@ func driveSnapshotListCmd(c *Command, client interfaces.MetalCloudClient) (strin
 
 	}
 
+	TableSorter(schema).OrderBy(schema[0].FieldName).Sort(data)
+
 	subtitle := fmt.Sprintf("Snapshots of drive #%d", driveID)
+
 	return renderTable("Snapshots", subtitle, getStringParam(c.Arguments["format"]), data, schema)
 }
 

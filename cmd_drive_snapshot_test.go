@@ -43,7 +43,7 @@ func TestSnapshotsListCmd(t *testing.T) {
 	client := mock_metalcloud.NewMockMetalCloudClient(ctrl)
 
 	s := map[string]metalcloud.Snapshot{
-		"test": metalcloud.Snapshot{
+		"test": {
 			DriveSnapshotID: 100,
 		},
 	}

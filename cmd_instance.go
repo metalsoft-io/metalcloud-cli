@@ -13,7 +13,7 @@ import (
 //instanceCmds commands affecting instances
 var instanceCmds = []Command{
 
-	Command{
+	{
 		Description:  "Control power an instance",
 		Subject:      "instance",
 		AltSubject:   "instance",
@@ -30,7 +30,7 @@ var instanceCmds = []Command{
 		ExecuteFunc: instancePowerControlCmd,
 	},
 
-	Command{
+	{
 		Description:  "Show an instance's credentials",
 		Subject:      "instance",
 		AltSubject:   "instance",
@@ -45,24 +45,6 @@ var instanceCmds = []Command{
 		},
 		ExecuteFunc: instanceCredentialsCmd,
 	},
-	/*
-		Command{
-			Description:  "Instance change server type",
-			Subject:      "instance",
-			AltSubject:   "instance",
-			Predicate:    "server-type-change",
-			AltPredicate: "st-change",
-			FlagSet:      flag.NewFlagSet("instance credentials", flag.ExitOnError),
-			InitFunc: func(c *Command) {
-				c.Arguments = map[string]interface{}{
-					"instance_id": c.FlagSet.Int("id", _nilDefaultInt, "(Required) Instances's id . Note that the 'label' this be ambiguous in certain situations."),
-					"server_type": c.FlagSet.String("server-type", _nilDefaultStr, "(Required) Server type id or label."),
-					"autoconfirm": c.FlagSet.Bool("autoconfirm", false, "If true it does not ask for confirmation anymore"),
-				}
-			},
-			ExecuteFunc: instanceServerTypeChangeCmd,
-		},
-	*/
 }
 
 func instancePowerControlCmd(c *Command, client interfaces.MetalCloudClient) (string, error) {
@@ -159,32 +141,32 @@ func instanceCredentialsCmd(c *Command, client interfaces.MetalCloudClient) (str
 
 	schema := []SchemaField{
 
-		SchemaField{
+		{
 			FieldName: "ID",
 			FieldType: TypeInt,
 			FieldSize: 6,
 		},
-		SchemaField{
+		{
 			FieldName: "SUBDOMAIN",
 			FieldType: TypeString,
 			FieldSize: 10,
 		},
-		SchemaField{
+		{
 			FieldName: "INSTANCE_ARRAY",
 			FieldType: TypeString,
 			FieldSize: 10,
 		},
-		SchemaField{
+		{
 			FieldName: "INFRASTRUCTURE",
 			FieldType: TypeString,
 			FieldSize: 10,
 		},
-		SchemaField{
+		{
 			FieldName: "PUBLIC_IPs",
 			FieldType: TypeString,
 			FieldSize: 6,
 		},
-		SchemaField{
+		{
 			FieldName: "PRIVATE_IPs",
 			FieldType: TypeString,
 			FieldSize: 6,
@@ -206,17 +188,17 @@ func instanceCredentialsCmd(c *Command, client interfaces.MetalCloudClient) (str
 	if v := instance.InstanceCredentials.SSH; v != nil {
 
 		newFields := []SchemaField{
-			SchemaField{
+			{
 				FieldName: "SSH_USERNAME",
 				FieldType: TypeString,
 				FieldSize: 10,
 			},
-			SchemaField{
+			{
 				FieldName: "SSH_PASSWORD",
 				FieldType: TypeString,
 				FieldSize: 10,
 			},
-			SchemaField{
+			{
 				FieldName: "SSH_PORT",
 				FieldType: TypeInt,
 				FieldSize: 10,
@@ -236,17 +218,17 @@ func instanceCredentialsCmd(c *Command, client interfaces.MetalCloudClient) (str
 	if v := instance.InstanceCredentials.RDP; v != nil {
 
 		newFields := []SchemaField{
-			SchemaField{
+			{
 				FieldName: "RDP_USERNAME",
 				FieldType: TypeString,
 				FieldSize: 5,
 			},
-			SchemaField{
+			{
 				FieldName: "RDP_PASSWORD",
 				FieldType: TypeString,
 				FieldSize: 5,
 			},
-			SchemaField{
+			{
 				FieldName: "RDP_PORT",
 				FieldType: TypeInt,
 				FieldSize: 5,
@@ -265,17 +247,17 @@ func instanceCredentialsCmd(c *Command, client interfaces.MetalCloudClient) (str
 	if v := instance.InstanceCredentials.ISCSI; v != nil {
 
 		newFields := []SchemaField{
-			SchemaField{
+			{
 				FieldName: "INITIATOR_IQN",
 				FieldType: TypeString,
 				FieldSize: 5,
 			},
-			SchemaField{
+			{
 				FieldName: "ISCSI_USERNAME",
 				FieldType: TypeString,
 				FieldSize: 5,
 			},
-			SchemaField{
+			{
 				FieldName: "ISCSI_PASSWORD",
 				FieldType: TypeString,
 				FieldSize: 5,
@@ -295,22 +277,22 @@ func instanceCredentialsCmd(c *Command, client interfaces.MetalCloudClient) (str
 
 		for k, sd := range v {
 			newFields := []SchemaField{
-				SchemaField{
+				{
 					FieldName: fmt.Sprintf("SHARED_DRIVE_%d_TARGET_IP_ADDRESS", k),
 					FieldType: TypeString,
 					FieldSize: 5,
 				},
-				SchemaField{
+				{
 					FieldName: fmt.Sprintf("SHARED_DRIVE_%d_TARGET_PORT", k),
 					FieldType: TypeInt,
 					FieldSize: 5,
 				},
-				SchemaField{
+				{
 					FieldName: fmt.Sprintf("SHARED_DRIVE_%d_TARGET_IQN", k),
 					FieldType: TypeString,
 					FieldSize: 5,
 				},
-				SchemaField{
+				{
 					FieldName: fmt.Sprintf("SHARED_DRIVE_%d_LUN_ID", k),
 					FieldType: TypeString,
 					FieldSize: 5,

@@ -13,17 +13,17 @@ import (
 func TestGetTableHeader(t *testing.T) {
 
 	schema := []SchemaField{
-		SchemaField{
+		{
 			FieldName: "ID",
 			FieldType: TypeInt,
 			FieldSize: 6,
 		},
-		SchemaField{
+		{
 			FieldName: "LABEL",
 			FieldType: TypeString,
 			FieldSize: 20,
 		},
-		SchemaField{
+		{
 			FieldName:      "INST.",
 			FieldType:      TypeFloat,
 			FieldSize:      6,
@@ -42,23 +42,23 @@ func TestGetTableHeader(t *testing.T) {
 func TestGetTableRow(t *testing.T) {
 	RegisterTestingT(t)
 	schema := []SchemaField{
-		SchemaField{
+		{
 			FieldName: "ID",
 			FieldType: TypeInt,
 			FieldSize: 6,
 		},
-		SchemaField{
+		{
 			FieldName: "LABEL",
 			FieldType: TypeString,
 			FieldSize: 20,
 		},
-		SchemaField{
+		{
 			FieldName:      "INST.",
 			FieldType:      TypeFloat,
 			FieldSize:      6,
 			FieldPrecision: 2,
 		},
-		SchemaField{
+		{
 			FieldName: "INTF",
 			FieldSize: 5,
 			FieldType: TypeInterface,
@@ -75,17 +75,17 @@ func TestGetTableRow(t *testing.T) {
 
 func TestGetTableDelimiter(t *testing.T) {
 	schema := []SchemaField{
-		SchemaField{
+		{
 			FieldName: "ID",
 			FieldType: TypeInt,
 			FieldSize: 6,
 		},
-		SchemaField{
+		{
 			FieldName: "LABEL",
 			FieldType: TypeString,
 			FieldSize: 20,
 		},
-		SchemaField{
+		{
 			FieldName:      "INST.",
 			FieldType:      TypeFloat,
 			FieldSize:      6,
@@ -104,17 +104,17 @@ func TestGetTableDelimiter(t *testing.T) {
 
 func TestGetTableAsString(t *testing.T) {
 	schema := []SchemaField{
-		SchemaField{
+		{
 			FieldName: "ID",
 			FieldType: TypeInt,
 			FieldSize: 6,
 		},
-		SchemaField{
+		{
 			FieldName: "LABEL",
 			FieldType: TypeString,
 			FieldSize: 20,
 		},
-		SchemaField{
+		{
 			FieldName:      "INST.",
 			FieldType:      TypeFloat,
 			FieldSize:      6,
@@ -147,17 +147,17 @@ func TestGetTableAsString(t *testing.T) {
 func TestGetTableAsJSONString(t *testing.T) {
 	RegisterTestingT(t)
 	schema := []SchemaField{
-		SchemaField{
+		{
 			FieldName: "ID",
 			FieldType: TypeInt,
 			FieldSize: 6,
 		},
-		SchemaField{
+		{
 			FieldName: "LABEL",
 			FieldType: TypeString,
 			FieldSize: 20,
 		},
-		SchemaField{
+		{
 			FieldName:      "INST.",
 			FieldType:      TypeFloat,
 			FieldSize:      6,
@@ -191,17 +191,17 @@ func TestGetTableAsJSONString(t *testing.T) {
 func TestGetTableAsCSVString(t *testing.T) {
 
 	schema := []SchemaField{
-		SchemaField{
+		{
 			FieldName: "ID",
 			FieldType: TypeInt,
 			FieldSize: 6,
 		},
-		SchemaField{
+		{
 			FieldName: "LABEL",
 			FieldType: TypeString,
 			FieldSize: 20,
 		},
-		SchemaField{
+		{
 			FieldName:      "INST.",
 			FieldType:      TypeFloat,
 			FieldSize:      6,
@@ -234,23 +234,23 @@ func TestGetTableAsCSVString(t *testing.T) {
 func TestAdjustFieldSizes(t *testing.T) {
 	RegisterTestingT(t)
 	schema := []SchemaField{
-		SchemaField{
+		{
 			FieldName: "ID",
 			FieldType: TypeInt,
 			FieldSize: 3,
 		},
-		SchemaField{
+		{
 			FieldName: "LABEL",
 			FieldType: TypeString,
 			FieldSize: 5, //this is smaller than the largest
 		},
-		SchemaField{
+		{
 			FieldName:      "INST.",
 			FieldType:      TypeFloat,
 			FieldSize:      0,
 			FieldPrecision: 4,
 		},
-		SchemaField{
+		{
 			FieldName:      "VERY LONG FIELD NAME",
 			FieldType:      TypeString,
 			FieldSize:      4,
@@ -277,23 +277,23 @@ func TestAdjustFieldSizes(t *testing.T) {
 func TestRenderTable(t *testing.T) {
 	RegisterTestingT(t)
 	schema := []SchemaField{
-		SchemaField{
+		{
 			FieldName: "ID",
 			FieldType: TypeInt,
 			FieldSize: 3,
 		},
-		SchemaField{
+		{
 			FieldName: "LABEL",
 			FieldType: TypeString,
 			FieldSize: 5,
 		},
-		SchemaField{
+		{
 			FieldName:      "INST.",
 			FieldType:      TypeFloat,
 			FieldSize:      0,
 			FieldPrecision: 4,
 		},
-		SchemaField{
+		{
 			FieldName:      "VERY LONG FIELD NAME",
 			FieldType:      TypeString,
 			FieldSize:      4,
@@ -420,23 +420,23 @@ func TestConvertToStringTable(t *testing.T) {
 func TestRenderTransposedTable(t *testing.T) {
 	RegisterTestingT(t)
 	schema := []SchemaField{
-		SchemaField{
+		{
 			FieldName: "ID",
 			FieldType: TypeInt,
 			FieldSize: 3,
 		},
-		SchemaField{
+		{
 			FieldName: "LABEL",
 			FieldType: TypeString,
 			FieldSize: 5,
 		},
-		SchemaField{
+		{
 			FieldName:      "INST.",
 			FieldType:      TypeFloat,
 			FieldSize:      0,
 			FieldPrecision: 4,
 		},
-		SchemaField{
+		{
 			FieldName:      "VERY LONG FIELD NAME",
 			FieldType:      TypeString,
 			FieldSize:      4,

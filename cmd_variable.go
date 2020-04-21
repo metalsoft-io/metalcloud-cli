@@ -13,7 +13,7 @@ import (
 
 var variablesCmds = []Command{
 
-	Command{
+	{
 		Description:  "Lists available variables",
 		Subject:      "variable",
 		AltSubject:   "var",
@@ -29,7 +29,7 @@ var variablesCmds = []Command{
 		ExecuteFunc: variablesListCmd,
 		Endpoint:    ExtendedEndpoint,
 	},
-	Command{
+	{
 		Description:  "Create variable",
 		Subject:      "variable",
 		AltSubject:   "var",
@@ -47,7 +47,7 @@ var variablesCmds = []Command{
 		ExecuteFunc: variableCreateCmd,
 		Endpoint:    ExtendedEndpoint,
 	},
-	Command{
+	{
 		Description:  "Delete variable",
 		Subject:      "variable",
 		AltSubject:   "var",
@@ -79,27 +79,27 @@ func variablesListCmd(c *Command, client interfaces.MetalCloudClient) (string, e
 	}
 
 	schema := []SchemaField{
-		SchemaField{
+		{
 			FieldName: "ID",
 			FieldType: TypeInt,
 			FieldSize: 6,
 		},
-		SchemaField{
+		{
 			FieldName: "NAME",
 			FieldType: TypeString,
 			FieldSize: 20,
 		},
-		SchemaField{
+		{
 			FieldName: "USAGE",
 			FieldType: TypeString,
 			FieldSize: 20,
 		},
-		SchemaField{
+		{
 			FieldName: "CREATED",
 			FieldType: TypeString,
 			FieldSize: 20,
 		},
-		SchemaField{
+		{
 			FieldName: "UPDATED",
 			FieldType: TypeString,
 			FieldSize: 20,
@@ -118,6 +118,8 @@ func variablesListCmd(c *Command, client interfaces.MetalCloudClient) (string, e
 		})
 
 	}
+
+	TableSorter(schema).OrderBy(schema[0].FieldName).Sort(data)
 
 	return renderTable("Variables", "", getStringParam(c.Arguments["format"]), data, schema)
 }

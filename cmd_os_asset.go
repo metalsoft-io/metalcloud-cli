@@ -13,7 +13,7 @@ import (
 
 var osAssetsCmds = []Command{
 
-	Command{
+	{
 		Description:  "Lists available Assets",
 		Subject:      "asset",
 		AltSubject:   "asset",
@@ -29,7 +29,7 @@ var osAssetsCmds = []Command{
 		ExecuteFunc: assetsListCmd,
 		Endpoint:    ExtendedEndpoint,
 	},
-	Command{
+	{
 		Description:  "Create asset",
 		Subject:      "asset",
 		AltSubject:   "asset",
@@ -49,7 +49,7 @@ var osAssetsCmds = []Command{
 		ExecuteFunc: assetCreateCmd,
 		Endpoint:    ExtendedEndpoint,
 	},
-	Command{
+	{
 		Description:  "Delete asset",
 		Subject:      "asset",
 		AltSubject:   "asset",
@@ -65,7 +65,7 @@ var osAssetsCmds = []Command{
 		ExecuteFunc: assetDeleteCmd,
 		Endpoint:    ExtendedEndpoint,
 	},
-	Command{
+	{
 		Description:  "Add (associate) asset to template",
 		Subject:      "asset",
 		AltSubject:   "asset",
@@ -82,7 +82,7 @@ var osAssetsCmds = []Command{
 		ExecuteFunc: associateAssetCmd,
 		Endpoint:    ExtendedEndpoint,
 	},
-	Command{
+	{
 		Description:  "List associated assets",
 		Subject:      "asset",
 		AltSubject:   "asset",
@@ -108,37 +108,37 @@ func assetsListCmd(c *Command, client interfaces.MetalCloudClient) (string, erro
 	}
 
 	schema := []SchemaField{
-		SchemaField{
+		{
 			FieldName: "ID",
 			FieldType: TypeInt,
 			FieldSize: 2,
 		},
-		SchemaField{
+		{
 			FieldName: "FILENAME",
 			FieldType: TypeString,
 			FieldSize: 20,
 		},
-		SchemaField{
+		{
 			FieldName: "FILE_SIZE_BYTES",
 			FieldType: TypeInt,
 			FieldSize: 4,
 		},
-		SchemaField{
+		{
 			FieldName: "FILE_MIME",
 			FieldType: TypeString,
 			FieldSize: 20,
 		},
-		SchemaField{
+		{
 			FieldName: "USAGE",
 			FieldType: TypeString,
 			FieldSize: 5,
 		},
-		SchemaField{
+		{
 			FieldName: "SOURCE_URL",
 			FieldType: TypeString,
 			FieldSize: 5,
 		},
-		SchemaField{
+		{
 			FieldName: "CHECKSUM_SHA256",
 			FieldType: TypeString,
 			FieldSize: 5,
@@ -159,6 +159,8 @@ func assetsListCmd(c *Command, client interfaces.MetalCloudClient) (string, erro
 		})
 
 	}
+
+	TableSorter(schema).OrderBy(schema[0].FieldName).Sort(data)
 
 	return renderTable("Assets", "", getStringParam(c.Arguments["format"]), data, schema)
 }
@@ -302,37 +304,37 @@ func templateListAssociatedAssetsCmd(c *Command, client interfaces.MetalCloudCli
 	}
 
 	schema := []SchemaField{
-		SchemaField{
+		{
 			FieldName: "PATH",
 			FieldType: TypeString,
 			FieldSize: 5,
 		},
-		SchemaField{
+		{
 			FieldName: "ID",
 			FieldType: TypeInt,
 			FieldSize: 2,
 		},
-		SchemaField{
+		{
 			FieldName: "FILENAME",
 			FieldType: TypeString,
 			FieldSize: 20,
 		},
-		SchemaField{
+		{
 			FieldName: "FILE_SIZE_BYTES",
 			FieldType: TypeInt,
 			FieldSize: 4,
 		},
-		SchemaField{
+		{
 			FieldName: "FILE_MIME",
 			FieldType: TypeString,
 			FieldSize: 20,
 		},
-		SchemaField{
+		{
 			FieldName: "USAGE",
 			FieldType: TypeString,
 			FieldSize: 5,
 		},
-		SchemaField{
+		{
 			FieldName: "SOURCE_URL",
 			FieldType: TypeString,
 			FieldSize: 5,
