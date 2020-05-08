@@ -258,6 +258,7 @@ func fitlerCommandSet(commandSet []Command, clients map[string]interfaces.MetalC
 func getCommands(clients map[string]interfaces.MetalCloudClient) []Command {
 
 	commands := [][]Command{
+		datacenterCmds,
 		infrastructureCmds,
 		instanceArrayCmds,
 		instanceCmds,
@@ -364,7 +365,7 @@ func requestConfirmation(s string) (bool, error) {
 	return strings.Trim(string(yes), "\r\n ") == "yes", nil
 }
 
-func requestInputFromFile(path string) ([]byte, error) {
+func readInputFromFile(path string) ([]byte, error) {
 
 	file, err := os.Open(path)
 	if err != nil {

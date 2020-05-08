@@ -204,8 +204,7 @@ func stageDefinitionsListCmd(c *Command, client interfaces.MetalCloudClient) (st
 
 	}
 
-	TableSorter(schema).OrderBy(
-		schema[1].FieldName).Sort(data)
+	TableSorter(schema).OrderBy(schema[1].FieldName).Sort(data)
 
 	return renderTable("Stage Definitions", "", getStringParam(c.Arguments["format"]), data, schema)
 }
@@ -252,7 +251,7 @@ func stageDefinitionCreateCmd(c *Command, client interfaces.MetalCloudClient) (s
 
 			ab.AnsibleBundleArchiveFilename = *v.(*string)
 
-			content, err := requestInputFromFile(ab.AnsibleBundleArchiveFilename)
+			content, err := readInputFromFile(ab.AnsibleBundleArchiveFilename)
 			if err != nil {
 				return "", err
 			}
@@ -278,7 +277,7 @@ func stageDefinitionCreateCmd(c *Command, client interfaces.MetalCloudClient) (s
 		} else {
 			if filename, ok := getStringParamOk(c.Arguments["http_request_body_filename"]); ok {
 
-				c, err := requestInputFromFile(filename)
+				c, err := readInputFromFile(filename)
 				if err != nil {
 					return "", err
 				}

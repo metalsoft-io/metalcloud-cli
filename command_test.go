@@ -391,6 +391,7 @@ func testCreateCommand(f CommandExecuteFunc, cases []CommandTestCase, client int
 	for _, c := range cases {
 		t.Run(c.name, func(t *testing.T) {
 			//test without return id
+
 			_, err := f(&c.cmd, client)
 			if c.good {
 
@@ -403,23 +404,24 @@ func testCreateCommand(f CommandExecuteFunc, cases []CommandTestCase, client int
 					t.Errorf("Should have thrown error")
 				}
 			}
+			if c.id != 0 {
+				//test with return id
+				cmdWithReturn := c.cmd
+				bTrue := true
+				cmdWithReturn.Arguments["return_id"] = &bTrue
+				ret, err := f(&c.cmd, client)
+				if c.good {
+					if ret != fmt.Sprintf("%d", c.id) {
+						t.Error("id not returned")
+					}
+					if err != nil {
+						t.Errorf("error thrown: %v", err)
+					}
 
-			//test with return id
-			cmdWithReturn := c.cmd
-			bTrue := true
-			cmdWithReturn.Arguments["return_id"] = &bTrue
-			ret, err := f(&c.cmd, client)
-			if c.good {
-				if ret != fmt.Sprintf("%d", c.id) {
-					t.Error("id not returned")
-				}
-				if err != nil {
-					t.Errorf("error thrown: %v", err)
-				}
-
-			} else {
-				if err == nil {
-					t.Errorf("Should have thrown error")
+				} else {
+					if err == nil {
+						t.Errorf("Should have thrown error")
+					}
 				}
 			}
 		})

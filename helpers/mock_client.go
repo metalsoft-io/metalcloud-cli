@@ -76,6 +76,155 @@ func (mr *MockMetalCloudClientMockRecorder) InfrastructureDeployCustomStages(inf
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "InfrastructureDeployCustomStages", reflect.TypeOf((*MockMetalCloudClient)(nil).InfrastructureDeployCustomStages), infraID, stageDefinitionType)
 }
 
+// Datacenters mocks base method
+func (m *MockMetalCloudClient) Datacenters(onlyActive bool) (*map[string]metal_cloud_sdk_go.Datacenter, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "Datacenters", onlyActive)
+	ret0, _ := ret[0].(*map[string]metal_cloud_sdk_go.Datacenter)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// Datacenters indicates an expected call of Datacenters
+func (mr *MockMetalCloudClientMockRecorder) Datacenters(onlyActive interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Datacenters", reflect.TypeOf((*MockMetalCloudClient)(nil).Datacenters), onlyActive)
+}
+
+// DatacentersByUserID mocks base method
+func (m *MockMetalCloudClient) DatacentersByUserID(userID int, onlyActive bool) (*map[string]metal_cloud_sdk_go.Datacenter, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "DatacentersByUserID", userID, onlyActive)
+	ret0, _ := ret[0].(*map[string]metal_cloud_sdk_go.Datacenter)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// DatacentersByUserID indicates an expected call of DatacentersByUserID
+func (mr *MockMetalCloudClientMockRecorder) DatacentersByUserID(userID, onlyActive interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "DatacentersByUserID", reflect.TypeOf((*MockMetalCloudClient)(nil).DatacentersByUserID), userID, onlyActive)
+}
+
+// DatacentersByUserEmail mocks base method
+func (m *MockMetalCloudClient) DatacentersByUserEmail(userEmail string, onlyActive bool) (*map[string]metal_cloud_sdk_go.Datacenter, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "DatacentersByUserEmail", userEmail, onlyActive)
+	ret0, _ := ret[0].(*map[string]metal_cloud_sdk_go.Datacenter)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// DatacentersByUserEmail indicates an expected call of DatacentersByUserEmail
+func (mr *MockMetalCloudClientMockRecorder) DatacentersByUserEmail(userEmail, onlyActive interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "DatacentersByUserEmail", reflect.TypeOf((*MockMetalCloudClient)(nil).DatacentersByUserEmail), userEmail, onlyActive)
+}
+
+// DatacenterGet mocks base method
+func (m *MockMetalCloudClient) DatacenterGet(datacenterName string) (*metal_cloud_sdk_go.Datacenter, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "DatacenterGet", datacenterName)
+	ret0, _ := ret[0].(*metal_cloud_sdk_go.Datacenter)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// DatacenterGet indicates an expected call of DatacenterGet
+func (mr *MockMetalCloudClientMockRecorder) DatacenterGet(datacenterName interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "DatacenterGet", reflect.TypeOf((*MockMetalCloudClient)(nil).DatacenterGet), datacenterName)
+}
+
+// DatacenterGetForUserByEmail mocks base method
+func (m *MockMetalCloudClient) DatacenterGetForUserByEmail(datacenterName, userID string) (*metal_cloud_sdk_go.Datacenter, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "DatacenterGetForUserByEmail", datacenterName, userID)
+	ret0, _ := ret[0].(*metal_cloud_sdk_go.Datacenter)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// DatacenterGetForUserByEmail indicates an expected call of DatacenterGetForUserByEmail
+func (mr *MockMetalCloudClientMockRecorder) DatacenterGetForUserByEmail(datacenterName, userID interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "DatacenterGetForUserByEmail", reflect.TypeOf((*MockMetalCloudClient)(nil).DatacenterGetForUserByEmail), datacenterName, userID)
+}
+
+// DatacenterGetForUserByID mocks base method
+func (m *MockMetalCloudClient) DatacenterGetForUserByID(datacenterName string, userID int) (*metal_cloud_sdk_go.Datacenter, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "DatacenterGetForUserByID", datacenterName, userID)
+	ret0, _ := ret[0].(*metal_cloud_sdk_go.Datacenter)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// DatacenterGetForUserByID indicates an expected call of DatacenterGetForUserByID
+func (mr *MockMetalCloudClientMockRecorder) DatacenterGetForUserByID(datacenterName, userID interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "DatacenterGetForUserByID", reflect.TypeOf((*MockMetalCloudClient)(nil).DatacenterGetForUserByID), datacenterName, userID)
+}
+
+// DatacenterConfigGet mocks base method
+func (m *MockMetalCloudClient) DatacenterConfigGet(datacenterName string) (*metal_cloud_sdk_go.DatacenterConfig, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "DatacenterConfigGet", datacenterName)
+	ret0, _ := ret[0].(*metal_cloud_sdk_go.DatacenterConfig)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// DatacenterConfigGet indicates an expected call of DatacenterConfigGet
+func (mr *MockMetalCloudClientMockRecorder) DatacenterConfigGet(datacenterName interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "DatacenterConfigGet", reflect.TypeOf((*MockMetalCloudClient)(nil).DatacenterConfigGet), datacenterName)
+}
+
+// DatacenterConfigUpdate mocks base method
+func (m *MockMetalCloudClient) DatacenterConfigUpdate(datacenterName string, datacenterConfig metal_cloud_sdk_go.DatacenterConfig) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "DatacenterConfigUpdate", datacenterName, datacenterConfig)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// DatacenterConfigUpdate indicates an expected call of DatacenterConfigUpdate
+func (mr *MockMetalCloudClientMockRecorder) DatacenterConfigUpdate(datacenterName, datacenterConfig interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "DatacenterConfigUpdate", reflect.TypeOf((*MockMetalCloudClient)(nil).DatacenterConfigUpdate), datacenterName, datacenterConfig)
+}
+
+// DatacenterCreate mocks base method
+func (m *MockMetalCloudClient) DatacenterCreate(datacenter metal_cloud_sdk_go.Datacenter, datacenterConfig metal_cloud_sdk_go.DatacenterConfig) (*metal_cloud_sdk_go.Datacenter, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "DatacenterCreate", datacenter, datacenterConfig)
+	ret0, _ := ret[0].(*metal_cloud_sdk_go.Datacenter)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// DatacenterCreate indicates an expected call of DatacenterCreate
+func (mr *MockMetalCloudClientMockRecorder) DatacenterCreate(datacenter, datacenterConfig interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "DatacenterCreate", reflect.TypeOf((*MockMetalCloudClient)(nil).DatacenterCreate), datacenter, datacenterConfig)
+}
+
+// DatacenterAgentsConfigJSONDownloadURL mocks base method
+func (m *MockMetalCloudClient) DatacenterAgentsConfigJSONDownloadURL(datacenterName string, decrypt bool) (string, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "DatacenterAgentsConfigJSONDownloadURL", datacenterName, decrypt)
+	ret0, _ := ret[0].(string)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// DatacenterAgentsConfigJSONDownloadURL indicates an expected call of DatacenterAgentsConfigJSONDownloadURL
+func (mr *MockMetalCloudClientMockRecorder) DatacenterAgentsConfigJSONDownloadURL(datacenterName, decrypt interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "DatacenterAgentsConfigJSONDownloadURL", reflect.TypeOf((*MockMetalCloudClient)(nil).DatacenterAgentsConfigJSONDownloadURL), datacenterName, decrypt)
+}
+
 // DriveArrays mocks base method
 func (m *MockMetalCloudClient) DriveArrays(infrastructureID int) (*map[string]metal_cloud_sdk_go.DriveArray, error) {
 	m.ctrl.T.Helper()

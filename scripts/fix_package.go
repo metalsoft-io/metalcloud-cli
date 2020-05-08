@@ -44,6 +44,8 @@ var types = [...]string{
 	"Snapshot",
 	"ServerTypeMatches",
 	"ServerTypeMatch",
+	"Datacenter",
+	"DatacenterConfig",
 }
 
 const packageName = "metalcloud"

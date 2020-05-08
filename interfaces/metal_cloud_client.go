@@ -16,6 +16,26 @@ type MetalCloudClient interface {
 	InfrastructureDeployCustomStageDeleteIntoRunlevel(infraID int, stageID int, runLevel int, stageRunMoment string) error
 	//InfrastructureDeployCustomStages retrieves a list of all the metalcloud.StageDefinition objects which a specified metalcloud.User is allowed to see through ownership or delegation. The stageDefinition objects never return the actual protected stageDefinition value.
 	InfrastructureDeployCustomStages(infraID int, stageDefinitionType string) (*[]metalcloud.WorkflowStageAssociation, error)
+	//Datacenters returns datacenters for all users
+	Datacenters(onlyActive bool) (*map[string]metalcloud.Datacenter, error)
+	//DatacentersByUserID returns datacenters for specific user
+	DatacentersByUserID(userID int, onlyActive bool) (*map[string]metalcloud.Datacenter, error)
+	//DatacentersByUserEmail returns datacenters by email
+	DatacentersByUserEmail(userEmail string, onlyActive bool) (*map[string]metalcloud.Datacenter, error)
+	//DatacenterGet returns details of a specific datacenter
+	DatacenterGet(datacenterName string) (*metalcloud.Datacenter, error)
+	//DatacenterGetForUserByEmail returns details of a specific datacenter
+	DatacenterGetForUserByEmail(datacenterName string, userID string) (*metalcloud.Datacenter, error)
+	//DatacenterGetForUserByID returns details of a specific datacenter
+	DatacenterGetForUserByID(datacenterName string, userID int) (*metalcloud.Datacenter, error)
+	//DatacenterConfigGet returns details of a specific datacenter
+	DatacenterConfigGet(datacenterName string) (*metalcloud.DatacenterConfig, error)
+	//DatacenterConfigUpdate Updates configuration information for a specified metalcloud.Datacenter.
+	DatacenterConfigUpdate(datacenterName string, datacenterConfig metalcloud.DatacenterConfig) error
+	//DatacenterCreate creates a new metalcloud.Datacenter
+	DatacenterCreate(datacenter metalcloud.Datacenter, datacenterConfig metalcloud.DatacenterConfig) (*metalcloud.Datacenter, error)
+	//DatacenterAgentsConfigJSONDownloadURL returns the agent url (and automatically decrypts it)
+	DatacenterAgentsConfigJSONDownloadURL(datacenterName string, decrypt bool) (string, error)
 	//DriveArrays retrieves the list of drives arrays of an infrastructure
 	DriveArrays(infrastructureID int) (*map[string]metalcloud.DriveArray, error)
 	//DriveArraysByLabel retrieves the list of drives arrays of an infrastructure
@@ -215,7 +235,7 @@ type MetalCloudClient interface {
 	ServerComponents(serverID int, filter string) (*[]metalcloud.ServerComponent, error)
 	//ServerTypesMatchHardwareConfiguration Retrieves a list of server types that match the provided hardware configuration. The function does not check for availability, only compatibility, so physical servers associated with the returned server types might be unavailable.
 	ServerTypesMatchHardwareConfiguration(datacenterName string, hardwareConfiguration metalcloud.HardwareConfiguration) (*map[int]metalcloud.ServerType, error)
-	//ServerTypeDatacenter retrieves all the server type IDs for servers found in a specified Datacenter
+	//ServerTypeDatacenter retrieves all the server type IDs for servers found in a specified metalcloud.Datacenter
 	ServerTypeDatacenter(datacenterName string) (*[]int, error)
 	//ServerTypes retrieves all metalcloud.ServerType objects from the database.
 	ServerTypes(datacenterName string, bOnlyAvailable bool) (*map[int]metalcloud.ServerType, error)
