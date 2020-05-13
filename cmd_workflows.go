@@ -26,7 +26,7 @@ var workflowCmds = []Command{
 			}
 		},
 		ExecuteFunc: workflowsListCmd,
-		Endpoint:    DeveloperEndpoint,
+		Endpoint:    ExtendedEndpoint,
 	},
 	{
 		Description:  "Get workflow details",
@@ -42,7 +42,7 @@ var workflowCmds = []Command{
 			}
 		},
 		ExecuteFunc: workflowGetCmd,
-		Endpoint:    DeveloperEndpoint,
+		Endpoint:    ExtendedEndpoint,
 	},
 	{
 		Description:  "Create workflow ",
@@ -63,7 +63,7 @@ var workflowCmds = []Command{
 			}
 		},
 		ExecuteFunc: workflowCreateCmd,
-		Endpoint:    DeveloperEndpoint,
+		Endpoint:    ExtendedEndpoint,
 	},
 	{
 		Description:  "Delete a stage from a workflow",
