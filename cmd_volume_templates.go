@@ -25,6 +25,7 @@ var volumeTemplateyCmds = []Command{
 			}
 		},
 		ExecuteFunc: volumeTemplatesListCmd,
+		Endpoint:    ExtendedEndpoint,
 	},
 	{
 		Description:  "Create volume templates",
@@ -47,6 +48,7 @@ var volumeTemplateyCmds = []Command{
 			}
 		},
 		ExecuteFunc: volumeTemplateCreateCmd,
+		Endpoint:    ExtendedEndpoint,
 	},
 }
 
