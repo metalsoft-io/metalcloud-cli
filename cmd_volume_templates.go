@@ -42,7 +42,7 @@ var volumeTemplateyCmds = []Command{
 				"display_name":           c.FlagSet.String("name", _nilDefaultStr, "(Required) The display name of the volume template"),
 				"boot_type":              c.FlagSet.String("boot-type", _nilDefaultStr, "(Required) The boot_type of the volume template. Possible values: 'uefi_only','legacy_only','hybrid' "),
 				"boot_methods_supported": c.FlagSet.String("boot-methods-supported", _nilDefaultStr, "The boot_methods_supported of the volume template. Defaults to 'pxe_iscsi'."),
-				"deprecated":             c.FlagSet.Bool("deprecated", false, "(Flag) set to true if this template is deprecated"),
+				"deprecation_status":     c.FlagSet.String("deprecation-status", _nilDefaultStr, "Deprecation status. Possible values: not_deprecated,deprecated_deny_provision,deprecated_allow_expand. Defaults to 'not_deprecated'."),
 				"tags":                   c.FlagSet.String("tags", _nilDefaultStr, "The tags of the volume template, comma separated."),
 				"return_id":              c.FlagSet.Bool("return-id", false, "(Optional) Will print the ID of the created Drive Array. Useful for automating tasks."),
 			}
@@ -143,12 +143,21 @@ func volumeTemplateCreateCmd(c *Command, client interfaces.MetalCloudClient) (st
 	}
 
 	description := getStringParam(c.Arguments["label"])
-	name := getStringParam(c.Arguments["name"])
+	name := getStringParam(c.Arguments["display_name"])
 	bootType := getStringParam(c.Arguments["boot_type"])
-	deprecationStatus := getBoolParam(c.Arguments["deprecated"])
+	deprecationStatus := getStringParam(c.Arguments["deprecation_status"])
 	bootMethodSupported := getStringParam(c.Arguments["boot_methods_supported"])
 	tags := strings.Split(getStringParam(c.Arguments["tags"]), ",")
 
+	if deprecationStatus == "" {
+		deprecationStatus = "not_deprecated"
+	}
+
+	if bootMethodSupported == "" {
+		bootMethodSupported = "pxe_iscsi"
+	}
+
+	fmt.Printf("display name: %s", name)
 	ret, err := client.VolumeTemplateCreate(driveID, label, description, name, bootType, deprecationStatus, bootMethodSupported, tags)
 	if err != nil {
 		return "", err

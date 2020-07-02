@@ -144,9 +144,17 @@ func workflowsListCmd(c *Command, client interfaces.MetalCloudClient) (string, e
 	data := [][]interface{}{}
 	for _, w := range *list {
 
-		user, err := client.UserGet(w.UserIDOwner)
-		if err != nil {
-			return "", err
+		user := &metalcloud.User{
+			UserID:          0,
+			UserDisplayName: "",
+			UserEmail:       "",
+		}
+
+		if w.UserIDOwner != 0 {
+			user, err = client.UserGet(w.UserIDOwner)
+			if err != nil {
+				return "", err
+			}
 		}
 
 		data = append(data, []interface{}{
@@ -160,7 +168,6 @@ func workflowsListCmd(c *Command, client interfaces.MetalCloudClient) (string, e
 			w.WorkflowCreatedTimestamp,
 			w.WorkflowUpdatedTimestamp,
 		})
-
 	}
 
 	TableSorter(schema).OrderBy(schema[0].FieldName).Sort(data)

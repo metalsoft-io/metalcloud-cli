@@ -2009,7 +2009,7 @@ func (mr *MockMetalCloudClientMockRecorder) VolumeTemplateGetByLabel(volumeTempl
 }
 
 // VolumeTemplateCreate mocks base method
-func (m *MockMetalCloudClient) VolumeTemplateCreate(driveID int, label, description, displayName, bootType string, deprecationStatus bool, bootMethodsSupported string, volumeTemplateTags []string) (*metal_cloud_sdk_go.VolumeTemplate, error) {
+func (m *MockMetalCloudClient) VolumeTemplateCreate(driveID int, label, description, displayName, bootType, deprecationStatus, bootMethodsSupported string, volumeTemplateTags []string) (*metal_cloud_sdk_go.VolumeTemplate, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "VolumeTemplateCreate", driveID, label, description, displayName, bootType, deprecationStatus, bootMethodsSupported, volumeTemplateTags)
 	ret0, _ := ret[0].(*metal_cloud_sdk_go.VolumeTemplate)
@@ -2024,7 +2024,7 @@ func (mr *MockMetalCloudClientMockRecorder) VolumeTemplateCreate(driveID, label,
 }
 
 // VolumeTemplateCreateByLabel mocks base method
-func (m *MockMetalCloudClient) VolumeTemplateCreateByLabel(driveLabel, label, description, displayName, bootType string, deprecationStatus bool, bootMethodsSupported string, volumeTemplateTags []string) (*metal_cloud_sdk_go.VolumeTemplate, error) {
+func (m *MockMetalCloudClient) VolumeTemplateCreateByLabel(driveLabel, label, description, displayName, bootType, deprecationStatus, bootMethodsSupported string, volumeTemplateTags []string) (*metal_cloud_sdk_go.VolumeTemplate, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "VolumeTemplateCreateByLabel", driveLabel, label, description, displayName, bootType, deprecationStatus, bootMethodsSupported, volumeTemplateTags)
 	ret0, _ := ret[0].(*metal_cloud_sdk_go.VolumeTemplate)
