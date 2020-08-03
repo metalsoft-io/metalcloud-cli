@@ -9,6 +9,7 @@ import (
 
 	metalcloud "github.com/bigstepinc/metal-cloud-sdk-go"
 	helper "github.com/bigstepinc/metalcloud-cli/helpers"
+	mock_metalcloud "github.com/bigstepinc/metalcloud-cli/helpers"
 	gomock "github.com/golang/mock/gomock"
 	. "github.com/onsi/gomega"
 )
@@ -478,4 +479,116 @@ func TestInfrastructureListCmd(t *testing.T) {
 		Equal(infra.InfrastructureOperation.InfrastructureLabel),
 		Equal(infra2.InfrastructureOperation.InfrastructureLabel),
 	))
+}
+
+func TestDeployBlocking(t *testing.T) {
+	RegisterTestingT(t)
+
+	ctrl := gomock.NewController(t)
+	client := mock_metalcloud.NewMockMetalCloudClient(ctrl)
+
+	instance := metalcloud.Instance{
+		InstanceArrayID: 100,
+	}
+
+	instanceArray := metalcloud.InstanceArray{
+		InfrastructureID: 1000,
+	}
+
+	client.EXPECT().
+		InstanceGet(10).
+		Return(&instance, nil).
+		AnyTimes()
+
+	client.EXPECT().
+		InstanceArrayGet(100).
+		Return(&instanceArray, nil).
+		AnyTimes()
+
+	//infrastructureGet first returns locked then returns not locked
+	gomock.InOrder(
+		client.EXPECT().
+			InfrastructureGet(1000).
+			Return(&metalcloud.Infrastructure{
+				InfrastructureID:             1000,
+				InfrastructureDesignIsLocked: true, //locked infra
+			}, nil).
+			Times(1),
+		client.EXPECT().
+			InfrastructureGet(1000).
+			Return(&metalcloud.Infrastructure{
+				InfrastructureID:             1000,
+				InfrastructureDesignIsLocked: false, //not locked infra
+			}, nil).
+			Times(1),
+	)
+
+	client.EXPECT().
+		InfrastructureDeploy(1000, gomock.Any(), gomock.Any(), gomock.Any()).
+		Return(nil).
+		AnyTimes()
+
+	cmd := MakeCommand(map[string]interface{}{
+		"infrastructure_id_or_label": "1000",
+		"autoconfirm":                true,
+		"block_until_deployed":       true,
+		"block_timeout":              3, //3 seconds to make sure the test is short
+		"block_check_interval":       1, //1 second to make sure the test is short
+	})
+
+	//cs with infra locked
+	_, err := infrastructureDeployCmd(&cmd, client)
+	Expect(err).To(BeNil())
+
+}
+
+func TestDeployBlockingTimeouting(t *testing.T) {
+	RegisterTestingT(t)
+
+	ctrl := gomock.NewController(t)
+	client := mock_metalcloud.NewMockMetalCloudClient(ctrl)
+
+	instance := metalcloud.Instance{
+		InstanceArrayID: 100,
+	}
+
+	instanceArray := metalcloud.InstanceArray{
+		InfrastructureID: 1000,
+	}
+
+	client.EXPECT().
+		InstanceGet(10).
+		Return(&instance, nil).
+		AnyTimes()
+
+	client.EXPECT().
+		InstanceArrayGet(100).
+		Return(&instanceArray, nil).
+		AnyTimes()
+
+	client.EXPECT().
+		InfrastructureGet(1000).
+		Return(&metalcloud.Infrastructure{
+			InfrastructureID:             1000,
+			InfrastructureDesignIsLocked: true, //locked infra (forever)
+		}, nil).
+		AnyTimes()
+
+	client.EXPECT().
+		InfrastructureDeploy(1000, gomock.Any(), gomock.Any(), gomock.Any()).
+		Return(nil).
+		AnyTimes()
+
+	cmd := MakeCommand(map[string]interface{}{
+		"infrastructure_id_or_label": "1000",
+		"autoconfirm":                true,
+		"block_until_deployed":       true,
+		"block_timeout":              2, //2 seconds to make sure the test is short
+		"block_check_interval":       1, //1 second to make sure the test is short
+	})
+
+	//cs with infra locked
+	_, err := infrastructureDeployCmd(&cmd, client)
+	Expect(err).NotTo(BeNil())
+
 }

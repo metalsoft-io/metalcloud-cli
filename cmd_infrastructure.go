@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"os"
 	"strings"
+	"time"
 
 	metalcloud "github.com/bigstepinc/metal-cloud-sdk-go"
 	interfaces "github.com/bigstepinc/metalcloud-cli/interfaces"
@@ -73,6 +74,9 @@ var infrastructureCmds = []Command{
 				"soft_shutdown_timeout_seconds":  c.FlagSet.Int("soft-shutdown-timeout-seconds", 180, "(Optional, default 180) Timeout to wait if hard_shutdown_after_timeout is set."),
 				"allow_data_loss":                c.FlagSet.Bool("allow-data-loss", false, "(Flag) If set, deploy will throw error if data loss is expected."),
 				"skip_ansible":                   c.FlagSet.Bool("skip-ansible", false, "(Flag) If set, some automatic provisioning steps will be skipped. This parameter should generally be ignored."),
+				"block_until_deployed":           c.FlagSet.Bool("block-until-deployed", false, "(Flag) If set, the operation will wait until deployment finishes."),
+				"block_timeout":                  c.FlagSet.Int("block-timeout", 180*60, "Block timeout in seconds. After this timeout the application will return an error. Defaults to 180 minutes."),
+				"block_check_interval":           c.FlagSet.Int("block-check-interval", 10, "Check interval for when blocking. Defaults to 10 seconds."),
 				"autoconfirm":                    c.FlagSet.Bool("autoconfirm", false, "(Flag) If set operation procedes without asking for confirmation"),
 			}
 		},
@@ -285,26 +289,31 @@ func infrastructureDeployCmd(c *Command, client interfaces.MetalCloudClient) (st
 	return infrastructureConfirmAndDo("Deploy", c, client,
 		func(infraID int, c *Command, client interfaces.MetalCloudClient) (string, error) {
 
-			timeout := 180
-			if c.Arguments["soft_shutdown_timeout_seconds"] != nil {
-				timeout = *c.Arguments["soft_shutdown_timeout_seconds"].(*int)
-			}
-
-			NoHardShutdownAfterTimeout := c.Arguments["no_hard_shutdown_after_timeout"] != nil && *c.Arguments["no_hard_shutdown_after_timeout"].(*bool)
-			NoAttemptSoftShutdown := c.Arguments["no_attempt_soft_shutdown"] != nil && *c.Arguments["no_attempt_soft_shutdown"].(*bool)
-
 			shutDownOptions := metalcloud.ShutdownOptions{
-				HardShutdownAfterTimeout:   !NoHardShutdownAfterTimeout,
-				AttemptSoftShutdown:        !NoAttemptSoftShutdown,
-				SoftShutdownTimeoutSeconds: timeout,
+				HardShutdownAfterTimeout:   !getBoolParam(c.Arguments["no_hard_shutdown_after_timeout"]),
+				AttemptSoftShutdown:        !getBoolParam(c.Arguments["no_attempt_soft_shutdown"]),
+				SoftShutdownTimeoutSeconds: getIntParam(c.Arguments["soft_shutdown_timeout_seconds"]),
 			}
 
-			return "", client.InfrastructureDeploy(
+			err := client.InfrastructureDeploy(
 				infraID,
 				shutDownOptions,
-				c.Arguments["allow_data_loss"] != nil && *c.Arguments["allow_data_loss"].(*bool),
-				c.Arguments["skip_ansible"] != nil && *c.Arguments["skip_ansible"].(*bool),
+				getBoolParam(c.Arguments["allow_data_loss"]),
+				getBoolParam(c.Arguments["skip_ansible"]),
 			)
+			if err != nil {
+				return "", err
+			}
+
+			if getBoolParam(c.Arguments["block_until_deployed"]) {
+				err := loopUntilInfraReady(infraID, getIntParam(c.Arguments["block_timeout"]), getIntParam(c.Arguments["block_check_interval"]), client)
+
+				if err != nil {
+					return "", err
+				}
+			}
+
+			return "", nil
 		})
 }
 
@@ -612,4 +621,32 @@ func getInfrastructureFromCommand(paramName string, c *Command, client interface
 	}
 
 	return client.InfrastructureGetByLabel(label)
+}
+
+//loop until infra is ready
+func loopUntilInfraReady(infraID int, timeoutSeconds int, checkIntervalSeconds int, client interfaces.MetalCloudClient) error {
+	c := make(chan error, 1)
+
+	go func() {
+		for {
+			infra, err := client.InfrastructureGet(infraID)
+
+			if err != nil {
+				c <- err
+			}
+			if !infra.InfrastructureDesignIsLocked {
+				break
+			} else {
+				time.Sleep(time.Duration(checkIntervalSeconds) * time.Second)
+			}
+		}
+		c <- nil
+	}()
+
+	select {
+	case err := <-c:
+		return err
+	case <-time.After(time.Duration(timeoutSeconds) * time.Second):
+		return fmt.Errorf("timeout after %d seconds while waiting for infrastructure to finish deploying", timeoutSeconds)
+	}
 }
