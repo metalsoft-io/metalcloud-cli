@@ -16,7 +16,6 @@ func TestAssetsListCmd(t *testing.T) {
 	assetList := map[string]metalcloud.OSAsset{
 		"test": {
 			OSAssetID:       10,
-			OSAssetISPublic: true,
 			OSAssetUsage:    "test",
 		},
 	}
