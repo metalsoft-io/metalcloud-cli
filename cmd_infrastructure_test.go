@@ -510,15 +510,19 @@ func TestDeployBlocking(t *testing.T) {
 		client.EXPECT().
 			InfrastructureGet(1000).
 			Return(&metalcloud.Infrastructure{
-				InfrastructureID:             1000,
-				InfrastructureDesignIsLocked: true, //locked infra
+				InfrastructureID: 1000,
+				InfrastructureOperation: metalcloud.InfrastructureOperation{
+					InfrastructureDeployStatus: "ongoing",
+				}, //locked infra
 			}, nil).
 			Times(1),
 		client.EXPECT().
 			InfrastructureGet(1000).
 			Return(&metalcloud.Infrastructure{
-				InfrastructureID:             1000,
-				InfrastructureDesignIsLocked: false, //not locked infra
+				InfrastructureID: 1000,
+				InfrastructureOperation: metalcloud.InfrastructureOperation{
+					InfrastructureDeployStatus: "finished",
+				}, //locked infra
 			}, nil).
 			Times(1),
 	)
@@ -569,8 +573,10 @@ func TestDeployBlockingTimeouting(t *testing.T) {
 	client.EXPECT().
 		InfrastructureGet(1000).
 		Return(&metalcloud.Infrastructure{
-			InfrastructureID:             1000,
-			InfrastructureDesignIsLocked: true, //locked infra (forever)
+			InfrastructureID: 1000,
+			InfrastructureOperation: metalcloud.InfrastructureOperation{
+				InfrastructureDeployStatus: "ongoing",
+			},
 		}, nil).
 		AnyTimes()
 

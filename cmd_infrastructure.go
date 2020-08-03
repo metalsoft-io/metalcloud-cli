@@ -74,7 +74,7 @@ var infrastructureCmds = []Command{
 				"soft_shutdown_timeout_seconds":  c.FlagSet.Int("soft-shutdown-timeout-seconds", 180, "(Optional, default 180) Timeout to wait if hard_shutdown_after_timeout is set."),
 				"allow_data_loss":                c.FlagSet.Bool("allow-data-loss", false, "(Flag) If set, deploy will throw error if data loss is expected."),
 				"skip_ansible":                   c.FlagSet.Bool("skip-ansible", false, "(Flag) If set, some automatic provisioning steps will be skipped. This parameter should generally be ignored."),
-				"block_until_deployed":           c.FlagSet.Bool("block-until-deployed", false, "(Flag) If set, the operation will wait until deployment finishes."),
+				"block_until_deployed":           c.FlagSet.Bool("blocking", false, "(Flag) If set, the operation will wait until deployment finishes."),
 				"block_timeout":                  c.FlagSet.Int("block-timeout", 180*60, "Block timeout in seconds. After this timeout the application will return an error. Defaults to 180 minutes."),
 				"block_check_interval":           c.FlagSet.Int("block-check-interval", 10, "Check interval for when blocking. Defaults to 10 seconds."),
 				"autoconfirm":                    c.FlagSet.Bool("autoconfirm", false, "(Flag) If set operation procedes without asking for confirmation"),
@@ -306,11 +306,14 @@ func infrastructureDeployCmd(c *Command, client interfaces.MetalCloudClient) (st
 			}
 
 			if getBoolParam(c.Arguments["block_until_deployed"]) {
+
+				time.Sleep(time.Duration(getIntParam(c.Arguments["block_check_interval"])) * time.Second) //wait until the system picks up the afc
+
 				err := loopUntilInfraReady(infraID, getIntParam(c.Arguments["block_timeout"]), getIntParam(c.Arguments["block_check_interval"]), client)
 
-				if err != nil {
+				if err != nil && strings.HasPrefix(err.Error(), "timeout after") {
 					return "", err
-				}
+				} //else we ignore errors as they might be infrastrucure not found due to infrastructure being deleted
 			}
 
 			return "", nil
@@ -633,11 +636,12 @@ func loopUntilInfraReady(infraID int, timeoutSeconds int, checkIntervalSeconds i
 
 			if err != nil {
 				c <- err
-			}
-			if !infra.InfrastructureDesignIsLocked {
 				break
-			} else {
+			}
+			if infra.InfrastructureOperation.InfrastructureDeployStatus == "ongoing" {
 				time.Sleep(time.Duration(checkIntervalSeconds) * time.Second)
+			} else {
+				break
 			}
 		}
 		c <- nil

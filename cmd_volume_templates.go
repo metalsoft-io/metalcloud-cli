@@ -157,7 +157,6 @@ func volumeTemplateCreateCmd(c *Command, client interfaces.MetalCloudClient) (st
 		bootMethodSupported = "pxe_iscsi"
 	}
 
-	fmt.Printf("display name: %s", name)
 	ret, err := client.VolumeTemplateCreate(driveID, label, description, name, bootType, deprecationStatus, bootMethodSupported, tags)
 	if err != nil {
 		return "", err
