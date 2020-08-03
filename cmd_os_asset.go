@@ -38,12 +38,13 @@ var osAssetsCmds = []Command{
 		FlagSet:      flag.NewFlagSet("create asset", flag.ExitOnError),
 		InitFunc: func(c *Command) {
 			c.Arguments = map[string]interface{}{
-				"filename":               c.FlagSet.String("filename", _nilDefaultStr, "Asset's filename"),
-				"usage":                  c.FlagSet.String("usage", _nilDefaultStr, "Asset's usage. Possible values: \"bootloader\", \"ipxe_config_local_install\",\"ipxe_config_os_boot\",\"onie_installer\""),
-				"mime":                   c.FlagSet.String("mime", _nilDefaultStr, "Required. Asset's mime type. Possible values: \"text/plain\",\"application/octet-stream\""),
-				"url":                    c.FlagSet.String("url", _nilDefaultStr, "Asset's source url. If present it will not read content anymore"),
-				"read_content_from_pipe": c.FlagSet.Bool("pipe", false, "Read secret's content read from pipe instead of terminal input"),
-				"return_id":              c.FlagSet.Bool("return-id", false, "(Flag) If set will print the ID of the created infrastructure. Useful for automating tasks."),
+				"filename":                c.FlagSet.String("filename", _nilDefaultStr, "Asset's filename"),
+				"usage":                   c.FlagSet.String("usage", _nilDefaultStr, "Asset's usage. Possible values: \"bootloader\""),
+				"mime":                    c.FlagSet.String("mime", _nilDefaultStr, "Required. Asset's mime type. Possible values: \"text/plain\",\"application/octet-stream\""),
+				"url":                     c.FlagSet.String("url", _nilDefaultStr, "Asset's source url. If present it will not read content anymore"),
+				"variable_names_required": c.FlagSet.String("variable-names-required", _nilDefaultStr, "The names of the variables and secrets that are used in this asset, comma separated."),
+				"read_content_from_pipe":  c.FlagSet.Bool("pipe", false, "Read secret's content read from pipe instead of terminal input"),
+				"return_id":               c.FlagSet.Bool("return-id", false, "(Flag) If set will print the ID of the created infrastructure. Useful for automating tasks."),
 			}
 		},
 		ExecuteFunc: assetCreateCmd,
@@ -77,9 +78,26 @@ var osAssetsCmds = []Command{
 				"asset_id_or_name":    c.FlagSet.String("id", _nilDefaultStr, "Asset's id or filename"),
 				"template_id_or_name": c.FlagSet.String("template-id", _nilDefaultStr, "Template's id or name"),
 				"path":                c.FlagSet.String("path", _nilDefaultStr, "Path to associate asset to"),
+				"variables_json":      c.FlagSet.String("variables-json", _nilDefaultStr, "JSON encoded variables object"),
 			}
 		},
 		ExecuteFunc: associateAssetCmd,
+		Endpoint:    ExtendedEndpoint,
+	},
+	{
+		Description:  "Remove (unassign) asset from template",
+		Subject:      "asset",
+		AltSubject:   "asset",
+		Predicate:    "disassociate",
+		AltPredicate: "unassign",
+		FlagSet:      flag.NewFlagSet("disassociate asset from template", flag.ExitOnError),
+		InitFunc: func(c *Command) {
+			c.Arguments = map[string]interface{}{
+				"asset_id_or_name":    c.FlagSet.String("id", _nilDefaultStr, "Asset's id or filename"),
+				"template_id_or_name": c.FlagSet.String("template-id", _nilDefaultStr, "Template's id or name"),
+			}
+		},
+		ExecuteFunc: disassociateAssetCmd,
 		Endpoint:    ExtendedEndpoint,
 	},
 	{
@@ -139,9 +157,9 @@ func assetsListCmd(c *Command, client interfaces.MetalCloudClient) (string, erro
 			FieldSize: 5,
 		},
 		{
-			FieldName: "CHECKSUM_SHA256",
+			FieldName: "VARIABLE_NAMES_REQUIRED",
 			FieldType: TypeString,
-			FieldSize: 5,
+			FieldSize: 10,
 		},
 	}
 
@@ -155,7 +173,7 @@ func assetsListCmd(c *Command, client interfaces.MetalCloudClient) (string, erro
 			s.OSAssetFileMime,
 			s.OSAssetUsage,
 			s.OSAssetSourceURL,
-			s.OSAssetContentsSHA256Hex,
+			strings.Join(s.OSAssetVariableNamesRequired, ","),
 		})
 
 	}
@@ -193,6 +211,10 @@ func assetCreateCmd(c *Command, client interfaces.MetalCloudClient) (string, err
 		}
 
 		obj.OSAssetContentsBase64 = base64.StdEncoding.EncodeToString([]byte(content))
+
+		if v, ok := getStringParamOk(c.Arguments["variable_names_required"]); ok {
+			obj.OSAssetVariableNamesRequired = strings.Split(v, ",")
+		}
 	}
 
 	ret, err := client.OSAssetCreate(obj)
@@ -287,7 +309,27 @@ func associateAssetCmd(c *Command, client interfaces.MetalCloudClient) (string, 
 		return "", fmt.Errorf("path is required")
 	}
 
-	return "", client.OSTemplateAddOSAsset(template.VolumeTemplateID, asset.OSAssetID, path)
+	variablesJSON := "[]"
+	if v := c.Arguments["variables-json"]; v != nil && *v.(*string) != _nilDefaultStr {
+		variablesJSON = *v.(*string)
+	}
+
+	return "", client.OSTemplateAddOSAsset(template.VolumeTemplateID, asset.OSAssetID, path, variablesJSON)
+}
+
+func disassociateAssetCmd(c *Command, client interfaces.MetalCloudClient) (string, error) {
+
+	asset, err := getOSAssetFromCommand("id", "asset_id_or_name", c, client)
+	if err != nil {
+		return "", err
+	}
+
+	template, err := getOSTemplateFromCommand("template_id", c, client, false)
+	if err != nil {
+		return "", err
+	}
+
+	return "", client.OSTemplateRemoveOSAsset(template.VolumeTemplateID, asset.OSAssetID)
 }
 
 func templateListAssociatedAssetsCmd(c *Command, client interfaces.MetalCloudClient) (string, error) {
@@ -339,6 +381,11 @@ func templateListAssociatedAssetsCmd(c *Command, client interfaces.MetalCloudCli
 			FieldType: TypeString,
 			FieldSize: 5,
 		},
+		{
+			FieldName: "VARIABLES_JSON",
+			FieldType: TypeString,
+			FieldSize: 5,
+		},
 	}
 
 	data := [][]interface{}{}
@@ -346,12 +393,13 @@ func templateListAssociatedAssetsCmd(c *Command, client interfaces.MetalCloudCli
 
 		data = append(data, []interface{}{
 			path,
-			s.OSAssetID,
-			s.OSAssetFileName,
-			s.OSAssetFileSizeBytes,
-			s.OSAssetFileMime,
-			s.OSAssetUsage,
-			s.OSAssetSourceURL,
+			s.OSAsset.OSAssetID,
+			s.OSAsset.OSAssetFileName,
+			s.OSAsset.OSAssetFileSizeBytes,
+			s.OSAsset.OSAssetFileMime,
+			s.OSAsset.OSAssetUsage,
+			s.OSAsset.OSAssetSourceURL,
+			s.OSTemplateOSAssetVariablesJSON,
 		})
 
 	}

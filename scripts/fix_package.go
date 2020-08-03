@@ -46,6 +46,9 @@ var types = [...]string{
 	"ServerTypeMatch",
 	"Datacenter",
 	"DatacenterConfig",
+	"SharedDrive",
+	"OSTemplateOSAssetData",
+	"SharedDriveOperation",
 }
 
 const packageName = "metalcloud"

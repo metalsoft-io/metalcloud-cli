@@ -278,22 +278,22 @@ func instanceCredentialsCmd(c *Command, client interfaces.MetalCloudClient) (str
 		for k, sd := range v {
 			newFields := []SchemaField{
 				{
-					FieldName: fmt.Sprintf("SHARED_DRIVE_%d_TARGET_IP_ADDRESS", k),
+					FieldName: fmt.Sprintf("SHARED_DRIVE_%s_TARGET_IP_ADDRESS", k),
 					FieldType: TypeString,
 					FieldSize: 5,
 				},
 				{
-					FieldName: fmt.Sprintf("SHARED_DRIVE_%d_TARGET_PORT", k),
+					FieldName: fmt.Sprintf("SHARED_DRIVE_%s_TARGET_PORT", k),
 					FieldType: TypeInt,
 					FieldSize: 5,
 				},
 				{
-					FieldName: fmt.Sprintf("SHARED_DRIVE_%d_TARGET_IQN", k),
+					FieldName: fmt.Sprintf("SHARED_DRIVE_%s_TARGET_IQN", k),
 					FieldType: TypeString,
 					FieldSize: 5,
 				},
 				{
-					FieldName: fmt.Sprintf("SHARED_DRIVE_%d_LUN_ID", k),
+					FieldName: fmt.Sprintf("SHARED_DRIVE_%s_LUN_ID", k),
 					FieldType: TypeString,
 					FieldSize: 5,
 				},

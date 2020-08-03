@@ -201,9 +201,15 @@ type MetalCloudClient interface {
 	//OSTemplates retrieves a list of all the metalcloud.OSTemplate objects which a specified metalcloud.User is allowed to see through ownership or delegation. The metalcloud.OSTemplate objects never return the actual protected metalcloud.OSTemplate value.
 	OSTemplates() (*map[string]metalcloud.OSTemplate, error)
 	//OSTemplateOSAssets returns the OSAssets assigned to an metalcloud.OSTemplate.
-	OSTemplateOSAssets(osTemplateID int) (*map[string]metalcloud.OSAsset, error)
-	//OSTemplateAddOSAsset returns the OSAssets assigned to an metalcloud.OSTemplate.
-	OSTemplateAddOSAsset(osTemplateID int, osAssetID int, path string) error
+	OSTemplateOSAssets(osTemplateID int) (*map[string]metalcloud.OSTemplateOSAssetData, error)
+	//OSTemplateAddOSAsset adds an asset to a template
+	OSTemplateAddOSAsset(osTemplateID int, osAssetID int, path string, variablesJSON string) error
+	//OSTemplateRemoveOSAsset removes an asset from a template
+	OSTemplateRemoveOSAsset(osTemplateID int, osAssetID int) error
+	//OSTemplateUpdateOSAssetPath updates an asset mapping
+	OSTemplateUpdateOSAssetPath(osTemplateID int, osAssetID int, path string) error
+	//OSTemplateUpdateOSAssetVariables updates an asset variable
+	OSTemplateUpdateOSAssetVariables(osTemplateID int, osAssetID int, variablesJSON string) error
 	//SecretCreate creates a secret
 	SecretCreate(secret metalcloud.Secret) (*metalcloud.Secret, error)
 	//SecretDelete Permanently destroys a metalcloud.Secret.
@@ -247,6 +253,22 @@ type MetalCloudClient interface {
 	ServerTypesMatches(infrastructureID int, hardwareConfiguration metalcloud.HardwareConfiguration, instanceArrayID *int, bAllowServerSwap bool) (*map[string]metalcloud.ServerType, error)
 	//ServerTypesMatchesByLabel matches available servers with a certain metalcloud.Instance&#39;s configuration, using the properties specified in the objHardwareConfiguration object, and returns the number of compatible servers for each server_type_id.
 	ServerTypesMatchesByLabel(infrastructureLabel string, hardwareConfiguration metalcloud.HardwareConfiguration, instanceArrayID *int, bAllowServerSwap bool) (*map[string]metalcloud.ServerType, error)
+	//SharedDriveCreate creates a shared drive array. Requires deploy.
+	SharedDriveCreate(infrastructureID int, sharedDrive metalcloud.SharedDrive) (*metalcloud.SharedDrive, error)
+	//SharedDriveCreateByLabel creates a shared drive array. Requires deploy.
+	SharedDriveCreateByLabel(infrastructureLabel string, sharedDrive metalcloud.SharedDrive) (*metalcloud.SharedDrive, error)
+	//SharedDriveGet Retrieves a shared drive
+	SharedDriveGet(sharedDriveID int) (*metalcloud.SharedDrive, error)
+	//SharedDriveGetByLabel Retrieves a shared drive
+	SharedDriveGetByLabel(sharedDriveLabel string) (*metalcloud.SharedDrive, error)
+	//SharedDriveEdit alters a deployed drive array. Requires deploy.
+	SharedDriveEdit(sharedDriveID int, sharedDriveOperation metalcloud.SharedDriveOperation) (*metalcloud.SharedDrive, error)
+	//SharedDriveEditByLabel alters a deployed drive array. Requires deploy.
+	SharedDriveEditByLabel(sharedDriveLabel string, sharedDriveOperation metalcloud.SharedDriveOperation) (*metalcloud.SharedDrive, error)
+	//SharedDriveDelete deletes a shared drive.
+	SharedDriveDelete(sharedDriveID int) error
+	//SharedDriveDeleteByLabel deletes a shared drive.
+	SharedDriveDeleteByLabel(sharedDriveLabel string) error
 	//StageDefinitionCreate creates a stageDefinition
 	StageDefinitionCreate(stageDefinition metalcloud.StageDefinition) (*metalcloud.StageDefinition, error)
 	//StageDefinitionDelete Permanently destroys a metalcloud.StageDefinition.
