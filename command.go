@@ -1,11 +1,13 @@
 package main
 
 import (
+	"encoding/json"
 	"flag"
 	"fmt"
 	"strconv"
 
 	interfaces "github.com/bigstepinc/metalcloud-cli/interfaces"
+	"gopkg.in/yaml.v3"
 )
 
 //CommandExecuteFunc a function type a command can take for executing the content
@@ -183,4 +185,51 @@ func updateIfBoolParamSet(v interface{}, p *bool) {
 	if v, ok := getBoolParamOk(v); ok {
 		*p = v
 	}
+}
+
+func getRawObjectFromCommand(c *Command, obj interface{}) error {
+	readContentfromPipe := getBoolParam((c.Arguments["read_config_from_pipe"]))
+
+	var err error
+	content := []byte{}
+
+	if readContentfromPipe {
+		content, err = readInputFromPipe()
+	} else {
+
+		if configFilePath, ok := getStringParamOk(c.Arguments["read_config_from_file"]); ok {
+
+			content, err = readInputFromFile(configFilePath)
+		} else {
+			return fmt.Errorf("-config <path_to_json_file> or -pipe is required")
+		}
+	}
+
+	if err != nil {
+		return err
+	}
+
+	if len(content) == 0 {
+		return fmt.Errorf("Content cannot be empty")
+	}
+
+	format := getStringParam(c.Arguments["format"])
+
+	switch format {
+	case "json":
+		err := json.Unmarshal(content, obj)
+		if err != nil {
+			return err
+		}
+	case "yaml":
+
+		err := yaml.Unmarshal(content, obj)
+		if err != nil {
+			return err
+		}
+	default:
+		return fmt.Errorf("input format \"%s\" not supported", format)
+	}
+
+	return nil
 }

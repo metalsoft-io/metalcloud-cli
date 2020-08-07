@@ -19,7 +19,7 @@ var serversCmds = []Command{
 		FlagSet:      flag.NewFlagSet("list servers", flag.ExitOnError),
 		InitFunc: func(c *Command) {
 			c.Arguments = map[string]interface{}{
-				"format":           c.FlagSet.String("format", _nilDefaultStr, "The output format. Supported values are 'json','csv'. The default format is human readable."),
+				"format":           c.FlagSet.String("format", _nilDefaultStr, "The output format. Supported values are 'json','csv','yaml'. The default format is human readable."),
 				"filter":           c.FlagSet.String("filter", "*", "filter to use when searching for servers. Check the documentation for examples. Defaults to '*'"),
 				"show_credentials": c.FlagSet.Bool("show-credentials", false, "(Flag) If set returns the servers' IPMI credentials. (Slow for large queries)"),
 			}
@@ -38,7 +38,7 @@ var serversCmds = []Command{
 		InitFunc: func(c *Command) {
 			c.Arguments = map[string]interface{}{
 				"id":               c.FlagSet.Int("id", _nilDefaultInt, "Server's ID"),
-				"format":           c.FlagSet.String("format", _nilDefaultStr, "The output format. Supported values are 'json','csv'. The default format is human readable."),
+				"format":           c.FlagSet.String("format", _nilDefaultStr, "The output format. Supported values are 'json','csv','yaml'. The default format is human readable."),
 				"show_credentials": c.FlagSet.Bool("show-credentials", false, "(Flag) If set returns the servers' IPMI credentials"),
 			}
 		},

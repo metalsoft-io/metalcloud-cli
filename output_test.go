@@ -7,6 +7,9 @@ import (
 	"strings"
 	"testing"
 
+	"gopkg.in/yaml.v2"
+
+	metalcloud "github.com/bigstepinc/metal-cloud-sdk-go"
 	. "github.com/onsi/gomega"
 )
 
@@ -321,6 +324,59 @@ func TestRenderTable(t *testing.T) {
 
 	s, err = renderTable("test", "", "csv", data, schema)
 	Expect(err).To(BeNil())
+
+	s, err = renderTable("test", "", "yaml", data, schema)
+	err = yaml.Unmarshal([]byte(s), &m)
+	Expect(err).To(BeNil())
+}
+
+func TestYAMLMArshalOfMetalcloudObjects(t *testing.T) {
+	RegisterTestingT(t)
+
+	var sw metalcloud.SwitchDevice
+
+	err := json.Unmarshal([]byte(_switchDeviceFixture1), &sw)
+	Expect(err).To(BeNil())
+
+	b, err := yaml.Marshal(sw)
+	Expect(err).To(BeNil())
+
+	t.Log(string(b))
+
+	var sw2 metalcloud.SwitchDevice
+
+	err = yaml.Unmarshal(b, &sw2)
+	Expect(err).To(BeNil())
+	Expect(sw2.NetworkEquipmentPrimaryWANIPv4SubnetPool).To(Equal(sw.NetworkEquipmentPrimaryWANIPv4SubnetPool))
+	//for some reason this doesn't work. don't know why yet
+	//t.Logf("sw1=%+v", sw)
+	//t.Logf("sw2=%+v", sw2)
+	//Expect(reflect.DeepEqual(sw, sw2)).To(BeTrue())
+}
+
+func TestYAMLMArshalCaseSensitivity(t *testing.T) {
+	RegisterTestingT(t)
+
+	type dummy struct {
+		WithCamelCase1 string
+		WithCamelCase2 int `yaml:"withCamelCase2"`
+		A              int
+	}
+
+	var d dummy
+
+	s := `
+withcamelcase1: test
+withCamelCase2: 10
+a: 12
+`
+
+	err := yaml.Unmarshal([]byte(s), &d)
+	Expect(err).To(BeNil())
+	Expect(d.A).To(Equal(12))
+	Expect(d.WithCamelCase2).To(Equal(10))
+	Expect(d.WithCamelCase1).To(Equal("test"))
+
 }
 
 func JSONUnmarshal(jsonString string) ([]interface{}, error) {
@@ -464,4 +520,107 @@ func TestRenderTransposedTable(t *testing.T) {
 
 	s, err = renderTransposedTable("test", "", "csv", data, schema)
 	Expect(err).To(BeNil())
+}
+
+func TestObjectToTable(t *testing.T) {
+
+	RegisterTestingT(t)
+
+	var sw metalcloud.SwitchDevice
+
+	err := json.Unmarshal([]byte(_switchDeviceFixture1), &sw)
+	Expect(err).To(BeNil())
+
+	d, s, err := objectToTable(sw)
+	Expect(err).To(BeNil())
+	Expect(len(d)).To(Equal(40))
+	Expect(d[1]).To(Equal("UK_RDG_EVR01_00_0001_00A9_01"))
+	Expect(s[1].FieldName).To(Equal("network equipment identifier string"))
+	Expect(s[39].FieldName).To(Equal("volume template id"))
+	Expect(d[39]).To(Equal(0))
+}
+
+func TestObjToTableWithFormatter(t *testing.T) {
+	RegisterTestingT(t)
+
+	var sw metalcloud.SwitchDevice
+
+	err := json.Unmarshal([]byte(_switchDeviceFixture1), &sw)
+	Expect(err).To(BeNil())
+
+	d, s, err := objectToTableWithFormatter(sw, NewStripPrefixFormatter("NetworkEquipment"))
+	Expect(err).To(BeNil())
+	Expect(len(d)).To(Equal(40))
+	Expect(d[1]).To(Equal("UK_RDG_EVR01_00_0001_00A9_01"))
+	Expect(s[1].FieldName).To(Equal("Identifier String"))
+	Expect(s[39].FieldName).To(Equal("Volume Template Id"))
+	Expect(d[39]).To(Equal(0))
+
+}
+
+func TestRenderTransposedTableHumanReadable(t *testing.T) {
+	RegisterTestingT(t)
+
+	schema := []SchemaField{
+		{
+			FieldName: "Field1",
+			FieldType: TypeInt,
+		},
+		{
+			FieldName: "Field2",
+			FieldType: TypeString,
+		},
+	}
+
+	data := [][]interface{}{
+		{
+			10,
+			"test",
+		},
+	}
+
+	s, err := renderTransposedTableHumanReadable("test", "test", data, schema)
+
+	Expect(err).To(BeNil())
+	Expect(s).To(Equal(`Field1: 10
+Field2: test
+`))
+
+}
+
+func TestRenderRawObject(t *testing.T) {
+	RegisterTestingT(t)
+
+	var sw metalcloud.SwitchDevice
+
+	err := json.Unmarshal([]byte(_switchDeviceFixture1), &sw)
+	Expect(err).To(BeNil())
+
+	ret, err := renderRawObject(sw, "json", "")
+
+	Expect(err).To(BeNil())
+	Expect(ret).NotTo(BeNil())
+	Expect(ret).To(ContainSubstring("2A02:0CB8:0000:0000:0000:0000:0000:0000/53"))
+
+	var sw2 metalcloud.SwitchDevice
+	err = json.Unmarshal([]byte(ret), &sw2)
+	Expect(err).To(BeNil())
+
+	ret, err = renderRawObject(sw, "yaml", "")
+	Expect(err).To(BeNil())
+	Expect(ret).NotTo(BeNil())
+	Expect(ret).To(ContainSubstring("2A02:0CB8:0000:0000:0000:0000:0000:0000/53"))
+
+	ret, err = renderRawObject(sw, "csv", "")
+	Expect(err).To(BeNil())
+	Expect(ret).NotTo(BeNil())
+	Expect(ret).To(ContainSubstring("2A02:0CB8:0000:0000:0000:0000:0000:0000/53"))
+
+	ret, err = renderRawObject(sw, "", "NetworkEquipment")
+	Expect(err).To(BeNil())
+	Expect(ret).NotTo(BeNil())
+	Expect(ret).To(ContainSubstring("2A02:0CB8:0000:0000:0000:0000:0000:0000/53"))
+
+	t.Log(ret)
+
 }

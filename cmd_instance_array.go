@@ -52,7 +52,7 @@ var instanceArrayCmds = []Command{
 		InitFunc: func(c *Command) {
 			c.Arguments = map[string]interface{}{
 				"infrastructure_id_or_label": c.FlagSet.String("infra", _nilDefaultStr, "(Required) Infrastructure's id or label. Note that the 'label' this be ambiguous in certain situations."),
-				"format":                     c.FlagSet.String("format", "", "The output format. Supported values are 'json','csv'. The default format is human readable."),
+				"format":                     c.FlagSet.String("format", "", "The output format. Supported values are 'json','csv','yaml'. The default format is human readable."),
 			}
 		},
 		ExecuteFunc: instanceArrayListCmd,
@@ -112,7 +112,7 @@ var instanceArrayCmds = []Command{
 				"show_credentials":           c.FlagSet.Bool("show-credentials", false, "(Flag) If set returns the instances' credentials"),
 				"show_power_status":          c.FlagSet.Bool("show-power-status", false, "(Flag) If set returns the instances' power status"),
 				"show_iscsi_credentials":     c.FlagSet.Bool("show-iscsi-credentials", false, "(Flag) If set returns the instances' iscsi credentials"),
-				"format":                     c.FlagSet.String("format", "", "The output format. Supported values are 'json','csv'. The default format is human readable."),
+				"format":                     c.FlagSet.String("format", "", "The output format. Supported values are 'json','csv','yaml'. The default format is human readable."),
 			}
 		},
 		ExecuteFunc: instanceArrayGetCmd,

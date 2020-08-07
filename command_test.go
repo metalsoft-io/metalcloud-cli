@@ -2,11 +2,16 @@ package main
 
 import (
 	"bytes"
+	"encoding/json"
 	"flag"
 	"fmt"
+	"io/ioutil"
 	"reflect"
 	"strings"
+	"syscall"
 	"testing"
+
+	metalcloud "github.com/bigstepinc/metal-cloud-sdk-go"
 
 	//. "github.com/onsi/gomega"
 	mock_metalcloud "github.com/bigstepinc/metalcloud-cli/helpers"
@@ -252,7 +257,6 @@ func testListCommand(f CommandExecuteFunc, cmd *Command, client interfaces.Metal
 
 	ret, err = f(cmdWithFormat, client)
 	Expect(err).To(BeNil())
-	t.Logf("%+v", ret)
 	Expect(JSONFirstRowEquals(ret, firstRow)).To(BeNil())
 
 	//test csv output
@@ -462,4 +466,35 @@ func TestMakeWrongCommand(t *testing.T) {
 
 	Expect(len(cmds)).To(Equal(14))
 
+}
+
+func TestGetRawObjectFromCommand(t *testing.T) {
+	RegisterTestingT(t)
+
+	var sw metalcloud.SwitchDevice
+	err := json.Unmarshal([]byte(_switchDeviceFixture1), &sw)
+	if err != nil {
+		t.Error(err)
+	}
+
+	f, err := ioutil.TempFile("/tmp", "testconf-*.json")
+	if err != nil {
+		t.Error(err)
+	}
+
+	//create an input json file
+	f.WriteString(_switchDeviceFixture1)
+	f.Close()
+	defer syscall.Unlink(f.Name())
+
+	cmd := MakeCommand(map[string]interface{}{
+		"read_config_from_file": f.Name(),
+		"format":                "json",
+	})
+
+	var sw2 metalcloud.SwitchDevice
+
+	err = getRawObjectFromCommand(&cmd, &sw2)
+	Expect(err).To(BeNil())
+	Expect(sw.NetworkEquipmentPrimarySANSubnetPool).To(Equal("100.64.0.0"))
 }

@@ -19,7 +19,7 @@ var volumeTemplateyCmds = []Command{
 		FlagSet:      flag.NewFlagSet("list volume templates", flag.ExitOnError),
 		InitFunc: func(c *Command) {
 			c.Arguments = map[string]interface{}{
-				"format":     c.FlagSet.String("format", _nilDefaultStr, "The output format. Supported values are 'json','csv'. The default format is human readable."),
+				"format":     c.FlagSet.String("format", _nilDefaultStr, "The output format. Supported values are 'json','csv','yaml'. The default format is human readable."),
 				"local_only": c.FlagSet.Bool("local-only", false, "Show only templates that support local install"),
 				"pxe_only":   c.FlagSet.Bool("pxe-only", false, "Show only templates that support pxe booting"),
 			}

@@ -8,6 +8,7 @@ import (
 
 	metalcloud "github.com/bigstepinc/metal-cloud-sdk-go"
 	interfaces "github.com/bigstepinc/metalcloud-cli/interfaces"
+	"gopkg.in/yaml.v3"
 )
 
 //infrastructureCmds commands affecting infrastructures
@@ -25,7 +26,7 @@ var datacenterCmds = []Command{
 				"user_id":       c.FlagSet.String("user", _nilDefaultStr, "List only specific user's datacenters"),
 				"show_inactive": c.FlagSet.Bool("show-inactive", false, "(Flag) Set flag if inactive datacenters are to be returned"),
 				"show_hidden":   c.FlagSet.Bool("show-hidden", false, "(Flag) Set flag if hidden datacenters are to be returned"),
-				"format":        c.FlagSet.String("format", "", "The output format. Supported values are 'json','csv'. The default format is human readable."),
+				"format":        c.FlagSet.String("format", "", "The output format. Supported values are 'json','csv','yaml'. The default format is human readable."),
 			}
 		},
 		ExecuteFunc: datacenterListCmd,
@@ -39,14 +40,15 @@ var datacenterCmds = []Command{
 		FlagSet:      flag.NewFlagSet("Create datacenter", flag.ExitOnError),
 		InitFunc: func(c *Command) {
 			c.Arguments = map[string]interface{}{
-				"datacenter_name":         c.FlagSet.String("label", _nilDefaultStr, "(Required) Label of the datacenter. Also used as an ID."),
+				"datacenter_name":         c.FlagSet.String("id", _nilDefaultStr, "(Required) Label of the datacenter. Also used as an ID."),
 				"datacenter_display_name": c.FlagSet.String("title", _nilDefaultStr, "(Required) Human readable name of the datacenter. Usually includes the location such as UK,Reading"),
-				"read_config_from_file":   c.FlagSet.String("config", _nilDefaultStr, "(Required) Read datacenter configuration from JSON file"),
+				"read_config_from_file":   c.FlagSet.String("config", _nilDefaultStr, "(Required) Read datacenter configuration from file"),
 				"datacenter_name_parent":  c.FlagSet.String("parent", _nilDefaultStr, "If the datacenter is subordonated to another datacenter such as to a near-edge site."),
 				"create_hidden":           c.FlagSet.Bool("hidden", false, "(Flag) If set, the datacenter will be hidden after creation instead."),
 				"user_id":                 c.FlagSet.String("user", _nilDefaultStr, "Datacenter's owner. If ommited, the default is a public datacenter."),
 				"tags":                    c.FlagSet.String("tags", _nilDefaultStr, "Tags associated with this datacenter, comma separated"),
 				"read_config_from_pipe":   c.FlagSet.Bool("pipe", false, "(Flag) If set, read datacenter configuration from pipe instead of from a file. Either this flag or the -config option must be used."),
+				"format":                  c.FlagSet.String("format", "json", "The input format. Supported values are 'json','yaml'. The default format is json."),
 				"return_id":               c.FlagSet.Bool("return-id", false, "Will print the ID of the created Datacenter Useful for automating tasks."),
 			}
 		},
@@ -62,11 +64,11 @@ var datacenterCmds = []Command{
 		FlagSet:      flag.NewFlagSet("Get datacenter", flag.ExitOnError),
 		InitFunc: func(c *Command) {
 			c.Arguments = map[string]interface{}{
-				"datacenter_name":        c.FlagSet.String("label", _nilDefaultStr, "(Required) Label of the datacenter. Also used as an ID."),
+				"datacenter_name":        c.FlagSet.String("id", _nilDefaultStr, "(Required) Label of the datacenter. Also used as an ID."),
 				"show_secret_config_url": c.FlagSet.Bool("show-config-url", false, "(Flag) If set returns the secret config url for datacenter agents."),
 				"show_datacenter_config": c.FlagSet.Bool("show-config", false, "(Flag) If set returns the config of the datacenter."),
 				"return_config_url":      c.FlagSet.Bool("return-config-url", false, "(Flag) If set prints the config url of the datacenter. Ignores all other flags. Useful in automation."),
-				"format":                 c.FlagSet.String("format", "", "The output format. Supported values are 'json','csv'. The default format is human readable."),
+				"format":                 c.FlagSet.String("format", "", "The output format. Supported values are 'json','csv','yaml'. The default format is human readable."),
 			}
 		},
 		ExecuteFunc: datacenterGetCmd,
@@ -175,7 +177,7 @@ func datacenterCreateCmd(c *Command, client interfaces.MetalCloudClient) (string
 	datacenterName, ok := getStringParamOk(c.Arguments["datacenter_name"])
 
 	if !ok {
-		return "", fmt.Errorf("label is required")
+		return "", fmt.Errorf("id is required")
 	}
 
 	datacenterDisplayName, ok := getStringParamOk(c.Arguments["datacenter_display_name"])
@@ -238,10 +240,22 @@ func datacenterCreateCmd(c *Command, client interfaces.MetalCloudClient) (string
 		return "", fmt.Errorf("Content cannot be empty")
 	}
 
+	format := getStringParam(c.Arguments["format"])
+
 	var dcConf metalcloud.DatacenterConfig
-	err = json.Unmarshal(content, &dcConf)
-	if err != nil {
-		return "", err
+	switch format {
+	case "json":
+		err := json.Unmarshal(content, &dcConf)
+		if err != nil {
+			return "", err
+		}
+	case "yaml":
+		err := yaml.Unmarshal(content, &dcConf)
+		if err != nil {
+			return "", err
+		}
+	default:
+		return "", fmt.Errorf("input format \"%s\" not supported", format)
 	}
 
 	ret, err := client.DatacenterCreate(dc, dcConf)
@@ -260,7 +274,7 @@ func datacenterGetCmd(c *Command, client interfaces.MetalCloudClient) (string, e
 
 	datacenterName, ok := getStringParamOk(c.Arguments["datacenter_name"])
 	if !ok {
-		return "", fmt.Errorf("-label required")
+		return "", fmt.Errorf("-id required")
 	}
 
 	retDC, err := client.DatacenterGet(datacenterName)
@@ -336,6 +350,8 @@ func datacenterGetCmd(c *Command, client interfaces.MetalCloudClient) (string, e
 		}
 	}
 
+	format := getStringParam(c.Arguments["format"])
+
 	showConfig := getBoolParam(c.Arguments["show_datacenter_config"])
 	configStr := ""
 	config := metalcloud.DatacenterConfig{}
@@ -352,12 +368,6 @@ func datacenterGetCmd(c *Command, client interfaces.MetalCloudClient) (string, e
 		}
 		config = *configRet
 
-		configBytes, err := json.MarshalIndent(config, "", "\t")
-		if err != nil {
-			return "", err
-		}
-
-		configStr = string(configBytes)
 	}
 
 	data := [][]interface{}{
@@ -374,15 +384,14 @@ func datacenterGetCmd(c *Command, client interfaces.MetalCloudClient) (string, e
 
 	var sb strings.Builder
 
-	format := c.Arguments["format"]
-	if format == nil {
-		var f string
-		f = ""
-		format = &f
-	}
-
-	switch *format.(*string) {
+	switch format {
 	case "json", "JSON":
+		configBytes, err := json.MarshalIndent(config, "", "\t")
+		if err != nil {
+			return "", err
+		}
+
+		data[0][5] = string(configBytes)
 		ret, err := GetTableAsJSONString(data, schema)
 		if err != nil {
 			return "", err
@@ -390,6 +399,20 @@ func datacenterGetCmd(c *Command, client interfaces.MetalCloudClient) (string, e
 		sb.WriteString(ret)
 	case "csv", "CSV":
 		ret, err := GetTableAsCSVString(data, schema)
+		if err != nil {
+			return "", err
+		}
+		sb.WriteString(ret)
+
+	case "yaml", "YAML":
+		configBytes, err := yaml.Marshal(config)
+		if err != nil {
+			return "", err
+		}
+
+		data[0][5] = string(configBytes)
+
+		ret, err := GetTableAsYAMLString(data, schema)
 		if err != nil {
 			return "", err
 		}

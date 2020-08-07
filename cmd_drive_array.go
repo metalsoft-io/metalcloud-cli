@@ -66,7 +66,7 @@ var driveArrayCmds = []Command{
 		InitFunc: func(c *Command) {
 			c.Arguments = map[string]interface{}{
 				"infrastructure_id_or_label": c.FlagSet.String("infra", _nilDefaultStr, "(Required) Infrastructure's id or label. Note that the 'label' this be ambiguous in certain situations."),
-				"format":                     c.FlagSet.String("format", "", "The output format. Supported values are 'json','csv'. The default format is human readable."),
+				"format":                     c.FlagSet.String("format", "", "The output format. Supported values are 'json','csv','yaml'. The default format is human readable."),
 			}
 		},
 		ExecuteFunc: driveArrayListCmd,
@@ -97,7 +97,7 @@ var driveArrayCmds = []Command{
 			c.Arguments = map[string]interface{}{
 				"drive_array_id_or_label": c.FlagSet.String("id", _nilDefaultStr, "(Required) Drive Array's ID or label. Note that using the label can be ambiguous and is slower."),
 				"show_iscsi_credentials":  c.FlagSet.Bool("show-iscsi-credentials", false, "(Flag) If set returns the drives' iscsi credentials"),
-				"format":                  c.FlagSet.String("format", "", "The output format. Supported values are 'json','csv'. The default format is human readable."),
+				"format":                  c.FlagSet.String("format", "", "The output format. Supported values are 'json','csv','yaml'. The default format is human readable."),
 			}
 		},
 		ExecuteFunc: driveArrayGetCmd,

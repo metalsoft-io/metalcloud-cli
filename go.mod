@@ -3,9 +3,10 @@ module github.com/bigstepinc/metalcloud-cli
 go 1.12
 
 require (
-	github.com/bigstepinc/metal-cloud-sdk-go v1.3.9
+	github.com/bigstepinc/metal-cloud-sdk-go v1.4.3
 	github.com/golang/mock v1.3.1
 	github.com/golang/protobuf v1.3.2 // indirect
+	github.com/iancoleman/strcase v0.0.0-20191112232945-16388991a334
 	github.com/kr/pretty v0.1.0 // indirect
 	github.com/onsi/ginkgo v1.10.3 // indirect
 	github.com/onsi/gomega v1.7.1
@@ -14,7 +15,8 @@ require (
 	golang.org/x/sys v0.0.0-20191204072324-ce4227a45e2e // indirect
 	golang.org/x/text v0.3.2 // indirect
 	gopkg.in/check.v1 v1.0.0-20190902080502-41f04d3bba15 // indirect
-	gopkg.in/yaml.v2 v2.2.5 // indirect
+	gopkg.in/yaml.v2 v2.2.5
+	gopkg.in/yaml.v3 v3.0.0-20200615113413-eeeca48fe776
 )
 
-//replace github.com/bigstepinc/metal-cloud-sdk-go => /Users/alex/go/src/github.com/bigstepinc/metal-cloud-sdk-go
+replace github.com/bigstepinc/metal-cloud-sdk-go => /Users/alex/code/go/src/github.com/bigstepinc/metal-cloud-sdk-go

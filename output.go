@@ -8,8 +8,12 @@ import (
 	"fmt"
 	"io"
 	"os"
+	"reflect"
 	"strings"
 	"sync"
+
+	"github.com/iancoleman/strcase"
+	"gopkg.in/yaml.v2"
 )
 
 //ConsoleIOChannel represents an IO channel, typically stdin and stdout but could be anything
@@ -75,7 +79,9 @@ func GetTableRow(row []interface{}, schema []SchemaField) string {
 		case TypeInt:
 			rowStr = append(rowStr, fmt.Sprintf(fmt.Sprintf(" %%-%dd", field.FieldSize), row[i].(int)))
 		case TypeString:
-			rowStr = append(rowStr, fmt.Sprintf(fmt.Sprintf(" %%-%ds", field.FieldSize), row[i].(string)))
+			//escape %
+			s := strings.ReplaceAll(row[i].(string), "%", "%%")
+			rowStr = append(rowStr, fmt.Sprintf(fmt.Sprintf(" %%-%ds", field.FieldSize), s))
 		case TypeFloat:
 			rowStr = append(rowStr, fmt.Sprintf(fmt.Sprintf(" %%-%d.%df", field.FieldSize, field.FieldPrecision), row[i].(float64)))
 		default:
@@ -172,7 +178,29 @@ func printTable(data [][]interface{}, schema []SchemaField) {
 	fmt.Print(GetTableAsString(data, schema))
 }
 
-//GetTableAsJSONString returns a MarshalIndent string for the given data
+//GetTableAsYAMLString returns a yaml.Marshal string for the given data
+func GetTableAsYAMLString(data [][]interface{}, schema []SchemaField) (string, error) {
+
+	dataAsMap := make([]interface{}, len(data))
+
+	for k, row := range data {
+		rowAsMap := make(map[string]interface{}, len(schema))
+		for i, field := range schema {
+			formattedFieldName := strcase.ToLowerCamel(strings.ToLower(field.FieldName))
+			rowAsMap[formattedFieldName] = row[i]
+		}
+		dataAsMap[k] = rowAsMap
+	}
+
+	ret, err := yaml.Marshal(dataAsMap)
+	if err != nil {
+		return "", err
+	}
+
+	return string(ret), nil
+}
+
+//GetTableAsJSONString returns a json.MarshalIndent string for the given data
 func GetTableAsJSONString(data [][]interface{}, schema []SchemaField) (string, error) {
 	dataAsMap := make([]interface{}, len(data))
 
@@ -192,7 +220,7 @@ func GetTableAsJSONString(data [][]interface{}, schema []SchemaField) (string, e
 	return string(ret), nil
 }
 
-//GetTableAsCSVString returns a csv
+//GetTableAsCSVString returns a table as a csv
 func GetTableAsCSVString(data [][]interface{}, schema []SchemaField) (string, error) {
 	var buf bytes.Buffer
 	writer := bufio.NewWriter(&buf)
@@ -251,6 +279,12 @@ func renderTable(tableName string, topLine string, format string, data [][]inter
 		sb.WriteString(ret)
 	case "csv", "CSV":
 		ret, err := GetTableAsCSVString(data, schema)
+		if err != nil {
+			return "", err
+		}
+		sb.WriteString(ret)
+	case "yaml", "YAML":
+		ret, err := GetTableAsYAMLString(data, schema)
 		if err != nil {
 			return "", err
 		}
@@ -352,5 +386,156 @@ func renderTransposedTable(tableName string, topLine string, format string, data
 	}
 
 	return renderTable(tableName, topLine, format, dataTransposed, newSchema)
+
+}
+
+//renderTransposedTableHumanReadable renders an object in a human readable way
+func renderTransposedTableHumanReadable(tableName string, topLine string, data [][]interface{}, schema []SchemaField) (string, error) {
+
+	headerRow := []interface{}{}
+	for _, s := range schema {
+		headerRow = append(headerRow, s.FieldName)
+	}
+
+	var sb strings.Builder
+	for i, field := range schema {
+		sb.WriteString(fmt.Sprintf("%s: %v\n", field.FieldName, data[0][i]))
+	}
+
+	return sb.String(), nil
+}
+
+//FieldNameFormatter is a formatter for fields
+type FieldNameFormatter interface {
+	Format(n string) string
+}
+
+//HumanReadableFormatter formats a field in the form "word word word"
+type HumanReadableFormatter struct{}
+
+//Format returns formatted string
+func (o *HumanReadableFormatter) Format(s string) string {
+	return strcase.ToDelimited(s, ' ')
+}
+
+//NewHumanReadableFormatter creates a new formatter
+func NewHumanReadableFormatter() *HumanReadableFormatter { return &HumanReadableFormatter{} }
+
+//PassThroughFormatter formats a field in the form "word word word"
+type PassThroughFormatter struct{}
+
+//Format returns formatted string
+func (o *PassThroughFormatter) Format(s string) string {
+	return s
+}
+
+//NewPassThroughFormatter passthriugh
+func NewPassThroughFormatter() *PassThroughFormatter { return &PassThroughFormatter{} }
+
+//StripPrefixFormatter strips a prefix from field names
+type StripPrefixFormatter struct {
+	Prefix string
+}
+
+//Format returns formatted string
+func (o *StripPrefixFormatter) Format(s string) string {
+	return strings.Title(strcase.ToDelimited(strings.TrimPrefix(s, o.Prefix), ' '))
+}
+
+//NewStripPrefixFormatter like HumanReadableFormatter but strips a prefix
+func NewStripPrefixFormatter(prefix string) *StripPrefixFormatter {
+	return &StripPrefixFormatter{Prefix: prefix}
+}
+
+//objectToTable converts an object into a table directly
+//without having to manually build the schema and fields
+func objectToTable(obj interface{}) ([]interface{}, []SchemaField, error) {
+	return objectToTableWithFormatter(obj, NewHumanReadableFormatter())
+}
+
+//objectToTable converts an object into a table directly
+//without having to manually build the schema and fields
+func objectToTableWithFormatter(obj interface{}, fieldNameFormatter FieldNameFormatter) ([]interface{}, []SchemaField, error) {
+	var data []interface{}
+	var schema []SchemaField
+
+	t := reflect.TypeOf(obj)
+	v := reflect.ValueOf(obj)
+
+	if t.Kind() != reflect.Struct {
+		panic(fmt.Errorf("Only struct types are supported. This is %v", t.Kind()))
+	}
+
+	for i := 0; i < t.NumField(); i++ {
+
+		fieldName := fieldNameFormatter.Format(t.Field(i).Name)
+
+		typeName := 0
+
+		switch t.Field(i).Type.Kind() {
+		case reflect.Int, reflect.Int16, reflect.Int32, reflect.Int64:
+			typeName = TypeInt
+			data = append(data, int(v.Field(i).Int()))
+		case reflect.String:
+			typeName = TypeString
+			data = append(data, v.Field(i).String())
+		case reflect.Float32, reflect.Float64:
+			typeName = TypeFloat
+			data = append(data, v.Field(i).Float())
+		default:
+			typeName = TypeString
+			s, err := yaml.Marshal(v.Field(i).Interface())
+			if err != nil {
+				return nil, nil, err
+			}
+			data = append(data, strings.TrimSpace(string(s)))
+		}
+
+		schema = append(schema, SchemaField{
+			FieldName: fieldName,
+			FieldType: typeName,
+		})
+	}
+
+	return data, schema, nil
+
+}
+
+func renderRawObject(obj interface{}, format string, prefixToStrip string) (string, error) {
+
+	switch format {
+	case "json", "JSON":
+		ret, err := json.MarshalIndent(obj, "", "\t")
+		if err != nil {
+			return "", err
+		}
+		return string(ret), nil
+	case "csv", "CSV":
+		data, schema, err := objectToTableWithFormatter(obj, NewPassThroughFormatter())
+		if err != nil {
+			return "", err
+		}
+		ret, err := GetTableAsCSVString([][]interface{}{data}, schema)
+		if err != nil {
+			return "", err
+		}
+		return ret, nil
+	case "yaml", "YAML":
+		ret, err := yaml.Marshal(obj)
+		if err != nil {
+			return "", err
+		}
+		return string(ret), nil
+	default:
+		data, schema, err := objectToTableWithFormatter(obj, NewStripPrefixFormatter(prefixToStrip))
+		if err != nil {
+			return "", err
+		}
+		ret, err := renderTransposedTableHumanReadable("", "", [][]interface{}{data}, schema)
+		if err != nil {
+			return "", err
+		}
+		return ret, nil
+	}
 
 }

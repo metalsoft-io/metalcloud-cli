@@ -40,7 +40,7 @@ var instanceCmds = []Command{
 		InitFunc: func(c *Command) {
 			c.Arguments = map[string]interface{}{
 				"instance_id": c.FlagSet.Int("id", _nilDefaultInt, "(Required) Instances's id . Note that the 'label' this be ambiguous in certain situations."),
-				"format":      c.FlagSet.String("format", "", "The output format. Supported values are 'json','csv'. The default format is human readable."),
+				"format":      c.FlagSet.String("format", "", "The output format. Supported values are 'json','csv','yaml'. The default format is human readable."),
 			}
 		},
 		ExecuteFunc: instanceCredentialsCmd,

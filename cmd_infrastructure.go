@@ -39,7 +39,7 @@ var infrastructureCmds = []Command{
 		FlagSet:      flag.NewFlagSet("list infrastructure", flag.ExitOnError),
 		InitFunc: func(c *Command) {
 			c.Arguments = map[string]interface{}{
-				"format": c.FlagSet.String("format", "", "The output format. Supported values are 'json','csv'. The default format is human readable."),
+				"format": c.FlagSet.String("format", "", "The output format. Supported values are 'json','csv','yaml'. The default format is human readable."),
 			}
 		},
 		ExecuteFunc: infrastructureListCmd,
@@ -92,7 +92,7 @@ var infrastructureCmds = []Command{
 		InitFunc: func(c *Command) {
 			c.Arguments = map[string]interface{}{
 				"infrastructure_id_or_label": c.FlagSet.String("id", _nilDefaultStr, "(Required) Infrastructure's id or label. Note that using the 'label' might be ambiguous in certain situations."),
-				"format":                     c.FlagSet.String("format", "", "The output format. Supported values are 'json','csv'. The default format is human readable."),
+				"format":                     c.FlagSet.String("format", "", "The output format. Supported values are 'json','csv','yaml'. The default format is human readable."),
 			}
 		},
 		ExecuteFunc: infrastructureGetCmd,

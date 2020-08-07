@@ -84,6 +84,7 @@ func TestDatacenterCreate(t *testing.T) {
 				"read_config_from_file":   f.Name(),
 				"create_hidden":           true,
 				"user_id":                 _userFixture1.UserEmail,
+				"format":                  "json",
 				"tags":                    "t1,t2",
 				"datacenter_name_parent":  "test",
 			}),
@@ -197,7 +198,7 @@ func TestDatacenterGet(t *testing.T) {
 	})
 	ret, err = datacenterGetCmd(&cmd, client)
 	Expect(err).To(BeNil())
-	Expect(ret).To(ContainSubstring("VLAN"))
+	Expect(ret).To(ContainSubstring("Datacenter name"))
 
 	//verify json format
 

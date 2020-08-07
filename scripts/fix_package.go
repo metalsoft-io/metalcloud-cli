@@ -49,6 +49,9 @@ var types = [...]string{
 	"SharedDrive",
 	"OSTemplateOSAssetData",
 	"SharedDriveOperation",
+	"SwitchDevice",
+	"SubnetPool",
+	"SubnetPoolUtilization",
 }
 
 const packageName = "metalcloud"

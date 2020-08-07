@@ -21,7 +21,7 @@ var osTemplatesCmds = []Command{
 		FlagSet:      flag.NewFlagSet("list templates", flag.ExitOnError),
 		InitFunc: func(c *Command) {
 			c.Arguments = map[string]interface{}{
-				"format": c.FlagSet.String("format", _nilDefaultStr, "The output format. Supported values are 'json','csv'. The default format is human readable."),
+				"format": c.FlagSet.String("format", _nilDefaultStr, "The output format. Supported values are 'json','csv','yaml'. The default format is human readable."),
 				"usage":  c.FlagSet.String("usage", _nilDefaultStr, "Template's usage"),
 			}
 		},
@@ -103,7 +103,7 @@ var osTemplatesCmds = []Command{
 		InitFunc: func(c *Command) {
 			c.Arguments = map[string]interface{}{
 				"template_id_or_name": c.FlagSet.String("id", _nilDefaultStr, "Asset's id or name"),
-				"format":              c.FlagSet.String("format", _nilDefaultStr, "The output format. Supported values are 'json','csv'. The default format is human readable."),
+				"format":              c.FlagSet.String("format", _nilDefaultStr, "The output format. Supported values are 'json','csv','yaml'. The default format is human readable."),
 				"show_credentials":    c.FlagSet.Bool("show-credentials", false, "(Flag) If set returns the templates initial ssh credentials"),
 			}
 		},

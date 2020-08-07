@@ -23,7 +23,7 @@ var firewallRuleCmds = []Command{
 		InitFunc: func(c *Command) {
 			c.Arguments = map[string]interface{}{
 				"instance_array_id": c.FlagSet.Int("ia", _nilDefaultInt, "(Required) The instance array id"),
-				"format":            c.FlagSet.String("format", _nilDefaultStr, "The output format. Supported values are 'json','csv'. The default format is human readable."),
+				"format":            c.FlagSet.String("format", _nilDefaultStr, "The output format. Supported values are 'json','csv','yaml'. The default format is human readable."),
 			}
 		},
 		ExecuteFunc: firewallRuleListCmd,

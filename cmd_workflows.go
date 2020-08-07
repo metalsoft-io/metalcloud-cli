@@ -22,7 +22,7 @@ var workflowCmds = []Command{
 		InitFunc: func(c *Command) {
 			c.Arguments = map[string]interface{}{
 				"usage":  c.FlagSet.String("usage", _nilDefaultStr, "Workflow usage. One of infrastructure, network_equipment, server, free_standing, storage_pool, user, os_template"),
-				"format": c.FlagSet.String("format", _nilDefaultStr, "The output format. Supported values are 'json','csv'. The default format is human readable."),
+				"format": c.FlagSet.String("format", _nilDefaultStr, "The output format. Supported values are 'json','csv','yaml'. The default format is human readable."),
 			}
 		},
 		ExecuteFunc: workflowsListCmd,
@@ -38,7 +38,7 @@ var workflowCmds = []Command{
 		InitFunc: func(c *Command) {
 			c.Arguments = map[string]interface{}{
 				"workflow_id_or_label": c.FlagSet.String("id", _nilDefaultStr, "Workflow's id or label."),
-				"format":               c.FlagSet.String("format", _nilDefaultStr, "The output format. Supported values are 'json','csv'. The default format is human readable."),
+				"format":               c.FlagSet.String("format", _nilDefaultStr, "The output format. Supported values are 'json','csv','yaml'. The default format is human readable."),
 			}
 		},
 		ExecuteFunc: workflowGetCmd,

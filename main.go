@@ -271,6 +271,8 @@ func getCommands(clients map[string]interfaces.MetalCloudClient) []Command {
 		osAssetsCmds,
 		osTemplatesCmds,
 		serversCmds,
+		switchCmds,
+		subnetPoolCmds,
 		stageDefinitionsCmds,
 		workflowCmds,
 		versionCmds,
