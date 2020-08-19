@@ -137,11 +137,13 @@ func locateCommand(predicate string, subject string, commands []Command) *Comman
 }
 
 func getArgumentHelp(f *flag.Flag) string {
-	dashes := "-"
-	if len(f.Name) > 1 {
-		dashes = "--"
+
+	if len(f.Name) == 1 {
+		return fmt.Sprintf("\t  -%-25s %s\n", f.Name, f.Usage)
+	} else {
+		return fmt.Sprintf("\t  --%-24s %s\n", f.Name, f.Usage)
 	}
-	return fmt.Sprintf("\t  %s%-25s %s\n", dashes, f.Name, f.Usage)
+
 }
 
 func getCommandHelp(cmd Command, showArguments bool) string {

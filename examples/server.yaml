@@ -1,0 +1,40 @@
+id: 685
+UUID: 44454C4C-5800-1039-8052-C2C04F373632
+status: available
+serialNumber: BX9R762
+vendor: Dell Inc.
+datacenter: es-madrid
+networkTotalCapacityMbps: 4000
+bootType: uefi
+powerStatus: "off"
+processorName: Intel(R) Xeon(R) CPU E5-2630 v3 @ 2.40GHz
+processorCoreCount: 8
+processorCoreMhz: 1295
+processorCount: 2
+processorThreads: 2
+processorCPUMark: 0
+ramGbytes: 32
+disks:
+- diskType: HDD
+  diskSizeGB: 279
+diskCount: 1
+diskSizeMbytes: 285696
+diskType: HDD
+productName: PowerEdge R730 (SKU=NotProvided;ModelName=PowerEdge R730)
+serverClass: bigdata
+serverTypeID: 33
+interfaces:
+- macAddress: 44:a8:42:24:93:4e
+- macAddress: 44:a8:42:24:93:50
+- macAddress: 00:1b:21:72:f2:74
+- macAddress: 00:1b:21:72:f2:75
+tags:
+- "0"
+- "1"
+- "2"
+IPMIChannel: 0
+IPMIHostname: 10.255.237.40
+IPMIUsername: bsiVvf3
+vendorSKU: SKU=NotProvided;ModelName=PowerEdge R730
+BIOSInfoJson: '{"server_bios_vendor":"Dell Inc.","server_bios_version":"2.10.5"}'
+CustomJSON: '{"previous_ipmi_username":"bsiVvf3","previous_ipmi_password_encrypted":"rqi|aes-cbc|YpYvxmGtz5L4miVgZ2SKnUmv828c2hnnoPyG\/xElpun7Oe6Nat\/sm+i6AIFooDlU"}'

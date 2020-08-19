@@ -77,7 +77,7 @@ var instanceArrayCmds = []Command{
 		Subject:      "instance-array",
 		AltSubject:   "ia",
 		Predicate:    "edit",
-		AltPredicate: "alter",
+		AltPredicate: "update",
 		FlagSet:      flag.NewFlagSet("instance_array", flag.ExitOnError),
 		InitFunc: func(c *Command) {
 			c.Arguments = map[string]interface{}{

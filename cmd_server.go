@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"strings"
 
+	metalcloud "github.com/bigstepinc/metal-cloud-sdk-go"
 	interfaces "github.com/bigstepinc/metalcloud-cli/interfaces"
 )
 
@@ -37,12 +38,57 @@ var serversCmds = []Command{
 		FlagSet:      flag.NewFlagSet("get server", flag.ExitOnError),
 		InitFunc: func(c *Command) {
 			c.Arguments = map[string]interface{}{
-				"id":               c.FlagSet.Int("id", _nilDefaultInt, "Server's ID"),
-				"format":           c.FlagSet.String("format", _nilDefaultStr, "The output format. Supported values are 'json','csv','yaml'. The default format is human readable."),
-				"show_credentials": c.FlagSet.Bool("show-credentials", false, "(Flag) If set returns the servers' IPMI credentials"),
+				"server_id_or_uuid": c.FlagSet.String("id", _nilDefaultStr, "Server's ID or UUID"),
+				"format":            c.FlagSet.String("format", _nilDefaultStr, "The output format. Supported values are 'json','csv','yaml'. The default format is human readable."),
+				"show_credentials":  c.FlagSet.Bool("show-credentials", false, "(Flag) If set returns the servers' IPMI credentials"),
+				"raw":               c.FlagSet.Bool("raw", false, "(Flag) If set returns the servers' raw object serialized using specified format"),
 			}
 		},
 		ExecuteFunc: serverGetCmd,
+		Endpoint:    DeveloperEndpoint,
+	},
+
+	{
+		Description:  "Create server",
+		Subject:      "server",
+		AltSubject:   "srv",
+		Predicate:    "create",
+		AltPredicate: "new",
+		FlagSet:      flag.NewFlagSet("create server", flag.ExitOnError),
+		InitFunc: func(c *Command) {
+			c.Arguments = map[string]interface{}{
+				"format":                c.FlagSet.String("format", "json", "The input format. Supported values are 'json','yaml'. The default format is json."),
+				"read_config_from_file": c.FlagSet.String("raw-config", _nilDefaultStr, "(Required) Read raw object from file"),
+				"read_config_from_pipe": c.FlagSet.Bool("pipe", false, "(Flag) If set, read raw object from pipe instead of from a file. Either this flag or the --raw-config option must be used."),
+				"return_id":             c.FlagSet.Bool("return-id", false, "Will print the ID of the created object. Useful for automating tasks."),
+			}
+		},
+		ExecuteFunc: serverCreateCmd,
+		Endpoint:    DeveloperEndpoint,
+	},
+
+	{
+		Description:  "Edit server",
+		Subject:      "server",
+		AltSubject:   "srv",
+		Predicate:    "edit",
+		AltPredicate: "update",
+		FlagSet:      flag.NewFlagSet("edit server", flag.ExitOnError),
+		InitFunc: func(c *Command) {
+			c.Arguments = map[string]interface{}{
+				"server_id_or_uuid":     c.FlagSet.String("id", _nilDefaultStr, "Server's ID or UUID"),
+				"status":                c.FlagSet.String("status", _nilDefaultStr, "The new status of the server. Supported values are 'available','unavailable'. This command cannot be used in conjunction with config or pipe commands."),
+				"ipmi_hostname":         c.FlagSet.String("ipmi-host", _nilDefaultStr, "The new IPMI hostname of the server. This command cannot be used in conjunction with config or pipe commands."),
+				"ipmi_username":         c.FlagSet.String("ipmi-user", _nilDefaultStr, "The new IPMI username of the server. This command cannot be used in conjunction with config or pipe commands."),
+				"ipmi_password":         c.FlagSet.String("ipmi-pass", _nilDefaultStr, "The new IPMI password of the server. This command cannot be used in conjunction with config or pipe commands."),
+				"server_type":           c.FlagSet.String("server-type", _nilDefaultStr, "The new server type (id or label) of the server. This command cannot be used in conjunction with config or pipe commands."),
+				"server_class":          c.FlagSet.String("server-class", _nilDefaultStr, "The new class of the server. This command cannot be used in conjunction with config or pipe commands."),
+				"format":                c.FlagSet.String("format", "json", "The input format used when config or pipe commands are used. Supported values are 'json','yaml'. The default format is json."),
+				"read_config_from_file": c.FlagSet.String("raw-config", _nilDefaultStr, "(Required) Read raw object from file"),
+				"read_config_from_pipe": c.FlagSet.Bool("pipe", false, "(Flag) If set, read raw object from pipe instead of from a file. Either this flag or the --raw-config option must be used."),
+			}
+		},
+		ExecuteFunc: serverEditCmd,
 		Endpoint:    DeveloperEndpoint,
 	},
 }
@@ -204,18 +250,9 @@ func serversListCmd(c *Command, client interfaces.MetalCloudClient) (string, err
 
 func serverGetCmd(c *Command, client interfaces.MetalCloudClient) (string, error) {
 
-	serverID := *c.Arguments["id"].(*int)
-	if serverID == _nilDefaultInt {
-		return "", fmt.Errorf("id is required")
-	}
+	showCredentials := getBoolParam(c.Arguments["show_credentials"])
 
-	showCredentials := false
-	if c.Arguments["show_credentials"] != nil && *c.Arguments["show_credentials"].(*bool) {
-		showCredentials = true
-	}
-
-	server, err := client.ServerGet(serverID, showCredentials)
-
+	server, err := getServerFromCommand("id", c, client, showCredentials)
 	if err != nil {
 		return "", err
 	}
@@ -360,57 +397,176 @@ func serverGetCmd(c *Command, client interfaces.MetalCloudClient) (string, error
 
 	var sb strings.Builder
 
-	format := c.Arguments["format"]
-	if format == nil {
-		var f string
-		f = ""
-		format = &f
-	}
+	format := getStringParam(c.Arguments["format"])
 
-	switch *format.(*string) {
-	case "json", "JSON":
-		ret, err := GetTableAsJSONString(data, schema)
+	if getBoolParam(c.Arguments["raw"]) {
+		ret, err := renderRawObject(*server, format, "Server")
 		if err != nil {
 			return "", err
 		}
 		sb.WriteString(ret)
-	case "csv", "CSV":
-		ret, err := GetTableAsCSVString(data, schema)
-		if err != nil {
-			return "", err
+	} else {
+
+		switch format {
+		case "json", "JSON":
+			ret, err := GetTableAsJSONString(data, schema)
+			if err != nil {
+				return "", err
+			}
+			sb.WriteString(ret)
+		case "csv", "CSV":
+			ret, err := GetTableAsCSVString(data, schema)
+			if err != nil {
+				return "", err
+			}
+			sb.WriteString(ret)
+
+		default:
+			sb.WriteString("SERVER OVERVIEW\n")
+			sb.WriteString("---------------\n")
+			sb.WriteString(fmt.Sprintf("#%d %s %s\n",
+				server.ServerID,
+				serverTypeName,
+				server.DatacenterName))
+
+			sb.WriteString(fmt.Sprintf("%s %s\n%s %s\n\n",
+				server.ServerVendor,
+				server.ServerProductName,
+				server.ServerSerialNumber,
+				server.ServerUUID))
+
+			sb.WriteString("CONFIGURATION\n")
+			sb.WriteString("------------\n")
+			sb.WriteString(fmt.Sprintf("%s\n", configuration))
+			sb.WriteString(fmt.Sprintf("%s\n\n", disks))
+
+			sb.WriteString("ALLOCATION\n")
+			sb.WriteString("----------\n")
+			sb.WriteString(fmt.Sprintf("server_status: %s\nallocated to: %s\n\n", server.ServerStatus, allocation))
+
+			if showCredentials {
+				sb.WriteString("CREDENTIALS\n")
+				sb.WriteString("-----------\n")
+				sb.WriteString(fmt.Sprintf("%s\n", credentials))
+			}
+
 		}
-		sb.WriteString(ret)
-
-	default:
-		sb.WriteString("SERVER OVERVIEW\n")
-		sb.WriteString("---------------\n")
-		sb.WriteString(fmt.Sprintf("#%d %s %s\n",
-			server.ServerID,
-			serverTypeName,
-			server.DatacenterName))
-
-		sb.WriteString(fmt.Sprintf("%s %s\n%s %s\n\n",
-			server.ServerVendor,
-			server.ServerProductName,
-			server.ServerSerialNumber,
-			server.ServerUUID))
-
-		sb.WriteString("CONFIGURATION\n")
-		sb.WriteString("------------\n")
-		sb.WriteString(fmt.Sprintf("%s\n", configuration))
-		sb.WriteString(fmt.Sprintf("%s\n\n", disks))
-
-		sb.WriteString("ALLOCATION\n")
-		sb.WriteString("----------\n")
-		sb.WriteString(fmt.Sprintf("server_status: %s\nallocated to: %s\n\n", server.ServerStatus, allocation))
-
-		if showCredentials {
-			sb.WriteString("CREDENTIALS\n")
-			sb.WriteString("-----------\n")
-			sb.WriteString(fmt.Sprintf("%s\n", credentials))
-		}
-
 	}
 
 	return sb.String(), nil
+}
+
+func serverCreateCmd(c *Command, client interfaces.MetalCloudClient) (string, error) {
+
+	var obj metalcloud.Server
+
+	err := getRawObjectFromCommand(c, &obj)
+
+	ret, err := client.ServerCreate(obj, false)
+	if err != nil {
+		return "", err
+	}
+
+	if getBoolParam(c.Arguments["return_id"]) {
+		return fmt.Sprintf("%d", ret), nil
+	}
+
+	return "", err
+}
+
+func serverEditCmd(c *Command, client interfaces.MetalCloudClient) (string, error) {
+
+	server, err := getServerFromCommand("id", c, client, false)
+	if err != nil {
+		return "", err
+	}
+
+	newStatus, setStatus := getStringParamOk(c.Arguments["status"])
+	newIPMIHostname, setIPMIHostname := getStringParamOk(c.Arguments["ipmi_hostname"])
+	newIPMIUsername, setIPMIUsername := getStringParamOk(c.Arguments["ipmi_username"])
+	newIPMIPassword, setIPMIPassword := getStringParamOk(c.Arguments["ipmi_password"])
+
+	_, setServerType := getStringParamOk(c.Arguments["server_type"])
+	newServerClass, setServerClass := getStringParamOk(c.Arguments["server_class"])
+
+	_, readFromFile := getStringParamOk(c.Arguments["read_config_from_file"])
+	readFromPipe := getBoolParam(c.Arguments["read_config_from_pipe"])
+
+	if (readFromFile || readFromPipe) && (setStatus || setIPMIHostname || setIPMIUsername || setIPMIPassword) {
+		return "", fmt.Errorf("Cannot use --config or --pipe with --status or --ipmi-host or --ipmi-user or --ipmi-pass")
+	}
+
+	newServer := *server
+
+	if readFromFile || readFromPipe {
+
+		err = getRawObjectFromCommand(c, &newServer)
+		if err != nil {
+			return "", err
+		}
+	}
+
+	if setStatus {
+		newServer.ServerStatus = newStatus
+	}
+
+	if setIPMIHostname {
+		newServer.ServerIPMIHost = newIPMIHostname
+	}
+
+	if setIPMIUsername {
+		newServer.ServerIPMInternalUsername = newIPMIUsername
+	}
+
+	if setIPMIPassword {
+		newServer.ServerIPMInternalPassword = newIPMIPassword
+	}
+
+	if setServerClass {
+		newServer.ServerClass = newServerClass
+	}
+
+	if setServerType {
+		serverType, err := getServerTypeFromCommand("server-type", c, client)
+		if err != nil {
+			return "", err
+		}
+		newServer.ServerTypeID = serverType.ServerTypeID
+
+	}
+	_, err = client.ServerEditComplete(server.ServerID, newServer)
+
+	return "", err
+}
+
+func getServerFromCommand(paramName string, c *Command, client interfaces.MetalCloudClient, decryptPassword bool) (*metalcloud.Server, error) {
+
+	m, err := getParam(c, "server_id_or_uuid", paramName)
+	if err != nil {
+		return nil, err
+	}
+
+	id, uuid, isID := idOrLabel(m)
+
+	if isID {
+		return client.ServerGet(id, decryptPassword)
+	}
+
+	return client.ServerGetByUUID(uuid, decryptPassword)
+}
+
+func getServerTypeFromCommand(paramName string, c *Command, client interfaces.MetalCloudClient) (*metalcloud.ServerType, error) {
+
+	m, err := getParam(c, "server_type", paramName)
+	if err != nil {
+		return nil, err
+	}
+
+	id, label, isID := idOrLabel(m)
+
+	if isID {
+		return client.ServerTypeGet(id)
+	}
+
+	return client.ServerTypeGetByLabel(label)
 }

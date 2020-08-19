@@ -10,101 +10,6 @@ import metalcloud "github.com/bigstepinc/metal-cloud-sdk-go"
 
 // MetalCloudClient interface used for mocking and abstracting the backend
 type MetalCloudClient interface {
-	//InfrastructureDeployCustomStageAddIntoRunlevel adds a stage into a runlevel
-	InfrastructureDeployCustomStageAddIntoRunlevel(infraID int, stageID int, runLevel int, stageRunMoment string) error
-	//InfrastructureDeployCustomStageDeleteIntoRunlevel delete a stage into a runlevel
-	InfrastructureDeployCustomStageDeleteIntoRunlevel(infraID int, stageID int, runLevel int, stageRunMoment string) error
-	//InfrastructureDeployCustomStages retrieves a list of all the metalcloud.StageDefinition objects which a specified metalcloud.User is allowed to see through ownership or delegation. The stageDefinition objects never return the actual protected stageDefinition value.
-	InfrastructureDeployCustomStages(infraID int, stageDefinitionType string) (*[]metalcloud.WorkflowStageAssociation, error)
-	/*
-	   //SwitchProvisioner provisioner base struct
-	   type SwitchProvisioner struct {
-	   	Provisioner interface{}
-	   	Type        string
-	   }
-
-	   //VLANProvisioner - defines settings for the networking provisioning architecture that uses vlans
-	   type VLANProvisioner struct {
-	   	LANVLANRange     string `json:"LANVLANRange,omitempty"`
-	   	WANVLANRange     string `json:"WANVLANRange,omitempty"`
-	   	QuarantineVLANID int    `json:"quarantineVLANID,omitempty"`
-	   	Type             string `json:"type,omitempty"`
-	   }
-
-	   //VPLSProvisioner - defines settings for the networking provisioning architecture that uses vpls
-	   type VPLSProvisioner struct {
-	   	ACLSAN            int    `json:"ACLSAN,omitempty"`
-	   	ACLWAN            int    `json:"ACLWAN,omitempty"`
-	   	SANACLRange       string `json:"SANACLRange,omitempty"`
-	   	ToRLANVLANRange   string `json:"ToRLANVLANRange,omitempty"`
-	   	ToRSANVLANRange   string `json:"ToRSANVLANRange,omitempty"`
-	   	ToRWANVLANRange   string `json:"ToRWANVLANRange,omitempty"`
-	   	QuarantineVLANID  int    `json:"quarantineVLANID,omitempty"`
-	   	NorthWANVLANRange string `json:"NorthWANVLANRange,omitempty"`
-	   	Type              string `json:"type,omitempty"`
-	   }
-
-	   //UnmarshalJSON custom unmarshaling
-	   func (o *SwitchProvisioner) UnmarshalJSON(data []byte) error {
-	   	var p struct {
-	   		Type string `json:"type,omitempty"`
-	   	}
-
-	   	err := json.Unmarshal(data, &p)
-	   	if err != nil {
-	   		return err
-	   	}
-
-	   	o.Type = p.Type
-
-	   	switch p.Type {
-	   	case "VLANProvisioner":
-
-	   		var provisioner VLANProvisioner
-	   		err := json.Unmarshal(data, &provisioner)
-	   		if err != nil {
-	   			return err
-	   		}
-	   		o.Provisioner = provisioner
-
-	   	case "VPLSProvisioner":
-	   		var provisioner VPLSProvisioner
-
-	   		err := json.Unmarshal(data, &provisioner)
-	   		if err != nil {
-	   			return err
-	   		}
-
-	   		o.Provisioner = provisioner
-	   	default:
-	   		return fmt.Errorf("Cannot unmarshal unsupported provisioner type %s", p.Type)
-	   	}
-
-	   	return nil
-	   }
-
-	   //MarshalJSON custom marshaling
-	   func (o *SwitchProvisioner) MarshalJSON() ([]byte, error) {
-
-	   	switch o.Type {
-	   	case "VLANProvisioner":
-
-	   		provisioner := o.Provisioner.(VLANProvisioner)
-	   		provisioner.Type = o.Type
-
-	   		return json.Marshal(&provisioner)
-
-	   	case "VPLSProvisioner":
-	   		provisioner := o.Provisioner.(VPLSProvisioner)
-	   		provisioner.Type = o.Type
-	   		return json.Marshal(&provisioner)
-
-	   	default:
-	   		return nil, fmt.Errorf("Cannot marshal unsupported provisioner type %s", o.Type)
-	   	}
-
-	   }
-	*/
 	//Datacenters returns datacenters for all users
 	Datacenters(onlyActive bool) (*map[string]metalcloud.Datacenter, error)
 	//DatacentersByUserID returns datacenters for specific user
@@ -311,8 +216,24 @@ type MetalCloudClient interface {
 	Secrets(usage string) (*map[string]metalcloud.Secret, error)
 	//ServersSearch searches for servers matching certain filter
 	ServersSearch(filter string) (*[]metalcloud.ServerSearchResult, error)
+	//ServerGetByUUID retrieves information about a specified metalcloud.Server by using the server's UUID
+	ServerGetByUUID(serverUUID string, decryptPasswd bool) (*metalcloud.Server, error)
 	//ServerGet returns a server's details
 	ServerGet(serverID int, decryptPasswd bool) (*metalcloud.Server, error)
+	//ServerCreate manually creates a server record
+	ServerCreate(server metalcloud.Server, autoGenerate bool) (int, error)
+	//ServerEditComplete - perform a complete edit
+	ServerEditComplete(serverID int, server metalcloud.Server) (*metalcloud.Server, error)
+	//ServerEditIPMI - edit only IPMI settings
+	ServerEditIPMI(serverID int, server metalcloud.Server) (*metalcloud.Server, error)
+	//ServerEditAvailability - edit only server availability settings
+	ServerEditAvailability(serverID int, server metalcloud.Server) (*metalcloud.Server, error)
+	//ServerEdit edits a server record
+	ServerEdit(serverID int, serverEditType string, server metalcloud.Server) (*metalcloud.Server, error)
+	//ServerDelete deletes all the information about a specified metalcloud.Server.
+	ServerDelete(serverID int, skipIPMI bool) error
+	//ServerDecomission decomissions the server row and deletes all child rows.
+	ServerDecomission(serverID int, skipIPMI bool) error
 	//ServerFirmwareComponentUpgrade Creates a firmware upgrading session for the specified component.
 	//If no strServerComponentFirmwareNewVersion or strFirmwareBinaryURL are provided the system will use the values from the database which should have been previously added
 	ServerFirmwareComponentUpgrade(serverID int, serverComponentID int, serverComponentFirmwareNewVersion string, firmwareBinaryURL string) error
@@ -333,7 +254,9 @@ type MetalCloudClient interface {
 	//ServerTypeDatacenter retrieves all the server type IDs for servers found in a specified metalcloud.Datacenter
 	ServerTypeDatacenter(datacenterName string) (*[]int, error)
 	//ServerTypes retrieves all metalcloud.ServerType objects from the database.
-	ServerTypes(datacenterName string, bOnlyAvailable bool) (*map[int]metalcloud.ServerType, error)
+	ServerTypes(bOnlyAvailable bool) (*map[int]metalcloud.ServerType, error)
+	//ServerTypesForDatacenter retrieves all metalcloud.ServerType objects from the database.
+	ServerTypesForDatacenter(datacenterName string, bOnlyAvailable bool) (*map[int]metalcloud.ServerType, error)
 	//ServerTypeGet retrieves a server type by id
 	ServerTypeGet(serverTypeID int) (*metalcloud.ServerType, error)
 	//ServerTypeGetByLabel retrieves a server type by id
@@ -446,4 +369,10 @@ type MetalCloudClient interface {
 	WorkflowMoveIntoRunLevel(workflowID int, stageDefinitionID int, sourceRunLevel int, destinationRunLevel int) error
 	//WorkflowStageDelete deletes a stage from a workflow entirelly
 	WorkflowStageDelete(workflowStageID int) error
+	//InfrastructureDeployCustomStageAddIntoRunlevel adds a stage into a runlevel
+	InfrastructureDeployCustomStageAddIntoRunlevel(infraID int, stageID int, runLevel int, stageRunMoment string) error
+	//InfrastructureDeployCustomStageDeleteIntoRunlevel delete a stage into a runlevel
+	InfrastructureDeployCustomStageDeleteIntoRunlevel(infraID int, stageID int, runLevel int, stageRunMoment string) error
+	//InfrastructureDeployCustomStages retrieves a list of all the metalcloud.StageDefinition objects which a specified metalcloud.User is allowed to see through ownership or delegation. The stageDefinition objects never return the actual protected stageDefinition value.
+	InfrastructureDeployCustomStages(infraID int, stageDefinitionType string) (*[]metalcloud.WorkflowStageAssociation, error)
 }
