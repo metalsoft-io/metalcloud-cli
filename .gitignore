@@ -1,4 +1,6 @@
 .vscode
+.DS_Store
+examples/.DS_Store
 set_envs.sh
 metalcloud-cli
 scripts/getgocookie.sh

@@ -13,10 +13,8 @@ managementProtocol: ssh
 managementPort: 22
 managementUsername: admin
 managementPassword: BigStepd3pl0y
-#the CIDR subnet for the mgmt address such as 16 for a /16 address
-managementAddressMask: 16
-#Sometimes required if gateway not on the same subnet as the management address
-#managementAddressGateway: 10.10.0.1
+
+#Used if switch will go through ONIE imaging
 #managementMACAddress: 00:00:00:00:00:00
 
 #Network address (first IP) of the WAN IPv6 subnet.

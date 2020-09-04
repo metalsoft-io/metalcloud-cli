@@ -84,19 +84,28 @@ func TestSwitchCreate(t *testing.T) {
 	defer syscall.Unlink(f2.Name())
 
 	cases := []CommandTestCase{
-		{
-			name: "sw-create-good1",
-			cmd: MakeCommand(map[string]interface{}{
-				"read_config_from_file": f.Name(),
-				"format":                "json",
-			}),
-			good: true,
-			id:   1,
-		},
+		/*	{
+				name: "sw-create-good1",
+				cmd: MakeCommand(map[string]interface{}{
+					"read_config_from_file": f.Name(),
+					"format":                "json",
+				}),
+				good: true,
+				id:   1,
+			},
+			{
+				name: "sw-create-good-yaml",
+				cmd: MakeCommand(map[string]interface{}{
+					"read_config_from_file": f2.Name(),
+					"format":                "yaml",
+				}),
+				good: true,
+				id:   1,
+			},*/
 		{
 			name: "sw-create-good-yaml",
 			cmd: MakeCommand(map[string]interface{}{
-				"read_config_from_file": f2.Name(),
+				"read_config_from_file": "examples/switch.yaml",
 				"format":                "yaml",
 			}),
 			good: true,

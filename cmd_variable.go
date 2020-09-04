@@ -127,19 +127,18 @@ func variablesListCmd(c *Command, client interfaces.MetalCloudClient) (string, e
 func variableCreateCmd(c *Command, client interfaces.MetalCloudClient) (string, error) {
 	variable := metalcloud.Variable{}
 
-	if v := c.Arguments["name"]; v != nil && *v.(*string) != _nilDefaultStr {
-		variable.VariableName = *v.(*string)
+	if v, ok := getStringParamOk(c.Arguments["name"]); ok {
+		variable.VariableName = v
 	} else {
 		return "", fmt.Errorf("name is required")
 	}
 
-	if v := c.Arguments["usage"]; v != nil && *v.(*string) != _nilDefaultStr {
-		variable.VariableUsage = *v.(*string)
-	}
+	variable.VariableUsage = getStringParam(c.Arguments["usage"])
 
 	var err error
 	content := []byte{}
-	if v := c.Arguments["read_content_from_pipe"]; *v.(*bool) {
+
+	if getBoolParam(c.Arguments["read_content_from_pipe"]) {
 		content, err = readInputFromPipe()
 	} else {
 		content, err = requestInput("Variable content:")
@@ -153,7 +152,10 @@ func variableCreateCmd(c *Command, client interfaces.MetalCloudClient) (string, 
 		return "", fmt.Errorf("Content cannot be empty")
 	}
 
-	b, err := json.Marshal(content)
+	cleanedContent := strings.Trim(string(content), "\"\r\n")
+
+	b, err := json.Marshal(cleanedContent)
+	fmt.Printf("%s", b)
 	variable.VariableJSON = string(b)
 
 	ret, err := client.VariableCreate(variable)

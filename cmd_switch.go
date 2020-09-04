@@ -41,7 +41,7 @@ var switchCmds = []Command{
 			c.Arguments = map[string]interface{}{
 				"overwrite_hostname_from_switch": c.FlagSet.Bool("retrieve-hostname-from-switch", false, "(Flag) Retrieve the hostname from the equipment instead of configuration file."),
 				"format":                         c.FlagSet.String("format", "json", "The input format. Supported values are 'json','yaml'. The default format is json."),
-				"read_config_from_file":          c.FlagSet.String("config", _nilDefaultStr, "(Required) Read  configuration from JSON file"),
+				"read_config_from_file":          c.FlagSet.String("raw-config", _nilDefaultStr, "(Required) Read  configuration from JSON file"),
 				"read_config_from_pipe":          c.FlagSet.Bool("pipe", false, "(Flag) If set, read  configuration from pipe instead of from a file. Either this flag or the -config option must be used."),
 				"return_id":                      c.FlagSet.Bool("return-id", false, "Will print the ID of the created object. Useful for automating tasks."),
 			}

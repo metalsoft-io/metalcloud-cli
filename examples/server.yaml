@@ -1,40 +1,50 @@
-id: 685
-UUID: 44454C4C-5800-1039-8052-C2C04F373632
-status: available
-serialNumber: BX9R762
-vendor: Dell Inc.
-datacenter: es-madrid
-networkTotalCapacityMbps: 4000
+id: 519
+UUID: 38363739-3539-435A-4A38-303830465631
+status: unavailable
+serialNumber: CZJ8080FV1
+vendor: HPE
+datacenter: ke-nairobi
+networkTotalCapacityMbps: 40000
 bootType: uefi
 powerStatus: "off"
-processorName: Intel(R) Xeon(R) CPU E5-2630 v3 @ 2.40GHz
-processorCoreCount: 8
-processorCoreMhz: 1295
+processorName: Intel(R) Xeon(R) Silver 4114 CPU @ 2.20GHz
+processorCoreCount: 10
+processorCoreMhz: 800
 processorCount: 2
 processorThreads: 2
 processorCPUMark: 0
-ramGbytes: 32
+ramGbytes: 256
 disks:
-- diskType: HDD
-  diskSizeGB: 279
-diskCount: 1
-diskSizeMbytes: 285696
+- id: 235
+  model: LOGICAL VOLUME
+  type: HDD
+  vendor: HPE
+  status: installed
+  serial_number: 600508b1001c9c6b91ea72bc1e2e9c78
+  sizeGB: 931
+- id: 236
+  model: LOGICAL VOLUME
+  type: HDD
+  vendor: HPE
+  status: installed
+  serial_number: 600508b1001c2922e37bc2849eb2d50c
+  sizeGB: 931
+diskCount: 2
+diskSizeMbytes: 953344
 diskType: HDD
-productName: PowerEdge R730 (SKU=NotProvided;ModelName=PowerEdge R730)
+productName: ProLiant DL360 Gen10 (867959-B21)
 serverClass: bigdata
-serverTypeID: 33
+serverTypeID: 31
 interfaces:
-- macAddress: 44:a8:42:24:93:4e
-- macAddress: 44:a8:42:24:93:50
-- macAddress: 00:1b:21:72:f2:74
-- macAddress: 00:1b:21:72:f2:75
-tags:
-- "0"
-- "1"
-- "2"
+- macAddress: 18:61:2f:00:07:90
+- macAddress: 18:61:2f:00:07:94
+- macAddress: 18:61:2f:00:07:98
+- macAddress: 18:61:2f:00:07:9c
 IPMIChannel: 0
-IPMIHostname: 10.255.237.40
-IPMIUsername: bsiVvf3
-vendorSKU: SKU=NotProvided;ModelName=PowerEdge R730
-BIOSInfoJson: '{"server_bios_vendor":"Dell Inc.","server_bios_version":"2.10.5"}'
-CustomJSON: '{"previous_ipmi_username":"bsiVvf3","previous_ipmi_password_encrypted":"rqi|aes-cbc|YpYvxmGtz5L4miVgZ2SKnUmv828c2hnnoPyG\/xElpun7Oe6Nat\/sm+i6AIFooDlU"}'
+IPMIHostname: 10.255.238.19
+IPMIUsername: bsizBzM
+vendorSKU: 867959-B21
+comments: 'Adrian S 25--5: after tudor''s investigation seems to be some problems
+  with the 519''s network cable'
+BIOSInfoJson: '{"server_bios_vendor":"HPE","server_bios_version":"U32"}'
+CustomJSON: '{"previous_ipmi_username":"bsiVCzz","previous_ipmi_password_encrypted":"rqi|aes-cbc|dSZiCWbhLqT4EsU69tL41mObq4WlgIqBb0qTM2WFlAmdHumd3KryR5G6f+1d7HMS"}'

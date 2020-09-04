@@ -1,6 +1,7 @@
 package main
 
 import (
+	"bytes"
 	"encoding/csv"
 	"encoding/json"
 	"fmt"
@@ -86,5 +87,40 @@ func TestVariablesListCmd(t *testing.T) {
 	csv, err := reader.ReadAll()
 	Expect(csv[1][0]).To(Equal(fmt.Sprintf("%d", 0)))
 	Expect(csv[1][1]).To(Equal("test"))
+
+}
+
+func TestVariableCreateCmd(t *testing.T) {
+	RegisterTestingT(t)
+	ctrl := gomock.NewController(t)
+
+	variable := metalcloud.Variable{
+		VariableName:  "test",
+		VariableUsage: "test",
+		VariableJSON:  "\"testcontent\"",
+	}
+
+	client := mock_metalcloud.NewMockMetalCloudClient(ctrl)
+
+	client.EXPECT().
+		VariableCreate(variable).
+		Return(&variable, nil).
+		AnyTimes()
+
+	var stdin bytes.Buffer
+	var stdout bytes.Buffer
+
+	SetConsoleIOChannel(&stdin, &stdout)
+
+	stdin.Write([]byte("testcontent\n"))
+
+	cmd := MakeCommand(map[string]interface{}{
+		"name":  "test",
+		"usage": "test",
+	})
+
+	ret, err := variableCreateCmd(&cmd, client)
+	Expect(err).To(BeNil())
+	Expect(ret).NotTo(BeNil())
 
 }
