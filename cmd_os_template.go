@@ -399,6 +399,9 @@ func templateCreateCmd(c *Command, client interfaces.MetalCloudClient) (string, 
 func templateEditCmd(c *Command, client interfaces.MetalCloudClient) (string, error) {
 
 	obj, err := getOSTemplateFromCommand("id", c, client, false)
+	if err != nil {
+		return "", err
+	}
 	newobj := metalcloud.OSTemplate{}
 	updatedObj, err := updateTemplateFromCommand(newobj, c, client, false)
 	if err != nil {
