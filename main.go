@@ -140,9 +140,9 @@ func getArgumentHelp(f *flag.Flag) string {
 
 	if len(f.Name) == 1 {
 		return fmt.Sprintf("\t  -%-25s %s\n", f.Name, f.Usage)
-	} else {
-		return fmt.Sprintf("\t  --%-24s %s\n", f.Name, f.Usage)
 	}
+
+	return fmt.Sprintf("\t  --%-24s %s\n", f.Name, f.Usage)
 
 }
 

@@ -19,7 +19,7 @@ var osAssetsCmds = []Command{
 		AltSubject:   "asset",
 		Predicate:    "list",
 		AltPredicate: "ls",
-		FlagSet:      flag.NewFlagSet("list secrets", flag.ExitOnError),
+		FlagSet:      flag.NewFlagSet("list assets", flag.ExitOnError),
 		InitFunc: func(c *Command) {
 			c.Arguments = map[string]interface{}{
 				"format": c.FlagSet.String("format", _nilDefaultStr, "The output format. Supported values are 'json','csv','yaml'. The default format is human readable."),
@@ -43,7 +43,7 @@ var osAssetsCmds = []Command{
 				"mime":                    c.FlagSet.String("mime", _nilDefaultStr, "Required. Asset's mime type. Possible values: \"text/plain\",\"application/octet-stream\""),
 				"url":                     c.FlagSet.String("url", _nilDefaultStr, "Asset's source url. If present it will not read content anymore"),
 				"variable_names_required": c.FlagSet.String("variable-names-required", _nilDefaultStr, "The names of the variables and secrets that are used in this asset, comma separated."),
-				"read_content_from_pipe":  c.FlagSet.Bool("pipe", false, "Read secret's content read from pipe instead of terminal input"),
+				"read_content_from_pipe":  c.FlagSet.Bool("pipe", false, "Read assets's content read from pipe instead of terminal input"),
 				"return_id":               c.FlagSet.Bool("return-id", false, "(Flag) If set will print the ID of the created infrastructure. Useful for automating tasks."),
 			}
 		},
@@ -287,7 +287,7 @@ func getOSAssetFromCommand(paramName string, internalParamName string, c *Comman
 		}
 	}
 
-	return nil, fmt.Errorf("Could not locate secret with id/name %v", *v.(*interface{}))
+	return nil, fmt.Errorf("Could not locate asset with label '%s'", label)
 }
 
 func associateAssetCmd(c *Command, client interfaces.MetalCloudClient) (string, error) {
