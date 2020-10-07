@@ -74,6 +74,24 @@ var datacenterCmds = []Command{
 		ExecuteFunc: datacenterGetCmd,
 		Endpoint:    DeveloperEndpoint,
 	},
+	{
+		Description:  "Update datacenter config",
+		Subject:      "datacenter",
+		AltSubject:   "dc",
+		Predicate:    "update",
+		AltPredicate: "edit",
+		FlagSet:      flag.NewFlagSet("Update datacenter config", flag.ExitOnError),
+		InitFunc: func(c *Command) {
+			c.Arguments = map[string]interface{}{
+				"datacenter_name":       c.FlagSet.String("id", _nilDefaultStr, "(Required) Label of the datacenter. Also used as an ID."),
+				"read_config_from_file": c.FlagSet.String("config", _nilDefaultStr, "(Required) Read datacenter configuration from file"),
+				"read_config_from_pipe": c.FlagSet.Bool("pipe", false, "(Flag) If set, read datacenter configuration from pipe instead of from a file. Either this flag or the -config option must be used."),
+				"format":                c.FlagSet.String("format", "json", "The input format. Supported values are 'json','yaml'. The default format is json."),
+			}
+		},
+		ExecuteFunc: datacenterUpdateCmd,
+		Endpoint:    DeveloperEndpoint,
+	},
 }
 
 func datacenterListCmd(c *Command, client interfaces.MetalCloudClient) (string, error) {
@@ -449,4 +467,63 @@ func datacenterGetCmd(c *Command, client interfaces.MetalCloudClient) (string, e
 	}
 
 	return sb.String(), nil
+}
+
+func datacenterUpdateCmd(c *Command, client interfaces.MetalCloudClient) (string, error) {
+
+	datacenterName, ok := getStringParamOk(c.Arguments["datacenter_name"])
+
+	if !ok {
+		return "", fmt.Errorf("id is required")
+	}
+
+	readContentfromPipe := getBoolParam((c.Arguments["read_config_from_pipe"]))
+
+	var err error
+	content := []byte{}
+
+	if readContentfromPipe {
+		content, err = readInputFromPipe()
+	} else {
+
+		if configFilePath, ok := getStringParamOk(c.Arguments["read_config_from_file"]); ok {
+
+			content, err = readInputFromFile(configFilePath)
+		} else {
+			return "", fmt.Errorf("-config <path_to_json_file> or -pipe is required")
+		}
+	}
+
+	if err != nil {
+		return "", err
+	}
+
+	if len(content) == 0 {
+		return "", fmt.Errorf("Content cannot be empty")
+	}
+
+	format := getStringParam(c.Arguments["format"])
+
+	var dcConf metalcloud.DatacenterConfig
+	switch format {
+	case "json":
+		err := json.Unmarshal(content, &dcConf)
+		if err != nil {
+			return "", err
+		}
+	case "yaml":
+		err := yaml.Unmarshal(content, &dcConf)
+		if err != nil {
+			return "", err
+		}
+	default:
+		return "", fmt.Errorf("input format \"%s\" not supported", format)
+	}
+
+	err = client.DatacenterConfigUpdate(datacenterName, dcConf)
+	if err != nil {
+		return "", err
+	}
+
+	return "", err
 }

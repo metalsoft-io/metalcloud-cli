@@ -127,6 +127,92 @@ func TestDatacenterCreate(t *testing.T) {
 
 }
 
+func TestDatacenterUpdate(t *testing.T) {
+	RegisterTestingT(t)
+	ctrl := gomock.NewController(t)
+
+	client := mock_metalcloud.NewMockMetalCloudClient(ctrl)
+
+	var dcConf metalcloud.DatacenterConfig
+	err := json.Unmarshal([]byte(_dcConfigFixture1), &dcConf)
+	if err != nil {
+		t.Error(err)
+	}
+
+	client.EXPECT().
+		DatacenterConfigUpdate("test", dcConf).
+		Return(nil).
+		AnyTimes()
+
+	client.EXPECT().
+		UserGetByEmail(_userFixture1.UserEmail).
+		Return(&_userFixture1, nil).
+		AnyTimes()
+
+	f, err := ioutil.TempFile("/tmp", "testconf-*.json")
+	if err != nil {
+		t.Error(err)
+	}
+
+	f.WriteString(_dcConfigFixture1)
+	f.Close()
+	defer syscall.Unlink(f.Name())
+
+	cases := []CommandTestCase{
+		{
+			name: "dc-create-good1",
+			cmd: MakeCommand(map[string]interface{}{
+				"datacenter_name":       _dcFixture1.DatacenterName,
+				"read_config_from_file": f.Name(),
+				"format":                "json",
+			}),
+			good: true,
+			id:   0,
+		},
+		{
+			name: "missing label",
+			cmd:  MakeCommand(map[string]interface{}{}),
+			good: false,
+		},
+		{
+			name: "missing read_config_from_file",
+			cmd: MakeCommand(map[string]interface{}{
+				"datacenter_name":         _dcFixture1.DatacenterName,
+				"datacenter_display_name": _dcFixture1.DatacenterDisplayName,
+			}),
+			good: false,
+		},
+		{
+			name: "both read_config_from_file and pipe",
+			cmd: MakeCommand(map[string]interface{}{
+				"datacenter_name":         _dcFixture1.DatacenterName,
+				"datacenter_display_name": _dcFixture1.DatacenterDisplayName,
+				"read_config_from_file":   f.Name(),
+				"read_config_from_pipe":   true,
+			}),
+			good: false,
+		},
+	}
+
+	for _, c := range cases {
+		t.Run(c.name, func(t *testing.T) {
+
+			_, err := datacenterUpdateCmd(&c.cmd, client)
+			if c.good {
+
+				if err != nil {
+					t.Errorf("error thrown: %v", err)
+				}
+
+			} else {
+				if err == nil {
+					t.Errorf("Should have thrown error")
+				}
+			}
+		})
+	}
+}
+
 func TestDatacenterGet(t *testing.T) {
 	RegisterTestingT(t)
 	ctrl := gomock.NewController(t)

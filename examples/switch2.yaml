@@ -1,0 +1,55 @@
+#the hostname of the switch
+identifierString: HP5900-H1060
+description: ToR switch
+#the datacenter label
+datacenterName: ro-bucharest
+#
+provisionerType: lan
+provisionerPosition: other
+driver: hp5900
+#connection details. This can be in-band management iP or the out-of-band. In this setup we used the out of band 
+managementAddress: 172.16.10.2
+managementProtocol: ssh
+managementPort: 22
+managementUsername: admin
+managementPassword: mmmmm
+
+#Used if switch will go through ONIE imaging
+#managementMACAddress: 00:00:00:00:00:00
+
+#Network address (first IP) of the WAN IPv6 subnet.
+#These will be the IPs that will be allocated to hosts
+#that need to be reachable from outside an infrastructure
+#Both Ipv4 and IPv6 IPs are allocated to servers
+#The IPv6 subnet will be automatically created
+primaryWANIPv6SubnetPool: fd1f:8bbb:56b3:2000:0000:0000:1000:0000
+#Subnet size of the above subnet. If it is fd1f:8bbb:56b3:2000:0000:0000:1000:0000/53 in CIRD notation this number will be 53
+primaryWANIPv6SubnetPrefixSize: 53
+
+#Network address (first IP) of the SAN subnet. 
+primarySANSubnetPool: 100.64.0.1
+#By default, the SAN subnet has a netmask of 21.
+primarySANSubnetPrefixSize: 21
+
+#This IP range is used as a hack to 
+#prevent downtime during dynamic provisioning of ports (since we have multiple secondary IPs on the same interface)
+#the traffic is not routed to these IPs.
+#The real IPv4 WAN subnet pool needs to be added using the subnets tab.
+primaryWANIPv4SubnetPool: 172.24.4.0
+#Subnet size of the above subnet. If it is 172.24.4.0/22 in CIRD notation this number will be 22
+primaryWANIPv4SubnetPrefixSize: 22
+
+
+# The pool from which to allocate ips to servers during registration
+quarantineSubnetStart: 172.16.0.0
+quarantineSubnetEnd: 172.16.0.255
+#the subnet size (CIDR) of the above pool
+quarantineSubnetPrefixSize: 24
+#the IP of the SVI in the quarantine network
+quarantineSubnetGateway: 172.16.0.1
+
+
+#Set to true to enable ONIE for this switch.
+requiresOSInstall: false
+#Set this to the ID of the volume template that holds the ONIE image
+volumeTemplateID: 0
