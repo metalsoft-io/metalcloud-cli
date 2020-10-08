@@ -10,6 +10,7 @@ import (
 	mock_metalcloud "github.com/bigstepinc/metalcloud-cli/helpers"
 	gomock "github.com/golang/mock/gomock"
 	. "github.com/onsi/gomega"
+	"gopkg.in/yaml.v3"
 )
 
 func TestDatacenterListCmd(t *testing.T) {
@@ -127,6 +128,20 @@ func TestDatacenterCreate(t *testing.T) {
 
 }
 
+func TestDatacenterYamlUnmarshal(t *testing.T) {
+	RegisterTestingT(t)
+
+	var dcConf metalcloud.DatacenterConfig
+	content, err := readInputFromFile("examples/datacenter.yaml")
+	Expect(err).To(BeNil())
+	Expect(content).NotTo(BeNil())
+
+	err = yaml.Unmarshal(content, &dcConf)
+	Expect(err).To(BeNil())
+
+	Expect(dcConf.ServerRegisterUsingGeneratedIPMICredentialsEnabled).To(BeTrue())
+}
+
 func TestDatacenterUpdate(t *testing.T) {
 	RegisterTestingT(t)
 	ctrl := gomock.NewController(t)
@@ -164,6 +179,16 @@ func TestDatacenterUpdate(t *testing.T) {
 			cmd: MakeCommand(map[string]interface{}{
 				"datacenter_name":       _dcFixture1.DatacenterName,
 				"read_config_from_file": f.Name(),
+				"format":                "json",
+			}),
+			good: true,
+			id:   0,
+		},
+		{
+			name: "dc-create-good2",
+			cmd: MakeCommand(map[string]interface{}{
+				"datacenter_name":       _dcFixture1.DatacenterName,
+				"read_config_from_file": "examples/datacenter.yaml",
 				"format":                "json",
 			}),
 			good: true,

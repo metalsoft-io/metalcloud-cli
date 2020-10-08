@@ -56,3 +56,7 @@ switchProvisioner:
 #    WANVLANRange: 100-199
 #    #VLAN range for LAN networks
 #    LANVLANRange: 200-299
+
+
+serverRegisterUsingGeneratedIPMICredentialsEnabled: true
+datacenterNetworkIsLayer2Only: true
