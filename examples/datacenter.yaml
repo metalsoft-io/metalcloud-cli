@@ -47,7 +47,10 @@ switchProvisioner:
     quarantineVLANID: 5
     #VLAN Range for WAN ports 'North' switches.
     NorthWANVLANRange: 1001-2000
-    
+
+serverRegisterUsingGeneratedIPMICredentialsEnabled: true
+datacenterNetworkIsLayer2Only: true
+
 #switchProvisioner:    
 #    type: VLANProvisioner
 #    #The VLAN to use for quarantine network
@@ -56,7 +59,3 @@ switchProvisioner:
 #    WANVLANRange: 100-199
 #    #VLAN range for LAN networks
 #    LANVLANRange: 200-299
-
-
-serverRegisterUsingGeneratedIPMICredentialsEnabled: true
-datacenterNetworkIsLayer2Only: true

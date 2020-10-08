@@ -12,7 +12,7 @@ managementAddress: 172.16.10.2
 managementProtocol: ssh
 managementPort: 22
 managementUsername: admin
-managementPassword: BigStepd3pl0y
+managementPassword: mmmmm
 
 #Used if switch will go through ONIE imaging
 #managementMACAddress: 00:00:00:00:00:00

@@ -185,16 +185,6 @@ func TestDatacenterUpdate(t *testing.T) {
 			id:   0,
 		},
 		{
-			name: "dc-create-good2",
-			cmd: MakeCommand(map[string]interface{}{
-				"datacenter_name":       _dcFixture1.DatacenterName,
-				"read_config_from_file": "examples/datacenter.yaml",
-				"format":                "json",
-			}),
-			good: true,
-			id:   0,
-		},
-		{
 			name: "missing label",
 			cmd:  MakeCommand(map[string]interface{}{}),
 			good: false,
