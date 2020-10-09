@@ -14,7 +14,7 @@ import (
 var firewallRuleCmds = []Command{
 
 	{
-		Description:  "Lists instance array firewall rules",
+		Description:  "Lists instance array firewall rules.",
 		Subject:      "firewall-rule",
 		AltSubject:   "fw",
 		Predicate:    "list",
@@ -29,7 +29,7 @@ var firewallRuleCmds = []Command{
 		ExecuteFunc: firewallRuleListCmd,
 	},
 	{
-		Description:  "Add instance array firewall rule",
+		Description:  "Add instance array firewall rule.",
 		Subject:      "firewall-rule",
 		AltSubject:   "fw",
 		Predicate:    "add",
@@ -49,7 +49,7 @@ var firewallRuleCmds = []Command{
 		ExecuteFunc: firewallRuleAddCmd,
 	},
 	{
-		Description:  "Remove instance array firewall rule",
+		Description:  "Remove instance array firewall rule.",
 		Subject:      "firewall-rule",
 		AltSubject:   "fw",
 		Predicate:    "delete",

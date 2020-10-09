@@ -13,7 +13,7 @@ import (
 var switchCmds = []Command{
 
 	{
-		Description:  "Lists registered switches",
+		Description:  "Lists registered switches.",
 		Subject:      "switch",
 		AltSubject:   "sw",
 		Predicate:    "list",
@@ -31,7 +31,7 @@ var switchCmds = []Command{
 		Endpoint:    DeveloperEndpoint,
 	},
 	{
-		Description:  "Create switch device",
+		Description:  "Create switch device.",
 		Subject:      "switch",
 		AltSubject:   "sw",
 		Predicate:    "create",
@@ -50,7 +50,7 @@ var switchCmds = []Command{
 		Endpoint:    DeveloperEndpoint,
 	},
 	{
-		Description:  "Get a switch device",
+		Description:  "Get a switch device.",
 		Subject:      "switch",
 		AltSubject:   "sw",
 		Predicate:    "get",
@@ -68,7 +68,7 @@ var switchCmds = []Command{
 		Endpoint:    DeveloperEndpoint,
 	},
 	{
-		Description:  "Delete switch.",
+		Description:  "Delete a switch.",
 		Subject:      "switch",
 		AltSubject:   "sw",
 		Predicate:    "delete",

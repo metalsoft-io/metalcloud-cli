@@ -11,7 +11,7 @@ import (
 var volumeTemplateyCmds = []Command{
 
 	{
-		Description:  "Lists available volume templates",
+		Description:  "Lists available volume templates.",
 		Subject:      "volume-template",
 		AltSubject:   "vt",
 		Predicate:    "list",
@@ -28,7 +28,7 @@ var volumeTemplateyCmds = []Command{
 		Endpoint:    ExtendedEndpoint,
 	},
 	{
-		Description:  "Create volume templates",
+		Description:  "Create volume templates.",
 		Subject:      "volume-template",
 		AltSubject:   "vt",
 		Predicate:    "create",

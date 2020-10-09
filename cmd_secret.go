@@ -15,7 +15,7 @@ import (
 var secretsCmds = []Command{
 
 	{
-		Description:  "Lists available secrets",
+		Description:  "Lists available secrets.",
 		Subject:      "secrets",
 		AltSubject:   "sec",
 		Predicate:    "list",
@@ -31,7 +31,7 @@ var secretsCmds = []Command{
 		Endpoint:    ExtendedEndpoint,
 	},
 	{
-		Description:  "Create secret",
+		Description:  "Create a secret.",
 		Subject:      "secret",
 		AltSubject:   "sec",
 		Predicate:    "create",
@@ -49,7 +49,7 @@ var secretsCmds = []Command{
 		Endpoint:    ExtendedEndpoint,
 	},
 	{
-		Description:  "Delete secret",
+		Description:  "Delete a secret.",
 		Subject:      "secret",
 		AltSubject:   "sec",
 		Predicate:    "delete",

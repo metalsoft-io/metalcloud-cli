@@ -14,7 +14,7 @@ import (
 var variablesCmds = []Command{
 
 	{
-		Description:  "Lists available variables",
+		Description:  "Lists all variables.",
 		Subject:      "variable",
 		AltSubject:   "var",
 		Predicate:    "list",
@@ -30,7 +30,7 @@ var variablesCmds = []Command{
 		Endpoint:    ExtendedEndpoint,
 	},
 	{
-		Description:  "Create variable",
+		Description:  "Create a variable.",
 		Subject:      "variable",
 		AltSubject:   "var",
 		Predicate:    "create",
@@ -48,7 +48,7 @@ var variablesCmds = []Command{
 		Endpoint:    ExtendedEndpoint,
 	},
 	{
-		Description:  "Delete variable",
+		Description:  "Delete a variable.",
 		Subject:      "variable",
 		AltSubject:   "var",
 		Predicate:    "delete",

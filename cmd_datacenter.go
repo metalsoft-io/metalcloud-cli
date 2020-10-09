@@ -15,7 +15,7 @@ import (
 var datacenterCmds = []Command{
 
 	{
-		Description:  "List datacenters",
+		Description:  "List all datacenters.",
 		Subject:      "datacenter",
 		AltSubject:   "dc",
 		Predicate:    "list",
@@ -32,7 +32,7 @@ var datacenterCmds = []Command{
 		ExecuteFunc: datacenterListCmd,
 	},
 	{
-		Description:  "Create datacenter",
+		Description:  "Create a datacenter.",
 		Subject:      "datacenter",
 		AltSubject:   "dc",
 		Predicate:    "create",
@@ -61,7 +61,7 @@ var datacenterCmds = []Command{
 		AltSubject:   "dc",
 		Predicate:    "get",
 		AltPredicate: "show",
-		FlagSet:      flag.NewFlagSet("Get datacenter", flag.ExitOnError),
+		FlagSet:      flag.NewFlagSet("Get datacenter details.", flag.ExitOnError),
 		InitFunc: func(c *Command) {
 			c.Arguments = map[string]interface{}{
 				"datacenter_name":        c.FlagSet.String("id", _nilDefaultStr, "(Required) Label of the datacenter. Also used as an ID."),

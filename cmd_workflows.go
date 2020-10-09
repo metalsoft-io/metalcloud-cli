@@ -13,7 +13,7 @@ import (
 var workflowCmds = []Command{
 
 	{
-		Description:  "Lists available workflows",
+		Description:  "Lists available workflows.",
 		Subject:      "workflow",
 		AltSubject:   "wf",
 		Predicate:    "list",
@@ -29,7 +29,7 @@ var workflowCmds = []Command{
 		Endpoint:    ExtendedEndpoint,
 	},
 	{
-		Description:  "Get workflow details",
+		Description:  "Get workflow details.",
 		Subject:      "workflow",
 		AltSubject:   "wf",
 		Predicate:    "get",
@@ -45,7 +45,7 @@ var workflowCmds = []Command{
 		Endpoint:    ExtendedEndpoint,
 	},
 	{
-		Description:  "Create workflow ",
+		Description:  "Create a workflow",
 		Subject:      "workflow",
 		AltSubject:   "wf",
 		Predicate:    "create",
@@ -66,7 +66,7 @@ var workflowCmds = []Command{
 		Endpoint:    ExtendedEndpoint,
 	},
 	{
-		Description:  "Delete a stage from a workflow",
+		Description:  "Delete a stage from a workflow.",
 		Subject:      "workflow",
 		AltSubject:   "wf",
 		Predicate:    "delete-stage",

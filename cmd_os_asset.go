@@ -14,7 +14,7 @@ import (
 var osAssetsCmds = []Command{
 
 	{
-		Description:  "Lists available Assets",
+		Description:  "Lists all Assets.",
 		Subject:      "asset",
 		AltSubject:   "asset",
 		Predicate:    "list",
@@ -30,7 +30,7 @@ var osAssetsCmds = []Command{
 		Endpoint:    ExtendedEndpoint,
 	},
 	{
-		Description:  "Create asset",
+		Description:  "Create asset.",
 		Subject:      "asset",
 		AltSubject:   "asset",
 		Predicate:    "create",
@@ -51,7 +51,7 @@ var osAssetsCmds = []Command{
 		Endpoint:    ExtendedEndpoint,
 	},
 	{
-		Description:  "Delete asset",
+		Description:  "Delete asset.",
 		Subject:      "asset",
 		AltSubject:   "asset",
 		Predicate:    "delete",
@@ -67,7 +67,7 @@ var osAssetsCmds = []Command{
 		Endpoint:    ExtendedEndpoint,
 	},
 	{
-		Description:  "Add (associate) asset to template",
+		Description:  "Add (associate) asset to template.",
 		Subject:      "asset",
 		AltSubject:   "asset",
 		Predicate:    "associate",
@@ -85,7 +85,7 @@ var osAssetsCmds = []Command{
 		Endpoint:    ExtendedEndpoint,
 	},
 	{
-		Description:  "Remove (unassign) asset from template",
+		Description:  "Remove (unassign) asset from template.",
 		Subject:      "asset",
 		AltSubject:   "asset",
 		Predicate:    "disassociate",
@@ -101,7 +101,7 @@ var osAssetsCmds = []Command{
 		Endpoint:    ExtendedEndpoint,
 	},
 	{
-		Description:  "List associated assets",
+		Description:  "List associated assets.",
 		Subject:      "asset",
 		AltSubject:   "asset",
 		Predicate:    "list-associated",

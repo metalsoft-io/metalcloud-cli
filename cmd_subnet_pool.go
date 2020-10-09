@@ -30,7 +30,7 @@ var subnetPoolCmds = []Command{
 		Endpoint:    DeveloperEndpoint,
 	},
 	{
-		Description:  "Get a subnet pool",
+		Description:  "Get a subnet pool.",
 		Subject:      "subnet-pool",
 		AltSubject:   "subnet",
 		Predicate:    "get",
@@ -47,7 +47,7 @@ var subnetPoolCmds = []Command{
 		Endpoint:    DeveloperEndpoint,
 	},
 	{
-		Description:  "Create a subnet pool",
+		Description:  "Create a subnet pool.",
 		Subject:      "subnet-pool",
 		AltSubject:   "subnet",
 		Predicate:    "create",
@@ -65,7 +65,7 @@ var subnetPoolCmds = []Command{
 		Endpoint:    DeveloperEndpoint,
 	},
 	{
-		Description:  "Delete a subnet pool",
+		Description:  "Delete a subnet pool.",
 		Subject:      "subnet-pool",
 		AltSubject:   "subnet",
 		Predicate:    "delete",

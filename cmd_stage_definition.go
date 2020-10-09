@@ -14,7 +14,7 @@ import (
 var stageDefinitionsCmds = []Command{
 
 	{
-		Description:  "Lists available stage definitions",
+		Description:  "Lists all stage definitions.",
 		Subject:      "stage-definition",
 		AltSubject:   "stagedef",
 		Predicate:    "list",
@@ -29,7 +29,7 @@ var stageDefinitionsCmds = []Command{
 		Endpoint:    ExtendedEndpoint,
 	},
 	{
-		Description:  "Create stage definition",
+		Description:  "Create a stage definition.",
 		Subject:      "stage-definition",
 		AltSubject:   "stagedef",
 		Predicate:    "create",
@@ -69,7 +69,7 @@ var stageDefinitionsCmds = []Command{
 		Endpoint:    ExtendedEndpoint,
 	},
 	{
-		Description:  "Delete stage definition",
+		Description:  "Delete a stage definition.",
 		Subject:      "stage-definition",
 		AltSubject:   "stagedef",
 		Predicate:    "delete",
@@ -85,7 +85,7 @@ var stageDefinitionsCmds = []Command{
 		Endpoint:    ExtendedEndpoint,
 	},
 	{
-		Description:  "Add stage into infrastructure",
+		Description:  "Add a stage to an infrastructure pre or post deploy workflows.",
 		Subject:      "stage-definition",
 		AltSubject:   "stagedef",
 		Predicate:    "add-to-infrastructure",
@@ -103,7 +103,7 @@ var stageDefinitionsCmds = []Command{
 		Endpoint:    ExtendedEndpoint,
 	},
 	{
-		Description:  "Add stage into workflow",
+		Description:  "Add stage into workflow.",
 		Subject:      "stage-definition",
 		AltSubject:   "stagedef",
 		Predicate:    "add-to-workflow",

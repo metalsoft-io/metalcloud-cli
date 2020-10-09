@@ -28,7 +28,7 @@ var driveSnapshotCmds = []Command{
 		ExecuteFunc: driveSnapshotCreateCmd,
 	},
 	{
-		Description:  "Lists drive snapshots",
+		Description:  "Lists drive snapshots.",
 		Subject:      "drive-snapshot",
 		AltSubject:   "snapshot",
 		Predicate:    "list",
@@ -43,7 +43,7 @@ var driveSnapshotCmds = []Command{
 		ExecuteFunc: driveSnapshotListCmd,
 	},
 	{
-		Description:  "Delete snapshot",
+		Description:  "Delete a snapshot.",
 		Subject:      "drive-snapshot",
 		AltSubject:   "snapshot",
 		Predicate:    "delete",
@@ -58,7 +58,7 @@ var driveSnapshotCmds = []Command{
 		ExecuteFunc: driveSnapshotDeleteCmd,
 	},
 	{
-		Description:  "Rollback snapshot",
+		Description:  "Rollback a snapshot.",
 		Subject:      "drive-snapshot",
 		AltSubject:   "snapshot",
 		Predicate:    "rollback",

@@ -100,7 +100,7 @@ var instanceArrayCmds = []Command{
 		ExecuteFunc: instanceArrayEditCmd,
 	},
 	{
-		Description:  "Get an instance array.",
+		Description:  "Get instance array details.",
 		Subject:      "instance-array",
 		AltSubject:   "ia",
 		Predicate:    "get",

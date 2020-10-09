@@ -12,7 +12,7 @@ import (
 var serversCmds = []Command{
 
 	{
-		Description:  "Lists available servers",
+		Description:  "Lists all servers.",
 		Subject:      "server",
 		AltSubject:   "srv",
 		Predicate:    "list",
@@ -30,7 +30,7 @@ var serversCmds = []Command{
 	},
 
 	{
-		Description:  "Get server details",
+		Description:  "Get server details.",
 		Subject:      "server",
 		AltSubject:   "srv",
 		Predicate:    "get",
@@ -49,7 +49,7 @@ var serversCmds = []Command{
 	},
 
 	{
-		Description:  "Create server",
+		Description:  "Create server.",
 		Subject:      "server",
 		AltSubject:   "srv",
 		Predicate:    "create",
@@ -68,7 +68,7 @@ var serversCmds = []Command{
 	},
 
 	{
-		Description:  "Edit server",
+		Description:  "Edit server.",
 		Subject:      "server",
 		AltSubject:   "srv",
 		Predicate:    "edit",

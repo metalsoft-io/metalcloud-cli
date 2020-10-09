@@ -13,7 +13,7 @@ import (
 var osTemplatesCmds = []Command{
 
 	{
-		Description:  "Lists available Templates",
+		Description:  "Lists available templates.",
 		Subject:      "os-template",
 		AltSubject:   "template",
 		Predicate:    "list",
@@ -29,7 +29,7 @@ var osTemplatesCmds = []Command{
 		Endpoint:    ExtendedEndpoint,
 	},
 	{
-		Description:  "Create template",
+		Description:  "Create a template.",
 		Subject:      "os-template",
 		AltSubject:   "template",
 		Predicate:    "create",
@@ -62,7 +62,7 @@ var osTemplatesCmds = []Command{
 		Endpoint:    ExtendedEndpoint,
 	},
 	{
-		Description:  "Edit template",
+		Description:  "Edit a template.",
 		Subject:      "os-template",
 		AltSubject:   "template",
 		Predicate:    "update",
@@ -94,7 +94,7 @@ var osTemplatesCmds = []Command{
 		Endpoint:    ExtendedEndpoint,
 	},
 	{
-		Description:  "Get template",
+		Description:  "Get a template.",
 		Subject:      "os-template",
 		AltSubject:   "template",
 		Predicate:    "get",
@@ -111,7 +111,7 @@ var osTemplatesCmds = []Command{
 		Endpoint:    ExtendedEndpoint,
 	},
 	{
-		Description:  "Delete template",
+		Description:  "Delete a template.",
 		Subject:      "os-template",
 		AltSubject:   "template",
 		Predicate:    "delete",

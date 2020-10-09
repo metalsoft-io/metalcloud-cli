@@ -72,7 +72,7 @@ var infrastructureCmds = []Command{
 				"no_hard_shutdown_after_timeout": c.FlagSet.Bool("no-hard-shutdown-after-timeout", false, "(Flag) If set do not force a hard power off after timeout expired and the server is not powered off."),
 				"no_attempt_soft_shutdown":       c.FlagSet.Bool("no-attempt-soft-shutdown", false, "(Flag) If set,do not atempt a soft (ACPI) power off of all the servers in the infrastructure before the deploy"),
 				"soft_shutdown_timeout_seconds":  c.FlagSet.Int("soft-shutdown-timeout-seconds", 180, "(Optional, default 180) Timeout to wait if hard_shutdown_after_timeout is set."),
-				"allow_data_loss":                c.FlagSet.Bool("allow-data-loss", false, "(Flag) If set, deploy will throw error if data loss is expected."),
+				"allow_data_loss":                c.FlagSet.Bool("allow-data-loss", false, "(Flag) If set, deploy will not throw error if data loss is expected."),
 				"skip_ansible":                   c.FlagSet.Bool("skip-ansible", false, "(Flag) If set, some automatic provisioning steps will be skipped. This parameter should generally be ignored."),
 				"block_until_deployed":           c.FlagSet.Bool("blocking", false, "(Flag) If set, the operation will wait until deployment finishes."),
 				"block_timeout":                  c.FlagSet.Int("block-timeout", 180*60, "Block timeout in seconds. After this timeout the application will return an error. Defaults to 180 minutes."),
@@ -83,7 +83,7 @@ var infrastructureCmds = []Command{
 		ExecuteFunc: infrastructureDeployCmd,
 	},
 	{
-		Description:  "Get an infrastructure.",
+		Description:  "Get infrastructure details.",
 		Subject:      "infrastructure",
 		AltSubject:   "infra",
 		Predicate:    "get",
@@ -113,12 +113,12 @@ var infrastructureCmds = []Command{
 		ExecuteFunc: infrastructureRevertCmd,
 	},
 	{
-		Description:  "list stages of a workflow",
+		Description:  "List stages of a workflow.",
 		Subject:      "infrastructure",
 		AltSubject:   "infra",
 		Predicate:    "workflow-stages",
 		AltPredicate: "workflow-stages",
-		FlagSet:      flag.NewFlagSet("list stages of a workflow", flag.ExitOnError),
+		FlagSet:      flag.NewFlagSet("List stages of a workflow.", flag.ExitOnError),
 		InitFunc: func(c *Command) {
 			c.Arguments = map[string]interface{}{
 				"infrastructure_id_or_label": c.FlagSet.String("id", _nilDefaultStr, "The infrastructure's id"),
