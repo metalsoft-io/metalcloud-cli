@@ -18,6 +18,8 @@ github.com/bigstepinc/metal-cloud-sdk-go v1.4.8 h1:0aD8e3OwCY4l9AazQV9MgR8T4fyaD
 github.com/bigstepinc/metal-cloud-sdk-go v1.4.8/go.mod h1:Y1ql/C5IPENUI5tlI/91raHVhy7Dpr9I9FfMsxpPC/E=
 github.com/bigstepinc/metal-cloud-sdk-go v1.4.9 h1:fBYB3m4wIJGukai5cH0ijduUw77WG+ctzZVAse6P4c0=
 github.com/bigstepinc/metal-cloud-sdk-go v1.4.9/go.mod h1:Y1ql/C5IPENUI5tlI/91raHVhy7Dpr9I9FfMsxpPC/E=
+github.com/bigstepinc/metal-cloud-sdk-go v1.5.0 h1:0G52L1dWADUSSw/J9EbXtuUhrZaIle0f+jcEgyTast4=
+github.com/bigstepinc/metal-cloud-sdk-go v1.5.0/go.mod h1:Y1ql/C5IPENUI5tlI/91raHVhy7Dpr9I9FfMsxpPC/E=
 github.com/fsnotify/fsnotify v1.4.7 h1:IXs+QLmnXW2CcXuY+8Mzv/fWEsPGWxqefPtCP5CnV9I=
 github.com/fsnotify/fsnotify v1.4.7/go.mod h1:jwhsz4b93w/PPRr/qN1Yymfu8t87LnFCMoQvtojpjFo=
 github.com/golang/mock v1.3.1 h1:qGJ6qTW+x6xX/my+8YUVl4WNpX9B7+/l2tRsHGZ7f2s=
