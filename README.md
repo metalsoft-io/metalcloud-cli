@@ -181,6 +181,8 @@ git tag v1.0.1
 git push --tags
 ```
 
+A coverage report is generated automatically at each build by [coverall](https://coveralls.io/github/bigstepinc/metalcloud-cli?branch=master). There is a lower limit to the coverage currently set at 20%. 
+
 It is a good idea to update the master branch as well (with no tag):
 ```
 git push
@@ -193,3 +195,4 @@ To update the SDK update `go.mod` file then regenerate the interfaces used for t
 go generate
 ```
 If new objects are added in the SDK `helpers/fix_package.go` will need to be updated.
+
