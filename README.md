@@ -60,11 +60,11 @@ Use `metalcloud-cli help` for a list of supported commands.
 ### Getting started
 
 To create an infrastructure, in the default datacenter, configured via the `METALCLOUD_DATACENTER` environment variable):
-```
+```bash
 metalcloud-cli infrastructure create --label test --return-id
 ```
 
-```
+```bash
 metalcloud-cli infrastructure list
 +-------+-----------------------------------------+-------------------------------+-----------+-----------+---------------------+---------------------+
 | ID    | LABEL                                   | OWNER                         | REL.      | STATUS    | CREATED             | UPDATED             |
@@ -75,13 +75,13 @@ metalcloud-cli infrastructure list
 
 To create an instance array in that infrastructure, get the ID of the infrastructure from above (12345):
 
-```
+```bash
 metalcloud-cli instance-array create --infra 12345 --label master --proc 1 --proc-core-count 8 --ram 16
 ```
 
 To view the id of the previously created drive array:
 
-```
+```bash
 metalcloud-cli instance-array list --infra 12345
 +-------+---------------------+---------------------+-----------+
 | ID    | LABEL               | STATUS              | INST_CNT  |
@@ -93,13 +93,13 @@ Total: 1 Instance Arrays
 
 To create a drive array and attach it to the previous instance array:
 
-```
+```bash
 metalcloud-cli drive-array create --infra 12345 --label master-da --ia 54321
 ```
 
 To view the current status of the infrastructure
 
-```
+```bash
 metalcloud-cli infrastructure get --id 12345
 Infrastructures I have access to (as test@test.com)
 +-------+----------------+-------------------------------+-----------------------------------------------------------------------+-----------+
@@ -122,14 +122,14 @@ The CLI also provides a "condensed format" for most of it's commands:
 ...
 
 This allows commands such as:
-```
+```bash
 metalcloud-cli infra ls
 ```
 
 ### Using label instead of IDs
 
 Most commands also take a label instead of an id as a parameter. For example:
-```
+```bash
 metalcloud-cli infra show --id complex-demo
 ```
 
@@ -142,10 +142,16 @@ Some commands depend on various permissions. For instance you cannot access anot
 ### Admin commands
 
 To enable admin commands set the following environment variable:
-```
+```bash
 export METALCLOUD_ADMIN="true"
 ```
 
+## Debugging information
+
+To enable debugging information in the output set the following environment variable:
+```bash
+export METALCLOUD_LOGGING_ENABLED=true
+```
 ### Building the CLI
 
 The build process is automated by travis. Just push into the repository using the appropriate tag:
@@ -175,6 +181,8 @@ git tag v1.0.1
 git push --tags
 git push
 ```
+
+
 
 ### Updating the SDK
 
