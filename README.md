@@ -173,7 +173,7 @@ v1.7.6
 v1.7.7
 v1.7.8
 ```
-Push new changes with new tag 
+Push new changes with new tag:
 ```
 git add .
 git commit -m "commit comment"
@@ -190,4 +190,4 @@ To update the SDK update `go.mod` file then regenerate the interfaces used for t
 ```
 go generate
 ```
-if new objects are added in the SDK `helpers/fix_package.go` will need to be updated.
+If new objects are added in the SDK `helpers/fix_package.go` will need to be updated.
