@@ -178,7 +178,7 @@ func secretDeleteCmd(c *Command, client interfaces.MetalCloudClient) (string, er
 	}
 	confirm := false
 
-	if c.Arguments["autoconfirm"] != nil && *c.Arguments["autoconfirm"].(*bool) == true {
+	if getBoolParam(c.Arguments["autoconfirm"]) {
 		confirm = true
 	} else {
 

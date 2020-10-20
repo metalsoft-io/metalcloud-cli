@@ -178,7 +178,7 @@ func variableDeleteCmd(c *Command, client interfaces.MetalCloudClient) (string, 
 	}
 	confirm := false
 
-	if c.Arguments["autoconfirm"] != nil && *c.Arguments["autoconfirm"].(*bool) == true {
+	if getBoolParam(c.Arguments["autoconfirm"]) {
 		confirm = true
 	} else {
 
