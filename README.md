@@ -179,10 +179,12 @@ git add .
 git commit -m "commit comment"
 git tag v1.0.1
 git push --tags
-git push
 ```
 
-
+It is a good idea to update the master branch as well (with no tag):
+```
+git push
+```
 
 ### Updating the SDK
 
