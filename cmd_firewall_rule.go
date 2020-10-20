@@ -191,7 +191,7 @@ func firewallRuleListCmd(c *Command, client interfaces.MetalCloudClient) (string
 	return renderTable("Rules", topLine, getStringParam(c.Arguments["format"]), data, schema)
 }
 
-func w(c *Command, client interfaces.MetalCloudClient) (string, error) {
+func firewallRuleAddCmd(c *Command, client interfaces.MetalCloudClient) (string, error) {
 	instanceArrayID := c.Arguments["instance_array_id"]
 
 	if instanceArrayID == nil || *instanceArrayID.(*int) == 0 {
