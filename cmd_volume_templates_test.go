@@ -90,16 +90,29 @@ func TestVolumeTemplatesListCmd(t *testing.T) {
 
 }
 
-func TestVolumeTemplateCmd(t *testing.T) {
+func TestVolumeTemplateCreateFromDriveCmd(t *testing.T) {
 
 	client := mock_metalcloud.NewMockMetalCloudClient(gomock.NewController(t))
 
 	vt := metalcloud.VolumeTemplate{
-		VolumeTemplateID: 10,
+		VolumeTemplateID:                   10,
+		VolumeTemplateLabel:                "centos7-10",
+		VolumeTemplateSizeMBytes:           40960,
+		VolumeTemplateDisplayName:          "Centos7",
+		VolumeTemplateDescription:          "centos7-10",
+		VolumeTemplateLocalDiskSupported:   true,
+		VolumeTemplateBootMethodsSupported: "pxe_iscsi",
+		VolumeTemplateDeprecationStatus:    "not_deprecated",
+		VolumeTemplateRepoURL:              "centos7_repo_url",
+		VolumeTemplateOperatingSystem: metalcloud.OperatingSystem{
+			OperatingSystemType:         "Centos",
+			OperatingSystemVersion:      "7",
+			OperatingSystemArchitecture: "x86_64",
+		},
 	}
 
 	client.EXPECT().
-		VolumeTemplateCreate(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).
+		VolumeTemplateCreateFromDrive(gomock.Any(), gomock.Any()).
 		Return(&vt, nil).
 		MinTimes(1)
 
@@ -107,13 +120,37 @@ func TestVolumeTemplateCmd(t *testing.T) {
 		{
 			name: "good1",
 			cmd: MakeCommand(map[string]interface{}{
-				"drive_id": 11,
-				"label":    "ass",
+				"drive_id":     11,
+				"label":        vt.VolumeTemplateLabel,
+				"display_name": vt.VolumeTemplateDisplayName,
+				"description":  vt.VolumeTemplateDescription,
 			}),
 			good: true,
 			id:   vt.VolumeTemplateID,
 		},
+		{
+			name: "good2",
+			cmd: MakeCommand(map[string]interface{}{
+				"drive_id":     11,
+				"label":        vt.VolumeTemplateLabel,
+				"display_name": vt.VolumeTemplateDisplayName,
+				"description":  vt.VolumeTemplateDescription,
+				"tags":         "tag1,tag2",
+			}),
+			good: true,
+			id:   vt.VolumeTemplateID,
+		},
+		{
+			name: "missing label",
+			cmd: MakeCommand(map[string]interface{}{
+				"drive_id":     11,
+				"display_name": vt.VolumeTemplateDisplayName,
+				"description":  vt.VolumeTemplateDescription,
+			}),
+			good: false,
+			id:   vt.VolumeTemplateID,
+		},
 	}
 
-	testCreateCommand(volumeTemplateCreateCmd, cases, client, t)
+	testCreateCommand(volumeTemplateCreateFromDriveCmd, cases, client, t)
 }
