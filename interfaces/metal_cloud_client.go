@@ -339,10 +339,10 @@ type MetalCloudClient interface {
 	VolumeTemplateGet(volumeTemplateID int) (*metalcloud.VolumeTemplate, error)
 	//VolumeTemplateGetByLabel returns the specified volume template
 	VolumeTemplateGetByLabel(volumeTemplateLabel string) (*metalcloud.VolumeTemplate, error)
-	//VolumeTemplateCreate creates a private volume template from a drive
-	VolumeTemplateCreate(driveID int, label string, description string, displayName string, bootType string, deprecationStatus string, bootMethodsSupported string, volumeTemplateTags []string) (*metalcloud.VolumeTemplate, error)
-	//VolumeTemplateCreateByLabel creates a private volume template from a drive
-	VolumeTemplateCreateByLabel(driveLabel string, label string, description string, displayName string, bootType string, deprecationStatus string, bootMethodsSupported string, volumeTemplateTags []string) (*metalcloud.VolumeTemplate, error)
+	//VolumeTemplateCreateFromDrive creates a private volume template from a drive
+	VolumeTemplateCreateFromDrive(driveID int, objVolumeTemplate metalcloud.VolumeTemplate) (*metalcloud.VolumeTemplate, error)
+	//VolumeTemplateCreateFromDriveByLabel creates a private volume template from a drive
+	VolumeTemplateCreateFromDriveByLabel(driveLabel string, objVolumeTemplate metalcloud.VolumeTemplate) (*metalcloud.VolumeTemplate, error)
 	//WorkflowCreate creates a workflow
 	WorkflowCreate(workflow metalcloud.Workflow) (*metalcloud.Workflow, error)
 	//WorkflowDelete Permanently destroys a metalcloud.Workflow.

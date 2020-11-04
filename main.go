@@ -270,7 +270,7 @@ func getCommands(clients map[string]interfaces.MetalCloudClient) []Command {
 		instanceCmds,
 		driveArrayCmds,
 		driveSnapshotCmds,
-		volumeTemplateyCmds,
+		volumeTemplateCmds,
 		firewallRuleCmds,
 		secretsCmds,
 		variablesCmds,

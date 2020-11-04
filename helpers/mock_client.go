@@ -2451,34 +2451,34 @@ func (mr *MockMetalCloudClientMockRecorder) VolumeTemplateGetByLabel(volumeTempl
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "VolumeTemplateGetByLabel", reflect.TypeOf((*MockMetalCloudClient)(nil).VolumeTemplateGetByLabel), volumeTemplateLabel)
 }
 
-// VolumeTemplateCreate mocks base method
-func (m *MockMetalCloudClient) VolumeTemplateCreate(driveID int, label, description, displayName, bootType, deprecationStatus, bootMethodsSupported string, volumeTemplateTags []string) (*metalcloud.VolumeTemplate, error) {
+// VolumeTemplateCreateFromDrive mocks base method
+func (m *MockMetalCloudClient) VolumeTemplateCreateFromDrive(driveID int, objVolumeTemplate metalcloud.VolumeTemplate) (*metalcloud.VolumeTemplate, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "VolumeTemplateCreate", driveID, label, description, displayName, bootType, deprecationStatus, bootMethodsSupported, volumeTemplateTags)
+	ret := m.ctrl.Call(m, "VolumeTemplateCreateFromDrive", driveID, objVolumeTemplate)
 	ret0, _ := ret[0].(*metalcloud.VolumeTemplate)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
-// VolumeTemplateCreate indicates an expected call of VolumeTemplateCreate
-func (mr *MockMetalCloudClientMockRecorder) VolumeTemplateCreate(driveID, label, description, displayName, bootType, deprecationStatus, bootMethodsSupported, volumeTemplateTags interface{}) *gomock.Call {
+// VolumeTemplateCreateFromDrive indicates an expected call of VolumeTemplateCreateFromDrive
+func (mr *MockMetalCloudClientMockRecorder) VolumeTemplateCreateFromDrive(driveID, objVolumeTemplate interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "VolumeTemplateCreate", reflect.TypeOf((*MockMetalCloudClient)(nil).VolumeTemplateCreate), driveID, label, description, displayName, bootType, deprecationStatus, bootMethodsSupported, volumeTemplateTags)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "VolumeTemplateCreateFromDrive", reflect.TypeOf((*MockMetalCloudClient)(nil).VolumeTemplateCreateFromDrive), driveID, objVolumeTemplate)
 }
 
-// VolumeTemplateCreateByLabel mocks base method
-func (m *MockMetalCloudClient) VolumeTemplateCreateByLabel(driveLabel, label, description, displayName, bootType, deprecationStatus, bootMethodsSupported string, volumeTemplateTags []string) (*metalcloud.VolumeTemplate, error) {
+// VolumeTemplateCreateFromDriveByLabel mocks base method
+func (m *MockMetalCloudClient) VolumeTemplateCreateFromDriveByLabel(driveLabel string, objVolumeTemplate metalcloud.VolumeTemplate) (*metalcloud.VolumeTemplate, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "VolumeTemplateCreateByLabel", driveLabel, label, description, displayName, bootType, deprecationStatus, bootMethodsSupported, volumeTemplateTags)
+	ret := m.ctrl.Call(m, "VolumeTemplateCreateFromDriveByLabel", driveLabel, objVolumeTemplate)
 	ret0, _ := ret[0].(*metalcloud.VolumeTemplate)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
-// VolumeTemplateCreateByLabel indicates an expected call of VolumeTemplateCreateByLabel
-func (mr *MockMetalCloudClientMockRecorder) VolumeTemplateCreateByLabel(driveLabel, label, description, displayName, bootType, deprecationStatus, bootMethodsSupported, volumeTemplateTags interface{}) *gomock.Call {
+// VolumeTemplateCreateFromDriveByLabel indicates an expected call of VolumeTemplateCreateFromDriveByLabel
+func (mr *MockMetalCloudClientMockRecorder) VolumeTemplateCreateFromDriveByLabel(driveLabel, objVolumeTemplate interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "VolumeTemplateCreateByLabel", reflect.TypeOf((*MockMetalCloudClient)(nil).VolumeTemplateCreateByLabel), driveLabel, label, description, displayName, bootType, deprecationStatus, bootMethodsSupported, volumeTemplateTags)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "VolumeTemplateCreateFromDriveByLabel", reflect.TypeOf((*MockMetalCloudClient)(nil).VolumeTemplateCreateFromDriveByLabel), driveLabel, objVolumeTemplate)
 }
 
 // WorkflowCreate mocks base method
