@@ -45,9 +45,9 @@ var volumeTemplateCmds = []Command{
 				"boot_methods_supported": c.FlagSet.String("boot-methods-supported", _nilDefaultStr, "The boot_methods_supported of the volume template. Defaults to 'pxe_iscsi'."),
 				"deprecation_status":     c.FlagSet.String("deprecation-status", _nilDefaultStr, "Deprecation status. Possible values: not_deprecated,deprecated_deny_provision,deprecated_allow_expand. Defaults to 'not_deprecated'."),
 				"tags":                   c.FlagSet.String("tags", _nilDefaultStr, "The tags of the volume template, comma separated."),
-				"os_type":                c.FlagSet.String("os-type", _nilDefaultStr, "(Required) Template operating system type. For example, Ubuntu or CentOS."),
-				"os_version":             c.FlagSet.String("os-version", _nilDefaultStr, "(Required) Template operating system version."),
-				"os_architecture":        c.FlagSet.String("os-architecture", _nilDefaultStr, "(Required) Template operating system architecture.Possible values: none, unknown, x86, x86_64."),
+				"os_type":                c.FlagSet.String("os-type", _nilDefaultStr, "Template operating system type. For example, Ubuntu or CentOS."),
+				"os_version":             c.FlagSet.String("os-version", _nilDefaultStr, "Template operating system version."),
+				"os_architecture":        c.FlagSet.String("os-architecture", _nilDefaultStr, "Template operating system architecture.Possible values: none, unknown, x86, x86_64."),
 				"return_id":              c.FlagSet.Bool("return-id", false, "(Optional) Will print the ID of the created Volume Template. Useful for automating tasks."),
 			}
 		},
@@ -169,20 +169,14 @@ func volumeTemplateCreateFromDriveCmd(c *Command, client interfaces.MetalCloudCl
 		objOperatingSystem := metalcloud.OperatingSystem{}
 		objVolumeTemplate.VolumeTemplateOperatingSystem = objOperatingSystem
 		objVolumeTemplate.VolumeTemplateOperatingSystem.OperatingSystemType = osType
-	} else {
-		return "", fmt.Errorf("os-type is required")
 	}
 
 	if osVersion, ok := getStringParamOk(c.Arguments["os_version"]); ok {
 		objVolumeTemplate.VolumeTemplateOperatingSystem.OperatingSystemVersion = osVersion
-	} else {
-		return "", fmt.Errorf("os-version is required")
 	}
 
 	if osArchitecture, ok := getStringParamOk(c.Arguments["os_architecture"]); ok {
 		objVolumeTemplate.VolumeTemplateOperatingSystem.OperatingSystemArchitecture = osArchitecture
-	} else {
-		return "", fmt.Errorf("os-architecture is required")
 	}
 
 	ret, err := client.VolumeTemplateCreateFromDrive(driveID, objVolumeTemplate)
