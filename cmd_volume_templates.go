@@ -37,18 +37,19 @@ var volumeTemplateCmds = []Command{
 		FlagSet:      flag.NewFlagSet("create volume templates", flag.ExitOnError),
 		InitFunc: func(c *Command) {
 			c.Arguments = map[string]interface{}{
-				"drive_id":               c.FlagSet.Int("id", _nilDefaultInt, "(Required) The id of the drive to create the volume template from"),
-				"label":                  c.FlagSet.String("label", _nilDefaultStr, "(Required) The label of the volume template"),
-				"description":            c.FlagSet.String("description", _nilDefaultStr, "(Required) The description of the volume template"),
-				"display_name":           c.FlagSet.String("name", _nilDefaultStr, "(Required) The display name of the volume template"),
-				"boot_type":              c.FlagSet.String("boot-type", _nilDefaultStr, "The boot_type of the volume template. Possible values: 'uefi_only','legacy_only','hybrid' "),
-				"boot_methods_supported": c.FlagSet.String("boot-methods-supported", _nilDefaultStr, "The boot_methods_supported of the volume template. Defaults to 'pxe_iscsi'."),
-				"deprecation_status":     c.FlagSet.String("deprecation-status", _nilDefaultStr, "Deprecation status. Possible values: not_deprecated,deprecated_deny_provision,deprecated_allow_expand. Defaults to 'not_deprecated'."),
-				"tags":                   c.FlagSet.String("tags", _nilDefaultStr, "The tags of the volume template, comma separated."),
-				"os_type":                c.FlagSet.String("os-type", _nilDefaultStr, "Template operating system type. For example, Ubuntu or CentOS."),
-				"os_version":             c.FlagSet.String("os-version", _nilDefaultStr, "Template operating system version."),
-				"os_architecture":        c.FlagSet.String("os-architecture", _nilDefaultStr, "Template operating system architecture.Possible values: none, unknown, x86, x86_64."),
-				"return_id":              c.FlagSet.Bool("return-id", false, "(Optional) Will print the ID of the created Volume Template. Useful for automating tasks."),
+				"drive_id":                   c.FlagSet.Int("id", _nilDefaultInt, "(Required) The id of the drive to create the volume template from"),
+				"label":                      c.FlagSet.String("label", _nilDefaultStr, "(Required) The label of the volume template"),
+				"description":                c.FlagSet.String("description", _nilDefaultStr, "(Required) The description of the volume template"),
+				"display_name":               c.FlagSet.String("name", _nilDefaultStr, "(Required) The display name of the volume template"),
+				"boot_type":                  c.FlagSet.String("boot-type", _nilDefaultStr, "The boot_type of the volume template. Possible values: 'uefi_only','legacy_only','hybrid' "),
+				"boot_methods_supported":     c.FlagSet.String("boot-methods-supported", _nilDefaultStr, "The boot_methods_supported of the volume template. Defaults to 'pxe_iscsi'."),
+				"deprecation_status":         c.FlagSet.String("deprecation-status", _nilDefaultStr, "Deprecation status. Possible values: not_deprecated,deprecated_deny_provision,deprecated_allow_expand. Defaults to 'not_deprecated'."),
+				"tags":                       c.FlagSet.String("tags", _nilDefaultStr, "The tags of the volume template, comma separated."),
+				"os_bootstrap_function_name": c.FlagSet.String("os-bootstrap-function-name", _nilDefaultStr, "Optional property that selects the cloudinit configuration function. Can be one of: provisioner_os_cloudinit_prepare_centos, provisioner_os_cloudinit_prepare_rhel, provisioner_os_cloudinit_prepare_ubuntu, provisioner_os_cloudbaseinit_prepare_windows."),
+				"os_type":                    c.FlagSet.String("os-type", _nilDefaultStr, "Template operating system type. For example, Ubuntu or CentOS."),
+				"os_version":                 c.FlagSet.String("os-version", _nilDefaultStr, "Template operating system version."),
+				"os_architecture":            c.FlagSet.String("os-architecture", _nilDefaultStr, "Template operating system architecture.Possible values: none, unknown, x86, x86_64."),
+				"return_id":                  c.FlagSet.Bool("return-id", false, "(Optional) Will print the ID of the created Volume Template. Useful for automating tasks."),
 			}
 		},
 		ExecuteFunc: volumeTemplateCreateFromDriveCmd,
@@ -136,10 +137,11 @@ func volumeTemplatesListCmd(c *Command, client interfaces.MetalCloudClient) (str
 
 func volumeTemplateCreateFromDriveCmd(c *Command, client interfaces.MetalCloudClient) (string, error) {
 	objVolumeTemplate := metalcloud.VolumeTemplate{
-		VolumeTemplateDeprecationStatus:    getStringParam(c.Arguments["deprecation_status"]),
-		VolumeTemplateBootMethodsSupported: getStringParam(c.Arguments["boot_methods_supported"]),
-		VolumeTemplateTags:                 strings.Split(getStringParam(c.Arguments["tags"]), ","),
-		VolumeTemplateBootType:             getStringParam(c.Arguments["boot_type"]),
+		VolumeTemplateDeprecationStatus:       getStringParam(c.Arguments["deprecation_status"]),
+		VolumeTemplateBootMethodsSupported:    getStringParam(c.Arguments["boot_methods_supported"]),
+		VolumeTemplateTags:                    strings.Split(getStringParam(c.Arguments["tags"]), ","),
+		VolumeTemplateBootType:                getStringParam(c.Arguments["boot_type"]),
+		VolumeTemplateOsBootstrapFunctionName: getStringParam(c.Arguments["os_bootstrap_function_name"]),
 	}
 
 	driveID, ok := getIntParamOk(c.Arguments["drive_id"])
