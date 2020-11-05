@@ -8,6 +8,7 @@ import (
 
 	metalcloud "github.com/bigstepinc/metal-cloud-sdk-go"
 	interfaces "github.com/bigstepinc/metalcloud-cli/interfaces"
+	"github.com/metalsoft-io/tableformatter"
 )
 
 //driveArrayCmds commands affecting instance arrays
@@ -239,45 +240,45 @@ func driveArrayListCmd(c *Command, client interfaces.MetalCloudClient) (string, 
 		return "", err
 	}
 
-	schema := []SchemaField{
+	schema := []tableformatter.SchemaField{
 		{
 			FieldName: "ID",
-			FieldType: TypeInt,
+			FieldType: tableformatter.TypeInt,
 			FieldSize: 6,
 		},
 		{
 			FieldName: "LABEL",
-			FieldType: TypeString,
+			FieldType: tableformatter.TypeString,
 			FieldSize: 30,
 		},
 		{
 			FieldName: "STATUS",
-			FieldType: TypeString,
+			FieldType: tableformatter.TypeString,
 			FieldSize: 10,
 		},
 		{
 			FieldName: "SIZE (MB)",
-			FieldType: TypeInt,
+			FieldType: tableformatter.TypeInt,
 			FieldSize: 10,
 		},
 		{
 			FieldName: "TYPE",
-			FieldType: TypeString,
+			FieldType: tableformatter.TypeString,
 			FieldSize: 10,
 		},
 		{
 			FieldName: "ATTACHED TO",
-			FieldType: TypeString,
+			FieldType: tableformatter.TypeString,
 			FieldSize: 30,
 		},
 		{
 			FieldName: "DRV_CNT",
-			FieldType: TypeInt,
+			FieldType: tableformatter.TypeInt,
 			FieldSize: 10,
 		},
 		{
 			FieldName: "TEMPLATE",
-			FieldType: TypeString,
+			FieldType: tableformatter.TypeString,
 			FieldSize: 25,
 		},
 	}
@@ -324,9 +325,14 @@ func driveArrayListCmd(c *Command, client interfaces.MetalCloudClient) (string, 
 			volumeTemplateName})
 	}
 
-	TableSorter(schema).OrderBy(schema[0].FieldName).Sort(data)
+	tableformatter.TableSorter(schema).OrderBy(schema[0].FieldName).Sort(data)
 
-	return renderTable("Drive Arrays", "", getStringParam(c.Arguments["format"]), data, schema)
+	table := tableformatter.Table{
+		Data:   data,
+		Schema: schema,
+	}
+
+	return table.RenderTable("Drive Arrays", "", getStringParam(c.Arguments["format"]))
 }
 
 func driveArrayDeleteCmd(c *Command, client interfaces.MetalCloudClient) (string, error) {
@@ -390,45 +396,45 @@ func driveArrayGetCmd(c *Command, client interfaces.MetalCloudClient) (string, e
 		return "", err
 	}
 
-	schema := []SchemaField{
+	schema := []tableformatter.SchemaField{
 		{
 			FieldName: "ID",
-			FieldType: TypeInt,
+			FieldType: tableformatter.TypeInt,
 			FieldSize: 6,
 		},
 		{
 			FieldName: "LABEL",
-			FieldType: TypeString,
+			FieldType: tableformatter.TypeString,
 			FieldSize: 30,
 		},
 		{
 			FieldName: "STATUS",
-			FieldType: TypeString,
+			FieldType: tableformatter.TypeString,
 			FieldSize: 10,
 		},
 		{
 			FieldName: "SIZE (MB)",
-			FieldType: TypeInt,
+			FieldType: tableformatter.TypeInt,
 			FieldSize: 10,
 		},
 		{
 			FieldName: "TYPE",
-			FieldType: TypeString,
+			FieldType: tableformatter.TypeString,
 			FieldSize: 10,
 		},
 		{
 			FieldName: "ATTACHED TO",
-			FieldType: TypeString,
+			FieldType: tableformatter.TypeString,
 			FieldSize: 30,
 		},
 		{
 			FieldName: "TEMPLATE",
-			FieldType: TypeString,
+			FieldType: tableformatter.TypeString,
 			FieldSize: 25,
 		},
 		{
 			FieldName: "DETAILS",
-			FieldType: TypeString,
+			FieldType: tableformatter.TypeString,
 			FieldSize: 25,
 		},
 	}
@@ -488,9 +494,9 @@ func driveArrayGetCmd(c *Command, client interfaces.MetalCloudClient) (string, e
 	}
 
 	if getBoolParam(c.Arguments["show_iscsi_credentials"]) {
-		schema = append(schema, SchemaField{
+		schema = append(schema, tableformatter.SchemaField{
 			FieldName: "CREDENTIALS",
-			FieldType: TypeString,
+			FieldType: tableformatter.TypeString,
 			FieldSize: 5,
 		})
 	}
@@ -501,8 +507,12 @@ func driveArrayGetCmd(c *Command, client interfaces.MetalCloudClient) (string, e
 	}
 	subtitle = fmt.Sprintf("%s has the following drives:", subtitle)
 
-	TableSorter(schema).OrderBy(schema[0].FieldName).Sort(data)
-	return renderTable("Drives", subtitle, getStringParam(c.Arguments["format"]), data, schema)
+	tableformatter.TableSorter(schema).OrderBy(schema[0].FieldName).Sort(data)
+	table := tableformatter.Table{
+		Data:   data,
+		Schema: schema,
+	}
+	return table.RenderTable("Drives", subtitle, getStringParam(c.Arguments["format"]))
 }
 
 func argsToDriveArray(m map[string]interface{}) *metalcloud.DriveArray {

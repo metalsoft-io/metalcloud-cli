@@ -8,6 +8,7 @@ import (
 
 	metalcloud "github.com/bigstepinc/metal-cloud-sdk-go"
 	interfaces "github.com/bigstepinc/metalcloud-cli/interfaces"
+	"github.com/metalsoft-io/tableformatter"
 )
 
 var switchCmds = []Command{
@@ -96,35 +97,35 @@ func switchListCmd(c *Command, client interfaces.MetalCloudClient) (string, erro
 		return "", err
 	}
 
-	schema := []SchemaField{
+	schema := []tableformatter.SchemaField{
 		{
 			FieldName: "ID",
-			FieldType: TypeInt,
+			FieldType: tableformatter.TypeInt,
 			FieldSize: 6,
 		},
 		{
 			FieldName: "IDENTIFIER",
-			FieldType: TypeString,
+			FieldType: tableformatter.TypeString,
 			FieldSize: 6,
 		},
 		{
 			FieldName: "DATACENTER",
-			FieldType: TypeString,
+			FieldType: tableformatter.TypeString,
 			FieldSize: 5,
 		},
 		{
 			FieldName: "DRIVER",
-			FieldType: TypeString,
+			FieldType: tableformatter.TypeString,
 			FieldSize: 6,
 		},
 		{
 			FieldName: "PROVISIONER",
-			FieldType: TypeString,
+			FieldType: tableformatter.TypeString,
 			FieldSize: 6,
 		},
 		{
 			FieldName: "MGMT IP",
-			FieldType: TypeString,
+			FieldType: tableformatter.TypeString,
 			FieldSize: 5,
 		},
 	}
@@ -133,15 +134,15 @@ func switchListCmd(c *Command, client interfaces.MetalCloudClient) (string, erro
 	if c.Arguments["show_credentials"] != nil && *c.Arguments["show_credentials"].(*bool) {
 		showCredentials = true
 
-		schema = append(schema, SchemaField{
+		schema = append(schema, tableformatter.SchemaField{
 			FieldName: "MGMT_USER",
-			FieldType: TypeString,
+			FieldType: tableformatter.TypeString,
 			FieldSize: 5,
 		})
 
-		schema = append(schema, SchemaField{
+		schema = append(schema, tableformatter.SchemaField{
 			FieldName: "MGMT_PASS",
-			FieldType: TypeString,
+			FieldType: tableformatter.TypeString,
 			FieldSize: 5,
 		})
 
@@ -178,12 +179,16 @@ func switchListCmd(c *Command, client interfaces.MetalCloudClient) (string, erro
 
 	}
 
-	TableSorter(schema).OrderBy(
+	tableformatter.TableSorter(schema).OrderBy(
 		schema[0].FieldName,
 		schema[1].FieldName,
 		schema[2].FieldName).Sort(data)
 
-	return renderTable("Switches", "", getStringParam(c.Arguments["format"]), data, schema)
+	table := tableformatter.Table{
+		Data:   data,
+		Schema: schema,
+	}
+	return table.RenderTable("Switches", "", getStringParam(c.Arguments["format"]))
 }
 
 func switchCreateCmd(c *Command, client interfaces.MetalCloudClient) (string, error) {
@@ -214,35 +219,35 @@ func switchGetCmd(c *Command, client interfaces.MetalCloudClient) (string, error
 		return "", err
 	}
 
-	schema := []SchemaField{
+	schema := []tableformatter.SchemaField{
 		{
 			FieldName: "ID",
-			FieldType: TypeInt,
+			FieldType: tableformatter.TypeInt,
 			FieldSize: 6,
 		},
 		{
 			FieldName: "IDENTIFIER",
-			FieldType: TypeString,
+			FieldType: tableformatter.TypeString,
 			FieldSize: 6,
 		},
 		{
 			FieldName: "DATACENTER",
-			FieldType: TypeString,
+			FieldType: tableformatter.TypeString,
 			FieldSize: 5,
 		},
 		{
 			FieldName: "DRIVER",
-			FieldType: TypeString,
+			FieldType: tableformatter.TypeString,
 			FieldSize: 6,
 		},
 		{
 			FieldName: "PROVISIONER",
-			FieldType: TypeString,
+			FieldType: tableformatter.TypeString,
 			FieldSize: 6,
 		},
 		{
 			FieldName: "MGMT IP",
-			FieldType: TypeString,
+			FieldType: tableformatter.TypeString,
 			FieldSize: 5,
 		},
 	}
@@ -256,15 +261,15 @@ func switchGetCmd(c *Command, client interfaces.MetalCloudClient) (string, error
 		credentialsUser = fmt.Sprintf("%s", retSW.NetworkEquipmentManagementUsername)
 		credentialsPass = fmt.Sprintf("%s", retSW.NetworkEquipmentManagementPassword)
 
-		schema = append(schema, SchemaField{
+		schema = append(schema, tableformatter.SchemaField{
 			FieldName: "MGMT_USER",
-			FieldType: TypeString,
+			FieldType: tableformatter.TypeString,
 			FieldSize: 5,
 		})
 
-		schema = append(schema, SchemaField{
+		schema = append(schema, tableformatter.SchemaField{
 			FieldName: "MGMT_PASS",
-			FieldType: TypeString,
+			FieldType: tableformatter.TypeString,
 			FieldSize: 5,
 		})
 
@@ -286,14 +291,17 @@ func switchGetCmd(c *Command, client interfaces.MetalCloudClient) (string, error
 	format := getStringParam(c.Arguments["format"])
 
 	if getBoolParam(c.Arguments["raw"]) {
-		ret, err := renderRawObject(*retSW, format, "NetworkEquipment")
+		ret, err := tableformatter.RenderRawObject(*retSW, format, "NetworkEquipment")
 		if err != nil {
 			return "", err
 		}
 		sb.WriteString(ret)
 	} else {
-
-		ret, err := renderTransposedTable("switch device", "", format, data, schema)
+		table := tableformatter.Table{
+			Data:   data,
+			Schema: schema,
+		}
+		ret, err := table.RenderTransposedTable("switch device", "", format)
 		if err != nil {
 			return "", err
 		}

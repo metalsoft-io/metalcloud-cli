@@ -8,6 +8,7 @@ import (
 
 	metalcloud "github.com/bigstepinc/metal-cloud-sdk-go"
 	interfaces "github.com/bigstepinc/metalcloud-cli/interfaces"
+	"github.com/metalsoft-io/tableformatter"
 )
 
 var osTemplatesCmds = []Command{
@@ -138,65 +139,65 @@ func templatesListCmd(c *Command, client interfaces.MetalCloudClient) (string, e
 		return "", err
 	}
 
-	schema := []SchemaField{
+	schema := []tableformatter.SchemaField{
 		{
 			FieldName: "ID",
-			FieldType: TypeInt,
+			FieldType: tableformatter.TypeInt,
 			FieldSize: 2,
 		},
 		{
 			FieldName: "LABEL",
-			FieldType: TypeString,
+			FieldType: tableformatter.TypeString,
 			FieldSize: 5,
 		},
 		{
 			FieldName: "NAME",
-			FieldType: TypeString,
+			FieldType: tableformatter.TypeString,
 			FieldSize: 5,
 		},
 		{
 			FieldName: "DESCRIPTION",
-			FieldType: TypeString,
+			FieldType: tableformatter.TypeString,
 			FieldSize: 5,
 		},
 		{
 			FieldName: "SIZE_MBYTES",
-			FieldType: TypeInt,
+			FieldType: tableformatter.TypeInt,
 			FieldSize: 5,
 		},
 		{
 			FieldName: "BOOT_METHODS",
-			FieldType: TypeString,
+			FieldType: tableformatter.TypeString,
 			FieldSize: 5,
 		},
 		{
 			FieldName: "OS",
-			FieldType: TypeString,
+			FieldType: tableformatter.TypeString,
 			FieldSize: 5,
 		},
 		{
 			FieldName: "INSTALL_BOOTLOADER",
-			FieldType: TypeString,
+			FieldType: tableformatter.TypeString,
 			FieldSize: 5,
 		},
 		{
 			FieldName: "OS_BOOTLOADER",
-			FieldType: TypeString,
+			FieldType: tableformatter.TypeString,
 			FieldSize: 5,
 		},
 		{
 			FieldName: "USER_ID",
-			FieldType: TypeInt,
+			FieldType: tableformatter.TypeInt,
 			FieldSize: 5,
 		},
 		{
 			FieldName: "CREATED",
-			FieldType: TypeString,
+			FieldType: tableformatter.TypeString,
 			FieldSize: 5,
 		},
 		{
 			FieldName: "UPDATED",
-			FieldType: TypeString,
+			FieldType: tableformatter.TypeString,
 			FieldSize: 5,
 		},
 	}
@@ -248,9 +249,13 @@ func templatesListCmd(c *Command, client interfaces.MetalCloudClient) (string, e
 
 	}
 
-	TableSorter(schema).OrderBy(schema[0].FieldName).Sort(data)
+	tableformatter.TableSorter(schema).OrderBy(schema[0].FieldName).Sort(data)
 
-	return renderTable("Templates", "", getStringParam(c.Arguments["format"]), data, schema)
+	table := tableformatter.Table{
+		Data:   data,
+		Schema: schema,
+	}
+	return table.RenderTable("Templates", "", getStringParam(c.Arguments["format"]))
 }
 
 func updateTemplateFromCommand(obj metalcloud.OSTemplate, c *Command, client interfaces.MetalCloudClient, checkRequired bool) (*metalcloud.OSTemplate, error) {
@@ -507,65 +512,65 @@ func templateGetCmd(c *Command, client interfaces.MetalCloudClient) (string, err
 		return "", err
 	}
 
-	schema := []SchemaField{
+	schema := []tableformatter.SchemaField{
 		{
 			FieldName: "ID",
-			FieldType: TypeInt,
+			FieldType: tableformatter.TypeInt,
 			FieldSize: 2,
 		},
 		{
 			FieldName: "LABEL",
-			FieldType: TypeString,
+			FieldType: tableformatter.TypeString,
 			FieldSize: 5,
 		},
 		{
 			FieldName: "NAME",
-			FieldType: TypeString,
+			FieldType: tableformatter.TypeString,
 			FieldSize: 5,
 		},
 		{
 			FieldName: "DESCRIPTION",
-			FieldType: TypeString,
+			FieldType: tableformatter.TypeString,
 			FieldSize: 5,
 		},
 		{
 			FieldName: "SIZE_MBYTES",
-			FieldType: TypeInt,
+			FieldType: tableformatter.TypeInt,
 			FieldSize: 5,
 		},
 		{
 			FieldName: "BOOT_METHODS",
-			FieldType: TypeString,
+			FieldType: tableformatter.TypeString,
 			FieldSize: 5,
 		},
 		{
 			FieldName: "OS",
-			FieldType: TypeString,
+			FieldType: tableformatter.TypeString,
 			FieldSize: 5,
 		},
 		{
 			FieldName: "USER_ID",
-			FieldType: TypeInt,
+			FieldType: tableformatter.TypeInt,
 			FieldSize: 5,
 		},
 		{
 			FieldName: "INSTALL_BOOTLOADER",
-			FieldType: TypeString,
+			FieldType: tableformatter.TypeString,
 			FieldSize: 5,
 		},
 		{
 			FieldName: "OS_BOOTLOADER",
-			FieldType: TypeString,
+			FieldType: tableformatter.TypeString,
 			FieldSize: 5,
 		},
 		{
 			FieldName: "CREATED",
-			FieldType: TypeString,
+			FieldType: tableformatter.TypeString,
 			FieldSize: 5,
 		},
 		{
 			FieldName: "UPDATED",
-			FieldType: TypeString,
+			FieldType: tableformatter.TypeString,
 			FieldSize: 5,
 		},
 	}
@@ -576,9 +581,9 @@ func templateGetCmd(c *Command, client interfaces.MetalCloudClient) (string, err
 
 	if showCredentials {
 
-		schema = append(schema, SchemaField{
+		schema = append(schema, tableformatter.SchemaField{
 			FieldName: "CREDENTIALS",
-			FieldType: TypeString,
+			FieldType: tableformatter.TypeString,
 			FieldSize: 5,
 		})
 
@@ -632,41 +637,15 @@ func templateGetCmd(c *Command, client interfaces.MetalCloudClient) (string, err
 		credentials,
 	})
 
-	var sb strings.Builder
+	topLine := fmt.Sprintf("Template %s (%d)\n", template.VolumeTemplateLabel, template.VolumeTemplateID)
 
-	format := c.Arguments["format"]
-	if format == nil {
-		var f string
-		f = ""
-		format = &f
+	tableformatter.TableSorter(schema).OrderBy(
+		schema[0].FieldName,
+		schema[1].FieldName).Sort(data)
+
+	table := tableformatter.Table{
+		Data:   data,
+		Schema: schema,
 	}
-
-	switch *format.(*string) {
-	case "json", "JSON":
-		ret, err := GetTableAsJSONString(data, schema)
-		if err != nil {
-			return "", err
-		}
-		sb.WriteString(ret)
-	case "csv", "CSV":
-		ret, err := GetTableAsCSVString(data, schema)
-		if err != nil {
-			return "", err
-		}
-		sb.WriteString(ret)
-
-	default:
-		sb.WriteString(fmt.Sprintf("Template %s (%d)\n", template.VolumeTemplateLabel, template.VolumeTemplateID))
-
-		TableSorter(schema).OrderBy(
-			schema[0].FieldName,
-			schema[1].FieldName).Sort(data)
-
-		AdjustFieldSizes(data, &schema)
-
-		sb.WriteString(GetTableAsString(data, schema))
-
-	}
-
-	return sb.String(), nil
+	return table.RenderTable("Templates", topLine, getStringParam(c.Arguments["format"]))
 }

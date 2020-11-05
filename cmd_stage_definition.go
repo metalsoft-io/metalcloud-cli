@@ -9,6 +9,7 @@ import (
 
 	metalcloud "github.com/bigstepinc/metal-cloud-sdk-go"
 	interfaces "github.com/bigstepinc/metalcloud-cli/interfaces"
+	"github.com/metalsoft-io/tableformatter"
 )
 
 var stageDefinitionsCmds = []Command{
@@ -129,50 +130,50 @@ func stageDefinitionsListCmd(c *Command, client interfaces.MetalCloudClient) (st
 		return "", err
 	}
 
-	schema := []SchemaField{
+	schema := []tableformatter.SchemaField{
 		{
 			FieldName: "ID",
-			FieldType: TypeInt,
+			FieldType: tableformatter.TypeInt,
 			FieldSize: 6,
 		},
 		{
 			FieldName: "LABEL",
-			FieldType: TypeString,
+			FieldType: tableformatter.TypeString,
 			FieldSize: 6,
 		},
 		{
 			FieldName: "TITLE",
-			FieldType: TypeString,
+			FieldType: tableformatter.TypeString,
 			FieldSize: 5,
 		},
 		{
 			FieldName: "DESCRIPTION",
-			FieldType: TypeString,
+			FieldType: tableformatter.TypeString,
 			FieldSize: 5,
 		},
 		{
 			FieldName: "TYPE",
-			FieldType: TypeString,
+			FieldType: tableformatter.TypeString,
 			FieldSize: 5,
 		},
 		{
 			FieldName: "VARS_REQUIRED",
-			FieldType: TypeString,
+			FieldType: tableformatter.TypeString,
 			FieldSize: 5,
 		},
 		{
 			FieldName: "DEF.",
-			FieldType: TypeString,
+			FieldType: tableformatter.TypeString,
 			FieldSize: 5,
 		},
 		{
 			FieldName: "CREATED",
-			FieldType: TypeString,
+			FieldType: tableformatter.TypeString,
 			FieldSize: 5,
 		},
 		{
 			FieldName: "UPDATED",
-			FieldType: TypeString,
+			FieldType: tableformatter.TypeString,
 			FieldSize: 4,
 		},
 	}
@@ -204,9 +205,13 @@ func stageDefinitionsListCmd(c *Command, client interfaces.MetalCloudClient) (st
 
 	}
 
-	TableSorter(schema).OrderBy(schema[1].FieldName).Sort(data)
+	tableformatter.TableSorter(schema).OrderBy(schema[1].FieldName).Sort(data)
 
-	return renderTable("Stage Definitions", "", getStringParam(c.Arguments["format"]), data, schema)
+	table := tableformatter.Table{
+		Data:   data,
+		Schema: schema,
+	}
+	return table.RenderTable("Stage Definitions", "", getStringParam(c.Arguments["format"]))
 }
 
 func stageDefinitionCreateCmd(c *Command, client interfaces.MetalCloudClient) (string, error) {

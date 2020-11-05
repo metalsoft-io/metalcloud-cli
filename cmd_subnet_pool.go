@@ -8,6 +8,7 @@ import (
 
 	metalcloud "github.com/bigstepinc/metal-cloud-sdk-go"
 	interfaces "github.com/bigstepinc/metalcloud-cli/interfaces"
+	"github.com/metalsoft-io/tableformatter"
 )
 
 var subnetPoolCmds = []Command{
@@ -95,46 +96,46 @@ func subnetPoolListCmd(c *Command, client interfaces.MetalCloudClient) (string, 
 		return "", err
 	}
 
-	schema := []SchemaField{
+	schema := []tableformatter.SchemaField{
 		{
 			FieldName: "ID",
-			FieldType: TypeInt,
+			FieldType: tableformatter.TypeInt,
 			FieldSize: 6,
 		},
 		{
 			FieldName: "DATACENTER",
-			FieldType: TypeString,
+			FieldType: tableformatter.TypeString,
 			FieldSize: 6,
 		},
 		{
 			FieldName: "DEST.",
-			FieldType: TypeString,
+			FieldType: tableformatter.TypeString,
 			FieldSize: 3,
 		},
 
 		{
 			FieldName: "PREFIX",
-			FieldType: TypeString,
+			FieldType: tableformatter.TypeString,
 			FieldSize: 10,
 		},
 		{
 			FieldName: "NETWORK_EQUIPMENT",
-			FieldType: TypeString,
+			FieldType: tableformatter.TypeString,
 			FieldSize: 5,
 		},
 		{
 			FieldName: "USER",
-			FieldType: TypeString,
+			FieldType: tableformatter.TypeString,
 			FieldSize: 5,
 		},
 		{
 			FieldName: "MANUAL_ONLY",
-			FieldType: TypeBool,
+			FieldType: tableformatter.TypeBool,
 			FieldSize: 3,
 		},
 		{
 			FieldName: "AVAILABLE_IPS",
-			FieldType: TypeString,
+			FieldType: tableformatter.TypeString,
 			FieldSize: 3,
 		},
 	}
@@ -185,12 +186,16 @@ func subnetPoolListCmd(c *Command, client interfaces.MetalCloudClient) (string, 
 
 	}
 
-	TableSorter(schema).OrderBy(
+	tableformatter.TableSorter(schema).OrderBy(
 		schema[0].FieldName,
 		schema[1].FieldName,
 		schema[2].FieldName).Sort(data)
 
-	return renderTable("Switches", "", getStringParam(c.Arguments["format"]), data, schema)
+	table := tableformatter.Table{
+		Data:   data,
+		Schema: schema,
+	}
+	return table.RenderTable("Switches", "", getStringParam(c.Arguments["format"]))
 }
 
 func subnetPoolGetCmd(c *Command, client interfaces.MetalCloudClient) (string, error) {
@@ -205,46 +210,46 @@ func subnetPoolGetCmd(c *Command, client interfaces.MetalCloudClient) (string, e
 		return "", err
 	}
 
-	schema := []SchemaField{
+	schema := []tableformatter.SchemaField{
 		{
 			FieldName: "ID",
-			FieldType: TypeInt,
+			FieldType: tableformatter.TypeInt,
 			FieldSize: 6,
 		},
 		{
 			FieldName: "DATACENTER",
-			FieldType: TypeString,
+			FieldType: tableformatter.TypeString,
 			FieldSize: 6,
 		},
 		{
 			FieldName: "DEST.",
-			FieldType: TypeString,
+			FieldType: tableformatter.TypeString,
 			FieldSize: 3,
 		},
 
 		{
 			FieldName: "PREFIX",
-			FieldType: TypeString,
+			FieldType: tableformatter.TypeString,
 			FieldSize: 10,
 		},
 		{
 			FieldName: "NETWORK_EQUIPMENT",
-			FieldType: TypeString,
+			FieldType: tableformatter.TypeString,
 			FieldSize: 5,
 		},
 		{
 			FieldName: "USER",
-			FieldType: TypeString,
+			FieldType: tableformatter.TypeString,
 			FieldSize: 5,
 		},
 		{
 			FieldName: "MANUAL_ONLY",
-			FieldType: TypeBool,
+			FieldType: tableformatter.TypeBool,
 			FieldSize: 3,
 		},
 		{
 			FieldName: "AVAILABLE_IPS",
-			FieldType: TypeString,
+			FieldType: tableformatter.TypeString,
 			FieldSize: 3,
 		},
 	}
@@ -295,14 +300,17 @@ func subnetPoolGetCmd(c *Command, client interfaces.MetalCloudClient) (string, e
 	format := getStringParam(c.Arguments["format"])
 
 	if getBoolParam(c.Arguments["raw"]) {
-		ret, err := renderRawObject(*s, format, "SubnetPool")
+		ret, err := tableformatter.RenderRawObject(*s, format, "SubnetPool")
 		if err != nil {
 			return "", err
 		}
 		sb.WriteString(ret)
 	} else {
-
-		ret, err := renderTransposedTable("subnet pool", "", format, data, schema)
+		table := tableformatter.Table{
+			Data:   data,
+			Schema: schema,
+		}
+		ret, err := table.RenderTransposedTable("subnet pool", "", format)
 		if err != nil {
 			return "", err
 		}

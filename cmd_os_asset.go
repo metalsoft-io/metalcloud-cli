@@ -9,6 +9,7 @@ import (
 
 	metalcloud "github.com/bigstepinc/metal-cloud-sdk-go"
 	interfaces "github.com/bigstepinc/metalcloud-cli/interfaces"
+	"github.com/metalsoft-io/tableformatter"
 )
 
 var osAssetsCmds = []Command{
@@ -125,40 +126,40 @@ func assetsListCmd(c *Command, client interfaces.MetalCloudClient) (string, erro
 		return "", err
 	}
 
-	schema := []SchemaField{
+	schema := []tableformatter.SchemaField{
 		{
 			FieldName: "ID",
-			FieldType: TypeInt,
+			FieldType: tableformatter.TypeInt,
 			FieldSize: 2,
 		},
 		{
 			FieldName: "FILENAME",
-			FieldType: TypeString,
+			FieldType: tableformatter.TypeString,
 			FieldSize: 20,
 		},
 		{
 			FieldName: "FILE_SIZE_BYTES",
-			FieldType: TypeInt,
+			FieldType: tableformatter.TypeInt,
 			FieldSize: 4,
 		},
 		{
 			FieldName: "FILE_MIME",
-			FieldType: TypeString,
+			FieldType: tableformatter.TypeString,
 			FieldSize: 20,
 		},
 		{
 			FieldName: "USAGE",
-			FieldType: TypeString,
+			FieldType: tableformatter.TypeString,
 			FieldSize: 5,
 		},
 		{
 			FieldName: "SOURCE_URL",
-			FieldType: TypeString,
+			FieldType: tableformatter.TypeString,
 			FieldSize: 5,
 		},
 		{
 			FieldName: "VARIABLE_NAMES_REQUIRED",
-			FieldType: TypeString,
+			FieldType: tableformatter.TypeString,
 			FieldSize: 10,
 		},
 	}
@@ -178,9 +179,13 @@ func assetsListCmd(c *Command, client interfaces.MetalCloudClient) (string, erro
 
 	}
 
-	TableSorter(schema).OrderBy(schema[0].FieldName).Sort(data)
+	tableformatter.TableSorter(schema).OrderBy(schema[0].FieldName).Sort(data)
 
-	return renderTable("Assets", "", getStringParam(c.Arguments["format"]), data, schema)
+	table := tableformatter.Table{
+		Data:   data,
+		Schema: schema,
+	}
+	return table.RenderTable("Assets", "", getStringParam(c.Arguments["format"]))
 }
 
 func assetCreateCmd(c *Command, client interfaces.MetalCloudClient) (string, error) {
@@ -345,45 +350,45 @@ func templateListAssociatedAssetsCmd(c *Command, client interfaces.MetalCloudCli
 		return "", err
 	}
 
-	schema := []SchemaField{
+	schema := []tableformatter.SchemaField{
 		{
 			FieldName: "PATH",
-			FieldType: TypeString,
+			FieldType: tableformatter.TypeString,
 			FieldSize: 5,
 		},
 		{
 			FieldName: "ID",
-			FieldType: TypeInt,
+			FieldType: tableformatter.TypeInt,
 			FieldSize: 2,
 		},
 		{
 			FieldName: "FILENAME",
-			FieldType: TypeString,
+			FieldType: tableformatter.TypeString,
 			FieldSize: 20,
 		},
 		{
 			FieldName: "FILE_SIZE_BYTES",
-			FieldType: TypeInt,
+			FieldType: tableformatter.TypeInt,
 			FieldSize: 4,
 		},
 		{
 			FieldName: "FILE_MIME",
-			FieldType: TypeString,
+			FieldType: tableformatter.TypeString,
 			FieldSize: 20,
 		},
 		{
 			FieldName: "USAGE",
-			FieldType: TypeString,
+			FieldType: tableformatter.TypeString,
 			FieldSize: 5,
 		},
 		{
 			FieldName: "SOURCE_URL",
-			FieldType: TypeString,
+			FieldType: tableformatter.TypeString,
 			FieldSize: 5,
 		},
 		{
 			FieldName: "VARIABLES_JSON",
-			FieldType: TypeString,
+			FieldType: tableformatter.TypeString,
 			FieldSize: 5,
 		},
 	}
@@ -404,42 +409,13 @@ func templateListAssociatedAssetsCmd(c *Command, client interfaces.MetalCloudCli
 
 	}
 
-	var sb strings.Builder
+	tableformatter.TableSorter(schema).OrderBy(
+		schema[0].FieldName,
+		schema[1].FieldName).Sort(data)
 
-	format := c.Arguments["format"]
-	if format == nil {
-		var f string
-		f = ""
-		format = &f
+	table := tableformatter.Table{
+		Data:   data,
+		Schema: schema,
 	}
-
-	switch *format.(*string) {
-	case "json", "JSON":
-		ret, err := GetTableAsJSONString(data, schema)
-		if err != nil {
-			return "", err
-		}
-		sb.WriteString(ret)
-	case "csv", "CSV":
-		ret, err := GetTableAsCSVString(data, schema)
-		if err != nil {
-			return "", err
-		}
-		sb.WriteString(ret)
-
-	default:
-		sb.WriteString(fmt.Sprintf("Assets associated to template (%s #%d)\n", ret.VolumeTemplateLabel, ret.VolumeTemplateID))
-
-		TableSorter(schema).OrderBy(
-			schema[0].FieldName,
-			schema[1].FieldName).Sort(data)
-
-		AdjustFieldSizes(data, &schema)
-
-		sb.WriteString(GetTableAsString(data, schema))
-
-		sb.WriteString(fmt.Sprintf("Total: %d assets\n\n", len(*list)))
-	}
-
-	return sb.String(), nil
+	return table.RenderTable("Associated assets", "", getStringParam(c.Arguments["format"]))
 }

@@ -190,7 +190,12 @@ git push
 
 ### Updating the SDK
 
-To update the SDK update `go.mod` file then regenerate the interfaces used for testing.
+To update the SDK update `go.mod` file then regenerate the interfaces used for testing. 
+Ifacemaker is needed
+```
+go get ifacemaker
+```
+
 ```
 go generate
 ```

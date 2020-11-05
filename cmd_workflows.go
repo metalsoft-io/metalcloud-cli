@@ -8,6 +8,7 @@ import (
 
 	metalcloud "github.com/bigstepinc/metal-cloud-sdk-go"
 	interfaces "github.com/bigstepinc/metalcloud-cli/interfaces"
+	"github.com/metalsoft-io/tableformatter"
 )
 
 var workflowCmds = []Command{
@@ -93,50 +94,50 @@ func workflowsListCmd(c *Command, client interfaces.MetalCloudClient) (string, e
 		return "", err
 	}
 
-	schema := []SchemaField{
+	schema := []tableformatter.SchemaField{
 		{
 			FieldName: "ID",
-			FieldType: TypeInt,
+			FieldType: tableformatter.TypeInt,
 			FieldSize: 6,
 		},
 		{
 			FieldName: "LABEL",
-			FieldType: TypeString,
+			FieldType: tableformatter.TypeString,
 			FieldSize: 6,
 		},
 		{
 			FieldName: "USAGE",
-			FieldType: TypeString,
+			FieldType: tableformatter.TypeString,
 			FieldSize: 5,
 		},
 		{
 			FieldName: "DESCRIPTION",
-			FieldType: TypeString,
+			FieldType: tableformatter.TypeString,
 			FieldSize: 5,
 		},
 		{
 			FieldName: "TITLE",
-			FieldType: TypeString,
+			FieldType: tableformatter.TypeString,
 			FieldSize: 5,
 		},
 		{
 			FieldName: "OWNER",
-			FieldType: TypeString,
+			FieldType: tableformatter.TypeString,
 			FieldSize: 5,
 		},
 		{
 			FieldName: "DEPRECATED",
-			FieldType: TypeBool,
+			FieldType: tableformatter.TypeBool,
 			FieldSize: 5,
 		},
 		{
 			FieldName: "CREATED",
-			FieldType: TypeString,
+			FieldType: tableformatter.TypeString,
 			FieldSize: 5,
 		},
 		{
 			FieldName: "UPDATED",
-			FieldType: TypeString,
+			FieldType: tableformatter.TypeString,
 			FieldSize: 4,
 		},
 	}
@@ -170,9 +171,13 @@ func workflowsListCmd(c *Command, client interfaces.MetalCloudClient) (string, e
 		})
 	}
 
-	TableSorter(schema).OrderBy(schema[0].FieldName).Sort(data)
+	tableformatter.TableSorter(schema).OrderBy(schema[0].FieldName).Sort(data)
 
-	return renderTable("Workflows", "", getStringParam(c.Arguments["format"]), data, schema)
+	table := tableformatter.Table{
+		Data:   data,
+		Schema: schema,
+	}
+	return table.RenderTable("Workflows", "", getStringParam(c.Arguments["format"]))
 }
 
 func workflowGetCmd(c *Command, client interfaces.MetalCloudClient) (string, error) {
@@ -182,15 +187,15 @@ func workflowGetCmd(c *Command, client interfaces.MetalCloudClient) (string, err
 		return "", err
 	}
 
-	schema := []SchemaField{
+	schema := []tableformatter.SchemaField{
 		{
 			FieldName: "RUNLEVEL",
-			FieldType: TypeInt,
+			FieldType: tableformatter.TypeInt,
 			FieldSize: 6,
 		},
 		{
 			FieldName: "STAGES",
-			FieldType: TypeString,
+			FieldType: tableformatter.TypeString,
 			FieldSize: 6,
 		},
 	}
@@ -226,10 +231,14 @@ func workflowGetCmd(c *Command, client interfaces.MetalCloudClient) (string, err
 
 	}
 
-	TableSorter(schema).OrderBy(schema[0].FieldName).Sort(data)
+	tableformatter.TableSorter(schema).OrderBy(schema[0].FieldName).Sort(data)
 
 	topLine := fmt.Sprintf("Workflow %s (%d) has the following stages:", wf.WorkflowLabel, wf.WorkflowID)
-	return renderTable("Stages", topLine, getStringParam(c.Arguments["format"]), data, schema)
+	table := tableformatter.Table{
+		Data:   data,
+		Schema: schema,
+	}
+	return table.RenderTable("Stages", topLine, getStringParam(c.Arguments["format"]))
 }
 
 func workflowCreateCmd(c *Command, client interfaces.MetalCloudClient) (string, error) {

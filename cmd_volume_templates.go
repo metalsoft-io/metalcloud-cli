@@ -7,6 +7,7 @@ import (
 
 	metalcloud "github.com/bigstepinc/metal-cloud-sdk-go"
 	interfaces "github.com/bigstepinc/metalcloud-cli/interfaces"
+	"github.com/metalsoft-io/tableformatter"
 )
 
 var volumeTemplateCmds = []Command{
@@ -45,11 +46,11 @@ var volumeTemplateCmds = []Command{
 				"boot_methods_supported":     c.FlagSet.String("boot-methods-supported", _nilDefaultStr, "The boot_methods_supported of the volume template. Defaults to 'pxe_iscsi'."),
 				"deprecation_status":         c.FlagSet.String("deprecation-status", _nilDefaultStr, "Deprecation status. Possible values: not_deprecated,deprecated_deny_provision,deprecated_allow_expand. Defaults to 'not_deprecated'."),
 				"tags":                       c.FlagSet.String("tags", _nilDefaultStr, "The tags of the volume template, comma separated."),
-				"os_bootstrap_function_name": c.FlagSet.String("os-bootstrap-function-name", _nilDefaultStr, "Optional property that selects the cloudinit configuration function. Can be one of: provisioner_os_cloudinit_prepare_centos, provisioner_os_cloudinit_prepare_rhel, provisioner_os_cloudinit_prepare_ubuntu, provisioner_os_cloudbaseinit_prepare_windows."),
-				"os_type":                    c.FlagSet.String("os-type", _nilDefaultStr, "Template operating system type. For example, Ubuntu or CentOS."),
+				"os_bootstrap_function_name": c.FlagSet.String("os-bootstrap-function-name", _nilDefaultStr, "The cloudinit configuration function. Can be one of: provisioner_os_cloudinit_prepare_centos, provisioner_os_cloudinit_prepare_rhel, provisioner_os_cloudinit_prepare_ubuntu, provisioner_os_cloudbaseinit_prepare_windows."),
+				"os_type":                    c.FlagSet.String("os-type", _nilDefaultStr, "Template operating system type. Can be one of: Ubuntu, CentOS, Redhat, Windows"),
 				"os_version":                 c.FlagSet.String("os-version", _nilDefaultStr, "Template operating system version."),
 				"os_architecture":            c.FlagSet.String("os-architecture", _nilDefaultStr, "Template operating system architecture.Possible values: none, unknown, x86, x86_64."),
-				"return_id":                  c.FlagSet.Bool("return-id", false, "(Optional) Will print the ID of the created Volume Template. Useful for automating tasks."),
+				"return_id":                  c.FlagSet.Bool("return-id", false, "Will print the ID of the created Volume Template. Useful for automating tasks."),
 			}
 		},
 		ExecuteFunc: volumeTemplateCreateFromDriveCmd,
@@ -64,35 +65,35 @@ func volumeTemplatesListCmd(c *Command, client interfaces.MetalCloudClient) (str
 		return "", err
 	}
 
-	schema := []SchemaField{
+	schema := []tableformatter.SchemaField{
 		{
 			FieldName: "ID",
-			FieldType: TypeInt,
+			FieldType: tableformatter.TypeInt,
 			FieldSize: 6,
 		},
 		{
 			FieldName: "LABEL",
-			FieldType: TypeString,
+			FieldType: tableformatter.TypeString,
 			FieldSize: 20,
 		},
 		{
 			FieldName: "NAME",
-			FieldType: TypeString,
+			FieldType: tableformatter.TypeString,
 			FieldSize: 20,
 		},
 		{
 			FieldName: "SIZE",
-			FieldType: TypeInt,
+			FieldType: tableformatter.TypeInt,
 			FieldSize: 6,
 		},
 		{
 			FieldName: "STATUS",
-			FieldType: TypeString,
+			FieldType: tableformatter.TypeString,
 			FieldSize: 20,
 		},
 		{
 			FieldName: "FLAGS",
-			FieldType: TypeString,
+			FieldType: tableformatter.TypeString,
 			FieldSize: 10,
 		},
 	}
@@ -130,9 +131,13 @@ func volumeTemplatesListCmd(c *Command, client interfaces.MetalCloudClient) (str
 
 	}
 
-	TableSorter(schema).OrderBy(schema[0].FieldName).Sort(data)
+	tableformatter.TableSorter(schema).OrderBy(schema[0].FieldName).Sort(data)
 
-	return renderTable("Volume templates", "", getStringParam(c.Arguments["format"]), data, schema)
+	table := tableformatter.Table{
+		Data:   data,
+		Schema: schema,
+	}
+	return table.RenderTable("Volume templates", "", getStringParam(c.Arguments["format"]))
 }
 
 func volumeTemplateCreateFromDriveCmd(c *Command, client interfaces.MetalCloudClient) (string, error) {

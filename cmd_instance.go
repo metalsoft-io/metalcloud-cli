@@ -8,6 +8,7 @@ import (
 
 	metalcloud "github.com/bigstepinc/metal-cloud-sdk-go"
 	interfaces "github.com/bigstepinc/metalcloud-cli/interfaces"
+	"github.com/metalsoft-io/tableformatter"
 )
 
 //instanceCmds commands affecting instances
@@ -139,36 +140,36 @@ func instanceCredentialsCmd(c *Command, client interfaces.MetalCloudClient) (str
 		return "", err
 	}
 
-	schema := []SchemaField{
+	schema := []tableformatter.SchemaField{
 
 		{
 			FieldName: "ID",
-			FieldType: TypeInt,
+			FieldType: tableformatter.TypeInt,
 			FieldSize: 6,
 		},
 		{
 			FieldName: "SUBDOMAIN",
-			FieldType: TypeString,
+			FieldType: tableformatter.TypeString,
 			FieldSize: 10,
 		},
 		{
 			FieldName: "INSTANCE_ARRAY",
-			FieldType: TypeString,
+			FieldType: tableformatter.TypeString,
 			FieldSize: 10,
 		},
 		{
 			FieldName: "INFRASTRUCTURE",
-			FieldType: TypeString,
+			FieldType: tableformatter.TypeString,
 			FieldSize: 10,
 		},
 		{
 			FieldName: "PUBLIC_IPs",
-			FieldType: TypeString,
+			FieldType: tableformatter.TypeString,
 			FieldSize: 6,
 		},
 		{
 			FieldName: "PRIVATE_IPs",
-			FieldType: TypeString,
+			FieldType: tableformatter.TypeString,
 			FieldSize: 6,
 		},
 	}
@@ -187,20 +188,20 @@ func instanceCredentialsCmd(c *Command, client interfaces.MetalCloudClient) (str
 
 	if v := instance.InstanceCredentials.SSH; v != nil {
 
-		newFields := []SchemaField{
+		newFields := []tableformatter.SchemaField{
 			{
 				FieldName: "SSH_USERNAME",
-				FieldType: TypeString,
+				FieldType: tableformatter.TypeString,
 				FieldSize: 10,
 			},
 			{
 				FieldName: "SSH_PASSWORD",
-				FieldType: TypeString,
+				FieldType: tableformatter.TypeString,
 				FieldSize: 10,
 			},
 			{
 				FieldName: "SSH_PORT",
-				FieldType: TypeInt,
+				FieldType: tableformatter.TypeInt,
 				FieldSize: 10,
 			},
 		}
@@ -217,20 +218,20 @@ func instanceCredentialsCmd(c *Command, client interfaces.MetalCloudClient) (str
 
 	if v := instance.InstanceCredentials.RDP; v != nil {
 
-		newFields := []SchemaField{
+		newFields := []tableformatter.SchemaField{
 			{
 				FieldName: "RDP_USERNAME",
-				FieldType: TypeString,
+				FieldType: tableformatter.TypeString,
 				FieldSize: 5,
 			},
 			{
 				FieldName: "RDP_PASSWORD",
-				FieldType: TypeString,
+				FieldType: tableformatter.TypeString,
 				FieldSize: 5,
 			},
 			{
 				FieldName: "RDP_PORT",
-				FieldType: TypeInt,
+				FieldType: tableformatter.TypeInt,
 				FieldSize: 5,
 			},
 		}
@@ -246,20 +247,20 @@ func instanceCredentialsCmd(c *Command, client interfaces.MetalCloudClient) (str
 
 	if v := instance.InstanceCredentials.ISCSI; v != nil {
 
-		newFields := []SchemaField{
+		newFields := []tableformatter.SchemaField{
 			{
 				FieldName: "INITIATOR_IQN",
-				FieldType: TypeString,
+				FieldType: tableformatter.TypeString,
 				FieldSize: 5,
 			},
 			{
 				FieldName: "ISCSI_USERNAME",
-				FieldType: TypeString,
+				FieldType: tableformatter.TypeString,
 				FieldSize: 5,
 			},
 			{
 				FieldName: "ISCSI_PASSWORD",
-				FieldType: TypeString,
+				FieldType: tableformatter.TypeString,
 				FieldSize: 5,
 			},
 		}
@@ -276,25 +277,25 @@ func instanceCredentialsCmd(c *Command, client interfaces.MetalCloudClient) (str
 	if v := instance.InstanceCredentials.SharedDrives; v != nil {
 
 		for k, sd := range v {
-			newFields := []SchemaField{
+			newFields := []tableformatter.SchemaField{
 				{
 					FieldName: fmt.Sprintf("SHARED_DRIVE_%s_TARGET_IP_ADDRESS", k),
-					FieldType: TypeString,
+					FieldType: tableformatter.TypeString,
 					FieldSize: 5,
 				},
 				{
 					FieldName: fmt.Sprintf("SHARED_DRIVE_%s_TARGET_PORT", k),
-					FieldType: TypeInt,
+					FieldType: tableformatter.TypeInt,
 					FieldSize: 5,
 				},
 				{
 					FieldName: fmt.Sprintf("SHARED_DRIVE_%s_TARGET_IQN", k),
-					FieldType: TypeString,
+					FieldType: tableformatter.TypeString,
 					FieldSize: 5,
 				},
 				{
 					FieldName: fmt.Sprintf("SHARED_DRIVE_%s_LUN_ID", k),
-					FieldType: TypeString,
+					FieldType: tableformatter.TypeString,
 					FieldSize: 5,
 				},
 			}
@@ -315,8 +316,11 @@ func instanceCredentialsCmd(c *Command, client interfaces.MetalCloudClient) (str
 	topRow := fmt.Sprintf("Instance %s",
 		instance.InstanceSubdomainPermanent,
 	)
-
-	return renderTransposedTable("Records", topRow, getStringParam(c.Arguments["format"]), data, schema)
+	table := tableformatter.Table{
+		Data:   data,
+		Schema: schema,
+	}
+	return table.RenderTransposedTable("Records", topRow, getStringParam(c.Arguments["format"]))
 }
 
 func getIPsAsStringArray(ips []metalcloud.IP) []string {

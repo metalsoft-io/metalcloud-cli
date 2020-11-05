@@ -7,6 +7,7 @@ import (
 
 	metalcloud "github.com/bigstepinc/metal-cloud-sdk-go"
 	interfaces "github.com/bigstepinc/metalcloud-cli/interfaces"
+	"github.com/metalsoft-io/tableformatter"
 )
 
 var serversCmds = []Command{
@@ -93,6 +94,14 @@ var serversCmds = []Command{
 	},
 }
 
+func truncateString(s string, length int) string {
+	str := s
+	if len(str) > 0 {
+		return str[:length] + "..."
+	}
+	return ""
+}
+
 func serversListCmd(c *Command, client interfaces.MetalCloudClient) (string, error) {
 
 	filter := getStringParam(c.Arguments["filter"])
@@ -103,60 +112,60 @@ func serversListCmd(c *Command, client interfaces.MetalCloudClient) (string, err
 		return "", err
 	}
 
-	schema := []SchemaField{
+	schema := []tableformatter.SchemaField{
 		{
 			FieldName: "ID",
-			FieldType: TypeInt,
+			FieldType: tableformatter.TypeInt,
 			FieldSize: 6,
 		},
 		{
 			FieldName: "DATACENTER_NAME",
-			FieldType: TypeString,
+			FieldType: tableformatter.TypeString,
 			FieldSize: 6,
 		},
 		{
 			FieldName: "SERVER_TYPE",
-			FieldType: TypeString,
+			FieldType: tableformatter.TypeString,
 			FieldSize: 6,
 		},
 		{
 			FieldName: "STATUS",
-			FieldType: TypeString,
+			FieldType: tableformatter.TypeString,
 			FieldSize: 5,
 		},
 		{
 			FieldName: "VENDOR",
-			FieldType: TypeString,
+			FieldType: tableformatter.TypeString,
 			FieldSize: 5,
 		},
 		{
 			FieldName: "PRODUCT_NAME",
-			FieldType: TypeString,
+			FieldType: tableformatter.TypeString,
 			FieldSize: 5,
 		},
 		{
 			FieldName: "SERIAL_NUMBER",
-			FieldType: TypeString,
+			FieldType: tableformatter.TypeString,
 			FieldSize: 5,
 		},
 		{
 			FieldName: "CONFIG.",
-			FieldType: TypeString,
+			FieldType: tableformatter.TypeString,
 			FieldSize: 5,
 		},
 		{
 			FieldName: "TAGS",
-			FieldType: TypeString,
+			FieldType: tableformatter.TypeString,
 			FieldSize: 4,
 		},
 		{
 			FieldName: "IPMI_HOST",
-			FieldType: TypeString,
+			FieldType: tableformatter.TypeString,
 			FieldSize: 5,
 		},
 		{
 			FieldName: "ALLOCATED_TO.",
-			FieldType: TypeString,
+			FieldType: tableformatter.TypeString,
 			FieldSize: 5,
 		},
 	}
@@ -165,15 +174,15 @@ func serversListCmd(c *Command, client interfaces.MetalCloudClient) (string, err
 	if c.Arguments["show_credentials"] != nil && *c.Arguments["show_credentials"].(*bool) {
 		showCredentials = true
 
-		schema = append(schema, SchemaField{
+		schema = append(schema, tableformatter.SchemaField{
 			FieldName: "IPMI_USER",
-			FieldType: TypeString,
+			FieldType: tableformatter.TypeString,
 			FieldSize: 5,
 		})
 
-		schema = append(schema, SchemaField{
+		schema = append(schema, tableformatter.SchemaField{
 			FieldName: "IPMI_PASS",
-			FieldType: TypeString,
+			FieldType: tableformatter.TypeString,
 			FieldSize: 5,
 		})
 
@@ -245,7 +254,11 @@ func serversListCmd(c *Command, client interfaces.MetalCloudClient) (string, err
 
 	}
 
-	return renderTable("Servers", "", getStringParam(c.Arguments["format"]), data, schema)
+	table := tableformatter.Table{
+		Data:   data,
+		Schema: schema,
+	}
+	return table.RenderTable("Servers", "", getStringParam(c.Arguments["format"]))
 }
 
 func serverGetCmd(c *Command, client interfaces.MetalCloudClient) (string, error) {
@@ -257,65 +270,65 @@ func serverGetCmd(c *Command, client interfaces.MetalCloudClient) (string, error
 		return "", err
 	}
 
-	schema := []SchemaField{
+	schema := []tableformatter.SchemaField{
 		{
 			FieldName: "ID",
-			FieldType: TypeInt,
+			FieldType: tableformatter.TypeInt,
 			FieldSize: 6,
 		},
 		{
 			FieldName: "DATACENTER_NAME",
-			FieldType: TypeString,
+			FieldType: tableformatter.TypeString,
 			FieldSize: 6,
 		},
 		{
 			FieldName: "SERVER_TYPE",
-			FieldType: TypeString,
+			FieldType: tableformatter.TypeString,
 			FieldSize: 6,
 		},
 		{
 			FieldName: "STATUS",
-			FieldType: TypeString,
+			FieldType: tableformatter.TypeString,
 			FieldSize: 5,
 		},
 		{
 			FieldName: "VENDOR",
-			FieldType: TypeString,
+			FieldType: tableformatter.TypeString,
 			FieldSize: 5,
 		},
 		{
 			FieldName: "PRODUCT_NAME",
-			FieldType: TypeString,
+			FieldType: tableformatter.TypeString,
 			FieldSize: 5,
 		},
 		{
 			FieldName: "SERIAL_NUMBER",
-			FieldType: TypeString,
+			FieldType: tableformatter.TypeString,
 			FieldSize: 5,
 		},
 		{
 			FieldName: "CONFIG.",
-			FieldType: TypeString,
+			FieldType: tableformatter.TypeString,
 			FieldSize: 5,
 		},
 		{
 			FieldName: "DISKS",
-			FieldType: TypeString,
+			FieldType: tableformatter.TypeString,
 			FieldSize: 5,
 		},
 		{
 			FieldName: "TAGS",
-			FieldType: TypeString,
+			FieldType: tableformatter.TypeString,
 			FieldSize: 4,
 		},
 		{
 			FieldName: "IPMI_HOST",
-			FieldType: TypeString,
+			FieldType: tableformatter.TypeString,
 			FieldSize: 5,
 		},
 		{
 			FieldName: "ALLOCATED_TO.",
-			FieldType: TypeString,
+			FieldType: tableformatter.TypeString,
 			FieldSize: 5,
 		},
 	}
@@ -358,9 +371,9 @@ func serverGetCmd(c *Command, client interfaces.MetalCloudClient) (string, error
 
 	if showCredentials {
 
-		schema = append(schema, SchemaField{
+		schema = append(schema, tableformatter.SchemaField{
 			FieldName: "CREDENTIALS",
-			FieldType: TypeString,
+			FieldType: tableformatter.TypeString,
 			FieldSize: 5,
 		})
 
@@ -400,7 +413,7 @@ func serverGetCmd(c *Command, client interfaces.MetalCloudClient) (string, error
 	format := getStringParam(c.Arguments["format"])
 
 	if getBoolParam(c.Arguments["raw"]) {
-		ret, err := renderRawObject(*server, format, "Server")
+		ret, err := tableformatter.RenderRawObject(*server, format, "Server")
 		if err != nil {
 			return "", err
 		}
@@ -409,13 +422,21 @@ func serverGetCmd(c *Command, client interfaces.MetalCloudClient) (string, error
 
 		switch format {
 		case "json", "JSON":
-			ret, err := GetTableAsJSONString(data, schema)
+			table := tableformatter.Table{
+				Data:   data,
+				Schema: schema,
+			}
+			ret, err := table.RenderTableAsJSON()
 			if err != nil {
 				return "", err
 			}
 			sb.WriteString(ret)
 		case "csv", "CSV":
-			ret, err := GetTableAsCSVString(data, schema)
+			table := tableformatter.Table{
+				Data:   data,
+				Schema: schema,
+			}
+			ret, err := table.RenderTableAsCSV()
 			if err != nil {
 				return "", err
 			}
