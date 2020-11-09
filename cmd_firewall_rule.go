@@ -9,6 +9,7 @@ import (
 
 	metalcloud "github.com/bigstepinc/metal-cloud-sdk-go"
 	interfaces "github.com/bigstepinc/metalcloud-cli/interfaces"
+	"github.com/metalsoft-io/tableformatter"
 )
 
 var firewallRuleCmds = []Command{
@@ -86,45 +87,45 @@ func firewallRuleListCmd(c *Command, client interfaces.MetalCloudClient) (string
 		return "", fmt.Errorf("the instance array %s [#%d] has firewall management disabled", retIA.InstanceArrayLabel, retIA.InstanceArrayID)
 	}
 
-	schema := []SchemaField{
+	schema := []tableformatter.SchemaField{
 		{
 			FieldName: "INDEX",
-			FieldType: TypeInt,
+			FieldType: tableformatter.TypeInt,
 			FieldSize: 6,
 		},
 		{
 			FieldName: "PROTOCOL",
-			FieldType: TypeString,
+			FieldType: tableformatter.TypeString,
 			FieldSize: 10,
 		},
 		{
 			FieldName: "PORT",
-			FieldType: TypeString,
+			FieldType: tableformatter.TypeString,
 			FieldSize: 10,
 		},
 		{
 			FieldName: "SOURCE",
-			FieldType: TypeString,
+			FieldType: tableformatter.TypeString,
 			FieldSize: 20,
 		},
 		{
 			FieldName: "DEST",
-			FieldType: TypeString,
+			FieldType: tableformatter.TypeString,
 			FieldSize: 20,
 		},
 		{
 			FieldName: "TYPE",
-			FieldType: TypeString,
+			FieldType: tableformatter.TypeString,
 			FieldSize: 5,
 		},
 		{
 			FieldName: "ENABLED",
-			FieldType: TypeBool,
+			FieldType: tableformatter.TypeBool,
 			FieldSize: 10,
 		},
 		{
 			FieldName: "DESC.",
-			FieldType: TypeString,
+			FieldType: tableformatter.TypeString,
 			FieldSize: 50,
 		},
 	}
@@ -186,9 +187,13 @@ func firewallRuleListCmd(c *Command, client interfaces.MetalCloudClient) (string
 
 	topLine := fmt.Sprintf("Instance Array %s (%d) [%s] has the following firewall rules:\n", retIA.InstanceArrayLabel, retIA.InstanceArrayID, status)
 
-	TableSorter(schema).OrderBy(schema[0].FieldName).Sort(data)
+	tableformatter.TableSorter(schema).OrderBy(schema[0].FieldName).Sort(data)
 
-	return renderTable("Rules", topLine, getStringParam(c.Arguments["format"]), data, schema)
+	table := tableformatter.Table{
+		Data:   data,
+		Schema: schema,
+	}
+	return table.RenderTable("Rules", topLine, getStringParam(c.Arguments["format"]))
 }
 
 func firewallRuleAddCmd(c *Command, client interfaces.MetalCloudClient) (string, error) {

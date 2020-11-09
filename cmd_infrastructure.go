@@ -9,6 +9,7 @@ import (
 
 	metalcloud "github.com/bigstepinc/metal-cloud-sdk-go"
 	interfaces "github.com/bigstepinc/metalcloud-cli/interfaces"
+	"github.com/metalsoft-io/tableformatter"
 )
 
 //infrastructureCmds commands affecting infrastructures
@@ -163,35 +164,35 @@ func infrastructureListCmd(c *Command, client interfaces.MetalCloudClient) (stri
 		return "", err
 	}
 
-	schema := []SchemaField{
+	schema := []tableformatter.SchemaField{
 		{
 			FieldName: "ID",
-			FieldType: TypeInt,
+			FieldType: tableformatter.TypeInt,
 			FieldSize: 6,
 		},
 		{
 			FieldName: "LABEL",
-			FieldType: TypeString,
+			FieldType: tableformatter.TypeString,
 			FieldSize: 15,
 		},
 		{
 			FieldName: "OWNER",
-			FieldType: TypeString,
+			FieldType: tableformatter.TypeString,
 			FieldSize: 20,
 		},
 		{
 			FieldName: "REL.",
-			FieldType: TypeString,
+			FieldType: tableformatter.TypeString,
 			FieldSize: 10,
 		},
 		{
 			FieldName: "STATUS",
-			FieldType: TypeString,
+			FieldType: tableformatter.TypeString,
 			FieldSize: 5,
 		},
 		{
 			FieldName: "DATACENTER",
-			FieldType: TypeString,
+			FieldType: tableformatter.TypeString,
 			FieldSize: 10,
 		},
 	}
@@ -215,14 +216,18 @@ func infrastructureListCmd(c *Command, client interfaces.MetalCloudClient) (stri
 
 	}
 
-	TableSorter(schema).OrderBy(
+	tableformatter.TableSorter(schema).OrderBy(
 		schema[3].FieldName,
 		schema[0].FieldName,
 		schema[1].FieldName).Sort(data)
 
 	topLine := fmt.Sprintf("Infrastructures I have access to (as %s) in datacenter %s\n", user, GetDatacenter())
 
-	return renderTable("Infrastructures", topLine, getStringParam(c.Arguments["format"]), data, schema)
+	table := tableformatter.Table{
+		Data:   data,
+		Schema: schema,
+	}
+	return table.RenderTable("Infrastructures", topLine, getStringParam(c.Arguments["format"]))
 }
 
 type infrastructureConfirmAndDoFunc func(infraID int, c *Command, client interfaces.MetalCloudClient) (string, error)
@@ -335,31 +340,31 @@ func infrastructureGetCmd(c *Command, client interfaces.MetalCloudClient) (strin
 		return "", err
 	}
 
-	schema := []SchemaField{
+	schema := []tableformatter.SchemaField{
 
 		{
 			FieldName: "ID",
-			FieldType: TypeInt,
+			FieldType: tableformatter.TypeInt,
 			FieldSize: 6,
 		},
 		{
 			FieldName: "OBJECT_TYPE",
-			FieldType: TypeString,
+			FieldType: tableformatter.TypeString,
 			FieldSize: 15,
 		},
 		{
 			FieldName: "LABEL",
-			FieldType: TypeString,
+			FieldType: tableformatter.TypeString,
 			FieldSize: 10,
 		},
 		{
 			FieldName: "DETAILS",
-			FieldType: TypeString,
+			FieldType: tableformatter.TypeString,
 			FieldSize: 50,
 		},
 		{
 			FieldName: "STATUS",
-			FieldType: TypeString,
+			FieldType: tableformatter.TypeString,
 			FieldSize: 5,
 		},
 	}
@@ -452,46 +457,17 @@ func infrastructureGetCmd(c *Command, client interfaces.MetalCloudClient) (strin
 		})
 
 	}
+	topLine := fmt.Sprintf("Infrastructure %s (%d) - datacenter %s owner %s\n",
+		retInfra.InfrastructureLabel,
+		retInfra.InfrastructureID,
+		retInfra.DatacenterName,
+		retInfra.UserEmailOwner)
 
-	var sb strings.Builder
-
-	format := c.Arguments["format"]
-	if format == nil {
-		var f string
-		f = ""
-		format = &f
+	table := tableformatter.Table{
+		Data:   data,
+		Schema: schema,
 	}
-
-	switch *format.(*string) {
-	case "json", "JSON":
-		ret, err := GetTableAsJSONString(data, schema)
-		if err != nil {
-			return "", err
-		}
-		sb.WriteString(ret)
-	case "csv", "CSV":
-		ret, err := GetTableAsCSVString(data, schema)
-		if err != nil {
-			return "", err
-		}
-		sb.WriteString(ret)
-
-	default:
-
-		sb.WriteString(fmt.Sprintf("Infrastructure %s (%d) - datacenter %s owner %s\n",
-			retInfra.InfrastructureLabel,
-			retInfra.InfrastructureID,
-			retInfra.DatacenterName,
-			retInfra.UserEmailOwner))
-
-		AdjustFieldSizes(data, &schema)
-
-		sb.WriteString(GetTableAsString(data, schema))
-
-		sb.WriteString(fmt.Sprintf("Total: %d elements\n\n", len(data)))
-	}
-
-	return sb.String(), nil
+	return table.RenderTable("Infrastructures", topLine, getStringParam(c.Arguments["format"]))
 }
 
 func listWorkflowStagesCmd(c *Command, client interfaces.MetalCloudClient) (string, error) {
@@ -512,35 +488,35 @@ func listWorkflowStagesCmd(c *Command, client interfaces.MetalCloudClient) (stri
 		return "", err
 	}
 
-	schema := []SchemaField{
+	schema := []tableformatter.SchemaField{
 		{
 			FieldName: "ID",
-			FieldType: TypeInt,
+			FieldType: tableformatter.TypeInt,
 			FieldSize: 6,
 		},
 		{
 			FieldName: "INFRASTRUCTRE",
-			FieldType: TypeString,
+			FieldType: tableformatter.TypeString,
 			FieldSize: 5,
 		},
 		{
 			FieldName: "STAGE",
-			FieldType: TypeString,
+			FieldType: tableformatter.TypeString,
 			FieldSize: 4,
 		},
 		{
 			FieldName: "TYPE",
-			FieldType: TypeString,
+			FieldType: tableformatter.TypeString,
 			FieldSize: 4,
 		},
 		{
 			FieldName: "RUNLEVEL",
-			FieldType: TypeInt,
+			FieldType: tableformatter.TypeInt,
 			FieldSize: 5,
 		},
 		{
 			FieldName: "OUTPUT",
-			FieldType: TypeString,
+			FieldType: tableformatter.TypeString,
 			FieldSize: 20,
 		},
 	}
@@ -569,44 +545,11 @@ func listWorkflowStagesCmd(c *Command, client interfaces.MetalCloudClient) (stri
 
 	}
 
-	var sb strings.Builder
-
-	format := c.Arguments["format"]
-	if format == nil {
-		var f string
-		f = ""
-		format = &f
+	table := tableformatter.Table{
+		Data:   data,
+		Schema: schema,
 	}
-
-	switch *format.(*string) {
-	case "json", "JSON":
-		ret, err := GetTableAsJSONString(data, schema)
-		if err != nil {
-			return "", err
-		}
-		sb.WriteString(ret)
-	case "csv", "CSV":
-		ret, err := GetTableAsCSVString(data, schema)
-		if err != nil {
-			return "", err
-		}
-		sb.WriteString(ret)
-
-	default:
-		sb.WriteString(fmt.Sprintf("Stage Definitions:\n"))
-
-		TableSorter(schema).OrderBy(
-			schema[0].FieldName,
-			schema[1].FieldName).Sort(data)
-
-		AdjustFieldSizes(data, &schema)
-
-		sb.WriteString(GetTableAsString(data, schema))
-
-		sb.WriteString(fmt.Sprintf("Total: %d \n\n", len(*list)))
-	}
-
-	return sb.String(), nil
+	return table.RenderTable("Workflow Stages", "", getStringParam(c.Arguments["format"]))
 }
 
 //getInfrastructureFromCommand returns an Infrastructure object using the infrastructure_id_or_label argument

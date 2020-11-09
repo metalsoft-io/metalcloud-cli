@@ -8,6 +8,7 @@ import (
 
 	metalcloud "github.com/bigstepinc/metal-cloud-sdk-go"
 	interfaces "github.com/bigstepinc/metalcloud-cli/interfaces"
+	"github.com/metalsoft-io/tableformatter"
 	"gopkg.in/yaml.v3"
 )
 
@@ -117,30 +118,30 @@ func datacenterListCmd(c *Command, client interfaces.MetalCloudClient) (string, 
 		return "", err
 	}
 
-	schema := []SchemaField{
+	schema := []tableformatter.SchemaField{
 		{
 			FieldName: "LABEL",
-			FieldType: TypeString,
+			FieldType: tableformatter.TypeString,
 			FieldSize: 15,
 		},
 		{
 			FieldName: "NAME",
-			FieldType: TypeString,
+			FieldType: tableformatter.TypeString,
 			FieldSize: 20,
 		},
 		{
 			FieldName: "OWNER",
-			FieldType: TypeString,
+			FieldType: tableformatter.TypeString,
 			FieldSize: 10,
 		},
 		{
 			FieldName: "PARENT",
-			FieldType: TypeString,
+			FieldType: tableformatter.TypeString,
 			FieldSize: 10,
 		},
 		{
 			FieldName: "FLAGS",
-			FieldType: TypeString,
+			FieldType: tableformatter.TypeString,
 			FieldSize: 20,
 		},
 	}
@@ -186,8 +187,11 @@ func datacenterListCmd(c *Command, client interfaces.MetalCloudClient) (string, 
 		})
 
 	}
-
-	return renderTable("Datacenters", "", getStringParam(c.Arguments["format"]), data, schema)
+	table := tableformatter.Table{
+		Data:   data,
+		Schema: schema,
+	}
+	return table.RenderTable("Datacenters", "", getStringParam(c.Arguments["format"]))
 }
 
 func datacenterCreateCmd(c *Command, client interfaces.MetalCloudClient) (string, error) {
@@ -300,30 +304,30 @@ func datacenterGetCmd(c *Command, client interfaces.MetalCloudClient) (string, e
 		return "", err
 	}
 
-	schema := []SchemaField{
+	schema := []tableformatter.SchemaField{
 		{
 			FieldName: "LABEL",
-			FieldType: TypeString,
+			FieldType: tableformatter.TypeString,
 			FieldSize: 15,
 		},
 		{
 			FieldName: "TITLE",
-			FieldType: TypeString,
+			FieldType: tableformatter.TypeString,
 			FieldSize: 20,
 		},
 		{
 			FieldName: "OWNER",
-			FieldType: TypeString,
+			FieldType: tableformatter.TypeString,
 			FieldSize: 10,
 		},
 		{
 			FieldName: "PARENT",
-			FieldType: TypeString,
+			FieldType: tableformatter.TypeString,
 			FieldSize: 10,
 		},
 		{
 			FieldName: "FLAGS",
-			FieldType: TypeString,
+			FieldType: tableformatter.TypeString,
 			FieldSize: 20,
 		},
 	}
@@ -357,9 +361,9 @@ func datacenterGetCmd(c *Command, client interfaces.MetalCloudClient) (string, e
 	secretConfigURL := ""
 
 	if showSecretURL || getBoolParam(c.Arguments["return_config_url"]) {
-		schema = append(schema, SchemaField{
+		schema = append(schema, tableformatter.SchemaField{
 			FieldName: "CONFIG_URL",
-			FieldType: TypeString,
+			FieldType: tableformatter.TypeString,
 			FieldSize: 15,
 		})
 		secretConfigURL, err = client.DatacenterAgentsConfigJSONDownloadURL(datacenterName, true)
@@ -374,9 +378,9 @@ func datacenterGetCmd(c *Command, client interfaces.MetalCloudClient) (string, e
 	configStr := ""
 	config := metalcloud.DatacenterConfig{}
 	if showConfig {
-		schema = append(schema, SchemaField{
+		schema = append(schema, tableformatter.SchemaField{
 			FieldName: "CONFIG",
-			FieldType: TypeString,
+			FieldType: tableformatter.TypeString,
 			FieldSize: 15,
 		})
 
@@ -410,13 +414,22 @@ func datacenterGetCmd(c *Command, client interfaces.MetalCloudClient) (string, e
 		}
 
 		data[0][5] = string(configBytes)
-		ret, err := GetTableAsJSONString(data, schema)
+
+		table := tableformatter.Table{
+			Data:   data,
+			Schema: schema,
+		}
+		ret, err := table.RenderTableAsJSON()
 		if err != nil {
 			return "", err
 		}
 		sb.WriteString(ret)
 	case "csv", "CSV":
-		ret, err := GetTableAsCSVString(data, schema)
+		table := tableformatter.Table{
+			Data:   data,
+			Schema: schema,
+		}
+		ret, err := table.RenderTableAsCSV()
 		if err != nil {
 			return "", err
 		}
@@ -430,7 +443,11 @@ func datacenterGetCmd(c *Command, client interfaces.MetalCloudClient) (string, e
 
 		data[0][5] = string(configBytes)
 
-		ret, err := GetTableAsYAMLString(data, schema)
+		table := tableformatter.Table{
+			Data:   data,
+			Schema: schema,
+		}
+		ret, err := table.RenderTableAsYAML()
 		if err != nil {
 			return "", err
 		}

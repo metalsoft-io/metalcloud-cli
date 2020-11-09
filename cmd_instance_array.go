@@ -8,6 +8,7 @@ import (
 
 	metalcloud "github.com/bigstepinc/metal-cloud-sdk-go"
 	interfaces "github.com/bigstepinc/metalcloud-cli/interfaces"
+	"github.com/metalsoft-io/tableformatter"
 )
 
 //instanceArrayCmds commands affecting instance arrays
@@ -235,25 +236,25 @@ func instanceArrayListCmd(c *Command, client interfaces.MetalCloudClient) (strin
 		return "", err
 	}
 
-	schema := []SchemaField{
+	schema := []tableformatter.SchemaField{
 		{
 			FieldName: "ID",
-			FieldType: TypeInt,
+			FieldType: tableformatter.TypeInt,
 			FieldSize: 6,
 		},
 		{
 			FieldName: "LABEL",
-			FieldType: TypeString,
+			FieldType: tableformatter.TypeString,
 			FieldSize: 15,
 		},
 		{
 			FieldName: "STATUS",
-			FieldType: TypeString,
+			FieldType: tableformatter.TypeString,
 			FieldSize: 10,
 		},
 		{
 			FieldName: "INST_CNT",
-			FieldType: TypeInt,
+			FieldType: tableformatter.TypeInt,
 			FieldSize: 10,
 		},
 	}
@@ -274,9 +275,13 @@ func instanceArrayListCmd(c *Command, client interfaces.MetalCloudClient) (strin
 			ia.InstanceArrayOperation.InstanceArrayInstanceCount})
 	}
 
-	TableSorter(schema).OrderBy(schema[0].FieldName).Sort(data)
+	tableformatter.TableSorter(schema).OrderBy(schema[0].FieldName).Sort(data)
 
-	return renderTable("Instance Arrays", "", getStringParam(c.Arguments["format"]), data, schema)
+	table := tableformatter.Table{
+		Data:   data,
+		Schema: schema,
+	}
+	return table.RenderTable("Instance Arrays", "", getStringParam(c.Arguments["format"]))
 }
 
 func instanceArrayDeleteCmd(c *Command, client interfaces.MetalCloudClient) (string, error) {
@@ -328,58 +333,58 @@ func instanceArrayGetCmd(c *Command, client interfaces.MetalCloudClient) (string
 		return "", err
 	}
 
-	schema := []SchemaField{
+	schema := []tableformatter.SchemaField{
 
 		{
 			FieldName: "ID",
-			FieldType: TypeInt,
+			FieldType: tableformatter.TypeInt,
 			FieldSize: 6,
 		},
 		{
 			FieldName: "SUBDOMAIN",
-			FieldType: TypeString,
+			FieldType: tableformatter.TypeString,
 			FieldSize: 10,
 		},
 		{
 			FieldName: "WAN_IP",
-			FieldType: TypeString,
+			FieldType: tableformatter.TypeString,
 			FieldSize: 10,
 		},
 		{
 			FieldName: "DETAILS",
-			FieldType: TypeString,
+			FieldType: tableformatter.TypeString,
 			FieldSize: 10,
 		},
 		{
 			FieldName: "STATUS",
-			FieldType: TypeString,
+			FieldType: tableformatter.TypeString,
 			FieldSize: 5,
 		},
 	}
 
 	if getBoolParam(c.Arguments["show_credentials"]) {
 
-		schema = append(schema, SchemaField{
+		schema = append(schema, tableformatter.SchemaField{
 			FieldName: "CREDENTIALS",
-			FieldType: TypeString,
+			FieldType: tableformatter.TypeString,
 			FieldSize: 5,
 		})
 	}
 
 	if getBoolParam(c.Arguments["show_power_status"]) {
 
-		schema = append(schema, SchemaField{
+		schema = append(schema, tableformatter.SchemaField{
 			FieldName: "POWER",
-			FieldType: TypeString,
+			FieldType: tableformatter.TypeString,
 			FieldSize: 5,
 		})
 	}
 
 	if getBoolParam(c.Arguments["show_iscsi_credentials"]) {
 
-		schema = append(schema, SchemaField{
+		schema = append(schema, tableformatter.SchemaField{
 			FieldName: "ISCSI",
-			FieldType: TypeString,
+			FieldType: tableformatter.TypeString,
 			FieldSize: 5,
 		})
 	}
@@ -501,9 +506,13 @@ func instanceArrayGetCmd(c *Command, client interfaces.MetalCloudClient) (string
 		infra.InfrastructureLabel,
 		infra.InfrastructureID)
 
-	TableSorter(schema).OrderBy(schema[0].FieldName).Sort(data)
+	tableformatter.TableSorter(schema).OrderBy(schema[0].FieldName).Sort(data)
 
-	return renderTable("Instances", subtitle, getStringParam(c.Arguments["format"]), data, schema)
+	table := tableformatter.Table{
+		Data:   data,
+		Schema: schema,
+	}
+	return table.RenderTable("Instances", subtitle, getStringParam(c.Arguments["format"]))
 }
 
 func argsToInstanceArray(m map[string]interface{}) *metalcloud.InstanceArray {

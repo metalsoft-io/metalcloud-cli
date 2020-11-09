@@ -97,7 +97,7 @@ func TestVariableCreateCmd(t *testing.T) {
 	variable := metalcloud.Variable{
 		VariableName:  "test",
 		VariableUsage: "test",
-		VariableJSON:  "\"testcontent\"",
+		VariableJSON:  "\"    \"",
 	}
 
 	client := mock_metalcloud.NewMockMetalCloudClient(ctrl)
@@ -112,7 +112,7 @@ func TestVariableCreateCmd(t *testing.T) {
 
 	SetConsoleIOChannel(&stdin, &stdout)
 
-	stdin.Write([]byte("testcontent\n"))
+	stdin.Write([]byte("    \n"))
 
 	cmd := MakeCommand(map[string]interface{}{
 		"name":  "test",

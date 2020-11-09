@@ -7,6 +7,7 @@ import (
 	"strings"
 
 	interfaces "github.com/bigstepinc/metalcloud-cli/interfaces"
+	"github.com/metalsoft-io/tableformatter"
 )
 
 //driveArrayCmds commands affecting instance arrays
@@ -100,25 +101,25 @@ func driveSnapshotListCmd(c *Command, client interfaces.MetalCloudClient) (strin
 		return "", fmt.Errorf("-id is required (drive id)")
 	}
 
-	schema := []SchemaField{
+	schema := []tableformatter.SchemaField{
 		{
 			FieldName: "ID",
-			FieldType: TypeInt,
+			FieldType: tableformatter.TypeInt,
 			FieldSize: 6,
 		},
 		{
 			FieldName: "LABEL",
-			FieldType: TypeString,
+			FieldType: tableformatter.TypeString,
 			FieldSize: 30,
 		},
 		{
 			FieldName: "DRIVE_ID",
-			FieldType: TypeInt,
+			FieldType: tableformatter.TypeInt,
 			FieldSize: 10,
 		},
 		{
 			FieldName: "CREATED",
-			FieldType: TypeString,
+			FieldType: tableformatter.TypeString,
 			FieldSize: 10,
 		},
 	}
@@ -140,11 +141,15 @@ func driveSnapshotListCmd(c *Command, client interfaces.MetalCloudClient) (strin
 
 	}
 
-	TableSorter(schema).OrderBy(schema[0].FieldName).Sort(data)
+	tableformatter.TableSorter(schema).OrderBy(schema[0].FieldName).Sort(data)
 
 	subtitle := fmt.Sprintf("Snapshots of drive #%d", driveID)
 
-	return renderTable("Snapshots", subtitle, getStringParam(c.Arguments["format"]), data, schema)
+	table := tableformatter.Table{
+		Data:   data,
+		Schema: schema,
+	}
+	return table.RenderTable("Snapshots", subtitle, getStringParam(c.Arguments["format"]))
 }
 
 func driveSnapshotDeleteCmd(c *Command, client interfaces.MetalCloudClient) (string, error) {

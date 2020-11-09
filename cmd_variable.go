@@ -9,6 +9,7 @@ import (
 
 	metalcloud "github.com/bigstepinc/metal-cloud-sdk-go"
 	interfaces "github.com/bigstepinc/metalcloud-cli/interfaces"
+	"github.com/metalsoft-io/tableformatter"
 )
 
 var variablesCmds = []Command{
@@ -78,30 +79,30 @@ func variablesListCmd(c *Command, client interfaces.MetalCloudClient) (string, e
 		return "", err
 	}
 
-	schema := []SchemaField{
+	schema := []tableformatter.SchemaField{
 		{
 			FieldName: "ID",
-			FieldType: TypeInt,
+			FieldType: tableformatter.TypeInt,
 			FieldSize: 6,
 		},
 		{
 			FieldName: "NAME",
-			FieldType: TypeString,
+			FieldType: tableformatter.TypeString,
 			FieldSize: 20,
 		},
 		{
 			FieldName: "USAGE",
-			FieldType: TypeString,
+			FieldType: tableformatter.TypeString,
 			FieldSize: 20,
 		},
 		{
 			FieldName: "CREATED",
-			FieldType: TypeString,
+			FieldType: tableformatter.TypeString,
 			FieldSize: 20,
 		},
 		{
 			FieldName: "UPDATED",
-			FieldType: TypeString,
+			FieldType: tableformatter.TypeString,
 			FieldSize: 20,
 		},
 	}
@@ -119,9 +120,13 @@ func variablesListCmd(c *Command, client interfaces.MetalCloudClient) (string, e
 
 	}
 
-	TableSorter(schema).OrderBy(schema[0].FieldName).Sort(data)
+	tableformatter.TableSorter(schema).OrderBy(schema[0].FieldName).Sort(data)
 
-	return renderTable("Variables", "", getStringParam(c.Arguments["format"]), data, schema)
+	table := tableformatter.Table{
+		Data:   data,
+		Schema: schema,
+	}
+	return table.RenderTable("Variables", "", getStringParam(c.Arguments["format"]))
 }
 
 func variableCreateCmd(c *Command, client interfaces.MetalCloudClient) (string, error) {
@@ -155,7 +160,7 @@ func variableCreateCmd(c *Command, client interfaces.MetalCloudClient) (string, 
 	cleanedContent := strings.Trim(string(content), "\"\r\n")
 
 	b, err := json.Marshal(cleanedContent)
-	fmt.Printf("%s", b)
+
 	variable.VariableJSON = string(b)
 
 	ret, err := client.VariableCreate(variable)

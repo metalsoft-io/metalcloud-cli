@@ -2,6 +2,7 @@ package main
 
 import (
 	"bytes"
+	"encoding/csv"
 	"encoding/json"
 	"flag"
 	"fmt"
@@ -268,6 +269,39 @@ func testListCommand(f CommandExecuteFunc, cmd *Command, client interfaces.Metal
 
 	//this is not reliable as the first row sometimes changes.
 	//Expect(CSVFirstRowEquals(ret, firstRow)).To(BeNil())
+}
+
+//JSONFirstRowEquals checks if values of the table returned in the json match the values provided. Type is not checked (we check string equality)
+func JSONFirstRowEquals(jsonString string, testVals map[string]interface{}) error {
+	m, err := JSONUnmarshal(jsonString)
+	if err != nil {
+		return err
+	}
+
+	firstRow := m[0].(map[string]interface{})
+
+	for k, v := range testVals {
+		if fmt.Sprintf("%+v", firstRow[k]) != fmt.Sprintf("%+v", v) {
+			return fmt.Errorf("values for key %s do not match:  expected '%+v' provided '%+v'", k, v, firstRow[k])
+		}
+	}
+
+	return nil
+}
+
+func JSONUnmarshal(jsonString string) ([]interface{}, error) {
+	var m []interface{}
+	err := json.Unmarshal([]byte(jsonString), &m)
+	if err != nil {
+		return nil, err
+	}
+	return m, nil
+}
+
+func CSVUnmarshal(csvString string) ([][]string, error) {
+	reader := csv.NewReader(strings.NewReader(csvString))
+
+	return reader.ReadAll()
 }
 
 //checks the various outputs
