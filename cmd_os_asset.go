@@ -40,10 +40,13 @@ var osAssetsCmds = []Command{
 			c.Arguments = map[string]interface{}{
 				"filename":                c.FlagSet.String("filename", _nilDefaultStr, "Asset's filename"),
 				"usage":                   c.FlagSet.String("usage", _nilDefaultStr, "Asset's usage. Possible values: \"bootloader\""),
-				"mime":                    c.FlagSet.String("mime", _nilDefaultStr, "Required. Asset's mime type. Possible values: \"text/plain\",\"application/octet-stream\""),
+				"mime":                    c.FlagSet.String("mime", _nilDefaultStr, "Asset's mime type. Possible values: \"text/plain\",\"application/octet-stream\""),
 				"url":                     c.FlagSet.String("url", _nilDefaultStr, "Asset's source url. If present it will not read content anymore"),
 				"variable_names_required": c.FlagSet.String("variable-names-required", _nilDefaultStr, "The names of the variables and secrets that are used in this asset, comma separated."),
 				"read_content_from_pipe":  c.FlagSet.Bool("pipe", false, "Read assets's content read from pipe instead of terminal input"),
+				"template_id_or_name":     c.FlagSet.String("template-id", _nilDefaultStr, "Template's id or name to associate. "),
+				"path":                    c.FlagSet.String("path", _nilDefaultStr, "Path to associate asset to."),
+				"variables_json":          c.FlagSet.String("variables-json", _nilDefaultStr, "JSON encoded variables object"),
 				"return_id":               c.FlagSet.Bool("return-id", false, "(Flag) If set will print the ID of the created infrastructure. Useful for automating tasks."),
 			}
 		},
@@ -195,7 +198,6 @@ func assetCreateCmd(c *Command, client interfaces.MetalCloudClient) (string, err
 	if v, ok := getStringParamOk(c.Arguments["url"]); ok {
 		obj.OSAssetSourceURL = v
 	} else {
-
 		if getBoolParam(c.Arguments["read_content_from_pipe"]) {
 			_content, err := readInputFromPipe()
 			if err != nil {
@@ -218,6 +220,32 @@ func assetCreateCmd(c *Command, client interfaces.MetalCloudClient) (string, err
 	}
 
 	ret, err := client.OSAssetCreate(obj)
+
+	if err != nil {
+		return "", err
+	}
+
+	var path string
+	var template *metalcloud.OSTemplate
+	variablesJSON := "[]"
+
+	if _, error := getParam(c, "template_id_or_name", "template-id"); error == nil {
+		_template, err := getOSTemplateFromCommand("template-id", c, client, false)
+		if err != nil {
+			return "", err
+		}
+		template = _template
+
+		_path, ok := getStringParamOk(c.Arguments["path"])
+		if !ok {
+			return "", fmt.Errorf("-path is required")
+		}
+
+		path = _path
+		variablesJSON = getStringParam(c.Arguments["variables_json"])
+
+		err = client.OSTemplateAddOSAsset(template.VolumeTemplateID, ret.OSAssetID, path, variablesJSON)
+	}
 
 	if err != nil {
 		return "", err
@@ -302,17 +330,12 @@ func associateAssetCmd(c *Command, client interfaces.MetalCloudClient) (string, 
 		return "", err
 	}
 
-	path := ""
-	if v := c.Arguments["path"]; v != nil && *v.(*string) != _nilDefaultStr {
-		path = *v.(*string)
-	} else {
-		return "", fmt.Errorf("path is required")
+	path, ok := getStringParamOk(c.Arguments["path"])
+	if !ok {
+		return "", fmt.Errorf("-path is required")
 	}
 
-	variablesJSON := "[]"
-	if v := c.Arguments["variables-json"]; v != nil && *v.(*string) != _nilDefaultStr {
-		variablesJSON = *v.(*string)
-	}
+	variablesJSON := getStringParam(c.Arguments["variables_json"])
 
 	return "", client.OSTemplateAddOSAsset(template.VolumeTemplateID, asset.OSAssetID, path, variablesJSON)
 }

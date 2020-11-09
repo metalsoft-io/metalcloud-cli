@@ -118,6 +118,17 @@ func TestVolumeTemplateCreateFromDriveCmd(t *testing.T) {
 
 	cases := []CommandTestCase{
 		{
+			name: "good",
+			cmd: MakeCommand(map[string]interface{}{
+				"drive_id":     11,
+				"label":        vt.VolumeTemplateLabel,
+				"display_name": vt.VolumeTemplateDisplayName,
+				"description":  vt.VolumeTemplateDescription,
+			}),
+			good: true,
+			id:   vt.VolumeTemplateID,
+		},
+		{
 			name: "good1",
 			cmd: MakeCommand(map[string]interface{}{
 				"drive_id":        11,
@@ -165,6 +176,55 @@ func TestVolumeTemplateCreateFromDriveCmd(t *testing.T) {
 				"drive_id":     11,
 				"label":        vt.VolumeTemplateLabel,
 				"display_name": vt.VolumeTemplateDisplayName,
+			}),
+			good: false,
+			id:   vt.VolumeTemplateID,
+		},
+		{
+			name: "missing display name",
+			cmd: MakeCommand(map[string]interface{}{
+				"drive_id":    11,
+				"label":       vt.VolumeTemplateLabel,
+				"description": vt.VolumeTemplateDescription,
+			}),
+			good: false,
+			id:   vt.VolumeTemplateID,
+		},
+		{
+			name: "missing os_type",
+			cmd: MakeCommand(map[string]interface{}{
+				"drive_id":        11,
+				"display_name":    vt.VolumeTemplateDisplayName,
+				"label":           vt.VolumeTemplateLabel,
+				"description":     vt.VolumeTemplateDescription,
+				"os_version":      vt.VolumeTemplateOperatingSystem.OperatingSystemVersion,
+				"os_architecture": vt.VolumeTemplateOperatingSystem.OperatingSystemArchitecture,
+			}),
+			good: false,
+			id:   vt.VolumeTemplateID,
+		},
+		{
+			name: "missing os_version",
+			cmd: MakeCommand(map[string]interface{}{
+				"drive_id":        11,
+				"display_name":    vt.VolumeTemplateDisplayName,
+				"label":           vt.VolumeTemplateLabel,
+				"description":     vt.VolumeTemplateDescription,
+				"os_type":         vt.VolumeTemplateOperatingSystem.OperatingSystemType,
+				"os_architecture": vt.VolumeTemplateOperatingSystem.OperatingSystemArchitecture,
+			}),
+			good: false,
+			id:   vt.VolumeTemplateID,
+		},
+		{
+			name: "missing os_architecture",
+			cmd: MakeCommand(map[string]interface{}{
+				"drive_id":     11,
+				"display_name": vt.VolumeTemplateDisplayName,
+				"label":        vt.VolumeTemplateLabel,
+				"description":  vt.VolumeTemplateDescription,
+				"os_type":      vt.VolumeTemplateOperatingSystem.OperatingSystemType,
+				"os_version":   vt.VolumeTemplateOperatingSystem.OperatingSystemVersion,
 			}),
 			good: false,
 			id:   vt.VolumeTemplateID,
