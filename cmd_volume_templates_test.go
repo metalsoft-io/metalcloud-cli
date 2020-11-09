@@ -95,15 +95,16 @@ func TestVolumeTemplateCreateFromDriveCmd(t *testing.T) {
 	client := mock_metalcloud.NewMockMetalCloudClient(gomock.NewController(t))
 
 	vt := metalcloud.VolumeTemplate{
-		VolumeTemplateID:                   10,
-		VolumeTemplateLabel:                "centos7-10",
-		VolumeTemplateSizeMBytes:           40960,
-		VolumeTemplateDisplayName:          "Centos7",
-		VolumeTemplateDescription:          "centos7-10",
-		VolumeTemplateLocalDiskSupported:   true,
-		VolumeTemplateBootMethodsSupported: "pxe_iscsi",
-		VolumeTemplateDeprecationStatus:    "not_deprecated",
-		VolumeTemplateRepoURL:              "centos7_repo_url",
+		VolumeTemplateID:                      10,
+		VolumeTemplateLabel:                   "centos7-10",
+		VolumeTemplateSizeMBytes:              40960,
+		VolumeTemplateDisplayName:             "Centos7",
+		VolumeTemplateDescription:             "centos7-10",
+		VolumeTemplateLocalDiskSupported:      true,
+		VolumeTemplateBootMethodsSupported:    "pxe_iscsi",
+		VolumeTemplateDeprecationStatus:       "not_deprecated",
+		VolumeTemplateOsBootstrapFunctionName: "provisioner_os_cloudinit_prepare_centos",
+		VolumeTemplateRepoURL:                 "centos7_repo_url",
 		VolumeTemplateOperatingSystem: metalcloud.OperatingSystem{
 			OperatingSystemType:         "Centos",
 			OperatingSystemVersion:      "7",
@@ -120,10 +121,11 @@ func TestVolumeTemplateCreateFromDriveCmd(t *testing.T) {
 		{
 			name: "good",
 			cmd: MakeCommand(map[string]interface{}{
-				"drive_id":     11,
-				"label":        vt.VolumeTemplateLabel,
-				"display_name": vt.VolumeTemplateDisplayName,
-				"description":  vt.VolumeTemplateDescription,
+				"drive_id":                   11,
+				"label":                      vt.VolumeTemplateLabel,
+				"display_name":               vt.VolumeTemplateDisplayName,
+				"description":                vt.VolumeTemplateDescription,
+				"os_bootstrap_function_name": vt.VolumeTemplateOsBootstrapFunctionName,
 			}),
 			good: true,
 			id:   vt.VolumeTemplateID,
