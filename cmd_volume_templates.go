@@ -46,11 +46,11 @@ var volumeTemplateCmds = []Command{
 				"boot_methods_supported":     c.FlagSet.String("boot-methods-supported", _nilDefaultStr, "The boot_methods_supported of the volume template. Defaults to 'pxe_iscsi'."),
 				"deprecation_status":         c.FlagSet.String("deprecation-status", _nilDefaultStr, "Deprecation status. Possible values: not_deprecated,deprecated_deny_provision,deprecated_allow_expand. Defaults to 'not_deprecated'."),
 				"tags":                       c.FlagSet.String("tags", _nilDefaultStr, "The tags of the volume template, comma separated."),
-				"os_bootstrap_function_name": c.FlagSet.String("os-bootstrap-function-name", _nilDefaultStr, "The cloudinit configuration function. Can be one of: provisioner_os_cloudinit_prepare_centos, provisioner_os_cloudinit_prepare_rhel, provisioner_os_cloudinit_prepare_ubuntu, provisioner_os_cloudbaseinit_prepare_windows."),
-				"os_type":                    c.FlagSet.String("os-type", _nilDefaultStr, "Template operating system type. Can be one of: Ubuntu, CentOS, Redhat, Windows"),
-				"os_version":                 c.FlagSet.String("os-version", _nilDefaultStr, "Template operating system version."),
-				"os_architecture":            c.FlagSet.String("os-architecture", _nilDefaultStr, "Template operating system architecture.Possible values: none, unknown, x86, x86_64."),
-				"return_id":                  c.FlagSet.Bool("return-id", false, "Will print the ID of the created Volume Template. Useful for automating tasks."),
+				"os_bootstrap_function_name": c.FlagSet.String("os-bootstrap-function-name", _nilDefaultStr, "Optional property that selects the cloudinit configuration function. Can be one of: provisioner_os_cloudinit_prepare_centos, provisioner_os_cloudinit_prepare_rhel, provisioner_os_cloudinit_prepare_ubuntu, provisioner_os_cloudbaseinit_prepare_windows."),
+				"os_type":                    c.FlagSet.String("os-type", _nilDefaultStr, "Template operating system type. For example, Ubuntu or CentOS. If set, os-version and os-architecture flags are required as well."),
+				"os_version":                 c.FlagSet.String("os-version", _nilDefaultStr, "Template operating system version. If set, os-type and os-architecture flags are required as well."),
+				"os_architecture":            c.FlagSet.String("os-architecture", _nilDefaultStr, "Template operating system architecture.Possible values: none, unknown, x86, x86_64. If set, os-version and os-type flags are required as well."),
+				"return_id":                  c.FlagSet.Bool("return-id", false, "(Optional) Will print the ID of the created Volume Template. Useful for automating tasks."),
 			}
 		},
 		ExecuteFunc: volumeTemplateCreateFromDriveCmd,
@@ -172,18 +172,26 @@ func volumeTemplateCreateFromDriveCmd(c *Command, client interfaces.MetalCloudCl
 		return "", fmt.Errorf("-name is required")
 	}
 
+	objVolumeTemplate.VolumeTemplateOperatingSystem = metalcloud.OperatingSystem{}
+	count := 0
+
 	if osType, ok := getStringParamOk(c.Arguments["os_type"]); ok {
-		objOperatingSystem := metalcloud.OperatingSystem{}
-		objVolumeTemplate.VolumeTemplateOperatingSystem = objOperatingSystem
+		count++
 		objVolumeTemplate.VolumeTemplateOperatingSystem.OperatingSystemType = osType
 	}
 
 	if osVersion, ok := getStringParamOk(c.Arguments["os_version"]); ok {
+		count++
 		objVolumeTemplate.VolumeTemplateOperatingSystem.OperatingSystemVersion = osVersion
 	}
 
 	if osArchitecture, ok := getStringParamOk(c.Arguments["os_architecture"]); ok {
+		count++
 		objVolumeTemplate.VolumeTemplateOperatingSystem.OperatingSystemArchitecture = osArchitecture
+	}
+
+	if count != 0 && count != 3 {
+		return "", fmt.Errorf("some operating system flags are missing")
 	}
 
 	ret, err := client.VolumeTemplateCreateFromDrive(driveID, objVolumeTemplate)
