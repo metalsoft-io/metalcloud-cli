@@ -249,6 +249,8 @@ type MetalCloudClient interface {
 	ServerComponentGet(serverComponentID int) (*metalcloud.ServerComponent, error)
 	//ServerComponents searches for servers matching certain filter
 	ServerComponents(serverID int, filter string) (*[]metalcloud.ServerComponent, error)
+	//ServerPowerSet reboots or powers on a server
+	ServerPowerSet(serverID int, operation string) error
 	//ServerTypesMatchHardwareConfiguration Retrieves a list of server types that match the provided hardware configuration. The function does not check for availability, only compatibility, so physical servers associated with the returned server types might be unavailable.
 	ServerTypesMatchHardwareConfiguration(datacenterName string, hardwareConfiguration metalcloud.HardwareConfiguration) (*map[int]metalcloud.ServerType, error)
 	//ServerTypeDatacenter retrieves all the server type IDs for servers found in a specified metalcloud.Datacenter
