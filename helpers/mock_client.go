@@ -1782,6 +1782,20 @@ func (mr *MockMetalCloudClientMockRecorder) ServerComponents(serverID, filter in
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ServerComponents", reflect.TypeOf((*MockMetalCloudClient)(nil).ServerComponents), serverID, filter)
 }
 
+// ServerPowerSet mocks base method
+func (m *MockMetalCloudClient) ServerPowerSet(serverID int, operation string) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "ServerPowerSet", serverID, operation)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// ServerPowerSet indicates an expected call of ServerPowerSet
+func (mr *MockMetalCloudClientMockRecorder) ServerPowerSet(serverID, operation interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ServerPowerSet", reflect.TypeOf((*MockMetalCloudClient)(nil).ServerPowerSet), serverID, operation)
+}
+
 // ServerTypesMatchHardwareConfiguration mocks base method
 func (m *MockMetalCloudClient) ServerTypesMatchHardwareConfiguration(datacenterName string, hardwareConfiguration metalcloud.HardwareConfiguration) (*map[int]metalcloud.ServerType, error) {
 	m.ctrl.T.Helper()

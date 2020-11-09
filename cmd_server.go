@@ -3,6 +3,7 @@ package main
 import (
 	"flag"
 	"fmt"
+	"os"
 	"strings"
 
 	metalcloud "github.com/bigstepinc/metal-cloud-sdk-go"
@@ -92,6 +93,22 @@ var serversCmds = []Command{
 		ExecuteFunc: serverEditCmd,
 		Endpoint:    DeveloperEndpoint,
 	},
+	{
+		Description:  "Change server power status",
+		Subject:      "server",
+		AltSubject:   "srv",
+		Predicate:    "power-control",
+		AltPredicate: "pwr",
+		FlagSet:      flag.NewFlagSet("", flag.ExitOnError),
+		InitFunc: func(c *Command) {
+			c.Arguments = map[string]interface{}{
+				"server_id":   c.FlagSet.Int("id", _nilDefaultInt, "(Required) Server's id."),
+				"operation":   c.FlagSet.String("operation", _nilDefaultStr, "(Required) Power control operation, one of: on, off, reset, soft."),
+				"autoconfirm": c.FlagSet.Bool("autoconfirm", false, "If true it does not ask for confirmation anymore"),
+			}
+		},
+		ExecuteFunc: serverPowerControlCmd,
+	},
 }
 
 func truncateString(s string, length int) string {
@@ -100,6 +117,58 @@ func truncateString(s string, length int) string {
 		return str[:length] + "..."
 	}
 	return ""
+}
+
+func serverPowerControlCmd(c *Command, client interfaces.MetalCloudClient) (string, error) {
+	serverID, ok := getIntParamOk(c.Arguments["server_id"])
+	if !ok {
+		return "", fmt.Errorf("-id is required")
+	}
+	operation, ok := getStringParamOk(c.Arguments["operation"])
+	if !ok {
+		return "", fmt.Errorf("-operation is required (one of: on, off, reset, soft)")
+	}
+
+	server, err := client.ServerGet(serverID, false)
+	if err != nil {
+		return "", err
+	}
+
+	confirm, err := confirmCommand(c, func() string {
+		op := ""
+		switch operation {
+		case "on":
+			op = "Turning on"
+		case "off":
+			op = "Turning off (hard)"
+		case "reset":
+			op = "Rebooting"
+		case "soft":
+			op = "Shutting down"
+		}
+
+		confirmationMessage := fmt.Sprintf("%s server (%d) of datacenter %s.  Are you sure? Type \"yes\" to continue:",
+			op,
+			server.ServerID,
+			server.DatacenterName,
+		)
+
+		if strings.HasSuffix(os.Args[0], ".test") {
+			confirmationMessage = ""
+		}
+
+		return confirmationMessage
+	})
+
+	if err != nil {
+		return "", err
+	}
+
+	if confirm {
+		err = client.ServerPowerSet(serverID, operation)
+	}
+
+	return "", err
 }
 
 func serversListCmd(c *Command, client interfaces.MetalCloudClient) (string, error) {
