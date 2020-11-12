@@ -125,6 +125,19 @@ func TestCreateAssetCmd(t *testing.T) {
 			id:   asset.OSAssetID,
 		},
 		{
+			name: "good5, delete asset if it exists",
+			cmd: MakeCommand(map[string]interface{}{
+				"filename":               "testf6",
+				"usage":                  "testf6",
+				"read_content_from_pipe": true,
+				"template_id_or_name":    10,
+				"path":                   "test5",
+				"delete_if_exists":       true,
+			}),
+			good: true,
+			id:   asset.OSAssetID,
+		},
+		{
 			name: "associate a template, non-existant template",
 			cmd: MakeCommand(map[string]interface{}{
 				"filename":               "testf5",

@@ -217,39 +217,10 @@ func assetsListCmd(c *Command, client interfaces.MetalCloudClient) (string, erro
 }
 
 func assetCreateCmd(c *Command, client interfaces.MetalCloudClient) (string, error) {
-	obj := metalcloud.OSAsset{
-		OSAssetFileName: getStringParam(c.Arguments["filename"]),
-		OSAssetUsage:    getStringParam(c.Arguments["usage"]),
-		OSAssetFileMime: getStringParam(c.Arguments["mime"]),
-	}
+	newObj := metalcloud.OSAsset{}
+	updatedObj, err := updateAssetFromCommand(newObj, c, client, true)
 
-	content := []byte{}
-
-	if v, ok := getStringParamOk(c.Arguments["url"]); ok {
-		obj.OSAssetSourceURL = v
-	} else {
-		if getBoolParam(c.Arguments["read_content_from_pipe"]) {
-			_content, err := readInputFromPipe()
-			if err != nil {
-				return "", err
-			}
-			content = _content
-		} else {
-			_content, err := requestInputSilent("Asset content:")
-			if err != nil {
-				return "", err
-			}
-			content = _content
-		}
-
-		obj.OSAssetContentsBase64 = base64.StdEncoding.EncodeToString([]byte(content))
-
-		if v, ok := getStringParamOk(c.Arguments["variable_names_required"]); ok {
-			obj.OSAssetVariableNamesRequired = strings.Split(v, ",")
-		}
-	}
-
-	ret, err := client.OSAssetCreate(obj)
+	ret, err := client.OSAssetCreate(*updatedObj)
 
 	if err != nil {
 		return "", err
@@ -285,7 +256,7 @@ func assetCreateCmd(c *Command, client interfaces.MetalCloudClient) (string, err
 		return fmt.Sprintf("%d", ret.OSAssetID), nil
 	}
 
-	return "", err
+	return "", nil
 }
 
 func assetDeleteCmd(c *Command, client interfaces.MetalCloudClient) (string, error) {
@@ -346,6 +317,52 @@ func getOSAssetFromCommand(paramName string, internalParamName string, c *Comman
 	}
 
 	return nil, fmt.Errorf("Could not locate asset with label '%s'", label)
+}
+
+func updateAssetFromCommand(obj metalcloud.OSAsset, c *Command, client interfaces.MetalCloudClient, checkRequired bool) (*metalcloud.OSAsset, error) {
+	if v, ok := getStringParamOk(c.Arguments["filename"]); ok {
+		obj.OSAssetFileName = v
+	} else {
+		if checkRequired {
+			return nil, fmt.Errorf("-filename is required")
+		}
+	}
+
+	if v, ok := getStringParamOk(c.Arguments["usage"]); ok {
+		obj.OSAssetUsage = v
+	}
+
+	if v, ok := getStringParamOk(c.Arguments["mime"]); ok {
+		obj.OSAssetFileMime = v
+	}
+
+	content := []byte{}
+
+	if v, ok := getStringParamOk(c.Arguments["url"]); ok {
+		obj.OSAssetSourceURL = v
+	} else {
+		if getBoolParam(c.Arguments["read_content_from_pipe"]) {
+			_content, err := readInputFromPipe()
+			if err != nil {
+				return nil, err
+			}
+			content = _content
+		} else {
+			_content, err := requestInputSilent("Asset content:")
+			if err != nil {
+				return nil, err
+			}
+			content = _content
+		}
+
+		obj.OSAssetContentsBase64 = base64.StdEncoding.EncodeToString([]byte(content))
+
+		if v, ok := getStringParamOk(c.Arguments["variable_names_required"]); ok {
+			obj.OSAssetVariableNamesRequired = strings.Split(v, ",")
+		}
+	}
+
+	return &obj, nil
 }
 
 func associateAssetCmd(c *Command, client interfaces.MetalCloudClient) (string, error) {
@@ -478,39 +495,15 @@ func assetEditCmd(c *Command, client interfaces.MetalCloudClient) (string, error
 		return "", err
 	}
 
-	obj := metalcloud.OSAsset{
-		OSAssetFileName: getStringParam(c.Arguments["filename"]),
-		OSAssetUsage:    getStringParam(c.Arguments["usage"]),
-		OSAssetFileMime: getStringParam(c.Arguments["mime"]),
+	newObj := metalcloud.OSAsset{}
+
+	updatedObj, err := updateAssetFromCommand(newObj, c, client, true)
+
+	if err != nil {
+		return "", err
 	}
 
-	content := []byte{}
-
-	if v, ok := getStringParamOk(c.Arguments["url"]); ok {
-		obj.OSAssetSourceURL = v
-	} else {
-		if getBoolParam(c.Arguments["read_content_from_pipe"]) {
-			_content, err := readInputFromPipe()
-			if err != nil {
-				return "", err
-			}
-			content = _content
-		} else {
-			_content, err := requestInputSilent("Asset content:")
-			if err != nil {
-				return "", err
-			}
-			content = _content
-		}
-
-		obj.OSAssetContentsBase64 = base64.StdEncoding.EncodeToString([]byte(content))
-
-		if v, ok := getStringParamOk(c.Arguments["variable_names_required"]); ok {
-			obj.OSAssetVariableNamesRequired = strings.Split(v, ",")
-		}
-	}
-
-	ret, err := client.OSAssetUpdate(asset.OSAssetID, obj)
+	ret, err := client.OSAssetUpdate(asset.OSAssetID, *updatedObj)
 
 	if err != nil {
 		return "", err
