@@ -129,6 +129,37 @@ var osTemplatesCmds = []Command{
 		ExecuteFunc: templateDeleteCmd,
 		Endpoint:    ExtendedEndpoint,
 	},
+	{
+		Description:  "Allow other users of the platform to use the template.",
+		Subject:      "os-template",
+		AltSubject:   "template",
+		Predicate:    "make-public",
+		AltPredicate: "public",
+		FlagSet:      flag.NewFlagSet("make template public", flag.ExitOnError),
+		InitFunc: func(c *Command) {
+			c.Arguments = map[string]interface{}{
+				"template_id_or_name": c.FlagSet.String("id", _nilDefaultStr, "Template id or name"),
+			}
+		},
+		ExecuteFunc: templateMakePublicCmd,
+		Endpoint:    ExtendedEndpoint,
+	},
+	{
+		Description:  "Stop other users of the platform from being able to use the template by allocating a specific owner.",
+		Subject:      "os-template",
+		AltSubject:   "template",
+		Predicate:    "make-private",
+		AltPredicate: "private",
+		FlagSet:      flag.NewFlagSet("make template private", flag.ExitOnError),
+		InitFunc: func(c *Command) {
+			c.Arguments = map[string]interface{}{
+				"template_id_or_name": c.FlagSet.String("id", _nilDefaultStr, "Template id or name"),
+				"user_id":             c.FlagSet.String("user-id", _nilDefaultStr, "New owner user id or email."),
+			}
+		},
+		ExecuteFunc: templateMakePrivateCmd,
+		Endpoint:    ExtendedEndpoint,
+	},
 }
 
 func templatesListCmd(c *Command, client interfaces.MetalCloudClient) (string, error) {
@@ -648,4 +679,55 @@ func templateGetCmd(c *Command, client interfaces.MetalCloudClient) (string, err
 		Schema: schema,
 	}
 	return table.RenderTable("Templates", topLine, getStringParam(c.Arguments["format"]))
+}
+
+func templateMakePublicCmd(c *Command, client interfaces.MetalCloudClient) (string, error) {
+	template, err := getOSTemplateFromCommand("id", c, client, false)
+
+	if err != nil {
+		return "", err
+	}
+
+	err = client.OSTemplateMakePublic(template.VolumeTemplateID)
+
+	if err != nil {
+		return "", err
+	}
+
+	return "", nil
+}
+
+func templateMakePrivateCmd(c *Command, client interfaces.MetalCloudClient) (string, error) {
+	template, err := getOSTemplateFromCommand("id", c, client, false)
+
+	if err != nil {
+		return "", err
+	}
+
+	user, err := getUserFromCommand("user-id", c, client)
+
+	if err != nil {
+		return "", err
+	}
+
+	if err = client.OSTemplateMakePrivate(template.VolumeTemplateID, user.UserID); err != nil {
+		return "", err
+	}
+
+	return "", nil
+}
+
+func getUserFromCommand(paramName string, c *Command, client interfaces.MetalCloudClient) (*metalcloud.User, error) {
+	user, err := getParam(c, "user_id", paramName)
+	if err != nil {
+		return nil, err
+	}
+
+	id, email, isID := idOrLabel(user)
+
+	if isID {
+		return client.UserGet(id)
+	} else {
+		return client.UserGetByEmail(email)
+	}
 }

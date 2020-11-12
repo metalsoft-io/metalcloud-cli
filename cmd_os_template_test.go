@@ -190,3 +190,171 @@ func TestOSTemplateCreateCmd(t *testing.T) {
 	testCreateCommand(templateCreateCmd, cases, client, t)
 
 }
+
+func TestOSTemplateMakePrivateCmd(t *testing.T) {
+
+	client := mock_metalcloud.NewMockMetalCloudClient(gomock.NewController(t))
+
+	tmpl := metalcloud.OSTemplate{
+		VolumeTemplateID:    10,
+		VolumeTemplateLabel: "test",
+	}
+
+	tmpls := map[string]metalcloud.OSTemplate{
+		"t1": tmpl,
+	}
+
+	user := metalcloud.User{
+		UserID: 1,
+	}
+
+	user1 := metalcloud.User{
+		UserEmail: "test",
+	}
+
+	client.EXPECT().
+		OSTemplateGet(gomock.Any(), false).
+		Return(&tmpl, nil).
+		AnyTimes()
+
+	client.EXPECT().
+		OSTemplates().
+		Return(&tmpls, nil).
+		MinTimes(1)
+
+	client.EXPECT().
+		UserGet(gomock.Any()).
+		Return(&user, nil).
+		AnyTimes()
+
+	client.EXPECT().
+		UserGetByEmail(gomock.Any()).
+		Return(&user1, nil).
+		MinTimes(1)
+
+	client.EXPECT().
+		OSTemplateMakePrivate(gomock.Any(), gomock.Any()).
+		Return(nil).
+		AnyTimes()
+
+	cases := []CommandTestCase{
+		{
+			name: "good1",
+			cmd: MakeCommand(map[string]interface{}{
+				"template_id_or_name": 10,
+				"user_id":             1,
+			}),
+			good: true,
+			id:   0,
+		},
+		{
+			name: "good2",
+			cmd: MakeCommand(map[string]interface{}{
+				"template_id_or_name": "test",
+				"user_id":             1,
+			}),
+			good: true,
+			id:   0,
+		},
+		{
+			name: "good3",
+			cmd: MakeCommand(map[string]interface{}{
+				"template_id_or_name": 10,
+				"user_id":             "test",
+			}),
+			good: true,
+			id:   0,
+		},
+		{
+			name: "template not found",
+			cmd: MakeCommand(map[string]interface{}{
+				"template_id_or_name": "test1",
+				"user_id":             1,
+			}),
+			good: false,
+			id:   0,
+		},
+		{
+			name: "missing template id or name",
+			cmd: MakeCommand(map[string]interface{}{
+				"user_id": 1,
+			}),
+			good: false,
+			id:   0,
+		},
+		{
+			name: "missing user id or email",
+			cmd: MakeCommand(map[string]interface{}{
+				"template_id_or_name": "test",
+			}),
+			good: false,
+			id:   0,
+		},
+	}
+
+	testCreateCommand(templateMakePrivateCmd, cases, client, t)
+}
+
+func TestOSTemplateMakePublicCmd(t *testing.T) {
+
+	client := mock_metalcloud.NewMockMetalCloudClient(gomock.NewController(t))
+
+	tmpl := metalcloud.OSTemplate{
+		VolumeTemplateID:    10,
+		VolumeTemplateLabel: "test",
+	}
+
+	tmpls := map[string]metalcloud.OSTemplate{
+		"t1": tmpl,
+	}
+
+	client.EXPECT().
+		OSTemplateGet(gomock.Any(), false).
+		Return(&tmpl, nil).
+		AnyTimes()
+
+	client.EXPECT().
+		OSTemplates().
+		Return(&tmpls, nil).
+		MinTimes(1)
+
+	client.EXPECT().
+		OSTemplateMakePublic(gomock.Any()).
+		Return(nil).
+		AnyTimes()
+
+	cases := []CommandTestCase{
+		{
+			name: "good1",
+			cmd: MakeCommand(map[string]interface{}{
+				"template_id_or_name": 10,
+			}),
+			good: true,
+			id:   0,
+		},
+		{
+			name: "good2",
+			cmd: MakeCommand(map[string]interface{}{
+				"template_id_or_name": "test",
+			}),
+			good: true,
+			id:   0,
+		},
+		{
+			name: "template not found",
+			cmd: MakeCommand(map[string]interface{}{
+				"template_id_or_name": "test1",
+			}),
+			good: false,
+			id:   0,
+		},
+		{
+			name: "missing template id or name",
+			cmd:  MakeCommand(map[string]interface{}{}),
+			good: false,
+			id:   0,
+		},
+	}
+
+	testCreateCommand(templateMakePublicCmd, cases, client, t)
+}
