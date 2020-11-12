@@ -48,6 +48,7 @@ var osAssetsCmds = []Command{
 				"template_id_or_name":     c.FlagSet.String("template-id", _nilDefaultStr, "Template's id or name to associate. "),
 				"path":                    c.FlagSet.String("path", _nilDefaultStr, "Path to associate asset to."),
 				"variables_json":          c.FlagSet.String("variables-json", _nilDefaultStr, "JSON encoded variables object"),
+				"delete_if_exists":        c.FlagSet.Bool("delete-if-exists", true, "Automatically delete the existing asset associated with the current template."),
 				"return_id":               c.FlagSet.Bool("return-id", false, "(Flag) If set will print the ID of the created infrastructure. Useful for automating tasks."),
 			}
 		},
@@ -248,6 +249,23 @@ func assetCreateCmd(c *Command, client interfaces.MetalCloudClient) (string, err
 
 		path = _path
 		variablesJSON = getStringParam(c.Arguments["variables_json"])
+		if del := getBoolParam(c.Arguments["delete-if-exists"]); del {
+			list, err := client.OSTemplateOSAssets(template.VolumeTemplateID)
+
+			if err != nil {
+				return "", err
+			}
+
+			for _, a := range *list {
+				if a.OSAsset.OSAssetFileName == obj.OSAssetFileName {
+					err = client.OSTemplateRemoveOSAsset(template.VolumeTemplateID, a.OSAsset.OSAssetID)
+
+					if err != nil {
+						return "", err
+					}
+				}
+			}
+		}
 
 		err = client.OSTemplateAddOSAsset(template.VolumeTemplateID, ret.OSAssetID, path, variablesJSON)
 	}
@@ -303,7 +321,7 @@ func getOSAssetFromCommand(paramName string, internalParamName string, c *Comman
 		return nil, err
 	}
 
-	id, label, isID := idOrLabel(v)
+	id, name, isID := idOrLabel(v)
 
 	if isID {
 		return client.OSAssetGet(id)
@@ -315,12 +333,12 @@ func getOSAssetFromCommand(paramName string, internalParamName string, c *Comman
 	}
 
 	for _, s := range *list {
-		if s.OSAssetFileName == label {
+		if s.OSAssetFileName == name {
 			return &s, nil
 		}
 	}
 
-	return nil, fmt.Errorf("Could not locate asset with label '%s'", label)
+	return nil, fmt.Errorf("Could not locate asset with file name '%s'", name)
 }
 
 func associateAssetCmd(c *Command, client interfaces.MetalCloudClient) (string, error) {
