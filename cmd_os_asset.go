@@ -135,7 +135,7 @@ var osAssetsCmds = []Command{
 				"url":                     c.FlagSet.String("url", _nilDefaultStr, "Asset's source url. If present it will not read content anymore"),
 				"variable_names_required": c.FlagSet.String("variable-names-required", _nilDefaultStr, "The names of the variables and secrets that are used in this asset, comma separated."),
 				"read_content_from_pipe":  c.FlagSet.Bool("pipe", false, "Read assets's content read from pipe instead of terminal input"),
-				"template_id_or_name":     c.FlagSet.String("os-template", _nilDefaultStr, "Template's id or name to associate. "),
+				"template_id_or_name":     c.FlagSet.String("template-id", _nilDefaultStr, "Template's id or name to associate. "),
 				"path":                    c.FlagSet.String("path", _nilDefaultStr, "Path to associate asset to."),
 				"variables_json":          c.FlagSet.String("variable-names-required", _nilDefaultStr, "JSON encoded variables object"),
 				"return_id":               c.FlagSet.Bool("return-id", false, "(Flag) If set will print the ID of the created infrastructure. Useful for automating tasks."),
@@ -226,27 +226,7 @@ func assetCreateCmd(c *Command, client interfaces.MetalCloudClient) (string, err
 		return "", err
 	}
 
-	var path string
-	var template *metalcloud.OSTemplate
-	variablesJSON := "[]"
-
-	if _, error := getParam(c, "template_id_or_name", "template-id"); error == nil {
-		_template, err := getOSTemplateFromCommand("template-id", c, client, false)
-		if err != nil {
-			return "", err
-		}
-		template = _template
-
-		_path, ok := getStringParamOk(c.Arguments["path"])
-		if !ok {
-			return "", fmt.Errorf("-path is required")
-		}
-
-		path = _path
-		variablesJSON = getStringParam(c.Arguments["variables_json"])
-
-		err = client.OSTemplateAddOSAsset(template.VolumeTemplateID, ret.OSAssetID, path, variablesJSON)
-	}
+	err = associateAssetFromCommand(ret.OSAssetID, c, client)
 
 	if err != nil {
 		return "", err
@@ -256,7 +236,28 @@ func assetCreateCmd(c *Command, client interfaces.MetalCloudClient) (string, err
 		return fmt.Sprintf("%d", ret.OSAssetID), nil
 	}
 
-	return "", nil
+	return "", err
+}
+
+func associateAssetFromCommand(assetID int, c *Command, client interfaces.MetalCloudClient) error {
+
+	if _, error := getParam(c, "template_id_or_name", "template-id"); error == nil {
+		_template, err := getOSTemplateFromCommand("template-id", c, client, false)
+		if err != nil {
+			return err
+		}
+		_path, ok := getStringParamOk(c.Arguments["path"])
+		if !ok {
+			return fmt.Errorf("-path is required")
+		}
+
+		variablesJSON := getStringParam(c.Arguments["variables_json"])
+
+		err = client.OSTemplateAddOSAsset(_template.VolumeTemplateID, assetID, _path, variablesJSON)
+		return err
+	}
+
+	return nil
 }
 
 func assetDeleteCmd(c *Command, client interfaces.MetalCloudClient) (string, error) {
@@ -372,7 +373,7 @@ func associateAssetCmd(c *Command, client interfaces.MetalCloudClient) (string, 
 		return "", err
 	}
 
-	template, err := getOSTemplateFromCommand("template_id", c, client, false)
+	template, err := getOSTemplateFromCommand("template-id", c, client, false)
 	if err != nil {
 		return "", err
 	}
@@ -394,7 +395,7 @@ func disassociateAssetCmd(c *Command, client interfaces.MetalCloudClient) (strin
 		return "", err
 	}
 
-	template, err := getOSTemplateFromCommand("template_id", c, client, false)
+	template, err := getOSTemplateFromCommand("template-id", c, client, false)
 	if err != nil {
 		return "", err
 	}
@@ -509,27 +510,7 @@ func assetEditCmd(c *Command, client interfaces.MetalCloudClient) (string, error
 		return "", err
 	}
 
-	var path string
-	var template *metalcloud.OSTemplate
-	variablesJSON := "[]"
-
-	if _, error := getParam(c, "template_id_or_name", "os-template"); error == nil {
-		_template, err := getOSTemplateFromCommand("os-template", c, client, false)
-		if err != nil {
-			return "", err
-		}
-		template = _template
-
-		_path, ok := getStringParamOk(c.Arguments["path"])
-		if !ok {
-			return "", fmt.Errorf("-path is required")
-		}
-
-		path = _path
-		variablesJSON = getStringParam(c.Arguments["variables_json"])
-
-		err = client.OSTemplateAddOSAsset(template.VolumeTemplateID, ret.OSAssetID, path, variablesJSON)
-	}
+	err = associateAssetFromCommand(ret.OSAssetID, c, client)
 
 	if err != nil {
 		return "", err
