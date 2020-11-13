@@ -263,9 +263,9 @@ func serversListCmd(c *Command, client interfaces.MetalCloudClient) (string, err
 		allocation := ""
 		if s.ServerStatus == "used" || s.ServerStatus == "used_registering" {
 			users := strings.Join(s.UserEmail[0], ",")
-			if len(users) > 30 {
-				users = truncateString(users, 27)
-			}
+			// if len(users) > 30 {
+			// 	users = truncateString(users, 27)
+			// }
 			allocation = fmt.Sprintf("%s %s (#%d) IA:#%d Infra:#%d",
 				users,
 				s.InstanceLabel[0],
