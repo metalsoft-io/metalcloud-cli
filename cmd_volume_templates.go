@@ -56,6 +56,37 @@ var volumeTemplateCmds = []Command{
 		ExecuteFunc: volumeTemplateCreateFromDriveCmd,
 		Endpoint:    ExtendedEndpoint,
 	},
+	{
+		Description:  "Allow other users of the platform to use the template.",
+		Subject:      "volume-template",
+		AltSubject:   "vt",
+		Predicate:    "make-public",
+		AltPredicate: "public",
+		FlagSet:      flag.NewFlagSet("make volume template public", flag.ExitOnError),
+		InitFunc: func(c *Command) {
+			c.Arguments = map[string]interface{}{
+				"template_id_or_name": c.FlagSet.String("id", _nilDefaultStr, "Volume template id or name"),
+			}
+		},
+		ExecuteFunc: volumeTemplateMakePublicCmd,
+		Endpoint:    ExtendedEndpoint,
+	},
+	{
+		Description:  "Stop other users of the platform from being able to use the template by allocating a specific owner.",
+		Subject:      "volume-template",
+		AltSubject:   "vt",
+		Predicate:    "make-private",
+		AltPredicate: "private",
+		FlagSet:      flag.NewFlagSet("make volume template private", flag.ExitOnError),
+		InitFunc: func(c *Command) {
+			c.Arguments = map[string]interface{}{
+				"template_id_or_name": c.FlagSet.String("id", _nilDefaultStr, "Volume template id or name"),
+				"user_id":             c.FlagSet.String("user-id", _nilDefaultStr, "New owner user id or email."),
+			}
+		},
+		ExecuteFunc: volumeTemplateMakePrivateCmd,
+		Endpoint:    ExtendedEndpoint,
+	},
 }
 
 func volumeTemplatesListCmd(c *Command, client interfaces.MetalCloudClient) (string, error) {
@@ -201,6 +232,72 @@ func volumeTemplateCreateFromDriveCmd(c *Command, client interfaces.MetalCloudCl
 
 	if getBoolParam(c.Arguments["return_id"]) {
 		return fmt.Sprintf("%d", ret.VolumeTemplateID), nil
+	}
+
+	return "", nil
+}
+
+func getVolumeTemplateFromCommand(paramName string, c *Command, client interfaces.MetalCloudClient) (*metalcloud.VolumeTemplate, error) {
+
+	v, err := getParam(c, "template_id_or_name", paramName)
+	if err != nil {
+		return nil, err
+	}
+
+	id, label, isID := idOrLabel(v)
+
+	if isID {
+		return client.VolumeTemplateGet(id)
+	}
+
+	list, err := client.VolumeTemplates()
+	if err != nil {
+		return nil, err
+	}
+
+	for _, s := range *list {
+		if s.VolumeTemplateLabel == label {
+			return &s, nil
+		}
+	}
+
+	if isID {
+		return nil, fmt.Errorf("volume template %d not found", id)
+	}
+
+	return nil, fmt.Errorf("volume template %s not found", label)
+}
+
+func volumeTemplateMakePublicCmd(c *Command, client interfaces.MetalCloudClient) (string, error) {
+	template, err := getVolumeTemplateFromCommand("id", c, client)
+
+	if err != nil {
+		return "", err
+	}
+
+	err = client.VolumeTemplateMakePublic(template.VolumeTemplateID)
+
+	if err != nil {
+		return "", err
+	}
+
+	return "", nil
+}
+
+func volumeTemplateMakePrivateCmd(c *Command, client interfaces.MetalCloudClient) (string, error) {
+	template, err := getVolumeTemplateFromCommand("id", c, client)
+
+	if err != nil {
+		return "", err
+	}
+
+	user, err := getUserFromCommand("user-id", c, client)
+	if err != nil {
+		return "", err
+	}
+
+	if err = client.VolumeTemplateMakePrivate(template.VolumeTemplateID, user.UserID); err != nil {
+		return "", err
 	}
 
 	return "", nil

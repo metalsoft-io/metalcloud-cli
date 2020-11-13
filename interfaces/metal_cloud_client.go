@@ -204,6 +204,10 @@ type MetalCloudClient interface {
 	OSTemplateUpdateOSAssetPath(osTemplateID int, osAssetID int, path string) error
 	//OSTemplateUpdateOSAssetVariables updates an asset variable
 	OSTemplateUpdateOSAssetVariables(osTemplateID int, osAssetID int, variablesJSON string) error
+	//OSTemplateMakePublic makes a template public
+	OSTemplateMakePublic(osTemplateID int) error
+	//OSTemplateMakePrivate makes a template private
+	OSTemplateMakePrivate(osTemplateID int, userID int) error
 	//SecretCreate creates a secret
 	SecretCreate(secret metalcloud.Secret) (*metalcloud.Secret, error)
 	//SecretDelete Permanently destroys a metalcloud.Secret.
@@ -337,6 +341,10 @@ type MetalCloudClient interface {
 	Variables(usage string) (*map[string]metalcloud.Variable, error)
 	//VolumeTemplates retrives the list of available templates
 	VolumeTemplates() (*map[string]metalcloud.VolumeTemplate, error)
+	//VolumeTemplateMakePublic makes a template public
+	VolumeTemplateMakePublic(volumeTemplateID int) error
+	//VolumeTemplateMakePrivate makes a template private
+	VolumeTemplateMakePrivate(volumeTemplateID int, userID int) error
 	//VolumeTemplateGet returns the specified volume template
 	VolumeTemplateGet(volumeTemplateID int) (*metalcloud.VolumeTemplate, error)
 	//VolumeTemplateGetByLabel returns the specified volume template
