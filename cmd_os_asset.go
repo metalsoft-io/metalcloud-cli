@@ -138,7 +138,7 @@ var osAssetsCmds = []Command{
 				"read_content_from_pipe":  c.FlagSet.Bool("pipe", false, "Read assets's content read from pipe instead of terminal input"),
 				"template_id_or_name":     c.FlagSet.String("template-id", _nilDefaultStr, "Template's id or name to associate. "),
 				"path":                    c.FlagSet.String("path", _nilDefaultStr, "Path to associate asset to."),
-				"variables_json":          c.FlagSet.String("variable-names-required", _nilDefaultStr, "JSON encoded variables object"),
+				"variables_json":          c.FlagSet.String("variables-json", _nilDefaultStr, "JSON encoded variables object"),
 				"return_id":               c.FlagSet.Bool("return-id", false, "(Flag) If set will print the ID of the created infrastructure. Useful for automating tasks."),
 			}
 		},
