@@ -132,7 +132,7 @@ func TestCreateAssetCmd(t *testing.T) {
 				"read_content_from_pipe": true,
 				"template_id_or_name":    10,
 				"path":                   "test5",
-				"delete_if_exists":       true,
+				"delete_if_exists":       false,
 			}),
 			good: true,
 			id:   asset.OSAssetID,
