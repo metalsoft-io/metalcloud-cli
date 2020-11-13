@@ -1460,6 +1460,34 @@ func (mr *MockMetalCloudClientMockRecorder) OSTemplateUpdateOSAssetVariables(osT
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "OSTemplateUpdateOSAssetVariables", reflect.TypeOf((*MockMetalCloudClient)(nil).OSTemplateUpdateOSAssetVariables), osTemplateID, osAssetID, variablesJSON)
 }
 
+// OSTemplateMakePublic mocks base method
+func (m *MockMetalCloudClient) OSTemplateMakePublic(osTemplateID int) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "OSTemplateMakePublic", osTemplateID)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// OSTemplateMakePublic indicates an expected call of OSTemplateMakePublic
+func (mr *MockMetalCloudClientMockRecorder) OSTemplateMakePublic(osTemplateID interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "OSTemplateMakePublic", reflect.TypeOf((*MockMetalCloudClient)(nil).OSTemplateMakePublic), osTemplateID)
+}
+
+// OSTemplateMakePrivate mocks base method
+func (m *MockMetalCloudClient) OSTemplateMakePrivate(osTemplateID, userID int) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "OSTemplateMakePrivate", osTemplateID, userID)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// OSTemplateMakePrivate indicates an expected call of OSTemplateMakePrivate
+func (mr *MockMetalCloudClientMockRecorder) OSTemplateMakePrivate(osTemplateID, userID interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "OSTemplateMakePrivate", reflect.TypeOf((*MockMetalCloudClient)(nil).OSTemplateMakePrivate), osTemplateID, userID)
+}
+
 // SecretCreate mocks base method
 func (m *MockMetalCloudClient) SecretCreate(secret metalcloud.Secret) (*metalcloud.Secret, error) {
 	m.ctrl.T.Helper()
@@ -2433,6 +2461,34 @@ func (m *MockMetalCloudClient) VolumeTemplates() (*map[string]metalcloud.VolumeT
 func (mr *MockMetalCloudClientMockRecorder) VolumeTemplates() *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "VolumeTemplates", reflect.TypeOf((*MockMetalCloudClient)(nil).VolumeTemplates))
+}
+
+// VolumeTemplateMakePublic mocks base method
+func (m *MockMetalCloudClient) VolumeTemplateMakePublic(volumeTemplateID int) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "VolumeTemplateMakePublic", volumeTemplateID)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// VolumeTemplateMakePublic indicates an expected call of VolumeTemplateMakePublic
+func (mr *MockMetalCloudClientMockRecorder) VolumeTemplateMakePublic(volumeTemplateID interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "VolumeTemplateMakePublic", reflect.TypeOf((*MockMetalCloudClient)(nil).VolumeTemplateMakePublic), volumeTemplateID)
+}
+
+// VolumeTemplateMakePrivate mocks base method
+func (m *MockMetalCloudClient) VolumeTemplateMakePrivate(volumeTemplateID, userID int) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "VolumeTemplateMakePrivate", volumeTemplateID, userID)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// VolumeTemplateMakePrivate indicates an expected call of VolumeTemplateMakePrivate
+func (mr *MockMetalCloudClientMockRecorder) VolumeTemplateMakePrivate(volumeTemplateID, userID interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "VolumeTemplateMakePrivate", reflect.TypeOf((*MockMetalCloudClient)(nil).VolumeTemplateMakePrivate), volumeTemplateID, userID)
 }
 
 // VolumeTemplateGet mocks base method
