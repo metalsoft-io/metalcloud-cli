@@ -406,7 +406,10 @@ func associateAssetCmd(c *Command, client interfaces.MetalCloudClient) (string, 
 		return "", fmt.Errorf("-path is required")
 	}
 
-	variablesJSON := getStringParam(c.Arguments["variables_json"])
+	variablesJSON := "[]"
+	if v, ok := getStringParamOk(c.Arguments["variables_json"]); ok {
+		variablesJSON = v
+	}
 
 	return "", client.OSTemplateAddOSAsset(template.VolumeTemplateID, asset.OSAssetID, path, variablesJSON)
 }
