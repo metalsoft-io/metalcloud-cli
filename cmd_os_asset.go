@@ -220,6 +220,9 @@ func assetsListCmd(c *Command, client interfaces.MetalCloudClient) (string, erro
 func assetCreateCmd(c *Command, client interfaces.MetalCloudClient) (string, error) {
 	newObj := metalcloud.OSAsset{}
 	updatedObj, err := updateAssetFromCommand(newObj, c, client, true)
+	if err != nil {
+		return "", err
+	}
 
 	ret, err := client.OSAssetCreate(*updatedObj)
 
