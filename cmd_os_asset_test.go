@@ -359,3 +359,152 @@ func TestEditAssetCmd(t *testing.T) {
 
 	testCreateCommand(assetEditCmd, cases, client, t)
 }
+
+func TestAssociateAssetCmd(t *testing.T) {
+
+	client := mock_metalcloud.NewMockMetalCloudClient(gomock.NewController(t))
+
+	tmpl := metalcloud.OSTemplate{
+		VolumeTemplateID:    10,
+		VolumeTemplateLabel: "test",
+	}
+
+	tmpls := map[string]metalcloud.OSTemplate{
+		"1": tmpl,
+	}
+
+	client.EXPECT().
+		OSTemplateGet(gomock.Any(), false).
+		Return(&tmpl, nil).
+		MinTimes(1)
+
+	client.EXPECT().
+		OSTemplates().
+		Return(&tmpls, nil).
+		AnyTimes()
+
+	asset := metalcloud.OSAsset{
+		OSAssetID: 100,
+	}
+
+	client.EXPECT().
+		OSAssetGet(gomock.Any()).
+		Return(&asset, nil).
+		MinTimes(1)
+
+	client.EXPECT().
+		OSTemplateAddOSAsset(tmpl.VolumeTemplateID, asset.OSAssetID, gomock.Any(), gomock.Any()).
+		Return(nil).
+		AnyTimes()
+
+	cases := []CommandTestCase{
+		{
+			name: "good1",
+			cmd: MakeCommand(map[string]interface{}{
+				"asset_id_or_name":    100,
+				"template_id_or_name": 10,
+				"path":                "test",
+				"variables_json":      "['1': 'test', '2': 'test1']",
+			}),
+			good: true,
+			id:   0,
+		},
+		{
+			name: "good2, associate a template (id)",
+			cmd: MakeCommand(map[string]interface{}{
+				"asset_id_or_name":    100,
+				"template_id_or_name": 10,
+				"path":                "test",
+				"variables_json":      "['1': 'test', '2': 'test1']",
+			}),
+			good: true,
+			id:   0,
+		},
+		{
+			name: "good3, associate a template without variables_json",
+			cmd: MakeCommand(map[string]interface{}{
+				"asset_id_or_name":    100,
+				"template_id_or_name": 10,
+				"path":                "test",
+			}),
+			good: true,
+			id:   0,
+		},
+		{
+			name: "associate a template, non-existant template",
+			cmd: MakeCommand(map[string]interface{}{
+				"asset_id_or_name":    100,
+				"template_id_or_name": "tmpl1",
+				"path":                "test",
+				"variables_json":      "['1': 'test', '2': 'test1']",
+			}),
+			good: false,
+			id:   0,
+		},
+		{
+			name: "associate a template, missing path",
+			cmd: MakeCommand(map[string]interface{}{
+				"asset_id_or_name":    100,
+				"template_id_or_name": "tmpl1",
+				"variables_json":      "['1': 'test', '2': 'test1']",
+			}),
+			good: false,
+			id:   0,
+		},
+	}
+
+	testCreateCommand(associateAssetCmd, cases, client, t)
+}
+
+func TestAssociateAssetMissingVariablesCmd(t *testing.T) {
+
+	client := mock_metalcloud.NewMockMetalCloudClient(gomock.NewController(t))
+
+	tmpl := metalcloud.OSTemplate{
+		VolumeTemplateID:    10,
+		VolumeTemplateLabel: "test",
+	}
+
+	tmpls := map[string]metalcloud.OSTemplate{
+		"1": tmpl,
+	}
+
+	client.EXPECT().
+		OSTemplateGet(gomock.Any(), false).
+		Return(&tmpl, nil).
+		MinTimes(1)
+
+	client.EXPECT().
+		OSTemplates().
+		Return(&tmpls, nil).
+		AnyTimes()
+
+	asset := metalcloud.OSAsset{
+		OSAssetID: 100,
+	}
+
+	client.EXPECT().
+		OSAssetGet(gomock.Any()).
+		Return(&asset, nil).
+		MinTimes(1)
+
+	client.EXPECT().
+		OSTemplateAddOSAsset(tmpl.VolumeTemplateID, asset.OSAssetID, gomock.Any(), "[]").
+		Return(nil).
+		AnyTimes()
+
+	cases := []CommandTestCase{
+		{
+			name: "good1",
+			cmd: MakeCommand(map[string]interface{}{
+				"asset_id_or_name":    100,
+				"template_id_or_name": 10,
+				"path":                "test",
+			}),
+			good: true,
+			id:   0,
+		},
+	}
+
+	testCreateCommand(associateAssetCmd, cases, client, t)
+}
