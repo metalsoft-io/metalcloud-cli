@@ -85,9 +85,32 @@ func main() {
 	}
 }
 
+func validateArguments(args []string) (string, string, int) {
+	subject, predicate := _nilDefaultStr, _nilDefaultStr
+	count := 1
+
+	if !strings.HasPrefix(args[1], "-") {
+		subject = args[1]
+		count++
+	}
+	if !strings.HasPrefix(args[2], "-") {
+		predicate = args[2]
+		count++
+	}
+
+	return subject, predicate, count
+}
+
+func helpMessage(err error, subject string, predicate string) error {
+	if predicate != _nilDefaultStr {
+		return fmt.Errorf("%s Use '%s %s -h' for syntax help", err, subject, predicate)
+	}
+
+	return fmt.Errorf("%s Use '%s -h' for syntax help", err, subject)
+}
+
 func executeCommand(args []string, commands []Command, clients map[string]interfaces.MetalCloudClient) error {
-	predicate := args[2]
-	subject := args[1]
+	subject, predicate, count := validateArguments(args)
 
 	cmd := locateCommand(predicate, subject, commands)
 
@@ -106,9 +129,10 @@ func executeCommand(args []string, commands []Command, clients map[string]interf
 		}
 	}
 
-	err := cmd.FlagSet.Parse(args[3:])
+	err := cmd.FlagSet.Parse(args[count:])
+
 	if err != nil {
-		return fmt.Errorf("%s Use '%s %s -h' for syntax help", err, subject, predicate)
+		return helpMessage(err, subject, predicate)
 	}
 
 	client, ok := clients[cmd.Endpoint]
@@ -118,7 +142,7 @@ func executeCommand(args []string, commands []Command, clients map[string]interf
 
 	ret, err := cmd.ExecuteFunc(cmd, client)
 	if err != nil {
-		return fmt.Errorf("%s Use '%s %s -h' for syntax help", err, subject, predicate)
+		return helpMessage(err, subject, predicate)
 	}
 
 	fmt.Fprintf(GetStdout(), ret)
@@ -283,6 +307,7 @@ func getCommands(clients map[string]interfaces.MetalCloudClient) []Command {
 		stageDefinitionsCmds,
 		workflowCmds,
 		versionCmds,
+		applyCmds,
 	}
 
 	filteredCommands := []Command{}
@@ -381,9 +406,17 @@ func readInputFromFile(path string) ([]byte, error) {
 		return nil, err
 	}
 
+	defer file.Close()
+
 	buf := new(bytes.Buffer)
-	buf.ReadFrom(file)
-	file.Close()
+	_, err = buf.ReadFrom(file)
+	if err != nil {
+		return nil, err
+	}
+
+	if err := file.Close(); err != nil {
+		return nil, err
+	}
 
 	return buf.Bytes(), nil
 }
