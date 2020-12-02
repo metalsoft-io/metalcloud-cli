@@ -257,11 +257,10 @@ func TestEditAssetCmd(t *testing.T) {
 		{
 			name: "good1",
 			cmd: MakeCommand(map[string]interface{}{
-				"asset_id_or_name":        100,
-				"filename":                "testf1",
-				"usage":                   "testf1",
-				"read_content_from_pipe":  true,
-				"variable_names_required": "1,2,3",
+				"asset_id_or_name":       100,
+				"filename":               "testf1",
+				"usage":                  "testf1",
+				"read_content_from_pipe": true,
 			}),
 			good: true,
 			id:   asset.OSAssetID,
@@ -334,11 +333,10 @@ func TestEditAssetCmd(t *testing.T) {
 		{
 			name: "asset not found",
 			cmd: MakeCommand(map[string]interface{}{
-				"asset_id_or_name":        101,
-				"filename":                "testf1",
-				"usage":                   "testf1",
-				"read_content_from_pipe":  true,
-				"variable_names_required": "1,2,3",
+				"asset_id_or_name":       101,
+				"filename":               "testf1",
+				"usage":                  "testf1",
+				"read_content_from_pipe": true,
 			}),
 			good: false,
 			id:   0,
@@ -346,11 +344,10 @@ func TestEditAssetCmd(t *testing.T) {
 		{
 			name: "asset not found",
 			cmd: MakeCommand(map[string]interface{}{
-				"asset_id_or_name":        "file",
-				"filename":                "testf1",
-				"usage":                   "testf1",
-				"read_content_from_pipe":  true,
-				"variable_names_required": "1,2,3",
+				"asset_id_or_name":       "file",
+				"filename":               "testf1",
+				"usage":                  "testf1",
+				"read_content_from_pipe": true,
 			}),
 			good: false,
 			id:   0,

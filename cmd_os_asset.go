@@ -39,17 +39,16 @@ var osAssetsCmds = []Command{
 		FlagSet:      flag.NewFlagSet("create asset", flag.ExitOnError),
 		InitFunc: func(c *Command) {
 			c.Arguments = map[string]interface{}{
-				"filename":                c.FlagSet.String("filename", _nilDefaultStr, "Asset's filename"),
-				"usage":                   c.FlagSet.String("usage", _nilDefaultStr, "Asset's usage. Possible values: \"bootloader\""),
-				"mime":                    c.FlagSet.String("mime", _nilDefaultStr, "Asset's mime type. Possible values: \"text/plain\",\"application/octet-stream\""),
-				"url":                     c.FlagSet.String("url", _nilDefaultStr, "Asset's source url. If present it will not read content anymore"),
-				"variable_names_required": c.FlagSet.String("variable-names-required", _nilDefaultStr, "The names of the variables and secrets that are used in this asset, comma separated."),
-				"read_content_from_pipe":  c.FlagSet.Bool("pipe", false, "Read assets's content read from pipe instead of terminal input"),
-				"template_id_or_name":     c.FlagSet.String("template-id", _nilDefaultStr, "Template's id or name to associate. "),
-				"path":                    c.FlagSet.String("path", _nilDefaultStr, "Path to associate asset to."),
-				"variables_json":          c.FlagSet.String("variables-json", _nilDefaultStr, "JSON encoded variables object"),
-				"delete_if_exists":        c.FlagSet.Bool("delete-if-exists", true, "Automatically delete the existing asset associated with the current template."),
-				"return_id":               c.FlagSet.Bool("return-id", false, "(Flag) If set will print the ID of the created infrastructure. Useful for automating tasks."),
+				"filename":               c.FlagSet.String("filename", _nilDefaultStr, "Asset's filename"),
+				"usage":                  c.FlagSet.String("usage", _nilDefaultStr, "Asset's usage. Possible values: \"bootloader\""),
+				"mime":                   c.FlagSet.String("mime", _nilDefaultStr, "Asset's mime type. Possible values: \"text/plain\",\"application/octet-stream\""),
+				"url":                    c.FlagSet.String("url", _nilDefaultStr, "Asset's source url. If present it will not read content anymore"),
+				"read_content_from_pipe": c.FlagSet.Bool("pipe", false, "Read assets's content read from pipe instead of terminal input"),
+				"template_id_or_name":    c.FlagSet.String("template-id", _nilDefaultStr, "Template's id or name to associate. "),
+				"path":                   c.FlagSet.String("path", _nilDefaultStr, "Path to associate asset to."),
+				"variables_json":         c.FlagSet.String("variables-json", _nilDefaultStr, "JSON encoded variables object"),
+				"delete_if_exists":       c.FlagSet.Bool("delete-if-exists", true, "Automatically delete the existing asset associated with the current template."),
+				"return_id":              c.FlagSet.Bool("return-id", false, "(Flag) If set will print the ID of the created infrastructure. Useful for automating tasks."),
 			}
 		},
 		ExecuteFunc: assetCreateCmd,
@@ -129,17 +128,16 @@ var osAssetsCmds = []Command{
 		FlagSet:      flag.NewFlagSet("edit asset", flag.ExitOnError),
 		InitFunc: func(c *Command) {
 			c.Arguments = map[string]interface{}{
-				"asset_id_or_name":        c.FlagSet.String("id", _nilDefaultStr, "Asset's id or filename"),
-				"filename":                c.FlagSet.String("filename", _nilDefaultStr, "Asset's filename"),
-				"usage":                   c.FlagSet.String("usage", _nilDefaultStr, "Asset's usage. Possible values: \"bootloader\""),
-				"mime":                    c.FlagSet.String("mime", _nilDefaultStr, "Required. Asset's mime type. Possible values: \"text/plain\",\"application/octet-stream\""),
-				"url":                     c.FlagSet.String("url", _nilDefaultStr, "Asset's source url. If present it will not read content anymore"),
-				"variable_names_required": c.FlagSet.String("variable-names-required", _nilDefaultStr, "The names of the variables and secrets that are used in this asset, comma separated."),
-				"read_content_from_pipe":  c.FlagSet.Bool("pipe", false, "Read assets's content read from pipe instead of terminal input"),
-				"template_id_or_name":     c.FlagSet.String("template-id", _nilDefaultStr, "Template's id or name to associate. "),
-				"path":                    c.FlagSet.String("path", _nilDefaultStr, "Path to associate asset to."),
-				"variables_json":          c.FlagSet.String("variables-json", _nilDefaultStr, "JSON encoded variables object"),
-				"return_id":               c.FlagSet.Bool("return-id", false, "(Flag) If set will print the ID of the created infrastructure. Useful for automating tasks."),
+				"asset_id_or_name":       c.FlagSet.String("id", _nilDefaultStr, "Asset's id or filename"),
+				"filename":               c.FlagSet.String("filename", _nilDefaultStr, "Asset's filename"),
+				"usage":                  c.FlagSet.String("usage", _nilDefaultStr, "Asset's usage. Possible values: \"bootloader\""),
+				"mime":                   c.FlagSet.String("mime", _nilDefaultStr, "Required. Asset's mime type. Possible values: \"text/plain\",\"application/octet-stream\""),
+				"url":                    c.FlagSet.String("url", _nilDefaultStr, "Asset's source url. If present it will not read content anymore"),
+				"read_content_from_pipe": c.FlagSet.Bool("pipe", false, "Read assets's content read from pipe instead of terminal input"),
+				"template_id_or_name":    c.FlagSet.String("template-id", _nilDefaultStr, "Template's id or name to associate. "),
+				"path":                   c.FlagSet.String("path", _nilDefaultStr, "Path to associate asset to."),
+				"variables_json":         c.FlagSet.String("variables-json", _nilDefaultStr, "JSON encoded variables object"),
+				"return_id":              c.FlagSet.Bool("return-id", false, "(Flag) If set will print the ID of the created infrastructure. Useful for automating tasks."),
 			}
 		},
 		ExecuteFunc: assetEditCmd,
@@ -383,10 +381,6 @@ func updateAssetFromCommand(obj metalcloud.OSAsset, c *Command, client interface
 		}
 
 		obj.OSAssetContentsBase64 = base64.StdEncoding.EncodeToString([]byte(content))
-
-		if v, ok := getStringParamOk(c.Arguments["variable_names_required"]); ok {
-			obj.OSAssetVariableNamesRequired = strings.Split(v, ",")
-		}
 	}
 
 	return &obj, nil
