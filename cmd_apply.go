@@ -56,7 +56,8 @@ func applyCmd(c *Command, client interfaces.MetalCloudClient) (string, error) {
 	}
 
 	for _, object := range objects {
-		err := object.CreateOrUpdate(client)
+		err = object.Validate()
+		err = object.CreateOrUpdate(client)
 		if err != nil {
 			fmt.Printf("errror is %s\n", err)
 			return "", err
