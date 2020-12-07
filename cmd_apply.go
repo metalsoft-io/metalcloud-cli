@@ -49,7 +49,7 @@ var applyCmds = []Command{
 }
 
 func applyCmd(c *Command, client interfaces.MetalCloudClient) (string, error) {
-	objects, err := readObjectsFromCommand(c, client)
+	objects, err := readObjectsFromCommand(c)
 
 	if err != nil {
 		return "", err
@@ -57,9 +57,11 @@ func applyCmd(c *Command, client interfaces.MetalCloudClient) (string, error) {
 
 	for _, object := range objects {
 		err = object.Validate()
+		if err != nil {
+			return "", err
+		}
 		err = object.CreateOrUpdate(client)
 		if err != nil {
-			fmt.Printf("errror is %s\n", err)
 			return "", err
 		}
 	}
@@ -68,7 +70,7 @@ func applyCmd(c *Command, client interfaces.MetalCloudClient) (string, error) {
 }
 
 func deleteCmd(c *Command, client interfaces.MetalCloudClient) (string, error) {
-	objects, err := readObjectsFromCommand(c, client)
+	objects, err := readObjectsFromCommand(c)
 
 	if err != nil {
 		return "", err
@@ -84,7 +86,7 @@ func deleteCmd(c *Command, client interfaces.MetalCloudClient) (string, error) {
 	return "", nil
 }
 
-func readObjectsFromCommand(c *Command, client interfaces.MetalCloudClient) ([]metalcloud.Applier, error) {
+func readObjectsFromCommand(c *Command) ([]metalcloud.Applier, error) {
 	initTypeRegistry()
 	var err error
 	content := []byte{}
@@ -92,6 +94,8 @@ func readObjectsFromCommand(c *Command, client interfaces.MetalCloudClient) ([]m
 
 	if filePath, ok := getStringParamOk(c.Arguments["read_config_from_file"]); ok {
 		content, err = readInputFromFile(filePath)
+	} else {
+		return nil, fmt.Errorf("file name is required")
 	}
 
 	if err != nil {

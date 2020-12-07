@@ -1,0 +1,118 @@
+
+kind: SharedDrive
+apiVersion: 1.0
+infrastructureID: 2
+label: test-shared
+storageType: test-storage
+
+---
+kind: InstanceArray
+apiVersion: 1.0
+infrastructureID: 2
+label: test-ia
+instanceCount: 1
+  
+---
+kind: DriveArray
+apiVersion: 1.0
+infrastructureID: 2
+label: test-da
+count: 2
+---
+kind: Infrastructure
+apiVersion: 1.0
+label: test-inf
+datacenter: test-dc
+  
+---
+kind: Network
+apiVersion: 1.0
+infrastructureID: 2
+label: test-net
+  
+---
+kind: OSAsset
+apiVersion: 1.0
+label: test-osasset
+ownerID: 1
+fileName: testName
+fileMime: testMime
+contentBase64: content
+usage: testUsage
+  
+  
+---
+kind: OSTemplate
+apiVersion: 1.0
+infrastructureID: 2
+label: test-t
+vtOS:
+  type: testType
+  version: 1
+  architecture: testArch
+credentials:
+  initialUser: testUser
+  imitialPassword: testPass
+  initialSSHPort: 22
+  changePasswordAfterDeploy: true
+  
+---
+kind: Secret
+apiVersion: 1.0
+ownerID: 1
+usage: testUsage
+  
+---
+kind: Server
+apiVersion: 1.0
+infrastructureID: 2
+datacenter: slavedatacenter-138
+disks:
+  - model: testModel1
+    type: testType1
+    vendor: testVendor1
+    status: testStatus1
+  - model: testModel2
+    type: testType2
+    vendor: testVendor2
+    status: testStatus2
+interfaces:
+  - macAddress: mac1
+  - macAddress: mac2
+
+---
+kind: StageDefinition
+apiVersion: 1.0
+ownerID: 2
+label: test-sd
+type: testType
+description: testDescription
+title: testTitle 
+---
+kind: SubnetPool
+apiVersion: 1.0
+datacenter: test-dc
+prefix: testPrefix
+type: testType
+destination: testDestination
+
+---
+kind: SwitchDevice
+apiVersion: 1.0
+identifierID: net-2
+datacenter: test-dc
+
+---
+kind: Variable
+apiVersion: 1.0
+ownerID: 1
+usage: testUsage
+name: testName
+
+---
+kind: Workflow
+apiVersion: 1.0
+label: test-w
+usage: testUsage
+title: testTitle
+description: testDescription

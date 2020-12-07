@@ -1,0 +1,6 @@
+kind: SharedDrive
+apiVersion: 1.0
+infrastructureID: 2
+label: test-shared
+storageType: test-storage
+id: 1
