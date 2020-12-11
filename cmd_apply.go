@@ -3,7 +3,6 @@ package main
 import (
 	"flag"
 	"fmt"
-	"reflect"
 	"regexp"
 	"strings"
 
@@ -88,7 +87,6 @@ func deleteCmd(c *Command, client metalcloud.MetalCloudClient) (string, error) {
 }
 
 func readObjectsFromCommand(c *Command, client metalcloud.MetalCloudClient) ([]metalcloud.Applier, error) {
-	initTypeRegistry()
 	var err error
 	content := []byte{}
 	var results []metalcloud.Applier
@@ -146,43 +144,4 @@ func readObjectsFromCommand(c *Command, client metalcloud.MetalCloudClient) ([]m
 	}
 
 	return results, nil
-}
-
-var typeRegistry = make(map[string]reflect.Type)
-
-func initTypeRegistry() {
-	myTypes := []metalcloud.Applier{
-		&metalcloud.InstanceArray{},
-		&metalcloud.Datacenter{},
-		&metalcloud.DriveArray{},
-		&metalcloud.Infrastructure{},
-		&metalcloud.Network{},
-		&metalcloud.OSAsset{},
-		&metalcloud.OSTemplate{},
-		&metalcloud.Secret{},
-		&metalcloud.Server{},
-		&metalcloud.SharedDrive{},
-		&metalcloud.StageDefinition{},
-		&metalcloud.Workflow{},
-		&metalcloud.SubnetPool{},
-		&metalcloud.SwitchDevice{},
-		&metalcloud.Variable{},
-	}
-
-	for _, v := range myTypes {
-		t := reflect.ValueOf(v).Elem()
-		u := reflect.TypeOf(v).Elem()
-		typeRegistry[u.Name()] = t.Type()
-	}
-}
-
-func getObjectByKind(name string) (reflect.Value, error) {
-	t, ok := typeRegistry[name]
-	fmt.Printf("type is: %v\n", name)
-	if !ok {
-		return reflect.Value{}, fmt.Errorf("%s was not recongnized as a valid product", name)
-	}
-
-	v := reflect.New(t)
-	return v, nil
 }
