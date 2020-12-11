@@ -6,7 +6,6 @@ import (
 	"strings"
 
 	metalcloud "github.com/bigstepinc/metal-cloud-sdk-go"
-	interfaces "github.com/bigstepinc/metalcloud-cli/interfaces"
 	"github.com/metalsoft-io/tableformatter"
 )
 
@@ -89,7 +88,7 @@ var volumeTemplateCmds = []Command{
 	},
 }
 
-func volumeTemplatesListCmd(c *Command, client interfaces.MetalCloudClient) (string, error) {
+func volumeTemplatesListCmd(c *Command, client metalcloud.MetalCloudClient) (string, error) {
 
 	vList, err := client.VolumeTemplates()
 	if err != nil {
@@ -171,7 +170,7 @@ func volumeTemplatesListCmd(c *Command, client interfaces.MetalCloudClient) (str
 	return table.RenderTable("Volume templates", "", getStringParam(c.Arguments["format"]))
 }
 
-func volumeTemplateCreateFromDriveCmd(c *Command, client interfaces.MetalCloudClient) (string, error) {
+func volumeTemplateCreateFromDriveCmd(c *Command, client metalcloud.MetalCloudClient) (string, error) {
 	objVolumeTemplate := metalcloud.VolumeTemplate{
 		VolumeTemplateDeprecationStatus:       getStringParam(c.Arguments["deprecation_status"]),
 		VolumeTemplateBootMethodsSupported:    getStringParam(c.Arguments["boot_methods_supported"]),
@@ -237,7 +236,7 @@ func volumeTemplateCreateFromDriveCmd(c *Command, client interfaces.MetalCloudCl
 	return "", nil
 }
 
-func getVolumeTemplateFromCommand(paramName string, c *Command, client interfaces.MetalCloudClient) (*metalcloud.VolumeTemplate, error) {
+func getVolumeTemplateFromCommand(paramName string, c *Command, client metalcloud.MetalCloudClient) (*metalcloud.VolumeTemplate, error) {
 
 	v, err := getParam(c, "template_id_or_name", paramName)
 	if err != nil {
@@ -268,7 +267,7 @@ func getVolumeTemplateFromCommand(paramName string, c *Command, client interface
 	return nil, fmt.Errorf("volume template %s not found", label)
 }
 
-func volumeTemplateMakePublicCmd(c *Command, client interfaces.MetalCloudClient) (string, error) {
+func volumeTemplateMakePublicCmd(c *Command, client metalcloud.MetalCloudClient) (string, error) {
 	template, err := getVolumeTemplateFromCommand("id", c, client)
 
 	if err != nil {
@@ -284,7 +283,7 @@ func volumeTemplateMakePublicCmd(c *Command, client interfaces.MetalCloudClient)
 	return "", nil
 }
 
-func volumeTemplateMakePrivateCmd(c *Command, client interfaces.MetalCloudClient) (string, error) {
+func volumeTemplateMakePrivateCmd(c *Command, client metalcloud.MetalCloudClient) (string, error) {
 	template, err := getVolumeTemplateFromCommand("id", c, client)
 
 	if err != nil {

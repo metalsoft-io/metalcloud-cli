@@ -7,7 +7,6 @@ import (
 	"strings"
 
 	metalcloud "github.com/bigstepinc/metal-cloud-sdk-go"
-	interfaces "github.com/bigstepinc/metalcloud-cli/interfaces"
 	"github.com/metalsoft-io/tableformatter"
 )
 
@@ -105,7 +104,7 @@ var driveArrayCmds = []Command{
 	},
 }
 
-func driveArrayCreateCmd(c *Command, client interfaces.MetalCloudClient) (string, error) {
+func driveArrayCreateCmd(c *Command, client metalcloud.MetalCloudClient) (string, error) {
 
 	da := argsToDriveArray(c.Arguments)
 
@@ -161,7 +160,7 @@ func driveArrayCreateCmd(c *Command, client interfaces.MetalCloudClient) (string
 	return "", err
 }
 
-func driveArrayEditCmd(c *Command, client interfaces.MetalCloudClient) (string, error) {
+func driveArrayEditCmd(c *Command, client metalcloud.MetalCloudClient) (string, error) {
 
 	retDA, err := getDriveArrayFromCommand(c, client)
 	if err != nil {
@@ -216,7 +215,7 @@ func driveArrayEditCmd(c *Command, client interfaces.MetalCloudClient) (string, 
 	return "", err
 }
 
-func driveArrayListCmd(c *Command, client interfaces.MetalCloudClient) (string, error) {
+func driveArrayListCmd(c *Command, client metalcloud.MetalCloudClient) (string, error) {
 
 	infraIDStr, err := getParam(c, "infrastructure_id_or_label", "infra")
 	if err != nil {
@@ -335,7 +334,7 @@ func driveArrayListCmd(c *Command, client interfaces.MetalCloudClient) (string, 
 	return table.RenderTable("Drive Arrays", "", getStringParam(c.Arguments["format"]))
 }
 
-func driveArrayDeleteCmd(c *Command, client interfaces.MetalCloudClient) (string, error) {
+func driveArrayDeleteCmd(c *Command, client metalcloud.MetalCloudClient) (string, error) {
 
 	retDA, err := getDriveArrayFromCommand(c, client)
 	if err != nil {
@@ -389,7 +388,7 @@ func driveArrayDeleteCmd(c *Command, client interfaces.MetalCloudClient) (string
 	return "", fmt.Errorf("Operation not confirmed. Aborting")
 }
 
-func driveArrayGetCmd(c *Command, client interfaces.MetalCloudClient) (string, error) {
+func driveArrayGetCmd(c *Command, client metalcloud.MetalCloudClient) (string, error) {
 
 	retDA, err := getDriveArrayFromCommand(c, client)
 	if err != nil {
@@ -526,7 +525,7 @@ func argsToDriveArray(m map[string]interface{}) *metalcloud.DriveArray {
 	}
 }
 
-func getDriveArrayFromCommand(c *Command, client interfaces.MetalCloudClient) (*metalcloud.DriveArray, error) {
+func getDriveArrayFromCommand(c *Command, client metalcloud.MetalCloudClient) (*metalcloud.DriveArray, error) {
 
 	m, err := getParam(c, "drive_array_id_or_label", "id")
 	if err != nil {

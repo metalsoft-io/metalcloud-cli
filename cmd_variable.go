@@ -8,7 +8,6 @@ import (
 	"strings"
 
 	metalcloud "github.com/bigstepinc/metal-cloud-sdk-go"
-	interfaces "github.com/bigstepinc/metalcloud-cli/interfaces"
 	"github.com/metalsoft-io/tableformatter"
 )
 
@@ -66,7 +65,7 @@ var variablesCmds = []Command{
 	},
 }
 
-func variablesListCmd(c *Command, client interfaces.MetalCloudClient) (string, error) {
+func variablesListCmd(c *Command, client metalcloud.MetalCloudClient) (string, error) {
 
 	usage := *c.Arguments["usage"].(*string)
 	if usage == _nilDefaultStr {
@@ -129,7 +128,7 @@ func variablesListCmd(c *Command, client interfaces.MetalCloudClient) (string, e
 	return table.RenderTable("Variables", "", getStringParam(c.Arguments["format"]))
 }
 
-func variableCreateCmd(c *Command, client interfaces.MetalCloudClient) (string, error) {
+func variableCreateCmd(c *Command, client metalcloud.MetalCloudClient) (string, error) {
 	variable := metalcloud.Variable{}
 
 	if v, ok := getStringParamOk(c.Arguments["name"]); ok {
@@ -175,7 +174,7 @@ func variableCreateCmd(c *Command, client interfaces.MetalCloudClient) (string, 
 	return "", err
 }
 
-func variableDeleteCmd(c *Command, client interfaces.MetalCloudClient) (string, error) {
+func variableDeleteCmd(c *Command, client metalcloud.MetalCloudClient) (string, error) {
 
 	retS, err := getVariableFromCommand("id", c, client)
 	if err != nil {
@@ -212,7 +211,7 @@ func variableDeleteCmd(c *Command, client interfaces.MetalCloudClient) (string, 
 	return "", err
 }
 
-func getVariableFromCommand(paramName string, c *Command, client interfaces.MetalCloudClient) (*metalcloud.Variable, error) {
+func getVariableFromCommand(paramName string, c *Command, client metalcloud.MetalCloudClient) (*metalcloud.Variable, error) {
 
 	v, err := getParam(c, "variable_id_or_name", paramName)
 	if err != nil {

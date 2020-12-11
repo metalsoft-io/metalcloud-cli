@@ -7,7 +7,6 @@ import (
 	"strings"
 
 	metalcloud "github.com/bigstepinc/metal-cloud-sdk-go"
-	interfaces "github.com/bigstepinc/metalcloud-cli/interfaces"
 	"github.com/metalsoft-io/tableformatter"
 )
 
@@ -162,7 +161,7 @@ var osTemplatesCmds = []Command{
 	},
 }
 
-func templatesListCmd(c *Command, client interfaces.MetalCloudClient) (string, error) {
+func templatesListCmd(c *Command, client metalcloud.MetalCloudClient) (string, error) {
 
 	list, err := client.OSTemplates()
 
@@ -289,7 +288,7 @@ func templatesListCmd(c *Command, client interfaces.MetalCloudClient) (string, e
 	return table.RenderTable("Templates", "", getStringParam(c.Arguments["format"]))
 }
 
-func updateTemplateFromCommand(obj metalcloud.OSTemplate, c *Command, client interfaces.MetalCloudClient, checkRequired bool) (*metalcloud.OSTemplate, error) {
+func updateTemplateFromCommand(obj metalcloud.OSTemplate, c *Command, client metalcloud.MetalCloudClient, checkRequired bool) (*metalcloud.OSTemplate, error) {
 
 	if v, ok := getStringParamOk(c.Arguments["label"]); ok {
 		obj.VolumeTemplateLabel = v
@@ -426,7 +425,7 @@ func updateTemplateFromCommand(obj metalcloud.OSTemplate, c *Command, client int
 	return &obj, nil
 }
 
-func templateCreateCmd(c *Command, client interfaces.MetalCloudClient) (string, error) {
+func templateCreateCmd(c *Command, client metalcloud.MetalCloudClient) (string, error) {
 	obj := metalcloud.OSTemplate{}
 	updatedObj, err := updateTemplateFromCommand(obj, c, client, true)
 	if err != nil {
@@ -444,7 +443,7 @@ func templateCreateCmd(c *Command, client interfaces.MetalCloudClient) (string, 
 	return "", err
 }
 
-func templateEditCmd(c *Command, client interfaces.MetalCloudClient) (string, error) {
+func templateEditCmd(c *Command, client metalcloud.MetalCloudClient) (string, error) {
 
 	obj, err := getOSTemplateFromCommand("id", c, client, false)
 	if err != nil {
@@ -459,7 +458,7 @@ func templateEditCmd(c *Command, client interfaces.MetalCloudClient) (string, er
 	return "", err
 }
 
-func templateDeleteCmd(c *Command, client interfaces.MetalCloudClient) (string, error) {
+func templateDeleteCmd(c *Command, client metalcloud.MetalCloudClient) (string, error) {
 
 	retS, err := getOSTemplateFromCommand("id", c, client, false)
 	if err != nil {
@@ -496,7 +495,7 @@ func templateDeleteCmd(c *Command, client interfaces.MetalCloudClient) (string, 
 	return "", err
 }
 
-func getOSTemplateFromCommand(paramName string, c *Command, client interfaces.MetalCloudClient, decryptPasswd bool) (*metalcloud.OSTemplate, error) {
+func getOSTemplateFromCommand(paramName string, c *Command, client metalcloud.MetalCloudClient, decryptPasswd bool) (*metalcloud.OSTemplate, error) {
 
 	v, err := getParam(c, "template_id_or_name", paramName)
 	if err != nil {
@@ -527,7 +526,7 @@ func getOSTemplateFromCommand(paramName string, c *Command, client interfaces.Me
 	return nil, fmt.Errorf("template %s not found", label)
 }
 
-func templateGetCmd(c *Command, client interfaces.MetalCloudClient) (string, error) {
+func templateGetCmd(c *Command, client metalcloud.MetalCloudClient) (string, error) {
 
 	showCredentials := false
 	if c.Arguments["show_credentials"] != nil && *c.Arguments["show_credentials"].(*bool) {
@@ -681,7 +680,7 @@ func templateGetCmd(c *Command, client interfaces.MetalCloudClient) (string, err
 	return table.RenderTable("Templates", topLine, getStringParam(c.Arguments["format"]))
 }
 
-func templateMakePublicCmd(c *Command, client interfaces.MetalCloudClient) (string, error) {
+func templateMakePublicCmd(c *Command, client metalcloud.MetalCloudClient) (string, error) {
 	template, err := getOSTemplateFromCommand("id", c, client, false)
 
 	if err != nil {
@@ -697,7 +696,7 @@ func templateMakePublicCmd(c *Command, client interfaces.MetalCloudClient) (stri
 	return "", nil
 }
 
-func templateMakePrivateCmd(c *Command, client interfaces.MetalCloudClient) (string, error) {
+func templateMakePrivateCmd(c *Command, client metalcloud.MetalCloudClient) (string, error) {
 	template, err := getOSTemplateFromCommand("id", c, client, false)
 
 	if err != nil {
@@ -717,7 +716,7 @@ func templateMakePrivateCmd(c *Command, client interfaces.MetalCloudClient) (str
 	return "", nil
 }
 
-func getUserFromCommand(paramName string, c *Command, client interfaces.MetalCloudClient) (*metalcloud.User, error) {
+func getUserFromCommand(paramName string, c *Command, client metalcloud.MetalCloudClient) (*metalcloud.User, error) {
 	user, err := getParam(c, "user_id", paramName)
 	if err != nil {
 		return nil, err

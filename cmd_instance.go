@@ -7,7 +7,6 @@ import (
 	"strings"
 
 	metalcloud "github.com/bigstepinc/metal-cloud-sdk-go"
-	interfaces "github.com/bigstepinc/metalcloud-cli/interfaces"
 	"github.com/metalsoft-io/tableformatter"
 )
 
@@ -48,7 +47,7 @@ var instanceCmds = []Command{
 	},
 }
 
-func instancePowerControlCmd(c *Command, client interfaces.MetalCloudClient) (string, error) {
+func instancePowerControlCmd(c *Command, client metalcloud.MetalCloudClient) (string, error) {
 
 	instanceID, ok := getIntParamOk(c.Arguments["instance_id"])
 	if !ok {
@@ -118,7 +117,7 @@ func instancePowerControlCmd(c *Command, client interfaces.MetalCloudClient) (st
 	return "", err
 }
 
-func instanceCredentialsCmd(c *Command, client interfaces.MetalCloudClient) (string, error) {
+func instanceCredentialsCmd(c *Command, client metalcloud.MetalCloudClient) (string, error) {
 
 	instanceID, ok := getIntParamOk(c.Arguments["instance_id"])
 	if !ok {
@@ -332,7 +331,7 @@ func getIPsAsStringArray(ips []metalcloud.IP) []string {
 }
 
 /*
-func instanceServerTypeChangeCmd(c *Command, client interfaces.MetalCloudClient) (string, error) {
+func instanceServerTypeChangeCmd(c *Command, client metalcloud.MetalCloudClient) (string, error) {
 
 	instanceID, ok := getIntParamOk(c.Arguments["instance_id"])
 	if !ok {

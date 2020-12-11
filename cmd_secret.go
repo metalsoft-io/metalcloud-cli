@@ -9,7 +9,6 @@ import (
 	"strings"
 
 	metalcloud "github.com/bigstepinc/metal-cloud-sdk-go"
-	interfaces "github.com/bigstepinc/metalcloud-cli/interfaces"
 	"github.com/metalsoft-io/tableformatter"
 )
 
@@ -67,7 +66,7 @@ var secretsCmds = []Command{
 	},
 }
 
-func secretsListCmd(c *Command, client interfaces.MetalCloudClient) (string, error) {
+func secretsListCmd(c *Command, client metalcloud.MetalCloudClient) (string, error) {
 
 	usage := *c.Arguments["usage"].(*string)
 	if usage == _nilDefaultStr {
@@ -130,7 +129,7 @@ func secretsListCmd(c *Command, client interfaces.MetalCloudClient) (string, err
 	return table.RenderTable("Secrets", "", getStringParam(c.Arguments["format"]))
 }
 
-func secretCreateCmd(c *Command, client interfaces.MetalCloudClient) (string, error) {
+func secretCreateCmd(c *Command, client metalcloud.MetalCloudClient) (string, error) {
 	secret := metalcloud.Secret{}
 
 	if v := c.Arguments["name"]; v != nil && *v.(*string) != _nilDefaultStr {
@@ -175,7 +174,7 @@ func secretCreateCmd(c *Command, client interfaces.MetalCloudClient) (string, er
 	return "", err
 }
 
-func secretDeleteCmd(c *Command, client interfaces.MetalCloudClient) (string, error) {
+func secretDeleteCmd(c *Command, client metalcloud.MetalCloudClient) (string, error) {
 
 	retS, err := getSecretFromCommand("id", c, client)
 	if err != nil {
@@ -212,7 +211,7 @@ func secretDeleteCmd(c *Command, client interfaces.MetalCloudClient) (string, er
 	return "", err
 }
 
-func getSecretFromCommand(paramName string, c *Command, client interfaces.MetalCloudClient) (*metalcloud.Secret, error) {
+func getSecretFromCommand(paramName string, c *Command, client metalcloud.MetalCloudClient) (*metalcloud.Secret, error) {
 
 	v, err := getParam(c, "secret_id_or_name", paramName)
 	if err != nil {

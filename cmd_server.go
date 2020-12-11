@@ -7,7 +7,6 @@ import (
 	"strings"
 
 	metalcloud "github.com/bigstepinc/metal-cloud-sdk-go"
-	interfaces "github.com/bigstepinc/metalcloud-cli/interfaces"
 	"github.com/metalsoft-io/tableformatter"
 )
 
@@ -119,7 +118,7 @@ func truncateString(s string, length int) string {
 	return ""
 }
 
-func serverPowerControlCmd(c *Command, client interfaces.MetalCloudClient) (string, error) {
+func serverPowerControlCmd(c *Command, client metalcloud.MetalCloudClient) (string, error) {
 	serverID, ok := getIntParamOk(c.Arguments["server_id"])
 	if !ok {
 		return "", fmt.Errorf("-id is required")
@@ -171,7 +170,7 @@ func serverPowerControlCmd(c *Command, client interfaces.MetalCloudClient) (stri
 	return "", err
 }
 
-func serversListCmd(c *Command, client interfaces.MetalCloudClient) (string, error) {
+func serversListCmd(c *Command, client metalcloud.MetalCloudClient) (string, error) {
 
 	filter := getStringParam(c.Arguments["filter"])
 
@@ -330,7 +329,7 @@ func serversListCmd(c *Command, client interfaces.MetalCloudClient) (string, err
 	return table.RenderTable("Servers", "", getStringParam(c.Arguments["format"]))
 }
 
-func serverGetCmd(c *Command, client interfaces.MetalCloudClient) (string, error) {
+func serverGetCmd(c *Command, client metalcloud.MetalCloudClient) (string, error) {
 
 	showCredentials := getBoolParam(c.Arguments["show_credentials"])
 
@@ -546,7 +545,7 @@ func serverGetCmd(c *Command, client interfaces.MetalCloudClient) (string, error
 	return sb.String(), nil
 }
 
-func serverCreateCmd(c *Command, client interfaces.MetalCloudClient) (string, error) {
+func serverCreateCmd(c *Command, client metalcloud.MetalCloudClient) (string, error) {
 
 	var obj metalcloud.Server
 
@@ -564,7 +563,7 @@ func serverCreateCmd(c *Command, client interfaces.MetalCloudClient) (string, er
 	return "", err
 }
 
-func serverEditCmd(c *Command, client interfaces.MetalCloudClient) (string, error) {
+func serverEditCmd(c *Command, client metalcloud.MetalCloudClient) (string, error) {
 
 	server, err := getServerFromCommand("id", c, client, false)
 	if err != nil {
@@ -629,7 +628,7 @@ func serverEditCmd(c *Command, client interfaces.MetalCloudClient) (string, erro
 	return "", err
 }
 
-func getServerFromCommand(paramName string, c *Command, client interfaces.MetalCloudClient, decryptPassword bool) (*metalcloud.Server, error) {
+func getServerFromCommand(paramName string, c *Command, client metalcloud.MetalCloudClient, decryptPassword bool) (*metalcloud.Server, error) {
 
 	m, err := getParam(c, "server_id_or_uuid", paramName)
 	if err != nil {
@@ -645,7 +644,7 @@ func getServerFromCommand(paramName string, c *Command, client interfaces.MetalC
 	return client.ServerGetByUUID(uuid, decryptPassword)
 }
 
-func getServerTypeFromCommand(paramName string, c *Command, client interfaces.MetalCloudClient) (*metalcloud.ServerType, error) {
+func getServerTypeFromCommand(paramName string, c *Command, client metalcloud.MetalCloudClient) (*metalcloud.ServerType, error) {
 
 	m, err := getParam(c, "server_type", paramName)
 	if err != nil {

@@ -8,7 +8,6 @@ import (
 	"strings"
 
 	metalcloud "github.com/bigstepinc/metal-cloud-sdk-go"
-	interfaces "github.com/bigstepinc/metalcloud-cli/interfaces"
 	"gopkg.in/yaml.v3"
 )
 
@@ -48,15 +47,14 @@ var applyCmds = []Command{
 	},
 }
 
-func applyCmd(c *Command, client interfaces.MetalCloudClient) (string, error) {
-	objects, err := readObjectsFromCommand(c)
+func applyCmd(c *Command, client metalcloud.MetalCloudClient) (string, error) {
+	objects, err := readObjectsFromCommand(c, client)
 
 	if err != nil {
 		return "", err
 	}
 
 	for _, object := range objects {
-		err = object.Validate()
 		if err != nil {
 			return "", err
 		}
@@ -69,14 +67,17 @@ func applyCmd(c *Command, client interfaces.MetalCloudClient) (string, error) {
 	return "", nil
 }
 
-func deleteCmd(c *Command, client interfaces.MetalCloudClient) (string, error) {
-	objects, err := readObjectsFromCommand(c)
+func deleteCmd(c *Command, client metalcloud.MetalCloudClient) (string, error) {
+	objects, err := readObjectsFromCommand(c, client)
 
 	if err != nil {
 		return "", err
 	}
 
 	for _, object := range objects {
+		if err != nil {
+			return "", err
+		}
 		err := object.Delete(client)
 
 		if err != nil {
@@ -86,7 +87,7 @@ func deleteCmd(c *Command, client interfaces.MetalCloudClient) (string, error) {
 	return "", nil
 }
 
-func readObjectsFromCommand(c *Command) ([]metalcloud.Applier, error) {
+func readObjectsFromCommand(c *Command, client metalcloud.MetalCloudClient) ([]metalcloud.Applier, error) {
 	initTypeRegistry()
 	var err error
 	content := []byte{}
@@ -131,7 +132,7 @@ func readObjectsFromCommand(c *Command) ([]metalcloud.Applier, error) {
 		}
 		kind = strings.Trim(kind, " \n\r")
 
-		newType, err := getObjectByKind(kind)
+		newType, err := metalcloud.GetObjectByKind(kind)
 		if err != nil {
 			return nil, err
 		}
@@ -177,6 +178,7 @@ func initTypeRegistry() {
 
 func getObjectByKind(name string) (reflect.Value, error) {
 	t, ok := typeRegistry[name]
+	fmt.Printf("type is: %v\n", name)
 	if !ok {
 		return reflect.Value{}, fmt.Errorf("%s was not recongnized as a valid product", name)
 	}

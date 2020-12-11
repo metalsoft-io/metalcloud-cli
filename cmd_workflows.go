@@ -7,7 +7,6 @@ import (
 	"strings"
 
 	metalcloud "github.com/bigstepinc/metal-cloud-sdk-go"
-	interfaces "github.com/bigstepinc/metalcloud-cli/interfaces"
 	"github.com/metalsoft-io/tableformatter"
 )
 
@@ -84,7 +83,7 @@ var workflowCmds = []Command{
 	},
 }
 
-func workflowsListCmd(c *Command, client interfaces.MetalCloudClient) (string, error) {
+func workflowsListCmd(c *Command, client metalcloud.MetalCloudClient) (string, error) {
 
 	usage := getStringParam(c.Arguments["usage"])
 
@@ -180,7 +179,7 @@ func workflowsListCmd(c *Command, client interfaces.MetalCloudClient) (string, e
 	return table.RenderTable("Workflows", "", getStringParam(c.Arguments["format"]))
 }
 
-func workflowGetCmd(c *Command, client interfaces.MetalCloudClient) (string, error) {
+func workflowGetCmd(c *Command, client metalcloud.MetalCloudClient) (string, error) {
 
 	wf, err := getWorkflowFromCommand("id", c, client)
 	if err != nil {
@@ -241,7 +240,7 @@ func workflowGetCmd(c *Command, client interfaces.MetalCloudClient) (string, err
 	return table.RenderTable("Stages", topLine, getStringParam(c.Arguments["format"]))
 }
 
-func workflowCreateCmd(c *Command, client interfaces.MetalCloudClient) (string, error) {
+func workflowCreateCmd(c *Command, client metalcloud.MetalCloudClient) (string, error) {
 
 	label, ok := getStringParamOk(c.Arguments["label"])
 	if !ok {
@@ -274,7 +273,7 @@ func workflowCreateCmd(c *Command, client interfaces.MetalCloudClient) (string, 
 
 }
 
-func workflowDeleteCmd(c *Command, client interfaces.MetalCloudClient) (string, error) {
+func workflowDeleteCmd(c *Command, client metalcloud.MetalCloudClient) (string, error) {
 
 	ret, err := getWorkflowFromCommand("id", c, client)
 	if err != nil {
@@ -311,7 +310,7 @@ func workflowDeleteCmd(c *Command, client interfaces.MetalCloudClient) (string, 
 	return "", err
 }
 
-func workflowDeleteStageCmd(c *Command, client interfaces.MetalCloudClient) (string, error) {
+func workflowDeleteStageCmd(c *Command, client metalcloud.MetalCloudClient) (string, error) {
 
 	workflowStageID, ok := getIntParamOk(c.Arguments["workflow_stage_id"])
 	if !ok {
@@ -362,7 +361,7 @@ func workflowDeleteStageCmd(c *Command, client interfaces.MetalCloudClient) (str
 	return "", err
 }
 
-func getWorkflowFromCommand(paramName string, c *Command, client interfaces.MetalCloudClient) (*metalcloud.Workflow, error) {
+func getWorkflowFromCommand(paramName string, c *Command, client metalcloud.MetalCloudClient) (*metalcloud.Workflow, error) {
 
 	v, err := getParam(c, "workflow_id_or_label", paramName)
 	if err != nil {

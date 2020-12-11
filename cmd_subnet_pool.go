@@ -7,7 +7,6 @@ import (
 	"strings"
 
 	metalcloud "github.com/bigstepinc/metal-cloud-sdk-go"
-	interfaces "github.com/bigstepinc/metalcloud-cli/interfaces"
 	"github.com/metalsoft-io/tableformatter"
 )
 
@@ -83,7 +82,7 @@ var subnetPoolCmds = []Command{
 	},
 }
 
-func subnetPoolListCmd(c *Command, client interfaces.MetalCloudClient) (string, error) {
+func subnetPoolListCmd(c *Command, client metalcloud.MetalCloudClient) (string, error) {
 
 	filter := getStringParam(c.Arguments["filter"])
 	if datacenter, ok := getStringParamOk(c.Arguments["datacenter"]); ok {
@@ -198,7 +197,7 @@ func subnetPoolListCmd(c *Command, client interfaces.MetalCloudClient) (string, 
 	return table.RenderTable("Switches", "", getStringParam(c.Arguments["format"]))
 }
 
-func subnetPoolGetCmd(c *Command, client interfaces.MetalCloudClient) (string, error) {
+func subnetPoolGetCmd(c *Command, client metalcloud.MetalCloudClient) (string, error) {
 
 	id, ok := getIntParamOk(c.Arguments["subnet_pool_id"])
 	if !ok {
@@ -320,7 +319,7 @@ func subnetPoolGetCmd(c *Command, client interfaces.MetalCloudClient) (string, e
 	return sb.String(), nil
 }
 
-func subnetPoolCreateCmd(c *Command, client interfaces.MetalCloudClient) (string, error) {
+func subnetPoolCreateCmd(c *Command, client metalcloud.MetalCloudClient) (string, error) {
 
 	var sn metalcloud.SubnetPool
 
@@ -338,7 +337,7 @@ func subnetPoolCreateCmd(c *Command, client interfaces.MetalCloudClient) (string
 	return "", err
 }
 
-func subnetPoolDeleteCmd(c *Command, client interfaces.MetalCloudClient) (string, error) {
+func subnetPoolDeleteCmd(c *Command, client metalcloud.MetalCloudClient) (string, error) {
 
 	id, ok := getIntParamOk(c.Arguments["subnet_pool_id"])
 	if !ok {

@@ -7,7 +7,6 @@ import (
 	"strings"
 
 	metalcloud "github.com/bigstepinc/metal-cloud-sdk-go"
-	interfaces "github.com/bigstepinc/metalcloud-cli/interfaces"
 	"github.com/metalsoft-io/tableformatter"
 )
 
@@ -120,7 +119,7 @@ var instanceArrayCmds = []Command{
 	},
 }
 
-func instanceArrayCreateCmd(c *Command, client interfaces.MetalCloudClient) (string, error) {
+func instanceArrayCreateCmd(c *Command, client metalcloud.MetalCloudClient) (string, error) {
 
 	infra, err := getInfrastructureFromCommand("infra", c, client)
 	if err != nil {
@@ -193,7 +192,7 @@ func instanceArrayCreateCmd(c *Command, client interfaces.MetalCloudClient) (str
 	return "", err
 }
 
-func instanceArrayEditCmd(c *Command, client interfaces.MetalCloudClient) (string, error) {
+func instanceArrayEditCmd(c *Command, client metalcloud.MetalCloudClient) (string, error) {
 
 	retIA, err := getInstanceArrayFromCommand("id", c, client)
 	if err != nil {
@@ -224,7 +223,7 @@ func instanceArrayEditCmd(c *Command, client interfaces.MetalCloudClient) (strin
 	return "", err
 }
 
-func instanceArrayListCmd(c *Command, client interfaces.MetalCloudClient) (string, error) {
+func instanceArrayListCmd(c *Command, client metalcloud.MetalCloudClient) (string, error) {
 
 	infra, err := getInfrastructureFromCommand("infra", c, client)
 	if err != nil {
@@ -284,7 +283,7 @@ func instanceArrayListCmd(c *Command, client interfaces.MetalCloudClient) (strin
 	return table.RenderTable("Instance Arrays", "", getStringParam(c.Arguments["format"]))
 }
 
-func instanceArrayDeleteCmd(c *Command, client interfaces.MetalCloudClient) (string, error) {
+func instanceArrayDeleteCmd(c *Command, client metalcloud.MetalCloudClient) (string, error) {
 
 	retIA, err := getInstanceArrayFromCommand("id", c, client)
 	if err != nil {
@@ -326,7 +325,7 @@ func instanceArrayDeleteCmd(c *Command, client interfaces.MetalCloudClient) (str
 	return "", err
 }
 
-func instanceArrayGetCmd(c *Command, client interfaces.MetalCloudClient) (string, error) {
+func instanceArrayGetCmd(c *Command, client metalcloud.MetalCloudClient) (string, error) {
 
 	retIA, err := getInstanceArrayFromCommand("id", c, client)
 	if err != nil {
@@ -636,7 +635,7 @@ func copyInstanceArrayInterfaceToOperation(i metalcloud.InstanceArrayInterface, 
 	io.NetworkID = i.NetworkID
 }
 
-func getInstanceArrayFromCommand(paramName string, c *Command, client interfaces.MetalCloudClient) (*metalcloud.InstanceArray, error) {
+func getInstanceArrayFromCommand(paramName string, c *Command, client metalcloud.MetalCloudClient) (*metalcloud.InstanceArray, error) {
 
 	m, err := getParam(c, "instance_array_id_or_label", paramName)
 	if err != nil {

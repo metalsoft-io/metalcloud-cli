@@ -8,7 +8,6 @@ import (
 	"strings"
 
 	metalcloud "github.com/bigstepinc/metal-cloud-sdk-go"
-	interfaces "github.com/bigstepinc/metalcloud-cli/interfaces"
 	"github.com/metalsoft-io/tableformatter"
 )
 
@@ -145,7 +144,7 @@ var osAssetsCmds = []Command{
 	},
 }
 
-func assetsListCmd(c *Command, client interfaces.MetalCloudClient) (string, error) {
+func assetsListCmd(c *Command, client metalcloud.MetalCloudClient) (string, error) {
 
 	list, err := client.OSAssets()
 
@@ -215,7 +214,7 @@ func assetsListCmd(c *Command, client interfaces.MetalCloudClient) (string, erro
 	return table.RenderTable("Assets", "", getStringParam(c.Arguments["format"]))
 }
 
-func assetCreateCmd(c *Command, client interfaces.MetalCloudClient) (string, error) {
+func assetCreateCmd(c *Command, client metalcloud.MetalCloudClient) (string, error) {
 	newObj := metalcloud.OSAsset{}
 	updatedObj, err := updateAssetFromCommand(newObj, c, client, true)
 	if err != nil {
@@ -241,7 +240,7 @@ func assetCreateCmd(c *Command, client interfaces.MetalCloudClient) (string, err
 	return "", err
 }
 
-func associateAssetFromCommand(assetID int, assetFileName string, c *Command, client interfaces.MetalCloudClient) error {
+func associateAssetFromCommand(assetID int, assetFileName string, c *Command, client metalcloud.MetalCloudClient) error {
 	variablesJSON := "[]"
 	if _, error := getParam(c, "template_id_or_name", "template-id"); error == nil {
 		template, err := getOSTemplateFromCommand("template-id", c, client, false)
@@ -284,7 +283,7 @@ func associateAssetFromCommand(assetID int, assetFileName string, c *Command, cl
 	return nil
 }
 
-func assetDeleteCmd(c *Command, client interfaces.MetalCloudClient) (string, error) {
+func assetDeleteCmd(c *Command, client metalcloud.MetalCloudClient) (string, error) {
 
 	retS, err := getOSAssetFromCommand("id", "asset_id_or_name", c, client)
 	if err != nil {
@@ -317,7 +316,7 @@ func assetDeleteCmd(c *Command, client interfaces.MetalCloudClient) (string, err
 }
 
 //asset_id_or_name
-func getOSAssetFromCommand(paramName string, internalParamName string, c *Command, client interfaces.MetalCloudClient) (*metalcloud.OSAsset, error) {
+func getOSAssetFromCommand(paramName string, internalParamName string, c *Command, client metalcloud.MetalCloudClient) (*metalcloud.OSAsset, error) {
 
 	v, err := getParam(c, internalParamName, paramName)
 	if err != nil {
@@ -344,7 +343,7 @@ func getOSAssetFromCommand(paramName string, internalParamName string, c *Comman
 	return nil, fmt.Errorf("Could not locate asset with file name '%s'", name)
 }
 
-func updateAssetFromCommand(obj metalcloud.OSAsset, c *Command, client interfaces.MetalCloudClient, checkRequired bool) (*metalcloud.OSAsset, error) {
+func updateAssetFromCommand(obj metalcloud.OSAsset, c *Command, client metalcloud.MetalCloudClient, checkRequired bool) (*metalcloud.OSAsset, error) {
 	if v, ok := getStringParamOk(c.Arguments["filename"]); ok {
 		obj.OSAssetFileName = v
 	} else {
@@ -386,7 +385,7 @@ func updateAssetFromCommand(obj metalcloud.OSAsset, c *Command, client interface
 	return &obj, nil
 }
 
-func associateAssetCmd(c *Command, client interfaces.MetalCloudClient) (string, error) {
+func associateAssetCmd(c *Command, client metalcloud.MetalCloudClient) (string, error) {
 
 	asset, err := getOSAssetFromCommand("id", "asset_id_or_name", c, client)
 	if err != nil {
@@ -411,7 +410,7 @@ func associateAssetCmd(c *Command, client interfaces.MetalCloudClient) (string, 
 	return "", client.OSTemplateAddOSAsset(template.VolumeTemplateID, asset.OSAssetID, path, variablesJSON)
 }
 
-func disassociateAssetCmd(c *Command, client interfaces.MetalCloudClient) (string, error) {
+func disassociateAssetCmd(c *Command, client metalcloud.MetalCloudClient) (string, error) {
 
 	asset, err := getOSAssetFromCommand("id", "asset_id_or_name", c, client)
 	if err != nil {
@@ -426,7 +425,7 @@ func disassociateAssetCmd(c *Command, client interfaces.MetalCloudClient) (strin
 	return "", client.OSTemplateRemoveOSAsset(template.VolumeTemplateID, asset.OSAssetID)
 }
 
-func templateListAssociatedAssetsCmd(c *Command, client interfaces.MetalCloudClient) (string, error) {
+func templateListAssociatedAssetsCmd(c *Command, client metalcloud.MetalCloudClient) (string, error) {
 
 	ret, err := getOSTemplateFromCommand("id", c, client, false)
 	if err != nil {
@@ -509,7 +508,7 @@ func templateListAssociatedAssetsCmd(c *Command, client interfaces.MetalCloudCli
 	return table.RenderTable("Associated assets", "", getStringParam(c.Arguments["format"]))
 }
 
-func assetEditCmd(c *Command, client interfaces.MetalCloudClient) (string, error) {
+func assetEditCmd(c *Command, client metalcloud.MetalCloudClient) (string, error) {
 	asset, err := getOSAssetFromCommand("id", "asset_id_or_name", c, client)
 	if err != nil {
 		fmt.Println(err)
