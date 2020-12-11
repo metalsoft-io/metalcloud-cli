@@ -3,7 +3,7 @@ module github.com/bigstepinc/metalcloud-cli
 go 1.12
 
 require (
-	github.com/bigstepinc/metal-cloud-sdk-go/v2.0.0
+	github.com/bigstepinc/metal-cloud-sdk-go v2.0.0
 	github.com/golang/mock v1.4.4
 	github.com/kr/text v0.2.0 // indirect
 	github.com/metalsoft-io/tableformatter v1.0.4
