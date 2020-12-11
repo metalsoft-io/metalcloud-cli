@@ -4,7 +4,7 @@ import (
 	"flag"
 	"fmt"
 
-	metalcloud "github.com/bigstepinc/metal-cloud-sdk-go"
+	metalcloud "github.com/bigstepinc/metal-cloud-sdk-go/v2"
 )
 
 var versionCmds = []Command{

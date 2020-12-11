@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"strings"
 
-	metalcloud "github.com/bigstepinc/metal-cloud-sdk-go"
+	metalcloud "github.com/bigstepinc/metal-cloud-sdk-go/v2"
 	"github.com/metalsoft-io/tableformatter"
 )
 
