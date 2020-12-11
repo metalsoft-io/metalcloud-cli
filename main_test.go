@@ -8,8 +8,8 @@ import (
 	"os"
 	"testing"
 
+	metalcloud "github.com/bigstepinc/metal-cloud-sdk-go"
 	mock_metalcloud "github.com/bigstepinc/metalcloud-cli/helpers"
-	interfaces "github.com/bigstepinc/metalcloud-cli/interfaces"
 	gomock "github.com/golang/mock/gomock"
 	. "github.com/onsi/gomega"
 )
@@ -160,7 +160,7 @@ func TestExecuteCommand(t *testing.T) {
 				}
 				initFuncExecuted = true
 			},
-			ExecuteFunc: func(c *Command, client interfaces.MetalCloudClient) (string, error) {
+			ExecuteFunc: func(c *Command, client metalcloud.MetalCloudClient) (string, error) {
 				execFuncExecuted = true
 				execFuncExecutedOnDeveloperEndpoint = client.GetEndpoint() == "developer"
 				return "", nil
@@ -171,7 +171,7 @@ func TestExecuteCommand(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	client := mock_metalcloud.NewMockMetalCloudClient(ctrl)
 	client.EXPECT().GetEndpoint().Return("user").AnyTimes()
-	clients := map[string]interfaces.MetalCloudClient{
+	clients := map[string]metalcloud.MetalCloudClient{
 		UserEndpoint: client,
 		"":           client,
 	}
@@ -237,7 +237,7 @@ func TestGetCommandHelp(t *testing.T) {
 				"cmd": c.FlagSet.Int(RandStringBytes(10), 0, "Random param"),
 			}
 		},
-		ExecuteFunc: func(c *Command, client interfaces.MetalCloudClient) (string, error) {
+		ExecuteFunc: func(c *Command, client metalcloud.MetalCloudClient) (string, error) {
 			return "", nil
 		}}
 
@@ -252,7 +252,7 @@ func TestGetHelp(t *testing.T) {
 	RegisterTestingT(t)
 	ctrl := gomock.NewController(t)
 	client := mock_metalcloud.NewMockMetalCloudClient(ctrl)
-	clients := map[string]interfaces.MetalCloudClient{
+	clients := map[string]metalcloud.MetalCloudClient{
 		"": client,
 	}
 	cmds := getCommands(clients)

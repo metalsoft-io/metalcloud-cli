@@ -16,7 +16,6 @@ import (
 
 	//. "github.com/onsi/gomega"
 	mock_metalcloud "github.com/bigstepinc/metalcloud-cli/helpers"
-	interfaces "github.com/bigstepinc/metalcloud-cli/interfaces"
 	gomock "github.com/golang/mock/gomock"
 	. "github.com/onsi/gomega"
 )
@@ -28,7 +27,7 @@ func TestCheckForDuplicates(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	client := mock_metalcloud.NewMockMetalCloudClient(ctrl)
 	client.EXPECT().GetEndpoint().Return("user").AnyTimes()
-	clients := map[string]interfaces.MetalCloudClient{
+	clients := map[string]metalcloud.MetalCloudClient{
 		"": client,
 	}
 
@@ -75,7 +74,7 @@ func TestSimpleArgument(t *testing.T) {
 				"instance_array_instance_label": c.FlagSet.String("label", "", "Instance array's label"),
 			}
 		},
-		ExecuteFunc: func(c *Command, client interfaces.MetalCloudClient) (string, error) {
+		ExecuteFunc: func(c *Command, client metalcloud.MetalCloudClient) (string, error) {
 			executed = true
 			return "retstr", nil
 		},
@@ -139,7 +138,7 @@ func TestConfirmFunc(t *testing.T) {
 				"autoconfirm": c.FlagSet.Bool("autoconfirm", false, "autoconfirm text"),
 			}
 		},
-		ExecuteFunc: func(c *Command, client interfaces.MetalCloudClient) (string, error) {
+		ExecuteFunc: func(c *Command, client metalcloud.MetalCloudClient) (string, error) {
 			return "", nil
 		},
 	}
@@ -238,7 +237,7 @@ func TestIdOrLabel(t *testing.T) {
 }
 
 //checks the various outputs
-func testListCommand(f CommandExecuteFunc, cmd *Command, client interfaces.MetalCloudClient, firstRow map[string]interface{}, t *testing.T) {
+func testListCommand(f CommandExecuteFunc, cmd *Command, client metalcloud.MetalCloudClient, firstRow map[string]interface{}, t *testing.T) {
 	//RegisterTestingT(t)
 
 	c := cmd
@@ -305,7 +304,7 @@ func CSVUnmarshal(csvString string) ([][]string, error) {
 }
 
 //checks the various outputs
-func testGetCommand(f CommandExecuteFunc, cases []CommandTestCase, client interfaces.MetalCloudClient, firstRow map[string]interface{}, t *testing.T) {
+func testGetCommand(f CommandExecuteFunc, cases []CommandTestCase, client metalcloud.MetalCloudClient, firstRow map[string]interface{}, t *testing.T) {
 	for _, c := range cases {
 		t.Run(c.name, func(t *testing.T) {
 			_, err := f(&c.cmd, client)
@@ -424,7 +423,7 @@ func GenerateCommandTestCases(arguments map[string]interface{}) []CommandTestCas
 }
 
 //checks command with and without return_id
-func testCreateCommand(f CommandExecuteFunc, cases []CommandTestCase, client interfaces.MetalCloudClient, t *testing.T) {
+func testCreateCommand(f CommandExecuteFunc, cases []CommandTestCase, client metalcloud.MetalCloudClient, t *testing.T) {
 
 	for _, c := range cases {
 		t.Run(c.name, func(t *testing.T) {
@@ -467,7 +466,7 @@ func testCreateCommand(f CommandExecuteFunc, cases []CommandTestCase, client int
 
 }
 
-func testCommandWithConfirmation(f CommandExecuteFunc, cmd Command, client interfaces.MetalCloudClient, t *testing.T) {
+func testCommandWithConfirmation(f CommandExecuteFunc, cmd Command, client metalcloud.MetalCloudClient, t *testing.T) {
 	var stdin bytes.Buffer
 	var stdout bytes.Buffer
 
