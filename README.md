@@ -201,3 +201,27 @@ go generate
 ```
 If new objects are added in the SDK `helpers/fix_package.go` will need to be updated.
 
+### Apply
+
+Apply creates or updates a resource from a file. The supported format is yaml.
+
+```bash
+metalcloud-cli apply -f resources.yaml
+```
+
+The type of the requested resource needs to be specified using the field *kind*.
+
+```
+cat resources.yaml
+
+kind: InstanceArray
+apiVersion: 1.0
+label: my-instance-array
+
+---
+
+kind: Secret
+apiVersion: 1.0
+name: my-secret
+
+```
