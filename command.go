@@ -6,12 +6,12 @@ import (
 	"fmt"
 	"strconv"
 
-	interfaces "github.com/bigstepinc/metalcloud-cli/interfaces"
+	metalcloud "github.com/bigstepinc/metal-cloud-sdk-go/v2"
 	"gopkg.in/yaml.v3"
 )
 
 //CommandExecuteFunc a function type a command can take for executing the content
-type CommandExecuteFunc = func(c *Command, client interfaces.MetalCloudClient) (string, error)
+type CommandExecuteFunc = func(c *Command, client metalcloud.MetalCloudClient) (string, error)
 
 //CommandInitFunc a function type a command can take for initializing the command
 type CommandInitFunc = func(c *Command)

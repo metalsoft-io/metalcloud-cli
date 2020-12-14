@@ -4,7 +4,7 @@ import (
 	"flag"
 	"fmt"
 
-	interfaces "github.com/bigstepinc/metalcloud-cli/interfaces"
+	metalcloud "github.com/bigstepinc/metal-cloud-sdk-go/v2"
 )
 
 var versionCmds = []Command{
@@ -27,7 +27,7 @@ var versionCmds = []Command{
 	},
 }
 
-func versionShowCmd(c *Command, client interfaces.MetalCloudClient) (string, error) {
+func versionShowCmd(c *Command, client metalcloud.MetalCloudClient) (string, error) {
 	if version == "" {
 		return fmt.Sprintf("manual build\n"), nil
 	}

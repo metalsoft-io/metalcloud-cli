@@ -7,8 +7,7 @@ import (
 	"os"
 	"strings"
 
-	metalcloud "github.com/bigstepinc/metal-cloud-sdk-go"
-	interfaces "github.com/bigstepinc/metalcloud-cli/interfaces"
+	metalcloud "github.com/bigstepinc/metal-cloud-sdk-go/v2"
 	"github.com/metalsoft-io/tableformatter"
 )
 
@@ -122,7 +121,7 @@ var stageDefinitionsCmds = []Command{
 	},
 }
 
-func stageDefinitionsListCmd(c *Command, client interfaces.MetalCloudClient) (string, error) {
+func stageDefinitionsListCmd(c *Command, client metalcloud.MetalCloudClient) (string, error) {
 
 	list, err := client.StageDefinitions()
 
@@ -214,7 +213,7 @@ func stageDefinitionsListCmd(c *Command, client interfaces.MetalCloudClient) (st
 	return table.RenderTable("Stage Definitions", "", getStringParam(c.Arguments["format"]))
 }
 
-func stageDefinitionCreateCmd(c *Command, client interfaces.MetalCloudClient) (string, error) {
+func stageDefinitionCreateCmd(c *Command, client metalcloud.MetalCloudClient) (string, error) {
 
 	stage := metalcloud.StageDefinition{}
 
@@ -371,7 +370,7 @@ func stageDefinitionCreateCmd(c *Command, client interfaces.MetalCloudClient) (s
 	return "", err
 }
 
-func stageDefinitionDeleteCmd(c *Command, client interfaces.MetalCloudClient) (string, error) {
+func stageDefinitionDeleteCmd(c *Command, client metalcloud.MetalCloudClient) (string, error) {
 
 	retS, err := getStageDefinitionFromCommand("id", c, client)
 	if err != nil {
@@ -408,7 +407,7 @@ func stageDefinitionDeleteCmd(c *Command, client interfaces.MetalCloudClient) (s
 	return "", err
 }
 
-func stageDefinitionAddToInfrastructureCmd(c *Command, client interfaces.MetalCloudClient) (string, error) {
+func stageDefinitionAddToInfrastructureCmd(c *Command, client metalcloud.MetalCloudClient) (string, error) {
 
 	stage, err := getStageDefinitionFromCommand("id", c, client)
 	if err != nil {
@@ -435,7 +434,7 @@ func stageDefinitionAddToInfrastructureCmd(c *Command, client interfaces.MetalCl
 	return "", err
 }
 
-func stageDefinitionAddToWorkflowCmd(c *Command, client interfaces.MetalCloudClient) (string, error) {
+func stageDefinitionAddToWorkflowCmd(c *Command, client metalcloud.MetalCloudClient) (string, error) {
 
 	stage, err := getStageDefinitionFromCommand("id", c, client)
 	if err != nil {
@@ -463,7 +462,7 @@ func stageDefinitionAddToWorkflowCmd(c *Command, client interfaces.MetalCloudCli
 	return "", err
 }
 
-func getStageDefinitionFromCommand(paramName string, c *Command, client interfaces.MetalCloudClient) (*metalcloud.StageDefinition, error) {
+func getStageDefinitionFromCommand(paramName string, c *Command, client metalcloud.MetalCloudClient) (*metalcloud.StageDefinition, error) {
 
 	v, err := getParam(c, "stage_id_or_name", paramName)
 	if err != nil {

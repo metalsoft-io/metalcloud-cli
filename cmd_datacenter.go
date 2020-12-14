@@ -6,9 +6,9 @@ import (
 	"fmt"
 	"strings"
 
-	metalcloud "github.com/bigstepinc/metal-cloud-sdk-go"
-	interfaces "github.com/bigstepinc/metalcloud-cli/interfaces"
+	metalcloud "github.com/bigstepinc/metal-cloud-sdk-go/v2"
 	"github.com/metalsoft-io/tableformatter"
+	jq "github.com/savaki/jq"
 	"gopkg.in/yaml.v3"
 )
 
@@ -28,6 +28,7 @@ var datacenterCmds = []Command{
 				"show_inactive": c.FlagSet.Bool("show-inactive", false, "(Flag) Set flag if inactive datacenters are to be returned"),
 				"show_hidden":   c.FlagSet.Bool("show-hidden", false, "(Flag) Set flag if hidden datacenters are to be returned"),
 				"format":        c.FlagSet.String("format", "", "The output format. Supported values are 'json','csv','yaml'. The default format is human readable."),
+				"json_path":     c.FlagSet.String("jsonpath", _nilDefaultStr, "Filter the output."),
 			}
 		},
 		ExecuteFunc: datacenterListCmd,
@@ -70,6 +71,7 @@ var datacenterCmds = []Command{
 				"show_datacenter_config": c.FlagSet.Bool("show-config", false, "(Flag) If set returns the config of the datacenter."),
 				"return_config_url":      c.FlagSet.Bool("return-config-url", false, "(Flag) If set prints the config url of the datacenter. Ignores all other flags. Useful in automation."),
 				"format":                 c.FlagSet.String("format", "", "The output format. Supported values are 'json','csv','yaml'. The default format is human readable."),
+				"json_path":              c.FlagSet.String("jsonpath", _nilDefaultStr, "Filter the JSON config."),
 			}
 		},
 		ExecuteFunc: datacenterGetCmd,
@@ -95,7 +97,7 @@ var datacenterCmds = []Command{
 	},
 }
 
-func datacenterListCmd(c *Command, client interfaces.MetalCloudClient) (string, error) {
+func datacenterListCmd(c *Command, client metalcloud.MetalCloudClient) (string, error) {
 
 	showHidden := getBoolParam(c.Arguments["show_hidden"])
 	showInactive := getBoolParam(c.Arguments["show_inactive"])
@@ -191,10 +193,11 @@ func datacenterListCmd(c *Command, client interfaces.MetalCloudClient) (string, 
 		Data:   data,
 		Schema: schema,
 	}
+
 	return table.RenderTable("Datacenters", "", getStringParam(c.Arguments["format"]))
 }
 
-func datacenterCreateCmd(c *Command, client interfaces.MetalCloudClient) (string, error) {
+func datacenterCreateCmd(c *Command, client metalcloud.MetalCloudClient) (string, error) {
 
 	datacenterName, ok := getStringParamOk(c.Arguments["datacenter_name"])
 
@@ -292,7 +295,7 @@ func datacenterCreateCmd(c *Command, client interfaces.MetalCloudClient) (string
 	return "", err
 }
 
-func datacenterGetCmd(c *Command, client interfaces.MetalCloudClient) (string, error) {
+func datacenterGetCmd(c *Command, client metalcloud.MetalCloudClient) (string, error) {
 
 	datacenterName, ok := getStringParamOk(c.Arguments["datacenter_name"])
 	if !ok {
@@ -413,7 +416,17 @@ func datacenterGetCmd(c *Command, client interfaces.MetalCloudClient) (string, e
 			return "", err
 		}
 
-		data[0][5] = string(configBytes)
+		if jsonPath, ok := getStringParamOk(c.Arguments["json_path"]); ok {
+			op, err := jq.Parse(jsonPath)
+
+			if err != nil {
+				return "", err
+			}
+			result, _ := op.Apply(configBytes)
+			data[0][5] = string(result)
+		} else {
+			data[0][5] = string(configBytes)
+		}
 
 		table := tableformatter.Table{
 			Data:   data,
@@ -486,7 +499,7 @@ func datacenterGetCmd(c *Command, client interfaces.MetalCloudClient) (string, e
 	return sb.String(), nil
 }
 
-func datacenterUpdateCmd(c *Command, client interfaces.MetalCloudClient) (string, error) {
+func datacenterUpdateCmd(c *Command, client metalcloud.MetalCloudClient) (string, error) {
 
 	datacenterName, ok := getStringParamOk(c.Arguments["datacenter_name"])
 

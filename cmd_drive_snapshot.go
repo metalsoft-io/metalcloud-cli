@@ -6,7 +6,7 @@ import (
 	"os"
 	"strings"
 
-	interfaces "github.com/bigstepinc/metalcloud-cli/interfaces"
+	metalcloud "github.com/bigstepinc/metal-cloud-sdk-go/v2"
 	"github.com/metalsoft-io/tableformatter"
 )
 
@@ -75,7 +75,7 @@ var driveSnapshotCmds = []Command{
 	},
 }
 
-func driveSnapshotCreateCmd(c *Command, client interfaces.MetalCloudClient) (string, error) {
+func driveSnapshotCreateCmd(c *Command, client metalcloud.MetalCloudClient) (string, error) {
 
 	driveID, ok := getIntParamOk(c.Arguments["drive_id"])
 	if !ok {
@@ -94,7 +94,7 @@ func driveSnapshotCreateCmd(c *Command, client interfaces.MetalCloudClient) (str
 	return "", err
 }
 
-func driveSnapshotListCmd(c *Command, client interfaces.MetalCloudClient) (string, error) {
+func driveSnapshotListCmd(c *Command, client metalcloud.MetalCloudClient) (string, error) {
 
 	driveID, ok := getIntParamOk(c.Arguments["drive_id"])
 	if !ok {
@@ -152,7 +152,7 @@ func driveSnapshotListCmd(c *Command, client interfaces.MetalCloudClient) (strin
 	return table.RenderTable("Snapshots", subtitle, getStringParam(c.Arguments["format"]))
 }
 
-func driveSnapshotDeleteCmd(c *Command, client interfaces.MetalCloudClient) (string, error) {
+func driveSnapshotDeleteCmd(c *Command, client metalcloud.MetalCloudClient) (string, error) {
 
 	driveSnapshotID, ok := getIntParamOk(c.Arguments["drive_snapshot_id"])
 	if !ok {
@@ -191,7 +191,7 @@ func driveSnapshotDeleteCmd(c *Command, client interfaces.MetalCloudClient) (str
 	return "", err
 }
 
-func driveSnapshotRollbackCmd(c *Command, client interfaces.MetalCloudClient) (string, error) {
+func driveSnapshotRollbackCmd(c *Command, client metalcloud.MetalCloudClient) (string, error) {
 
 	driveSnapshotID, ok := getIntParamOk(c.Arguments["drive_snapshot_id"])
 	if !ok {

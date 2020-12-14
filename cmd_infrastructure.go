@@ -7,8 +7,7 @@ import (
 	"strings"
 	"time"
 
-	metalcloud "github.com/bigstepinc/metal-cloud-sdk-go"
-	interfaces "github.com/bigstepinc/metalcloud-cli/interfaces"
+	metalcloud "github.com/bigstepinc/metal-cloud-sdk-go/v2"
 	"github.com/metalsoft-io/tableformatter"
 )
 
@@ -130,7 +129,7 @@ var infrastructureCmds = []Command{
 	},
 }
 
-func infrastructureCreateCmd(c *Command, client interfaces.MetalCloudClient) (string, error) {
+func infrastructureCreateCmd(c *Command, client metalcloud.MetalCloudClient) (string, error) {
 
 	infrastructureLabel := c.Arguments["infrastructure_label"]
 
@@ -157,7 +156,7 @@ func infrastructureCreateCmd(c *Command, client interfaces.MetalCloudClient) (st
 	return "", nil
 }
 
-func infrastructureListCmd(c *Command, client interfaces.MetalCloudClient) (string, error) {
+func infrastructureListCmd(c *Command, client metalcloud.MetalCloudClient) (string, error) {
 
 	iList, err := client.Infrastructures()
 	if err != nil {
@@ -230,10 +229,10 @@ func infrastructureListCmd(c *Command, client interfaces.MetalCloudClient) (stri
 	return table.RenderTable("Infrastructures", topLine, getStringParam(c.Arguments["format"]))
 }
 
-type infrastructureConfirmAndDoFunc func(infraID int, c *Command, client interfaces.MetalCloudClient) (string, error)
+type infrastructureConfirmAndDoFunc func(infraID int, c *Command, client metalcloud.MetalCloudClient) (string, error)
 
 //infrastructureConfirmAndDo asks for confirmation and executes the given function
-func infrastructureConfirmAndDo(operation string, c *Command, client interfaces.MetalCloudClient, f infrastructureConfirmAndDoFunc) (string, error) {
+func infrastructureConfirmAndDo(operation string, c *Command, client metalcloud.MetalCloudClient, f infrastructureConfirmAndDoFunc) (string, error) {
 
 	val, err := getParam(c, "infrastructure_id_or_label", "infra")
 	if err != nil {
@@ -282,17 +281,17 @@ func infrastructureConfirmAndDo(operation string, c *Command, client interfaces.
 	return f(infraID, c, client)
 }
 
-func infrastructureDeleteCmd(c *Command, client interfaces.MetalCloudClient) (string, error) {
+func infrastructureDeleteCmd(c *Command, client metalcloud.MetalCloudClient) (string, error) {
 	return infrastructureConfirmAndDo("Delete", c, client,
-		func(infraID int, c *Command, client interfaces.MetalCloudClient) (string, error) {
+		func(infraID int, c *Command, client metalcloud.MetalCloudClient) (string, error) {
 			return "", client.InfrastructureDelete(infraID)
 		})
 }
 
-func infrastructureDeployCmd(c *Command, client interfaces.MetalCloudClient) (string, error) {
+func infrastructureDeployCmd(c *Command, client metalcloud.MetalCloudClient) (string, error) {
 
 	return infrastructureConfirmAndDo("Deploy", c, client,
-		func(infraID int, c *Command, client interfaces.MetalCloudClient) (string, error) {
+		func(infraID int, c *Command, client metalcloud.MetalCloudClient) (string, error) {
 
 			shutDownOptions := metalcloud.ShutdownOptions{
 				HardShutdownAfterTimeout:   !getBoolParam(c.Arguments["no_hard_shutdown_after_timeout"]),
@@ -325,15 +324,15 @@ func infrastructureDeployCmd(c *Command, client interfaces.MetalCloudClient) (st
 		})
 }
 
-func infrastructureRevertCmd(c *Command, client interfaces.MetalCloudClient) (string, error) {
+func infrastructureRevertCmd(c *Command, client metalcloud.MetalCloudClient) (string, error) {
 
 	return infrastructureConfirmAndDo("Revert", c, client,
-		func(infraID int, c *Command, client interfaces.MetalCloudClient) (string, error) {
+		func(infraID int, c *Command, client metalcloud.MetalCloudClient) (string, error) {
 			return "", client.InfrastructureOperationCancel(infraID)
 		})
 }
 
-func infrastructureGetCmd(c *Command, client interfaces.MetalCloudClient) (string, error) {
+func infrastructureGetCmd(c *Command, client metalcloud.MetalCloudClient) (string, error) {
 
 	retInfra, err := getInfrastructureFromCommand("id", c, client)
 	if err != nil {
@@ -470,7 +469,7 @@ func infrastructureGetCmd(c *Command, client interfaces.MetalCloudClient) (strin
 	return table.RenderTable("Infrastructures", topLine, getStringParam(c.Arguments["format"]))
 }
 
-func listWorkflowStagesCmd(c *Command, client interfaces.MetalCloudClient) (string, error) {
+func listWorkflowStagesCmd(c *Command, client metalcloud.MetalCloudClient) (string, error) {
 
 	t := *c.Arguments["type"].(*string)
 	if t == _nilDefaultStr {
@@ -553,7 +552,7 @@ func listWorkflowStagesCmd(c *Command, client interfaces.MetalCloudClient) (stri
 }
 
 //getInfrastructureFromCommand returns an Infrastructure object using the infrastructure_id_or_label argument
-func getInfrastructureFromCommand(paramName string, c *Command, client interfaces.MetalCloudClient) (*metalcloud.Infrastructure, error) {
+func getInfrastructureFromCommand(paramName string, c *Command, client metalcloud.MetalCloudClient) (*metalcloud.Infrastructure, error) {
 
 	m, err := getParam(c, "infrastructure_id_or_label", paramName)
 	if err != nil {
@@ -570,7 +569,7 @@ func getInfrastructureFromCommand(paramName string, c *Command, client interface
 }
 
 //loop until infra is ready
-func loopUntilInfraReady(infraID int, timeoutSeconds int, checkIntervalSeconds int, client interfaces.MetalCloudClient) error {
+func loopUntilInfraReady(infraID int, timeoutSeconds int, checkIntervalSeconds int, client metalcloud.MetalCloudClient) error {
 	c := make(chan error, 1)
 
 	go func() {

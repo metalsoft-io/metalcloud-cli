@@ -6,8 +6,7 @@ import (
 	"os"
 	"strings"
 
-	metalcloud "github.com/bigstepinc/metal-cloud-sdk-go"
-	interfaces "github.com/bigstepinc/metalcloud-cli/interfaces"
+	metalcloud "github.com/bigstepinc/metal-cloud-sdk-go/v2"
 	"github.com/metalsoft-io/tableformatter"
 )
 
@@ -86,7 +85,7 @@ var switchCmds = []Command{
 	},
 }
 
-func switchListCmd(c *Command, client interfaces.MetalCloudClient) (string, error) {
+func switchListCmd(c *Command, client metalcloud.MetalCloudClient) (string, error) {
 
 	datacenterName := getStringParam(c.Arguments["datacenter_name"])
 	switchType := getStringParam(c.Arguments["switch_type"])
@@ -191,7 +190,7 @@ func switchListCmd(c *Command, client interfaces.MetalCloudClient) (string, erro
 	return table.RenderTable("Switches", "", getStringParam(c.Arguments["format"]))
 }
 
-func switchCreateCmd(c *Command, client interfaces.MetalCloudClient) (string, error) {
+func switchCreateCmd(c *Command, client metalcloud.MetalCloudClient) (string, error) {
 
 	var obj metalcloud.SwitchDevice
 
@@ -212,7 +211,7 @@ func switchCreateCmd(c *Command, client interfaces.MetalCloudClient) (string, er
 	return "", err
 }
 
-func switchGetCmd(c *Command, client interfaces.MetalCloudClient) (string, error) {
+func switchGetCmd(c *Command, client metalcloud.MetalCloudClient) (string, error) {
 
 	retSW, err := getSwitchFromCommandLine("id", c, client)
 	if err != nil {
@@ -311,7 +310,7 @@ func switchGetCmd(c *Command, client interfaces.MetalCloudClient) (string, error
 	return sb.String(), nil
 }
 
-func switchDeleteCmd(c *Command, client interfaces.MetalCloudClient) (string, error) {
+func switchDeleteCmd(c *Command, client metalcloud.MetalCloudClient) (string, error) {
 
 	retSW, err := getSwitchFromCommandLine("id", c, client)
 	if err != nil {
@@ -348,7 +347,7 @@ func switchDeleteCmd(c *Command, client interfaces.MetalCloudClient) (string, er
 	return "", err
 }
 
-func getSwitchFromCommandLine(paramName string, c *Command, client interfaces.MetalCloudClient) (*metalcloud.SwitchDevice, error) {
+func getSwitchFromCommandLine(paramName string, c *Command, client metalcloud.MetalCloudClient) (*metalcloud.SwitchDevice, error) {
 	m, err := getParam(c, "network_device_id_or_identifier_string", paramName)
 	if err != nil {
 		return nil, err
