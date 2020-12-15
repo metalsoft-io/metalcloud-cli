@@ -137,6 +137,7 @@ name: my-secret
 
 ```
 
+The objects and their fields can be found in the [SDK documentation](https://godoc.org/github.com/bigstepinc/metal-cloud-sdk-go).
 
 ### Condensed format
 
