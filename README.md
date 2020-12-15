@@ -137,7 +137,7 @@ name: my-secret
 
 ```
 
-The objects and their fields can be found in the [SDK documentation](https://godoc.org/github.com/bigstepinc/metal-cloud-sdk-go).
+The objects and their fields can be found in the [SDK documentation](https://godoc.org/github.com/bigstepinc/metal-cloud-sdk-go). The fields will be in the format specified in the yaml tag. For example `SubnetPool` object has a field named `subnet_pool_prefix_human_readable` in JSON format. In the YAML file used as imput for this command, the field should be called `prefix`. 
 
 ### Condensed format
 
