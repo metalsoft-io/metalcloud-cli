@@ -726,7 +726,7 @@ func getUserFromCommand(paramName string, c *Command, client metalcloud.MetalClo
 
 	if isID {
 		return client.UserGet(id)
-	} else {
-		return client.UserGetByEmail(email)
 	}
+
+	return client.UserGetByEmail(email)
 }

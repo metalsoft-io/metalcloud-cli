@@ -153,6 +153,101 @@ func TestInfrastructureDeployCmd(t *testing.T) {
 
 }
 
+func TestInfrastructureDeployWithOptionsCmd(t *testing.T) {
+	RegisterTestingT(t)
+	ctrl := gomock.NewController(t)
+
+	infra := metalcloud.Infrastructure{
+		InfrastructureID:    10002,
+		InfrastructureLabel: "testinfra",
+	}
+
+	iao := metalcloud.InstanceArrayOperation{
+		InstanceArrayID:           11,
+		InstanceArrayLabel:        "testia-edited",
+		InstanceArrayDeployType:   "edit",
+		InstanceArrayDeployStatus: "not_started",
+	}
+
+	ia := metalcloud.InstanceArray{
+		InstanceArrayID:            11,
+		InstanceArrayLabel:         "testia",
+		InfrastructureID:           infra.InfrastructureID,
+		InstanceArrayOperation:     &iao,
+		InstanceArrayServiceStatus: "active",
+	}
+
+	client := helper.NewMockMetalCloudClient(ctrl)
+
+	client.EXPECT().
+		InfrastructureGet(10002).
+		Return(&infra, nil).
+		AnyTimes()
+
+	client.EXPECT().
+		InstanceArrayGet(ia.InstanceArrayID).
+		Return(&ia, nil).
+		AnyTimes()
+
+	st := metalcloud.ServerType{
+		ServerTypeID: 100,
+	}
+	client.EXPECT().
+		ServerTypeGetByLabel("M.8.32").
+		Return(&st, nil).
+		AnyTimes()
+
+	//bFalse := true
+	bTrue := true
+	timeout := 256
+	id := fmt.Sprintf("%d", infra.InfrastructureID)
+	str := "11:M.8.32:123"
+	cmd := Command{
+		Arguments: map[string]interface{}{
+			"infrastructure_id_or_label":    &id,
+			"allow_data_loss":               &bTrue,
+			"no_attempt_soft_shutdown":      &bTrue,
+			"soft_shutdown_timeout_seconds": &timeout,
+			"server_id_mapping":             &str,
+		},
+	}
+
+	expectedShutdownOptions := metalcloud.ShutdownOptions{
+		HardShutdownAfterTimeout:   true,
+		AttemptSoftShutdown:        false,
+		SoftShutdownTimeoutSeconds: timeout,
+	}
+
+	expectedDeployOptions := metalcloud.DeployOptions{
+		InstanceArrayMapping: map[int]map[string]metalcloud.DeployOptionsServerTypeMappingObject{
+			11: {
+				"100": {
+					ServerCount: 1,
+					ServerIDs:   []int{123},
+				},
+			},
+		},
+	}
+
+	client.EXPECT().
+		InfrastructureDeployWithOptions(gomock.Any(), expectedShutdownOptions, &expectedDeployOptions, true, false).
+		Return(nil).
+		Times(1)
+
+	//test first without confirmation
+	ret, err := infrastructureDeployCmd(&cmd, client)
+	Expect(ret).To(Equal(""))
+	Expect(err).NotTo(BeNil()) //should throw error indicating confirmation not given
+	Expect(err.Error()).To(Equal("Operation not confirmed. Aborting"))
+
+	cmd.Arguments["autoconfirm"] = &bTrue
+
+	ret, err = infrastructureDeployCmd(&cmd, client)
+	Expect(ret).To(Equal(""))
+	Expect(err).To(BeNil()) //should be nil
+
+}
+
 func TestInfrastructureDeleteCmd(t *testing.T) {
 	RegisterTestingT(t)
 	ctrl := gomock.NewController(t)
@@ -597,4 +692,59 @@ func TestDeployBlockingTimeouting(t *testing.T) {
 	_, err := infrastructureDeployCmd(&cmd, client)
 	Expect(err).NotTo(BeNil())
 
+}
+
+func TestPrepareDeployOptionsObjectFromString(t *testing.T) {
+	RegisterTestingT(t)
+	ctrl := gomock.NewController(t)
+	client := mock_metalcloud.NewMockMetalCloudClient(ctrl)
+
+	client.EXPECT().
+		InstanceArrayGet(100).
+		Return(nil, nil).
+		AnyTimes()
+
+	client.EXPECT().
+		InstanceArrayGet(134).
+		Return(nil, nil).
+		AnyTimes()
+
+	ia := metalcloud.InstanceArray{
+		InstanceArrayID: 100,
+	}
+	client.EXPECT().
+		InstanceArrayGetByLabel("test").
+		Return(&ia, nil).
+		AnyTimes()
+
+	st := metalcloud.ServerType{
+		ServerTypeID: 20,
+	}
+
+	client.EXPECT().
+		ServerTypeGet(20).
+		Return(nil, nil).
+		AnyTimes()
+
+	client.EXPECT().
+		ServerTypeGet(12).
+		Return(nil, nil).
+		AnyTimes()
+
+	client.EXPECT().
+		ServerTypeGetByLabel("M.224.33.12Dv2").
+		Return(&st, nil).
+		AnyTimes()
+
+	deployOpts, err := prepareDeployOptionsObjectFromString("100:20:14,test:12:55,134:M.224.33.12Dv2:12,134:M.224.33.12Dv2:13", client)
+	Expect(err).To(BeNil())
+
+	m := deployOpts.InstanceArrayMapping
+
+	Expect(len(m)).To(Equal(2)) //two instance arrays
+
+	Expect(len(m[100])).To(Equal(2))                 //first instance array (id 100) two server types
+	Expect(len(m[134])).To(Equal(1))                 //second instance array (id 134) one server type
+	Expect(m[134]["20"].ServerCount).To(Equal(2))    //second instance array (id 134) two server ids
+	Expect(len(m[134]["20"].ServerIDs)).To(Equal(2)) //second instance array (id 134) two server ids
 }

@@ -4,6 +4,7 @@ import (
 	"flag"
 	"fmt"
 	"os"
+	"strconv"
 	"strings"
 	"time"
 
@@ -77,6 +78,7 @@ var infrastructureCmds = []Command{
 				"block_until_deployed":           c.FlagSet.Bool("blocking", false, "(Flag) If set, the operation will wait until deployment finishes."),
 				"block_timeout":                  c.FlagSet.Int("block-timeout", 180*60, "Block timeout in seconds. After this timeout the application will return an error. Defaults to 180 minutes."),
 				"block_check_interval":           c.FlagSet.Int("block-check-interval", 10, "Check interval for when blocking. Defaults to 10 seconds."),
+				"server_id_mapping":              c.FlagSet.String("server-id-mapping", _nilDefaultStr, "Forces a particular server id mapping. Format: comma separated triplets such as <instance_array>:<server_type>:<server_id> for example test:M.231.1v2:12"),
 				"autoconfirm":                    c.FlagSet.Bool("autoconfirm", false, "(Flag) If set operation procedes without asking for confirmation"),
 			}
 		},
@@ -288,6 +290,81 @@ func infrastructureDeleteCmd(c *Command, client metalcloud.MetalCloudClient) (st
 		})
 }
 
+func prepareDeployOptionsObjectFromString(mappingString string, client metalcloud.MetalCloudClient) (*metalcloud.DeployOptions, error) {
+
+	maps := strings.Split(mappingString, ",")
+	deployOptions := metalcloud.DeployOptions{}
+
+	for _, m := range maps {
+		portions := strings.Split(m, ":")
+		if len(portions) != 3 {
+			return nil, fmt.Errorf("format error in deploy options string. Each map should be a triplet divided by \":\". For example \"10:33:22\"")
+		}
+
+		instanceArrayID, instanceArrayLabel, isID := idOrLabelString(portions[0])
+		if isID {
+			_, err := client.InstanceArrayGet(instanceArrayID)
+			if err != nil {
+				return nil, fmt.Errorf("Instance array (%d) sent as param in triplet %s was not found", instanceArrayID, m)
+			}
+		} else {
+
+			ia, err := client.InstanceArrayGetByLabel(instanceArrayLabel)
+			if err != nil {
+				return nil, fmt.Errorf("Instance array (%s) sent as param in triplet %s was not found", instanceArrayLabel, m)
+			}
+			instanceArrayID = ia.InstanceArrayID
+		}
+
+		serverTypeID, serverTypeLabel, isID := idOrLabelString(portions[1])
+		if isID {
+			_, err := client.ServerTypeGet(serverTypeID)
+			if err != nil {
+				return nil, fmt.Errorf("Server type (%d) sent as param in triplet %s was not found", serverTypeID, m)
+			}
+		} else {
+			st, err := client.ServerTypeGetByLabel(serverTypeLabel)
+			if err != nil {
+				return nil, fmt.Errorf("Instance array (%s) sent as param in triplet %s was not found", serverTypeLabel, m)
+			}
+			serverTypeID = st.ServerTypeID
+		}
+
+		serverID, err := strconv.Atoi(portions[2])
+		if err != nil {
+			return nil, err
+		}
+
+		if deployOptions.InstanceArrayMapping == nil {
+			deployOptions.InstanceArrayMapping = map[int]map[string]metalcloud.DeployOptionsServerTypeMappingObject{}
+		}
+		//create the mapping for this instance array if it doesn't exist
+		if _, ok := deployOptions.InstanceArrayMapping[instanceArrayID]; !ok {
+			deployOptions.InstanceArrayMapping[instanceArrayID] = map[string]metalcloud.DeployOptionsServerTypeMappingObject{}
+		}
+
+		serverTypeIDAsString := fmt.Sprintf("%d", serverTypeID)
+
+		//add a value for a single server id if does not exist
+		if _, ok := deployOptions.InstanceArrayMapping[instanceArrayID][serverTypeIDAsString]; !ok {
+			deployOptions.InstanceArrayMapping[instanceArrayID][serverTypeIDAsString] = metalcloud.DeployOptionsServerTypeMappingObject{
+				ServerCount: 1,
+				ServerIDs:   []int{serverID},
+			}
+		} else {
+			m := deployOptions.InstanceArrayMapping[instanceArrayID][serverTypeIDAsString]
+
+			m.ServerCount = m.ServerCount + 1
+			m.ServerIDs = append(m.ServerIDs, serverID)
+
+			deployOptions.InstanceArrayMapping[instanceArrayID][serverTypeIDAsString] = m
+		}
+
+	}
+
+	return &deployOptions, nil
+}
+
 func infrastructureDeployCmd(c *Command, client metalcloud.MetalCloudClient) (string, error) {
 
 	return infrastructureConfirmAndDo("Deploy", c, client,
@@ -299,14 +376,35 @@ func infrastructureDeployCmd(c *Command, client metalcloud.MetalCloudClient) (st
 				SoftShutdownTimeoutSeconds: getIntParam(c.Arguments["soft_shutdown_timeout_seconds"]),
 			}
 
-			err := client.InfrastructureDeploy(
-				infraID,
-				shutDownOptions,
-				getBoolParam(c.Arguments["allow_data_loss"]),
-				getBoolParam(c.Arguments["skip_ansible"]),
-			)
-			if err != nil {
-				return "", err
+			if deplOptString, ok := getStringParamOk(c.Arguments["server_id_mapping"]); ok {
+
+				deplyOpts, err := prepareDeployOptionsObjectFromString(deplOptString, client)
+				if err != nil {
+					return "", err
+				}
+
+				err = client.InfrastructureDeployWithOptions(
+					infraID,
+					shutDownOptions,
+					deplyOpts,
+					getBoolParam(c.Arguments["allow_data_loss"]),
+					getBoolParam(c.Arguments["skip_ansible"]),
+				)
+				if err != nil {
+					return "", err
+				}
+
+			} else {
+
+				err := client.InfrastructureDeploy(
+					infraID,
+					shutDownOptions,
+					getBoolParam(c.Arguments["allow_data_loss"]),
+					getBoolParam(c.Arguments["skip_ansible"]),
+				)
+				if err != nil {
+					return "", err
+				}
 			}
 
 			if getBoolParam(c.Arguments["block_until_deployed"]) {
