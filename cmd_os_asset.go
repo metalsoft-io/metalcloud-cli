@@ -46,7 +46,7 @@ var osAssetsCmds = []Command{
 				"template_id_or_name":    c.FlagSet.String("template-id", _nilDefaultStr, "Template's id or name to associate. "),
 				"path":                   c.FlagSet.String("path", _nilDefaultStr, "Path to associate asset to."),
 				"variables_json":         c.FlagSet.String("variables-json", _nilDefaultStr, "JSON encoded variables object"),
-				"delete_if_exists":       c.FlagSet.Bool("delete-if-exists", true, "Automatically delete the existing asset associated with the current template."),
+				"delete_if_exists":       c.FlagSet.Bool("delete-if-exists", false, "Automatically delete the existing asset associated with the current template."),
 				"return_id":              c.FlagSet.Bool("return-id", false, "(Flag) If set will print the ID of the created infrastructure. Useful for automating tasks."),
 			}
 		},
