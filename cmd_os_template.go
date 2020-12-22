@@ -141,7 +141,7 @@ var osTemplatesCmds = []Command{
 			}
 		},
 		ExecuteFunc: templateMakePublicCmd,
-		Endpoint:    ExtendedEndpoint,
+		Endpoint:    DeveloperEndpoint,
 	},
 	{
 		Description:  "Stop other users of the platform from being able to use the template by allocating a specific owner.",
@@ -157,7 +157,7 @@ var osTemplatesCmds = []Command{
 			}
 		},
 		ExecuteFunc: templateMakePrivateCmd,
-		Endpoint:    ExtendedEndpoint,
+		Endpoint:    DeveloperEndpoint,
 	},
 }
 

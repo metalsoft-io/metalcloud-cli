@@ -68,7 +68,7 @@ var volumeTemplateCmds = []Command{
 			}
 		},
 		ExecuteFunc: volumeTemplateMakePublicCmd,
-		Endpoint:    ExtendedEndpoint,
+		Endpoint:    DeveloperEndpoint,
 	},
 	{
 		Description:  "Stop other users of the platform from being able to use the template by allocating a specific owner.",
@@ -84,7 +84,7 @@ var volumeTemplateCmds = []Command{
 			}
 		},
 		ExecuteFunc: volumeTemplateMakePrivateCmd,
-		Endpoint:    ExtendedEndpoint,
+		Endpoint:    DeveloperEndpoint,
 	},
 }
 
