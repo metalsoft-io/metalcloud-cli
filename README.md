@@ -1,7 +1,7 @@
 # metalcloud-cli
 
 [![Build Status](https://travis-ci.org/bigstepinc/metalcloud-cli.svg?branch=master)](https://travis-ci.org/bigstepinc/metalcloud-cli)
-[![Coverage Status](https://coveralls.io/repos/github/bigstepinc/metalcloud-cli/badge.svg?branch=master)](https://coveralls.io/github/bigstepinc/metalcloud-cli?branch=master)
+[![Coverage Status](https://coveralls.io/repos/github/metalsoft-io/metalcloud-cli/badge.svg?branch=master)](https://coveralls.io/github/metalsoft-io/metalcloud-cli?branch=master)
 
 This tool allows the manipulation of all Bigstep Metal Cloud elements via the command line.
 
@@ -18,24 +18,24 @@ brew install metalcloud-cli
 
 To install on any CentOS/Redhat Linux distribution:
 ```
-$ sudo rpm -i https://github.com/bigstepinc/metalcloud-cli/releases/download/v1.0.3/metalcloud-cli_1.0.3_linux_amd64.rpm
+$ sudo rpm -i https://github.com/metalsoft-io/metalcloud-cli/releases/download/v1.0.3/metalcloud-cli_1.0.3_linux_amd64.rpm
 ```
 
 To install on any Debian/Ubuntu distributions:
 ```
-curl -sLO https://github.com/bigstepinc/metalcloud-cli/releases/download/v1.0.3/metalcloud-cli_1.0.3_linux_amd64.deb && sudo dpkg -i metalcloud-cli_1.0.3_linux_amd64.deb
+curl -sLO https://github.com/metalsoft-io/metalcloud-cli/releases/download/v1.0.3/metalcloud-cli_1.0.3_linux_amd64.deb && sudo dpkg -i metalcloud-cli_1.0.3_linux_amd64.deb
 ```
 
 To install on Windows:
-Binaries are available [here](https://github.com/bigstepinc/metalcloud-cli/releases/latest):
+Binaries are available [here](https://github.com/metalsoft-io/metalcloud-cli/releases/latest):
 ```
-https://github.com/bigstepinc/metalcloud-cli/releases/latest
+https://github.com/metalsoft-io/metalcloud-cli/releases/latest
 ```
 
 
 To install using `go get` (this should also work on Windows):
 ```bash
-go get github.com/bigstepinc/metalcloud-cli
+go get github.com/metalsoft-io/metalcloud-cli
 ```
 
 ### Getting the API key
@@ -137,7 +137,7 @@ name: my-secret
 
 ```
 
-The objects and their fields can be found in the [SDK documentation](https://godoc.org/github.com/bigstepinc/metal-cloud-sdk-go). The fields will be in the format specified in the yaml tag. For example `SubnetPool` object has a field named `subnet_pool_prefix_human_readable` in JSON format. In the YAML file used as imput for this command, the field should be called `prefix`. 
+The objects and their fields can be found in the [SDK documentation](https://godoc.org/github.com/metalsoft-io/metal-cloud-sdk-go). The fields will be in the format specified in the yaml tag. For example `SubnetPool` object has a field named `subnet_pool_prefix_human_readable` in JSON format. In the YAML file used as imput for this command, the field should be called `prefix`. 
 
 ### Condensed format
 
@@ -209,7 +209,7 @@ git tag v1.0.1
 git push --tags
 ```
 
-A coverage report is generated automatically at each build by [coverall](https://coveralls.io/github/bigstepinc/metalcloud-cli?branch=master). There is a lower limit to the coverage currently set at 20%. 
+A coverage report is generated automatically at each build by [coverall](https://coveralls.io/github/metalsoft-io/metalcloud-cli?branch=master). There is a lower limit to the coverage currently set at 20%. 
 
 It is a good idea to update the master branch as well (with no tag):
 ```
