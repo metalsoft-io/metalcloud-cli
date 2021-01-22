@@ -107,6 +107,17 @@ func helpMessage(err error, subject string, predicate string) error {
 	return fmt.Errorf("%s Use '%s -h' for syntax help", err, subject)
 }
 
+func commandHelp(cmd Command) string {
+	var c string
+	if cmd.Predicate != _nilDefaultStr {
+		c = fmt.Sprintf("%s %s", cmd.Subject, cmd.Predicate)
+		return fmt.Sprintf("Command: %-40s %s (alternatively use \"%s %s\")\n", c, cmd.Description, cmd.AltSubject, cmd.AltPredicate)
+	}
+
+	c = fmt.Sprintf("%s", cmd.Subject)
+	return fmt.Sprintf("Command: %-40s %s \n", c, cmd.Description)
+}
+
 func executeCommand(args []string, commands []Command, clients map[string]metalcloud.MetalCloudClient) error {
 	subject, predicate, count := validateArguments(args)
 
@@ -171,11 +182,15 @@ func getArgumentHelp(f *flag.Flag) string {
 
 func getCommandHelp(cmd Command, showArguments bool) string {
 	var sb strings.Builder
-
-	c := fmt.Sprintf("%s %s", cmd.Subject, cmd.Predicate)
+	var c string
+	if cmd.Predicate != _nilDefaultStr {
+		c = fmt.Sprintf("%s %s", cmd.Subject, cmd.Predicate)
+	} else {
+		c = fmt.Sprintf("%s", cmd.Subject)
+	}
 
 	if showArguments {
-		sb.WriteString(fmt.Sprintf("Command: %-40s %s (alternatively use \"%s %s\")\n", c, cmd.Description, cmd.AltSubject, cmd.AltPredicate))
+		sb.WriteString(commandHelp(cmd))
 		cmd.FlagSet.VisitAll(func(f *flag.Flag) {
 			sb.WriteString(getArgumentHelp(f))
 		})
