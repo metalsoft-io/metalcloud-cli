@@ -1,6 +1,6 @@
 # metalcloud-cli
 
-[![Build Status](https://travis-ci.org/bigstepinc/metalcloud-cli.svg?branch=master)](https://travis-ci.org/bigstepinc/metalcloud-cli)
+[![Build Status](https://travis-ci.org/metalsoft-io/metalcloud-cli.svg?branch=master)](https://travis-ci.org/metalsoft-io/metalcloud-cli)
 [![Coverage Status](https://coveralls.io/repos/github/bigstepinc/metalcloud-cli/badge.svg?branch=master)](https://coveralls.io/github/bigstepinc/metalcloud-cli?branch=master)
 
 This tool allows the manipulation of all Bigstep Metal Cloud elements via the command line.
