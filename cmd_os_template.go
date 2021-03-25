@@ -40,7 +40,6 @@ var osTemplatesCmds = []Command{
 				"label":                              c.FlagSet.String("label", _nilDefaultStr, "(Required) Template's label"),
 				"display_name":                       c.FlagSet.String("display-name", _nilDefaultStr, "(Required) Template's display name"),
 				"size":                               c.FlagSet.Int("size", _nilDefaultInt, "Template's size (bytes)"),
-				"local_disk_supported":               c.FlagSet.Bool("local-disk-supported", false, "Template supports local disk install. Default false"),
 				"boot_methods_supported":             c.FlagSet.String("boot-methods-supported", _nilDefaultStr, "(Required) Template boot methods supported. Defaults to pxe_iscsi."),
 				"boot_type":                          c.FlagSet.String("boot-type", _nilDefaultStr, "(Required) Template boot type. Possible values: 'uefi_only','legacy_only','hybrid' "),
 				"description":                        c.FlagSet.String("description", _nilDefaultStr, "Template description"),
@@ -55,7 +54,6 @@ var osTemplatesCmds = []Command{
 				"repo_url":                           c.FlagSet.String("repo-url", _nilDefaultStr, "Template's location the repository"),
 				"os_asset_id_bootloader_local_install_id_or_name": c.FlagSet.String("install-bootloader-asset", _nilDefaultStr, "Template's bootloader asset id during install"),
 				"os_asset_id_bootloader_os_boot_id_or_name":       c.FlagSet.String("os-boot-bootloader-asset", _nilDefaultStr, "Template's bootloader asset id during regular server boot"),
-
 				"return_id": c.FlagSet.Bool("return-id", false, "(Flag) If set will print the ID of the created infrastructure. Useful for automating tasks."),
 			}
 		},
@@ -75,7 +73,6 @@ var osTemplatesCmds = []Command{
 				"label":                  c.FlagSet.String("label", _nilDefaultStr, "(Required) Template's label"),
 				"display_name":           c.FlagSet.String("display-name", _nilDefaultStr, "(Required) Template's display name"),
 				"size":                   c.FlagSet.Int("size", _nilDefaultInt, "Template's size (bytes)"),
-				"local_disk_supported":   c.FlagSet.Bool("local-disk-supported", false, "Template supports local disk install. Default false"),
 				"boot_methods_supported": c.FlagSet.String("boot-methods-supported", _nilDefaultStr, "Template boot methods supported. Defaults to pxe_iscsi."),
 				"boot_type":              c.FlagSet.String("boot-type", _nilDefaultStr, "(Required) Template boot type. Possible values: 'uefi_only','legacy_only','hybrid' "),
 				"description":            c.FlagSet.String("description", _nilDefaultStr, "Template description"),
@@ -288,6 +285,42 @@ func templatesListCmd(c *Command, client metalcloud.MetalCloudClient) (string, e
 	return table.RenderTable("Templates", "", getStringParam(c.Arguments["format"]))
 }
 
+func templateCreateCmd(c *Command, client metalcloud.MetalCloudClient) (string, error) {
+	obj := metalcloud.OSTemplate{}
+	updatedObj, err := updateTemplateFromCommand(obj, c, client, true)
+	if err != nil {
+		return "", err
+	}
+
+	ret, err := client.OSTemplateCreate(*updatedObj)
+	if err != nil {
+		return "", err
+	}
+
+	if getBoolParam(c.Arguments["return_id"]) {
+		return fmt.Sprintf("%d", ret.VolumeTemplateID), nil
+	}
+
+	return "", err
+}
+
+func templateEditCmd(c *Command, client metalcloud.MetalCloudClient) (string, error) {
+
+	obj, err := getOSTemplateFromCommand("id", c, client, false)
+	if err != nil {
+		return "", err
+	}
+	newobj := metalcloud.OSTemplate{}
+	updatedObj, err := updateTemplateFromCommand(newobj, c, client, false)
+	if err != nil {
+		return "", err
+	}
+
+	_, err = client.OSTemplateUpdate(obj.VolumeTemplateID, *updatedObj)
+
+	return "", err
+}
+
 func updateTemplateFromCommand(obj metalcloud.OSTemplate, c *Command, client metalcloud.MetalCloudClient, checkRequired bool) (*metalcloud.OSTemplate, error) {
 
 	if v, ok := getStringParamOk(c.Arguments["label"]); ok {
@@ -310,8 +343,6 @@ func updateTemplateFromCommand(obj metalcloud.OSTemplate, c *Command, client met
 		obj.VolumeTemplateSizeMBytes = v
 	}
 
-	obj.VolumeTemplateLocalDiskSupported = getBoolParam(c.Arguments["local_disk_supported"])
-
 	obj.VolumeTemplateIsOSTemplate = true
 
 	if v, ok := getStringParamOk(c.Arguments["boot_methods_supported"]); ok {
@@ -331,33 +362,26 @@ func updateTemplateFromCommand(obj metalcloud.OSTemplate, c *Command, client met
 	}
 
 	//OS Data
-	if v, ok := getStringParamOk(c.Arguments["os_type"]); ok {
-		vt := metalcloud.OperatingSystem{}
-		obj.VolumeTemplateOperatingSystem = &vt
-		obj.VolumeTemplateOperatingSystem.OperatingSystemType = v
-	} else {
-		if checkRequired {
-			return nil, fmt.Errorf("os-type is required")
-		}
+	os, err := getOperatingSystemFromCommand(c)
+
+	if err != nil {
+		return nil, err
+	} else if checkRequired && *os == (metalcloud.OperatingSystem{}) {
+		return nil, fmt.Errorf("os flags are required")
 	}
 
-	if v, ok := getStringParamOk(c.Arguments["os_version"]); ok {
-		obj.VolumeTemplateOperatingSystem.OperatingSystemVersion = v
-	} else {
-		if checkRequired {
-			return nil, fmt.Errorf("os-version is required")
-		}
+	obj.VolumeTemplateOperatingSystem = os
+
+	//Network OS Data
+	nos, err := getNetworkOperatingSystemFromCommand(c)
+
+	if err != nil {
+		return nil, err
 	}
 
-	if v, ok := getStringParamOk(c.Arguments["os_architecture"]); ok {
-		obj.VolumeTemplateOperatingSystem.OperatingSystemArchitecture = v
-	} else {
-		if checkRequired {
-			return nil, fmt.Errorf("os-architecture is required")
-		}
-	}
+	obj.VolumeTemplateNetworkOperatingSystem = nos
 
-	//Boot options
+	// Boot options
 
 	if _, ok := getStringParamOk(c.Arguments["os_asset_id_bootloader_local_install_id_or_name"]); ok {
 		localInstallAsset, err := getOSAssetFromCommand("install_bootloader_asset", "os_asset_id_bootloader_local_install_id_or_name", c, client)
@@ -425,39 +449,6 @@ func updateTemplateFromCommand(obj metalcloud.OSTemplate, c *Command, client met
 	return &obj, nil
 }
 
-func templateCreateCmd(c *Command, client metalcloud.MetalCloudClient) (string, error) {
-	obj := metalcloud.OSTemplate{}
-	updatedObj, err := updateTemplateFromCommand(obj, c, client, true)
-	if err != nil {
-		return "", err
-	}
-
-	ret, err := client.OSTemplateCreate(*updatedObj)
-	if err != nil {
-		return "", err
-	}
-	if getBoolParam(c.Arguments["return_id"]) {
-		return fmt.Sprintf("%d", ret.VolumeTemplateID), nil
-	}
-
-	return "", err
-}
-
-func templateEditCmd(c *Command, client metalcloud.MetalCloudClient) (string, error) {
-
-	obj, err := getOSTemplateFromCommand("id", c, client, false)
-	if err != nil {
-		return "", err
-	}
-	newobj := metalcloud.OSTemplate{}
-	updatedObj, err := updateTemplateFromCommand(newobj, c, client, false)
-	if err != nil {
-		return "", err
-	}
-	_, err = client.OSTemplateUpdate(obj.VolumeTemplateID, *updatedObj)
-	return "", err
-}
-
 func templateDeleteCmd(c *Command, client metalcloud.MetalCloudClient) (string, error) {
 
 	retS, err := getOSTemplateFromCommand("id", c, client, false)
@@ -493,37 +484,6 @@ func templateDeleteCmd(c *Command, client metalcloud.MetalCloudClient) (string, 
 	err = client.OSTemplateDelete(retS.VolumeTemplateID)
 
 	return "", err
-}
-
-func getOSTemplateFromCommand(paramName string, c *Command, client metalcloud.MetalCloudClient, decryptPasswd bool) (*metalcloud.OSTemplate, error) {
-
-	v, err := getParam(c, "template_id_or_name", paramName)
-	if err != nil {
-		return nil, err
-	}
-
-	id, label, isID := idOrLabel(v)
-
-	if isID {
-		return client.OSTemplateGet(id, decryptPasswd)
-	}
-
-	list, err := client.OSTemplates()
-	if err != nil {
-		return nil, err
-	}
-
-	for _, s := range *list {
-		if s.VolumeTemplateLabel == label {
-			return &s, nil
-		}
-	}
-
-	if isID {
-		return nil, fmt.Errorf("template %d not found", id)
-	}
-
-	return nil, fmt.Errorf("template %s not found", label)
 }
 
 func templateGetCmd(c *Command, client metalcloud.MetalCloudClient) (string, error) {
@@ -714,6 +674,36 @@ func templateMakePrivateCmd(c *Command, client metalcloud.MetalCloudClient) (str
 	}
 
 	return "", nil
+}
+
+func getOSTemplateFromCommand(paramName string, c *Command, client metalcloud.MetalCloudClient, decryptPasswd bool) (*metalcloud.OSTemplate, error) {
+	v, err := getParam(c, "template_id_or_name", paramName)
+	if err != nil {
+		return nil, err
+	}
+
+	id, label, isID := idOrLabel(v)
+
+	if isID {
+		return client.OSTemplateGet(id, decryptPasswd)
+	}
+
+	list, err := client.OSTemplates()
+	if err != nil {
+		return nil, err
+	}
+
+	for _, s := range *list {
+		if s.VolumeTemplateLabel == label {
+			return &s, nil
+		}
+	}
+
+	if isID {
+		return nil, fmt.Errorf("template %d not found", id)
+	}
+
+	return nil, fmt.Errorf("template %s not found", label)
 }
 
 func getUserFromCommand(paramName string, c *Command, client metalcloud.MetalCloudClient) (*metalcloud.User, error) {

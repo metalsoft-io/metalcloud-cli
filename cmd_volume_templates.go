@@ -202,27 +202,12 @@ func volumeTemplateCreateFromDriveCmd(c *Command, client metalcloud.MetalCloudCl
 		return "", fmt.Errorf("-name is required")
 	}
 
-	objVolumeTemplate.VolumeTemplateOperatingSystem = metalcloud.OperatingSystem{}
-	count := 0
+	os, err := getOperatingSystemFromCommand(c)
 
-	if osType, ok := getStringParamOk(c.Arguments["os_type"]); ok {
-		count++
-		objVolumeTemplate.VolumeTemplateOperatingSystem.OperatingSystemType = osType
+	if err != nil {
+		return "", err
 	}
-
-	if osVersion, ok := getStringParamOk(c.Arguments["os_version"]); ok {
-		count++
-		objVolumeTemplate.VolumeTemplateOperatingSystem.OperatingSystemVersion = osVersion
-	}
-
-	if osArchitecture, ok := getStringParamOk(c.Arguments["os_architecture"]); ok {
-		count++
-		objVolumeTemplate.VolumeTemplateOperatingSystem.OperatingSystemArchitecture = osArchitecture
-	}
-
-	if count != 0 && count != 3 {
-		return "", fmt.Errorf("some operating system flags are missing")
-	}
+	objVolumeTemplate.VolumeTemplateOperatingSystem = *os
 
 	ret, err := client.VolumeTemplateCreateFromDrive(driveID, objVolumeTemplate)
 	if err != nil {
@@ -234,6 +219,91 @@ func volumeTemplateCreateFromDriveCmd(c *Command, client metalcloud.MetalCloudCl
 	}
 
 	return "", nil
+}
+
+func getOperatingSystemFromCommand(c *Command) (*metalcloud.OperatingSystem, error) {
+	var operatingSystem = metalcloud.OperatingSystem{}
+	present := false
+
+	if osType, ok := getStringParamOk(c.Arguments["os_type"]); ok {
+		present = true
+		operatingSystem.OperatingSystemType = osType
+	}
+
+	if osVersion, ok := getStringParamOk(c.Arguments["os_version"]); ok {
+		if !present {
+			return nil, fmt.Errorf("some of the operating system flags are missing")
+		}
+		operatingSystem.OperatingSystemVersion = osVersion
+	} else if present {
+		return nil, fmt.Errorf("os-version is required")
+	}
+
+	if osArchitecture, ok := getStringParamOk(c.Arguments["os_architecture"]); ok {
+		if !present {
+			return nil, fmt.Errorf("some of the operating system flags are missing")
+		}
+		operatingSystem.OperatingSystemArchitecture = osArchitecture
+	} else if present {
+		return nil, fmt.Errorf("os-architecture is required")
+	}
+
+	return &operatingSystem, nil
+}
+
+func getNetworkOperatingSystemFromCommand(c *Command) (*metalcloud.NetworkOperatingSystem, error) {
+	var operatingSystem = metalcloud.NetworkOperatingSystem{}
+	present := false
+
+	if osType, ok := getStringParamOk(c.Arguments["network_os_type"]); ok {
+		present = true
+		operatingSystem.OperatingSystemType = osType
+	}
+
+	if osVersion, ok := getStringParamOk(c.Arguments["network_os_version"]); ok {
+		if !present {
+			return nil, fmt.Errorf("some of the network operating system flags are missing")
+		}
+		operatingSystem.OperatingSystemVersion = osVersion
+	} else if present {
+		return nil, fmt.Errorf("network-os-version is required")
+	}
+
+	if osArchitecture, ok := getStringParamOk(c.Arguments["network_os_architecture"]); ok {
+		if !present {
+			return nil, fmt.Errorf("some of the network operating system flags are missing")
+		}
+		operatingSystem.OperatingSystemArchitecture = osArchitecture
+	} else if present {
+		return nil, fmt.Errorf("network-os-architecture is required")
+	}
+
+	if osVendor, ok := getStringParamOk(c.Arguments["network_os_vendor"]); ok {
+		if !present {
+			return nil, fmt.Errorf("some of the network operating system flags are missing")
+		}
+		operatingSystem.OperatingSystemVendor = osVendor
+	} else if present {
+		return nil, fmt.Errorf("network-os-vendor is required")
+	}
+
+	if osMachine, ok := getStringParamOk(c.Arguments["network_os_machine"]); ok {
+		if !present {
+			return nil, fmt.Errorf("some of the network operating system flags are missing")
+		}
+		operatingSystem.OperatingSystemMachine = osMachine
+	} else if present {
+		return nil, fmt.Errorf("network-os-machine is required")
+	}
+	if osMachineRevision, ok := getStringParamOk(c.Arguments["network_os_machine_revision"]); ok {
+		if !present {
+			return nil, fmt.Errorf("some of the network operating system flags are missing")
+		}
+		operatingSystem.OperatingSystemMachineRevision = osMachineRevision
+	} else if present {
+		return nil, fmt.Errorf("network-os-machine-revision is required")
+	}
+	return &operatingSystem, nil
 }
 
 func getVolumeTemplateFromCommand(paramName string, c *Command, client metalcloud.MetalCloudClient) (*metalcloud.VolumeTemplate, error) {
