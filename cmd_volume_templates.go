@@ -49,6 +49,7 @@ var volumeTemplateCmds = []Command{
 				"os_type":                    c.FlagSet.String("os-type", _nilDefaultStr, "Template operating system type. For example, Ubuntu or CentOS. If set, os-version and os-architecture flags are required as well."),
 				"os_version":                 c.FlagSet.String("os-version", _nilDefaultStr, "Template operating system version. If set, os-type and os-architecture flags are required as well."),
 				"os_architecture":            c.FlagSet.String("os-architecture", _nilDefaultStr, "Template operating system architecture.Possible values: none, unknown, x86, x86_64. If set, os-version and os-type flags are required as well."),
+				"version":                    c.FlagSet.String("version", _nilDefaultStr, "Template version. Default value is 0.0.0"),
 				"return_id":                  c.FlagSet.Bool("return-id", false, "(Optional) Will print the ID of the created Volume Template. Useful for automating tasks."),
 			}
 		},
@@ -177,6 +178,7 @@ func volumeTemplateCreateFromDriveCmd(c *Command, client metalcloud.MetalCloudCl
 		VolumeTemplateTags:                    strings.Split(getStringParam(c.Arguments["tags"]), ","),
 		VolumeTemplateBootType:                getStringParam(c.Arguments["boot_type"]),
 		VolumeTemplateOsBootstrapFunctionName: getStringParam(c.Arguments["os_bootstrap_function_name"]),
+		VolumeTemplateVersion:                 getStringParam(c.Arguments["version"]),
 	}
 
 	driveID, ok := getIntParamOk(c.Arguments["drive_id"])

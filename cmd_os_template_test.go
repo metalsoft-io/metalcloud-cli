@@ -64,6 +64,7 @@ func TestOSTemplateCreateCmd(t *testing.T) {
 		VolumeTemplateBootMethodsSupported: "pxe_iscsi",
 		VolumeTemplateDeprecationStatus:    "not_deprecated",
 		VolumeTemplateRepoURL:              "centos7_repo_url",
+		VolumeTemplateVersion:              "0.0.0",
 		VolumeTemplateOperatingSystem: &metalcloud.OperatingSystem{
 			OperatingSystemType:         "Centos",
 			OperatingSystemVersion:      "7",
@@ -108,6 +109,7 @@ func TestOSTemplateCreateCmd(t *testing.T) {
 				"initial_user":     tmpl.OSTemplateCredentials.OSTemplateInitialUser,
 				"initial_password": tmpl.OSTemplateCredentials.OSTemplateInitialPassword,
 				"initial_ssh_port": tmpl.OSTemplateCredentials.OSTemplateInitialSSHPort,
+				"version":          tmpl.VolumeTemplateVersion,
 			}),
 			good: true,
 		},
@@ -263,6 +265,7 @@ func TestOSTemplateEditCmd(t *testing.T) {
 		VolumeTemplateBootMethodsSupported: "pxe_iscsi",
 		VolumeTemplateDeprecationStatus:    "not_deprecated",
 		VolumeTemplateRepoURL:              "centos7_repo_url",
+		VolumeTemplateVersion:              "0.0.0",
 		VolumeTemplateOperatingSystem: &metalcloud.OperatingSystem{
 			OperatingSystemType:         "Centos",
 			OperatingSystemVersion:      "7",

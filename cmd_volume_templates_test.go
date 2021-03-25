@@ -105,6 +105,7 @@ func TestVolumeTemplateCreateFromDriveCmd(t *testing.T) {
 		VolumeTemplateDeprecationStatus:       "not_deprecated",
 		VolumeTemplateOsBootstrapFunctionName: "provisioner_os_cloudinit_prepare_centos",
 		VolumeTemplateRepoURL:                 "centos7_repo_url",
+		VolumeTemplateVersion:                 "0.0.0",
 		VolumeTemplateOperatingSystem: metalcloud.OperatingSystem{
 			OperatingSystemType:         "Centos",
 			OperatingSystemVersion:      "7",
@@ -126,6 +127,7 @@ func TestVolumeTemplateCreateFromDriveCmd(t *testing.T) {
 				"display_name":               vt.VolumeTemplateDisplayName,
 				"description":                vt.VolumeTemplateDescription,
 				"os_bootstrap_function_name": vt.VolumeTemplateOsBootstrapFunctionName,
+				"version":                    vt.VolumeTemplateVersion,
 			}),
 			good: true,
 			id:   vt.VolumeTemplateID,

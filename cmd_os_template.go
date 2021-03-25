@@ -54,6 +54,7 @@ var osTemplatesCmds = []Command{
 				"repo_url":                           c.FlagSet.String("repo-url", _nilDefaultStr, "Template's location the repository"),
 				"os_asset_id_bootloader_local_install_id_or_name": c.FlagSet.String("install-bootloader-asset", _nilDefaultStr, "Template's bootloader asset id during install"),
 				"os_asset_id_bootloader_os_boot_id_or_name":       c.FlagSet.String("os-boot-bootloader-asset", _nilDefaultStr, "Template's bootloader asset id during regular server boot"),
+				"version":   c.FlagSet.String("version", _nilDefaultStr, "Template version. Default value is 0.0.0"),
 				"return_id": c.FlagSet.Bool("return-id", false, "(Flag) If set will print the ID of the created infrastructure. Useful for automating tasks."),
 			}
 		},
@@ -322,6 +323,9 @@ func templateEditCmd(c *Command, client metalcloud.MetalCloudClient) (string, er
 }
 
 func updateTemplateFromCommand(obj metalcloud.OSTemplate, c *Command, client metalcloud.MetalCloudClient, checkRequired bool) (*metalcloud.OSTemplate, error) {
+	if v, ok := getStringParamOk(c.Arguments["version"]); ok {
+		obj.VolumeTemplateVersion = v
+	}
 
 	if v, ok := getStringParamOk(c.Arguments["label"]); ok {
 		obj.VolumeTemplateLabel = v

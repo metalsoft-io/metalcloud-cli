@@ -4,6 +4,8 @@ github.com/bigstepinc/metal-cloud-sdk-go/v2 v2.0.1 h1:ba7L1OvDzdkJ/fFxAYrlmXGg2r
 github.com/bigstepinc/metal-cloud-sdk-go/v2 v2.0.1/go.mod h1:PnOlikFgznqB4aaCwgFUXyc5JZ468LTAPGEqCXeEWss=
 github.com/bigstepinc/metal-cloud-sdk-go/v2 v2.0.3 h1:BVKVUOYOs+CtoK6qh9ID3zMcHh7ilicFcAcP/CjtNfU=
 github.com/bigstepinc/metal-cloud-sdk-go/v2 v2.0.3/go.mod h1:PnOlikFgznqB4aaCwgFUXyc5JZ468LTAPGEqCXeEWss=
+github.com/bigstepinc/metal-cloud-sdk-go/v2 v2.0.4 h1:zR5YUFVZMjU8iwDUxx1fFRL+3826pQWxDoLJom7xakA=
+github.com/bigstepinc/metal-cloud-sdk-go/v2 v2.0.4/go.mod h1:PnOlikFgznqB4aaCwgFUXyc5JZ468LTAPGEqCXeEWss=
 github.com/creack/pty v1.1.9/go.mod h1:oKZEueFk5CKHvIhNR5MUki03XCEU+Q6VDXinZuGJ33E=
 github.com/fsnotify/fsnotify v1.4.7 h1:IXs+QLmnXW2CcXuY+8Mzv/fWEsPGWxqefPtCP5CnV9I=
 github.com/fsnotify/fsnotify v1.4.7/go.mod h1:jwhsz4b93w/PPRr/qN1Yymfu8t87LnFCMoQvtojpjFo=
