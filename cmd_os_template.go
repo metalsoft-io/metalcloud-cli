@@ -41,6 +41,7 @@ var osTemplatesCmds = []Command{
 				"display_name":                       c.FlagSet.String("display-name", _nilDefaultStr, "(Required) Template's display name"),
 				"size":                               c.FlagSet.Int("size", _nilDefaultInt, "Template's size (bytes)"),
 				"boot_methods_supported":             c.FlagSet.String("boot-methods-supported", _nilDefaultStr, "(Required) Template boot methods supported. Defaults to pxe_iscsi."),
+				"os_bootstrap_function_name":         c.FlagSet.String("os-bootstrap-function-name", _nilDefaultStr, "Optional property that selects the cloudinit configuration function. Can be one of: provisioner_os_cloudinit_prepare_centos, provisioner_os_cloudinit_prepare_rhel, provisioner_os_cloudinit_prepare_ubuntu, provisioner_os_cloudbaseinit_prepare_windows."),
 				"boot_type":                          c.FlagSet.String("boot-type", _nilDefaultStr, "(Required) Template boot type. Possible values: 'uefi_only','legacy_only','hybrid' "),
 				"description":                        c.FlagSet.String("description", _nilDefaultStr, "Template description"),
 				"os_type":                            c.FlagSet.String("os-type", _nilDefaultStr, "(Required) Template operating system type. For example, Ubuntu or CentOS."),
@@ -70,16 +71,17 @@ var osTemplatesCmds = []Command{
 		FlagSet:      flag.NewFlagSet("update template", flag.ExitOnError),
 		InitFunc: func(c *Command) {
 			c.Arguments = map[string]interface{}{
-				"template_id_or_name":    c.FlagSet.String("id", _nilDefaultStr, "(Required) Template's id or label"),
-				"label":                  c.FlagSet.String("label", _nilDefaultStr, "(Required) Template's label"),
-				"display_name":           c.FlagSet.String("display-name", _nilDefaultStr, "(Required) Template's display name"),
-				"size":                   c.FlagSet.Int("size", _nilDefaultInt, "Template's size (bytes)"),
-				"boot_methods_supported": c.FlagSet.String("boot-methods-supported", _nilDefaultStr, "Template boot methods supported. Defaults to pxe_iscsi."),
-				"boot_type":              c.FlagSet.String("boot-type", _nilDefaultStr, "(Required) Template boot type. Possible values: 'uefi_only','legacy_only','hybrid' "),
-				"description":            c.FlagSet.String("description", _nilDefaultStr, "Template description"),
-				"os_type":                c.FlagSet.String("os-type", _nilDefaultStr, "(Required) Template operating system type. For example, Ubuntu or CentOS."),
-				"os_version":             c.FlagSet.String("os-version", _nilDefaultStr, "(Required) Template operating system version."),
-				"os_architecture":        c.FlagSet.String("os-architecture", _nilDefaultStr, "(Required) Template operating system architecture.Possible values: none, unknown, x86, x86_64."),
+				"template_id_or_name":        c.FlagSet.String("id", _nilDefaultStr, "(Required) Template's id or label"),
+				"label":                      c.FlagSet.String("label", _nilDefaultStr, "(Required) Template's label"),
+				"display_name":               c.FlagSet.String("display-name", _nilDefaultStr, "(Required) Template's display name"),
+				"size":                       c.FlagSet.Int("size", _nilDefaultInt, "Template's size (bytes)"),
+				"boot_methods_supported":     c.FlagSet.String("boot-methods-supported", _nilDefaultStr, "Template boot methods supported. Defaults to pxe_iscsi."),
+				"os_bootstrap_function_name": c.FlagSet.String("os-bootstrap-function-name", _nilDefaultStr, "Optional property that selects the cloudinit configuration function. Can be one of: provisioner_os_cloudinit_prepare_centos, provisioner_os_cloudinit_prepare_rhel, provisioner_os_cloudinit_prepare_ubuntu, provisioner_os_cloudbaseinit_prepare_windows."),
+				"boot_type":                  c.FlagSet.String("boot-type", _nilDefaultStr, "(Required) Template boot type. Possible values: 'uefi_only','legacy_only','hybrid' "),
+				"description":                c.FlagSet.String("description", _nilDefaultStr, "Template description"),
+				"os_type":                    c.FlagSet.String("os-type", _nilDefaultStr, "(Required) Template operating system type. For example, Ubuntu or CentOS."),
+				"os_version":                 c.FlagSet.String("os-version", _nilDefaultStr, "(Required) Template operating system version."),
+				"os_architecture":            c.FlagSet.String("os-architecture", _nilDefaultStr, "(Required) Template operating system architecture.Possible values: none, unknown, x86, x86_64."),
 				"os_asset_id_bootloader_local_install_id_or_name": c.FlagSet.String("install-bootloader-asset", _nilDefaultStr, "Template's bootloader asset id during install"),
 				"os_asset_id_bootloader_os_boot_id_or_name":       c.FlagSet.String("os-boot-bootloader-asset", _nilDefaultStr, "Template's bootloader asset id during regular server boot"),
 				"initial_user":                       c.FlagSet.String("initial-user", _nilDefaultStr, "(Required) Template's initial username, used to verify install."),
@@ -325,6 +327,10 @@ func templateEditCmd(c *Command, client metalcloud.MetalCloudClient) (string, er
 func updateTemplateFromCommand(obj metalcloud.OSTemplate, c *Command, client metalcloud.MetalCloudClient, checkRequired bool) (*metalcloud.OSTemplate, error) {
 	if v, ok := getStringParamOk(c.Arguments["version"]); ok {
 		obj.VolumeTemplateVersion = v
+	}
+
+	if v, ok := getStringParamOk(c.Arguments["os_bootstrap_function_name"]); ok {
+		obj.VolumeTemplateOsBootstrapFunctionName = v
 	}
 
 	if v, ok := getStringParamOk(c.Arguments["label"]); ok {
