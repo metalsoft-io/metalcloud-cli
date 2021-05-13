@@ -28,6 +28,7 @@ var applyCmds = []Command{
 			}
 		},
 		ExecuteFunc: applyCmd,
+		Endpoint:    DeveloperEndpoint,
 	},
 
 	{
@@ -43,6 +44,7 @@ var applyCmds = []Command{
 			}
 		},
 		ExecuteFunc: deleteCmd,
+		Endpoint:    DeveloperEndpoint,
 	},
 }
 
@@ -54,9 +56,6 @@ func applyCmd(c *Command, client metalcloud.MetalCloudClient) (string, error) {
 	}
 
 	for _, object := range objects {
-		if err != nil {
-			return "", err
-		}
 		err = object.CreateOrUpdate(client)
 		if err != nil {
 			return "", err
