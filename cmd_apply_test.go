@@ -215,20 +215,33 @@ func TestDelete(t *testing.T) {
 		SharedDriveDelete(gomock.Any()).
 		Return(nil).
 		AnyTimes()
-
+	client.EXPECT().
+		SharedDriveGetByLabel(gomock.Any()).
+		Return(&_sharedDrive1, nil).
+		AnyTimes()
 	client.EXPECT().
 		InstanceArrayDelete(gomock.Any()).
 		Return(nil).
 		AnyTimes()
-
+	client.EXPECT().
+		InstanceArrayGetByLabel("ia-test").
+		Return(&_instanceArray1, nil).
+		AnyTimes()
 	client.EXPECT().
 		DriveArrayDelete(gomock.Any()).
 		Return(nil).
 		AnyTimes()
-
+	client.EXPECT().
+		DriveArrayGetByLabel(gomock.Any()).
+		Return(&_driveArray1, nil).
+		AnyTimes()
 	client.EXPECT().
 		InfrastructureDelete(gomock.Any()).
 		Return(nil).
+		AnyTimes()
+	client.EXPECT().
+		InfrastructureGetByLabel(gomock.Any()).
+		Return(&_infrastructure1, nil).
 		AnyTimes()
 	client.EXPECT().
 		SecretDelete(gomock.Any()).
@@ -237,6 +250,10 @@ func TestDelete(t *testing.T) {
 	client.EXPECT().
 		NetworkDelete(gomock.Any()).
 		Return(nil).
+		AnyTimes()
+	client.EXPECT().
+		NetworkGetByLabel(gomock.Any()).
+		Return(&_network1, nil).
 		AnyTimes()
 	client.EXPECT().
 		OSTemplateDelete(gomock.Any()).
