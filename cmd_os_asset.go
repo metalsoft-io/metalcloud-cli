@@ -142,6 +142,37 @@ var osAssetsCmds = []Command{
 		ExecuteFunc: assetEditCmd,
 		Endpoint:    ExtendedEndpoint,
 	},
+	{
+		Description:  "Allow other users of the platform to use the asset.",
+		Subject:      "asset",
+		AltSubject:   "asset",
+		Predicate:    "make-public",
+		AltPredicate: "public",
+		FlagSet:      flag.NewFlagSet("make asset public", flag.ExitOnError),
+		InitFunc: func(c *Command) {
+			c.Arguments = map[string]interface{}{
+				"asset_id_or_name": c.FlagSet.String("id", _nilDefaultStr, "Asset id or name"),
+			}
+		},
+		ExecuteFunc: assetMakePublicCmd,
+		Endpoint:    DeveloperEndpoint,
+	},
+	{
+		Description:  "Stop other users of the platform from being able to use the asset by allocating a specific owner.",
+		Subject:      "asset",
+		AltSubject:   "asset",
+		Predicate:    "make-private",
+		AltPredicate: "private",
+		FlagSet:      flag.NewFlagSet("make asset private", flag.ExitOnError),
+		InitFunc: func(c *Command) {
+			c.Arguments = map[string]interface{}{
+				"asset_id_or_name": c.FlagSet.String("id", _nilDefaultStr, "Asset id or name"),
+				"user_id":          c.FlagSet.String("user-id", _nilDefaultStr, "New owner user id or email."),
+			}
+		},
+		ExecuteFunc: assetMakePrivateCmd,
+		Endpoint:    DeveloperEndpoint,
+	},
 }
 
 func assetsListCmd(c *Command, client metalcloud.MetalCloudClient) (string, error) {
@@ -543,4 +574,40 @@ func assetEditCmd(c *Command, client metalcloud.MetalCloudClient) (string, error
 	}
 
 	return "", err
+}
+
+func assetMakePublicCmd(c *Command, client metalcloud.MetalCloudClient) (string, error) {
+	asset, err := getOSAssetFromCommand("id", "asset_id_or_name", c, client)
+	if err != nil {
+		return "", err
+	}
+
+	asset, err = client.OSAssetMakePublic(asset.OSAssetID)
+
+	if err != nil {
+		return "", err
+	}
+
+	return "", nil
+}
+
+func assetMakePrivateCmd(c *Command, client metalcloud.MetalCloudClient) (string, error) {
+	asset, err := getOSAssetFromCommand("id", "asset_id_or_name", c, client)
+	if err != nil {
+		return "", err
+	}
+
+	user, err := getUserFromCommand("user-id", c, client)
+
+	if err != nil {
+		return "", err
+	}
+
+	asset, err = client.OSAssetMakePrivate(asset.OSAssetID, user.UserID)
+
+	if err != nil {
+		return "", err
+	}
+
+	return "", nil
 }

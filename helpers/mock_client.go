@@ -1343,6 +1343,36 @@ func (mr *MockMetalCloudClientMockRecorder) OSAssets() *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "OSAssets", reflect.TypeOf((*MockMetalCloudClient)(nil).OSAssets))
 }
 
+// OSAssetMakePublic mocks base method
+func (m *MockMetalCloudClient) OSAssetMakePublic(osAssetID int) (*metalcloud.OSAsset, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "OSAssetMakePublic", osAssetID)
+	ret0, _ := ret[0].(*metalcloud.OSAsset)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// OSAssetMakePublic indicates an expected call of OSAssetMakePublic
+func (mr *MockMetalCloudClientMockRecorder) OSAssetMakePublic(osAssetID interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "OSAssetMakePublic", reflect.TypeOf((*MockMetalCloudClient)(nil).OSAssetMakePublic), osAssetID)
+}
+
+// OSAssetMakePrivate mocks base method
+func (m *MockMetalCloudClient) OSAssetMakePrivate(osAssetID, userID int) (*metalcloud.OSAsset, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "OSAssetMakePrivate", osAssetID, userID)
+	ret0, _ := ret[0].(*metalcloud.OSAsset)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// OSAssetMakePrivate indicates an expected call of OSAssetMakePrivate
+func (mr *MockMetalCloudClientMockRecorder) OSAssetMakePrivate(osAssetID, userID interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "OSAssetMakePrivate", reflect.TypeOf((*MockMetalCloudClient)(nil).OSAssetMakePrivate), osAssetID, userID)
+}
+
 // OSTemplateCreate mocks base method
 func (m *MockMetalCloudClient) OSTemplateCreate(osTemplate metalcloud.OSTemplate) (*metalcloud.OSTemplate, error) {
 	m.ctrl.T.Helper()
