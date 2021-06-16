@@ -505,3 +505,171 @@ func TestAssociateAssetMissingVariablesCmd(t *testing.T) {
 
 	testCreateCommand(associateAssetCmd, cases, client, t)
 }
+
+func TestOSAssetMakePrivateCmd(t *testing.T) {
+
+	client := mock_metalcloud.NewMockMetalCloudClient(gomock.NewController(t))
+
+	asset := metalcloud.OSAsset{
+		OSAssetID:       100,
+		OSAssetFileName: "test",
+	}
+
+	assets := map[string]metalcloud.OSAsset{
+		"test": asset,
+	}
+
+	user := metalcloud.User{
+		UserID: 1,
+	}
+
+	user1 := metalcloud.User{
+		UserEmail: "test",
+	}
+
+	client.EXPECT().
+		OSAssetGet(gomock.Any()).
+		Return(&asset, nil).
+		AnyTimes()
+
+	client.EXPECT().
+		OSAssets().
+		Return(&assets, nil).
+		MinTimes(1)
+
+	client.EXPECT().
+		UserGet(gomock.Any()).
+		Return(&user, nil).
+		AnyTimes()
+
+	client.EXPECT().
+		UserGetByEmail(gomock.Any()).
+		Return(&user1, nil).
+		MinTimes(1)
+
+	client.EXPECT().
+		OSAssetMakePrivate(gomock.Any(), gomock.Any()).
+		Return(&asset, nil).
+		AnyTimes()
+
+	cases := []CommandTestCase{
+		{
+			name: "good1",
+			cmd: MakeCommand(map[string]interface{}{
+				"asset_id_or_name": 100,
+				"user_id":          1,
+			}),
+			good: true,
+			id:   0,
+		},
+		{
+			name: "good2",
+			cmd: MakeCommand(map[string]interface{}{
+				"asset_id_or_name": "test",
+				"user_id":          1,
+			}),
+			good: true,
+			id:   0,
+		},
+		{
+			name: "good3",
+			cmd: MakeCommand(map[string]interface{}{
+				"asset_id_or_name": 100,
+				"user_id":          "test",
+			}),
+			good: true,
+			id:   0,
+		},
+		{
+			name: "asset not found",
+			cmd: MakeCommand(map[string]interface{}{
+				"asset_id_or_name": "test1",
+				"user_id":          1,
+			}),
+			good: false,
+			id:   0,
+		},
+		{
+			name: "missing asset id or name",
+			cmd: MakeCommand(map[string]interface{}{
+				"user_id": 1,
+			}),
+			good: false,
+			id:   0,
+		},
+		{
+			name: "missing user id or email",
+			cmd: MakeCommand(map[string]interface{}{
+				"asset_id_or_name": "test",
+			}),
+			good: false,
+			id:   0,
+		},
+	}
+
+	testCreateCommand(assetMakePrivateCmd, cases, client, t)
+}
+
+func TestOSAssetMakePublicCmd(t *testing.T) {
+
+	client := mock_metalcloud.NewMockMetalCloudClient(gomock.NewController(t))
+
+	asset := metalcloud.OSAsset{
+		OSAssetID:       100,
+		OSAssetFileName: "test",
+	}
+
+	assets := map[string]metalcloud.OSAsset{
+		"test": asset,
+	}
+
+	client.EXPECT().
+		OSAssetGet(gomock.Any()).
+		Return(&asset, nil).
+		AnyTimes()
+
+	client.EXPECT().
+		OSAssets().
+		Return(&assets, nil).
+		MinTimes(1)
+
+	client.EXPECT().
+		OSAssetMakePublic(gomock.Any()).
+		Return(&asset, nil).
+		AnyTimes()
+
+	cases := []CommandTestCase{
+		{
+			name: "good1",
+			cmd: MakeCommand(map[string]interface{}{
+				"asset_id_or_name": 100,
+			}),
+			good: true,
+			id:   0,
+		},
+		{
+			name: "good2",
+			cmd: MakeCommand(map[string]interface{}{
+				"asset_id_or_name": "test",
+			}),
+			good: true,
+			id:   0,
+		},
+		{
+			name: "asset not found",
+			cmd: MakeCommand(map[string]interface{}{
+				"asset_id_or_name": "test1",
+			}),
+			good: false,
+			id:   0,
+		},
+		{
+			name: "missing asset id or name",
+			cmd:  MakeCommand(map[string]interface{}{}),
+			good: false,
+			id:   0,
+		},
+	}
+
+	testCreateCommand(assetMakePublicCmd, cases, client, t)
+}
