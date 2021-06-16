@@ -295,7 +295,7 @@ func associateAssetFromCommand(assetID int, assetFileName string, c *Command, cl
 			}
 
 			for _, a := range *list {
-				if a.OSAsset.OSAssetFileName == assetFileName {
+				if a.OSAsset.OSAssetFileName == assetFileName || a.OSAssetFilePath == path {
 					err = client.OSTemplateRemoveOSAsset(template.VolumeTemplateID, a.OSAsset.OSAssetID)
 
 					if err != nil {
