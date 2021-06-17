@@ -72,6 +72,11 @@ func TestCreateAssetCmd(t *testing.T) {
 		MinTimes(1)
 
 	client.EXPECT().
+		OSAssetMakePublic(gomock.Any()).
+		Return(&asset, nil).
+		MinTimes(1)
+
+	client.EXPECT().
 		OSTemplateAddOSAsset(tmpl.VolumeTemplateID, asset.OSAssetID, gomock.Any(), gomock.Any()).
 		Return(nil).
 		AnyTimes()
@@ -232,6 +237,11 @@ func TestEditAssetCmd(t *testing.T) {
 		OSAssetGet(asset.OSAssetID).
 		Return(&asset, nil).
 		AnyTimes()
+
+	client.EXPECT().
+		OSAssetMakePublic(gomock.Any()).
+		Return(&asset, nil).
+		MinTimes(1)
 
 	client.EXPECT().
 		OSAssetGet(asset.OSAssetFileName).
