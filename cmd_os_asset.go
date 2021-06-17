@@ -51,7 +51,7 @@ var osAssetsCmds = []Command{
 			}
 		},
 		ExecuteFunc: assetCreateCmd,
-		Endpoint:    ExtendedEndpoint,
+		Endpoint:    DeveloperEndpoint,
 	},
 	{
 		Description:  "Delete asset.",
@@ -273,11 +273,14 @@ func assetCreateCmd(c *Command, client metalcloud.MetalCloudClient) (string, err
 
 func associateAssetFromCommand(assetID int, assetFileName string, c *Command, client metalcloud.MetalCloudClient) error {
 	variablesJSON := "[]"
+	templateIsPublic := false
 	if _, error := getParam(c, "template_id_or_name", "template-id"); error == nil {
 		template, err := getOSTemplateFromCommand("template-id", c, client, false)
 		if err != nil {
 			return err
 		}
+
+		templateIsPublic = template.UserID == 0
 		path, ok := getStringParamOk(c.Arguments["path"])
 		if !ok {
 			return fmt.Errorf("-path is required")
@@ -302,6 +305,14 @@ func associateAssetFromCommand(assetID int, assetFileName string, c *Command, cl
 						return err
 					}
 				}
+			}
+		}
+
+		if templateIsPublic {
+			_, err = client.OSAssetMakePublic(assetID)
+
+			if err != nil {
+				return err
 			}
 		}
 
