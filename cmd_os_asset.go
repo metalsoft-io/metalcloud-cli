@@ -5,6 +5,7 @@ import (
 	"flag"
 	"fmt"
 	"os"
+	"runtime"
 	"strings"
 
 	metalcloud "github.com/bigstepinc/metal-cloud-sdk-go/v2"
@@ -403,6 +404,7 @@ func updateAssetFromCommand(obj metalcloud.OSAsset, c *Command, client metalclou
 	}
 
 	content := []byte{}
+	var err error
 
 	if v, ok := getStringParamOk(c.Arguments["url"]); ok {
 		obj.OSAssetSourceURL = v
@@ -414,11 +416,16 @@ func updateAssetFromCommand(obj metalcloud.OSAsset, c *Command, client metalclou
 			}
 			content = _content
 		} else {
-			_content, err := requestInputSilent("Asset content:")
+			if runtime.GOOS == "windows" {
+				content, err = requestInput("Asset content:")
+
+			} else {
+				content, err = requestInputSilent("Asset content:")
+			}
+
 			if err != nil {
 				return nil, err
 			}
-			content = _content
 		}
 
 		obj.OSAssetContentsBase64 = base64.StdEncoding.EncodeToString([]byte(content))
