@@ -132,12 +132,15 @@ func secretsListCmd(c *Command, client metalcloud.MetalCloudClient) (string, err
 func secretCreateCmd(c *Command, client metalcloud.MetalCloudClient) (string, error) {
 	secret := metalcloud.Secret{}
 
-	if v := c.Arguments["name"]; v != nil && *v.(*string) != _nilDefaultStr {
-		secret.SecretName = *v.(*string)
+	secretName, ok := getStringParamOk(c.Arguments["name"])
+	if !ok {
+		return "", fmt.Errorf("name is required")
+	} else {
+		secret.SecretName = secretName
 	}
 
-	if v := c.Arguments["usage"]; v != nil && *v.(*string) != _nilDefaultStr {
-		secret.SecretUsage = *v.(*string)
+	if v, ok := getStringParamOk(c.Arguments["usage"]); ok {
+		secret.SecretUsage = v
 	}
 
 	content := []byte{}
