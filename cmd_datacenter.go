@@ -47,6 +47,8 @@ var datacenterCmds = []Command{
 				"read_config_from_file":   c.FlagSet.String("config", _nilDefaultStr, "(Required) Read datacenter configuration from file"),
 				"datacenter_name_parent":  c.FlagSet.String("parent", _nilDefaultStr, "If the datacenter is subordonated to another datacenter such as to a near-edge site."),
 				"create_hidden":           c.FlagSet.Bool("hidden", false, "(Flag) If set, the datacenter will be hidden after creation instead."),
+				"is_master":               c.FlagSet.Bool("master", false, "(Flag) If set, the datacenter will be the master dc."),
+				"is_maintenance":          c.FlagSet.Bool("maintenance", false, "(Flag) If set, the datacenter will be in maintenance."),
 				"user_id":                 c.FlagSet.String("user", _nilDefaultStr, "Datacenter's owner. If ommited, the default is a public datacenter."),
 				"tags":                    c.FlagSet.String("tags", _nilDefaultStr, "Tags associated with this datacenter, comma separated"),
 				"read_config_from_pipe":   c.FlagSet.Bool("pipe", false, "(Flag) If set, read datacenter configuration from pipe instead of from a file. Either this flag or the -config option must be used."),
@@ -226,6 +228,9 @@ func datacenterCreateCmd(c *Command, client metalcloud.MetalCloudClient) (string
 	}
 
 	datacenterHidden := getBoolParam(c.Arguments["create_hidden"])
+	datacenterIsMaster := getBoolParam(c.Arguments["is_master"])
+	datacenterInMaintenance := getBoolParam(c.Arguments["is_maintenance"])
+
 	datacenterTags := strings.Split(getStringParam(c.Arguments["tags"]), ",")
 	datacenterParent := getStringParam(c.Arguments["datacenter_name_parent"])
 
@@ -233,8 +238,8 @@ func datacenterCreateCmd(c *Command, client metalcloud.MetalCloudClient) (string
 		DatacenterName:          datacenterName,
 		DatacenterDisplayName:   datacenterDisplayName,
 		UserID:                  userID,
-		DatacenterIsMaster:      false,
-		DatacenterIsMaintenance: false,
+		DatacenterIsMaster:      datacenterIsMaster,
+		DatacenterIsMaintenance: datacenterInMaintenance,
 		DatacenterHidden:        datacenterHidden,
 		DatacenterTags:          datacenterTags,
 		DatacenterNameParent:    datacenterParent,
