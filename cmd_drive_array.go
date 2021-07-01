@@ -145,7 +145,7 @@ func driveArrayCreateCmd(c *Command, client metalcloud.MetalCloudClient) (string
 	}
 
 	if da.DriveArrayLabel == "" {
-		return "", fmt.Errorf("-label <drive_array_label> is required")
+		return "", fmt.Errorf("-label is required")
 	}
 
 	retDA, err := client.DriveArrayCreate(infra.InfrastructureID, *da)
