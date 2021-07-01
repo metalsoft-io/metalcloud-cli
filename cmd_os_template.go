@@ -110,7 +110,7 @@ var osTemplatesCmds = []Command{
 			}
 		},
 		ExecuteFunc: templateGetCmd,
-		Endpoint:    ExtendedEndpoint,
+		Endpoint:    DeveloperEndpoint,
 	},
 	{
 		Description:  "Delete a template.",
@@ -594,7 +594,7 @@ func templateGetCmd(c *Command, client metalcloud.MetalCloudClient) (string, err
 
 	credentials := ""
 
-	if showCredentials {
+	if showCredentials && template.OSTemplateCredentials != nil {
 
 		schema = append(schema, tableformatter.SchemaField{
 			FieldName: "CREDENTIALS",

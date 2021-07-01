@@ -34,7 +34,7 @@ var instanceArrayCmds = []Command{
 				"instance_array_disk_size_mbytes":     c.FlagSet.Int("disk-size", _nilDefaultInt, "InstanceArray's local disks' size in MB"),
 				"instance_array_boot_method":          c.FlagSet.String("boot", _nilDefaultStr, "InstanceArray's boot type:'pxe_iscsi','local_drives'"),
 				"instance_array_firewall_not_managed": c.FlagSet.Bool("firewall-management-disabled", false, "(Flag) If set InstanceArray's firewall management on or off"),
-				"volume_template_id":                  c.FlagSet.Int("local-install-template", _nilDefaultInt, "InstanceArray's volume template when booting from for local drives"),
+				"volume_template_id_or_label":         c.FlagSet.String("local-install-template", _nilDefaultStr, "InstanceArray's volume template when booting from for local drives"),
 				"da_volume_template":                  c.FlagSet.String("drive-array-template", _nilDefaultStr, "The attached DriveArray's  volume template when booting from iscsi drives"),
 				"da_volume_disk_size":                 c.FlagSet.Int("drive-array-disk-size", _nilDefaultInt, "The attached DriveArray's  volume size (in MB) when booting from iscsi drives, If ommited the default size of the volume template will be used."),
 				"return_id":                           c.FlagSet.Bool("return-id", false, "(Flag) If set will print the ID of the created Instance Array. Useful for automating tasks."),
@@ -92,7 +92,7 @@ var instanceArrayCmds = []Command{
 				"instance_array_disk_size_mbytes":     c.FlagSet.Int("disk-size", _nilDefaultInt, "InstanceArray's local disks' size in MB"),
 				"instance_array_boot_method":          c.FlagSet.String("boot", _nilDefaultStr, "InstanceArray's boot type:'pxe_iscsi','local_drives'"),
 				"instance_array_firewall_not_managed": c.FlagSet.Bool("firewall-management-disabled", false, "(Flag) If set InstanceArray's firewall management is off"),
-				"volume_template_id":                  c.FlagSet.Int("local-install-template", _nilDefaultInt, "InstanceArray's volume template when booting from for local drives"),
+				"volume_template_id_or_label":         c.FlagSet.String("local-install-template", _nilDefaultStr, "InstanceArray's volume template when booting from for local drives"),
 				"bSwapExistingInstancesHardware":      c.FlagSet.Bool("swap-existing-hardware", false, "(Flag) If set all the hardware of the Instance objects is swapped to match the new InstanceArray specifications"),
 				"no_bKeepDetachingDrives":             c.FlagSet.Bool("do-not-keep-detaching-drives", false, "(Flag) If set and the number of Instance objects is reduced, then the detaching Drive objects will be deleted. If it's set to true, the detaching Drive objects will not be deleted."),
 			}
@@ -126,10 +126,10 @@ func instanceArrayCreateCmd(c *Command, client metalcloud.MetalCloudClient) (str
 		return "", err
 	}
 
-	ia := argsToInstanceArray(c.Arguments)
+	ia := argsToInstanceArray(c.Arguments, c, client)
 
 	if ia.InstanceArrayLabel == "" {
-		return "", fmt.Errorf("-label <instance_array_label> is required")
+		return "", fmt.Errorf("-label is required")
 	}
 
 	retIA, err := client.InstanceArrayCreate(infra.InfrastructureID, *ia)
@@ -199,7 +199,7 @@ func instanceArrayEditCmd(c *Command, client metalcloud.MetalCloudClient) (strin
 		return "", err
 	}
 
-	argsToInstanceArrayOperation(c.Arguments, retIA.InstanceArrayOperation)
+	argsToInstanceArrayOperation(c.Arguments, retIA.InstanceArrayOperation, c, client)
 
 	var bKeepDetachingDrives *bool
 	if v := c.Arguments["not_bKeepDetachingDrives"]; v != nil {
@@ -514,100 +514,121 @@ func instanceArrayGetCmd(c *Command, client metalcloud.MetalCloudClient) (string
 	return table.RenderTable("Instances", subtitle, getStringParam(c.Arguments["format"]))
 }
 
-func argsToInstanceArray(m map[string]interface{}) *metalcloud.InstanceArray {
+func argsToInstanceArray(m map[string]interface{}, c *Command, client metalcloud.MetalCloudClient) *metalcloud.InstanceArray {
 	ia := metalcloud.InstanceArray{}
 
-	if v := m["instance_array_instance_count"]; v != nil && *v.(*int) != _nilDefaultInt {
-		ia.InstanceArrayInstanceCount = *v.(*int)
+	if v, ok := getIntParamOk(m["instance_array_instance_count"]); ok {
+		ia.InstanceArrayInstanceCount = v
 	}
 
-	if v := m["instance_array_label"]; v != nil && *v.(*string) != _nilDefaultStr {
-		ia.InstanceArrayLabel = *v.(*string)
+	if v, ok := getStringParamOk(m["instance_array_label"]); ok {
+		ia.InstanceArrayLabel = v
 	}
 
-	if v := m["instance_array_ram_gbytes"]; v != nil && *v.(*int) != _nilDefaultInt {
-		ia.InstanceArrayRAMGbytes = *v.(*int)
+	if v, ok := getIntParamOk(m["instance_array_ram_gbytes"]); ok {
+		ia.InstanceArrayRAMGbytes = v
 	}
 
-	if v := m["instance_array_processor_count"]; v != nil && *v.(*int) != _nilDefaultInt {
-		ia.InstanceArrayProcessorCount = *v.(*int)
+	if v, ok := getIntParamOk(m["instance_array_processor_count"]); ok {
+		ia.InstanceArrayProcessorCount = v
 	}
 
-	if v := m["instance_array_processor_core_mhz"]; v != nil && *v.(*int) != _nilDefaultInt {
-		ia.InstanceArrayProcessorCoreMHZ = *v.(*int)
+	if v, ok := getIntParamOk(m["instance_array_processor_core_mhz"]); ok {
+		ia.InstanceArrayProcessorCoreMHZ = v
 	}
 
-	if v := m["instance_array_processor_core_count"]; v != nil && *v.(*int) != _nilDefaultInt {
-		ia.InstanceArrayProcessorCoreCount = *v.(*int)
+	if v, ok := getIntParamOk(m["instance_array_processor_core_count"]); ok {
+		ia.InstanceArrayProcessorCoreCount = v
 	}
 
-	if v := m["instance_array_disk_count"]; v != nil && *v.(*int) != _nilDefaultInt {
-		ia.InstanceArrayDiskCount = *v.(*int)
+	if v, ok := getIntParamOk(m["instance_array_disk_count"]); ok {
+		ia.InstanceArrayDiskCount = v
 	}
 
-	if v := m["instance_array_disk_size_mbytes"]; v != nil && *v.(*int) != _nilDefaultInt {
-		ia.InstanceArrayDiskSizeMBytes = *v.(*int)
+	if v, ok := getIntParamOk(m["instance_array_disk_size_mbytes"]); ok {
+		ia.InstanceArrayDiskSizeMBytes = v
 	}
 
-	if v := m["instance_array_boot_method"]; v != nil && *v.(*string) != _nilDefaultStr {
-		ia.InstanceArrayBootMethod = *v.(*string)
+	if v, ok := getStringParamOk(m["instance_array_boot_method"]); ok {
+		ia.InstanceArrayBootMethod = v
 	}
 
-	if v := m["instance_array_firewall_not_managed"]; v != nil {
-		ia.InstanceArrayFirewallManaged = !(*v.(*bool))
+	if v, ok := getBoolParamOk(m["instance_array_firewall_not_managed"]); ok {
+		ia.InstanceArrayFirewallManaged = v
 	}
 
-	if v := m["volume_template_id"]; v != nil && *v.(*int) != _nilDefaultInt {
-		ia.VolumeTemplateID = *v.(*int)
+	if v, ok := getStringParamOk(c.Arguments["volume_template_id_or_label"]); ok {
+		vtID, err := getIDOrDo(v, func(label string) (int, error) {
+			vt, err := client.VolumeTemplateGetByLabel(label)
+			if err != nil {
+				return 0, err
+			}
+			return vt.VolumeTemplateID, nil
+		},
+		)
+		if err != nil {
+			ia.VolumeTemplateID = 0
+		}
+		ia.VolumeTemplateID = vtID
 	}
 
 	return &ia
 }
 
-func argsToInstanceArrayOperation(m map[string]interface{}, iao *metalcloud.InstanceArrayOperation) {
-
-	if v := m["instance_array_instance_count"]; v != nil && *v.(*int) != _nilDefaultInt {
-		iao.InstanceArrayInstanceCount = *v.(*int)
+func argsToInstanceArrayOperation(m map[string]interface{}, iao *metalcloud.InstanceArrayOperation, c *Command, client metalcloud.MetalCloudClient) {
+	if v, ok := getIntParamOk(m["instance_array_instance_count"]); ok {
+		iao.InstanceArrayInstanceCount = v
 	}
 
-	if v := m["instance_array_label"]; v != nil && *v.(*string) != _nilDefaultStr {
-		iao.InstanceArrayLabel = *v.(*string)
+	if v, ok := getStringParamOk(m["instance_array_label"]); ok {
+		iao.InstanceArrayLabel = v
 	}
 
-	if v := m["instance_array_ram_gbytes"]; v != nil && *v.(*int) != _nilDefaultInt {
-		iao.InstanceArrayRAMGbytes = *v.(*int)
+	if v, ok := getIntParamOk(m["instance_array_ram_gbytes"]); ok {
+		iao.InstanceArrayRAMGbytes = v
 	}
 
-	if v := m["instance_array_processor_count"]; v != nil && *v.(*int) != _nilDefaultInt {
-		iao.InstanceArrayProcessorCount = *v.(*int)
+	if v, ok := getIntParamOk(m["instance_array_processor_count"]); ok {
+		iao.InstanceArrayProcessorCount = v
 	}
 
-	if v := m["instance_array_processor_core_mhz"]; v != nil && *v.(*int) != _nilDefaultInt {
-		iao.InstanceArrayProcessorCoreMHZ = *v.(*int)
+	if v, ok := getIntParamOk(m["instance_array_processor_core_mhz"]); ok {
+		iao.InstanceArrayProcessorCoreMHZ = v
 	}
 
-	if v := m["instance_array_processor_core_count"]; v != nil && *v.(*int) != _nilDefaultInt {
-		iao.InstanceArrayProcessorCoreCount = *v.(*int)
+	if v, ok := getIntParamOk(m["instance_array_processor_core_count"]); ok {
+		iao.InstanceArrayProcessorCoreCount = v
 	}
 
-	if v := m["instance_array_disk_count"]; v != nil && *v.(*int) != _nilDefaultInt {
-		iao.InstanceArrayDiskCount = *v.(*int)
+	if v, ok := getIntParamOk(m["instance_array_disk_count"]); ok {
+		iao.InstanceArrayDiskCount = v
 	}
 
-	if v := m["instance_array_disk_size_mbytes"]; v != nil && *v.(*int) != _nilDefaultInt {
-		iao.InstanceArrayDiskSizeMBytes = *v.(*int)
+	if v, ok := getIntParamOk(m["instance_array_disk_size_mbytes"]); ok {
+		iao.InstanceArrayDiskSizeMBytes = v
 	}
 
-	if v := m["instance_array_boot_method"]; v != nil && *v.(*string) != _nilDefaultStr {
-		iao.InstanceArrayBootMethod = *v.(*string)
+	if v, ok := getStringParamOk(m["instance_array_boot_method"]); ok {
+		iao.InstanceArrayBootMethod = v
 	}
 
-	if v := m["instance_array_firewall_not_managed"]; v != nil {
-		iao.InstanceArrayFirewallManaged = !*v.(*bool)
+	if v, ok := getBoolParamOk(m["instance_array_firewall_not_managed"]); ok {
+		iao.InstanceArrayFirewallManaged = v
 	}
 
-	if v := m["volume_template_id"]; v != nil && *v.(*int) != _nilDefaultInt {
-		iao.VolumeTemplateID = *v.(*int)
+	if v, ok := getStringParamOk(c.Arguments["volume_template_id_or_label"]); ok {
+		vtID, err := getIDOrDo(v, func(label string) (int, error) {
+			vt, err := client.VolumeTemplateGetByLabel(label)
+			if err != nil {
+				return 0, err
+			}
+			return vt.VolumeTemplateID, nil
+		},
+		)
+		if err != nil {
+			iao.VolumeTemplateID = 0
+		}
+		iao.VolumeTemplateID = vtID
 	}
 }
 

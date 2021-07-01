@@ -134,7 +134,7 @@ func infrastructureCreateCmd(c *Command, client metalcloud.MetalCloudClient) (st
 	infrastructureLabel := c.Arguments["infrastructure_label"]
 
 	if infrastructureLabel == nil || *infrastructureLabel.(*string) == "" {
-		return "", fmt.Errorf("-label <infrastructure_label> is required")
+		return "", fmt.Errorf("-label is required")
 	}
 
 	datacenter := c.Arguments["datacenter"]

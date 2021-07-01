@@ -188,6 +188,12 @@ func stageDefinitionsListCmd(c *Command, client metalcloud.MetalCloudClient) (st
 		case "HTTPRequest":
 			req := s.StageDefinition.(metalcloud.HTTPRequest)
 			stageDef = fmt.Sprintf("HTTP Request URI: %s", req.URL)
+		case "SSHExec":
+			ssh := s.StageDefinition.(metalcloud.SSHExec)
+			stageDef = fmt.Sprintf("SSHExec command: %s", ssh.Command)
+		case "WorkflowReference":
+			wr := s.StageDefinition.(metalcloud.WorkflowReference)
+			stageDef = fmt.Sprintf("Workflow Reference Workflow id: %d", wr.WorkflowID)
 		}
 
 		data = append(data, []interface{}{

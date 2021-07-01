@@ -74,7 +74,7 @@ func firewallRuleListCmd(c *Command, client metalcloud.MetalCloudClient) (string
 	instanceArrayID := c.Arguments["instance_array_id"]
 
 	if instanceArrayID == nil || *instanceArrayID.(*int) == 0 {
-		return "", fmt.Errorf("-ia <instance_array_id> is required")
+		return "", fmt.Errorf("-ia is required")
 	}
 
 	retIA, err := client.InstanceArrayGet(*instanceArrayID.(*int))
@@ -199,7 +199,7 @@ func firewallRuleAddCmd(c *Command, client metalcloud.MetalCloudClient) (string,
 	instanceArrayID := c.Arguments["instance_array_id"]
 
 	if instanceArrayID == nil || *instanceArrayID.(*int) == 0 {
-		return "", fmt.Errorf("-ia <instance_array_id> is required")
+		return "", fmt.Errorf("-ia is required")
 	}
 
 	retIA, err := client.InstanceArrayGet(*instanceArrayID.(*int))
@@ -256,7 +256,7 @@ func firewallRuleDeleteCmd(c *Command, client metalcloud.MetalCloudClient) (stri
 	instanceArrayID := c.Arguments["instance_array_id"]
 
 	if instanceArrayID == nil || *instanceArrayID.(*int) == 0 {
-		return "", fmt.Errorf("-ia <instance_array_id> is required")
+		return "", fmt.Errorf("-ia is required")
 	}
 
 	retIA, err := client.InstanceArrayGet(*instanceArrayID.(*int))
