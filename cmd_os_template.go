@@ -110,7 +110,7 @@ var osTemplatesCmds = []Command{
 			}
 		},
 		ExecuteFunc: templateGetCmd,
-		Endpoint:    ExtendedEndpoint,
+		Endpoint:    DeveloperEndpoint,
 	},
 	{
 		Description:  "Delete a template.",
