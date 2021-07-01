@@ -388,7 +388,7 @@ func datacenterGetCmd(c *Command, client metalcloud.MetalCloudClient) (string, e
 	if showConfig {
 		schema = append(schema, tableformatter.SchemaField{
 			FieldName: "CONFIG",
-			FieldType: tableformatter.TypeString,
+			FieldType: tableformatter.TypeInterface,
 			FieldSize: 15,
 		})
 
