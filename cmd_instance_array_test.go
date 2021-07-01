@@ -102,19 +102,19 @@ func TestInstanceArrayEdit(t *testing.T) {
 		Return(&ia, nil).
 		AnyTimes()
 
-	i := 10
+	i := "10"
 	newlabel := "newlabel"
 	cmd := Command{
 		Arguments: map[string]interface{}{
-			"instance_array_id_or_label": &ia.InstanceArrayID,
-			"instance_array_label":       &newlabel,
-			"volume_template_id":         &i,
+			"instance_array_id_or_label":  &ia.InstanceArrayID,
+			"instance_array_label":        &newlabel,
+			"volume_template_id_or_label": &i,
 		},
 	}
 
 	expectedOperationObject := iao
 	expectedOperationObject.InstanceArrayLabel = "newlabel"
-	expectedOperationObject.VolumeTemplateID = i
+	expectedOperationObject.VolumeTemplateID = 10
 
 	client.EXPECT().
 		InstanceArrayEdit(ia.InstanceArrayID, expectedOperationObject, nil, nil, nil, nil).
