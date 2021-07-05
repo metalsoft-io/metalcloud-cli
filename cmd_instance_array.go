@@ -554,7 +554,7 @@ func argsToInstanceArray(m map[string]interface{}, c *Command, client metalcloud
 	}
 
 	if v, ok := getBoolParamOk(m["instance_array_firewall_not_managed"]); ok {
-		ia.InstanceArrayFirewallManaged = v
+		ia.InstanceArrayFirewallManaged = !v
 	}
 
 	if v, ok := getStringParamOk(c.Arguments["volume_template_id_or_label"]); ok {
@@ -613,7 +613,7 @@ func argsToInstanceArrayOperation(m map[string]interface{}, iao *metalcloud.Inst
 	}
 
 	if v, ok := getBoolParamOk(m["instance_array_firewall_not_managed"]); ok {
-		iao.InstanceArrayFirewallManaged = v
+		iao.InstanceArrayFirewallManaged = !v
 	}
 
 	if v, ok := getStringParamOk(c.Arguments["volume_template_id_or_label"]); ok {
