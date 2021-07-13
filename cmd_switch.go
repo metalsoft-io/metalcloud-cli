@@ -199,6 +199,10 @@ func switchCreateCmd(c *Command, client metalcloud.MetalCloudClient) (string, er
 		return "", err
 	}
 
+	if obj.DatacenterName == "" {
+		return "", fmt.Errorf("Datacenter name is required.")
+	}
+
 	ret, err := client.SwitchDeviceCreate(obj, getBoolParam(c.Arguments["overwrite_hostname_from_switch"]))
 	if err != nil {
 		return "", err

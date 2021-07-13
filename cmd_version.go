@@ -19,7 +19,6 @@ var versionCmds = []Command{
 		InitFunc: func(c *Command) {
 			c.Arguments = map[string]interface{}{
 				"format": c.FlagSet.String("format", _nilDefaultStr, "The output format. Supported values are 'json','csv','yaml'. The default format is human readable."),
-				"usage":  c.FlagSet.String("usage", _nilDefaultStr, "Variable's usage"),
 			}
 		},
 		ExecuteFunc: versionShowCmd,

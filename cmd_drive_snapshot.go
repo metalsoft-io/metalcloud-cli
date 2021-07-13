@@ -37,7 +37,7 @@ var driveSnapshotCmds = []Command{
 		FlagSet:      flag.NewFlagSet("drive snapshots list", flag.ExitOnError),
 		InitFunc: func(c *Command) {
 			c.Arguments = map[string]interface{}{
-				"drive_id": c.FlagSet.Int("id", _nilDefaultInt, "(Required) The id of the drive to create a snapshot from"),
+				"drive_id": c.FlagSet.Int("id", _nilDefaultInt, "(Required) The id of the drive for which to list snapshots."),
 				"format":   c.FlagSet.String("format", "", "The output format. Supported values are 'json','csv','yaml'. The default format is human readable."),
 			}
 		},
