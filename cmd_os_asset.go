@@ -300,6 +300,22 @@ func associateAssetFromCommand(assetID int, assetFileName string, c *Command, cl
 
 			for _, a := range *list {
 				if a.OSAsset.OSAssetFileName == assetFileName || a.OSAssetFilePath == path {
+					bUpdateTemplate := false
+					if template.OSAssetBootloaderLocalInstall == a.OSAsset.OSAssetID {
+						template.OSAssetBootloaderLocalInstall = 0
+						bUpdateTemplate = true
+					}
+					if template.OSAssetBootloaderOSBoot == a.OSAsset.OSAssetID {
+						template.OSAssetBootloaderOSBoot = 0
+						bUpdateTemplate = true
+					}
+					if bUpdateTemplate {
+						template, err = client.OSTemplateUpdate(template.VolumeTemplateID, *template)
+
+						if err != nil {
+							return err
+						}
+					}
 					err = client.OSTemplateRemoveOSAsset(template.VolumeTemplateID, a.OSAsset.OSAssetID)
 
 					if err != nil {
