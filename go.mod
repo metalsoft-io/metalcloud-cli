@@ -5,7 +5,7 @@ go 1.12
 // replace github.com/bigstepinc/metal-cloud-sdk-go/v2 => C:\Users\Costina.Batica\go\src\github.com\metalsoft-io\metal-cloud-sdk-go
 
 require (
-	github.com/bigstepinc/metal-cloud-sdk-go/v2 v2.2.6
+	github.com/bigstepinc/metal-cloud-sdk-go/v2 v2.2.18
 	// github.com/bigstepinc/metal-cloud-sdk-go v1.5.2
 	// github.com/bigstepinc/metal-cloud-sdk-go v2.0.0
 	github.com/golang/mock v1.4.4
