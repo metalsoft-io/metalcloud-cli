@@ -1,4 +1,4 @@
-UUID: 35353736-3739-5A43-3335-313053375343
+UUID: 35353736-3739-5A43-3335-312312312312
 status: available
 serialNumber: CZ3510S7SC
 vendor: HP
@@ -47,7 +47,7 @@ diskSizeMbytes: 954368
 diskType: HDD
 productName: ProLiant DL320e Gen8
 serverClass: bigdata
-serverTypeID: 20
+#serverTypeID: 
 interfaces:
 - macAddress: 34:64:a9:95:92:64
 - macAddress: 34:64:a9:95:92:65
