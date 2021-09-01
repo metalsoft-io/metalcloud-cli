@@ -1,13 +1,11 @@
-module github.com/bigstepinc/metalcloud-cli
+module github.com/metalsoft-io/metalcloud-cli
 
 go 1.12
 
-// replace github.com/bigstepinc/metal-cloud-sdk-go/v2 => C:\Users\Costina.Batica\go\src\github.com\metalsoft-io\metal-cloud-sdk-go
+// replace github.com/metalsoft-io/metal-cloud-sdk-go/v2 => C:\Users\Costina.Batica\go\src\github.com\metalsoft-io\metal-cloud-sdk-go
 
 require (
-	github.com/bigstepinc/metal-cloud-sdk-go/v2 v2.2.20
-	// github.com/bigstepinc/metal-cloud-sdk-go v1.5.2
-	// github.com/bigstepinc/metal-cloud-sdk-go v2.0.0
+	github.com/metalsoft-io/metal-cloud-sdk-go/v2 v2.2.21
 	github.com/golang/mock v1.4.4
 	github.com/kr/text v0.2.0 // indirect
 	github.com/metalsoft-io/tableformatter v1.0.4
@@ -19,4 +17,3 @@ require (
 	gopkg.in/yaml.v3 v3.0.0-20200615113413-eeeca48fe776
 )
 
-//replace github.com/bigstepinc/metal-cloud-sdk-go => /Users/alex/code/go/src/github.com/bigstepinc/metal-cloud-sdk-go

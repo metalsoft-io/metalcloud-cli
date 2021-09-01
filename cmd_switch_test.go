@@ -8,8 +8,8 @@ import (
 
 	"gopkg.in/yaml.v2"
 
-	metalcloud "github.com/bigstepinc/metal-cloud-sdk-go/v2"
-	mock_metalcloud "github.com/bigstepinc/metalcloud-cli/helpers"
+	metalcloud "github.com/metalsoft-io/metal-cloud-sdk-go/v2"
+	mock_metalcloud "github.com/metalsoft-io/metalcloud-cli/helpers"
 	gomock "github.com/golang/mock/gomock"
 	. "github.com/onsi/gomega"
 )

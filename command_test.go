@@ -12,10 +12,10 @@ import (
 	"syscall"
 	"testing"
 
-	metalcloud "github.com/bigstepinc/metal-cloud-sdk-go/v2"
+	metalcloud "github.com/metalsoft-io/metal-cloud-sdk-go/v2"
 
 	//. "github.com/onsi/gomega"
-	mock_metalcloud "github.com/bigstepinc/metalcloud-cli/helpers"
+	mock_metalcloud "github.com/metalsoft-io/metalcloud-cli/helpers"
 	gomock "github.com/golang/mock/gomock"
 	. "github.com/onsi/gomega"
 )

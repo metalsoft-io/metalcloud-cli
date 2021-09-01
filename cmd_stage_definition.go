@@ -7,7 +7,7 @@ import (
 	"os"
 	"strings"
 
-	metalcloud "github.com/bigstepinc/metal-cloud-sdk-go/v2"
+	metalcloud "github.com/metalsoft-io/metal-cloud-sdk-go/v2"
 	"github.com/metalsoft-io/tableformatter"
 )
 
