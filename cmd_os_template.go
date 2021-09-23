@@ -329,6 +329,10 @@ func updateTemplateFromCommand(obj metalcloud.OSTemplate, c *Command, client met
 		obj.VolumeTemplateVersion = v
 	}
 
+	if v, ok := getStringParamOk(c.Arguments["os_ready_method"]); ok {
+		obj.VolumeTemplateOSReadyMethod = v
+	}
+
 	if v, ok := getStringParamOk(c.Arguments["os_bootstrap_function_name"]); ok {
 		obj.VolumeTemplateOsBootstrapFunctionName = v
 	}
