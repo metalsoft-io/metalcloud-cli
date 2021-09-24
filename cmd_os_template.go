@@ -55,8 +55,9 @@ var osTemplatesCmds = []Command{
 				"repo_url":                           c.FlagSet.String("repo-url", _nilDefaultStr, "Template's location the repository"),
 				"os_asset_id_bootloader_local_install_id_or_name": c.FlagSet.String("install-bootloader-asset", _nilDefaultStr, "Template's bootloader asset id during install"),
 				"os_asset_id_bootloader_os_boot_id_or_name":       c.FlagSet.String("os-boot-bootloader-asset", _nilDefaultStr, "Template's bootloader asset id during regular server boot"),
-				"version":   c.FlagSet.String("version", _nilDefaultStr, "Template version. Default value is 0.0.0"),
-				"return_id": c.FlagSet.Bool("return-id", false, "(Flag) If set will print the ID of the created infrastructure. Useful for automating tasks."),
+				"version":         c.FlagSet.String("version", _nilDefaultStr, "Template version. Default value is 0.0.0"),
+				"os_ready_method": c.FlagSet.String("os-ready-method", _nilDefaultStr, "Possible values: 'wait_for_ssh', 'wait_for_signal_from_os'. Default value: 'wait_for_ssh'."),
+				"return_id":       c.FlagSet.Bool("return-id", false, "(Flag) If set will print the ID of the created infrastructure. Useful for automating tasks."),
 			}
 		},
 		ExecuteFunc: templateCreateCmd,
