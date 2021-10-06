@@ -41,7 +41,7 @@ var volumeTemplateCmds = []Command{
 				"label":                      c.FlagSet.String("label", _nilDefaultStr, "(Required) The label of the volume template"),
 				"description":                c.FlagSet.String("description", _nilDefaultStr, "(Required) The description of the volume template"),
 				"display_name":               c.FlagSet.String("name", _nilDefaultStr, "(Required) The display name of the volume template"),
-				"boot_type":                  c.FlagSet.String("boot-type", _nilDefaultStr, "The boot_type of the volume template. Possible values: 'uefi_only','legacy_only','hybrid' "),
+				"boot_type":                  c.FlagSet.String("boot-type", _nilDefaultStr, "The boot_type of the volume template. Possible values: 'uefi_only','legacy_only' "),
 				"boot_methods_supported":     c.FlagSet.String("boot-methods-supported", _nilDefaultStr, "The boot_methods_supported of the volume template. Defaults to 'pxe_iscsi'."),
 				"deprecation_status":         c.FlagSet.String("deprecation-status", _nilDefaultStr, "Deprecation status. Possible values: not_deprecated,deprecated_deny_provision,deprecated_allow_expand. Defaults to 'not_deprecated'."),
 				"tags":                       c.FlagSet.String("tags", _nilDefaultStr, "The tags of the volume template, comma separated."),
