@@ -7,9 +7,9 @@ import (
 	"strings"
 	"testing"
 
+	gomock "github.com/golang/mock/gomock"
 	metalcloud "github.com/metalsoft-io/metal-cloud-sdk-go/v2"
 	mock_metalcloud "github.com/metalsoft-io/metalcloud-cli/helpers"
-	gomock "github.com/golang/mock/gomock"
 	. "github.com/onsi/gomega"
 )
 
@@ -308,15 +308,10 @@ func TestDriveArrayEdit(t *testing.T) {
 	//check catches error at get
 	i = 100
 	cmd.Arguments["drive_array_id_or_label"] = &i
-
+	da.DriveArrayID = i
 	client.EXPECT().
 		DriveArrayGet(i).
 		Return(&da, fmt.Errorf("testerr")).
-		Times(1)
-
-	client.EXPECT().
-		DriveArrayEdit(da.DriveArrayID, gomock.Any()).
-		Return(nil, fmt.Errorf("testerr")).
 		Times(1)
 
 	_, err = driveArrayEditCmd(&cmd, client)
@@ -325,6 +320,7 @@ func TestDriveArrayEdit(t *testing.T) {
 	//check catches error at edit
 	i = 101
 	cmd.Arguments["drive_array_id_or_label"] = &i
+	da.DriveArrayID = i
 
 	client.EXPECT().
 		DriveArrayGet(i).
@@ -332,13 +328,12 @@ func TestDriveArrayEdit(t *testing.T) {
 		Times(1)
 
 	client.EXPECT().
-		DriveArrayEdit(da.DriveArrayID, gomock.Any()).
+		DriveArrayEdit(i, gomock.Any()).
 		Return(nil, fmt.Errorf("testerr")).
 		Times(1)
 
 	_, err = driveArrayEditCmd(&cmd, client)
 	Expect(err).NotTo(BeNil())
-
 }
 
 func TestDriveArrayListCmd(t *testing.T) {
@@ -600,25 +595,7 @@ func TestGetDriveArrayFromCommand(t *testing.T) {
 		DriveArrayServiceStatus: "active",
 	}
 
-	daList := map[string]metalcloud.DriveArray{
-		da.DriveArrayLabel + ".vanilla": da,
-	}
-
 	client := mock_metalcloud.NewMockMetalCloudClient(ctrl)
-
-	iList := map[string]metalcloud.Infrastructure{
-		infra.InfrastructureLabel: infra,
-	}
-
-	client.EXPECT().
-		Infrastructures().
-		Return(&iList, nil).
-		Times(1)
-
-	client.EXPECT().
-		DriveArrays(infra.InfrastructureID).
-		Return(&daList, nil).
-		AnyTimes()
 
 	client.EXPECT().
 		DriveArrayGet(da.DriveArrayID).
