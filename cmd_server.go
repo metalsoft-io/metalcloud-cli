@@ -236,6 +236,26 @@ func serversListCmd(c *Command, client metalcloud.MetalCloudClient) (string, err
 			FieldType: tableformatter.TypeString,
 			FieldSize: 5,
 		},
+		{
+			FieldName: "INVENTORY_ID",
+			FieldType: tableformatter.TypeString,
+			FieldSize: 4,
+		},
+		{
+			FieldName: "RACK_NAME",
+			FieldType: tableformatter.TypeString,
+			FieldSize: 4,
+		},
+		{
+			FieldName: "RACK_POSITION_LOWER_UNIT",
+			FieldType: tableformatter.TypeString,
+			FieldSize: 4,
+		},
+		{
+			FieldName: "RACK_POSITION_UPPER_UNIT",
+			FieldType: tableformatter.TypeString,
+			FieldSize: 4,
+		},
 	}
 
 	showCredentials := false
@@ -316,6 +336,10 @@ func serversListCmd(c *Command, client metalcloud.MetalCloudClient) (string, err
 			strings.Join(s.ServerTags, ","),
 			s.ServerIPMIHost,
 			allocation,
+			s.ServerInventoryId,
+			s.ServerRackName,
+			s.ServerRackPositionLowerUnit,
+			s.ServerRackPositionUpperUnit,
 			credentialsUser,
 			credentialsPass,
 		})
@@ -346,6 +370,26 @@ func serverGetCmd(c *Command, client metalcloud.MetalCloudClient) (string, error
 		},
 		{
 			FieldName: "DATACENTER_NAME",
+			FieldType: tableformatter.TypeString,
+			FieldSize: 6,
+		},
+		{
+			FieldName: "INVENTORY_ID",
+			FieldType: tableformatter.TypeString,
+			FieldSize: 6,
+		},
+		{
+			FieldName: "RACK_NAME",
+			FieldType: tableformatter.TypeString,
+			FieldSize: 6,
+		},
+		{
+			FieldName: "RACK_POSITION_LOWER_UNIT",
+			FieldType: tableformatter.TypeString,
+			FieldSize: 6,
+		},
+		{
+			FieldName: "RACK_POSITION_UPPER_UNIT",
 			FieldType: tableformatter.TypeString,
 			FieldSize: 6,
 		},
@@ -463,6 +507,10 @@ func serverGetCmd(c *Command, client metalcloud.MetalCloudClient) (string, error
 	data = append(data, []interface{}{
 		server.ServerID,
 		server.DatacenterName,
+		server.ServerInventoryId,
+		server.ServerRackName,
+		server.ServerRackPositionLowerUnit,
+		server.ServerRackPositionUpperUnit,
 		serverTypeName,
 		server.ServerStatus,
 		server.ServerVendor,
@@ -513,10 +561,15 @@ func serverGetCmd(c *Command, client metalcloud.MetalCloudClient) (string, error
 		default:
 			sb.WriteString("SERVER OVERVIEW\n")
 			sb.WriteString("---------------\n")
-			sb.WriteString(fmt.Sprintf("#%d %s %s\n",
+			sb.WriteString(fmt.Sprintf("#%d %s %s\nInventory Id: %s\nRack Name: %s\nRack Position Lower Unit: %s\nRack Position Upper Unit: %s\n",
 				server.ServerID,
 				serverTypeName,
-				server.DatacenterName))
+				server.DatacenterName,
+				server.ServerInventoryId,
+				server.ServerRackName,
+				server.ServerRackPositionLowerUnit,
+				server.ServerRackPositionUpperUnit,
+			))
 
 			sb.WriteString(fmt.Sprintf("%s %s\n%s %s\n\n",
 				server.ServerVendor,
