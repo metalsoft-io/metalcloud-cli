@@ -98,7 +98,7 @@ brews:
 
     # Your app's homepage.
     # Default is empty.
-    homepage: "https://bigstep.com/"
+    homepage: "https://metalsoft.io/"
 
     # Your app's description.
     # Default is empty.
@@ -183,11 +183,11 @@ nfpms:
     vendor: Bigstep Inc.
     # Your app's homepage.
     # Default is empty.
-    homepage: https://bigstep.com/
+    homepage: https://metalsoft.io/
 
     # Your app's maintainer (probably you).
     # Default is empty.
-    maintainer: support@bigstep.com
+    maintainer: support@metalsoft.io
 
     # Your app's description.
     # Default is empty.
