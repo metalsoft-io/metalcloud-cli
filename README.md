@@ -12,7 +12,7 @@ This tool allows the manipulation of all Bigstep Metal Cloud elements via the co
 
 To install on Mac OS X:
 ```
-brew tap bigstepinc/homebrew-repo
+brew tap metalsoft-io/homebrew-repo
 brew install metalcloud-cli
 ```
 
