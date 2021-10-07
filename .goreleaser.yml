@@ -160,7 +160,7 @@ nfpms:
 
     # Your app's vendor.
     # Default is empty.
-    vendor: Bigstep Inc.
+    vendor: Metalsoft Cloud, Inc.
     # Your app's homepage.
     # Default is empty.
     homepage: https://metalsoft.io/
