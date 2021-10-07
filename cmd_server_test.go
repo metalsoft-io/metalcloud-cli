@@ -9,9 +9,9 @@ import (
 	"syscall"
 	"testing"
 
+	gomock "github.com/golang/mock/gomock"
 	metalcloud "github.com/metalsoft-io/metal-cloud-sdk-go/v2"
 	mock_metalcloud "github.com/metalsoft-io/metalcloud-cli/helpers"
-	gomock "github.com/golang/mock/gomock"
 	. "github.com/onsi/gomega"
 	"gopkg.in/yaml.v3"
 )
@@ -21,8 +21,12 @@ func TestServersListCmd(t *testing.T) {
 	ctrl := gomock.NewController(t)
 
 	server := metalcloud.ServerSearchResult{
-		ServerID:          100,
-		ServerProductName: "test",
+		ServerID:                    100,
+		ServerProductName:           "test",
+		ServerInventoryId:           "id-20040424",
+		ServerRackName:              "Rack Name",
+		ServerRackPositionLowerUnit: "L-2004",
+		ServerRackPositionUpperUnit: "U-2404",
 	}
 
 	list := []metalcloud.ServerSearchResult{
@@ -57,6 +61,10 @@ func TestServersListCmd(t *testing.T) {
 	r := m[0].(map[string]interface{})
 	Expect(int(r["ID"].(float64))).To(Equal(100))
 	Expect(r["PRODUCT_NAME"].(string)).To(Equal(server.ServerProductName))
+	Expect(r["INVENTORY_ID"].(string)).To(Equal(server.ServerInventoryId))
+	Expect(r["RACK_NAME"].(string)).To(Equal(server.ServerRackName))
+	Expect(r["RACK_POSITION_LOWER_UNIT"].(string)).To(Equal(server.ServerRackPositionLowerUnit))
+	Expect(r["RACK_POSITION_UPPER_UNIT"].(string)).To(Equal(server.ServerRackPositionUpperUnit))
 
 	//test plaintext
 	format = ""
@@ -90,7 +98,10 @@ func TestServersListCmd(t *testing.T) {
 	csv, err := reader.ReadAll()
 	Expect(csv[1][0]).To(Equal(fmt.Sprintf("%d", 100)))
 	Expect(csv[1][5]).To(Equal("test"))
-
+	Expect(csv[1][11]).To(Equal("id-20040424"))
+	Expect(csv[1][12]).To(Equal("Rack Name"))
+	Expect(csv[1][13]).To(Equal("L-2004"))
+	Expect(csv[1][14]).To(Equal("U-2404"))
 }
 
 func TestServerGetCmd(t *testing.T) {
@@ -105,9 +116,13 @@ func TestServerGetCmd(t *testing.T) {
 	}
 
 	server := metalcloud.Server{
-		ServerID:          10,
-		ServerProductName: "test",
-		ServerTypeID:      100,
+		ServerID:                    10,
+		ServerProductName:           "test",
+		ServerTypeID:                100,
+		ServerInventoryId:           "id-20040424",
+		ServerRackName:              "Rack Name",
+		ServerRackPositionLowerUnit: "L-2004",
+		ServerRackPositionUpperUnit: "U-2404",
 	}
 
 	client.EXPECT().
@@ -142,6 +157,10 @@ func TestServerGetCmd(t *testing.T) {
 	r := m[0].(map[string]interface{})
 	Expect(int(r["ID"].(float64))).To(Equal(10))
 	Expect(r["PRODUCT_NAME"].(string)).To(Equal(server.ServerProductName))
+	Expect(r["INVENTORY_ID"].(string)).To(Equal(server.ServerInventoryId))
+	Expect(r["RACK_NAME"].(string)).To(Equal(server.ServerRackName))
+	Expect(r["RACK_POSITION_LOWER_UNIT"].(string)).To(Equal(server.ServerRackPositionLowerUnit))
+	Expect(r["RACK_POSITION_UPPER_UNIT"].(string)).To(Equal(server.ServerRackPositionUpperUnit))
 
 	//test plaintext
 	format = ""
@@ -174,8 +193,11 @@ func TestServerGetCmd(t *testing.T) {
 
 	csv, err := reader.ReadAll()
 	Expect(csv[1][0]).To(Equal(fmt.Sprintf("%d", 10)))
-	Expect(csv[1][5]).To(Equal("test"))
-
+	Expect(csv[1][2]).To(Equal("id-20040424"))
+	Expect(csv[1][3]).To(Equal("Rack Name"))
+	Expect(csv[1][4]).To(Equal("L-2004"))
+	Expect(csv[1][5]).To(Equal("U-2404"))
+	Expect(csv[1][9]).To(Equal("test"))
 }
 
 func TestServerEditCmd(t *testing.T) {
