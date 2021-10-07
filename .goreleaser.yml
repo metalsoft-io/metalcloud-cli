@@ -56,37 +56,17 @@ brews:
     # same kind. We will probably unify this in the next major version like it is done with scoop.
 
     # Github repository to push the tap to.
-    github:
-      owner: bigstepinc
+    tap:
+      owner: metalsoft-io
       name: homebrew-repo
-
-    # OR Gitlab
-    # gitlab:
-    #   owner: gitlab-user
-    #   name: homebrew-tap
-
-    # Gitea is not supported yet, but the support coming
-
-    # Template for the url which is determined by the given Token (github or gitlab)
-    # Default for github is "https://github.com/<repo_owner>/<repo_name>/releases/download/{{ .Tag }}/{{ .ArtifactName }}"
-    # Default for gitlab is "https://gitlab.com/<repo_owner>/<repo_name>/uploads/{{ .ArtifactUploadHash }}/{{ .ArtifactName }}"
-   # url_template: "http://github.mycompany.com/foo/bar/releases/{{ .Tag }}/{{ .ArtifactName }}"
-
-    # Allows you to set a custom download strategy. Note that you'll need
-    # to implement the strategy and add it to your tap repository.
-    # Example: http://lessthanhero.io/post/homebrew-with-private-repo-releases/
-    # Default is empty.
-    #download_strategy: GitHubPrivateRepositoryReleaseDownloadStrategy
-
-    # Allows you to add a custom require_relative at the top of the formula template
-    # Default is empty
-    #custom_require: custom_download_strategy
-
-    # Git author used to commit to the repository.
-    # Defaults are shown.
+      #branch: main
+    
     commit_author:
       name: goreleaserbot
       email: goreleaser@carlosbecker.com
+    
+    commit_msg_template: "Brew formula update for {{ .ProjectName }} version {{ .Tag }}"
+
 
     # Folder inside the repository to put the formula.
     # Default is the root folder.
