@@ -117,5 +117,5 @@ func networkProfileListCmd(c *Command, client metalcloud.MetalCloudClient) (stri
 		Schema: schema,
 	}
 
-	return table.RenderTable("Drive Arrays", "", getStringParam(c.Arguments["format"]))
+	return table.RenderTable("Network Profiles", "", getStringParam(c.Arguments["format"]))
 }
