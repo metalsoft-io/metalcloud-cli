@@ -31,6 +31,21 @@ var networkProfilesCmds = []Command{
 		ExecuteFunc: networkProfileListCmd,
 	},
 	{
+		Description:  "Lists vlans of network profile.",
+		Subject:      "network-profile",
+		AltSubject:   "np",
+		Predicate:    "vlans-list",
+		AltPredicate: "vlans-ls",
+		FlagSet:      flag.NewFlagSet("vlans-list network_profile", flag.ExitOnError),
+		InitFunc: func(c *Command) {
+			c.Arguments = map[string]interface{}{
+				"network_profile_id": c.FlagSet.String("id", _nilDefaultStr, "(Required) Network profile's id."),
+				"format":             c.FlagSet.String("format", "", "The output format. Supported values are 'json','csv','yaml'. The default format is human readable."),
+			}
+		},
+		ExecuteFunc: networkProfileVlansListCmd,
+	},
+	{
 		Description:  "Get network profile details.",
 		Subject:      "network-profile",
 		AltSubject:   "np",
@@ -189,52 +204,15 @@ func networkProfileListCmd(c *Command, client metalcloud.MetalCloudClient) (stri
 	return table.RenderTable("Network Profiles", "", getStringParam(c.Arguments["format"]))
 }
 
-func networkProfileGetCmd(c *Command, client metalcloud.MetalCloudClient) (string, error) {
-
-	network_profile_id, ok := getStringParamOk(c.Arguments["network_profile_id"])
+func networkProfileVlansListCmd(c *Command, client metalcloud.MetalCloudClient) (string, error) {
+	id, ok := getIntParamOk(c.Arguments["network_profile_id"])
 	if !ok {
 		return "", fmt.Errorf("-id required")
-	}
-
-	id, err := strconv.Atoi(network_profile_id)
-	if err != nil {
-		return "", err
 	}
 
 	retNP, err := client.NetworkProfileGet(id)
 	if err != nil {
 		return "", err
-	}
-
-	schema := []tableformatter.SchemaField{
-		{
-			FieldName: "ID",
-			FieldType: tableformatter.TypeString,
-			FieldSize: 6,
-		},
-		{
-			FieldName: "LABEL",
-			FieldType: tableformatter.TypeString,
-			FieldSize: 6,
-		},
-		{
-			FieldName: "DATACENTER",
-			FieldType: tableformatter.TypeString,
-			FieldSize: 6,
-		},
-	}
-
-	data := [][]interface{}{
-		{
-			"#" + strconv.Itoa(retNP.NetworkProfileID),
-			retNP.NetworkProfileLabel,
-			retNP.DatacenterName,
-		},
-	}
-
-	table := tableformatter.Table{
-		Data:   data,
-		Schema: schema,
 	}
 
 	schemaConfiguration := []tableformatter.SchemaField{
@@ -294,17 +272,62 @@ func networkProfileGetCmd(c *Command, client metalcloud.MetalCloudClient) (strin
 		Schema: schemaConfiguration,
 	}
 
-	retOverviewTable, err := table.RenderTableFoldable("", "OVERVIEW\n--------\n", getStringParam(c.Arguments["format"]), 0)
+	retConfigTable, err := tableConfiguration.RenderTableFoldable("", "", getStringParam(c.Arguments["format"]), 0)
 	if err != nil {
 		return "", err
 	}
 
-	retConfigTable, err := tableConfiguration.RenderTableFoldable("", "CONFIGURATION\n-------------\n", getStringParam(c.Arguments["format"]), 0)
+	return retConfigTable, err
+}
+
+func networkProfileGetCmd(c *Command, client metalcloud.MetalCloudClient) (string, error) {
+	id, ok := getIntParamOk(c.Arguments["network_profile_id"])
+	if !ok {
+		return "", fmt.Errorf("-id required")
+	}
+
+	retNP, err := client.NetworkProfileGet(id)
 	if err != nil {
 		return "", err
 	}
 
-	return retOverviewTable + retConfigTable, err
+	schema := []tableformatter.SchemaField{
+		{
+			FieldName: "ID",
+			FieldType: tableformatter.TypeString,
+			FieldSize: 6,
+		},
+		{
+			FieldName: "LABEL",
+			FieldType: tableformatter.TypeString,
+			FieldSize: 6,
+		},
+		{
+			FieldName: "DATACENTER",
+			FieldType: tableformatter.TypeString,
+			FieldSize: 6,
+		},
+	}
+
+	data := [][]interface{}{
+		{
+			"#" + strconv.Itoa(retNP.NetworkProfileID),
+			retNP.NetworkProfileLabel,
+			retNP.DatacenterName,
+		},
+	}
+
+	table := tableformatter.Table{
+		Data:   data,
+		Schema: schema,
+	}
+
+	retOverviewTable, err := table.RenderTableFoldable("", "", getStringParam(c.Arguments["format"]), 0)
+	if err != nil {
+		return "", err
+	}
+
+	return retOverviewTable, err
 }
 
 func networkProfileCreateCmd(c *Command, client metalcloud.MetalCloudClient) (string, error) {
@@ -410,37 +433,22 @@ func networkProfileDeleteCmd(c *Command, client metalcloud.MetalCloudClient) (st
 }
 
 func networkProfileAssociateToInstanceArrayCmd(c *Command, client metalcloud.MetalCloudClient) (string, error) {
-	network_profile_id, ok := getStringParamOk(c.Arguments["network_profile_id"])
+	id, ok := getIntParamOk(c.Arguments["network_profile_id"])
 	if !ok {
 		return "", fmt.Errorf("-id required")
 	}
 
-	id, err := strconv.Atoi(network_profile_id)
-	if err != nil {
-		return "", err
-	}
-
-	network_id, ok := getStringParamOk(c.Arguments["network_id"])
+	net, ok := getIntParamOk(c.Arguments["network_id"])
 	if !ok {
 		return "", fmt.Errorf("-net required")
 	}
 
-	net, err := strconv.Atoi(network_id)
-	if err != nil {
-		return "", err
-	}
-
-	instance_array_id, ok := getStringParamOk(c.Arguments["instance_array_id"])
+	ia, ok := getIntParamOk(c.Arguments["instance_array_id"])
 	if !ok {
 		return "", fmt.Errorf("-net required")
 	}
 
-	ia, err := strconv.Atoi(instance_array_id)
-	if err != nil {
-		return "", err
-	}
-
-	_, err = client.InstanceArrayNetworkProfileSet(ia, net, id)
+	_, err := client.InstanceArrayNetworkProfileSet(ia, net, id)
 	if err != nil {
 		return "", err
 	}
