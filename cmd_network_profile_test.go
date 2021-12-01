@@ -216,7 +216,6 @@ func TestNetworkProfileVlansListCmd(t *testing.T) {
 		AnyTimes()
 
 	_, err = networkProfileVlansListCmd(&cmd, client)
-	fmt.Println(err)
 	Expect(err).NotTo(BeNil())
 }
 

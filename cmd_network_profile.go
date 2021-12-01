@@ -39,7 +39,7 @@ var networkProfilesCmds = []Command{
 		FlagSet:      flag.NewFlagSet("vlans-list network_profile", flag.ExitOnError),
 		InitFunc: func(c *Command) {
 			c.Arguments = map[string]interface{}{
-				"network_profile_id": c.FlagSet.String("id", _nilDefaultStr, "(Required) Network profile's id."),
+				"network_profile_id": c.FlagSet.Int("id", _nilDefaultInt, "(Required) Network profile's id."),
 				"format":             c.FlagSet.String("format", "", "The output format. Supported values are 'json','csv','yaml'. The default format is human readable."),
 			}
 		},
@@ -54,7 +54,7 @@ var networkProfilesCmds = []Command{
 		FlagSet:      flag.NewFlagSet("Get network profile details.", flag.ExitOnError),
 		InitFunc: func(c *Command) {
 			c.Arguments = map[string]interface{}{
-				"network_profile_id": c.FlagSet.String("id", _nilDefaultStr, "(Required) Network profile's id."),
+				"network_profile_id": c.FlagSet.Int("id", _nilDefaultInt, "(Required) Network profile's id."),
 				"format":             c.FlagSet.String("format", _nilDefaultStr, "The output format. Supported values are 'json','csv','yaml'. The default format is human readable."),
 			}
 		},
@@ -70,7 +70,7 @@ var networkProfilesCmds = []Command{
 		FlagSet:      flag.NewFlagSet("Create network profile", flag.ExitOnError),
 		InitFunc: func(c *Command) {
 			c.Arguments = map[string]interface{}{
-				"datacenter_name":       c.FlagSet.String("id", _nilDefaultStr, "(Required) Label of the datacenter. Also used as an ID."),
+				"datacenter":            c.FlagSet.String("datacenter", GetDatacenter(), "(Required) Label of the datacenter. Also used as an ID."),
 				"format":                c.FlagSet.String("format", "json", "The input format. Supported values are 'json','yaml'. The default format is json."),
 				"read_config_from_file": c.FlagSet.String("raw-config", _nilDefaultStr, "(Required) Read  configuration from file in the format specified with --format."),
 				"read_config_from_pipe": c.FlagSet.Bool("pipe", false, "(Flag) If set, read  configuration from pipe instead of from a file. Either this flag or the --raw-config option must be used."),
@@ -105,9 +105,9 @@ var networkProfilesCmds = []Command{
 		FlagSet:      flag.NewFlagSet("assign network profile to an instance array", flag.ExitOnError),
 		InitFunc: func(c *Command) {
 			c.Arguments = map[string]interface{}{
-				"network_profile_id": c.FlagSet.String("id", _nilDefaultStr, "(Required) Network profile's id"),
-				"network_id":         c.FlagSet.String("net", _nilDefaultStr, "(Required) Network's id"),
-				"instance_array_id":  c.FlagSet.String("ia", _nilDefaultStr, "(Required) Instance array's id"),
+				"network_profile_id": c.FlagSet.Int("id", _nilDefaultInt, "(Required) Network profile's id"),
+				"network_id":         c.FlagSet.Int("net", _nilDefaultInt, "(Required) Network's id"),
+				"instance_array_id":  c.FlagSet.Int("ia", _nilDefaultInt, "(Required) Instance array's id"),
 			}
 		},
 		ExecuteFunc: networkProfileAssociateToInstanceArrayCmd,
@@ -281,6 +281,7 @@ func networkProfileVlansListCmd(c *Command, client metalcloud.MetalCloudClient) 
 }
 
 func networkProfileGetCmd(c *Command, client metalcloud.MetalCloudClient) (string, error) {
+
 	id, ok := getIntParamOk(c.Arguments["network_profile_id"])
 	if !ok {
 		return "", fmt.Errorf("-id required")
@@ -331,11 +332,7 @@ func networkProfileGetCmd(c *Command, client metalcloud.MetalCloudClient) (strin
 }
 
 func networkProfileCreateCmd(c *Command, client metalcloud.MetalCloudClient) (string, error) {
-	datacenterName, ok := getStringParamOk(c.Arguments["datacenter_name"])
-
-	if !ok {
-		return "", fmt.Errorf("id is required")
-	}
+	datacenter := c.Arguments["datacenter"]
 
 	readContentfromPipe := getBoolParam((c.Arguments["read_config_from_pipe"]))
 
@@ -380,7 +377,7 @@ func networkProfileCreateCmd(c *Command, client metalcloud.MetalCloudClient) (st
 		return "", fmt.Errorf("input format \"%s\" not supported", format)
 	}
 
-	ret, err := client.NetworkProfileCreate(datacenterName, npConf)
+	ret, err := client.NetworkProfileCreate(*datacenter.(*string), npConf)
 	if err != nil {
 		return "", err
 	}

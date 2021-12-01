@@ -350,23 +350,68 @@ func TestGetInstanceArrayFromCommand(t *testing.T) {
 
 }
 
-func TestInstanceArrayGetOverview(t *testing.T) {
+func TestInstanceArrayGetCmd(t *testing.T) {
 	RegisterTestingT(t)
+
 	ctrl := gomock.NewController(t)
 	client := mock_metalcloud.NewMockMetalCloudClient(ctrl)
 
+	expectedFirstRow := map[string]interface{}{
+		"ID":             "#10",
+		"INFRASTRUCTURE": "test",
+		"LABEL":          "test",
+	}
+
+	ia := metalcloud.InstanceArray{
+		InstanceArrayID:    10,
+		InstanceArrayLabel: "test",
+		InfrastructureID:   1,
+	}
+
 	infra := metalcloud.Infrastructure{
-		InfrastructureID:    10002,
-		InfrastructureLabel: "testinfra",
+		InfrastructureID: 1,
 	}
 
 	client.EXPECT().
-		InfrastructureGet(gomock.Any()).
+		InstanceArrayGet(ia.InstanceArrayID).
+		Return(&ia, nil).
+		AnyTimes()
+
+	client.EXPECT().
+		InfrastructureGet(infra.InfrastructureID).
 		Return(&infra, nil).
 		AnyTimes()
+
+	cases := []CommandTestCase{
+		{
+			name: "ia-get-json1",
+			cmd: MakeCommand(map[string]interface{}{
+				"instance_array_id_or_label": 10,
+				"format":                     "json",
+			}),
+			good: true,
+			id:   1,
+		},
+		{
+			name: "ia-get-yaml1",
+			cmd: MakeCommand(map[string]interface{}{
+				"instance_array_id_or_label": 10,
+				"format":                     "yaml",
+			}),
+			good: true,
+			id:   1,
+		},
+		{
+			name: "no id",
+			cmd:  MakeCommand(map[string]interface{}{}),
+			good: false,
+		},
+	}
+
+	testGetCommand(instanceArrayGetCmd, cases, client, expectedFirstRow, t)
 }
 
-func TestInstanceArrayGetInstances(t *testing.T) {
+func TestInstanceArrayInstancesListCmd(t *testing.T) {
 	RegisterTestingT(t)
 	ctrl := gomock.NewController(t)
 	client := mock_metalcloud.NewMockMetalCloudClient(ctrl)
@@ -483,7 +528,7 @@ func TestInstanceArrayGetInstances(t *testing.T) {
 		},
 	}
 
-	ret, err := instanceArrayGetInstances(&cmd, client)
+	ret, err := instanceArrayInstancesListCmd(&cmd, client)
 	Expect(err).To(BeNil())
 	Expect(ret).To(ContainSubstring(ips[0].IPHumanReadable))
 	Expect(ret).To(ContainSubstring(ilist["instance-100"].InstanceSubdomainPermanent))
@@ -499,7 +544,7 @@ func TestInstanceArrayGetInstances(t *testing.T) {
 		},
 	}
 
-	ret, err = instanceArrayGetInstances(&cmd, client)
+	ret, err = instanceArrayInstancesListCmd(&cmd, client)
 	Expect(err).To(BeNil())
 	Expect(ret).To(ContainSubstring(ips[0].IPHumanReadable))
 	Expect(ret).To(ContainSubstring(ilist["instance-100"].InstanceSubdomainPermanent))
@@ -511,7 +556,7 @@ func TestInstanceArrayGetInstances(t *testing.T) {
 	format = "json"
 	cmd.Arguments["format"] = &format
 
-	ret, err = instanceArrayGetInstances(&cmd, client)
+	ret, err = instanceArrayInstancesListCmd(&cmd, client)
 	Expect(err).To(BeNil())
 
 	var m []interface{}
@@ -529,7 +574,7 @@ func TestInstanceArrayGetInstances(t *testing.T) {
 	format = "csv"
 	cmd.Arguments["format"] = &format
 
-	ret, err = instanceArrayGetInstances(&cmd, client)
+	ret, err = instanceArrayInstancesListCmd(&cmd, client)
 	Expect(err).To(BeNil())
 	Expect(ret).To(Not(Equal("")))
 

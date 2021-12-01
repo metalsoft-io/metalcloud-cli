@@ -59,6 +59,21 @@ var instanceArrayCmds = []Command{
 		ExecuteFunc: instanceArrayListCmd,
 	},
 	{
+		Description:  "Lists all instances of instance array.",
+		Subject:      "instance-array",
+		AltSubject:   "ia",
+		Predicate:    "instances-list",
+		AltPredicate: "instances-ls",
+		FlagSet:      flag.NewFlagSet("instances-list instance_array", flag.ExitOnError),
+		InitFunc: func(c *Command) {
+			c.Arguments = map[string]interface{}{
+				"instance_array_id_or_label": c.FlagSet.String("id", _nilDefaultStr, "(Required) InstanceArray's id or label. Note that the label can be ambigous."),
+				"format":                     c.FlagSet.String("format", "", "The output format. Supported values are 'json','csv','yaml'. The default format is human readable."),
+			}
+		},
+		ExecuteFunc: instanceArrayInstancesListCmd,
+	},
+	{
 		Description:  "Delete instance array.",
 		Subject:      "instance-array",
 		AltSubject:   "ia",
@@ -446,7 +461,7 @@ func instanceArrayGetCmd(c *Command, client metalcloud.MetalCloudClient) (string
 	return table.RenderTableFoldable("", "", getStringParam(c.Arguments["format"]), 0)
 }
 
-func instanceArrayGetInstances(c *Command, client metalcloud.MetalCloudClient) (string, error) {
+func instanceArrayInstancesListCmd(c *Command, client metalcloud.MetalCloudClient) (string, error) {
 
 	retIA, err := getInstanceArrayFromCommand("id", c, client)
 	if err != nil {
