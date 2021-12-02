@@ -2,8 +2,6 @@ module github.com/metalsoft-io/metalcloud-cli
 
 go 1.16
 
-replace github.com/metalsoft-io/metal-cloud-sdk-go/v2 => /Users/macbookpro/Documents/Bigstep/metal-cloud-sdk-go
-
 require (
 	github.com/golang/mock v1.6.0
 	github.com/kr/text v0.2.0 // indirect
