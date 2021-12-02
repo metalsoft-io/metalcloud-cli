@@ -9,9 +9,9 @@ import (
 	"github.com/metalsoft-io/tableformatter"
 )
 
-var networksCmds = []Command{
+var networkCmds = []Command{
 	{
-		Description:  "Lists all connections of instance array.",
+		Description:  "List all networks for an instance array.",
 		Subject:      "network",
 		AltSubject:   "nw",
 		Predicate:    "list",
@@ -34,7 +34,7 @@ func networkListCmd(c *Command, client metalcloud.MetalCloudClient) (string, err
 		return "", err
 	}
 	if &retIA == nil {
-		return "", fmt.Errorf("instance array should not be nil")
+		return "", fmt.Errorf("-ia is required")
 	}
 
 	dataNetworkAttachments := [][]interface{}{}

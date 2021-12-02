@@ -14,7 +14,7 @@ import (
 	"github.com/metalsoft-io/tableformatter"
 )
 
-var networkProfilesCmds = []Command{
+var networkProfileCmds = []Command{
 	{
 		Description:  "Lists all network profiles.",
 		Subject:      "network-profile",
@@ -114,19 +114,19 @@ var networkProfilesCmds = []Command{
 		Endpoint:    DeveloperEndpoint,
 	},
 	{
-		Description:  "Remove (unassign) profile to an instance array.",
+		Description:  "Remove network profile from an instance array.",
 		Subject:      "network-profile",
 		AltSubject:   "np",
-		Predicate:    "disassociate",
-		AltPredicate: "unassign",
-		FlagSet:      flag.NewFlagSet("disassociate network profile to an instance array", flag.ExitOnError),
+		Predicate:    "remove",
+		AltPredicate: "rm",
+		FlagSet:      flag.NewFlagSet("remove network profile of an instance array", flag.ExitOnError),
 		InitFunc: func(c *Command) {
 			c.Arguments = map[string]interface{}{
 				"instance_array_id": c.FlagSet.String("ia", _nilDefaultStr, "(Required) Instance array's id"),
 				"network_id":        c.FlagSet.String("net", _nilDefaultStr, "(Required) Network's id"),
 			}
 		},
-		ExecuteFunc: networkProfileUnassociateToInstanceArrayCmd,
+		ExecuteFunc: networkProfileRemoveFromInstanceArrayCmd,
 		Endpoint:    DeveloperEndpoint,
 	},
 }
@@ -393,7 +393,7 @@ func networkProfileCreateCmd(c *Command, client metalcloud.MetalCloudClient) (st
 func networkProfileDeleteCmd(c *Command, client metalcloud.MetalCloudClient) (string, error) {
 	networkProfileId, ok := getIntParamOk(c.Arguments["network_profile_id"])
 	if !ok {
-		return "", fmt.Errorf("-id is required (network_profile_id (NPI) number returned by get network profile")
+		return "", fmt.Errorf("-id is required")
 	}
 
 	confirm := getBoolParam(c.Arguments["autoconfirm"])
@@ -453,7 +453,7 @@ func networkProfileAssociateToInstanceArrayCmd(c *Command, client metalcloud.Met
 	return "", nil
 }
 
-func networkProfileUnassociateToInstanceArrayCmd(c *Command, client metalcloud.MetalCloudClient) (string, error) {
+func networkProfileRemoveFromInstanceArrayCmd(c *Command, client metalcloud.MetalCloudClient) (string, error) {
 
 	instance_array_id, ok := getStringParamOk(c.Arguments["instance_array_id"])
 	if !ok {
