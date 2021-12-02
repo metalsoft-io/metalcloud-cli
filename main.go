@@ -285,7 +285,7 @@ func initClient(endpointSuffix string) (metalcloud.MetalCloudClient, error) {
 		return nil, err
 	}
 
-	return metalcloud.GetMetalcloudClient(user, apiKey, endpoint, loggingEnabled)
+	return metalcloud.GetMetalcloudClient(user, apiKey, endpoint, loggingEnabled, "", "", "")
 
 }
 
@@ -321,6 +321,8 @@ func getCommands(clients map[string]metalcloud.MetalCloudClient) []Command {
 		workflowCmds,
 		versionCmds,
 		applyCmds,
+		networkProfileCmds,
+		networkCmds,
 	}
 
 	filteredCommands := []Command{}

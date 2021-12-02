@@ -7,9 +7,9 @@ import (
 	"strings"
 	"testing"
 
+	gomock "github.com/golang/mock/gomock"
 	metalcloud "github.com/metalsoft-io/metal-cloud-sdk-go/v2"
 	mock_metalcloud "github.com/metalsoft-io/metalcloud-cli/helpers"
-	gomock "github.com/golang/mock/gomock"
 	. "github.com/onsi/gomega"
 )
 
@@ -350,7 +350,68 @@ func TestGetInstanceArrayFromCommand(t *testing.T) {
 
 }
 
-func TestInstanceArrayGet(t *testing.T) {
+func TestInstanceArrayGetCmd(t *testing.T) {
+	RegisterTestingT(t)
+
+	ctrl := gomock.NewController(t)
+	client := mock_metalcloud.NewMockMetalCloudClient(ctrl)
+
+	expectedFirstRow := map[string]interface{}{
+		"ID":             "#10",
+		"INFRASTRUCTURE": "test",
+		"LABEL":          "test",
+	}
+
+	ia := metalcloud.InstanceArray{
+		InstanceArrayID:    10,
+		InstanceArrayLabel: "test",
+		InfrastructureID:   1,
+	}
+
+	infra := metalcloud.Infrastructure{
+		InfrastructureID: 1,
+	}
+
+	client.EXPECT().
+		InstanceArrayGet(ia.InstanceArrayID).
+		Return(&ia, nil).
+		AnyTimes()
+
+	client.EXPECT().
+		InfrastructureGet(infra.InfrastructureID).
+		Return(&infra, nil).
+		AnyTimes()
+
+	cases := []CommandTestCase{
+		{
+			name: "ia-get-json1",
+			cmd: MakeCommand(map[string]interface{}{
+				"instance_array_id_or_label": 10,
+				"format":                     "json",
+			}),
+			good: true,
+			id:   1,
+		},
+		{
+			name: "ia-get-yaml1",
+			cmd: MakeCommand(map[string]interface{}{
+				"instance_array_id_or_label": 10,
+				"format":                     "yaml",
+			}),
+			good: true,
+			id:   1,
+		},
+		{
+			name: "no id",
+			cmd:  MakeCommand(map[string]interface{}{}),
+			good: false,
+		},
+	}
+
+	testGetCommand(instanceArrayGetCmd, cases, client, expectedFirstRow, t)
+}
+
+func TestInstanceArrayInstancesListCmd(t *testing.T) {
 	RegisterTestingT(t)
 	ctrl := gomock.NewController(t)
 	client := mock_metalcloud.NewMockMetalCloudClient(ctrl)
@@ -418,6 +479,11 @@ func TestInstanceArrayGet(t *testing.T) {
 		ServerTypeID:          106,
 		ServerTypeDisplayName: "M.40.256.12D",
 	}
+
+	iaNetworkProfiles := map[int]int{
+		1: 10,
+	}
+
 	infra := metalcloud.Infrastructure{
 		InfrastructureID:    10,
 		InfrastructureLabel: "test",
@@ -448,6 +514,11 @@ func TestInstanceArrayGet(t *testing.T) {
 		Return(&infra, nil).
 		AnyTimes()
 
+	client.EXPECT().
+		NetworkProfileListByInstanceArray(ia.InstanceArrayID).
+		Return(&iaNetworkProfiles, nil).
+		AnyTimes()
+
 	//test with text output
 	format := "text"
 	cmd := Command{
@@ -457,7 +528,7 @@ func TestInstanceArrayGet(t *testing.T) {
 		},
 	}
 
-	ret, err := instanceArrayGetCmd(&cmd, client)
+	ret, err := instanceArrayInstancesListCmd(&cmd, client)
 	Expect(err).To(BeNil())
 	Expect(ret).To(ContainSubstring(ips[0].IPHumanReadable))
 	Expect(ret).To(ContainSubstring(ilist["instance-100"].InstanceSubdomainPermanent))
@@ -473,7 +544,7 @@ func TestInstanceArrayGet(t *testing.T) {
 		},
 	}
 
-	ret, err = instanceArrayGetCmd(&cmd, client)
+	ret, err = instanceArrayInstancesListCmd(&cmd, client)
 	Expect(err).To(BeNil())
 	Expect(ret).To(ContainSubstring(ips[0].IPHumanReadable))
 	Expect(ret).To(ContainSubstring(ilist["instance-100"].InstanceSubdomainPermanent))
@@ -485,7 +556,7 @@ func TestInstanceArrayGet(t *testing.T) {
 	format = "json"
 	cmd.Arguments["format"] = &format
 
-	ret, err = instanceArrayGetCmd(&cmd, client)
+	ret, err = instanceArrayInstancesListCmd(&cmd, client)
 	Expect(err).To(BeNil())
 
 	var m []interface{}
@@ -503,7 +574,7 @@ func TestInstanceArrayGet(t *testing.T) {
 	format = "csv"
 	cmd.Arguments["format"] = &format
 
-	ret, err = instanceArrayGetCmd(&cmd, client)
+	ret, err = instanceArrayInstancesListCmd(&cmd, client)
 	Expect(err).To(BeNil())
 	Expect(ret).To(Not(Equal("")))
 

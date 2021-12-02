@@ -4,6 +4,7 @@ import (
 	"flag"
 	"fmt"
 	"os"
+	"strconv"
 	"strings"
 
 	metalcloud "github.com/metalsoft-io/metal-cloud-sdk-go/v2"
@@ -56,6 +57,21 @@ var instanceArrayCmds = []Command{
 			}
 		},
 		ExecuteFunc: instanceArrayListCmd,
+	},
+	{
+		Description:  "Lists all instances of instance array.",
+		Subject:      "instance-array",
+		AltSubject:   "ia",
+		Predicate:    "instances-list",
+		AltPredicate: "instances-ls",
+		FlagSet:      flag.NewFlagSet("instances-list instance_array", flag.ExitOnError),
+		InitFunc: func(c *Command) {
+			c.Arguments = map[string]interface{}{
+				"instance_array_id_or_label": c.FlagSet.String("id", _nilDefaultStr, "(Required) InstanceArray's id or label. Note that the label can be ambigous."),
+				"format":                     c.FlagSet.String("format", "", "The output format. Supported values are 'json','csv','yaml'. The default format is human readable."),
+			}
+		},
+		ExecuteFunc: instanceArrayInstancesListCmd,
 	},
 	{
 		Description:  "Delete instance array.",
@@ -325,7 +341,127 @@ func instanceArrayDeleteCmd(c *Command, client metalcloud.MetalCloudClient) (str
 	return "", err
 }
 
+func instanceArrayGetNetworkAttachments(c *Command, client metalcloud.MetalCloudClient) (string, error) {
+
+	retIA, err := getInstanceArrayFromCommand("id", c, client)
+	if err != nil {
+		return "", err
+	}
+
+	if &retIA == nil {
+		return "", fmt.Errorf("instance array should not be nil")
+	}
+
+	dataNetworkAttachments := [][]interface{}{}
+
+	schemaNetworkAttachments := []tableformatter.SchemaField{
+
+		{
+			FieldName: "Port",
+			FieldType: tableformatter.TypeString,
+			FieldSize: 6,
+		},
+		{
+			FieldName: "Network",
+			FieldType: tableformatter.TypeString,
+			FieldSize: 10,
+		},
+		{
+			FieldName: "Profile",
+			FieldType: tableformatter.TypeString,
+			FieldSize: 10,
+		},
+	}
+	instanceArrayNetworkProfiles, err := client.NetworkProfileListByInstanceArray(retIA.InstanceArrayID)
+	if err != nil {
+		return "", err
+	}
+	for _, IAinterface := range retIA.InstanceArrayInterfaces {
+		index := strconv.Itoa(IAinterface.InstanceArrayInterfaceIndex + 1)
+		net := "unattached"
+		profile := ""
+		if IAinterface.NetworkID != 0 {
+			n, err := client.NetworkGet(IAinterface.NetworkID)
+			if err != nil {
+				return "", err
+			}
+			profileId := (*instanceArrayNetworkProfiles)[IAinterface.NetworkID]
+			if profileId != 0 {
+				networkProfile, err := client.NetworkProfileGet(profileId)
+				if err != nil {
+					return "", err
+				}
+				profile = networkProfile.NetworkProfileLabel + " (#" + strconv.Itoa(profileId) + ")"
+			}
+
+			net = n.NetworkType + "(#" + strconv.Itoa(IAinterface.NetworkID) + ")"
+		}
+
+		IAdataRow := []interface{}{
+			"#" + index,
+			net,
+			profile,
+		}
+
+		dataNetworkAttachments = append(dataNetworkAttachments, IAdataRow)
+	}
+
+	tableNetworkAttachments := tableformatter.Table{
+		Data:   dataNetworkAttachments,
+		Schema: schemaNetworkAttachments,
+	}
+	subtitleNetworkAttachmentsRender := "NETWORK ATTACHEMENTS\n--------------------\nNetworks to which this instance array is attached to:\n"
+
+	return tableNetworkAttachments.RenderTable("", subtitleNetworkAttachmentsRender, getStringParam(c.Arguments["format"]))
+}
+
 func instanceArrayGetCmd(c *Command, client metalcloud.MetalCloudClient) (string, error) {
+
+	retIA, err := getInstanceArrayFromCommand("id", c, client)
+	if err != nil {
+		return "", err
+	}
+
+	infra, err := client.InfrastructureGet(retIA.InfrastructureID)
+	if err != nil {
+		return "", err
+	}
+
+	schema := []tableformatter.SchemaField{
+		{
+			FieldName: "ID",
+			FieldType: tableformatter.TypeString,
+			FieldSize: 6,
+		},
+		{
+			FieldName: "LABEL",
+			FieldType: tableformatter.TypeString,
+			FieldSize: 6,
+		},
+		{
+			FieldName: "INFRASTRUCTURE",
+			FieldType: tableformatter.TypeString,
+			FieldSize: 6,
+		},
+	}
+
+	data := [][]interface{}{
+		{
+			"#" + strconv.Itoa(retIA.InstanceArrayID),
+			retIA.InstanceArrayLabel,
+			infra.InfrastructureLabel + " #" + strconv.Itoa(retIA.InfrastructureID),
+		},
+	}
+
+	table := tableformatter.Table{
+		Data:   data,
+		Schema: schema,
+	}
+
+	return table.RenderTableFoldable("", "", getStringParam(c.Arguments["format"]), 0)
+}
+
+func instanceArrayInstancesListCmd(c *Command, client metalcloud.MetalCloudClient) (string, error) {
 
 	retIA, err := getInstanceArrayFromCommand("id", c, client)
 	if err != nil {
@@ -511,6 +647,7 @@ func instanceArrayGetCmd(c *Command, client metalcloud.MetalCloudClient) (string
 		Data:   data,
 		Schema: schema,
 	}
+
 	return table.RenderTable("Instances", subtitle, getStringParam(c.Arguments["format"]))
 }
 
@@ -662,12 +799,9 @@ func getInstanceArrayFromCommand(paramName string, c *Command, client metalcloud
 	if err != nil {
 		return nil, err
 	}
-
 	id, label, isID := idOrLabel(m)
-
 	if isID {
 		return client.InstanceArrayGet(id)
 	}
-
 	return client.InstanceArrayGetByLabel(label)
 }
