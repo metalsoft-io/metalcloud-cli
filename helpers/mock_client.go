@@ -3067,17 +3067,17 @@ func (mr *MockMetalCloudClientMockRecorder) VolumeTemplateMakePrivate(volumeTemp
 }
 
 // VolumeTemplateMakePublic mocks base method.
-func (m *MockMetalCloudClient) VolumeTemplateMakePublic(volumeTemplateID int) error {
+func (m *MockMetalCloudClient) VolumeTemplateMakePublic(volumeTemplateID int, bootstrapFunctionName string) error {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "VolumeTemplateMakePublic", volumeTemplateID)
+	ret := m.ctrl.Call(m, "VolumeTemplateMakePublic", volumeTemplateID, bootstrapFunctionName)
 	ret0, _ := ret[0].(error)
 	return ret0
 }
 
 // VolumeTemplateMakePublic indicates an expected call of VolumeTemplateMakePublic.
-func (mr *MockMetalCloudClientMockRecorder) VolumeTemplateMakePublic(volumeTemplateID interface{}) *gomock.Call {
+func (mr *MockMetalCloudClientMockRecorder) VolumeTemplateMakePublic(volumeTemplateID, bootstrapFunctionName interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "VolumeTemplateMakePublic", reflect.TypeOf((*MockMetalCloudClient)(nil).VolumeTemplateMakePublic), volumeTemplateID)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "VolumeTemplateMakePublic", reflect.TypeOf((*MockMetalCloudClient)(nil).VolumeTemplateMakePublic), volumeTemplateID, bootstrapFunctionName)
 }
 
 // VolumeTemplates mocks base method.
