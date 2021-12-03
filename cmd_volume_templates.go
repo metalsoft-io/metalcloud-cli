@@ -66,7 +66,8 @@ var volumeTemplateCmds = []Command{
 		FlagSet:      flag.NewFlagSet("make volume template public", flag.ExitOnError),
 		InitFunc: func(c *Command) {
 			c.Arguments = map[string]interface{}{
-				"template_id_or_name": c.FlagSet.String("id", _nilDefaultStr, "Volume template id or name"),
+				"template_id_or_name":        c.FlagSet.String("id", _nilDefaultStr, "Volume template id or name"),
+				"os_bootstrap_function_name": c.FlagSet.String("os-bootstrap-function-name", _nilDefaultStr, "(Required) Selects the cloudinit configuration function. Can be one of: provisioner_os_cloudinit_prepare_centos, provisioner_os_cloudinit_prepare_rhel, provisioner_os_cloudinit_prepare_ubuntu, provisioner_os_cloudinit_prepare_windows."),
 			}
 		},
 		ExecuteFunc: volumeTemplateMakePublicCmd,
@@ -348,7 +349,12 @@ func volumeTemplateMakePublicCmd(c *Command, client metalcloud.MetalCloudClient)
 		return "", err
 	}
 
-	err = client.VolumeTemplateMakePublic(template.VolumeTemplateID)
+	osBootstrapFunctionName, ok := getStringParamOk(c.Arguments["os_bootstrap_function_name"])
+	if !ok {
+		return "", fmt.Errorf("-os_bootstrap_function_name is required")
+	}
+
+	err = client.VolumeTemplateMakePublic(template.VolumeTemplateID, osBootstrapFunctionName)
 
 	if err != nil {
 		return "", err

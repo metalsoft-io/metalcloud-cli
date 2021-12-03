@@ -306,7 +306,7 @@ func driveArrayListCmd(c *Command, client metalcloud.MetalCloudClient) (string, 
 
 		instanceArrayLabel := ""
 		if da.DriveArrayOperation.InstanceArrayID != 0 {
-			ia, err := client.InstanceArrayGet(da.DriveArrayOperation.InstanceArrayID)
+			ia, err := client.InstanceArrayGet(da.DriveArrayOperation.InstanceArrayID.(int))
 			if err != nil {
 				return "", err
 			}

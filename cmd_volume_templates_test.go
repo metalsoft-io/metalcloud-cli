@@ -7,9 +7,9 @@ import (
 	"strings"
 	"testing"
 
+	gomock "github.com/golang/mock/gomock"
 	metalcloud "github.com/metalsoft-io/metal-cloud-sdk-go/v2"
 	mock_metalcloud "github.com/metalsoft-io/metalcloud-cli/helpers"
-	gomock "github.com/golang/mock/gomock"
 
 	. "github.com/onsi/gomega"
 )
@@ -366,7 +366,7 @@ func TestVolumeTemplateMakePublicCmd(t *testing.T) {
 		MinTimes(1)
 
 	client.EXPECT().
-		VolumeTemplateMakePublic(gomock.Any()).
+		VolumeTemplateMakePublic(gomock.Any(), gomock.Any()).
 		Return(nil).
 		AnyTimes()
 
@@ -374,7 +374,8 @@ func TestVolumeTemplateMakePublicCmd(t *testing.T) {
 		{
 			name: "good1",
 			cmd: MakeCommand(map[string]interface{}{
-				"template_id_or_name": 10,
+				"template_id_or_name":        10,
+				"os_bootstrap_function_name": "provisioner_os_bootstrap_dummy",
 			}),
 			good: true,
 			id:   0,
@@ -382,7 +383,8 @@ func TestVolumeTemplateMakePublicCmd(t *testing.T) {
 		{
 			name: "good2",
 			cmd: MakeCommand(map[string]interface{}{
-				"template_id_or_name": "test",
+				"template_id_or_name":        "test",
+				"os_bootstrap_function_name": "provisioner_os_bootstrap_dummy",
 			}),
 			good: true,
 			id:   0,
