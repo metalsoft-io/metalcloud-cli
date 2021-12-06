@@ -351,7 +351,7 @@ func volumeTemplateMakePublicCmd(c *Command, client metalcloud.MetalCloudClient)
 
 	osBootstrapFunctionName, ok := getStringParamOk(c.Arguments["os_bootstrap_function_name"])
 	if !ok {
-		return "", fmt.Errorf("-os_bootstrap_function_name is required")
+		return "", fmt.Errorf("-os-bootstrap-function-name is required")
 	}
 
 	err = client.VolumeTemplateMakePublic(template.VolumeTemplateID, osBootstrapFunctionName)
