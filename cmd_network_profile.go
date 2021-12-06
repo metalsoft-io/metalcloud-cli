@@ -383,7 +383,7 @@ func networkProfileCreateCmd(c *Command, client metalcloud.MetalCloudClient) (st
 	}
 
 	if c.Arguments["return_id"] != nil && *c.Arguments["return_id"].(*bool) {
-		return fmt.Sprintf("%s", ret.DatacenterName), nil
+		return fmt.Sprintf("%d", ret.NetworkProfileID), nil
 	}
 
 	return "", err
