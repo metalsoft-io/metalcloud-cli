@@ -107,6 +107,7 @@ var serversCmds = []Command{
 			}
 		},
 		ExecuteFunc: serverPowerControlCmd,
+		Endpoint:    DeveloperEndpoint,
 	},
 }
 
