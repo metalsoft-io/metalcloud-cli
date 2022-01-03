@@ -324,6 +324,9 @@ func subnetPoolCreateCmd(c *Command, client metalcloud.MetalCloudClient) (string
 	var sn metalcloud.SubnetPool
 
 	err := getRawObjectFromCommand(c, &sn)
+	if err != nil {
+		return "", err
+	}
 
 	ret, err := client.SubnetPoolCreate(sn)
 	if err != nil {
