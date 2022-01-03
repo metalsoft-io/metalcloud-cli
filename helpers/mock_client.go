@@ -434,10 +434,10 @@ func (mr *MockMetalCloudClientMockRecorder) DriveSnapshots(driveID interface{}) 
 }
 
 // ExternalConnections mocks base method
-func (m *MockMetalCloudClient) ExternalConnections(datacenterName string) (*[]metalcloud.ExternalConnection, error) {
+func (m *MockMetalCloudClient) ExternalConnections(datacenterName string) (*map[int]metalcloud.ExternalConnection, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "ExternalConnections", datacenterName)
-	ret0, _ := ret[0].(*[]metalcloud.ExternalConnection)
+	ret0, _ := ret[0].(*map[int]metalcloud.ExternalConnection)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
