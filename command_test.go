@@ -450,7 +450,7 @@ func testCreateCommand(f CommandExecuteFunc, cases []CommandTestCase, client met
 				ret, err := f(&c.cmd, client)
 				if c.good {
 					if ret != fmt.Sprintf("%d", c.id) {
-						t.Error("id not returned")
+						t.Errorf("id not returned or incorrect. Expected %s got %s", ret, fmt.Sprintf("%d", c.id))
 					}
 					if err != nil {
 						t.Errorf("error thrown: %v", err)

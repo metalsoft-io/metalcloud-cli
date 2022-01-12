@@ -402,7 +402,12 @@ func switchDeleteCmd(c *Command, client metalcloud.MetalCloudClient) (string, er
 }
 
 func getSwitchFromCommandLine(paramName string, c *Command, client metalcloud.MetalCloudClient) (*metalcloud.SwitchDevice, error) {
-	m, err := getParam(c, "network_device_id_or_identifier_string", paramName)
+	return getSwitchFromCommandLineWithPrivateParam("network_device_id_or_identifier_string", paramName, c, client)
+}
+
+func getSwitchFromCommandLineWithPrivateParam(private_paramName string, public_paramName string, c *Command, client metalcloud.MetalCloudClient) (*metalcloud.SwitchDevice, error) {
+
+	m, err := getParam(c, private_paramName, public_paramName)
 	if err != nil {
 		return nil, err
 	}
