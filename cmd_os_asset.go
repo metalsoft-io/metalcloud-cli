@@ -576,7 +576,7 @@ func templateListAssociatedAssetsCmd(c *Command, client metalcloud.MetalCloudCli
 func assetEditCmd(c *Command, client metalcloud.MetalCloudClient) (string, error) {
 	asset, err := getOSAssetFromCommand("id", "asset_id_or_name", c, client)
 	if err != nil {
-		fmt.Println(err)
+		return "", err
 	}
 
 	if err != nil {

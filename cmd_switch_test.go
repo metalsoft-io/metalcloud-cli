@@ -8,9 +8,9 @@ import (
 
 	"gopkg.in/yaml.v2"
 
+	gomock "github.com/golang/mock/gomock"
 	metalcloud "github.com/metalsoft-io/metal-cloud-sdk-go/v2"
 	mock_metalcloud "github.com/metalsoft-io/metalcloud-cli/helpers"
-	gomock "github.com/golang/mock/gomock"
 	. "github.com/onsi/gomega"
 )
 
@@ -117,15 +117,104 @@ func TestSwitchCreate(t *testing.T) {
 
 }
 
+func TestSwitchEditCmd(t *testing.T) {
+
+	RegisterTestingT(t)
+	ctrl := gomock.NewController(t)
+
+	client := mock_metalcloud.NewMockMetalCloudClient(ctrl)
+
+	sw, err := getSwitchFixture1()
+	if err != nil {
+		t.Error(err)
+	}
+
+	f, err := ioutil.TempFile("/tmp", "testconf-*.json")
+	if err != nil {
+		t.Error(err)
+	}
+
+	//create an input json file
+	f.WriteString(_switchDeviceFixture1)
+	f.Close()
+	defer syscall.Unlink(f.Name())
+
+	f2, err := ioutil.TempFile("/tmp", "testconf-*.yaml")
+	if err != nil {
+		t.Error(err)
+	}
+
+	//create an input yaml file
+	s, err := yaml.Marshal(sw)
+	Expect(err).To(BeNil())
+
+	f2.WriteString(string(s))
+	f2.Close()
+	defer syscall.Unlink(f2.Name())
+
+	client.EXPECT().
+		SwitchDeviceGet(310, false).
+		Return(&sw, nil).
+		AnyTimes()
+
+	client.EXPECT().
+		SwitchDeviceUpdate(sw.NetworkEquipmentID, gomock.Any(), false).
+		Return(&sw, nil).
+		AnyTimes()
+
+	cases := []CommandTestCase{
+		{
+			name: "missing-id",
+			cmd: MakeCommand(map[string]interface{}{
+				"read_config_from_file": f.Name(),
+				"format":                "json",
+			}),
+			good: false,
+		},
+		{
+			name: "get-from-json-good1",
+			cmd: MakeCommand(map[string]interface{}{
+				"network_device_id_or_identifier_string": 310,
+				"read_config_from_file":                  f.Name(),
+				"format":                                 "json",
+			}),
+			good: true,
+		},
+		{
+			name: "get-from-yaml-good1",
+			cmd: MakeCommand(map[string]interface{}{
+				"network_device_id_or_identifier_string": 310,
+				"read_config_from_file":                  f2.Name(),
+				"format":                                 "yaml",
+			}),
+			good: true,
+		},
+	}
+
+	for _, c := range cases {
+		t.Run(c.name, func(t *testing.T) {
+			_, err := switchEditCmd(&c.cmd, client)
+			if c.good && err != nil {
+				t.Error(err)
+			}
+		})
+	}
+
+}
+
+func getSwitchFixture1() (metalcloud.SwitchDevice, error) {
+	var sw metalcloud.SwitchDevice
+	err := json.Unmarshal([]byte(_switchDeviceFixture1), &sw)
+	return sw, err
+}
+
 func TestSwitchGet(t *testing.T) {
 	RegisterTestingT(t)
 	ctrl := gomock.NewController(t)
 
 	client := mock_metalcloud.NewMockMetalCloudClient(ctrl)
 
-	var sw metalcloud.SwitchDevice
-
-	err := json.Unmarshal([]byte(_switchDeviceFixture1), &sw)
+	sw, err := getSwitchFixture1()
 	if err != nil {
 		t.Error(err)
 	}

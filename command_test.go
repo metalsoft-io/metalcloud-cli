@@ -15,8 +15,8 @@ import (
 	metalcloud "github.com/metalsoft-io/metal-cloud-sdk-go/v2"
 
 	//. "github.com/onsi/gomega"
-	mock_metalcloud "github.com/metalsoft-io/metalcloud-cli/helpers"
 	gomock "github.com/golang/mock/gomock"
+	mock_metalcloud "github.com/metalsoft-io/metalcloud-cli/helpers"
 	. "github.com/onsi/gomega"
 )
 
@@ -440,6 +440,7 @@ func testCreateCommand(f CommandExecuteFunc, cases []CommandTestCase, client met
 				if err == nil {
 					t.Errorf("Should have thrown error")
 				}
+
 			}
 			if c.id != 0 {
 				//test with return id

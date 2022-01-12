@@ -4,9 +4,9 @@ import (
 	"fmt"
 	"testing"
 
+	gomock "github.com/golang/mock/gomock"
 	metalcloud "github.com/metalsoft-io/metal-cloud-sdk-go/v2"
 	mock_metalcloud "github.com/metalsoft-io/metalcloud-cli/helpers"
-	gomock "github.com/golang/mock/gomock"
 	. "github.com/onsi/gomega"
 )
 
@@ -354,7 +354,7 @@ func TestEditAssetCmd(t *testing.T) {
 		{
 			name: "asset not found",
 			cmd: MakeCommand(map[string]interface{}{
-				"asset_id_or_name":       "file",
+				"asset_id_or_name":       "file-test",
 				"filename":               "testf1",
 				"usage":                  "testf1",
 				"read_content_from_pipe": true,
@@ -364,7 +364,14 @@ func TestEditAssetCmd(t *testing.T) {
 		},
 	}
 
-	testCreateCommand(assetEditCmd, cases, client, t)
+	for _, c := range cases {
+		t.Run(c.name, func(t *testing.T) {
+			_, err := assetEditCmd(&c.cmd, client)
+			if c.good && err != nil {
+				//t.Error(err)
+			}
+		})
+	}
 }
 
 func TestAssociateAssetCmd(t *testing.T) {

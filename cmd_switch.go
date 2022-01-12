@@ -50,6 +50,26 @@ var switchCmds = []Command{
 		Endpoint:    DeveloperEndpoint,
 	},
 	{
+		Description:  "Edit switch device.",
+		Subject:      "switch",
+		AltSubject:   "sw",
+		Predicate:    "edit",
+		AltPredicate: "update",
+		FlagSet:      flag.NewFlagSet("Edit switch device", flag.ExitOnError),
+		InitFunc: func(c *Command) {
+			c.Arguments = map[string]interface{}{
+				"network_device_id_or_identifier_string": c.FlagSet.String("id", _nilDefaultStr, "(Required) Switch's id or identifier string. "),
+				"overwrite_hostname_from_switch":         c.FlagSet.Bool("retrieve-hostname-from-switch", false, "(Flag) Retrieve the hostname from the equipment instead of configuration file."),
+				"format":                                 c.FlagSet.String("format", "json", "The input format. Supported values are 'json','yaml'. The default format is json."),
+				"read_config_from_file":                  c.FlagSet.String("raw-config", _nilDefaultStr, "(Required) Read  configuration from file in the format specified with --format."),
+				"read_config_from_pipe":                  c.FlagSet.Bool("pipe", false, "(Flag) If set, read  configuration from pipe instead of from a file. Either this flag or the --raw-config option must be used."),
+				"return_id":                              c.FlagSet.Bool("return-id", false, "Will print the ID of the created object. Useful for automating tasks."),
+			}
+		},
+		ExecuteFunc: switchEditCmd,
+		Endpoint:    DeveloperEndpoint,
+	},
+	{
 		Description:  "Get a switch device.",
 		Subject:      "switch",
 		AltSubject:   "sw",
@@ -204,6 +224,36 @@ func switchCreateCmd(c *Command, client metalcloud.MetalCloudClient) (string, er
 	}
 
 	ret, err := client.SwitchDeviceCreate(obj, getBoolParam(c.Arguments["overwrite_hostname_from_switch"]))
+	if err != nil {
+		return "", err
+	}
+
+	if getBoolParam(c.Arguments["return_id"]) {
+		return fmt.Sprintf("%d", ret.NetworkEquipmentID), nil
+	}
+
+	return "", err
+}
+
+func switchEditCmd(c *Command, client metalcloud.MetalCloudClient) (string, error) {
+
+	var obj metalcloud.SwitchDevice
+
+	err := getRawObjectFromCommand(c, &obj)
+	if err != nil {
+		return "", err
+	}
+
+	retSW, err := getSwitchFromCommandLine("id", c, client)
+	if err != nil {
+		return "", err
+	}
+
+	if obj.DatacenterName == "" {
+		return "", fmt.Errorf("Datacenter name is required.")
+	}
+
+	ret, err := client.SwitchDeviceUpdate(retSW.NetworkEquipmentID, obj, getBoolParam(c.Arguments["overwrite_hostname_from_switch"]))
 	if err != nil {
 		return "", err
 	}

@@ -35,7 +35,7 @@ var subnetPoolCmds = []Command{
 		AltSubject:   "subnet",
 		Predicate:    "get",
 		AltPredicate: "show",
-		FlagSet:      flag.NewFlagSet("get a switch device", flag.ExitOnError),
+		FlagSet:      flag.NewFlagSet("Get a subnet pool", flag.ExitOnError),
 		InitFunc: func(c *Command) {
 			c.Arguments = map[string]interface{}{
 				"subnet_pool_id": c.FlagSet.Int("id", _nilDefaultInt, "(Required) Subnetpool's id"),
@@ -194,7 +194,7 @@ func subnetPoolListCmd(c *Command, client metalcloud.MetalCloudClient) (string, 
 		Data:   data,
 		Schema: schema,
 	}
-	return table.RenderTable("Switches", "", getStringParam(c.Arguments["format"]))
+	return table.RenderTable("Subnet pools", "", getStringParam(c.Arguments["format"]))
 }
 
 func subnetPoolGetCmd(c *Command, client metalcloud.MetalCloudClient) (string, error) {
