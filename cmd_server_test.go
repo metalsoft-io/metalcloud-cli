@@ -60,11 +60,6 @@ func TestServersListCmd(t *testing.T) {
 
 	r := m[0].(map[string]interface{})
 	Expect(int(r["ID"].(float64))).To(Equal(100))
-	Expect(r["PRODUCT_NAME"].(string)).To(Equal(server.ServerProductName))
-	Expect(r["INVENTORY_ID"].(string)).To(Equal(server.ServerInventoryId))
-	Expect(r["RACK_NAME"].(string)).To(Equal(server.ServerRackName))
-	Expect(r["RACK_POSITION_LOWER_UNIT"].(string)).To(Equal(server.ServerRackPositionLowerUnit))
-	Expect(r["RACK_POSITION_UPPER_UNIT"].(string)).To(Equal(server.ServerRackPositionUpperUnit))
 
 	//test plaintext
 	format = ""
@@ -97,11 +92,11 @@ func TestServersListCmd(t *testing.T) {
 
 	csv, err := reader.ReadAll()
 	Expect(csv[1][0]).To(Equal(fmt.Sprintf("%d", 100)))
-	Expect(csv[1][5]).To(Equal("test"))
-	Expect(csv[1][11]).To(Equal("id-20040424"))
-	Expect(csv[1][12]).To(Equal("Rack Name"))
-	Expect(csv[1][13]).To(Equal("L-2004"))
-	Expect(csv[1][14]).To(Equal("U-2404"))
+
+	Expect(csv[1][8]).To(Equal("id-20040424"))
+	Expect(csv[1][9]).To(Equal("Rack Name"))
+	Expect(csv[1][10]).To(Equal("L-2004"))
+	Expect(csv[1][11]).To(Equal("U-2404"))
 }
 
 func TestServerGetCmd(t *testing.T) {

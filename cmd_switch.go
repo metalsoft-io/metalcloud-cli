@@ -58,7 +58,7 @@ var switchCmds = []Command{
 		FlagSet:      flag.NewFlagSet("Edit switch device", flag.ExitOnError),
 		InitFunc: func(c *Command) {
 			c.Arguments = map[string]interface{}{
-				"network_device_id_or_identifier_string": c.FlagSet.String("id", _nilDefaultStr, "(Required) Switch's id or identifier string. "),
+				"network_device_id_or_identifier_string": c.FlagSet.String("id", _nilDefaultStr, "(Required) Switch id or identifier string. "),
 				"overwrite_hostname_from_switch":         c.FlagSet.Bool("retrieve-hostname-from-switch", false, "(Flag) Retrieve the hostname from the equipment instead of configuration file."),
 				"format":                                 c.FlagSet.String("format", "json", "The input format. Supported values are 'json','yaml'. The default format is json."),
 				"read_config_from_file":                  c.FlagSet.String("raw-config", _nilDefaultStr, "(Required) Read  configuration from file in the format specified with --format."),
@@ -78,7 +78,7 @@ var switchCmds = []Command{
 		FlagSet:      flag.NewFlagSet("get a switch device", flag.ExitOnError),
 		InitFunc: func(c *Command) {
 			c.Arguments = map[string]interface{}{
-				"network_device_id_or_identifier_string": c.FlagSet.String("id", _nilDefaultStr, "(Required) Switch's id or identifier string. "),
+				"network_device_id_or_identifier_string": c.FlagSet.String("id", _nilDefaultStr, "(Required) Switch id or identifier string. "),
 				"show_credentials":                       c.FlagSet.Bool("show-credentials", false, "(Flag) If set returns the switch credentials"),
 				"format":                                 c.FlagSet.String("format", "", "The output format. Supported values are 'json','csv','yaml'. The default format is human readable."),
 				"raw":                                    c.FlagSet.Bool("raw", false, "(Flag) When set the return will be a full dump of the object. This is useful when copying configurations. Only works with json and yaml formats."),
@@ -96,11 +96,28 @@ var switchCmds = []Command{
 		FlagSet:      flag.NewFlagSet("delete switch", flag.ExitOnError),
 		InitFunc: func(c *Command) {
 			c.Arguments = map[string]interface{}{
-				"network_device_id_or_identifier_string": c.FlagSet.String("id", _nilDefaultStr, "(Required) Switch's id or identifier string. "),
+				"network_device_id_or_identifier_string": c.FlagSet.String("id", _nilDefaultStr, "(Required) Switch id or identifier string. "),
 				"autoconfirm":                            c.FlagSet.Bool("autoconfirm", false, "If true it does not ask for confirmation anymore"),
 			}
 		},
 		ExecuteFunc: switchDeleteCmd,
+		Endpoint:    DeveloperEndpoint,
+	},
+	{
+		Description:  "Lists switch interfaces.",
+		Subject:      "switch",
+		AltSubject:   "sw",
+		Predicate:    "interfaces",
+		AltPredicate: "intf",
+		FlagSet:      flag.NewFlagSet("list switch interfaces", flag.ExitOnError),
+		InitFunc: func(c *Command) {
+			c.Arguments = map[string]interface{}{
+				"network_device_id_or_identifier_string": c.FlagSet.String("id", _nilDefaultStr, "(Required) Switch id or identifier string. "),
+				"format":                                 c.FlagSet.String("format", _nilDefaultStr, "The output format. Supported values are 'json','csv','yaml'. The default format is human readable."),
+				"raw":                                    c.FlagSet.Bool("raw", false, "(Flag) When set the return will be a full dump of the object. This is useful when copying configurations. Only works with json and yaml formats."),
+			}
+		},
+		ExecuteFunc: switchInterfacesListCmd,
 		Endpoint:    DeveloperEndpoint,
 	},
 }
@@ -279,7 +296,7 @@ func switchGetCmd(c *Command, client metalcloud.MetalCloudClient) (string, error
 			FieldSize: 6,
 		},
 		{
-			FieldName: "IDENTIFIER",
+			FieldName: "HOSTNAME",
 			FieldType: tableformatter.TypeString,
 			FieldSize: 6,
 		},
@@ -399,6 +416,113 @@ func switchDeleteCmd(c *Command, client metalcloud.MetalCloudClient) (string, er
 	err = client.SwitchDeviceDelete(retSW.NetworkEquipmentID)
 
 	return "", err
+}
+
+func switchInterfacesListCmd(c *Command, client metalcloud.MetalCloudClient) (string, error) {
+
+	sw, err := getSwitchFromCommandLine("id", c, client)
+	if err != nil {
+		return "", err
+	}
+
+	list, err := client.SwitchInterfaceSearch(fmt.Sprintf("network_equipment_id:%d", sw.NetworkEquipmentID))
+
+	if err != nil {
+		return "", err
+	}
+
+	schema := []tableformatter.SchemaField{
+		{
+			FieldName: "IDX",
+			FieldType: tableformatter.TypeInt,
+			FieldSize: 5,
+		},
+		{
+			FieldName: "SWITCH INTERFACE",
+			FieldType: tableformatter.TypeString,
+			FieldSize: 6,
+		},
+		{
+			FieldName: "SERVER_ID",
+			FieldType: tableformatter.TypeInt,
+			FieldSize: 6,
+		},
+		{
+			FieldName: "SERVER_SERIAL",
+			FieldType: tableformatter.TypeString,
+			FieldSize: 6,
+		},
+		{
+			FieldName: "SERVER_IPMI_HOST",
+			FieldType: tableformatter.TypeString,
+			FieldSize: 6,
+		},
+		{
+			FieldName: "SERVER INTERFACE",
+			FieldType: tableformatter.TypeString,
+			FieldSize: 5,
+		},
+		{
+			FieldName: "CAPACITY",
+			FieldType: tableformatter.TypeString,
+			FieldSize: 5,
+		},
+		{
+			FieldName: "TYP",
+			FieldType: tableformatter.TypeString,
+			FieldSize: 5,
+		},
+		{
+			FieldName: "IP",
+			FieldType: tableformatter.TypeString,
+			FieldSize: 5,
+		},
+	}
+
+	data := [][]interface{}{}
+	for _, s := range *list {
+
+		ips := flattenAndJoinStrings(s.IP)
+		networkType := strings.Join(s.NetworkType, ",")
+		capacity := fmt.Sprintf("%d Gbps", int(s.ServerInterfaceCapacityMBPs/1000))
+
+		data = append(data, []interface{}{
+			s.NetworkEquipmentInterfaceID,
+			s.NetworkEquipmentInterfaceIdentifierString,
+			s.ServerID,
+			s.ServerSerialNumber,
+			s.ServerIPMIHost,
+			s.ServerInterfaceMACAddress,
+			capacity,
+			networkType,
+			ips,
+		})
+
+	}
+
+	var sb strings.Builder
+
+	format := getStringParam(c.Arguments["format"])
+
+	if getBoolParam(c.Arguments["raw"]) {
+		ret, err := tableformatter.RenderRawObject(*list, format, "Server interfaces")
+		if err != nil {
+			return "", err
+		}
+		sb.WriteString(ret)
+	} else {
+		table := tableformatter.Table{
+			Data:   data,
+			Schema: schema,
+		}
+		ret, err := table.RenderTable(fmt.Sprintf("Interfaces of switch %s (#%d)", sw.NetworkEquipmentIdentifierString, sw.NetworkEquipmentID), "", format)
+		if err != nil {
+			return "", err
+		}
+		sb.WriteString(ret)
+	}
+
+	return sb.String(), nil
 }
 
 func getSwitchFromCommandLine(paramName string, c *Command, client metalcloud.MetalCloudClient) (*metalcloud.SwitchDevice, error) {

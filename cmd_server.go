@@ -109,6 +109,23 @@ var serversCmds = []Command{
 		ExecuteFunc: serverPowerControlCmd,
 		Endpoint:    DeveloperEndpoint,
 	},
+	{
+		Description:  "Lists server interfaces.",
+		Subject:      "server",
+		AltSubject:   "srv",
+		Predicate:    "interfaces",
+		AltPredicate: "intf",
+		FlagSet:      flag.NewFlagSet("list server interfaces", flag.ExitOnError),
+		InitFunc: func(c *Command) {
+			c.Arguments = map[string]interface{}{
+				"format":            c.FlagSet.String("format", _nilDefaultStr, "The output format. Supported values are 'json','csv','yaml'. The default format is human readable."),
+				"server_id_or_uuid": c.FlagSet.Int("id", _nilDefaultInt, "(Required) Server's id."),
+				"raw":               c.FlagSet.Bool("raw", false, "(Flag) When set the return will be a full dump of the object. This is useful when copying configurations. Only works with json and yaml formats."),
+			}
+		},
+		ExecuteFunc: serverInterfacesListCmd,
+		Endpoint:    DeveloperEndpoint,
+	},
 }
 
 func truncateString(s string, length int) string {
@@ -188,40 +205,23 @@ func serversListCmd(c *Command, client metalcloud.MetalCloudClient) (string, err
 			FieldSize: 6,
 		},
 		{
-			FieldName: "DATACENTER_NAME",
+			FieldName: "STATUS",
 			FieldType: tableformatter.TypeString,
-			FieldSize: 6,
+			FieldSize: 5,
 		},
+
 		{
 			FieldName: "SERVER_TYPE",
 			FieldType: tableformatter.TypeString,
 			FieldSize: 6,
 		},
-		{
-			FieldName: "STATUS",
-			FieldType: tableformatter.TypeString,
-			FieldSize: 5,
-		},
-		{
-			FieldName: "VENDOR",
-			FieldType: tableformatter.TypeString,
-			FieldSize: 5,
-		},
-		{
-			FieldName: "PRODUCT_NAME",
-			FieldType: tableformatter.TypeString,
-			FieldSize: 5,
-		},
+
 		{
 			FieldName: "SERIAL_NUMBER",
 			FieldType: tableformatter.TypeString,
 			FieldSize: 5,
 		},
-		{
-			FieldName: "CONFIG.",
-			FieldType: tableformatter.TypeString,
-			FieldSize: 5,
-		},
+
 		{
 			FieldName: "TAGS",
 			FieldType: tableformatter.TypeString,
@@ -238,22 +238,27 @@ func serversListCmd(c *Command, client metalcloud.MetalCloudClient) (string, err
 			FieldSize: 5,
 		},
 		{
-			FieldName: "INVENTORY_ID",
+			FieldName: "DATACENTER_NAME",
+			FieldType: tableformatter.TypeString,
+			FieldSize: 6,
+		},
+		{
+			FieldName: "INV_ID",
 			FieldType: tableformatter.TypeString,
 			FieldSize: 4,
 		},
 		{
-			FieldName: "RACK_NAME",
+			FieldName: "RACK",
 			FieldType: tableformatter.TypeString,
 			FieldSize: 4,
 		},
 		{
-			FieldName: "RACK_POSITION_LOWER_UNIT",
+			FieldName: "RU_D",
 			FieldType: tableformatter.TypeString,
 			FieldSize: 4,
 		},
 		{
-			FieldName: "RACK_POSITION_UPPER_UNIT",
+			FieldName: "RU_U",
 			FieldType: tableformatter.TypeString,
 			FieldSize: 4,
 		},
@@ -292,16 +297,9 @@ func serversListCmd(c *Command, client metalcloud.MetalCloudClient) (string, err
 				s.InstanceID[0],
 				s.InstanceArrayID[0],
 				s.InfrastructureID[0])
-		}
-		productName := s.ServerProductName
-		if len(s.ServerProductName) > 21 {
-			productName = truncateString(s.ServerProductName, 18)
-		}
-		diskDescription := ""
-		if s.ServerDiskCount > 0 {
-			diskDescription = fmt.Sprintf(" %d x %d GB %s", s.ServerDiskCount,
-				s.ServerDiskSizeMbytes/1000,
-				s.ServerDiskType)
+			if len(allocation) > 30 {
+				allocation = truncateString(allocation, 10)
+			}
 		}
 
 		credentialsUser := ""
@@ -319,24 +317,18 @@ func serversListCmd(c *Command, client metalcloud.MetalCloudClient) (string, err
 			credentialsPass = fmt.Sprintf("%s", server.ServerIPMInternalPassword)
 
 		}
+
+		status := s.ServerStatus
+
 		data = append(data, []interface{}{
 			s.ServerID,
-			s.DatacenterName,
+			status,
 			s.ServerTypeName,
-			s.ServerStatus,
-			s.ServerVendor,
-			productName,
 			s.ServerSerialNumber,
-			fmt.Sprintf("%d GB RAM %d x %s (%d cores)%s",
-				s.ServerRAMGbytes,
-				s.ServerProcessorCount,
-				s.ServerProcessorName,
-				s.ServerProcessorCoreCount,
-				diskDescription,
-			),
 			strings.Join(s.ServerTags, ","),
 			s.ServerIPMIHost,
 			allocation,
+			s.DatacenterName,
 			s.ServerInventoryId,
 			s.ServerRackName,
 			s.ServerRackPositionLowerUnit,
@@ -441,6 +433,11 @@ func serverGetCmd(c *Command, client metalcloud.MetalCloudClient) (string, error
 		},
 		{
 			FieldName: "ALLOCATED_TO.",
+			FieldType: tableformatter.TypeString,
+			FieldSize: 5,
+		},
+		{
+			FieldName: "INTERFACES.",
 			FieldType: tableformatter.TypeString,
 			FieldSize: 5,
 		},
@@ -712,4 +709,105 @@ func getServerTypeFromCommand(paramName string, c *Command, client metalcloud.Me
 	}
 
 	return client.ServerTypeGetByLabel(label)
+}
+
+func serverInterfacesListCmd(c *Command, client metalcloud.MetalCloudClient) (string, error) {
+
+	server, err := getServerFromCommand("id", c, client, false)
+	if err != nil {
+		return "", err
+	}
+
+	list, err := client.SwitchInterfaceSearch(fmt.Sprintf("server_id:%d", server.ServerID))
+
+	if err != nil {
+		return "", err
+	}
+
+	schema := []tableformatter.SchemaField{
+		{
+			FieldName: "IDX",
+			FieldType: tableformatter.TypeInt,
+			FieldSize: 5,
+		},
+		{
+			FieldName: "SERVER INTERFACE",
+			FieldType: tableformatter.TypeString,
+			FieldSize: 5,
+		},
+		{
+			FieldName: "SWITCH INTERFACE",
+			FieldType: tableformatter.TypeString,
+			FieldSize: 6,
+		},
+		{
+			FieldName: "SWITCH",
+			FieldType: tableformatter.TypeString,
+			FieldSize: 6,
+		},
+		{
+			FieldName: "CAPACITY",
+			FieldType: tableformatter.TypeString,
+			FieldSize: 5,
+		},
+		{
+			FieldName: "TYP",
+			FieldType: tableformatter.TypeString,
+			FieldSize: 5,
+		},
+		{
+			FieldName: "IP",
+			FieldType: tableformatter.TypeString,
+			FieldSize: 5,
+		},
+	}
+
+	data := [][]interface{}{}
+	for _, s := range *list {
+
+		ips := flattenAndJoinStrings(s.IP)
+		networkType := strings.Join(s.NetworkType, ",")
+
+		switch_info := fmt.Sprintf("%s (#%d)",
+			s.NetworkEquipmentIdentifierString,
+			s.NetworkEquipmentID,
+		)
+
+		capacity := fmt.Sprintf("%d Gbps", int(s.ServerInterfaceCapacityMBPs/1000))
+
+		data = append(data, []interface{}{
+			s.ServerInterfaceIndex,
+			s.ServerInterfaceMACAddress,
+			s.NetworkEquipmentInterfaceIdentifierString,
+			switch_info,
+			capacity,
+			networkType,
+			ips,
+		})
+
+	}
+
+	var sb strings.Builder
+
+	format := getStringParam(c.Arguments["format"])
+
+	if getBoolParam(c.Arguments["raw"]) {
+		ret, err := tableformatter.RenderRawObject(*list, format, "Server interfaces")
+		if err != nil {
+			return "", err
+		}
+		sb.WriteString(ret)
+	} else {
+		table := tableformatter.Table{
+			Data:   data,
+			Schema: schema,
+		}
+		ret, err := table.RenderTable(fmt.Sprintf("Server interfaces of server #%d %s", server.ServerID, server.ServerSerialNumber), "", format)
+		if err != nil {
+			return "", err
+		}
+		sb.WriteString(ret)
+	}
+
+	return sb.String(), nil
 }

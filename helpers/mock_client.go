@@ -5,9 +5,10 @@
 package mock_metalcloud
 
 import (
+	reflect "reflect"
+
 	gomock "github.com/golang/mock/gomock"
 	metalcloud "github.com/metalsoft-io/metal-cloud-sdk-go/v2"
-	reflect "reflect"
 )
 
 // MockMetalCloudClient is a mock of MetalCloudClient interface
@@ -2914,6 +2915,21 @@ func (m *MockMetalCloudClient) SwitchDeviceLinkDelete(networkEquipmentID1, netwo
 func (mr *MockMetalCloudClientMockRecorder) SwitchDeviceLinkDelete(networkEquipmentID1, networkEquipmentID2, linkType interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SwitchDeviceLinkDelete", reflect.TypeOf((*MockMetalCloudClient)(nil).SwitchDeviceLinkDelete), networkEquipmentID1, networkEquipmentID2, linkType)
+}
+
+// SwitchInterfaceSearch mocks base method
+func (m *MockMetalCloudClient) SwitchInterfaceSearch(filter string) (*[]metalcloud.SwitchInterfaceSearchResult, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "SwitchInterfaceSearch", filter)
+	ret0, _ := ret[0].(*[]metalcloud.SwitchInterfaceSearchResult)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// SwitchInterfaceSearch indicates an expected call of SwitchInterfaceSearch
+func (mr *MockMetalCloudClientMockRecorder) SwitchInterfaceSearch(filter interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SwitchInterfaceSearch", reflect.TypeOf((*MockMetalCloudClient)(nil).SwitchInterfaceSearch), filter)
 }
 
 // UserGet mocks base method
