@@ -233,7 +233,7 @@ func serversListCmd(c *Command, client metalcloud.MetalCloudClient) (string, err
 			FieldSize: 5,
 		},
 		{
-			FieldName: "ALLOCATED_TO.",
+			FieldName: "ALLOCATED_TO",
 			FieldType: tableformatter.TypeString,
 			FieldSize: 5,
 		},
@@ -283,14 +283,33 @@ func serversListCmd(c *Command, client metalcloud.MetalCloudClient) (string, err
 	}
 
 	data := [][]interface{}{}
+
+	available := 0
+	cleaning := 0
+	registering := 0
+	used := 0
+
 	for _, s := range *list {
+
+		if s.ServerStatus == "decommissioned" {
+			continue
+		}
+
+		switch s.ServerStatus {
+		case "available":
+			available = available + 1
+		case "cleaning":
+			cleaning = cleaning + 1
+		case "registering":
+			registering = registering + 1
+		case "used":
+			used = used + 1
+		}
 
 		allocation := ""
 		if s.ServerStatus == "used" || s.ServerStatus == "used_registering" {
 			users := strings.Join(s.UserEmail[0], ",")
-			// if len(users) > 30 {
-			// 	users = truncateString(users, 27)
-			// }
+
 			allocation = fmt.Sprintf("%s %s (#%d) IA:#%d Infra:#%d",
 				users,
 				s.InstanceLabel[0],
@@ -343,7 +362,8 @@ func serversListCmd(c *Command, client metalcloud.MetalCloudClient) (string, err
 		Data:   data,
 		Schema: schema,
 	}
-	return table.RenderTable("Servers", "", getStringParam(c.Arguments["format"]))
+	title := fmt.Sprintf("Servers: %d available %d used %d cleaning %d registering", available, used, cleaning, registering)
+	return table.RenderTable(title, "", getStringParam(c.Arguments["format"]))
 }
 
 func serverGetCmd(c *Command, client metalcloud.MetalCloudClient) (string, error) {
