@@ -25,6 +25,7 @@ var serversCmds = []Command{
 				"format":           c.FlagSet.String("format", _nilDefaultStr, "The output format. Supported values are 'json','csv','yaml'. The default format is human readable."),
 				"filter":           c.FlagSet.String("filter", "*", "filter to use when searching for servers. Check the documentation for examples. Defaults to '*'"),
 				"show_credentials": c.FlagSet.Bool("show-credentials", false, "(Flag) If set returns the servers' IPMI credentials. (Slow for large queries)"),
+				"show_rack_data":   c.FlagSet.Bool("show-rack-data", false, "(Flag) If set returns the servers' rack metadata"),
 			}
 		},
 		ExecuteFunc: serversListCmd,
@@ -222,12 +223,6 @@ func serversListCmd(c *Command, client metalcloud.MetalCloudClient) (string, err
 			FieldType: tableformatter.TypeString,
 			FieldSize: 5,
 		},
-
-		{
-			FieldName: "TAGS",
-			FieldType: tableformatter.TypeString,
-			FieldSize: 4,
-		},
 		{
 			FieldName: "IPMI_HOST",
 			FieldType: tableformatter.TypeString,
@@ -243,26 +238,40 @@ func serversListCmd(c *Command, client metalcloud.MetalCloudClient) (string, err
 			FieldType: tableformatter.TypeString,
 			FieldSize: 6,
 		},
-		{
-			FieldName: "INV_ID",
-			FieldType: tableformatter.TypeString,
-			FieldSize: 4,
-		},
-		{
-			FieldName: "RACK",
-			FieldType: tableformatter.TypeString,
-			FieldSize: 4,
-		},
-		{
-			FieldName: "RU_D",
-			FieldType: tableformatter.TypeString,
-			FieldSize: 4,
-		},
-		{
-			FieldName: "RU_U",
-			FieldType: tableformatter.TypeString,
-			FieldSize: 4,
-		},
+	}
+
+	if getBoolParam(c.Arguments["show_rack_data"]) {
+
+		extraFields := []tableformatter.SchemaField{
+			{
+				FieldName: "TAGS",
+				FieldType: tableformatter.TypeString,
+				FieldSize: 4,
+			},
+			{
+				FieldName: "INV_ID",
+				FieldType: tableformatter.TypeString,
+				FieldSize: 4,
+			},
+			{
+				FieldName: "RACK",
+				FieldType: tableformatter.TypeString,
+				FieldSize: 4,
+			},
+			{
+				FieldName: "RU_D",
+				FieldType: tableformatter.TypeString,
+				FieldSize: 4,
+			},
+			{
+				FieldName: "RU_U",
+				FieldType: tableformatter.TypeString,
+				FieldSize: 4,
+			},
+		}
+
+		schema = append(schema, extraFields...)
+
 	}
 
 	showCredentials := false
@@ -359,10 +368,10 @@ func serversListCmd(c *Command, client metalcloud.MetalCloudClient) (string, err
 			status,
 			s.ServerTypeName,
 			s.ServerSerialNumber,
-			strings.Join(s.ServerTags, ","),
 			s.ServerIPMIHost,
 			allocation,
 			s.DatacenterName,
+			strings.Join(s.ServerTags, ","),
 			s.ServerInventoryId,
 			s.ServerRackName,
 			s.ServerRackPositionLowerUnit,
