@@ -77,10 +77,13 @@ func TestServersListCmd(t *testing.T) {
 	//test csv
 	format = "csv"
 
+	bTrue := true
+
 	cmd = Command{
 		Arguments: map[string]interface{}{
-			"filter": &emptyStr,
-			"format": &format,
+			"filter":         &emptyStr,
+			"format":         &format,
+			"show_rack_data": &bTrue,
 		},
 	}
 
