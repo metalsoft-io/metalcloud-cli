@@ -6,6 +6,7 @@ import (
 	"os"
 	"strings"
 
+	"github.com/fatih/color"
 	metalcloud "github.com/metalsoft-io/metal-cloud-sdk-go/v2"
 	"github.com/metalsoft-io/tableformatter"
 )
@@ -338,6 +339,20 @@ func serversListCmd(c *Command, client metalcloud.MetalCloudClient) (string, err
 		}
 
 		status := s.ServerStatus
+
+		green := color.New(color.FgGreen).SprintFunc()
+		yellow := color.New(color.FgYellow).SprintFunc()
+		blue := color.New(color.FgHiBlue).SprintFunc()
+
+		switch status {
+		case "available":
+			status = blue(status)
+		case "used":
+			status = green(status)
+		default:
+			status = yellow(status)
+
+		}
 
 		data = append(data, []interface{}{
 			s.ServerID,
