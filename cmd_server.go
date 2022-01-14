@@ -298,6 +298,7 @@ func serversListCmd(c *Command, client metalcloud.MetalCloudClient) (string, err
 	cleaning := 0
 	registering := 0
 	used := 0
+	unavailable := 0
 
 	for _, s := range *list {
 
@@ -312,6 +313,8 @@ func serversListCmd(c *Command, client metalcloud.MetalCloudClient) (string, err
 			cleaning = cleaning + 1
 		case "registering":
 			registering = registering + 1
+		case "unavailable":
+			unavailable = unavailable + 1
 		case "used":
 			used = used + 1
 		}
@@ -352,12 +355,15 @@ func serversListCmd(c *Command, client metalcloud.MetalCloudClient) (string, err
 		green := color.New(color.FgGreen).SprintFunc()
 		yellow := color.New(color.FgYellow).SprintFunc()
 		blue := color.New(color.FgHiBlue).SprintFunc()
+		magenta := color.New(color.FgMagenta).SprintFunc()
 
 		switch status {
 		case "available":
 			status = blue(status)
 		case "used":
 			status = green(status)
+		case "unavailable":
+			status = magenta(status)
 		default:
 			status = yellow(status)
 
@@ -386,7 +392,7 @@ func serversListCmd(c *Command, client metalcloud.MetalCloudClient) (string, err
 		Data:   data,
 		Schema: schema,
 	}
-	title := fmt.Sprintf("Servers: %d available %d used %d cleaning %d registering", available, used, cleaning, registering)
+	title := fmt.Sprintf("Servers: %d available %d used %d cleaning %d registering %d unavailable", available, used, cleaning, registering, unavailable)
 	return table.RenderTable(title, "", getStringParam(c.Arguments["format"]))
 }
 
