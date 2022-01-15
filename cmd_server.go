@@ -28,7 +28,6 @@ var serversCmds = []Command{
 				"show_rack_data":      c.FlagSet.Bool("show-rack-data", false, "(Flag) If set returns the servers' rack metadata"),
 				"show_hardware":       c.FlagSet.Bool("show-hardware", false, "(Flag) If set returns the servers' hardware configuration"),
 				"show_decommissioned": c.FlagSet.Bool("show-decommissioned", false, "(Flag) If set returns decommissioned servers which are normally hidden"),
-				"no_color":            c.FlagSet.Bool("no-color", false, "Disable coloring."),
 			}
 		},
 		ExecuteFunc: serversListCmd,
@@ -115,6 +114,23 @@ var serversCmds = []Command{
 		Endpoint:    DeveloperEndpoint,
 	},
 	{
+		Description:  "Change server status",
+		Subject:      "server",
+		AltSubject:   "srv",
+		Predicate:    "status-set",
+		AltPredicate: "status",
+		FlagSet:      flag.NewFlagSet("", flag.ExitOnError),
+		InitFunc: func(c *Command) {
+			c.Arguments = map[string]interface{}{
+				"server_id":   c.FlagSet.Int("id", _nilDefaultInt, "(Required) Server's id."),
+				"status":      c.FlagSet.String("status", _nilDefaultStr, "(Required) New server status. One of: 'available','decommissioned','removed_from_rack'"),
+				"autoconfirm": c.FlagSet.Bool("autoconfirm", false, "If true it does not ask for confirmation anymore"),
+			}
+		},
+		ExecuteFunc: serverStatusSetCmd,
+		Endpoint:    DeveloperEndpoint,
+	},
+	{
 		Description:  "Lists server interfaces.",
 		Subject:      "server",
 		AltSubject:   "srv",
@@ -191,6 +207,81 @@ func serverPowerControlCmd(c *Command, client metalcloud.MetalCloudClient) (stri
 	}
 
 	return "", err
+}
+
+func serverStatusSetCmd(c *Command, client metalcloud.MetalCloudClient) (string, error) {
+	serverID, ok := getIntParamOk(c.Arguments["server_id"])
+	if !ok {
+		return "", fmt.Errorf("-id is required")
+	}
+
+	newStatus, ok := getStringParamOk(c.Arguments["status"])
+	if !ok {
+		return "", fmt.Errorf("-status is required (one of: on, off, reset, soft)")
+	}
+
+	var server metalcloud.Server
+
+	if !getBoolParam(c.Arguments["autoconfirm"]) {
+		serverPtr, err := client.ServerGet(serverID, false)
+		if err != nil {
+			return "", err
+		}
+		server = *serverPtr
+	}
+
+	confirm, err := confirmCommand(c, func() string {
+
+		confirmationMessage := ""
+
+		if !getBoolParam(c.Arguments["autoconfirm"]) {
+
+			yellow := color.New(color.FgYellow).SprintFunc()
+			blue := color.New(color.FgHiBlue).SprintFunc()
+
+			confirmationMessage = fmt.Sprintf("Server #%s (%s) of datacenter %s. Current status: %s new status: %s  Are you sure? Type \"yes\" to continue:",
+				blue(server.ServerID),
+				yellow(server.ServerSerialNumber),
+				server.DatacenterName,
+				colorizeServerStatus(server.ServerStatus),
+				colorizeServerStatus(newStatus),
+			)
+		}
+
+		if strings.HasSuffix(os.Args[0], ".test") {
+			confirmationMessage = ""
+		}
+
+		return confirmationMessage
+	})
+
+	if err != nil {
+		return "", err
+	}
+
+	if confirm {
+		err = client.ServerStatusUpdate(serverID, newStatus)
+	}
+
+	return "", err
+}
+
+func colorizeServerStatus(status string) string {
+	green := color.New(color.FgGreen).SprintFunc()
+	yellow := color.New(color.FgYellow).SprintFunc()
+	blue := color.New(color.FgHiBlue).SprintFunc()
+	magenta := color.New(color.FgMagenta).SprintFunc()
+
+	switch status {
+	case "available":
+		return blue(status)
+	case "used":
+		return green(status)
+	case "unavailable":
+		return magenta(status)
+	}
+	return yellow(status)
+
 }
 
 func serversListCmd(c *Command, client metalcloud.MetalCloudClient) (string, error) {

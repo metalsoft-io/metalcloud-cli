@@ -2192,6 +2192,20 @@ func (mr *MockMetalCloudClientMockRecorder) ServerPowerSet(serverID, operation i
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ServerPowerSet", reflect.TypeOf((*MockMetalCloudClient)(nil).ServerPowerSet), serverID, operation)
 }
 
+// ServerStatusUpdate mocks base method
+func (m *MockMetalCloudClient) ServerStatusUpdate(serverID int, status string) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "ServerStatusUpdate", serverID, status)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// ServerStatusUpdate indicates an expected call of ServerStatusUpdate
+func (mr *MockMetalCloudClientMockRecorder) ServerStatusUpdate(serverID, status interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ServerStatusUpdate", reflect.TypeOf((*MockMetalCloudClient)(nil).ServerStatusUpdate), serverID, status)
+}
+
 // ServerFirmwarePolicyGet mocks base method
 func (m *MockMetalCloudClient) ServerFirmwarePolicyGet(serverFirmwarePolicyID int) (*metalcloud.ServerFirmwareUpgradePolicy, error) {
 	m.ctrl.T.Helper()

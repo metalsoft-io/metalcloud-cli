@@ -60,7 +60,7 @@ func main() {
 	}
 
 	if len(os.Args) < 2 {
-		fmt.Fprintf(GetStdout(), "Error: Syntax error. Use %s help for more details.\n", os.Args[0])
+		fmt.Fprintf(GetStdout(), "Invalid command! Use 'help' for a list of commands.\n")
 		os.Exit(-1)
 	}
 
@@ -70,7 +70,7 @@ func main() {
 	}
 
 	if len(os.Args) == 2 {
-		fmt.Fprintf(GetStdout(), "Error: Syntax error. Use %s help for more details.\n", os.Args[0])
+		fmt.Fprint(GetStdout(), "Invalid command! Use 'help' for a list of commands\n")
 		os.Exit(-1)
 	}
 
@@ -125,7 +125,7 @@ func executeCommand(args []string, commands []Command, clients map[string]metalc
 	cmd := locateCommand(predicate, subject, commands)
 
 	if cmd == nil {
-		return fmt.Errorf("%s %s is not a valid command. Use %s help for more details", subject, predicate, args[0])
+		return fmt.Errorf("Invalid command! Use 'help' for a list of commands")
 	}
 
 	cmd.InitFunc(cmd)
