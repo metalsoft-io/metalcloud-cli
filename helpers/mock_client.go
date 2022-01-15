@@ -5,9 +5,10 @@
 package mock_metalcloud
 
 import (
+	reflect "reflect"
+
 	gomock "github.com/golang/mock/gomock"
 	metalcloud "github.com/metalsoft-io/metal-cloud-sdk-go/v2"
-	reflect "reflect"
 )
 
 // MockMetalCloudClient is a mock of MetalCloudClient interface
@@ -2190,6 +2191,20 @@ func (m *MockMetalCloudClient) ServerPowerSet(serverID int, operation string) er
 func (mr *MockMetalCloudClientMockRecorder) ServerPowerSet(serverID, operation interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ServerPowerSet", reflect.TypeOf((*MockMetalCloudClient)(nil).ServerPowerSet), serverID, operation)
+}
+
+// ServerReregister mocks base method
+func (m *MockMetalCloudClient) ServerReregister(serverID int, bSkipIPMI, bUseBDKAgent bool) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "ServerReregister", serverID, bSkipIPMI, bUseBDKAgent)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// ServerReregister indicates an expected call of ServerReregister
+func (mr *MockMetalCloudClientMockRecorder) ServerReregister(serverID, bSkipIPMI, bUseBDKAgent interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ServerReregister", reflect.TypeOf((*MockMetalCloudClient)(nil).ServerReregister), serverID, bSkipIPMI, bUseBDKAgent)
 }
 
 // ServerStatusUpdate mocks base method

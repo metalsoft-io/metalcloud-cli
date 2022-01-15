@@ -131,6 +131,23 @@ var serversCmds = []Command{
 		Endpoint:    DeveloperEndpoint,
 	},
 	{
+		Description:  "Reregister server",
+		Subject:      "server",
+		AltSubject:   "srv",
+		Predicate:    "reregister",
+		AltPredicate: "re-register",
+		FlagSet:      flag.NewFlagSet("", flag.ExitOnError),
+		InitFunc: func(c *Command) {
+			c.Arguments = map[string]interface{}{
+				"server_id":   c.FlagSet.Int("id", _nilDefaultInt, "(Required) Server's id."),
+				"skip_ipmi":   c.FlagSet.Bool("do-not-set-ipmi", false, "If set, the system will not change the IPMI credentials."),
+				"autoconfirm": c.FlagSet.Bool("autoconfirm", false, "If true it does not ask for confirmation anymore"),
+			}
+		},
+		ExecuteFunc: serverReregisterCmd,
+		Endpoint:    DeveloperEndpoint,
+	},
+	{
 		Description:  "Lists server interfaces.",
 		Subject:      "server",
 		AltSubject:   "srv",
@@ -261,6 +278,59 @@ func serverStatusSetCmd(c *Command, client metalcloud.MetalCloudClient) (string,
 
 	if confirm {
 		err = client.ServerStatusUpdate(serverID, newStatus)
+	}
+
+	return "", err
+}
+
+func serverReregisterCmd(c *Command, client metalcloud.MetalCloudClient) (string, error) {
+	serverID, ok := getIntParamOk(c.Arguments["server_id"])
+	if !ok {
+		return "", fmt.Errorf("-id is required")
+	}
+
+	skipIpmi := getBoolParam(c.Arguments["skip_ipmi"])
+
+	var server metalcloud.Server
+
+	if !getBoolParam(c.Arguments["autoconfirm"]) {
+		serverPtr, err := client.ServerGet(serverID, false)
+		if err != nil {
+			return "", err
+		}
+		server = *serverPtr
+	}
+
+	confirm, err := confirmCommand(c, func() string {
+
+		confirmationMessage := ""
+
+		if !getBoolParam(c.Arguments["autoconfirm"]) {
+
+			yellow := color.New(color.FgYellow).SprintFunc()
+			blue := color.New(color.FgHiBlue).SprintFunc()
+
+			confirmationMessage = fmt.Sprintf("Server #%s (%s) BMC IP:%s of datacenter %s. Are you sure? Type \"yes\" to continue:",
+				blue(server.ServerID),
+				yellow(server.ServerSerialNumber),
+				server.ServerIPMIHost,
+				server.DatacenterName,
+			)
+		}
+
+		if strings.HasSuffix(os.Args[0], ".test") {
+			confirmationMessage = ""
+		}
+
+		return confirmationMessage
+	})
+
+	if err != nil {
+		return "", err
+	}
+
+	if confirm {
+		err = client.ServerReregister(serverID, skipIpmi, false)
 	}
 
 	return "", err
