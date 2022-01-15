@@ -15,6 +15,7 @@ import (
 	"strings"
 	"sync"
 
+	"github.com/fatih/color"
 	metalcloud "github.com/metalsoft-io/metal-cloud-sdk-go/v2"
 
 	"syscall"
@@ -129,12 +130,20 @@ func executeCommand(args []string, commands []Command, clients map[string]metalc
 
 	cmd.InitFunc(cmd)
 
+	if flag := cmd.FlagSet.Lookup("no-color"); flag != nil {
+		cmd.Arguments["no_color"] = cmd.FlagSet.Bool("no-color", false, "Disable coloring.")
+	}
+
 	//disable default usage
 	cmd.FlagSet.Usage = func() {}
 
 	for _, a := range args {
 		if a == "-h" || a == "-help" || a == "--help" {
 			return fmt.Errorf(getCommandHelp(*cmd, true))
+		}
+
+		if a == "--no-color" || a == "-no-color" {
+			color.NoColor = true
 		}
 	}
 

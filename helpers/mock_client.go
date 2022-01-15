@@ -5,10 +5,9 @@
 package mock_metalcloud
 
 import (
-	reflect "reflect"
-
 	gomock "github.com/golang/mock/gomock"
 	metalcloud "github.com/metalsoft-io/metal-cloud-sdk-go/v2"
+	reflect "reflect"
 )
 
 // MockMetalCloudClient is a mock of MetalCloudClient interface

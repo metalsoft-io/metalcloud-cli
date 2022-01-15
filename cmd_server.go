@@ -22,10 +22,13 @@ var serversCmds = []Command{
 		FlagSet:      flag.NewFlagSet("list servers", flag.ExitOnError),
 		InitFunc: func(c *Command) {
 			c.Arguments = map[string]interface{}{
-				"format":           c.FlagSet.String("format", _nilDefaultStr, "The output format. Supported values are 'json','csv','yaml'. The default format is human readable."),
-				"filter":           c.FlagSet.String("filter", "*", "filter to use when searching for servers. Check the documentation for examples. Defaults to '*'"),
-				"show_credentials": c.FlagSet.Bool("show-credentials", false, "(Flag) If set returns the servers' IPMI credentials. (Slow for large queries)"),
-				"show_rack_data":   c.FlagSet.Bool("show-rack-data", false, "(Flag) If set returns the servers' rack metadata"),
+				"format":              c.FlagSet.String("format", _nilDefaultStr, "The output format. Supported values are 'json','csv','yaml'. The default format is human readable."),
+				"filter":              c.FlagSet.String("filter", "*", "filter to use when searching for servers. Check the documentation for examples. Defaults to '*'"),
+				"show_credentials":    c.FlagSet.Bool("show-credentials", false, "(Flag) If set returns the servers' IPMI credentials. (Slow for large queries)"),
+				"show_rack_data":      c.FlagSet.Bool("show-rack-data", false, "(Flag) If set returns the servers' rack metadata"),
+				"show_hardware":       c.FlagSet.Bool("show-hardware", false, "(Flag) If set returns the servers' hardware configuration"),
+				"show_decommissioned": c.FlagSet.Bool("show-decommissioned", false, "(Flag) If set returns decommissioned servers which are normally hidden"),
+				"no_color":            c.FlagSet.Bool("no-color", false, "Disable coloring."),
 			}
 		},
 		ExecuteFunc: serversListCmd,
@@ -195,10 +198,15 @@ func serversListCmd(c *Command, client metalcloud.MetalCloudClient) (string, err
 	filter := getStringParam(c.Arguments["filter"])
 
 	list, err := client.ServersSearch(filter)
-
 	if err != nil {
 		return "", err
 	}
+
+	green := color.New(color.FgGreen).SprintFunc()
+	yellow := color.New(color.FgYellow).SprintFunc()
+	blue := color.New(color.FgHiBlue).SprintFunc()
+	magenta := color.New(color.FgMagenta).SprintFunc()
+	red := color.New(color.FgRed).SprintFunc()
 
 	schema := []tableformatter.SchemaField{
 		{
@@ -274,9 +282,33 @@ func serversListCmd(c *Command, client metalcloud.MetalCloudClient) (string, err
 
 	}
 
-	showCredentials := false
-	if c.Arguments["show_credentials"] != nil && *c.Arguments["show_credentials"].(*bool) {
-		showCredentials = true
+	serverInterfaces := map[int][]metalcloud.SwitchInterfaceSearchResult{}
+
+	if getBoolParam(c.Arguments["show_hardware"]) {
+		extraFields := []tableformatter.SchemaField{
+			{
+				FieldName: "CONFIG.",
+				FieldType: tableformatter.TypeString,
+				FieldSize: 5,
+			},
+		}
+		schema = append(schema, extraFields...)
+
+		//retrieve interface information, it will help us show a more detailed data on
+		//NICs.
+		serverInterfacesList, err := client.SwitchInterfaceSearch("*")
+
+		if err != nil {
+			return "", err
+		}
+
+		//We save it in a map indexed by server id for quicker retrieval later
+		for _, serverInterface := range *serverInterfacesList {
+			serverInterfaces[serverInterface.ServerID] = append(serverInterfaces[serverInterface.ServerID], serverInterface)
+		}
+	}
+
+	if getBoolParam(c.Arguments["show_credentials"]) {
 
 		schema = append(schema, tableformatter.SchemaField{
 			FieldName: "IPMI_USER",
@@ -302,10 +334,11 @@ func serversListCmd(c *Command, client metalcloud.MetalCloudClient) (string, err
 
 	for _, s := range *list {
 
-		if s.ServerStatus == "decommissioned" {
+		if getBoolParam(c.Arguments["show_credentials"]) && s.ServerStatus == "decommissioned" {
 			continue
 		}
 
+		//calculate stats
 		switch s.ServerStatus {
 		case "available":
 			available = available + 1
@@ -337,9 +370,9 @@ func serversListCmd(c *Command, client metalcloud.MetalCloudClient) (string, err
 		credentialsUser := ""
 		credentialsPass := ""
 
-		if showCredentials {
+		if getBoolParam(c.Arguments["show_credentials"]) {
 
-			server, err := client.ServerGet(s.ServerID, showCredentials)
+			server, err := client.ServerGet(s.ServerID, true)
 
 			if err != nil {
 				return "", err
@@ -350,12 +383,41 @@ func serversListCmd(c *Command, client metalcloud.MetalCloudClient) (string, err
 
 		}
 
-		status := s.ServerStatus
+		diskDescription := ""
+		if s.ServerDiskCount > 0 {
+			diskDescription = fmt.Sprintf("%s x %s GB %s",
+				yellow(s.ServerDiskCount),
+				yellow(s.ServerDiskSizeMbytes/1000),
+				yellow(s.ServerDiskType))
+		}
 
-		green := color.New(color.FgGreen).SprintFunc()
-		yellow := color.New(color.FgYellow).SprintFunc()
-		blue := color.New(color.FgHiBlue).SprintFunc()
-		magenta := color.New(color.FgMagenta).SprintFunc()
+		//we index by capacity
+		interfacesByCapacity := map[int][]metalcloud.SwitchInterfaceSearchResult{}
+
+		for _, serverInterface := range serverInterfaces[s.ServerID] {
+			interfacesByCapacity[serverInterface.ServerInterfaceCapacityMBPs] = append(interfacesByCapacity[serverInterface.ServerInterfaceCapacityMBPs], serverInterface)
+		}
+
+		interfaceDescription := ""
+
+		for capacity, serverInterfaces := range interfacesByCapacity {
+			interfaceDescription = interfaceDescription +
+				fmt.Sprintf("%s x %s Gbps NICs",
+					magenta(len(serverInterfaces)), magenta(capacity/1000))
+		}
+
+		hardwareConfig := ""
+		if s.ServerProcessorCount > 0 {
+			hardwareConfig = fmt.Sprintf("%s x %s cores(ht), %s GB RAM\n%s %s",
+				blue(s.ServerProcessorCount),
+				blue(s.ServerProcessorThreads*s.ServerProcessorCoreCount),
+				red(s.ServerRAMGbytes),
+				diskDescription,
+				interfaceDescription,
+			)
+		}
+
+		status := s.ServerStatus
 
 		switch status {
 		case "available":
@@ -369,7 +431,7 @@ func serversListCmd(c *Command, client metalcloud.MetalCloudClient) (string, err
 
 		}
 
-		data = append(data, []interface{}{
+		row := []interface{}{
 			s.ServerID,
 			status,
 			s.ServerTypeName,
@@ -377,14 +439,32 @@ func serversListCmd(c *Command, client metalcloud.MetalCloudClient) (string, err
 			s.ServerIPMIHost,
 			allocation,
 			s.DatacenterName,
-			strings.Join(s.ServerTags, ","),
-			s.ServerInventoryId,
-			s.ServerRackName,
-			s.ServerRackPositionLowerUnit,
-			s.ServerRackPositionUpperUnit,
-			credentialsUser,
-			credentialsPass,
-		})
+		}
+
+		if getBoolParam(c.Arguments["show_rack_data"]) {
+			row = append(row, []interface{}{
+				strings.Join(s.ServerTags, ","),
+				s.ServerInventoryId,
+				s.ServerRackName,
+				s.ServerRackPositionLowerUnit,
+				s.ServerRackPositionUpperUnit,
+			}...)
+		}
+
+		if getBoolParam(c.Arguments["show_hardware"]) {
+			row = append(row, []interface{}{
+				hardwareConfig,
+			}...)
+		}
+
+		if getBoolParam(c.Arguments["show_credentials"]) {
+			row = append(row, []interface{}{
+				credentialsUser,
+				credentialsPass,
+			}...)
+		}
+
+		data = append(data, row)
 
 	}
 
@@ -393,6 +473,7 @@ func serversListCmd(c *Command, client metalcloud.MetalCloudClient) (string, err
 		Schema: schema,
 	}
 	title := fmt.Sprintf("Servers: %d available %d used %d cleaning %d registering %d unavailable", available, used, cleaning, registering, unavailable)
+
 	return table.RenderTable(title, "", getStringParam(c.Arguments["format"]))
 }
 

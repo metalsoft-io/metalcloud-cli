@@ -29,6 +29,10 @@ func TestServersListCmd(t *testing.T) {
 		ServerRackPositionUpperUnit: "U-2404",
 	}
 
+	interfaces := []metalcloud.SwitchInterfaceSearchResult{{
+		ServerID: 100,
+	}}
+
 	list := []metalcloud.ServerSearchResult{
 		server,
 	}
@@ -38,6 +42,11 @@ func TestServersListCmd(t *testing.T) {
 	client.EXPECT().
 		ServersSearch("").
 		Return(&list, nil).
+		AnyTimes()
+
+	client.EXPECT().
+		SwitchInterfaceSearch("*").
+		Return(&interfaces, nil).
 		AnyTimes()
 
 	//test json
