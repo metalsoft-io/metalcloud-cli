@@ -487,31 +487,21 @@ func serversListCmd(c *Command, client metalcloud.MetalCloudClient) (string, err
 
 	data := [][]interface{}{}
 
-	available := 0
-	cleaning := 0
-	registering := 0
-	used := 0
-	unavailable := 0
+	statusCounts := map[string]int{
+		"available":      0,
+		"cleaning":       0,
+		"registering":    0,
+		"used":           0,
+		"decommissioned": 0,
+	}
 
 	for _, s := range *list {
 
-		if getBoolParam(c.Arguments["show_credentials"]) && s.ServerStatus == "decommissioned" {
+		if s.ServerStatus == "decommissioned" && !getBoolParam(c.Arguments["show_decommissioned"]) {
 			continue
 		}
 
-		//calculate stats
-		switch s.ServerStatus {
-		case "available":
-			available = available + 1
-		case "cleaning":
-			cleaning = cleaning + 1
-		case "registering":
-			registering = registering + 1
-		case "unavailable":
-			unavailable = unavailable + 1
-		case "used":
-			used = used + 1
-		}
+		statusCounts[s.ServerStatus] = statusCounts[s.ServerStatus] + 1
 
 		allocation := ""
 		if s.ServerStatus == "used" || s.ServerStatus == "used_registering" {
@@ -633,7 +623,17 @@ func serversListCmd(c *Command, client metalcloud.MetalCloudClient) (string, err
 		Data:   data,
 		Schema: schema,
 	}
-	title := fmt.Sprintf("Servers: %d available %d used %d cleaning %d registering %d unavailable", available, used, cleaning, registering, unavailable)
+
+	title := fmt.Sprintf("Servers: %d available %d used %d cleaning %d registering %d unavailable",
+		statusCounts["available"],
+		statusCounts["used"],
+		statusCounts["cleaning"],
+		statusCounts["registering"],
+		statusCounts["unavailable"])
+
+	if getBoolParam(c.Arguments["show_decommissioned"]) {
+		title = title + fmt.Sprintf(" %d decommissioned", statusCounts["decommissioned"])
+	}
 
 	return table.RenderTable(title, "", getStringParam(c.Arguments["format"]))
 }
