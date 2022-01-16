@@ -26,7 +26,7 @@ var jobsCmds = []Command{
 			c.Arguments = map[string]interface{}{
 				"format": c.FlagSet.String("format", _nilDefaultStr, "The output format. Supported values are 'json','csv','yaml'. The default format is human readable."),
 				"filter": c.FlagSet.String("filter", "*", "filter to use when searching for jobs. Check the documentation for examples. Defaults to '*'"),
-				"limit":  c.FlagSet.Int("limit", 100, "how many jobs to show. Latest jobs first."),
+				"limit":  c.FlagSet.Int("limit", 20, "how many jobs to show. Latest jobs first."),
 			}
 		},
 		ExecuteFunc: jobListCmd,
@@ -197,11 +197,15 @@ func jobListCmd(c *Command, client metalcloud.MetalCloudClient) (string, error) 
 		if s.ServerID != 0 {
 			affects = affects + fmt.Sprintf("Server: #%d ", s.ServerID)
 		}
-		if s.AFCGroupID != 0 {
-			affects = affects + fmt.Sprintf("Group: #%d ", s.AFCGroupID)
-		}
 		if s.InstanceID != 0 {
-			affects = affects + fmt.Sprintf("Instance: #%d ", s.InstanceID)
+			affects = affects + fmt.Sprintf("Inst: #%d ", s.InstanceID)
+		}
+		if s.InfrastructureID != 0 {
+			affects = affects + fmt.Sprintf("Infra: #%d ", s.InfrastructureID)
+		}
+
+		if s.InfrastructureID == 0 && s.AFCGroupID != 0 {
+			affects = affects + fmt.Sprintf("Group: #%d ", s.AFCGroupID)
 		}
 
 		retries := fmt.Sprintf("%d/%d", s.AFCRetryCount, s.AFCRetryMax)
@@ -343,6 +347,9 @@ func jobGetCmd(c *Command, client metalcloud.MetalCloudClient) (string, error) {
 	}
 	if s.InstanceID != 0 {
 		affects = affects + fmt.Sprintf("Instance: #%d ", s.InstanceID)
+	}
+	if s.InfrastructureID != 0 {
+		affects = affects + fmt.Sprintf("Infrastructure: #%d ", s.InfrastructureID)
 	}
 
 	retries := fmt.Sprintf("%d/%d", s.AFCRetryCount, s.AFCRetryMax)
