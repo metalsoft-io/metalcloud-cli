@@ -664,6 +664,11 @@ func serverGetCmd(c *Command, client metalcloud.MetalCloudClient) (string, error
 			FieldSize: 6,
 		},
 		{
+			FieldName: "SERIAL NUMBER",
+			FieldType: tableformatter.TypeString,
+			FieldSize: 6,
+		},
+		{
 			FieldName: "DATACENTER_NAME",
 			FieldType: tableformatter.TypeString,
 			FieldSize: 6,
@@ -709,11 +714,6 @@ func serverGetCmd(c *Command, client metalcloud.MetalCloudClient) (string, error
 			FieldSize: 5,
 		},
 		{
-			FieldName: "SERIAL_NUMBER",
-			FieldType: tableformatter.TypeString,
-			FieldSize: 5,
-		},
-		{
 			FieldName: "CONFIG.",
 			FieldType: tableformatter.TypeString,
 			FieldSize: 5,
@@ -735,11 +735,6 @@ func serverGetCmd(c *Command, client metalcloud.MetalCloudClient) (string, error
 		},
 		{
 			FieldName: "ALLOCATED_TO.",
-			FieldType: tableformatter.TypeString,
-			FieldSize: 5,
-		},
-		{
-			FieldName: "INTERFACES.",
 			FieldType: tableformatter.TypeString,
 			FieldSize: 5,
 		},
@@ -806,6 +801,7 @@ func serverGetCmd(c *Command, client metalcloud.MetalCloudClient) (string, error
 
 	data = append(data, []interface{}{
 		server.ServerID,
+		server.ServerSerialNumber,
 		server.DatacenterName,
 		server.ServerInventoryId,
 		server.ServerRackName,
@@ -815,7 +811,6 @@ func serverGetCmd(c *Command, client metalcloud.MetalCloudClient) (string, error
 		server.ServerStatus,
 		server.ServerVendor,
 		productName,
-		server.ServerSerialNumber,
 		configuration,
 		disks,
 		strings.Join(server.ServerTags, ","),
@@ -859,39 +854,16 @@ func serverGetCmd(c *Command, client metalcloud.MetalCloudClient) (string, error
 			sb.WriteString(ret)
 
 		default:
-			sb.WriteString("SERVER OVERVIEW\n")
-			sb.WriteString("---------------\n")
-			sb.WriteString(fmt.Sprintf("#%d %s %s\nInventory Id: %s\nRack Name: %s\nRack Position Lower Unit: %s\nRack Position Upper Unit: %s\n",
-				server.ServerID,
-				serverTypeName,
-				server.DatacenterName,
-				server.ServerInventoryId,
-				server.ServerRackName,
-				server.ServerRackPositionLowerUnit,
-				server.ServerRackPositionUpperUnit,
-			))
-
-			sb.WriteString(fmt.Sprintf("%s %s\n%s %s\n\n",
-				server.ServerVendor,
-				server.ServerProductName,
-				server.ServerSerialNumber,
-				server.ServerUUID))
-
-			sb.WriteString("CONFIGURATION\n")
-			sb.WriteString("------------\n")
-			sb.WriteString(fmt.Sprintf("%s\n", configuration))
-			sb.WriteString(fmt.Sprintf("%s\n\n", disks))
-
-			sb.WriteString("ALLOCATION\n")
-			sb.WriteString("----------\n")
-			sb.WriteString(fmt.Sprintf("server_status: %s\nallocated to: %s\n\n", server.ServerStatus, allocation))
-
-			if showCredentials {
-				sb.WriteString("CREDENTIALS\n")
-				sb.WriteString("-----------\n")
-				sb.WriteString(fmt.Sprintf("%s\n", credentials))
+			table := tableformatter.Table{
+				Data:   data,
+				Schema: schema,
+			}
+			ret, err := table.RenderTransposedTable("server", "", format)
+			if err != nil {
+				return "", err
 			}
 
+			sb.WriteString(ret)
 		}
 	}
 
@@ -1063,6 +1035,11 @@ func serverInterfacesListCmd(c *Command, client metalcloud.MetalCloudClient) (st
 			FieldSize: 5,
 		},
 		{
+			FieldName: "TYPE",
+			FieldType: tableformatter.TypeString,
+			FieldSize: 5,
+		},
+		{
 			FieldName: "SERVER INTERFACE",
 			FieldType: tableformatter.TypeString,
 			FieldSize: 5,
@@ -1078,6 +1055,11 @@ func serverInterfacesListCmd(c *Command, client metalcloud.MetalCloudClient) (st
 			FieldSize: 6,
 		},
 		{
+			FieldName: "SWITCH MGMT",
+			FieldType: tableformatter.TypeString,
+			FieldSize: 6,
+		},
+		{
 			FieldName: "SWITCH INTERFACE MAC",
 			FieldType: tableformatter.TypeString,
 			FieldSize: 6,
@@ -1087,11 +1069,7 @@ func serverInterfacesListCmd(c *Command, client metalcloud.MetalCloudClient) (st
 			FieldType: tableformatter.TypeString,
 			FieldSize: 5,
 		},
-		{
-			FieldName: "TYP",
-			FieldType: tableformatter.TypeString,
-			FieldSize: 5,
-		},
+
 		{
 			FieldName: "IP",
 			FieldType: tableformatter.TypeString,
@@ -1114,12 +1092,13 @@ func serverInterfacesListCmd(c *Command, client metalcloud.MetalCloudClient) (st
 
 		data = append(data, []interface{}{
 			s.ServerInterfaceIndex,
+			networkType,
 			s.ServerInterfaceMACAddress,
 			s.NetworkEquipmentInterfaceIdentifierString,
 			switch_info,
+			s.NetworkEquipmentManagementAddress,
 			s.NetworkEquipmentInterfaceMACAddress,
 			capacity,
-			networkType,
 			ips,
 		})
 

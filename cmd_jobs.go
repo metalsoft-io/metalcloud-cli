@@ -333,6 +333,16 @@ func jobGetCmd(c *Command, client metalcloud.MetalCloudClient) (string, error) {
 			FieldType: tableformatter.TypeString,
 			FieldSize: 5,
 		},
+		{
+			FieldName: "CREATED",
+			FieldType: tableformatter.TypeString,
+			FieldSize: 5,
+		},
+		{
+			FieldName: "UPDATED",
+			FieldType: tableformatter.TypeString,
+			FieldSize: 5,
+		},
 	}
 
 	data := [][]interface{}{}
@@ -416,6 +426,8 @@ func jobGetCmd(c *Command, client metalcloud.MetalCloudClient) (string, error) {
 		retries,
 		request,
 		response,
+		s.AFCCreatedTimestamp,
+		s.AFCUpdatedTimestamp,
 	}
 
 	data = append(data, row)
