@@ -500,6 +500,8 @@ func switchInterfacesListCmd(c *Command, client metalcloud.MetalCloudClient) (st
 
 	}
 
+	tableformatter.TableSorter(schema).OrderBy(schema[0].FieldName).Sort(data)
+
 	var sb strings.Builder
 
 	format := getStringParam(c.Arguments["format"])
