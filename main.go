@@ -17,6 +17,7 @@ import (
 
 	"github.com/fatih/color"
 	metalcloud "github.com/metalsoft-io/metal-cloud-sdk-go/v2"
+	"github.com/metalsoft-io/tableformatter"
 
 	"syscall"
 
@@ -73,6 +74,8 @@ func main() {
 		fmt.Fprint(GetStdout(), "Invalid command! Use 'help' for a list of commands\n")
 		os.Exit(-1)
 	}
+
+	tableformatter.DefaultFoldAtLength = 1000
 
 	commands := getCommands(clients)
 
