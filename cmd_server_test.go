@@ -171,10 +171,12 @@ func TestServerGetCmd(t *testing.T) {
 
 	//test plaintext
 	format = ""
+	bTrue := true
 	cmd = Command{
 		Arguments: map[string]interface{}{
 			"server_id_or_uuid": &id,
 			"format":            &format,
+			"show_rack_data":    bTrue,
 		},
 	}
 
@@ -189,6 +191,7 @@ func TestServerGetCmd(t *testing.T) {
 		Arguments: map[string]interface{}{
 			"server_id_or_uuid": &id,
 			"format":            &format,
+			"show_rack_data":    bTrue,
 		},
 	}
 
@@ -200,11 +203,12 @@ func TestServerGetCmd(t *testing.T) {
 
 	csv, err := reader.ReadAll()
 	Expect(csv[1][0]).To(Equal(fmt.Sprintf("%d", 10)))
-	Expect(csv[1][2]).To(Equal("id-20040424"))
-	Expect(csv[1][3]).To(Equal("Rack Name"))
-	Expect(csv[1][4]).To(Equal("L-2004"))
-	Expect(csv[1][5]).To(Equal("U-2404"))
-	Expect(csv[1][9]).To(Equal("test"))
+
+	Expect(csv[1][3]).To(Equal("id-20040424"))
+	Expect(csv[1][4]).To(Equal("Rack Name"))
+	Expect(csv[1][5]).To(Equal("L-2004"))
+	Expect(csv[1][6]).To(Equal("U-2404"))
+	Expect(csv[1][10]).To(Equal("test"))
 }
 
 func TestServerEditCmd(t *testing.T) {
