@@ -336,6 +336,7 @@ func getCommands(clients map[string]metalcloud.MetalCloudClient) []Command {
 		applyCmds,
 		networkProfileCmds,
 		networkCmds,
+		jobsCmds,
 	}
 
 	filteredCommands := []Command{}

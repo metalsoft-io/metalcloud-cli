@@ -184,14 +184,6 @@ var serversCmds = []Command{
 	},
 }
 
-func truncateString(s string, length int) string {
-	str := s
-	if len(str) > 0 {
-		return str[:length] + "..."
-	}
-	return ""
-}
-
 func serverPowerControlCmd(c *Command, client metalcloud.MetalCloudClient) (string, error) {
 	serverID, ok := getIntParamOk(c.Arguments["server_id"])
 	if !ok {
@@ -1086,6 +1078,11 @@ func serverInterfacesListCmd(c *Command, client metalcloud.MetalCloudClient) (st
 			FieldSize: 6,
 		},
 		{
+			FieldName: "SWITCH INTERFACE MAC",
+			FieldType: tableformatter.TypeString,
+			FieldSize: 6,
+		},
+		{
 			FieldName: "CAPACITY",
 			FieldType: tableformatter.TypeString,
 			FieldSize: 5,
@@ -1120,6 +1117,7 @@ func serverInterfacesListCmd(c *Command, client metalcloud.MetalCloudClient) (st
 			s.ServerInterfaceMACAddress,
 			s.NetworkEquipmentInterfaceIdentifierString,
 			switch_info,
+			s.NetworkEquipmentInterfaceMACAddress,
 			capacity,
 			networkType,
 			ips,

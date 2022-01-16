@@ -33,6 +33,92 @@ func (m *MockMetalCloudClient) EXPECT() *MockMetalCloudClientMockRecorder {
 	return m.recorder
 }
 
+// AFCSearch mocks base method
+func (m *MockMetalCloudClient) AFCSearch(filter string, page_start, page_end int) (*[]metalcloud.AFCSearchResult, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "AFCSearch", filter, page_start, page_end)
+	ret0, _ := ret[0].(*[]metalcloud.AFCSearchResult)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// AFCSearch indicates an expected call of AFCSearch
+func (mr *MockMetalCloudClientMockRecorder) AFCSearch(filter, page_start, page_end interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "AFCSearch", reflect.TypeOf((*MockMetalCloudClient)(nil).AFCSearch), filter, page_start, page_end)
+}
+
+// AFCGet mocks base method
+func (m *MockMetalCloudClient) AFCGet(afcID int) (*metalcloud.AFC, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "AFCGet", afcID)
+	ret0, _ := ret[0].(*metalcloud.AFC)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// AFCGet indicates an expected call of AFCGet
+func (mr *MockMetalCloudClientMockRecorder) AFCGet(afcID interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "AFCGet", reflect.TypeOf((*MockMetalCloudClient)(nil).AFCGet), afcID)
+}
+
+// AFCRetryCall mocks base method
+func (m *MockMetalCloudClient) AFCRetryCall(afcID int) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "AFCRetryCall", afcID)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// AFCRetryCall indicates an expected call of AFCRetryCall
+func (mr *MockMetalCloudClientMockRecorder) AFCRetryCall(afcID interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "AFCRetryCall", reflect.TypeOf((*MockMetalCloudClient)(nil).AFCRetryCall), afcID)
+}
+
+// AFCSkip mocks base method
+func (m *MockMetalCloudClient) AFCSkip(afcID int) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "AFCSkip", afcID)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// AFCSkip indicates an expected call of AFCSkip
+func (mr *MockMetalCloudClientMockRecorder) AFCSkip(afcID interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "AFCSkip", reflect.TypeOf((*MockMetalCloudClient)(nil).AFCSkip), afcID)
+}
+
+// AFCDelete mocks base method
+func (m *MockMetalCloudClient) AFCDelete(afcID int) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "AFCDelete", afcID)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// AFCDelete indicates an expected call of AFCDelete
+func (mr *MockMetalCloudClientMockRecorder) AFCDelete(afcID interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "AFCDelete", reflect.TypeOf((*MockMetalCloudClient)(nil).AFCDelete), afcID)
+}
+
+// AFCMarkForDeath mocks base method
+func (m *MockMetalCloudClient) AFCMarkForDeath(afcID int, typeOfMark string) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "AFCMarkForDeath", afcID, typeOfMark)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// AFCMarkForDeath indicates an expected call of AFCMarkForDeath
+func (mr *MockMetalCloudClientMockRecorder) AFCMarkForDeath(afcID, typeOfMark interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "AFCMarkForDeath", reflect.TypeOf((*MockMetalCloudClient)(nil).AFCMarkForDeath), afcID, typeOfMark)
+}
+
 // Datacenters mocks base method
 func (m *MockMetalCloudClient) Datacenters(onlyActive bool) (*map[string]metalcloud.Datacenter, error) {
 	m.ctrl.T.Helper()

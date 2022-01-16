@@ -443,6 +443,11 @@ func switchInterfacesListCmd(c *Command, client metalcloud.MetalCloudClient) (st
 			FieldSize: 6,
 		},
 		{
+			FieldName: "SWITCH INTERFACE MAC",
+			FieldType: tableformatter.TypeString,
+			FieldSize: 6,
+		},
+		{
 			FieldName: "SERVER_ID",
 			FieldType: tableformatter.TypeInt,
 			FieldSize: 6,
@@ -489,6 +494,7 @@ func switchInterfacesListCmd(c *Command, client metalcloud.MetalCloudClient) (st
 		data = append(data, []interface{}{
 			s.NetworkEquipmentInterfaceID,
 			s.NetworkEquipmentInterfaceIdentifierString,
+			s.NetworkEquipmentInterfaceMACAddress,
 			s.ServerID,
 			s.ServerSerialNumber,
 			s.ServerIPMIHost,
