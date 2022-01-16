@@ -205,7 +205,7 @@ func jobListCmd(c *Command, client metalcloud.MetalCloudClient) (string, error) 
 		}
 
 		retries := fmt.Sprintf("%d/%d", s.AFCRetryCount, s.AFCRetryMax)
-		if s.AFCRetryCount == s.AFCRetryMax {
+		if s.AFCRetryCount >= s.AFCRetryMax {
 			retries = red(retries)
 		} else if s.AFCRetryCount < s.AFCRetryMax && s.AFCRetryCount > 1 {
 			retries = yellow(retries)
