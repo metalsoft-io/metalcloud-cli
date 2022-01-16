@@ -6,7 +6,7 @@ require (
 	github.com/fatih/color v1.13.0 // indirect
 	github.com/golang/mock v1.6.0
 	github.com/kr/text v0.2.0 // indirect
-	github.com/metalsoft-io/metal-cloud-sdk-go/v2 v2.4.6
+	github.com/metalsoft-io/metal-cloud-sdk-go/v2 v2.4.7
 	github.com/metalsoft-io/tableformatter v1.0.8
 	github.com/onsi/gomega v1.16.0
 	github.com/savaki/jq v0.0.0-20161209013833-0e6baecebbf8

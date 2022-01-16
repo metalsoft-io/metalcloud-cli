@@ -97,6 +97,24 @@ var serversCmds = []Command{
 		Endpoint:    DeveloperEndpoint,
 	},
 	{
+		Description:  "Edit server's IPMI",
+		Subject:      "server",
+		AltSubject:   "srv",
+		Predicate:    "edit-ipmi",
+		AltPredicate: "update-ipmi",
+		FlagSet:      flag.NewFlagSet("edit server IPMI", flag.ExitOnError),
+		InitFunc: func(c *Command) {
+			c.Arguments = map[string]interface{}{
+				"server_id_or_uuid": c.FlagSet.String("id", _nilDefaultStr, "Server's ID or UUID"),
+				"ipmi_hostname":     c.FlagSet.String("ipmi-host", _nilDefaultStr, "The new IPMI hostname of the server. This command cannot be used in conjunction with config or pipe commands."),
+				"ipmi_username":     c.FlagSet.String("ipmi-user", _nilDefaultStr, "The new IPMI username of the server. This command cannot be used in conjunction with config or pipe commands."),
+				"ipmi_password":     c.FlagSet.String("ipmi-pass", _nilDefaultStr, "The new IPMI password of the server. This command cannot be used in conjunction with config or pipe commands."),
+			}
+		},
+		ExecuteFunc: serverEditIPMICmd,
+		Endpoint:    DeveloperEndpoint,
+	},
+	{
 		Description:  "Change server power status",
 		Subject:      "server",
 		AltSubject:   "srv",
@@ -967,6 +985,36 @@ func serverEditCmd(c *Command, client metalcloud.MetalCloudClient) (string, erro
 
 	}
 	_, err = client.ServerEditComplete(server.ServerID, newServer)
+
+	return "", err
+}
+
+func serverEditIPMICmd(c *Command, client metalcloud.MetalCloudClient) (string, error) {
+
+	server, err := getServerFromCommand("id", c, client, false)
+	if err != nil {
+		return "", err
+	}
+
+	newIPMIHostname, setIPMIHostname := getStringParamOk(c.Arguments["ipmi_hostname"])
+	newIPMIUsername, setIPMIUsername := getStringParamOk(c.Arguments["ipmi_username"])
+	newIPMIPassword, setIPMIPassword := getStringParamOk(c.Arguments["ipmi_password"])
+
+	newServer := *server
+
+	if setIPMIHostname {
+		newServer.ServerIPMIHost = newIPMIHostname
+	}
+
+	if setIPMIUsername {
+		newServer.ServerIPMInternalUsername = newIPMIUsername
+	}
+
+	if setIPMIPassword {
+		newServer.ServerIPMInternalPassword = newIPMIPassword
+	}
+
+	_, err = client.ServerEditIPMI(server.ServerID, newServer)
 
 	return "", err
 }
