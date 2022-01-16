@@ -217,7 +217,21 @@ func jobListCmd(c *Command, client metalcloud.MetalCloudClient) (string, error) 
 			retries = green(retries)
 		}
 
-		request := fmt.Sprintf("%s(%+v)", s.AFCFunctionName, s.AFCParamsJSON)
+		request := ""
+		switch s.AFCFunctionName {
+		case "infrastructure_provision":
+			var paramsArr []interface{}
+			err := json.Unmarshal([]byte(s.AFCParamsJSON), &paramsArr)
+			if err != nil {
+				return "", err
+			}
+			funcName := paramsArr[1].(string)
+			actualParams := paramsArr[2]
+			request = fmt.Sprintf("%s(%+v)", funcName, actualParams)
+		default:
+			request = fmt.Sprintf("%s(%+v)", s.AFCFunctionName, s.AFCParamsJSON)
+		}
+
 		if len(request) > 40 {
 			request = truncateString(request, 40)
 		}
@@ -361,7 +375,21 @@ func jobGetCmd(c *Command, client metalcloud.MetalCloudClient) (string, error) {
 		retries = green(retries)
 	}
 
-	request := fmt.Sprintf("%s(%+v)", s.AFCFunctionName, s.AFCParamsJSON)
+	request := ""
+	switch s.AFCFunctionName {
+	case "infrastructure_provision":
+		var paramsArr []interface{}
+		err := json.Unmarshal([]byte(s.AFCParamsJSON), &paramsArr)
+		if err != nil {
+			return "", err
+		}
+		funcName := paramsArr[1].(string)
+		actualParams := paramsArr[2]
+		request = fmt.Sprintf("%s(%+v)", funcName, actualParams)
+	default:
+		request = fmt.Sprintf("%s(%+v)", s.AFCFunctionName, s.AFCParamsJSON)
+	}
+
 	if len(request) > 100 {
 		request = truncateString(request, 100)
 	}
