@@ -5,10 +5,9 @@
 package mock_metalcloud
 
 import (
-	reflect "reflect"
-
 	gomock "github.com/golang/mock/gomock"
 	metalcloud "github.com/metalsoft-io/metal-cloud-sdk-go/v2"
+	reflect "reflect"
 )
 
 // MockMetalCloudClient is a mock of MetalCloudClient interface
@@ -1637,6 +1636,21 @@ func (m *MockMetalCloudClient) OSAssetGet(osAssetID int) (*metalcloud.OSAsset, e
 func (mr *MockMetalCloudClientMockRecorder) OSAssetGet(osAssetID interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "OSAssetGet", reflect.TypeOf((*MockMetalCloudClient)(nil).OSAssetGet), osAssetID)
+}
+
+// OSAssetGetStoredContent mocks base method
+func (m *MockMetalCloudClient) OSAssetGetStoredContent(osAssetID int) (string, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "OSAssetGetStoredContent", osAssetID)
+	ret0, _ := ret[0].(string)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// OSAssetGetStoredContent indicates an expected call of OSAssetGetStoredContent
+func (mr *MockMetalCloudClientMockRecorder) OSAssetGetStoredContent(osAssetID interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "OSAssetGetStoredContent", reflect.TypeOf((*MockMetalCloudClient)(nil).OSAssetGetStoredContent), osAssetID)
 }
 
 // OSAssets mocks base method

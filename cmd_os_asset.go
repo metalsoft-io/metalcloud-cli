@@ -55,6 +55,21 @@ var osAssetsCmds = []Command{
 		Endpoint:    DeveloperEndpoint,
 	},
 	{
+		Description:  "Get asset contents",
+		Subject:      "asset",
+		AltSubject:   "asset",
+		Predicate:    "get-contents",
+		AltPredicate: "contents",
+		FlagSet:      flag.NewFlagSet("get asset content", flag.ExitOnError),
+		InitFunc: func(c *Command) {
+			c.Arguments = map[string]interface{}{
+				"asset_id_or_name": c.FlagSet.String("id", _nilDefaultStr, "Asset's id or name"),
+			}
+		},
+		ExecuteFunc: assetGetCmd,
+		Endpoint:    ExtendedEndpoint,
+	},
+	{
 		Description:  "Delete asset.",
 		Subject:      "asset",
 		AltSubject:   "asset",
@@ -340,6 +355,32 @@ func associateAssetFromCommand(assetID int, assetFileName string, c *Command, cl
 		}
 	}
 	return nil
+}
+
+func assetGetCmd(c *Command, client metalcloud.MetalCloudClient) (string, error) {
+
+	retS, err := getOSAssetFromCommand("id", "asset_id_or_name", c, client)
+	if err != nil {
+		return "", err
+	}
+
+	if retS.OSAssetSourceURL != "" {
+		return "", fmt.Errorf("No stored content. This command can only be used for assets that have content stored in the database. This asset is being pulled from '%s'.", retS.OSAssetSourceURL)
+	}
+
+	content, err := client.OSAssetGetStoredContent(retS.OSAssetID)
+	if err != nil {
+		return "", err
+	}
+
+	sDec, err := base64.StdEncoding.DecodeString(content)
+	if err != nil {
+		return "", err
+	}
+
+	fmt.Print(string(sDec))
+
+	return "", err
 }
 
 func assetDeleteCmd(c *Command, client metalcloud.MetalCloudClient) (string, error) {
