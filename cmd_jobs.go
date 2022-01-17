@@ -225,8 +225,14 @@ func jobListCmd(c *Command, client metalcloud.MetalCloudClient) (string, error) 
 			if err != nil {
 				return "", err
 			}
-			funcName := paramsArr[1].(string)
-			actualParams := paramsArr[2]
+			funcName := ""
+			if len(paramsArr) >= 2 {
+				funcName = paramsArr[1].(string)
+			}
+			var actualParams interface{}
+			if len(paramsArr) >= 3 {
+				actualParams = paramsArr[2]
+			}
 			request = fmt.Sprintf("%s(%+v)", funcName, actualParams)
 		default:
 			request = fmt.Sprintf("%s(%+v)", s.AFCFunctionName, s.AFCParamsJSON)
@@ -393,8 +399,14 @@ func jobGetCmd(c *Command, client metalcloud.MetalCloudClient) (string, error) {
 		if err != nil {
 			return "", err
 		}
-		funcName := paramsArr[1].(string)
-		actualParams := paramsArr[2]
+		funcName := ""
+		if len(paramsArr) >= 2 {
+			funcName = paramsArr[1].(string)
+		}
+		var actualParams interface{}
+		if len(paramsArr) >= 3 {
+			actualParams = paramsArr[2]
+		}
 		request = fmt.Sprintf("%s(%+v)", funcName, actualParams)
 	default:
 		request = fmt.Sprintf("%s(%+v)", s.AFCFunctionName, s.AFCParamsJSON)
