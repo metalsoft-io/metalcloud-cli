@@ -258,8 +258,10 @@ func watch(f func() (string, error), refreshInterval string) error {
 		}
 
 		if prevLen != 0 {
-			cursor.StartOfLineUp(prevLen)
+			cursor.ClearLinesUp(prevLen)
 		}
+
+		cursor.StartOfLine()
 
 		timeStr := fmt.Sprintf("Refreshed at %s", time.Now().Format("01-02-2006 15:04:05"))
 
