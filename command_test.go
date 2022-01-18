@@ -532,3 +532,5 @@ func TestGetRawObjectFromCommand(t *testing.T) {
 	Expect(err).To(BeNil())
 	Expect(sw.NetworkEquipmentPrimarySANSubnetPool).To(Equal("100.64.0.0"))
 }
+
+

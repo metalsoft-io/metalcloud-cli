@@ -221,8 +221,7 @@ func jobListCmd(c *Command, client metalcloud.MetalCloudClient) (string, error) 
 		if s.InfrastructureID != 0 {
 			affects = affects + fmt.Sprintf("Infra: #%d ", s.InfrastructureID)
 		}
-
-		if s.InfrastructureID == 0 && s.AFCGroupID != 0 {
+		if s.AFCGroupID != 0 {
 			affects = affects + fmt.Sprintf("Group: #%d ", s.AFCGroupID)
 		}
 
