@@ -7,6 +7,7 @@ import (
 	"os"
 	"strconv"
 	"strings"
+	"time"
 
 	"github.com/fatih/color"
 	metalcloud "github.com/metalsoft-io/metal-cloud-sdk-go/v2"
@@ -28,6 +29,7 @@ var jobsCmds = []Command{
 				"filter": c.FlagSet.String("filter", "*", "filter to use when searching for jobs. Check the documentation for examples. Defaults to '*'"),
 				"limit":  c.FlagSet.Int("limit", 20, "how many jobs to show. Latest jobs first."),
 				"watch":  c.FlagSet.String("watch", _nilDefaultStr, "If set to a human readable interval such as '4s', '1m' will print the job status until interrupted."),
+				"wide":   c.FlagSet.Bool("wide", false, "(Flag) If set shows more of the normally truncated request and response fields"),
 			}
 		},
 		ExecuteFunc: jobListCmdWithWatch,
@@ -147,7 +149,11 @@ func jobListCmd(c *Command, client metalcloud.MetalCloudClient) (string, error) 
 			FieldType: tableformatter.TypeString,
 			FieldSize: 5,
 		},
-
+		{
+			FieldName: "DURATION",
+			FieldType: tableformatter.TypeString,
+			FieldSize: 5,
+		},
 		{
 			FieldName: "AFFECTS",
 			FieldType: tableformatter.TypeString,
@@ -198,6 +204,13 @@ func jobListCmd(c *Command, client metalcloud.MetalCloudClient) (string, error) 
 			status = yellow(status)
 		}
 
+		durationObj, err := durationSinceZuluUTC(s.AFCCreatedTimestamp)
+		if err != nil {
+			return "", err
+		}
+
+		duration := durationObj.Round(time.Second).String()
+
 		affects := ""
 		if s.ServerID != 0 {
 			affects = affects + fmt.Sprintf("Server: #%d ", s.ServerID)
@@ -243,8 +256,18 @@ func jobListCmd(c *Command, client metalcloud.MetalCloudClient) (string, error) 
 			request = fmt.Sprintf("%s(%+v)", s.AFCFunctionName, s.AFCParamsJSON)
 		}
 
-		if len(request) > 40 {
-			request = truncateString(request, 40)
+		requestFieldWidth := 40
+		if getBoolParam(c.Arguments["wide"]) {
+			requestFieldWidth = 160
+		}
+
+		responseFieldWidth := 80
+		if getBoolParam(c.Arguments["wide"]) {
+			responseFieldWidth = 360
+		}
+
+		if len(request) > requestFieldWidth {
+			request = truncateString(request, requestFieldWidth)
 		}
 		var respObj map[string]string
 
@@ -258,13 +281,14 @@ func jobListCmd(c *Command, client metalcloud.MetalCloudClient) (string, error) 
 			response = fmt.Sprintf("%+v", respObj["message"])
 		}
 
-		if len(response) > 80 {
-			response = truncateString(response, 80)
+		if len(response) > responseFieldWidth {
+			response = truncateString(response, responseFieldWidth)
 		}
 
 		row := []interface{}{
 			s.AFCID,
 			status,
+			duration,
 			affects,
 			retries,
 			request,
@@ -328,7 +352,11 @@ func jobGetCmd(c *Command, client metalcloud.MetalCloudClient) (string, error) {
 			FieldType: tableformatter.TypeString,
 			FieldSize: 5,
 		},
-
+		{
+			FieldName: "DURATION",
+			FieldType: tableformatter.TypeString,
+			FieldSize: 5,
+		},
 		{
 			FieldName: "AFFECTS",
 			FieldType: tableformatter.TypeString,
@@ -377,6 +405,13 @@ func jobGetCmd(c *Command, client metalcloud.MetalCloudClient) (string, error) {
 	default:
 		status = yellow(status)
 	}
+
+	durationObj, err := durationSinceZuluUTC(s.AFCCreatedTimestamp)
+	if err != nil {
+		return "", err
+	}
+
+	duration := durationObj.Round(time.Second).String()
 
 	affects := ""
 	if s.ServerID != 0 {
@@ -444,6 +479,7 @@ func jobGetCmd(c *Command, client metalcloud.MetalCloudClient) (string, error) {
 	row := []interface{}{
 		s.AFCID,
 		status,
+		duration,
 		affects,
 		retries,
 		request,
@@ -618,4 +654,13 @@ func jobKillCmd(c *Command, client metalcloud.MetalCloudClient) (string, error) 
 	}
 
 	return jobGetCmd(c, client)
+}
+
+func durationSinceZuluUTC(t string) (time.Duration, error) {
+	startTime, err := time.Parse(time.RFC3339, t)
+	if err != nil {
+		return time.Duration(0), err
+	}
+
+	return time.Now().Sub(startTime), nil
 }
