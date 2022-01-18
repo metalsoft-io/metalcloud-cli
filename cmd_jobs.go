@@ -30,7 +30,7 @@ var jobsCmds = []Command{
 				"watch":  c.FlagSet.String("watch", "5s", "If set to a human readable interval such as '4s', '1m' will print the job status until interrupted."),
 			}
 		},
-		ExecuteFunc: jobListCmd,
+		ExecuteFunc: jobListCmdWithWatch,
 		Endpoint:    DeveloperEndpoint,
 	},
 	{
@@ -47,7 +47,7 @@ var jobsCmds = []Command{
 				"watch":  c.FlagSet.String("watch", "5s", "If set to a human readable interval such as '4s', '1m' will print the job status until interrupted."),
 			}
 		},
-		ExecuteFunc: jobGetCmd,
+		ExecuteFunc: jobGetCmdWithWatch,
 		Endpoint:    DeveloperEndpoint,
 	},
 	{
@@ -115,6 +115,10 @@ var jobsCmds = []Command{
 		ExecuteFunc: jobKillCmd,
 		Endpoint:    DeveloperEndpoint,
 	},
+}
+
+func jobListCmdWithWatch(c *Command, client metalcloud.MetalCloudClient) (string, error) {
+	return funcWithWatch(c, client, jobListCmd)
 }
 
 func jobListCmd(c *Command, client metalcloud.MetalCloudClient) (string, error) {
@@ -283,17 +287,12 @@ func jobListCmd(c *Command, client metalcloud.MetalCloudClient) (string, error) 
 		statusCounts["returned_success"],
 	)
 
-	interval, ok := getStringParamOk(c.Arguments["watch"])
-	if ok {
-
-		watch(func() (string, error) {
-			return table.RenderTable(title, "", getStringParam(c.Arguments["format"]))
-		},
-			interval)
-	}
-
 	return table.RenderTable(title, "", getStringParam(c.Arguments["format"]))
 
+}
+
+func jobGetCmdWithWatch(c *Command, client metalcloud.MetalCloudClient) (string, error) {
+	return funcWithWatch(c, client, jobGetCmd)
 }
 
 func jobGetCmd(c *Command, client metalcloud.MetalCloudClient) (string, error) {

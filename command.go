@@ -287,3 +287,16 @@ func linesStringCount(s string) int {
 	}
 	return n
 }
+
+func funcWithWatch(c *Command, client metalcloud.MetalCloudClient, f func(*Command, metalcloud.MetalCloudClient) (string, error)) (string, error) {
+	interval, ok := getStringParamOk(c.Arguments["watch"])
+	if ok {
+
+		watch(func() (string, error) {
+			return f(c, client)
+		},
+			interval)
+	}
+
+	return f(c, client)
+}
