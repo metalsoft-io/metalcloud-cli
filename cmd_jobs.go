@@ -27,7 +27,7 @@ var jobsCmds = []Command{
 				"format": c.FlagSet.String("format", _nilDefaultStr, "The output format. Supported values are 'json','csv','yaml'. The default format is human readable."),
 				"filter": c.FlagSet.String("filter", "*", "filter to use when searching for jobs. Check the documentation for examples. Defaults to '*'"),
 				"limit":  c.FlagSet.Int("limit", 20, "how many jobs to show. Latest jobs first."),
-				"watch":  c.FlagSet.String("watch", "5s", "If set to a human readable interval such as '4s', '1m' will print the job status until interrupted."),
+				"watch":  c.FlagSet.String("watch", _nilDefaultStr, "If set to a human readable interval such as '4s', '1m' will print the job status until interrupted."),
 			}
 		},
 		ExecuteFunc: jobListCmdWithWatch,
@@ -44,7 +44,7 @@ var jobsCmds = []Command{
 			c.Arguments = map[string]interface{}{
 				"job_id": c.FlagSet.String("id", _nilDefaultStr, "JOB ID"),
 				"format": c.FlagSet.String("format", _nilDefaultStr, "The output format. Supported values are 'json','csv','yaml'. The default format is human readable."),
-				"watch":  c.FlagSet.String("watch", "5s", "If set to a human readable interval such as '4s', '1m' will print the job status until interrupted."),
+				"watch":  c.FlagSet.String("watch", _nilDefaultStr, "If set to a human readable interval such as '4s', '1m' will print the job status until interrupted."),
 			}
 		},
 		ExecuteFunc: jobGetCmdWithWatch,
