@@ -858,7 +858,7 @@ func serverGetCmd(c *Command, client metalcloud.MetalCloudClient) (string, error
 				Data:   data,
 				Schema: schema,
 			}
-			ret, err := table.RenderTransposedTable("server", "", format)
+			ret, err := table.RenderTransposedTable("server details", "", format)
 			if err != nil {
 				return "", err
 			}

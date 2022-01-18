@@ -3,6 +3,7 @@ module github.com/metalsoft-io/metalcloud-cli
 go 1.16
 
 require (
+	github.com/atomicgo/cursor v0.0.1 // indirect
 	github.com/fatih/color v1.13.0 // indirect
 	github.com/golang/mock v1.6.0
 	github.com/kr/text v0.2.0 // indirect

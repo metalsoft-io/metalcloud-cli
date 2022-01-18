@@ -18,7 +18,7 @@ var jobsCmds = []Command{
 	{
 		Description:  "Lists all jobs.",
 		Subject:      "job",
-		AltSubject:   "afc",
+		AltSubject:   "jobs",
 		Predicate:    "list",
 		AltPredicate: "ls",
 		FlagSet:      flag.NewFlagSet("list jobs", flag.ExitOnError),
@@ -27,6 +27,7 @@ var jobsCmds = []Command{
 				"format": c.FlagSet.String("format", _nilDefaultStr, "The output format. Supported values are 'json','csv','yaml'. The default format is human readable."),
 				"filter": c.FlagSet.String("filter", "*", "filter to use when searching for jobs. Check the documentation for examples. Defaults to '*'"),
 				"limit":  c.FlagSet.Int("limit", 20, "how many jobs to show. Latest jobs first."),
+				"watch":  c.FlagSet.String("watch", "5s", "If set to a human readable interval such as '4s', '1m' will print the job status until interrupted."),
 			}
 		},
 		ExecuteFunc: jobListCmd,
@@ -43,7 +44,7 @@ var jobsCmds = []Command{
 			c.Arguments = map[string]interface{}{
 				"job_id": c.FlagSet.String("id", _nilDefaultStr, "JOB ID"),
 				"format": c.FlagSet.String("format", _nilDefaultStr, "The output format. Supported values are 'json','csv','yaml'. The default format is human readable."),
-				"raw":    c.FlagSet.Bool("raw", false, "(Flag) If set returns the afc raw object serialized using specified format"),
+				"watch":  c.FlagSet.String("watch", "5s", "If set to a human readable interval such as '4s', '1m' will print the job status until interrupted."),
 			}
 		},
 		ExecuteFunc: jobGetCmd,
@@ -282,7 +283,17 @@ func jobListCmd(c *Command, client metalcloud.MetalCloudClient) (string, error) 
 		statusCounts["returned_success"],
 	)
 
+	interval, ok := getStringParamOk(c.Arguments["watch"])
+	if ok {
+
+		watch(func() (string, error) {
+			return table.RenderTable(title, "", getStringParam(c.Arguments["format"]))
+		},
+			interval)
+	}
+
 	return table.RenderTable(title, "", getStringParam(c.Arguments["format"]))
+
 }
 
 func jobGetCmd(c *Command, client metalcloud.MetalCloudClient) (string, error) {
@@ -448,8 +459,20 @@ func jobGetCmd(c *Command, client metalcloud.MetalCloudClient) (string, error) {
 		Data:   data,
 		Schema: schema,
 	}
+
 	title := fmt.Sprintf("Job details")
+
+	interval, ok := getStringParamOk(c.Arguments["watch"])
+	if ok {
+
+		watch(func() (string, error) {
+			return table.RenderTransposedTable(title, "", getStringParam(c.Arguments["format"]))
+		},
+			interval)
+	}
+
 	return table.RenderTransposedTable(title, "", getStringParam(c.Arguments["format"]))
+
 }
 
 func jobRetryCmd(c *Command, client metalcloud.MetalCloudClient) (string, error) {

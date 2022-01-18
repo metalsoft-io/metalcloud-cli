@@ -5,7 +5,11 @@ import (
 	"flag"
 	"fmt"
 	"strconv"
+	"strings"
+	"time"
 
+	"github.com/atomicgo/cursor"
+	"github.com/fatih/color"
 	metalcloud "github.com/metalsoft-io/metal-cloud-sdk-go/v2"
 	"gopkg.in/yaml.v3"
 )
@@ -232,4 +236,54 @@ func getRawObjectFromCommand(c *Command, obj interface{}) error {
 	}
 
 	return nil
+}
+
+//watch prints the return of the f function every refreshInterval intervals. The interval is in human readable format 1m 1s etc.
+func watch(f func() (string, error), refreshInterval string) error {
+
+	interval, err := time.ParseDuration(refreshInterval)
+	if err != nil {
+		return err
+	}
+
+	visualBeepInterval, err := time.ParseDuration("500ms")
+
+	whiteOnRed := color.New(color.FgHiWhite, color.BgRed).SprintFunc()
+
+	prevLen := 0
+	for {
+		str, err := f()
+		if err != nil {
+			return err
+		}
+
+		if prevLen != 0 {
+			cursor.StartOfLineUp(prevLen)
+		}
+
+		timeStr := fmt.Sprintf("Refreshed at %s", time.Now().Format("01-02-2006 15:04:05"))
+
+		str += "\n" + whiteOnRed(timeStr)
+
+		fmt.Printf(str)
+
+		prevLen = linesStringCount(str) - 1
+
+		time.Sleep(visualBeepInterval)
+
+		cursor.StartOfLine()
+
+		fmt.Printf(timeStr)
+
+		time.Sleep(interval - visualBeepInterval)
+
+	}
+}
+
+func linesStringCount(s string) int {
+	n := strings.Count(s, "\n")
+	if len(s) > 0 && !strings.HasSuffix(s, "\n") {
+		n++
+	}
+	return n
 }
