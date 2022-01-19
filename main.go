@@ -466,7 +466,7 @@ func GetConsoleIOChannel() *ConsoleIOChannel {
 
 		consoleIOChannelInstance = ConsoleIOChannel{
 			Stdin:  os.Stdin,
-			Stdout: os.Stdout,
+			Stdout: color.Output,
 		}
 	})
 
