@@ -9,7 +9,6 @@ import (
 	"strings"
 	"time"
 
-	"github.com/fatih/color"
 	metalcloud "github.com/metalsoft-io/metal-cloud-sdk-go/v2"
 	"github.com/metalsoft-io/tableformatter"
 )
@@ -132,11 +131,6 @@ func jobListCmd(c *Command, client metalcloud.MetalCloudClient) (string, error) 
 	if err != nil {
 		return "", err
 	}
-
-	green := color.New(color.FgGreen).SprintFunc()
-	yellow := color.New(color.FgYellow).SprintFunc()
-	magenta := color.New(color.FgMagenta).SprintFunc()
-	red := color.New(color.FgRed).SprintFunc()
 
 	schema := []tableformatter.SchemaField{
 		{
@@ -334,11 +328,6 @@ func jobGetCmd(c *Command, client metalcloud.MetalCloudClient) (string, error) {
 	if err != nil {
 		return "", err
 	}
-
-	green := color.New(color.FgGreen).SprintFunc()
-	yellow := color.New(color.FgYellow).SprintFunc()
-	magenta := color.New(color.FgMagenta).SprintFunc()
-	red := color.New(color.FgRed).SprintFunc()
 
 	schema := []tableformatter.SchemaField{
 		{

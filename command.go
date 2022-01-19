@@ -9,7 +9,6 @@ import (
 	"time"
 
 	"github.com/atomicgo/cursor"
-	"github.com/fatih/color"
 	metalcloud "github.com/metalsoft-io/metal-cloud-sdk-go/v2"
 	"gopkg.in/yaml.v3"
 )
@@ -247,8 +246,6 @@ func watch(f func() (string, error), refreshInterval string) error {
 	}
 
 	visualBeepInterval, err := time.ParseDuration("500ms")
-
-	whiteOnRed := color.New(color.FgHiWhite, color.BgRed).SprintFunc()
 
 	prevLen := 0
 	for {

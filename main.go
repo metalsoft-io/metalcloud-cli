@@ -15,7 +15,6 @@ import (
 	"strings"
 	"sync"
 
-	"github.com/fatih/color"
 	metalcloud "github.com/metalsoft-io/metal-cloud-sdk-go/v2"
 	"github.com/metalsoft-io/tableformatter"
 
@@ -145,9 +144,7 @@ func executeCommand(args []string, commands []Command, clients map[string]metalc
 			return fmt.Errorf(getCommandHelp(*cmd, true))
 		}
 
-		if a == "--no-color" || a == "-no-color" {
-			color.NoColor = true
-		}
+		setColoringEnabled(a != "--no-color" && a != "-no-color")
 	}
 
 	err := cmd.FlagSet.Parse(args[count:])
@@ -466,7 +463,7 @@ func GetConsoleIOChannel() *ConsoleIOChannel {
 
 		consoleIOChannelInstance = ConsoleIOChannel{
 			Stdin:  os.Stdin,
-			Stdout: color.Output,
+			Stdout: os.Stdout,
 		}
 	})
 

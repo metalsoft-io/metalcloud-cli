@@ -6,7 +6,6 @@ import (
 	"os"
 	"strings"
 
-	"github.com/fatih/color"
 	metalcloud "github.com/metalsoft-io/metal-cloud-sdk-go/v2"
 	"github.com/metalsoft-io/tableformatter"
 )
@@ -263,11 +262,8 @@ func serverStatusSetCmd(c *Command, client metalcloud.MetalCloudClient) (string,
 
 		if !getBoolParam(c.Arguments["autoconfirm"]) {
 
-			yellow := color.New(color.FgYellow).SprintFunc()
-			blue := color.New(color.FgHiBlue).SprintFunc()
-
 			confirmationMessage = fmt.Sprintf("Server #%s (%s) of datacenter %s. Current status: %s new status: %s  Are you sure? Type \"yes\" to continue:",
-				blue(server.ServerID),
+				blue(fmt.Sprintf("%d", server.ServerID)),
 				yellow(server.ServerSerialNumber),
 				server.DatacenterName,
 				colorizeServerStatus(server.ServerStatus),
@@ -317,11 +313,8 @@ func serverReregisterCmd(c *Command, client metalcloud.MetalCloudClient) (string
 
 		if !getBoolParam(c.Arguments["autoconfirm"]) {
 
-			yellow := color.New(color.FgYellow).SprintFunc()
-			blue := color.New(color.FgHiBlue).SprintFunc()
-
 			confirmationMessage = fmt.Sprintf("Server #%s (%s) BMC IP:%s of datacenter %s. Are you sure? Type \"yes\" to continue:",
-				blue(server.ServerID),
+				blue(fmt.Sprintf("%d", server.ServerID)),
 				yellow(server.ServerSerialNumber),
 				server.ServerIPMIHost,
 				server.DatacenterName,
@@ -347,10 +340,6 @@ func serverReregisterCmd(c *Command, client metalcloud.MetalCloudClient) (string
 }
 
 func colorizeServerStatus(status string) string {
-	green := color.New(color.FgGreen).SprintFunc()
-	yellow := color.New(color.FgYellow).SprintFunc()
-	blue := color.New(color.FgHiBlue).SprintFunc()
-	magenta := color.New(color.FgMagenta).SprintFunc()
 
 	switch status {
 	case "available":
@@ -372,12 +361,6 @@ func serversListCmd(c *Command, client metalcloud.MetalCloudClient) (string, err
 	if err != nil {
 		return "", err
 	}
-
-	green := color.New(color.FgGreen).SprintFunc()
-	yellow := color.New(color.FgYellow).SprintFunc()
-	blue := color.New(color.FgHiBlue).SprintFunc()
-	magenta := color.New(color.FgMagenta).SprintFunc()
-	red := color.New(color.FgRed).SprintFunc()
 
 	schema := []tableformatter.SchemaField{
 		{
@@ -564,7 +547,8 @@ func serversListCmd(c *Command, client metalcloud.MetalCloudClient) (string, err
 		for capacity, serverInterfaces := range interfacesByCapacity {
 			interfaceDescription = interfaceDescription +
 				fmt.Sprintf("%s x %s Gbps NICs",
-					magenta(len(serverInterfaces)), magenta(capacity/1000))
+					magenta(len(serverInterfaces)),
+					magenta(capacity/1000))
 		}
 
 		hardwareConfig := ""

@@ -6,6 +6,7 @@ require (
 	github.com/atomicgo/cursor v0.0.1 // indirect
 	github.com/fatih/color v1.13.0 // indirect
 	github.com/golang/mock v1.6.0
+	github.com/jwalton/gchalk v1.2.1 // indirect
 	github.com/kr/text v0.2.0 // indirect
 	github.com/metalsoft-io/metal-cloud-sdk-go/v2 v2.5.0
 	github.com/metalsoft-io/tableformatter v1.0.8
