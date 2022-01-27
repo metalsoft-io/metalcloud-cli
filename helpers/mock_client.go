@@ -2793,6 +2793,36 @@ func (mr *MockMetalCloudClientMockRecorder) StageDefinitions() *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "StageDefinitions", reflect.TypeOf((*MockMetalCloudClient)(nil).StageDefinitions))
 }
 
+// StoragePoolSearch mocks base method
+func (m *MockMetalCloudClient) StoragePoolSearch(filter string) (*[]metalcloud.StoragePoolSearchResult, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "StoragePoolSearch", filter)
+	ret0, _ := ret[0].(*[]metalcloud.StoragePoolSearchResult)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// StoragePoolSearch indicates an expected call of StoragePoolSearch
+func (mr *MockMetalCloudClientMockRecorder) StoragePoolSearch(filter interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "StoragePoolSearch", reflect.TypeOf((*MockMetalCloudClient)(nil).StoragePoolSearch), filter)
+}
+
+// StoragePoolGet mocks base method
+func (m *MockMetalCloudClient) StoragePoolGet(serverID int, decryptPasswd bool) (*metalcloud.StoragePool, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "StoragePoolGet", serverID, decryptPasswd)
+	ret0, _ := ret[0].(*metalcloud.StoragePool)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// StoragePoolGet indicates an expected call of StoragePoolGet
+func (mr *MockMetalCloudClientMockRecorder) StoragePoolGet(serverID, decryptPasswd interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "StoragePoolGet", reflect.TypeOf((*MockMetalCloudClient)(nil).StoragePoolGet), serverID, decryptPasswd)
+}
+
 // SubnetPoolCreate mocks base method
 func (m *MockMetalCloudClient) SubnetPoolCreate(subnetPool metalcloud.SubnetPool) (*metalcloud.SubnetPool, error) {
 	m.ctrl.T.Helper()
