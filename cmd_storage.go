@@ -93,7 +93,7 @@ func storageListCmd(c *Command, client metalcloud.MetalCloudClient) (string, err
 	data := [][]interface{}{}
 
 	statusCounts := map[string]int{
-		"available":      0,
+		"active":         0,
 		"maintenance":    0,
 		"decommissioned": 0,
 	}
@@ -178,7 +178,7 @@ func storageListCmd(c *Command, client metalcloud.MetalCloudClient) (string, err
 	}
 
 	title := fmt.Sprintf("Storage pools: %d active %d maintenance",
-		statusCounts["available"],
+		statusCounts["active"],
 		statusCounts["maintenance"])
 
 	if getBoolParam(c.Arguments["show_decommissioned"]) {
