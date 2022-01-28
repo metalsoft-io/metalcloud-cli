@@ -38,6 +38,9 @@ func whiteOnRed(i interface{}) string {
 	return gchalk.WithBgRed().White(fmt.Sprintf("%v", i))
 }
 
+func bold(i interface{}) string {
+	return gchalk.Bold(fmt.Sprintf("%v", i))
+}
 /*
 	green := color.New(color.FgGreen).SprintFunc()
 	yellow := color.New(color.FgYellow).SprintFunc()
