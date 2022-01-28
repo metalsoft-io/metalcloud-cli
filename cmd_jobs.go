@@ -28,7 +28,7 @@ var jobsCmds = []Command{
 				"filter": c.FlagSet.String("filter", "*", "filter to use when searching for jobs. Check the documentation for examples. Defaults to '*'"),
 				"limit":  c.FlagSet.Int("limit", 20, "how many jobs to show. Latest jobs first."),
 				"watch":  c.FlagSet.String("watch", _nilDefaultStr, "If set to a human readable interval such as '4s', '1m' will print the job status until interrupted."),
-				"wide":   c.FlagSet.Bool("wide", false, "(Flag) If set shows more of the normally truncated request and response fields"),
+				"wide":   c.FlagSet.Bool("wide", false, green("(Flag)") + " If set shows more of the normally truncated request and response fields"),
 			}
 		},
 		ExecuteFunc: jobListCmdWithWatch,

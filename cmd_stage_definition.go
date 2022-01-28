@@ -62,7 +62,7 @@ var stageDefinitionsCmds = []Command{
 
 				"workflow_id_or_label": c.FlagSet.String("workflow", _nilDefaultStr, "workflow to reference. Can only be used when type=WorkflowReference"),
 
-				"return_id": c.FlagSet.Bool("return-id", false, "(Flag) If set will print the ID of the created object. Useful for automating tasks."),
+				"return_id": c.FlagSet.Bool("return-id", false, green("(Flag)") + " If set will print the ID of the created object. Useful for automating tasks."),
 			}
 		},
 		ExecuteFunc: stageDefinitionCreateCmd,

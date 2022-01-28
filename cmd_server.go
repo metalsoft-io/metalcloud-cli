@@ -23,10 +23,10 @@ var serversCmds = []Command{
 			c.Arguments = map[string]interface{}{
 				"format":              c.FlagSet.String("format", _nilDefaultStr, "The output format. Supported values are 'json','csv','yaml'. The default format is human readable."),
 				"filter":              c.FlagSet.String("filter", "*", "filter to use when searching for servers. Check the documentation for examples. Defaults to '*'"),
-				"show_credentials":    c.FlagSet.Bool("show-credentials", false, "(Flag) If set returns the servers' IPMI credentials. (Slow for large queries)"),
-				"show_rack_data":      c.FlagSet.Bool("show-rack-data", false, "(Flag) If set returns the servers' rack metadata"),
-				"show_hardware":       c.FlagSet.Bool("show-hardware", false, "(Flag) If set returns the servers' hardware configuration"),
-				"show_decommissioned": c.FlagSet.Bool("show-decommissioned", false, "(Flag) If set returns decommissioned servers which are normally hidden"),
+				"show_credentials":    c.FlagSet.Bool("show-credentials", false, green("(Flag)") + " If set returns the servers' IPMI credentials. (Slow for large queries)"),
+				"show_rack_data":      c.FlagSet.Bool("show-rack-data", false, green("(Flag)") + " If set returns the servers' rack metadata"),
+				"show_hardware":       c.FlagSet.Bool("show-hardware", false, green("(Flag)") + " If set returns the servers' hardware configuration"),
+				"show_decommissioned": c.FlagSet.Bool("show-decommissioned", false, green("(Flag)") + " If set returns decommissioned servers which are normally hidden"),
 			}
 		},
 		ExecuteFunc: serversListCmd,
@@ -48,8 +48,8 @@ metalcloud-cli server list --show-credentials" to retrieve a list of credentials
 			c.Arguments = map[string]interface{}{
 				"server_id_or_uuid": c.FlagSet.String("id", _nilDefaultStr, "Server's ID or UUID"),
 				"format":            c.FlagSet.String("format", _nilDefaultStr, "The output format. Supported values are 'json','csv','yaml'. The default format is human readable."),
-				"show_credentials":  c.FlagSet.Bool("show-credentials", false, "(Flag) If set returns the servers' IPMI credentials"),
-				"raw":               c.FlagSet.Bool("raw", false, "(Flag) If set returns the servers' raw object serialized using specified format"),
+				"show_credentials":  c.FlagSet.Bool("show-credentials", false, green("(Flag)") + " If set returns the servers' IPMI credentials"),
+				"raw":               c.FlagSet.Bool("raw", false, green("(Flag)") + " If set returns the servers' raw object serialized using specified format"),
 			}
 		},
 		ExecuteFunc: serverGetCmd,
@@ -67,7 +67,7 @@ metalcloud-cli server list --show-credentials" to retrieve a list of credentials
 			c.Arguments = map[string]interface{}{
 				"format":                c.FlagSet.String("format", "json", "The input format. Supported values are 'json','yaml'. The default format is json."),
 				"read_config_from_file": c.FlagSet.String("raw-config", _nilDefaultStr, red("(Required)") + " Read raw object from file"),
-				"read_config_from_pipe": c.FlagSet.Bool("pipe", false, "(Flag) If set, read raw object from pipe instead of from a file. Either this flag or the --raw-config option must be used."),
+				"read_config_from_pipe": c.FlagSet.Bool("pipe", false, green("(Flag)") + " If set, read raw object from pipe instead of from a file. Either this flag or the --raw-config option must be used."),
 				"return_id":             c.FlagSet.Bool("return-id", false, "Will print the ID of the created object. Useful for automating tasks."),
 			}
 		},
@@ -93,7 +93,7 @@ metalcloud-cli server list --show-credentials" to retrieve a list of credentials
 				"server_class":          c.FlagSet.String("server-class", _nilDefaultStr, "The new class of the server. This command cannot be used in conjunction with config or pipe commands."),
 				"format":                c.FlagSet.String("format", "json", "The input format used when config or pipe commands are used. Supported values are 'json','yaml'. The default format is json."),
 				"read_config_from_file": c.FlagSet.String("raw-config", _nilDefaultStr, red("(Required)") + " Read raw object from file"),
-				"read_config_from_pipe": c.FlagSet.Bool("pipe", false, "(Flag) If set, read raw object from pipe instead of from a file. Either this flag or the --raw-config option must be used."),
+				"read_config_from_pipe": c.FlagSet.Bool("pipe", false, green("(Flag)") + " If set, read raw object from pipe instead of from a file. Either this flag or the --raw-config option must be used."),
 			}
 		},
 		ExecuteFunc: serverEditCmd,
@@ -179,7 +179,7 @@ metalcloud-cli server list --show-credentials" to retrieve a list of credentials
 			c.Arguments = map[string]interface{}{
 				"format":            c.FlagSet.String("format", _nilDefaultStr, "The output format. Supported values are 'json','csv','yaml'. The default format is human readable."),
 				"server_id_or_uuid": c.FlagSet.Int("id", _nilDefaultInt, red("(Required)") + " Server's id."),
-				"raw":               c.FlagSet.Bool("raw", false, "(Flag) When set the return will be a full dump of the object. This is useful when copying configurations. Only works with json and yaml formats."),
+				"raw":               c.FlagSet.Bool("raw", false, green("(Flag)") + " When set the return will be a full dump of the object. This is useful when copying configurations. Only works with json and yaml formats."),
 			}
 		},
 		ExecuteFunc: serverInterfacesListCmd,

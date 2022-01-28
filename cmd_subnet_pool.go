@@ -40,7 +40,7 @@ var subnetPoolCmds = []Command{
 			c.Arguments = map[string]interface{}{
 				"subnet_pool_id": c.FlagSet.Int("id", _nilDefaultInt, red("(Required)") + " Subnetpool's id"),
 				"format":         c.FlagSet.String("format", "", "The output format. Supported values are 'json','csv','yaml'. The default format is human readable."),
-				"raw":            c.FlagSet.Bool("raw", false, "(Flag) When set the return will be a full dump of the object. This is useful when copying configurations. Only works with json and yaml formats."),
+				"raw":            c.FlagSet.Bool("raw", false, green("(Flag)") + " When set the return will be a full dump of the object. This is useful when copying configurations. Only works with json and yaml formats."),
 			}
 		},
 		ExecuteFunc: subnetPoolGetCmd,
@@ -57,7 +57,7 @@ var subnetPoolCmds = []Command{
 			c.Arguments = map[string]interface{}{
 				"format":                c.FlagSet.String("format", "json", "The input format. Supported values are 'json','yaml'. The default format is json."),
 				"read_config_from_file": c.FlagSet.String("config", _nilDefaultStr, red("(Required)") + " Read configuration from file"),
-				"read_config_from_pipe": c.FlagSet.Bool("pipe", false, "(Flag) If set, read configuration from pipe instead of from a file. Either this flag or the -config option must be used."),
+				"read_config_from_pipe": c.FlagSet.Bool("pipe", false, green("(Flag)") + " If set, read configuration from pipe instead of from a file. Either this flag or the -config option must be used."),
 				"return_id":             c.FlagSet.Bool("return-id", false, "Will print the ID of the created Useful for automating tasks."),
 			}
 		},

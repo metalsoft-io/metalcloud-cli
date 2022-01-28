@@ -59,7 +59,7 @@ var workflowCmds = []Command{
 				"description":         c.FlagSet.String("description", _nilDefaultStr, "Workflow's description"),
 				"deprecated":          c.FlagSet.Bool("deprecated", false, "Flag. Workflow's deprecation status. Default false"),
 				"icon_asset_data_uri": c.FlagSet.String("icon", _nilDefaultStr, "Workflow's icon data"),
-				"return_id":           c.FlagSet.Bool("return-id", false, "(Flag) If set will print the ID of the created workflow. Useful for automating tasks."),
+				"return_id":           c.FlagSet.Bool("return-id", false, green("(Flag)") + " If set will print the ID of the created workflow. Useful for automating tasks."),
 			}
 		},
 		ExecuteFunc: workflowCreateCmd,

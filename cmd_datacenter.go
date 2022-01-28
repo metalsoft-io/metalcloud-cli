@@ -25,8 +25,8 @@ var datacenterCmds = []Command{
 		InitFunc: func(c *Command) {
 			c.Arguments = map[string]interface{}{
 				"user_id":       c.FlagSet.String("user", _nilDefaultStr, "List only specific user's datacenters"),
-				"show_inactive": c.FlagSet.Bool("show-inactive", false, "(Flag) Set flag if inactive datacenters are to be returned"),
-				"show_hidden":   c.FlagSet.Bool("show-hidden", false, "(Flag) Set flag if hidden datacenters are to be returned"),
+				"show_inactive": c.FlagSet.Bool("show-inactive", false, green("(Flag)") + " Set flag if inactive datacenters are to be returned"),
+				"show_hidden":   c.FlagSet.Bool("show-hidden", false, green("(Flag)") + " Set flag if hidden datacenters are to be returned"),
 				"format":        c.FlagSet.String("format", "", "The output format. Supported values are 'json','csv','yaml'. The default format is human readable."),
 				"json_path":     c.FlagSet.String("jsonpath", _nilDefaultStr, "Filter the output."),
 			}
@@ -46,12 +46,12 @@ var datacenterCmds = []Command{
 				"datacenter_display_name": c.FlagSet.String("title", _nilDefaultStr, red("(Required)") + " Human readable name of the datacenter. Usually includes the location such as UK,Reading"),
 				"read_config_from_file":   c.FlagSet.String("config", _nilDefaultStr, red("(Required)") + " Read datacenter configuration from file"),
 				"datacenter_name_parent":  c.FlagSet.String("parent", _nilDefaultStr, "If the datacenter is subordonated to another datacenter such as to a near-edge site."),
-				"create_hidden":           c.FlagSet.Bool("hidden", false, "(Flag) If set, the datacenter will be hidden after creation instead."),
-				"is_master":               c.FlagSet.Bool("master", false, "(Flag) If set, the datacenter will be the master dc."),
-				"is_maintenance":          c.FlagSet.Bool("maintenance", false, "(Flag) If set, the datacenter will be in maintenance."),
+				"create_hidden":           c.FlagSet.Bool("hidden", false, green("(Flag)") + " If set, the datacenter will be hidden after creation instead."),
+				"is_master":               c.FlagSet.Bool("master", false, green("(Flag)") + " If set, the datacenter will be the master dc."),
+				"is_maintenance":          c.FlagSet.Bool("maintenance", false, green("(Flag)") + " If set, the datacenter will be in maintenance."),
 				"user_id":                 c.FlagSet.String("user", _nilDefaultStr, "Datacenter's owner. If ommited, the default is a public datacenter."),
 				"tags":                    c.FlagSet.String("tags", _nilDefaultStr, "Tags associated with this datacenter, comma separated"),
-				"read_config_from_pipe":   c.FlagSet.Bool("pipe", false, "(Flag) If set, read datacenter configuration from pipe instead of from a file. Either this flag or the -config option must be used."),
+				"read_config_from_pipe":   c.FlagSet.Bool("pipe", false, green("(Flag)") + " If set, read datacenter configuration from pipe instead of from a file. Either this flag or the -config option must be used."),
 				"format":                  c.FlagSet.String("format", "json", "The input format. Supported values are 'json','yaml'. The default format is json."),
 				"return_id":               c.FlagSet.Bool("return-id", false, "Will print the ID of the created Datacenter Useful for automating tasks."),
 			}
@@ -69,9 +69,9 @@ var datacenterCmds = []Command{
 		InitFunc: func(c *Command) {
 			c.Arguments = map[string]interface{}{
 				"datacenter_name":        c.FlagSet.String("id", _nilDefaultStr, red("(Required)") + " Label of the datacenter. Also used as an ID."),
-				"show_secret_config_url": c.FlagSet.Bool("show-config-url", false, "(Flag) If set returns the secret config url for datacenter agents."),
-				"show_datacenter_config": c.FlagSet.Bool("show-config", false, "(Flag) If set returns the config of the datacenter."),
-				"return_config_url":      c.FlagSet.Bool("return-config-url", false, "(Flag) If set prints the config url of the datacenter. Ignores all other flags. Useful in automation."),
+				"show_secret_config_url": c.FlagSet.Bool("show-config-url", false, green("(Flag)") + " If set returns the secret config url for datacenter agents."),
+				"show_datacenter_config": c.FlagSet.Bool("show-config", false, green("(Flag)") + " If set returns the config of the datacenter."),
+				"return_config_url":      c.FlagSet.Bool("return-config-url", false, green("(Flag)") + " If set prints the config url of the datacenter. Ignores all other flags. Useful in automation."),
 				"format":                 c.FlagSet.String("format", "", "The output format. Supported values are 'json','csv','yaml'. The default format is human readable."),
 				"json_path":              c.FlagSet.String("jsonpath", _nilDefaultStr, "Filter the JSON config."),
 			}
@@ -90,7 +90,7 @@ var datacenterCmds = []Command{
 			c.Arguments = map[string]interface{}{
 				"datacenter_name":       c.FlagSet.String("id", _nilDefaultStr, red("(Required)") + " Label of the datacenter. Also used as an ID."),
 				"read_config_from_file": c.FlagSet.String("config", _nilDefaultStr, red("(Required)") + " Read datacenter configuration from file"),
-				"read_config_from_pipe": c.FlagSet.Bool("pipe", false, "(Flag) If set, read datacenter configuration from pipe instead of from a file. Either this flag or the -config option must be used."),
+				"read_config_from_pipe": c.FlagSet.Bool("pipe", false, green("(Flag)") + " If set, read datacenter configuration from pipe instead of from a file. Either this flag or the -config option must be used."),
 				"format":                c.FlagSet.String("format", "json", "The input format. Supported values are 'json','yaml'. The default format is json."),
 			}
 		},

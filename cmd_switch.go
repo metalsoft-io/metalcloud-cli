@@ -24,7 +24,7 @@ var switchCmds = []Command{
 				"format":           c.FlagSet.String("format", _nilDefaultStr, "The output format. Supported values are 'json','csv','yaml'. The default format is human readable."),
 				"datacenter_name":  c.FlagSet.String("datacenter", "", "The optional parameter acts as a filter that restricts the returned results to switch devices located in the specified datacenter."),
 				"switch_type":      c.FlagSet.String("switch-type", "", "The optional parameter acts as a filter that restricts the returned results to switch devices of the specified type."),
-				"show_credentials": c.FlagSet.Bool("show-credentials", false, "(Flag) If set returns the switch management credentials. (Slow for large queries)"),
+				"show_credentials": c.FlagSet.Bool("show-credentials", false, green("(Flag)") + " If set returns the switch management credentials. (Slow for large queries)"),
 			}
 		},
 		ExecuteFunc: switchListCmd,
@@ -39,10 +39,10 @@ var switchCmds = []Command{
 		FlagSet:      flag.NewFlagSet("Create switch device", flag.ExitOnError),
 		InitFunc: func(c *Command) {
 			c.Arguments = map[string]interface{}{
-				"overwrite_hostname_from_switch": c.FlagSet.Bool("retrieve-hostname-from-switch", false, "(Flag) Retrieve the hostname from the equipment instead of configuration file."),
+				"overwrite_hostname_from_switch": c.FlagSet.Bool("retrieve-hostname-from-switch", false, green("(Flag)") + " Retrieve the hostname from the equipment instead of configuration file."),
 				"format":                         c.FlagSet.String("format", "json", "The input format. Supported values are 'json','yaml'. The default format is json."),
 				"read_config_from_file":          c.FlagSet.String("raw-config", _nilDefaultStr, red("(Required)") + " Read  configuration from file in the format specified with --format."),
-				"read_config_from_pipe":          c.FlagSet.Bool("pipe", false, "(Flag) If set, read  configuration from pipe instead of from a file. Either this flag or the --raw-config option must be used."),
+				"read_config_from_pipe":          c.FlagSet.Bool("pipe", false, green("(Flag)") + " If set, read  configuration from pipe instead of from a file. Either this flag or the --raw-config option must be used."),
 				"return_id":                      c.FlagSet.Bool("return-id", false, "Will print the ID of the created object. Useful for automating tasks."),
 			}
 		},
@@ -59,10 +59,10 @@ var switchCmds = []Command{
 		InitFunc: func(c *Command) {
 			c.Arguments = map[string]interface{}{
 				"network_device_id_or_identifier_string": c.FlagSet.String("id", _nilDefaultStr, red("(Required)") + " Switch id or identifier string. "),
-				"overwrite_hostname_from_switch":         c.FlagSet.Bool("retrieve-hostname-from-switch", false, "(Flag) Retrieve the hostname from the equipment instead of configuration file."),
+				"overwrite_hostname_from_switch":         c.FlagSet.Bool("retrieve-hostname-from-switch", false, green("(Flag)") + " Retrieve the hostname from the equipment instead of configuration file."),
 				"format":                                 c.FlagSet.String("format", "json", "The input format. Supported values are 'json','yaml'. The default format is json."),
 				"read_config_from_file":                  c.FlagSet.String("raw-config", _nilDefaultStr, red("(Required)") + " Read  configuration from file in the format specified with --format."),
-				"read_config_from_pipe":                  c.FlagSet.Bool("pipe", false, "(Flag) If set, read  configuration from pipe instead of from a file. Either this flag or the --raw-config option must be used."),
+				"read_config_from_pipe":                  c.FlagSet.Bool("pipe", false, green("(Flag)") + " If set, read  configuration from pipe instead of from a file. Either this flag or the --raw-config option must be used."),
 				"return_id":                              c.FlagSet.Bool("return-id", false, "Will print the ID of the created object. Useful for automating tasks."),
 			}
 		},
@@ -79,9 +79,9 @@ var switchCmds = []Command{
 		InitFunc: func(c *Command) {
 			c.Arguments = map[string]interface{}{
 				"network_device_id_or_identifier_string": c.FlagSet.String("id", _nilDefaultStr, red("(Required)") + " Switch id or identifier string. "),
-				"show_credentials":                       c.FlagSet.Bool("show-credentials", false, "(Flag) If set returns the switch credentials"),
+				"show_credentials":                       c.FlagSet.Bool("show-credentials", false, green("(Flag)") + " If set returns the switch credentials"),
 				"format":                                 c.FlagSet.String("format", "", "The output format. Supported values are 'json','csv','yaml'. The default format is human readable."),
-				"raw":                                    c.FlagSet.Bool("raw", false, "(Flag) When set the return will be a full dump of the object. This is useful when copying configurations. Only works with json and yaml formats."),
+				"raw":                                    c.FlagSet.Bool("raw", false, green("(Flag)") + " When set the return will be a full dump of the object. This is useful when copying configurations. Only works with json and yaml formats."),
 			}
 		},
 		ExecuteFunc: switchGetCmd,
@@ -114,7 +114,7 @@ var switchCmds = []Command{
 			c.Arguments = map[string]interface{}{
 				"network_device_id_or_identifier_string": c.FlagSet.String("id", _nilDefaultStr, red("(Required)") + " Switch id or identifier string. "),
 				"format":                                 c.FlagSet.String("format", _nilDefaultStr, "The output format. Supported values are 'json','csv','yaml'. The default format is human readable."),
-				"raw":                                    c.FlagSet.Bool("raw", false, "(Flag) When set the return will be a full dump of the object. This is useful when copying configurations. Only works with json and yaml formats."),
+				"raw":                                    c.FlagSet.Bool("raw", false, green("(Flag)") + " When set the return will be a full dump of the object. This is useful when copying configurations. Only works with json and yaml formats."),
 			}
 		},
 		ExecuteFunc: switchInterfacesListCmd,

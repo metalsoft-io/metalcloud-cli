@@ -42,7 +42,7 @@ var secretsCmds = []Command{
 				"name":                   c.FlagSet.String("name", _nilDefaultStr, red("(Required)") + " Secret's name"),
 				"usage":                  c.FlagSet.String("usage", _nilDefaultStr, "Secret's usage"),
 				"read_content_from_pipe": c.FlagSet.Bool("pipe", false, "Read secret's content read from pipe instead of terminal input"),
-				"return_id":              c.FlagSet.Bool("return-id", false, "(Flag) If set will print the ID of the created infrastructure. Useful for automating tasks."),
+				"return_id":              c.FlagSet.Bool("return-id", false, green("(Flag)") + " If set will print the ID of the created infrastructure. Useful for automating tasks."),
 			}
 		},
 		ExecuteFunc: secretCreateCmd,

@@ -34,11 +34,11 @@ var instanceArrayCmds = []Command{
 				"instance_array_disk_count":           c.FlagSet.Int("disks", _nilDefaultInt, "InstanceArray's number of local drives"),
 				"instance_array_disk_size_mbytes":     c.FlagSet.Int("disk-size", _nilDefaultInt, "InstanceArray's local disks' size in MB"),
 				"instance_array_boot_method":          c.FlagSet.String("boot", _nilDefaultStr, "InstanceArray's boot type:'pxe_iscsi','local_drives'"),
-				"instance_array_firewall_not_managed": c.FlagSet.Bool("firewall-management-disabled", false, "(Flag) If set InstanceArray's firewall management on or off"),
+				"instance_array_firewall_not_managed": c.FlagSet.Bool("firewall-management-disabled", false, green("(Flag)") + " If set InstanceArray's firewall management on or off"),
 				"volume_template_id_or_label":         c.FlagSet.String("local-install-template", _nilDefaultStr, "InstanceArray's volume template when booting from for local drives"),
 				"da_volume_template":                  c.FlagSet.String("drive-array-template", _nilDefaultStr, "The attached DriveArray's  volume template when booting from iscsi drives"),
 				"da_volume_disk_size":                 c.FlagSet.Int("drive-array-disk-size", _nilDefaultInt, "The attached DriveArray's  volume size (in MB) when booting from iscsi drives, If ommited the default size of the volume template will be used."),
-				"return_id":                           c.FlagSet.Bool("return-id", false, "(Flag) If set will print the ID of the created Instance Array. Useful for automating tasks."),
+				"return_id":                           c.FlagSet.Bool("return-id", false, green("(Flag)") + " If set will print the ID of the created Instance Array. Useful for automating tasks."),
 			}
 		},
 		ExecuteFunc: instanceArrayCreateCmd,
@@ -107,10 +107,10 @@ var instanceArrayCmds = []Command{
 				"instance_array_disk_count":           c.FlagSet.Int("disks", _nilDefaultInt, "InstanceArray's number of local drives"),
 				"instance_array_disk_size_mbytes":     c.FlagSet.Int("disk-size", _nilDefaultInt, "InstanceArray's local disks' size in MB"),
 				"instance_array_boot_method":          c.FlagSet.String("boot", _nilDefaultStr, "InstanceArray's boot type:'pxe_iscsi','local_drives'"),
-				"instance_array_firewall_not_managed": c.FlagSet.Bool("firewall-management-disabled", false, "(Flag) If set InstanceArray's firewall management is off"),
+				"instance_array_firewall_not_managed": c.FlagSet.Bool("firewall-management-disabled", false, green("(Flag)") + " If set InstanceArray's firewall management is off"),
 				"volume_template_id_or_label":         c.FlagSet.String("local-install-template", _nilDefaultStr, "InstanceArray's volume template when booting from for local drives"),
-				"bSwapExistingInstancesHardware":      c.FlagSet.Bool("swap-existing-hardware", false, "(Flag) If set all the hardware of the Instance objects is swapped to match the new InstanceArray specifications"),
-				"no_bKeepDetachingDrives":             c.FlagSet.Bool("do-not-keep-detaching-drives", false, "(Flag) If set and the number of Instance objects is reduced, then the detaching Drive objects will be deleted. If it's set to true, the detaching Drive objects will not be deleted."),
+				"bSwapExistingInstancesHardware":      c.FlagSet.Bool("swap-existing-hardware", false, green("(Flag)") + " If set all the hardware of the Instance objects is swapped to match the new InstanceArray specifications"),
+				"no_bKeepDetachingDrives":             c.FlagSet.Bool("do-not-keep-detaching-drives", false, green("(Flag)") + " If set and the number of Instance objects is reduced, then the detaching Drive objects will be deleted. If it's set to true, the detaching Drive objects will not be deleted."),
 			}
 		},
 		ExecuteFunc: instanceArrayEditCmd,
@@ -125,9 +125,9 @@ var instanceArrayCmds = []Command{
 		InitFunc: func(c *Command) {
 			c.Arguments = map[string]interface{}{
 				"instance_array_id_or_label": c.FlagSet.String("id", _nilDefaultStr, red("(Required)") + " Instance array's id or label. Note that using the 'label' might be ambiguous in certain situations."),
-				"show_credentials":           c.FlagSet.Bool("show-credentials", false, "(Flag) If set returns the instances' credentials"),
-				"show_power_status":          c.FlagSet.Bool("show-power-status", false, "(Flag) If set returns the instances' power status"),
-				"show_iscsi_credentials":     c.FlagSet.Bool("show-iscsi-credentials", false, "(Flag) If set returns the instances' iscsi credentials"),
+				"show_credentials":           c.FlagSet.Bool("show-credentials", false, green("(Flag)") + " If set returns the instances' credentials"),
+				"show_power_status":          c.FlagSet.Bool("show-power-status", false, green("(Flag)") + " If set returns the instances' power status"),
+				"show_iscsi_credentials":     c.FlagSet.Bool("show-iscsi-credentials", false, green("(Flag)") + " If set returns the instances' iscsi credentials"),
 				"format":                     c.FlagSet.String("format", "", "The output format. Supported values are 'json','csv','yaml'. The default format is human readable."),
 			}
 		},
