@@ -31,6 +31,10 @@ var serversCmds = []Command{
 		},
 		ExecuteFunc: serversListCmd,
 		Endpoint:    DeveloperEndpoint,
+		Example: `
+metalcloud-cli server list --filter "available used" to show all available servers.
+metalcloud-cli server list --show-credentials" to retrieve a list of credentials. Note: this will take a longer time.
+		`,
 	},
 
 	{
@@ -357,7 +361,7 @@ func serversListCmd(c *Command, client metalcloud.MetalCloudClient) (string, err
 
 	filter := getStringParam(c.Arguments["filter"])
 
-	list, err := client.ServersSearch(filter)
+	list, err := client.ServersSearch(convertToSearchFieldFormat(filter))
 	if err != nil {
 		return "", err
 	}

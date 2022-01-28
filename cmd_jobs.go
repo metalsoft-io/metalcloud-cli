@@ -127,7 +127,7 @@ func jobListCmd(c *Command, client metalcloud.MetalCloudClient) (string, error) 
 	filter := getStringParam(c.Arguments["filter"])
 	limit := getIntParam(c.Arguments["limit"])
 
-	list, err := client.AFCSearch(filter, 0, limit)
+	list, err := client.AFCSearch(convertToSearchFieldFormat(filter), 0, limit)
 	if err != nil {
 		return "", err
 	}

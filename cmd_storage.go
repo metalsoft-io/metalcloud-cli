@@ -34,7 +34,7 @@ func storageListCmd(c *Command, client metalcloud.MetalCloudClient) (string, err
 
 	filter := getStringParam(c.Arguments["filter"])
 
-	list, err := client.StoragePoolSearch(filter)
+	list, err := client.StoragePoolSearch(convertToSearchFieldFormat(filter))
 	if err != nil {
 		return "", err
 	}

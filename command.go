@@ -31,6 +31,7 @@ type Command struct {
 	InitFunc     CommandInitFunc
 	ExecuteFunc  CommandExecuteFunc
 	Endpoint     string
+	Example      string
 }
 
 func sameCommand(a *Command, b *Command) bool {

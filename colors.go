@@ -9,6 +9,8 @@ import (
 func setColoringEnabled(enabled bool) {
 	if enabled {
 		gchalk.SetLevel(gchalk.LevelBasic)
+	} else {
+		gchalk.SetLevel(gchalk.LevelNone)
 	}
 }
 
