@@ -23,8 +23,8 @@ var infrastructureCmds = []Command{
 		FlagSet:      flag.NewFlagSet("create infrastructure", flag.ExitOnError),
 		InitFunc: func(c *Command) {
 			c.Arguments = map[string]interface{}{
-				"infrastructure_label": c.FlagSet.String("label", "", "(Required) Infrastructure's label"),
-				"datacenter":           c.FlagSet.String("datacenter", GetDatacenter(), "(Required) Infrastructure datacenter"),
+				"infrastructure_label": c.FlagSet.String("label", "", red("(Required)") + " Infrastructure's label"),
+				"datacenter":           c.FlagSet.String("datacenter", GetDatacenter(), red("(Required)") + " Infrastructure datacenter"),
 				"return_id":            c.FlagSet.Bool("return-id", false, "(Flag) If set will print the ID of the created infrastructure. Useful for automating tasks."),
 			}
 		},
@@ -53,7 +53,7 @@ var infrastructureCmds = []Command{
 		FlagSet:      flag.NewFlagSet("delete infrastructure", flag.ExitOnError),
 		InitFunc: func(c *Command) {
 			c.Arguments = map[string]interface{}{
-				"infrastructure_id_or_label": c.FlagSet.String("id", _nilDefaultStr, "(Required) Infrastructure's id or label. Note that using the 'label' might be ambiguous in certain situations."),
+				"infrastructure_id_or_label": c.FlagSet.String("id", _nilDefaultStr, red("(Required)") + " Infrastructure's id or label. Note that using the 'label' might be ambiguous in certain situations."),
 				"autoconfirm":                c.FlagSet.Bool("autoconfirm", false, "(Flag) If set it does not ask for confirmation anymore"),
 			}
 		},
@@ -68,7 +68,7 @@ var infrastructureCmds = []Command{
 		FlagSet:      flag.NewFlagSet("deploy infrastructure", flag.ExitOnError),
 		InitFunc: func(c *Command) {
 			c.Arguments = map[string]interface{}{
-				"infrastructure_id_or_label":     c.FlagSet.String("id", _nilDefaultStr, "(Required) Infrastructure's id or label. Note that using the 'label' might be ambiguous in certain situations."),
+				"infrastructure_id_or_label":     c.FlagSet.String("id", _nilDefaultStr, red("(Required)") + " Infrastructure's id or label. Note that using the 'label' might be ambiguous in certain situations."),
 				"no_hard_shutdown_after_timeout": c.FlagSet.Bool("no-hard-shutdown-after-timeout", false, "(Flag) If set do not force a hard power off after timeout expired and the server is not powered off."),
 				"no_attempt_soft_shutdown":       c.FlagSet.Bool("no-attempt-soft-shutdown", false, "(Flag) If set,do not atempt a soft (ACPI) power off of all the servers in the infrastructure before the deploy"),
 				"soft_shutdown_timeout_seconds":  c.FlagSet.Int("soft-shutdown-timeout-seconds", 180, "(Optional, default 180) Timeout to wait if hard_shutdown_after_timeout is set."),
@@ -91,7 +91,7 @@ var infrastructureCmds = []Command{
 		FlagSet:      flag.NewFlagSet("get infrastructure", flag.ExitOnError),
 		InitFunc: func(c *Command) {
 			c.Arguments = map[string]interface{}{
-				"infrastructure_id_or_label": c.FlagSet.String("id", _nilDefaultStr, "(Required) Infrastructure's id or label. Note that using the 'label' might be ambiguous in certain situations."),
+				"infrastructure_id_or_label": c.FlagSet.String("id", _nilDefaultStr, red("(Required)") + " Infrastructure's id or label. Note that using the 'label' might be ambiguous in certain situations."),
 				"format":                     c.FlagSet.String("format", "", "The output format. Supported values are 'json','csv','yaml'. The default format is human readable."),
 			}
 		},
@@ -106,7 +106,7 @@ var infrastructureCmds = []Command{
 		FlagSet:      flag.NewFlagSet("deploy infrastructure", flag.ExitOnError),
 		InitFunc: func(c *Command) {
 			c.Arguments = map[string]interface{}{
-				"infrastructure_id_or_label": c.FlagSet.String("id", _nilDefaultStr, "(Required) Infrastructure's id or label. Note that using the 'label' might be ambiguous in certain situations."),
+				"infrastructure_id_or_label": c.FlagSet.String("id", _nilDefaultStr, red("(Required)") + " Infrastructure's id or label. Note that using the 'label' might be ambiguous in certain situations."),
 				"autoconfirm":                c.FlagSet.Bool("autoconfirm", false, "(Flag) If set it does not ask for confirmation anymore"),
 			}
 		},

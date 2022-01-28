@@ -24,7 +24,7 @@ var networkProfileCmds = []Command{
 		FlagSet:      flag.NewFlagSet("list network_profile", flag.ExitOnError),
 		InitFunc: func(c *Command) {
 			c.Arguments = map[string]interface{}{
-				"datacenter": c.FlagSet.String("datacenter", GetDatacenter(), "(Required) Network profile datacenter"),
+				"datacenter": c.FlagSet.String("datacenter", GetDatacenter(), red("(Required)") + " Network profile datacenter"),
 				"format":     c.FlagSet.String("format", "", "The output format. Supported values are 'json','csv','yaml'. The default format is human readable."),
 			}
 		},
@@ -39,7 +39,7 @@ var networkProfileCmds = []Command{
 		FlagSet:      flag.NewFlagSet("vlans-list network_profile", flag.ExitOnError),
 		InitFunc: func(c *Command) {
 			c.Arguments = map[string]interface{}{
-				"network_profile_id": c.FlagSet.Int("id", _nilDefaultInt, "(Required) Network profile's id."),
+				"network_profile_id": c.FlagSet.Int("id", _nilDefaultInt, red("(Required)") + " Network profile's id."),
 				"format":             c.FlagSet.String("format", "", "The output format. Supported values are 'json','csv','yaml'. The default format is human readable."),
 			}
 		},
@@ -54,7 +54,7 @@ var networkProfileCmds = []Command{
 		FlagSet:      flag.NewFlagSet("Get network profile details.", flag.ExitOnError),
 		InitFunc: func(c *Command) {
 			c.Arguments = map[string]interface{}{
-				"network_profile_id": c.FlagSet.Int("id", _nilDefaultInt, "(Required) Network profile's id."),
+				"network_profile_id": c.FlagSet.Int("id", _nilDefaultInt, red("(Required)") + " Network profile's id."),
 				"format":             c.FlagSet.String("format", _nilDefaultStr, "The output format. Supported values are 'json','csv','yaml'. The default format is human readable."),
 			}
 		},
@@ -70,9 +70,9 @@ var networkProfileCmds = []Command{
 		FlagSet:      flag.NewFlagSet("Create network profile", flag.ExitOnError),
 		InitFunc: func(c *Command) {
 			c.Arguments = map[string]interface{}{
-				"datacenter":            c.FlagSet.String("datacenter", GetDatacenter(), "(Required) Label of the datacenter. Also used as an ID."),
+				"datacenter":            c.FlagSet.String("datacenter", GetDatacenter(), red("(Required)") + " Label of the datacenter. Also used as an ID."),
 				"format":                c.FlagSet.String("format", "json", "The input format. Supported values are 'json','yaml'. The default format is json."),
-				"read_config_from_file": c.FlagSet.String("raw-config", _nilDefaultStr, "(Required) Read  configuration from file in the format specified with --format."),
+				"read_config_from_file": c.FlagSet.String("raw-config", _nilDefaultStr, red("(Required)") + " Read  configuration from file in the format specified with --format."),
 				"read_config_from_pipe": c.FlagSet.Bool("pipe", false, "(Flag) If set, read  configuration from pipe instead of from a file. Either this flag or the --raw-config option must be used."),
 				"return_id":             c.FlagSet.Bool("return-id", false, "Will print the ID of the created object. Useful for automating tasks."),
 			}
@@ -89,7 +89,7 @@ var networkProfileCmds = []Command{
 		FlagSet:      flag.NewFlagSet("delete network profile", flag.ExitOnError),
 		InitFunc: func(c *Command) {
 			c.Arguments = map[string]interface{}{
-				"network_profile_id": c.FlagSet.Int("id", _nilDefaultInt, "(Required) Network profile's id "),
+				"network_profile_id": c.FlagSet.Int("id", _nilDefaultInt, red("(Required)") + " Network profile's id "),
 				"autoconfirm":        c.FlagSet.Bool("autoconfirm", false, "If true it does not ask for confirmation anymore"),
 			}
 		},
@@ -105,9 +105,9 @@ var networkProfileCmds = []Command{
 		FlagSet:      flag.NewFlagSet("assign network profile to an instance array", flag.ExitOnError),
 		InitFunc: func(c *Command) {
 			c.Arguments = map[string]interface{}{
-				"network_profile_id": c.FlagSet.Int("id", _nilDefaultInt, "(Required) Network profile's id"),
-				"network_id":         c.FlagSet.Int("net", _nilDefaultInt, "(Required) Network's id"),
-				"instance_array_id":  c.FlagSet.Int("ia", _nilDefaultInt, "(Required) Instance array's id"),
+				"network_profile_id": c.FlagSet.Int("id", _nilDefaultInt, red("(Required)") + " Network profile's id"),
+				"network_id":         c.FlagSet.Int("net", _nilDefaultInt, red("(Required)") + " Network's id"),
+				"instance_array_id":  c.FlagSet.Int("ia", _nilDefaultInt, red("(Required)") + " Instance array's id"),
 			}
 		},
 		ExecuteFunc: networkProfileAssociateToInstanceArrayCmd,
@@ -122,8 +122,8 @@ var networkProfileCmds = []Command{
 		FlagSet:      flag.NewFlagSet("remove network profile of an instance array", flag.ExitOnError),
 		InitFunc: func(c *Command) {
 			c.Arguments = map[string]interface{}{
-				"instance_array_id": c.FlagSet.String("ia", _nilDefaultStr, "(Required) Instance array's id"),
-				"network_id":        c.FlagSet.String("net", _nilDefaultStr, "(Required) Network's id"),
+				"instance_array_id": c.FlagSet.String("ia", _nilDefaultStr, red("(Required)") + " Instance array's id"),
+				"network_id":        c.FlagSet.String("net", _nilDefaultStr, red("(Required)") + " Network's id"),
 			}
 		},
 		ExecuteFunc: networkProfileRemoveFromInstanceArrayCmd,

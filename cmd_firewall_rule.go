@@ -22,7 +22,7 @@ var firewallRuleCmds = []Command{
 		FlagSet:      flag.NewFlagSet("list firewall rules", flag.ExitOnError),
 		InitFunc: func(c *Command) {
 			c.Arguments = map[string]interface{}{
-				"instance_array_id": c.FlagSet.Int("ia", _nilDefaultInt, "(Required) The instance array id"),
+				"instance_array_id": c.FlagSet.Int("ia", _nilDefaultInt, red("(Required)") + " The instance array id"),
 				"format":            c.FlagSet.String("format", _nilDefaultStr, "The output format. Supported values are 'json','csv','yaml'. The default format is human readable."),
 			}
 		},
@@ -37,7 +37,7 @@ var firewallRuleCmds = []Command{
 		FlagSet:      flag.NewFlagSet("add firewall rules", flag.ExitOnError),
 		InitFunc: func(c *Command) {
 			c.Arguments = map[string]interface{}{
-				"instance_array_id":                   c.FlagSet.Int("ia", _nilDefaultInt, "(Required) The instance array id"),
+				"instance_array_id":                   c.FlagSet.Int("ia", _nilDefaultInt, red("(Required)") + " The instance array id"),
 				"firewall_rule_protocol":              c.FlagSet.String("protocol", _nilDefaultStr, "The protocol of the firewall rule. Possible values: all, icmp, tcp, udp."),
 				"firewall_rule_ip_address_type":       c.FlagSet.String("ip-address-type", "ipv4", "The IP address type of the firewall rule. Possible values: ipv4, ipv6."),
 				"firewall_rule_port":                  c.FlagSet.String("port", _nilDefaultStr, "The port to filter on. It can also be a range with the start and end values separated by a dash."),
@@ -57,7 +57,7 @@ var firewallRuleCmds = []Command{
 		FlagSet:      flag.NewFlagSet("delete firewall rules", flag.ExitOnError),
 		InitFunc: func(c *Command) {
 			c.Arguments = map[string]interface{}{
-				"instance_array_id":                   c.FlagSet.Int("ia", _nilDefaultInt, "(Required) The instance array id"),
+				"instance_array_id":                   c.FlagSet.Int("ia", _nilDefaultInt, red("(Required)") + " The instance array id"),
 				"firewall_rule_ip_address_type":       c.FlagSet.String("ip-address-type", "ipv4", "The IP address type of the firewall rule. Possible values: ipv4, ipv6."),
 				"firewall_rule_protocol":              c.FlagSet.String("protocol", _nilDefaultStr, "The protocol of the firewall rule. Possible values: all, icmp, tcp, udp."),
 				"firewall_rule_port":                  c.FlagSet.String("port", _nilDefaultStr, "The port to filter on. It can also be a range with the start and end values separated by a dash."),

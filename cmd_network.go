@@ -19,7 +19,7 @@ var networkCmds = []Command{
 		FlagSet:      flag.NewFlagSet("list network", flag.ExitOnError),
 		InitFunc: func(c *Command) {
 			c.Arguments = map[string]interface{}{
-				"instance_array_id_or_label": c.FlagSet.String("ia", _nilDefaultStr, "(Required) InstanceArray's id or label. Note that the label can be ambigous."),
+				"instance_array_id_or_label": c.FlagSet.String("ia", _nilDefaultStr, red("(Required)") + " InstanceArray's id or label. Note that the label can be ambigous."),
 				"format":                     c.FlagSet.String("format", "", "The output format. Supported values are 'json','csv','yaml'. The default format is human readable."),
 			}
 		},

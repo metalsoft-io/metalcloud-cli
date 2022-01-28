@@ -22,9 +22,9 @@ var driveArrayCmds = []Command{
 		FlagSet:      flag.NewFlagSet("drive-array", flag.ExitOnError),
 		InitFunc: func(c *Command) {
 			c.Arguments = map[string]interface{}{
-				"infrastructure_id_or_label":                c.FlagSet.String("infra", _nilDefaultStr, "(Required) Infrastructure's id or label. Note that the 'label' this be ambiguous in certain situations."),
-				"instance_array_id_or_label":                c.FlagSet.String("ia", _nilDefaultStr, "(Required) The id of the instance array it is attached to. It can be zero for unattached Drive Arrays"),
-				"drive_array_label":                         c.FlagSet.String("label", _nilDefaultStr, "(Required) The label of the drive array"),
+				"infrastructure_id_or_label":                c.FlagSet.String("infra", _nilDefaultStr, red("(Required)") + " Infrastructure's id or label. Note that the 'label' this be ambiguous in certain situations."),
+				"instance_array_id_or_label":                c.FlagSet.String("ia", _nilDefaultStr, red("(Required)") + " The id of the instance array it is attached to. It can be zero for unattached Drive Arrays"),
+				"drive_array_label":                         c.FlagSet.String("label", _nilDefaultStr, red("(Required)") + " The label of the drive array"),
 				"drive_array_storage_type":                  c.FlagSet.String("type", _nilDefaultStr, "Possible values: iscsi_ssd, iscsi_hdd"),
 				"drive_size_mbytes_default":                 c.FlagSet.Int("size", _nilDefaultInt, "(Optional, default = 40960) Drive arrays's size in MBytes"),
 				"drive_array_count":                         c.FlagSet.Int("count", _nilDefaultInt, "DriveArrays's drive count. Use this only for unconnected DriveArrays."),
@@ -44,9 +44,9 @@ var driveArrayCmds = []Command{
 		FlagSet:      flag.NewFlagSet("edit_drive_array", flag.ExitOnError),
 		InitFunc: func(c *Command) {
 			c.Arguments = map[string]interface{}{
-				"drive_array_id_or_label":                c.FlagSet.String("id", _nilDefaultStr, "(Required) Drive Array's ID or label. Note that using the label can be ambiguous and is slower."),
-				"instance_array_id_or_label":             c.FlagSet.String("ia", _nilDefaultStr, "(Required) The id of the instance array it is attached to. It can be zero for unattached Drive Arrays"),
-				"drive_array_label":                      c.FlagSet.String("label", _nilDefaultStr, "(Required) The label of the drive array"),
+				"drive_array_id_or_label":                c.FlagSet.String("id", _nilDefaultStr, red("(Required)") + " Drive Array's ID or label. Note that using the label can be ambiguous and is slower."),
+				"instance_array_id_or_label":             c.FlagSet.String("ia", _nilDefaultStr, red("(Required)") + " The id of the instance array it is attached to. It can be zero for unattached Drive Arrays"),
+				"drive_array_label":                      c.FlagSet.String("label", _nilDefaultStr, red("(Required)") + " The label of the drive array"),
 				"drive_array_storage_type":               c.FlagSet.String("type", _nilDefaultStr, "Possible values: iscsi_ssd, iscsi_hdd"),
 				"drive_size_mbytes_default":              c.FlagSet.Int("size", _nilDefaultInt, "(Optional, default = 40960) Drive arrays's size in MBytes"),
 				"drive_array_count":                      c.FlagSet.Int("count", _nilDefaultInt, "DriveArrays's drive count. Use this only for unconnected DriveArrays."),
@@ -65,7 +65,7 @@ var driveArrayCmds = []Command{
 		FlagSet:      flag.NewFlagSet("list drive_array", flag.ExitOnError),
 		InitFunc: func(c *Command) {
 			c.Arguments = map[string]interface{}{
-				"infrastructure_id_or_label": c.FlagSet.String("infra", _nilDefaultStr, "(Required) Infrastructure's id or label. Note that the 'label' this be ambiguous in certain situations."),
+				"infrastructure_id_or_label": c.FlagSet.String("infra", _nilDefaultStr, red("(Required)") + " Infrastructure's id or label. Note that the 'label' this be ambiguous in certain situations."),
 				"format":                     c.FlagSet.String("format", "", "The output format. Supported values are 'json','csv','yaml'. The default format is human readable."),
 			}
 		},
@@ -80,7 +80,7 @@ var driveArrayCmds = []Command{
 		FlagSet:      flag.NewFlagSet("delete drive_array", flag.ExitOnError),
 		InitFunc: func(c *Command) {
 			c.Arguments = map[string]interface{}{
-				"drive_array_id_or_label": c.FlagSet.String("id", _nilDefaultStr, "(Required) Drive Array's ID or label. Note that using the label can be ambiguous and is slower."),
+				"drive_array_id_or_label": c.FlagSet.String("id", _nilDefaultStr, red("(Required)") + " Drive Array's ID or label. Note that using the label can be ambiguous and is slower."),
 				"autoconfirm":             c.FlagSet.Bool("autoconfirm", false, "If true it does not ask for confirmation anymore"),
 			}
 		},
@@ -95,7 +95,7 @@ var driveArrayCmds = []Command{
 		FlagSet:      flag.NewFlagSet("show drive_array", flag.ExitOnError),
 		InitFunc: func(c *Command) {
 			c.Arguments = map[string]interface{}{
-				"drive_array_id_or_label": c.FlagSet.String("id", _nilDefaultStr, "(Required) Drive Array's ID or label. Note that using the label can be ambiguous and is slower."),
+				"drive_array_id_or_label": c.FlagSet.String("id", _nilDefaultStr, red("(Required)") + " Drive Array's ID or label. Note that using the label can be ambiguous and is slower."),
 				"show_iscsi_credentials":  c.FlagSet.Bool("show-iscsi-credentials", false, "(Flag) If set returns the drives' iscsi credentials"),
 				"format":                  c.FlagSet.String("format", "", "The output format. Supported values are 'json','csv','yaml'. The default format is human readable."),
 			}

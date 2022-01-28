@@ -23,8 +23,8 @@ var instanceArrayCmds = []Command{
 		FlagSet:      flag.NewFlagSet("instance-array", flag.ExitOnError),
 		InitFunc: func(c *Command) {
 			c.Arguments = map[string]interface{}{
-				"infrastructure_id_or_label":          c.FlagSet.String("infra", _nilDefaultStr, "(Required) Infrastructure's id or label. Note that the 'label' this be ambiguous in certain situations."),
-				"instance_array_instance_count":       c.FlagSet.Int("instance-count", _nilDefaultInt, "(Required) Instance count of this instance array"),
+				"infrastructure_id_or_label":          c.FlagSet.String("infra", _nilDefaultStr, red("(Required)") + " Infrastructure's id or label. Note that the 'label' this be ambiguous in certain situations."),
+				"instance_array_instance_count":       c.FlagSet.Int("instance-count", _nilDefaultInt, red("(Required)") + " Instance count of this instance array"),
 				"instance_array_label":                c.FlagSet.String("label", _nilDefaultStr, "InstanceArray's label"),
 				"server_type":                         c.FlagSet.String("server-type", _nilDefaultStr, "InstanceArray's server type."),
 				"instance_array_ram_gbytes":           c.FlagSet.Int("ram", _nilDefaultInt, "InstanceArray's minimum RAM (GB)"),
@@ -52,7 +52,7 @@ var instanceArrayCmds = []Command{
 		FlagSet:      flag.NewFlagSet("list instance_array", flag.ExitOnError),
 		InitFunc: func(c *Command) {
 			c.Arguments = map[string]interface{}{
-				"infrastructure_id_or_label": c.FlagSet.String("infra", _nilDefaultStr, "(Required) Infrastructure's id or label. Note that the 'label' this be ambiguous in certain situations."),
+				"infrastructure_id_or_label": c.FlagSet.String("infra", _nilDefaultStr, red("(Required)") + " Infrastructure's id or label. Note that the 'label' this be ambiguous in certain situations."),
 				"format":                     c.FlagSet.String("format", "", "The output format. Supported values are 'json','csv','yaml'. The default format is human readable."),
 			}
 		},
@@ -67,7 +67,7 @@ var instanceArrayCmds = []Command{
 		FlagSet:      flag.NewFlagSet("instances-list instance_array", flag.ExitOnError),
 		InitFunc: func(c *Command) {
 			c.Arguments = map[string]interface{}{
-				"instance_array_id_or_label": c.FlagSet.String("id", _nilDefaultStr, "(Required) InstanceArray's id or label. Note that the label can be ambigous."),
+				"instance_array_id_or_label": c.FlagSet.String("id", _nilDefaultStr, red("(Required)") + " InstanceArray's id or label. Note that the label can be ambigous."),
 				"format":                     c.FlagSet.String("format", "", "The output format. Supported values are 'json','csv','yaml'. The default format is human readable."),
 			}
 		},
@@ -82,7 +82,7 @@ var instanceArrayCmds = []Command{
 		FlagSet:      flag.NewFlagSet("list instance_array", flag.ExitOnError),
 		InitFunc: func(c *Command) {
 			c.Arguments = map[string]interface{}{
-				"instance_array_id_or_label": c.FlagSet.String("id", _nilDefaultStr, "(Required) InstanceArray's id or label. Note that the label can be ambigous."),
+				"instance_array_id_or_label": c.FlagSet.String("id", _nilDefaultStr, red("(Required)") + " InstanceArray's id or label. Note that the label can be ambigous."),
 				"autoconfirm":                c.FlagSet.Bool("autoconfirm", false, "If true it does not ask for confirmation anymore"),
 			}
 		},
@@ -97,9 +97,9 @@ var instanceArrayCmds = []Command{
 		FlagSet:      flag.NewFlagSet("instance_array", flag.ExitOnError),
 		InitFunc: func(c *Command) {
 			c.Arguments = map[string]interface{}{
-				"instance_array_id_or_label":          c.FlagSet.String("id", _nilDefaultStr, "(Required) InstanceArray's id or label. Note that the label can be ambigous."),
+				"instance_array_id_or_label":          c.FlagSet.String("id", _nilDefaultStr, red("(Required)") + " InstanceArray's id or label. Note that the label can be ambigous."),
 				"instance_array_instance_count":       c.FlagSet.Int("instance-count", _nilDefaultInt, "Instance count of this instance array"),
-				"instance_array_label":                c.FlagSet.String("label", _nilDefaultStr, "(Required) InstanceArray's label"),
+				"instance_array_label":                c.FlagSet.String("label", _nilDefaultStr, red("(Required)") + " InstanceArray's label"),
 				"instance_array_ram_gbytes":           c.FlagSet.Int("ram", _nilDefaultInt, "InstanceArray's minimum RAM (GB)"),
 				"instance_array_processor_count":      c.FlagSet.Int("proc", _nilDefaultInt, "InstanceArray's minimum processor count"),
 				"instance_array_processor_core_mhz":   c.FlagSet.Int("proc-freq", _nilDefaultInt, "InstanceArray's minimum processor frequency (Mhz)"),
@@ -124,7 +124,7 @@ var instanceArrayCmds = []Command{
 		FlagSet:      flag.NewFlagSet("get instance array", flag.ExitOnError),
 		InitFunc: func(c *Command) {
 			c.Arguments = map[string]interface{}{
-				"instance_array_id_or_label": c.FlagSet.String("id", _nilDefaultStr, "(Required) Instance array's id or label. Note that using the 'label' might be ambiguous in certain situations."),
+				"instance_array_id_or_label": c.FlagSet.String("id", _nilDefaultStr, red("(Required)") + " Instance array's id or label. Note that using the 'label' might be ambiguous in certain situations."),
 				"show_credentials":           c.FlagSet.Bool("show-credentials", false, "(Flag) If set returns the instances' credentials"),
 				"show_power_status":          c.FlagSet.Bool("show-power-status", false, "(Flag) If set returns the instances' power status"),
 				"show_iscsi_credentials":     c.FlagSet.Bool("show-iscsi-credentials", false, "(Flag) If set returns the instances' iscsi credentials"),

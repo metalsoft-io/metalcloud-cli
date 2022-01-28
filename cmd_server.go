@@ -66,7 +66,7 @@ metalcloud-cli server list --show-credentials" to retrieve a list of credentials
 		InitFunc: func(c *Command) {
 			c.Arguments = map[string]interface{}{
 				"format":                c.FlagSet.String("format", "json", "The input format. Supported values are 'json','yaml'. The default format is json."),
-				"read_config_from_file": c.FlagSet.String("raw-config", _nilDefaultStr, "(Required) Read raw object from file"),
+				"read_config_from_file": c.FlagSet.String("raw-config", _nilDefaultStr, red("(Required)") + " Read raw object from file"),
 				"read_config_from_pipe": c.FlagSet.Bool("pipe", false, "(Flag) If set, read raw object from pipe instead of from a file. Either this flag or the --raw-config option must be used."),
 				"return_id":             c.FlagSet.Bool("return-id", false, "Will print the ID of the created object. Useful for automating tasks."),
 			}
@@ -92,7 +92,7 @@ metalcloud-cli server list --show-credentials" to retrieve a list of credentials
 				"server_type":           c.FlagSet.String("server-type", _nilDefaultStr, "The new server type (id or label) of the server. This command cannot be used in conjunction with config or pipe commands."),
 				"server_class":          c.FlagSet.String("server-class", _nilDefaultStr, "The new class of the server. This command cannot be used in conjunction with config or pipe commands."),
 				"format":                c.FlagSet.String("format", "json", "The input format used when config or pipe commands are used. Supported values are 'json','yaml'. The default format is json."),
-				"read_config_from_file": c.FlagSet.String("raw-config", _nilDefaultStr, "(Required) Read raw object from file"),
+				"read_config_from_file": c.FlagSet.String("raw-config", _nilDefaultStr, red("(Required)") + " Read raw object from file"),
 				"read_config_from_pipe": c.FlagSet.Bool("pipe", false, "(Flag) If set, read raw object from pipe instead of from a file. Either this flag or the --raw-config option must be used."),
 			}
 		},
@@ -126,8 +126,8 @@ metalcloud-cli server list --show-credentials" to retrieve a list of credentials
 		FlagSet:      flag.NewFlagSet("", flag.ExitOnError),
 		InitFunc: func(c *Command) {
 			c.Arguments = map[string]interface{}{
-				"server_id":   c.FlagSet.Int("id", _nilDefaultInt, "(Required) Server's id."),
-				"operation":   c.FlagSet.String("operation", _nilDefaultStr, "(Required) Power control operation, one of: on, off, reset, soft."),
+				"server_id":   c.FlagSet.Int("id", _nilDefaultInt, red("(Required)") + " Server's id."),
+				"operation":   c.FlagSet.String("operation", _nilDefaultStr, red("(Required)") + " Power control operation, one of: on, off, reset, soft."),
 				"autoconfirm": c.FlagSet.Bool("autoconfirm", false, "If true it does not ask for confirmation anymore"),
 			}
 		},
@@ -143,8 +143,8 @@ metalcloud-cli server list --show-credentials" to retrieve a list of credentials
 		FlagSet:      flag.NewFlagSet("", flag.ExitOnError),
 		InitFunc: func(c *Command) {
 			c.Arguments = map[string]interface{}{
-				"server_id":   c.FlagSet.Int("id", _nilDefaultInt, "(Required) Server's id."),
-				"status":      c.FlagSet.String("status", _nilDefaultStr, "(Required) New server status. One of: 'available','decommissioned','removed_from_rack'"),
+				"server_id":   c.FlagSet.Int("id", _nilDefaultInt, red("(Required)") + " Server's id."),
+				"status":      c.FlagSet.String("status", _nilDefaultStr, red("(Required)") + " New server status. One of: 'available','decommissioned','removed_from_rack'"),
 				"autoconfirm": c.FlagSet.Bool("autoconfirm", false, "If true it does not ask for confirmation anymore"),
 			}
 		},
@@ -160,7 +160,7 @@ metalcloud-cli server list --show-credentials" to retrieve a list of credentials
 		FlagSet:      flag.NewFlagSet("", flag.ExitOnError),
 		InitFunc: func(c *Command) {
 			c.Arguments = map[string]interface{}{
-				"server_id":   c.FlagSet.Int("id", _nilDefaultInt, "(Required) Server's id."),
+				"server_id":   c.FlagSet.Int("id", _nilDefaultInt, red("(Required)") + " Server's id."),
 				"skip_ipmi":   c.FlagSet.Bool("do-not-set-ipmi", false, "If set, the system will not change the IPMI credentials."),
 				"autoconfirm": c.FlagSet.Bool("autoconfirm", false, "If true it does not ask for confirmation anymore"),
 			}
@@ -178,7 +178,7 @@ metalcloud-cli server list --show-credentials" to retrieve a list of credentials
 		InitFunc: func(c *Command) {
 			c.Arguments = map[string]interface{}{
 				"format":            c.FlagSet.String("format", _nilDefaultStr, "The output format. Supported values are 'json','csv','yaml'. The default format is human readable."),
-				"server_id_or_uuid": c.FlagSet.Int("id", _nilDefaultInt, "(Required) Server's id."),
+				"server_id_or_uuid": c.FlagSet.Int("id", _nilDefaultInt, red("(Required)") + " Server's id."),
 				"raw":               c.FlagSet.Bool("raw", false, "(Flag) When set the return will be a full dump of the object. This is useful when copying configurations. Only works with json and yaml formats."),
 			}
 		},

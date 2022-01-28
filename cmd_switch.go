@@ -41,7 +41,7 @@ var switchCmds = []Command{
 			c.Arguments = map[string]interface{}{
 				"overwrite_hostname_from_switch": c.FlagSet.Bool("retrieve-hostname-from-switch", false, "(Flag) Retrieve the hostname from the equipment instead of configuration file."),
 				"format":                         c.FlagSet.String("format", "json", "The input format. Supported values are 'json','yaml'. The default format is json."),
-				"read_config_from_file":          c.FlagSet.String("raw-config", _nilDefaultStr, "(Required) Read  configuration from file in the format specified with --format."),
+				"read_config_from_file":          c.FlagSet.String("raw-config", _nilDefaultStr, red("(Required)") + " Read  configuration from file in the format specified with --format."),
 				"read_config_from_pipe":          c.FlagSet.Bool("pipe", false, "(Flag) If set, read  configuration from pipe instead of from a file. Either this flag or the --raw-config option must be used."),
 				"return_id":                      c.FlagSet.Bool("return-id", false, "Will print the ID of the created object. Useful for automating tasks."),
 			}
@@ -58,10 +58,10 @@ var switchCmds = []Command{
 		FlagSet:      flag.NewFlagSet("Edit switch device", flag.ExitOnError),
 		InitFunc: func(c *Command) {
 			c.Arguments = map[string]interface{}{
-				"network_device_id_or_identifier_string": c.FlagSet.String("id", _nilDefaultStr, "(Required) Switch id or identifier string. "),
+				"network_device_id_or_identifier_string": c.FlagSet.String("id", _nilDefaultStr, red("(Required)") + " Switch id or identifier string. "),
 				"overwrite_hostname_from_switch":         c.FlagSet.Bool("retrieve-hostname-from-switch", false, "(Flag) Retrieve the hostname from the equipment instead of configuration file."),
 				"format":                                 c.FlagSet.String("format", "json", "The input format. Supported values are 'json','yaml'. The default format is json."),
-				"read_config_from_file":                  c.FlagSet.String("raw-config", _nilDefaultStr, "(Required) Read  configuration from file in the format specified with --format."),
+				"read_config_from_file":                  c.FlagSet.String("raw-config", _nilDefaultStr, red("(Required)") + " Read  configuration from file in the format specified with --format."),
 				"read_config_from_pipe":                  c.FlagSet.Bool("pipe", false, "(Flag) If set, read  configuration from pipe instead of from a file. Either this flag or the --raw-config option must be used."),
 				"return_id":                              c.FlagSet.Bool("return-id", false, "Will print the ID of the created object. Useful for automating tasks."),
 			}
@@ -78,7 +78,7 @@ var switchCmds = []Command{
 		FlagSet:      flag.NewFlagSet("get a switch device", flag.ExitOnError),
 		InitFunc: func(c *Command) {
 			c.Arguments = map[string]interface{}{
-				"network_device_id_or_identifier_string": c.FlagSet.String("id", _nilDefaultStr, "(Required) Switch id or identifier string. "),
+				"network_device_id_or_identifier_string": c.FlagSet.String("id", _nilDefaultStr, red("(Required)") + " Switch id or identifier string. "),
 				"show_credentials":                       c.FlagSet.Bool("show-credentials", false, "(Flag) If set returns the switch credentials"),
 				"format":                                 c.FlagSet.String("format", "", "The output format. Supported values are 'json','csv','yaml'. The default format is human readable."),
 				"raw":                                    c.FlagSet.Bool("raw", false, "(Flag) When set the return will be a full dump of the object. This is useful when copying configurations. Only works with json and yaml formats."),
@@ -96,7 +96,7 @@ var switchCmds = []Command{
 		FlagSet:      flag.NewFlagSet("delete switch", flag.ExitOnError),
 		InitFunc: func(c *Command) {
 			c.Arguments = map[string]interface{}{
-				"network_device_id_or_identifier_string": c.FlagSet.String("id", _nilDefaultStr, "(Required) Switch id or identifier string. "),
+				"network_device_id_or_identifier_string": c.FlagSet.String("id", _nilDefaultStr, red("(Required)") + " Switch id or identifier string. "),
 				"autoconfirm":                            c.FlagSet.Bool("autoconfirm", false, "If true it does not ask for confirmation anymore"),
 			}
 		},
@@ -112,7 +112,7 @@ var switchCmds = []Command{
 		FlagSet:      flag.NewFlagSet("list switch interfaces", flag.ExitOnError),
 		InitFunc: func(c *Command) {
 			c.Arguments = map[string]interface{}{
-				"network_device_id_or_identifier_string": c.FlagSet.String("id", _nilDefaultStr, "(Required) Switch id or identifier string. "),
+				"network_device_id_or_identifier_string": c.FlagSet.String("id", _nilDefaultStr, red("(Required)") + " Switch id or identifier string. "),
 				"format":                                 c.FlagSet.String("format", _nilDefaultStr, "The output format. Supported values are 'json','csv','yaml'. The default format is human readable."),
 				"raw":                                    c.FlagSet.Bool("raw", false, "(Flag) When set the return will be a full dump of the object. This is useful when copying configurations. Only works with json and yaml formats."),
 			}

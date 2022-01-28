@@ -36,8 +36,8 @@ var switchPairCmds = []Command{
 		FlagSet:      flag.NewFlagSet("Create a switch pair", flag.ExitOnError),
 		InitFunc: func(c *Command) {
 			c.Arguments = map[string]interface{}{
-				"network_device_id_or_identifier_string1": c.FlagSet.String("switch1", _nilDefaultStr, "(Required) First Switch's id or identifier string. "),
-				"network_device_id_or_identifier_string2": c.FlagSet.String("switch2", _nilDefaultStr, "(Required) Second Switch's id or identifier string. "),
+				"network_device_id_or_identifier_string1": c.FlagSet.String("switch1", _nilDefaultStr, red("(Required)") + " First Switch's id or identifier string. "),
+				"network_device_id_or_identifier_string2": c.FlagSet.String("switch2", _nilDefaultStr, red("(Required)") + " Second Switch's id or identifier string. "),
 				"type":      c.FlagSet.String("type", "mlag", "The type of link. The default and only link type supported is `mlag`"),
 				"return_id": c.FlagSet.Bool("return-id", false, "Will print the ID of the created object. Useful for automating tasks."),
 			}
@@ -54,8 +54,8 @@ var switchPairCmds = []Command{
 		FlagSet:      flag.NewFlagSet("Delete switch pair", flag.ExitOnError),
 		InitFunc: func(c *Command) {
 			c.Arguments = map[string]interface{}{
-				"network_device_id_or_identifier_string1": c.FlagSet.String("switch1", _nilDefaultStr, "(Required) First Switch's id or identifier string. "),
-				"network_device_id_or_identifier_string2": c.FlagSet.String("switch2", _nilDefaultStr, "(Required) Second Switch's id or identifier string. "),
+				"network_device_id_or_identifier_string1": c.FlagSet.String("switch1", _nilDefaultStr, red("(Required)") + " First Switch's id or identifier string. "),
+				"network_device_id_or_identifier_string2": c.FlagSet.String("switch2", _nilDefaultStr, red("(Required)") + " Second Switch's id or identifier string. "),
 				"type":        c.FlagSet.String("type", "mlag", "The type of link. The default and only link type supported is `mlag`"),
 				"autoconfirm": c.FlagSet.Bool("autoconfirm", false, "If true it does not ask for confirmation anymore"),
 			}

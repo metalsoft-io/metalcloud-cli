@@ -22,8 +22,8 @@ var instanceCmds = []Command{
 		FlagSet:      flag.NewFlagSet("instance_array", flag.ExitOnError),
 		InitFunc: func(c *Command) {
 			c.Arguments = map[string]interface{}{
-				"instance_id": c.FlagSet.Int("id", _nilDefaultInt, "(Required) Instances's id . Note that the 'label' this be ambiguous in certain situations."),
-				"operation":   c.FlagSet.String("operation", _nilDefaultStr, "(Required) Power control operation, one of: on, off, reset, soft"),
+				"instance_id": c.FlagSet.Int("id", _nilDefaultInt, red("(Required)") + " Instances's id . Note that the 'label' this be ambiguous in certain situations."),
+				"operation":   c.FlagSet.String("operation", _nilDefaultStr, red("(Required)") + " Power control operation, one of: on, off, reset, soft"),
 				"autoconfirm": c.FlagSet.Bool("autoconfirm", false, "If true it does not ask for confirmation anymore"),
 			}
 		},
@@ -39,7 +39,7 @@ var instanceCmds = []Command{
 		FlagSet:      flag.NewFlagSet("instance credentials", flag.ExitOnError),
 		InitFunc: func(c *Command) {
 			c.Arguments = map[string]interface{}{
-				"instance_id": c.FlagSet.Int("id", _nilDefaultInt, "(Required) Instances's id . Note that the 'label' this be ambiguous in certain situations."),
+				"instance_id": c.FlagSet.Int("id", _nilDefaultInt, red("(Required)") + " Instances's id . Note that the 'label' this be ambiguous in certain situations."),
 				"format":      c.FlagSet.String("format", "", "The output format. Supported values are 'json','csv','yaml'. The default format is human readable."),
 			}
 		},

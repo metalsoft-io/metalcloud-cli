@@ -42,9 +42,9 @@ var datacenterCmds = []Command{
 		FlagSet:      flag.NewFlagSet("Create datacenter", flag.ExitOnError),
 		InitFunc: func(c *Command) {
 			c.Arguments = map[string]interface{}{
-				"datacenter_name":         c.FlagSet.String("id", _nilDefaultStr, "(Required) Label of the datacenter. Also used as an ID."),
-				"datacenter_display_name": c.FlagSet.String("title", _nilDefaultStr, "(Required) Human readable name of the datacenter. Usually includes the location such as UK,Reading"),
-				"read_config_from_file":   c.FlagSet.String("config", _nilDefaultStr, "(Required) Read datacenter configuration from file"),
+				"datacenter_name":         c.FlagSet.String("id", _nilDefaultStr, red("(Required)") + " Label of the datacenter. Also used as an ID."),
+				"datacenter_display_name": c.FlagSet.String("title", _nilDefaultStr, red("(Required)") + " Human readable name of the datacenter. Usually includes the location such as UK,Reading"),
+				"read_config_from_file":   c.FlagSet.String("config", _nilDefaultStr, red("(Required)") + " Read datacenter configuration from file"),
 				"datacenter_name_parent":  c.FlagSet.String("parent", _nilDefaultStr, "If the datacenter is subordonated to another datacenter such as to a near-edge site."),
 				"create_hidden":           c.FlagSet.Bool("hidden", false, "(Flag) If set, the datacenter will be hidden after creation instead."),
 				"is_master":               c.FlagSet.Bool("master", false, "(Flag) If set, the datacenter will be the master dc."),
@@ -68,7 +68,7 @@ var datacenterCmds = []Command{
 		FlagSet:      flag.NewFlagSet("Get datacenter details.", flag.ExitOnError),
 		InitFunc: func(c *Command) {
 			c.Arguments = map[string]interface{}{
-				"datacenter_name":        c.FlagSet.String("id", _nilDefaultStr, "(Required) Label of the datacenter. Also used as an ID."),
+				"datacenter_name":        c.FlagSet.String("id", _nilDefaultStr, red("(Required)") + " Label of the datacenter. Also used as an ID."),
 				"show_secret_config_url": c.FlagSet.Bool("show-config-url", false, "(Flag) If set returns the secret config url for datacenter agents."),
 				"show_datacenter_config": c.FlagSet.Bool("show-config", false, "(Flag) If set returns the config of the datacenter."),
 				"return_config_url":      c.FlagSet.Bool("return-config-url", false, "(Flag) If set prints the config url of the datacenter. Ignores all other flags. Useful in automation."),
@@ -88,8 +88,8 @@ var datacenterCmds = []Command{
 		FlagSet:      flag.NewFlagSet("Update datacenter config", flag.ExitOnError),
 		InitFunc: func(c *Command) {
 			c.Arguments = map[string]interface{}{
-				"datacenter_name":       c.FlagSet.String("id", _nilDefaultStr, "(Required) Label of the datacenter. Also used as an ID."),
-				"read_config_from_file": c.FlagSet.String("config", _nilDefaultStr, "(Required) Read datacenter configuration from file"),
+				"datacenter_name":       c.FlagSet.String("id", _nilDefaultStr, red("(Required)") + " Label of the datacenter. Also used as an ID."),
+				"read_config_from_file": c.FlagSet.String("config", _nilDefaultStr, red("(Required)") + " Read datacenter configuration from file"),
 				"read_config_from_pipe": c.FlagSet.Bool("pipe", false, "(Flag) If set, read datacenter configuration from pipe instead of from a file. Either this flag or the -config option must be used."),
 				"format":                c.FlagSet.String("format", "json", "The input format. Supported values are 'json','yaml'. The default format is json."),
 			}

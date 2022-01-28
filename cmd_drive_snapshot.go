@@ -22,7 +22,7 @@ var driveSnapshotCmds = []Command{
 		FlagSet:      flag.NewFlagSet("drive snapshots create", flag.ExitOnError),
 		InitFunc: func(c *Command) {
 			c.Arguments = map[string]interface{}{
-				"drive_id":  c.FlagSet.Int("id", _nilDefaultInt, "(Required) The id of the drive to create a snapshot from"),
+				"drive_id":  c.FlagSet.Int("id", _nilDefaultInt, red("(Required)") + " The id of the drive to create a snapshot from"),
 				"return_id": c.FlagSet.Bool("return-id", false, "(Optional) Will print the ID of the created Drive Array. Useful for automating tasks."),
 			}
 		},
@@ -37,7 +37,7 @@ var driveSnapshotCmds = []Command{
 		FlagSet:      flag.NewFlagSet("drive snapshots list", flag.ExitOnError),
 		InitFunc: func(c *Command) {
 			c.Arguments = map[string]interface{}{
-				"drive_id": c.FlagSet.Int("id", _nilDefaultInt, "(Required) The id of the drive for which to list snapshots."),
+				"drive_id": c.FlagSet.Int("id", _nilDefaultInt, red("(Required)") + " The id of the drive for which to list snapshots."),
 				"format":   c.FlagSet.String("format", "", "The output format. Supported values are 'json','csv','yaml'. The default format is human readable."),
 			}
 		},
@@ -52,7 +52,7 @@ var driveSnapshotCmds = []Command{
 		FlagSet:      flag.NewFlagSet("drive snapshots delete", flag.ExitOnError),
 		InitFunc: func(c *Command) {
 			c.Arguments = map[string]interface{}{
-				"drive_snapshot_id": c.FlagSet.Int("id", _nilDefaultInt, "(Required) The id of the drive snapshot"),
+				"drive_snapshot_id": c.FlagSet.Int("id", _nilDefaultInt, red("(Required)") + " The id of the drive snapshot"),
 				"autoconfirm":       c.FlagSet.Bool("autoconfirm", false, "If true it does not ask for confirmation anymore"),
 			}
 		},
@@ -67,7 +67,7 @@ var driveSnapshotCmds = []Command{
 		FlagSet:      flag.NewFlagSet("drive snapshots rollback", flag.ExitOnError),
 		InitFunc: func(c *Command) {
 			c.Arguments = map[string]interface{}{
-				"drive_snapshot_id": c.FlagSet.Int("id", _nilDefaultInt, "(Required) The id of the drive snapshot"),
+				"drive_snapshot_id": c.FlagSet.Int("id", _nilDefaultInt, red("(Required)") + " The id of the drive snapshot"),
 				"autoconfirm":       c.FlagSet.Bool("autoconfirm", false, "If true it does not ask for confirmation anymore"),
 			}
 		},

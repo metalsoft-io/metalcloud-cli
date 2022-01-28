@@ -37,10 +37,10 @@ var volumeTemplateCmds = []Command{
 		FlagSet:      flag.NewFlagSet("create volume templates", flag.ExitOnError),
 		InitFunc: func(c *Command) {
 			c.Arguments = map[string]interface{}{
-				"drive_id":                   c.FlagSet.Int("id", _nilDefaultInt, "(Required) The id of the drive to create the volume template from"),
-				"label":                      c.FlagSet.String("label", _nilDefaultStr, "(Required) The label of the volume template"),
-				"description":                c.FlagSet.String("description", _nilDefaultStr, "(Required) The description of the volume template"),
-				"display_name":               c.FlagSet.String("name", _nilDefaultStr, "(Required) The display name of the volume template"),
+				"drive_id":                   c.FlagSet.Int("id", _nilDefaultInt, red("(Required)") + " The id of the drive to create the volume template from"),
+				"label":                      c.FlagSet.String("label", _nilDefaultStr, red("(Required)") + " The label of the volume template"),
+				"description":                c.FlagSet.String("description", _nilDefaultStr, red("(Required)") + " The description of the volume template"),
+				"display_name":               c.FlagSet.String("name", _nilDefaultStr, red("(Required)") + " The display name of the volume template"),
 				"boot_type":                  c.FlagSet.String("boot-type", _nilDefaultStr, "The boot_type of the volume template. Possible values: 'uefi_only','legacy_only' "),
 				"boot_methods_supported":     c.FlagSet.String("boot-methods-supported", _nilDefaultStr, "The boot_methods_supported of the volume template. Defaults to 'pxe_iscsi'."),
 				"deprecation_status":         c.FlagSet.String("deprecation-status", _nilDefaultStr, "Deprecation status. Possible values: not_deprecated,deprecated_deny_provision,deprecated_allow_expand. Defaults to 'not_deprecated'."),
@@ -67,7 +67,7 @@ var volumeTemplateCmds = []Command{
 		InitFunc: func(c *Command) {
 			c.Arguments = map[string]interface{}{
 				"template_id_or_name":        c.FlagSet.String("id", _nilDefaultStr, "Volume template id or name"),
-				"os_bootstrap_function_name": c.FlagSet.String("os-bootstrap-function-name", _nilDefaultStr, "(Required) Selects the cloudinit configuration function. Can be one of: provisioner_os_cloudinit_prepare_centos, provisioner_os_cloudinit_prepare_rhel, provisioner_os_cloudinit_prepare_ubuntu, provisioner_os_cloudinit_prepare_windows."),
+				"os_bootstrap_function_name": c.FlagSet.String("os-bootstrap-function-name", _nilDefaultStr, red("(Required)") + " Selects the cloudinit configuration function. Can be one of: provisioner_os_cloudinit_prepare_centos, provisioner_os_cloudinit_prepare_rhel, provisioner_os_cloudinit_prepare_ubuntu, provisioner_os_cloudinit_prepare_windows."),
 			}
 		},
 		ExecuteFunc: volumeTemplateMakePublicCmd,

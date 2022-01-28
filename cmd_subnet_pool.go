@@ -38,7 +38,7 @@ var subnetPoolCmds = []Command{
 		FlagSet:      flag.NewFlagSet("Get a subnet pool", flag.ExitOnError),
 		InitFunc: func(c *Command) {
 			c.Arguments = map[string]interface{}{
-				"subnet_pool_id": c.FlagSet.Int("id", _nilDefaultInt, "(Required) Subnetpool's id"),
+				"subnet_pool_id": c.FlagSet.Int("id", _nilDefaultInt, red("(Required)") + " Subnetpool's id"),
 				"format":         c.FlagSet.String("format", "", "The output format. Supported values are 'json','csv','yaml'. The default format is human readable."),
 				"raw":            c.FlagSet.Bool("raw", false, "(Flag) When set the return will be a full dump of the object. This is useful when copying configurations. Only works with json and yaml formats."),
 			}
@@ -56,7 +56,7 @@ var subnetPoolCmds = []Command{
 		InitFunc: func(c *Command) {
 			c.Arguments = map[string]interface{}{
 				"format":                c.FlagSet.String("format", "json", "The input format. Supported values are 'json','yaml'. The default format is json."),
-				"read_config_from_file": c.FlagSet.String("config", _nilDefaultStr, "(Required) Read configuration from file"),
+				"read_config_from_file": c.FlagSet.String("config", _nilDefaultStr, red("(Required)") + " Read configuration from file"),
 				"read_config_from_pipe": c.FlagSet.Bool("pipe", false, "(Flag) If set, read configuration from pipe instead of from a file. Either this flag or the -config option must be used."),
 				"return_id":             c.FlagSet.Bool("return-id", false, "Will print the ID of the created Useful for automating tasks."),
 			}
@@ -73,7 +73,7 @@ var subnetPoolCmds = []Command{
 		FlagSet:      flag.NewFlagSet("delete subnet pool", flag.ExitOnError),
 		InitFunc: func(c *Command) {
 			c.Arguments = map[string]interface{}{
-				"subnet_pool_id": c.FlagSet.Int("id", _nilDefaultInt, "(Required) Subnet's's id"),
+				"subnet_pool_id": c.FlagSet.Int("id", _nilDefaultInt, red("(Required)") + " Subnet's's id"),
 				"autoconfirm":    c.FlagSet.Bool("autoconfirm", false, "If true it does not ask for confirmation anymore"),
 			}
 		},
