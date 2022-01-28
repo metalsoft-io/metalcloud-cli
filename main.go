@@ -189,7 +189,7 @@ func commandHelpSummary(cmd Command) string {
 	}
 
 	cmdHelpSummary := fmt.Sprintf("Command: %-40s %s (alternatively use \"%s %s\")\n",
-		blue(command),
+		bold(command),
 		cmd.Description,
 		cmd.AltSubject,
 		cmd.AltPredicate)
