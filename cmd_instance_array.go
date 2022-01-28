@@ -83,7 +83,7 @@ var instanceArrayCmds = []Command{
 		InitFunc: func(c *Command) {
 			c.Arguments = map[string]interface{}{
 				"instance_array_id_or_label": c.FlagSet.String("id", _nilDefaultStr, red("(Required)") + " InstanceArray's id or label. Note that the label can be ambigous."),
-				"autoconfirm":                c.FlagSet.Bool("autoconfirm", false, "If true it does not ask for confirmation anymore"),
+				"autoconfirm":                c.FlagSet.Bool("autoconfirm", false, green("(Flag)") + " If set it will assume action is confirmed"),
 			}
 		},
 		ExecuteFunc: instanceArrayDeleteCmd,

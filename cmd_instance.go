@@ -24,7 +24,7 @@ var instanceCmds = []Command{
 			c.Arguments = map[string]interface{}{
 				"instance_id": c.FlagSet.Int("id", _nilDefaultInt, red("(Required)") + " Instances's id . Note that the 'label' this be ambiguous in certain situations."),
 				"operation":   c.FlagSet.String("operation", _nilDefaultStr, red("(Required)") + " Power control operation, one of: on, off, reset, soft"),
-				"autoconfirm": c.FlagSet.Bool("autoconfirm", false, "If true it does not ask for confirmation anymore"),
+				"autoconfirm": c.FlagSet.Bool("autoconfirm", false, green("(Flag)") + " If set it will assume action is confirmed"),
 			}
 		},
 		ExecuteFunc: instancePowerControlCmd,

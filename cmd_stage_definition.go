@@ -78,7 +78,7 @@ var stageDefinitionsCmds = []Command{
 		InitFunc: func(c *Command) {
 			c.Arguments = map[string]interface{}{
 				"stage_id_or_name": c.FlagSet.String("id", _nilDefaultStr, "stage's id or name"),
-				"autoconfirm":      c.FlagSet.Bool("autoconfirm", false, "If true it does not ask for confirmation anymore"),
+				"autoconfirm":      c.FlagSet.Bool("autoconfirm", false, green("(Flag)") + " If set it will assume action is confirmed"),
 			}
 		},
 		ExecuteFunc: stageDefinitionDeleteCmd,

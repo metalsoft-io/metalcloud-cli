@@ -97,7 +97,7 @@ var switchCmds = []Command{
 		InitFunc: func(c *Command) {
 			c.Arguments = map[string]interface{}{
 				"network_device_id_or_identifier_string": c.FlagSet.String("id", _nilDefaultStr, red("(Required)") + " Switch id or identifier string. "),
-				"autoconfirm":                            c.FlagSet.Bool("autoconfirm", false, "If true it does not ask for confirmation anymore"),
+				"autoconfirm":                            c.FlagSet.Bool("autoconfirm", false, green("(Flag)") + " If set it will assume action is confirmed"),
 			}
 		},
 		ExecuteFunc: switchDeleteCmd,

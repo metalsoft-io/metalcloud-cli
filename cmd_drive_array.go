@@ -81,7 +81,7 @@ var driveArrayCmds = []Command{
 		InitFunc: func(c *Command) {
 			c.Arguments = map[string]interface{}{
 				"drive_array_id_or_label": c.FlagSet.String("id", _nilDefaultStr, red("(Required)") + " Drive Array's ID or label. Note that using the label can be ambiguous and is slower."),
-				"autoconfirm":             c.FlagSet.Bool("autoconfirm", false, "If true it does not ask for confirmation anymore"),
+				"autoconfirm":             c.FlagSet.Bool("autoconfirm", false, green("(Flag)") + " If set it will assume action is confirmed"),
 			}
 		},
 		ExecuteFunc: driveArrayDeleteCmd,

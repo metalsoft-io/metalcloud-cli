@@ -54,7 +54,7 @@ var infrastructureCmds = []Command{
 		InitFunc: func(c *Command) {
 			c.Arguments = map[string]interface{}{
 				"infrastructure_id_or_label": c.FlagSet.String("id", _nilDefaultStr, red("(Required)") + " Infrastructure's id or label. Note that using the 'label' might be ambiguous in certain situations."),
-				"autoconfirm":                c.FlagSet.Bool("autoconfirm", false, green("(Flag)") + " If set it does not ask for confirmation anymore"),
+				"autoconfirm":                c.FlagSet.Bool("autoconfirm", false, green("(Flag)") + " If set it will assume action is confirmed"),
 			}
 		},
 		ExecuteFunc: infrastructureDeleteCmd,
@@ -77,7 +77,7 @@ var infrastructureCmds = []Command{
 				"block_until_deployed":           c.FlagSet.Bool("blocking", false, green("(Flag)") + " If set, the operation will wait until deployment finishes."),
 				"block_timeout":                  c.FlagSet.Int("block-timeout", 180*60, "Block timeout in seconds. After this timeout the application will return an error. Defaults to 180 minutes."),
 				"block_check_interval":           c.FlagSet.Int("block-check-interval", 10, "Check interval for when blocking. Defaults to 10 seconds."),
-				"autoconfirm":                    c.FlagSet.Bool("autoconfirm", false, green("(Flag)") + " If set operation procedes without asking for confirmation"),
+				"autoconfirm":                    c.FlagSet.Bool("autoconfirm", false, green("(Flag)") + " If set it will assume action is confirmed"),
 			}
 		},
 		ExecuteFunc: infrastructureDeployCmd,
@@ -107,7 +107,7 @@ var infrastructureCmds = []Command{
 		InitFunc: func(c *Command) {
 			c.Arguments = map[string]interface{}{
 				"infrastructure_id_or_label": c.FlagSet.String("id", _nilDefaultStr, red("(Required)") + " Infrastructure's id or label. Note that using the 'label' might be ambiguous in certain situations."),
-				"autoconfirm":                c.FlagSet.Bool("autoconfirm", false, green("(Flag)") + " If set it does not ask for confirmation anymore"),
+				"autoconfirm":                c.FlagSet.Bool("autoconfirm", false, green("(Flag)") + " If set it will assume action is confirmed"),
 			}
 		},
 		ExecuteFunc: infrastructureRevertCmd,

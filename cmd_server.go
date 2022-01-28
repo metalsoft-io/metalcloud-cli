@@ -128,7 +128,7 @@ metalcloud-cli server list --show-credentials # to retrieve a list of credential
 			c.Arguments = map[string]interface{}{
 				"server_id":   c.FlagSet.Int("id", _nilDefaultInt, red("(Required)") + " Server's id."),
 				"operation":   c.FlagSet.String("operation", _nilDefaultStr, red("(Required)") + " Power control operation, one of: on, off, reset, soft."),
-				"autoconfirm": c.FlagSet.Bool("autoconfirm", false, "If true it does not ask for confirmation anymore"),
+				"autoconfirm": c.FlagSet.Bool("autoconfirm", false, green("(Flag)") + " If set it will assume action is confirmed"),
 			}
 		},
 		ExecuteFunc: serverPowerControlCmd,
@@ -145,7 +145,7 @@ metalcloud-cli server list --show-credentials # to retrieve a list of credential
 			c.Arguments = map[string]interface{}{
 				"server_id":   c.FlagSet.Int("id", _nilDefaultInt, red("(Required)") + " Server's id."),
 				"status":      c.FlagSet.String("status", _nilDefaultStr, red("(Required)") + " New server status. One of: 'available','decommissioned','removed_from_rack'"),
-				"autoconfirm": c.FlagSet.Bool("autoconfirm", false, "If true it does not ask for confirmation anymore"),
+				"autoconfirm": c.FlagSet.Bool("autoconfirm", false, green("(Flag)") + " If set it will assume action is confirmed"),
 			}
 		},
 		ExecuteFunc: serverStatusSetCmd,
@@ -162,7 +162,7 @@ metalcloud-cli server list --show-credentials # to retrieve a list of credential
 			c.Arguments = map[string]interface{}{
 				"server_id":   c.FlagSet.Int("id", _nilDefaultInt, red("(Required)") + " Server's id."),
 				"skip_ipmi":   c.FlagSet.Bool("do-not-set-ipmi", false, "If set, the system will not change the IPMI credentials."),
-				"autoconfirm": c.FlagSet.Bool("autoconfirm", false, "If true it does not ask for confirmation anymore"),
+				"autoconfirm": c.FlagSet.Bool("autoconfirm", false, green("(Flag)") + " If set it will assume action is confirmed"),
 			}
 		},
 		ExecuteFunc: serverReregisterCmd,

@@ -58,7 +58,7 @@ var secretsCmds = []Command{
 		InitFunc: func(c *Command) {
 			c.Arguments = map[string]interface{}{
 				"secret_id_or_name": c.FlagSet.String("id", _nilDefaultStr, "Secret's id or name"),
-				"autoconfirm":       c.FlagSet.Bool("autoconfirm", false, "If true it does not ask for confirmation anymore"),
+				"autoconfirm":       c.FlagSet.Bool("autoconfirm", false, green("(Flag)") + " If set it will assume action is confirmed"),
 			}
 		},
 		ExecuteFunc: secretDeleteCmd,

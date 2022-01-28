@@ -53,7 +53,7 @@ var driveSnapshotCmds = []Command{
 		InitFunc: func(c *Command) {
 			c.Arguments = map[string]interface{}{
 				"drive_snapshot_id": c.FlagSet.Int("id", _nilDefaultInt, red("(Required)") + " The id of the drive snapshot"),
-				"autoconfirm":       c.FlagSet.Bool("autoconfirm", false, "If true it does not ask for confirmation anymore"),
+				"autoconfirm":       c.FlagSet.Bool("autoconfirm", false, green("(Flag)") + " If set it will assume action is confirmed"),
 			}
 		},
 		ExecuteFunc: driveSnapshotDeleteCmd,
@@ -68,7 +68,7 @@ var driveSnapshotCmds = []Command{
 		InitFunc: func(c *Command) {
 			c.Arguments = map[string]interface{}{
 				"drive_snapshot_id": c.FlagSet.Int("id", _nilDefaultInt, red("(Required)") + " The id of the drive snapshot"),
-				"autoconfirm":       c.FlagSet.Bool("autoconfirm", false, "If true it does not ask for confirmation anymore"),
+				"autoconfirm":       c.FlagSet.Bool("autoconfirm", false, green("(Flag)") + " If set it will assume action is confirmed"),
 			}
 		},
 		ExecuteFunc: driveSnapshotRollbackCmd,

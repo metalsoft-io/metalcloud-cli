@@ -61,7 +61,7 @@ var jobsCmds = []Command{
 		InitFunc: func(c *Command) {
 			c.Arguments = map[string]interface{}{
 				"job_id":      c.FlagSet.String("id", _nilDefaultStr, "JOB ID"),
-				"autoconfirm": c.FlagSet.Bool("autoconfirm", false, "If true it does not ask for confirmation anymore"),
+				"autoconfirm": c.FlagSet.Bool("autoconfirm", false, green("(Flag)") + " If set it will assume action is confirmed"),
 			}
 		},
 		ExecuteFunc: jobRetryCmd,
@@ -77,7 +77,7 @@ var jobsCmds = []Command{
 		InitFunc: func(c *Command) {
 			c.Arguments = map[string]interface{}{
 				"job_id":      c.FlagSet.String("id", _nilDefaultStr, "JOB ID"),
-				"autoconfirm": c.FlagSet.Bool("autoconfirm", false, "If true it does not ask for confirmation anymore"),
+				"autoconfirm": c.FlagSet.Bool("autoconfirm", false, green("(Flag)") + " If set it will assume action is confirmed"),
 			}
 		},
 		ExecuteFunc: jobSkipCmd,
@@ -93,7 +93,7 @@ var jobsCmds = []Command{
 		InitFunc: func(c *Command) {
 			c.Arguments = map[string]interface{}{
 				"job_id":      c.FlagSet.String("id", _nilDefaultStr, "JOB ID"),
-				"autoconfirm": c.FlagSet.Bool("autoconfirm", false, "If true it does not ask for confirmation anymore"),
+				"autoconfirm": c.FlagSet.Bool("autoconfirm", false, green("(Flag)") + " If set it will assume action is confirmed"),
 			}
 		},
 		ExecuteFunc: jobDeleteCmd,
@@ -110,7 +110,7 @@ var jobsCmds = []Command{
 			c.Arguments = map[string]interface{}{
 				"job_id":      c.FlagSet.String("id", _nilDefaultStr, "JOB ID"),
 				"mark":        c.FlagSet.String("mark", "kill", "One of 'kill','stop_retrying','kill_and_stop_retrying','kill_and_stop_retrying','keep_alive'"),
-				"autoconfirm": c.FlagSet.Bool("autoconfirm", false, "If true it does not ask for confirmation anymore"),
+				"autoconfirm": c.FlagSet.Bool("autoconfirm", false, green("(Flag)") + " If set it will assume action is confirmed"),
 			}
 		},
 		ExecuteFunc: jobKillCmd,
