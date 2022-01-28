@@ -32,8 +32,8 @@ var serversCmds = []Command{
 		ExecuteFunc: serversListCmd,
 		Endpoint:    DeveloperEndpoint,
 		Example: `
-metalcloud-cli server list --filter "available used" to show all available servers.
-metalcloud-cli server list --show-credentials" to retrieve a list of credentials. Note: this will take a longer time.
+metalcloud-cli server list --filter "available used" # to show all available and used servers. One of: [available|unavailable|used|cleaning|registering]
+metalcloud-cli server list --show-credentials # to retrieve a list of credentials. Note: this will take a longer time.
 		`,
 	},
 
