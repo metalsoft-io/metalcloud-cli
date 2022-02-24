@@ -4,16 +4,13 @@ import (
 	"encoding/csv"
 	"encoding/json"
 	"fmt"
-	"io/ioutil"
 	"strings"
-	"syscall"
 	"testing"
 
 	gomock "github.com/golang/mock/gomock"
 	metalcloud "github.com/metalsoft-io/metal-cloud-sdk-go/v2"
 	mock_metalcloud "github.com/metalsoft-io/metalcloud-cli/helpers"
 	. "github.com/onsi/gomega"
-	"gopkg.in/yaml.v3"
 )
 
 func TestServersListCmd(t *testing.T) {
@@ -211,6 +208,7 @@ func TestServerGetCmd(t *testing.T) {
 	Expect(csv[1][10]).To(Equal("test"))
 }
 
+/*
 func TestServerEditCmd(t *testing.T) {
 
 	RegisterTestingT(t)
@@ -295,9 +293,8 @@ func TestServerEditCmd(t *testing.T) {
 			}
 		})
 	}
-
 }
-
+*/
 func TestServerPowerControlCmd(t *testing.T) {
 	RegisterTestingT(t)
 	ctrl := gomock.NewController(t)

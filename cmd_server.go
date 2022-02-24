@@ -23,10 +23,10 @@ var serversCmds = []Command{
 			c.Arguments = map[string]interface{}{
 				"format":              c.FlagSet.String("format", _nilDefaultStr, "The output format. Supported values are 'json','csv','yaml'. The default format is human readable."),
 				"filter":              c.FlagSet.String("filter", "*", "filter to use when searching for servers. Check the documentation for examples. Defaults to '*'"),
-				"show_credentials":    c.FlagSet.Bool("show-credentials", false, green("(Flag)") + " If set returns the servers' IPMI credentials. (Slow for large queries)"),
-				"show_rack_data":      c.FlagSet.Bool("show-rack-data", false, green("(Flag)") + " If set returns the servers' rack metadata"),
-				"show_hardware":       c.FlagSet.Bool("show-hardware", false, green("(Flag)") + " If set returns the servers' hardware configuration"),
-				"show_decommissioned": c.FlagSet.Bool("show-decommissioned", false, green("(Flag)") + " If set returns decommissioned servers which are normally hidden"),
+				"show_credentials":    c.FlagSet.Bool("show-credentials", false, green("(Flag)")+" If set returns the servers' IPMI credentials. (Slow for large queries)"),
+				"show_rack_data":      c.FlagSet.Bool("show-rack-data", false, green("(Flag)")+" If set returns the servers' rack metadata"),
+				"show_hardware":       c.FlagSet.Bool("show-hardware", false, green("(Flag)")+" If set returns the servers' hardware configuration"),
+				"show_decommissioned": c.FlagSet.Bool("show-decommissioned", false, green("(Flag)")+" If set returns decommissioned servers which are normally hidden"),
 			}
 		},
 		ExecuteFunc: serversListCmd,
@@ -48,8 +48,8 @@ metalcloud-cli server list --show-credentials # to retrieve a list of credential
 			c.Arguments = map[string]interface{}{
 				"server_id_or_uuid": c.FlagSet.String("id", _nilDefaultStr, "Server's ID or UUID"),
 				"format":            c.FlagSet.String("format", _nilDefaultStr, "The output format. Supported values are 'json','csv','yaml'. The default format is human readable."),
-				"show_credentials":  c.FlagSet.Bool("show-credentials", false, green("(Flag)") + " If set returns the servers' IPMI credentials"),
-				"raw":               c.FlagSet.Bool("raw", false, green("(Flag)") + " If set returns the servers' raw object serialized using specified format"),
+				"show_credentials":  c.FlagSet.Bool("show-credentials", false, green("(Flag)")+" If set returns the servers' IPMI credentials"),
+				"raw":               c.FlagSet.Bool("raw", false, green("(Flag)")+" If set returns the servers' raw object serialized using specified format"),
 			}
 		},
 		ExecuteFunc: serverGetCmd,
@@ -66,15 +66,15 @@ metalcloud-cli server list --show-credentials # to retrieve a list of credential
 		InitFunc: func(c *Command) {
 			c.Arguments = map[string]interface{}{
 				"format":                c.FlagSet.String("format", "json", "The input format. Supported values are 'json','yaml'. The default format is json."),
-				"read_config_from_file": c.FlagSet.String("raw-config", _nilDefaultStr, red("(Required)") + " Read raw object from file"),
-				"read_config_from_pipe": c.FlagSet.Bool("pipe", false, green("(Flag)") + " If set, read raw object from pipe instead of from a file. Either this flag or the --raw-config option must be used."),
+				"read_config_from_file": c.FlagSet.String("raw-config", _nilDefaultStr, red("(Required)")+" Read raw object from file"),
+				"read_config_from_pipe": c.FlagSet.Bool("pipe", false, green("(Flag)")+" If set, read raw object from pipe instead of from a file. Either this flag or the --raw-config option must be used."),
 				"return_id":             c.FlagSet.Bool("return-id", false, "Will print the ID of the created object. Useful for automating tasks."),
 			}
 		},
 		ExecuteFunc: serverCreateCmd,
 		Endpoint:    DeveloperEndpoint,
 	},
-
+	/* - currently broken
 	{
 		Description:  "Edit server.",
 		Subject:      "server",
@@ -99,6 +99,7 @@ metalcloud-cli server list --show-credentials # to retrieve a list of credential
 		ExecuteFunc: serverEditCmd,
 		Endpoint:    DeveloperEndpoint,
 	},
+	*/
 	{
 		Description:  "Edit server's IPMI",
 		Subject:      "server",
@@ -126,9 +127,9 @@ metalcloud-cli server list --show-credentials # to retrieve a list of credential
 		FlagSet:      flag.NewFlagSet("", flag.ExitOnError),
 		InitFunc: func(c *Command) {
 			c.Arguments = map[string]interface{}{
-				"server_id":   c.FlagSet.Int("id", _nilDefaultInt, red("(Required)") + " Server's id."),
-				"operation":   c.FlagSet.String("operation", _nilDefaultStr, red("(Required)") + " Power control operation, one of: on, off, reset, soft."),
-				"autoconfirm": c.FlagSet.Bool("autoconfirm", false, green("(Flag)") + " If set it will assume action is confirmed"),
+				"server_id":   c.FlagSet.Int("id", _nilDefaultInt, red("(Required)")+" Server's id."),
+				"operation":   c.FlagSet.String("operation", _nilDefaultStr, red("(Required)")+" Power control operation, one of: on, off, reset, soft."),
+				"autoconfirm": c.FlagSet.Bool("autoconfirm", false, green("(Flag)")+" If set it will assume action is confirmed"),
 			}
 		},
 		ExecuteFunc: serverPowerControlCmd,
@@ -143,9 +144,9 @@ metalcloud-cli server list --show-credentials # to retrieve a list of credential
 		FlagSet:      flag.NewFlagSet("", flag.ExitOnError),
 		InitFunc: func(c *Command) {
 			c.Arguments = map[string]interface{}{
-				"server_id":   c.FlagSet.Int("id", _nilDefaultInt, red("(Required)") + " Server's id."),
-				"status":      c.FlagSet.String("status", _nilDefaultStr, red("(Required)") + " New server status. One of: 'available','decommissioned','removed_from_rack'"),
-				"autoconfirm": c.FlagSet.Bool("autoconfirm", false, green("(Flag)") + " If set it will assume action is confirmed"),
+				"server_id":   c.FlagSet.Int("id", _nilDefaultInt, red("(Required)")+" Server's id."),
+				"status":      c.FlagSet.String("status", _nilDefaultStr, red("(Required)")+" New server status. One of: 'available','decommissioned','removed_from_rack'"),
+				"autoconfirm": c.FlagSet.Bool("autoconfirm", false, green("(Flag)")+" If set it will assume action is confirmed"),
 			}
 		},
 		ExecuteFunc: serverStatusSetCmd,
@@ -160,9 +161,9 @@ metalcloud-cli server list --show-credentials # to retrieve a list of credential
 		FlagSet:      flag.NewFlagSet("", flag.ExitOnError),
 		InitFunc: func(c *Command) {
 			c.Arguments = map[string]interface{}{
-				"server_id":   c.FlagSet.Int("id", _nilDefaultInt, red("(Required)") + " Server's id."),
+				"server_id":   c.FlagSet.Int("id", _nilDefaultInt, red("(Required)")+" Server's id."),
 				"skip_ipmi":   c.FlagSet.Bool("do-not-set-ipmi", false, "If set, the system will not change the IPMI credentials."),
-				"autoconfirm": c.FlagSet.Bool("autoconfirm", false, green("(Flag)") + " If set it will assume action is confirmed"),
+				"autoconfirm": c.FlagSet.Bool("autoconfirm", false, green("(Flag)")+" If set it will assume action is confirmed"),
 			}
 		},
 		ExecuteFunc: serverReregisterCmd,
@@ -178,8 +179,8 @@ metalcloud-cli server list --show-credentials # to retrieve a list of credential
 		InitFunc: func(c *Command) {
 			c.Arguments = map[string]interface{}{
 				"format":            c.FlagSet.String("format", _nilDefaultStr, "The output format. Supported values are 'json','csv','yaml'. The default format is human readable."),
-				"server_id_or_uuid": c.FlagSet.Int("id", _nilDefaultInt, red("(Required)") + " Server's id."),
-				"raw":               c.FlagSet.Bool("raw", false, green("(Flag)") + " When set the return will be a full dump of the object. This is useful when copying configurations. Only works with json and yaml formats."),
+				"server_id_or_uuid": c.FlagSet.Int("id", _nilDefaultInt, red("(Required)")+" Server's id."),
+				"raw":               c.FlagSet.Bool("raw", false, green("(Flag)")+" When set the return will be a full dump of the object. This is useful when copying configurations. Only works with json and yaml formats."),
 			}
 		},
 		ExecuteFunc: serverInterfacesListCmd,
@@ -480,6 +481,12 @@ func serversListCmd(c *Command, client metalcloud.MetalCloudClient) (string, err
 			FieldSize: 5,
 		})
 
+		schema = append(schema, tableformatter.SchemaField{
+			FieldName: "IPMI_SNMP_COMMUNITY",
+			FieldType: tableformatter.TypeString,
+			FieldSize: 5,
+		})
+
 	}
 
 	data := [][]interface{}{}
@@ -517,6 +524,7 @@ func serversListCmd(c *Command, client metalcloud.MetalCloudClient) (string, err
 
 		credentialsUser := ""
 		credentialsPass := ""
+		//snmpCommunity := ""
 
 		if getBoolParam(c.Arguments["show_credentials"]) {
 
@@ -528,6 +536,7 @@ func serversListCmd(c *Command, client metalcloud.MetalCloudClient) (string, err
 
 			credentialsUser = fmt.Sprintf("%s", server.ServerIPMInternalUsername)
 			credentialsPass = fmt.Sprintf("%s", server.ServerIPMInternalPassword)
+			//snmpCommunity = fmt.Sprintf("%s", server.ServerMgmtSNMPCommunityPassword)
 
 		}
 
@@ -610,6 +619,7 @@ func serversListCmd(c *Command, client metalcloud.MetalCloudClient) (string, err
 			row = append(row, []interface{}{
 				credentialsUser,
 				credentialsPass,
+				//snmpCommunity,
 			}...)
 		}
 
@@ -763,6 +773,7 @@ func serverGetCmd(c *Command, client metalcloud.MetalCloudClient) (string, error
 		productName = truncateString(server.ServerProductName, 18)
 	}
 	credentials := ""
+	snmpCommunity := ""
 
 	if showCredentials {
 
@@ -773,6 +784,14 @@ func serverGetCmd(c *Command, client metalcloud.MetalCloudClient) (string, error
 		})
 
 		credentials = fmt.Sprintf("User: %s Pass: %s", server.ServerIPMInternalUsername, server.ServerIPMInternalPassword)
+
+		schema = append(schema, tableformatter.SchemaField{
+			FieldName: "SNMP_COMMUNITY",
+			FieldType: tableformatter.TypeString,
+			FieldSize: 5,
+		})
+
+		//snmpCommunity = server.ServerMgmtSNMPCommunityPassword
 
 	}
 
@@ -805,6 +824,7 @@ func serverGetCmd(c *Command, client metalcloud.MetalCloudClient) (string, error
 		server.ServerIPMIHost,
 		allocation,
 		credentials,
+		snmpCommunity,
 	})
 
 	var sb strings.Builder
@@ -876,6 +896,7 @@ func serverCreateCmd(c *Command, client metalcloud.MetalCloudClient) (string, er
 	return "", err
 }
 
+/*
 func serverEditCmd(c *Command, client metalcloud.MetalCloudClient) (string, error) {
 
 	server, err := getServerFromCommand("id", c, client, false)
@@ -940,6 +961,7 @@ func serverEditCmd(c *Command, client metalcloud.MetalCloudClient) (string, erro
 
 	return "", err
 }
+*/
 
 func serverEditIPMICmd(c *Command, client metalcloud.MetalCloudClient) (string, error) {
 
