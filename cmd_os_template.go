@@ -166,6 +166,21 @@ var osTemplatesCmds = []Command{
 		ExecuteFunc: templateMakePrivateCmd,
 		Endpoint:    DeveloperEndpoint,
 	},
+	{
+		Description:  "List associated assets.",
+		Subject:      "os-template",
+		AltSubject:   "template",
+		Predicate:    "list-assets",
+		AltPredicate: "assoc",
+		FlagSet:      flag.NewFlagSet("associated assets", flag.ExitOnError),
+		InitFunc: func(c *Command) {
+			c.Arguments = map[string]interface{}{
+				"template_id_or_name": c.FlagSet.String("id", _nilDefaultStr, "Template's id or name"),
+			}
+		},
+		ExecuteFunc: templateListAssociatedAssetsCmd,
+		Endpoint:    ExtendedEndpoint,
+	},
 }
 
 func templatesListCmd(c *Command, client metalcloud.MetalCloudClient) (string, error) {
