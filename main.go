@@ -333,6 +333,7 @@ func getCommands(clients map[string]metalcloud.MetalCloudClient) []Command {
 		instanceArrayCmds,
 		instanceCmds,
 		driveArrayCmds,
+		sharedDriveCmds,
 		driveSnapshotCmds,
 		volumeTemplateCmds,
 		firewallRuleCmds,
