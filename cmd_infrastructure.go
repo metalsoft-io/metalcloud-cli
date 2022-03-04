@@ -423,9 +423,9 @@ func infrastructureGetCmd(c *Command, client metalcloud.MetalCloudClient) (strin
 	}
 
 	for _, ia := range *iaList {
-		status := ia.InstanceArrayServiceStatus
+		status := green(ia.InstanceArrayServiceStatus)
 		if ia.InstanceArrayServiceStatus != "ordered" && ia.InstanceArrayOperation.InstanceArrayDeployType == "edit" && ia.InstanceArrayOperation.InstanceArrayDeployStatus == "not_started" {
-			status = "edited"
+			status = blue("edited")
 		}
 
 		volumeTemplateName := ""
@@ -453,7 +453,7 @@ func infrastructureGetCmd(c *Command, client metalcloud.MetalCloudClient) (strin
 
 		data = append(data, []interface{}{
 			ia.InstanceArrayID,
-			"InstanceArray",
+			green("InstanceArray"),
 			ia.InstanceArrayOperation.InstanceArrayLabel,
 			details,
 			status,
@@ -467,9 +467,9 @@ func infrastructureGetCmd(c *Command, client metalcloud.MetalCloudClient) (strin
 	}
 
 	for _, da := range *daList {
-		status := da.DriveArrayServiceStatus
+		status := green(da.DriveArrayServiceStatus)
 		if da.DriveArrayServiceStatus != "ordered" && da.DriveArrayOperation.DriveArrayDeployType == "edit" && da.DriveArrayOperation.DriveArrayDeployStatus == "not_started" {
-			status = "edited"
+			status = blue("edited")
 		}
 
 		volumeTemplateName := ""
@@ -489,21 +489,54 @@ func infrastructureGetCmd(c *Command, client metalcloud.MetalCloudClient) (strin
 			}
 		}
 
+		details := fmt.Sprintf("%d drives - %.1f GB %s %s attached to: %s, storage pool: #%d",
+			da.DriveArrayOperation.DriveArrayCount,
+			float64(da.DriveArrayOperation.DriveSizeMBytesDefault/1024),
+			da.DriveArrayOperation.DriveArrayStorageType,
+			volumeTemplateName,
+			attachedToInstanceArrayStr,
+			da.StoragePoolID,
+		)
+
 		data = append(data, []interface{}{
 			da.DriveArrayID,
-			"DriveArray",
+			blue("DriveArray"),
 			da.DriveArrayOperation.DriveArrayLabel,
-			fmt.Sprintf("%d drives - %.1f GB %s %s attached to: %s",
-				da.DriveArrayOperation.DriveArrayCount,
-				float64(da.DriveArrayOperation.DriveSizeMBytesDefault/1024),
-				da.DriveArrayOperation.DriveArrayStorageType,
-				volumeTemplateName,
-				attachedToInstanceArrayStr),
+			details,
+			status,
+		})
+	}
+
+	sdaList, err := client.SharedDrives(retInfra.InfrastructureID)
+	if err != nil {
+		return "", err
+	}
+
+	for _, sda := range *sdaList {
+		status := green(sda.SharedDriveServiceStatus)
+		if sda.SharedDriveServiceStatus != "ordered" && sda.SharedDriveOperation.SharedDriveDeployType == "edit" && sda.SharedDriveOperation.SharedDriveDeployStatus == "not_started" {
+			status = blue("edited")
+		}
+
+		details := fmt.Sprintf("%d GB size, type: %s, i/o limit policy: %s, WWW: %s, storage pool: #%d",
+			int(sda.SharedDriveSizeMbytes/1000),
+			sda.SharedDriveStorageType,
+			sda.SharedDriveIOLimitPolicy,
+			sda.SharedDriveWWN,
+			sda.StoragePoolID,
+		)
+
+		data = append(data, []interface{}{
+			sda.SharedDriveID,
+			magenta("SharedDrive"),
+			sda.SharedDriveLabel,
+			details,
 			status,
 		})
 
 	}
-	topLine := fmt.Sprintf("Infrastructure %s (%d) - datacenter %s owner %s\n",
+
+	topLine := fmt.Sprintf("Infrastructure %s (%d) - datacenter %s owner %s",
 		retInfra.InfrastructureLabel,
 		retInfra.InfrastructureID,
 		retInfra.DatacenterName,

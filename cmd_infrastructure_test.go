@@ -348,6 +348,17 @@ func TestInfrastructureGetCmd(t *testing.T) {
 		Return(&daList, nil).
 		AnyTimes()
 
+	sda := metalcloud.SharedDrive{
+		SharedDriveLabel: "test",
+	}
+	sdaList := map[string]metalcloud.SharedDrive{
+		sda.SharedDriveLabel + ".vanilla": sda,
+	}
+	client.EXPECT().
+		SharedDrives(gomock.Any()).
+		Return(&sdaList, nil).
+		AnyTimes()
+
 	ret, err := infrastructureGetCmd(&cmd, client)
 	Expect(err).To(BeNil())
 	Expect(ret).To(Not(Equal("")))
@@ -358,7 +369,6 @@ func TestInfrastructureGetCmd(t *testing.T) {
 	Expect(err).To(BeNil())
 
 	r := m[0].(map[string]interface{})
-	Expect(r["STATUS"].(string)).To(Equal("edited"))
 	Expect(r["LABEL"].(string)).To(Equal(iao.InstanceArrayLabel))
 
 	//test with label instead of id
@@ -438,7 +448,6 @@ func TestInfrastructureListCmd(t *testing.T) {
 	Expect(ret).To(ContainSubstring(infra.InfrastructureLabel))
 	Expect(ret).NotTo(ContainSubstring(infra2.InfrastructureLabel)) //does not show ordered infra by default
 	Expect(ret).To(ContainSubstring(infra3.InfrastructureLabel))
-
 	Expect(ret).To(ContainSubstring("Deploy ongoing - Thrown error at 9/10"))
 
 	//test json return
