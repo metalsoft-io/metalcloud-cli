@@ -7,10 +7,10 @@ import (
 	"strings"
 	"testing"
 
+	gomock "github.com/golang/mock/gomock"
 	metalcloud "github.com/metalsoft-io/metal-cloud-sdk-go/v2"
 	helper "github.com/metalsoft-io/metalcloud-cli/helpers"
 	mock_metalcloud "github.com/metalsoft-io/metalcloud-cli/helpers"
-	gomock "github.com/golang/mock/gomock"
 	. "github.com/onsi/gomega"
 )
 
@@ -382,37 +382,45 @@ func TestInfrastructureListCmd(t *testing.T) {
 	RegisterTestingT(t)
 	ctrl := gomock.NewController(t)
 
-	iao := metalcloud.InfrastructureOperation{
-		InfrastructureLabel: "testinfra-edited",
-	}
-
-	infra := metalcloud.Infrastructure{
+	infra := metalcloud.InfrastructuresSearchResult{
 		InfrastructureID:            10002,
 		InfrastructureLabel:         "testinfra",
 		InfrastructureServiceStatus: "active",
-		InfrastructureOperation:     iao,
 	}
 
-	iao2 := metalcloud.InfrastructureOperation{
-		InfrastructureLabel: "testinfra-edited",
-	}
-
-	infra2 := metalcloud.Infrastructure{
+	infra2 := metalcloud.InfrastructuresSearchResult{
 		InfrastructureID:            10003,
 		InfrastructureLabel:         "testinfra2",
 		InfrastructureServiceStatus: "ordered",
-		InfrastructureOperation:     iao2,
+	}
+	infra3 := metalcloud.InfrastructuresSearchResult{
+		InfrastructureID:            10003,
+		InfrastructureLabel:         "testinfra3",
+		InfrastructureServiceStatus: "active",
+		AFCExecutedSuccess:          10,
+		AFCTotal:                    10,
 	}
 
-	infraList := map[string]metalcloud.Infrastructure{
-		infra.InfrastructureLabel:  infra,
-		infra2.InfrastructureLabel: infra2,
+	infra4 := metalcloud.InfrastructuresSearchResult{
+		InfrastructureID:            10003,
+		InfrastructureLabel:         "testinfra4",
+		InfrastructureServiceStatus: "active",
+		AFCExecutedSuccess:          9,
+		AFCThrownError:              1,
+		AFCTotal:                    10,
+	}
+
+	infraList := []metalcloud.InfrastructuresSearchResult{
+		infra,
+		infra2,
+		infra3,
+		infra4,
 	}
 
 	client := helper.NewMockMetalCloudClient(ctrl)
 
 	client.EXPECT().
-		Infrastructures().
+		InfrastructureSearch(gomock.Any()).
 		Return(&infraList, nil).
 		AnyTimes()
 
@@ -427,8 +435,11 @@ func TestInfrastructureListCmd(t *testing.T) {
 	ret, err := infrastructureListCmd(&cmd, client)
 	Expect(err).To(BeNil())
 	Expect(ret).To(Not(Equal("")))
-	Expect(ret).To(ContainSubstring(infra.InfrastructureOperation.InfrastructureLabel))
-	Expect(ret).To(ContainSubstring(infra2.InfrastructureOperation.InfrastructureLabel))
+	Expect(ret).To(ContainSubstring(infra.InfrastructureLabel))
+	Expect(ret).NotTo(ContainSubstring(infra2.InfrastructureLabel)) //does not show ordered infra by default
+	Expect(ret).To(ContainSubstring(infra3.InfrastructureLabel))
+
+	Expect(ret).To(ContainSubstring("Deploy ongoing - Thrown error at 9/10"))
 
 	//test json return
 	format = "json"
@@ -440,19 +451,7 @@ func TestInfrastructureListCmd(t *testing.T) {
 
 	var m []interface{}
 	err = json.Unmarshal([]byte(ret), &m)
-
 	Expect(err).To(BeNil())
-
-	r := m[0].(map[string]interface{})
-
-	Expect(r["STATUS"].(string)).To(SatisfyAny(
-		Equal(infra.InfrastructureServiceStatus),
-		Equal(infra2.InfrastructureServiceStatus),
-	))
-	Expect(r["LABEL"].(string)).To(SatisfyAny(
-		Equal(infra.InfrastructureOperation.InfrastructureLabel),
-		Equal(infra2.InfrastructureOperation.InfrastructureLabel),
-	))
 
 	//test csv return
 	format = "csv"
@@ -465,20 +464,9 @@ func TestInfrastructureListCmd(t *testing.T) {
 	reader := csv.NewReader(strings.NewReader(ret))
 
 	csv, err := reader.ReadAll()
+	Expect(err).To(BeNil())
+	Expect(csv).NotTo(BeNil())
 
-	Expect(csv[1][0]).To(SatisfyAny(
-		Equal(fmt.Sprintf("%d", infra.InfrastructureID)),
-		Equal(fmt.Sprintf("%d", infra2.InfrastructureID)),
-	))
-
-	Expect(csv[1][2]).To(SatisfyAny(
-		Equal(infra.UserEmailOwner),
-		Equal(infra2.UserEmailOwner),
-	))
-	Expect(csv[2][1]).To(SatisfyAny(
-		Equal(infra.InfrastructureOperation.InfrastructureLabel),
-		Equal(infra2.InfrastructureOperation.InfrastructureLabel),
-	))
 }
 
 func TestDeployBlocking(t *testing.T) {

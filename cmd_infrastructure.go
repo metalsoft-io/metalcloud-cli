@@ -245,11 +245,16 @@ func infrastructureListCmd(c *Command, client metalcloud.MetalCloudClient) (stri
 			status = magenta("Deleted")
 		}
 
+		userEmail := ""
+		if len(i.UserEmail) > 0 {
+			userEmail = i.UserEmail[0]
+		}
+
 		data = append(data, []interface{}{
 			i.InfrastructureID,
 			i.InfrastructureLabel,
 			status,
-			i.UserEmail[0],
+			userEmail,
 			i.DatacenterName,
 			i.InfrastructureCreatedTimestamp,
 			i.InfrastructureUpdatedTimestamp,
