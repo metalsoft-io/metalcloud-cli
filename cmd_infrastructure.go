@@ -23,9 +23,9 @@ var infrastructureCmds = []Command{
 		FlagSet:      flag.NewFlagSet("create infrastructure", flag.ExitOnError),
 		InitFunc: func(c *Command) {
 			c.Arguments = map[string]interface{}{
-				"infrastructure_label": c.FlagSet.String("label", "", red("(Required)") + " Infrastructure's label"),
-				"datacenter":           c.FlagSet.String("datacenter", GetDatacenter(), red("(Required)") + " Infrastructure datacenter"),
-				"return_id":            c.FlagSet.Bool("return-id", false, green("(Flag)") + " If set will print the ID of the created infrastructure. Useful for automating tasks."),
+				"infrastructure_label": c.FlagSet.String("label", "", red("(Required)")+" Infrastructure's label"),
+				"datacenter":           c.FlagSet.String("datacenter", GetDatacenter(), red("(Required)")+" Infrastructure datacenter"),
+				"return_id":            c.FlagSet.Bool("return-id", false, green("(Flag)")+" If set will print the ID of the created infrastructure. Useful for automating tasks."),
 			}
 		},
 		ExecuteFunc: infrastructureCreateCmd,
@@ -39,10 +39,14 @@ var infrastructureCmds = []Command{
 		FlagSet:      flag.NewFlagSet("list infrastructure", flag.ExitOnError),
 		InitFunc: func(c *Command) {
 			c.Arguments = map[string]interface{}{
-				"format": c.FlagSet.String("format", "", "The output format. Supported values are 'json','csv','yaml'. The default format is human readable."),
+				"format":       c.FlagSet.String("format", "", "The output format. Supported values are 'json','csv','yaml'. The default format is human readable."),
+				"filter":       c.FlagSet.String("filter", "*", "filter to use when searching for servers. Check the documentation for examples. Defaults to '*'"),
+				"show_ordered": c.FlagSet.Bool("show-ordered", false, green("(Flag)")+" If set will also return ordered (created but not deployed) infrastructures. Default is false."),
+				"show_deleted": c.FlagSet.Bool("show-deleted", false, green("(Flag)")+" If set will also return deleted infrastructures. Default is false."),
 			}
 		},
 		ExecuteFunc: infrastructureListCmd,
+		Endpoint:    DeveloperEndpoint,
 	},
 	{
 		Description:  "Delete an infrastructure.",
@@ -53,11 +57,12 @@ var infrastructureCmds = []Command{
 		FlagSet:      flag.NewFlagSet("delete infrastructure", flag.ExitOnError),
 		InitFunc: func(c *Command) {
 			c.Arguments = map[string]interface{}{
-				"infrastructure_id_or_label": c.FlagSet.String("id", _nilDefaultStr, red("(Required)") + " Infrastructure's id or label. Note that using the 'label' might be ambiguous in certain situations."),
-				"autoconfirm":                c.FlagSet.Bool("autoconfirm", false, green("(Flag)") + " If set it will assume action is confirmed"),
+				"infrastructure_id_or_label": c.FlagSet.String("id", _nilDefaultStr, red("(Required)")+" Infrastructure's id or label. Note that using the 'label' might be ambiguous in certain situations."),
+				"autoconfirm":                c.FlagSet.Bool("autoconfirm", false, green("(Flag)")+" If set it will assume action is confirmed"),
 			}
 		},
 		ExecuteFunc: infrastructureDeleteCmd,
+		Endpoint:    DeveloperEndpoint,
 	},
 	{
 		Description:  "Deploy an infrastructure.",
@@ -68,19 +73,20 @@ var infrastructureCmds = []Command{
 		FlagSet:      flag.NewFlagSet("deploy infrastructure", flag.ExitOnError),
 		InitFunc: func(c *Command) {
 			c.Arguments = map[string]interface{}{
-				"infrastructure_id_or_label":     c.FlagSet.String("id", _nilDefaultStr, red("(Required)") + " Infrastructure's id or label. Note that using the 'label' might be ambiguous in certain situations."),
-				"no_hard_shutdown_after_timeout": c.FlagSet.Bool("no-hard-shutdown-after-timeout", false, green("(Flag)") + " If set do not force a hard power off after timeout expired and the server is not powered off."),
-				"no_attempt_soft_shutdown":       c.FlagSet.Bool("no-attempt-soft-shutdown", false, green("(Flag)") + " If set,do not atempt a soft (ACPI) power off of all the servers in the infrastructure before the deploy"),
+				"infrastructure_id_or_label":     c.FlagSet.String("id", _nilDefaultStr, red("(Required)")+" Infrastructure's id or label. Note that using the 'label' might be ambiguous in certain situations."),
+				"no_hard_shutdown_after_timeout": c.FlagSet.Bool("no-hard-shutdown-after-timeout", false, green("(Flag)")+" If set do not force a hard power off after timeout expired and the server is not powered off."),
+				"no_attempt_soft_shutdown":       c.FlagSet.Bool("no-attempt-soft-shutdown", false, green("(Flag)")+" If set,do not atempt a soft (ACPI) power off of all the servers in the infrastructure before the deploy"),
 				"soft_shutdown_timeout_seconds":  c.FlagSet.Int("soft-shutdown-timeout-seconds", 180, "(Optional, default 180) Timeout to wait if hard_shutdown_after_timeout is set."),
-				"allow_data_loss":                c.FlagSet.Bool("allow-data-loss", false, green("(Flag)") + " If set, deploy will not throw error if data loss is expected."),
-				"skip_ansible":                   c.FlagSet.Bool("skip-ansible", false, green("(Flag)") + " If set, some automatic provisioning steps will be skipped. This parameter should generally be ignored."),
-				"block_until_deployed":           c.FlagSet.Bool("blocking", false, green("(Flag)") + " If set, the operation will wait until deployment finishes."),
+				"allow_data_loss":                c.FlagSet.Bool("allow-data-loss", false, green("(Flag)")+" If set, deploy will not throw error if data loss is expected."),
+				"skip_ansible":                   c.FlagSet.Bool("skip-ansible", false, green("(Flag)")+" If set, some automatic provisioning steps will be skipped. This parameter should generally be ignored."),
+				"block_until_deployed":           c.FlagSet.Bool("blocking", false, green("(Flag)")+" If set, the operation will wait until deployment finishes."),
 				"block_timeout":                  c.FlagSet.Int("block-timeout", 180*60, "Block timeout in seconds. After this timeout the application will return an error. Defaults to 180 minutes."),
 				"block_check_interval":           c.FlagSet.Int("block-check-interval", 10, "Check interval for when blocking. Defaults to 10 seconds."),
-				"autoconfirm":                    c.FlagSet.Bool("autoconfirm", false, green("(Flag)") + " If set it will assume action is confirmed"),
+				"autoconfirm":                    c.FlagSet.Bool("autoconfirm", false, green("(Flag)")+" If set it will assume action is confirmed"),
 			}
 		},
 		ExecuteFunc: infrastructureDeployCmd,
+		Endpoint:    DeveloperEndpoint,
 	},
 	{
 		Description:  "Get infrastructure details.",
@@ -91,11 +97,12 @@ var infrastructureCmds = []Command{
 		FlagSet:      flag.NewFlagSet("get infrastructure", flag.ExitOnError),
 		InitFunc: func(c *Command) {
 			c.Arguments = map[string]interface{}{
-				"infrastructure_id_or_label": c.FlagSet.String("id", _nilDefaultStr, red("(Required)") + " Infrastructure's id or label. Note that using the 'label' might be ambiguous in certain situations."),
+				"infrastructure_id_or_label": c.FlagSet.String("id", _nilDefaultStr, red("(Required)")+" Infrastructure's id or label. Note that using the 'label' might be ambiguous in certain situations."),
 				"format":                     c.FlagSet.String("format", "", "The output format. Supported values are 'json','csv','yaml'. The default format is human readable."),
 			}
 		},
 		ExecuteFunc: infrastructureGetCmd,
+		Endpoint:    DeveloperEndpoint,
 	},
 	{
 		Description:  "Revert all changes of an infrastructure.",
@@ -106,11 +113,12 @@ var infrastructureCmds = []Command{
 		FlagSet:      flag.NewFlagSet("deploy infrastructure", flag.ExitOnError),
 		InitFunc: func(c *Command) {
 			c.Arguments = map[string]interface{}{
-				"infrastructure_id_or_label": c.FlagSet.String("id", _nilDefaultStr, red("(Required)") + " Infrastructure's id or label. Note that using the 'label' might be ambiguous in certain situations."),
-				"autoconfirm":                c.FlagSet.Bool("autoconfirm", false, green("(Flag)") + " If set it will assume action is confirmed"),
+				"infrastructure_id_or_label": c.FlagSet.String("id", _nilDefaultStr, red("(Required)")+" Infrastructure's id or label. Note that using the 'label' might be ambiguous in certain situations."),
+				"autoconfirm":                c.FlagSet.Bool("autoconfirm", false, green("(Flag)")+" If set it will assume action is confirmed"),
 			}
 		},
 		ExecuteFunc: infrastructureRevertCmd,
+		Endpoint:    DeveloperEndpoint,
 	},
 	{
 		Description:  "List stages of a workflow.",
@@ -126,6 +134,7 @@ var infrastructureCmds = []Command{
 			}
 		},
 		ExecuteFunc: listWorkflowStagesCmd,
+		Endpoint:    DeveloperEndpoint,
 	},
 }
 
@@ -158,7 +167,8 @@ func infrastructureCreateCmd(c *Command, client metalcloud.MetalCloudClient) (st
 
 func infrastructureListCmd(c *Command, client metalcloud.MetalCloudClient) (string, error) {
 
-	iList, err := client.Infrastructures()
+	filter := getStringParam(c.Arguments["filter"])
+	iList, err := client.InfrastructureSearch(filter)
 	if err != nil {
 		return "", err
 	}
@@ -175,42 +185,74 @@ func infrastructureListCmd(c *Command, client metalcloud.MetalCloudClient) (stri
 			FieldSize: 15,
 		},
 		{
-			FieldName: "OWNER",
-			FieldType: tableformatter.TypeString,
-			FieldSize: 20,
-		},
-		{
-			FieldName: "REL.",
-			FieldType: tableformatter.TypeString,
-			FieldSize: 10,
-		},
-		{
 			FieldName: "STATUS",
 			FieldType: tableformatter.TypeString,
 			FieldSize: 5,
+		},
+		{
+			FieldName: "OWNER",
+			FieldType: tableformatter.TypeString,
+			FieldSize: 20,
 		},
 		{
 			FieldName: "DATACENTER",
 			FieldType: tableformatter.TypeString,
 			FieldSize: 10,
 		},
+		{
+			FieldName: "CREATED",
+			FieldType: tableformatter.TypeString,
+			FieldSize: 10,
+		},
+		{
+			FieldName: "UPDATED",
+			FieldType: tableformatter.TypeString,
+			FieldSize: 10,
+		},
 	}
-
-	user := GetUserEmail()
 
 	data := [][]interface{}{}
 	for _, i := range *iList {
-		relation := "OWNER"
-		if i.UserEmailOwner != user {
-			relation = "_DELEGATE"
+
+		if i.InfrastructureServiceStatus == "ordered" && !getBoolParam(c.Arguments["show_ordered"]) {
+			continue
 		}
+
+		if i.InfrastructureServiceStatus == "deleted" && !getBoolParam(c.Arguments["show_deleted"]) {
+			continue
+		}
+
+		status := ""
+
+		if i.InfrastructureServiceStatus == "active" && i.AFCExecutedSuccess == i.AFCTotal {
+			status = green("Deployed")
+		}
+
+		if i.InfrastructureServiceStatus == "ordered" && i.AFCTotal == 0 {
+			status = blue("Ordered (deploy not started)")
+		}
+
+		if i.AFCExecutedSuccess < i.AFCTotal {
+
+			if i.AFCThrownError == 0 {
+				status = yellow(fmt.Sprintf("Deploy ongoing - %d/%d", i.AFCExecutedSuccess, i.AFCTotal))
+			} else {
+				status = red(fmt.Sprintf("Deploy ongoing - Thrown error at %d/%d", i.AFCExecutedSuccess, i.AFCTotal))
+			}
+		}
+
+		if i.InfrastructureServiceStatus == "deleted" {
+			status = magenta("Deleted")
+		}
+
 		data = append(data, []interface{}{
 			i.InfrastructureID,
-			i.InfrastructureOperation.InfrastructureLabel,
-			i.UserEmailOwner,
-			relation,
-			i.InfrastructureServiceStatus,
+			i.InfrastructureLabel,
+			status,
+			i.UserEmail[0],
 			i.DatacenterName,
+			i.InfrastructureCreatedTimestamp,
+			i.InfrastructureUpdatedTimestamp,
 		})
 
 	}
@@ -220,7 +262,7 @@ func infrastructureListCmd(c *Command, client metalcloud.MetalCloudClient) (stri
 		schema[0].FieldName,
 		schema[1].FieldName).Sort(data)
 
-	topLine := fmt.Sprintf("Infrastructures I have access to (as %s) in datacenter %s\n", user, GetDatacenter())
+	topLine := fmt.Sprintf("Infrastructures")
 
 	table := tableformatter.Table{
 		Data:   data,

@@ -18,3 +18,4 @@ require (
 	gopkg.in/yaml.v3 v3.0.0-20200615113413-eeeca48fe776
 )
 
+replace github.com/metalsoft-io/metal-cloud-sdk-go/v2 => /Users/alex/code/metal-cloud-sdk-go

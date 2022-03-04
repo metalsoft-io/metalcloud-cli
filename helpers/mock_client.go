@@ -667,6 +667,21 @@ func (mr *MockMetalCloudClientMockRecorder) Infrastructures() *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Infrastructures", reflect.TypeOf((*MockMetalCloudClient)(nil).Infrastructures))
 }
 
+// InfrastructureSearch mocks base method
+func (m *MockMetalCloudClient) InfrastructureSearch(filter string) (*[]metalcloud.InfrastructuresSearchResult, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "InfrastructureSearch", filter)
+	ret0, _ := ret[0].(*[]metalcloud.InfrastructuresSearchResult)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// InfrastructureSearch indicates an expected call of InfrastructureSearch
+func (mr *MockMetalCloudClientMockRecorder) InfrastructureSearch(filter interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "InfrastructureSearch", reflect.TypeOf((*MockMetalCloudClient)(nil).InfrastructureSearch), filter)
+}
+
 // InfrastructureEdit mocks base method
 func (m *MockMetalCloudClient) InfrastructureEdit(infrastructureID int, infrastructureOperation metalcloud.InfrastructureOperation) (*metalcloud.Infrastructure, error) {
 	m.ctrl.T.Helper()

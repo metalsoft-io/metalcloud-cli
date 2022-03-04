@@ -74,7 +74,7 @@ metalcloud-cli server list --show-credentials # to retrieve a list of credential
 		ExecuteFunc: serverCreateCmd,
 		Endpoint:    DeveloperEndpoint,
 	},
-	/* - currently broken
+
 	{
 		Description:  "Edit server.",
 		Subject:      "server",
@@ -92,14 +92,13 @@ metalcloud-cli server list --show-credentials # to retrieve a list of credential
 				"server_type":           c.FlagSet.String("server-type", _nilDefaultStr, "The new server type (id or label) of the server. This command cannot be used in conjunction with config or pipe commands."),
 				"server_class":          c.FlagSet.String("server-class", _nilDefaultStr, "The new class of the server. This command cannot be used in conjunction with config or pipe commands."),
 				"format":                c.FlagSet.String("format", "json", "The input format used when config or pipe commands are used. Supported values are 'json','yaml'. The default format is json."),
-				"read_config_from_file": c.FlagSet.String("raw-config", _nilDefaultStr, red("(Required)") + " Read raw object from file"),
-				"read_config_from_pipe": c.FlagSet.Bool("pipe", false, green("(Flag)") + " If set, read raw object from pipe instead of from a file. Either this flag or the --raw-config option must be used."),
+				"read_config_from_file": c.FlagSet.String("raw-config", _nilDefaultStr, red("(Required)")+" Read raw object from file"),
+				"read_config_from_pipe": c.FlagSet.Bool("pipe", false, green("(Flag)")+" If set, read raw object from pipe instead of from a file. Either this flag or the --raw-config option must be used."),
 			}
 		},
 		ExecuteFunc: serverEditCmd,
 		Endpoint:    DeveloperEndpoint,
 	},
-	*/
 	{
 		Description:  "Edit server's IPMI",
 		Subject:      "server",
@@ -584,6 +583,8 @@ func serversListCmd(c *Command, client metalcloud.MetalCloudClient) (string, err
 			status = green(status)
 		case "unavailable":
 			status = magenta(status)
+		case "defective":
+			status = red(status)
 		default:
 			status = yellow(status)
 
@@ -896,7 +897,6 @@ func serverCreateCmd(c *Command, client metalcloud.MetalCloudClient) (string, er
 	return "", err
 }
 
-/*
 func serverEditCmd(c *Command, client metalcloud.MetalCloudClient) (string, error) {
 
 	server, err := getServerFromCommand("id", c, client, false)
@@ -961,7 +961,6 @@ func serverEditCmd(c *Command, client metalcloud.MetalCloudClient) (string, erro
 
 	return "", err
 }
-*/
 
 func serverEditIPMICmd(c *Command, client metalcloud.MetalCloudClient) (string, error) {
 
