@@ -69,7 +69,7 @@ func main() {
 		os.Exit(0)
 	}
 
-	if len(os.Args) == 2 {
+	if len(os.Args) == 1 {
 		fmt.Fprint(GetStdout(), "Invalid command! Use 'help' for a list of commands\n")
 		os.Exit(-1)
 	}
@@ -88,13 +88,13 @@ func main() {
 
 func validateArguments(args []string) (string, string, int) {
 	subject, predicate := _nilDefaultStr, _nilDefaultStr
-	count := 1
+	count := 0
 
-	if !strings.HasPrefix(args[1], "-") {
+	if len(args) >= 2 && !strings.HasPrefix(args[1], "-") {
 		subject = args[1]
 		count++
 	}
-	if !strings.HasPrefix(args[2], "-") {
+	if len(args) >= 3 && !strings.HasPrefix(args[2], "-") {
 		predicate = args[2]
 		count++
 	}
@@ -113,10 +113,17 @@ func helpMessage(err error, subject string, predicate string) error {
 func executeCommand(args []string, commands []Command, clients map[string]metalcloud.MetalCloudClient) error {
 	subject, predicate, count := validateArguments(args)
 
+	if count == 1 {
+		cmds := filterCommandsBySubject(subject, commands)
+		if len(cmds) > 0 {
+			return fmt.Errorf("Invalid command! %s", getPossiblePredicatesForSubjectHelp(subject, cmds))
+		}
+	}
+
 	cmd := locateCommand(predicate, subject, commands)
 
 	if cmd == nil {
-		return fmt.Errorf("Invalid command! Use 'help' for a list of commands")
+		return fmt.Errorf("Invalid command! Use 'help' for a list of commands.")
 	}
 
 	cmd.InitFunc(cmd)
@@ -136,7 +143,7 @@ func executeCommand(args []string, commands []Command, clients map[string]metalc
 		setColoringEnabled(a != "--no-color" && a != "-no-color")
 	}
 
-	err := cmd.FlagSet.Parse(args[count:])
+	err := cmd.FlagSet.Parse(args[count+1:])
 
 	if err != nil {
 		return helpMessage(err, subject, predicate)
@@ -168,6 +175,17 @@ func locateCommand(predicate string, subject string, commands []Command) *Comman
 	return nil
 }
 
+//identifies commands for given subjects
+func filterCommandsBySubject(subject string, commands []Command) []Command {
+	cmds := []Command{}
+	for _, c := range commands {
+		if c.Subject == subject {
+			cmds = append(cmds, c)
+		}
+	}
+	return cmds
+}
+
 func getArgumentHelp(f *flag.Flag) string {
 
 	if len(f.Name) == 1 {
@@ -196,6 +214,15 @@ func commandHelpSummary(cmd Command) string {
 
 	sb.WriteString(cmdHelpSummary)
 
+	return sb.String()
+}
+
+func getPossiblePredicatesForSubjectHelp(subject string, cmds []Command) string {
+	var sb strings.Builder
+	sb.WriteString(fmt.Sprintf("Possible commands for subject %s:\n", bold(subject)))
+	for _, cmd := range cmds {
+		sb.WriteString(fmt.Sprintf("\t%s %s - %s\n", bold(cmd.Subject), bold(cmd.Predicate), cmd.Description))
+	}
 	return sb.String()
 }
 
