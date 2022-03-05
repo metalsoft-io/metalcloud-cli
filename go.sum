@@ -183,6 +183,8 @@ github.com/metalsoft-io/metal-cloud-sdk-go/v2 v2.5.8 h1:kMtMaenuEAoBeDg9OxmXt9Ar
 github.com/metalsoft-io/metal-cloud-sdk-go/v2 v2.5.8/go.mod h1:wuePDoPyCjJAsq2c8hPScwsfEipvvoAj9F6aIx/Zmg4=
 github.com/metalsoft-io/metal-cloud-sdk-go/v2 v2.5.9 h1:D4gomGrccDAdalZIs/CXlt2DKP/KHwjZuNPO1naY6a8=
 github.com/metalsoft-io/metal-cloud-sdk-go/v2 v2.5.9/go.mod h1:wuePDoPyCjJAsq2c8hPScwsfEipvvoAj9F6aIx/Zmg4=
+github.com/metalsoft-io/metal-cloud-sdk-go/v2 v2.5.10 h1:L36OaRPC2QFWmdiHbHKm879GsXj6/S4V1kqJ0V6fJfU=
+github.com/metalsoft-io/metal-cloud-sdk-go/v2 v2.5.10/go.mod h1:NnoXzowSMosPp1thaoZMkG0QxGNu8YAMKxEXk1BHD3U=
 github.com/metalsoft-io/tableformatter v1.0.4 h1:MzKStZpyRWFV55rEFlTTVyQRR1q5mmChgJ0zor5gN2w=
 github.com/metalsoft-io/tableformatter v1.0.4/go.mod h1:4ldLr91sWT/bIRTJlArzw+FfKkBMQ5IbuuyL8IZKf/Q=
 github.com/metalsoft-io/tableformatter v1.0.5 h1:CgkZrYn2vGoTpnvsM7hobG765PcNZMz67g7Sa92Fc/o=
@@ -519,6 +521,8 @@ gopkg.in/yaml.v2 v2.4.0 h1:D8xgwECY7CYvx+Y2n4sBz93Jn9JRvxdiyyo8CTfuKaY=
 gopkg.in/yaml.v2 v2.4.0/go.mod h1:RDklbk79AGWmwhnvt/jBztapEOGDOx6ZbXqjP6csGnQ=
 gopkg.in/yaml.v3 v3.0.0-20200615113413-eeeca48fe776 h1:tQIYjPdBoyREyB9XMu+nnTclpTYkz2zFM+lzLJFO4gQ=
 gopkg.in/yaml.v3 v3.0.0-20200615113413-eeeca48fe776/go.mod h1:K4uyk7z7BCEPqu6E+C64Yfv1cQ7kz7rIZviUmN+EgEM=
+gopkg.in/yaml.v3 v3.0.0-20210107192922-496545a6307b h1:h8qDotaEPuJATrMmW04NCwg7v22aHH28wwpauUhK9Oo=
+gopkg.in/yaml.v3 v3.0.0-20210107192922-496545a6307b/go.mod h1:K4uyk7z7BCEPqu6E+C64Yfv1cQ7kz7rIZviUmN+EgEM=
 honnef.co/go/tools v0.0.0-20190102054323-c2f93a96b099/go.mod h1:rf3lG4BRIbNafJWhAfAdb/ePZxsR/4RtNHQocxwk9r4=
 honnef.co/go/tools v0.0.0-20190106161140-3f1c8253044a/go.mod h1:rf3lG4BRIbNafJWhAfAdb/ePZxsR/4RtNHQocxwk9r4=
 honnef.co/go/tools v0.0.0-20190418001031-e561f6794a2a/go.mod h1:rf3lG4BRIbNafJWhAfAdb/ePZxsR/4RtNHQocxwk9r4=
