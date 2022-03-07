@@ -53,5 +53,5 @@ jobs:
        with:
         certificate: '${{ secrets.CSR_CERTIFICATE }}'
         password: '${{secrets.CERTPASS}}'
-        folder: '*.exe'
+        folder: '.'
         recursive: false
