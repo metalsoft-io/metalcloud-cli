@@ -53,5 +53,6 @@ jobs:
        uses: "Dana-Prajea/code-sign-action@v4"
        with:
         certificate: '${{ secrets.CSR_CERTIFICATE }}'
+        password: '${{secrets.CERTPASS}}'
         folder: '*.exe'
         recursive: false
