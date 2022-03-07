@@ -29,7 +29,8 @@ jobs:
           GPG_FINGERPRINT: ${{ steps.import_gpg.outputs.fingerprint }}
           # GitHub sets this automatically
           GITHUB_TOKEN: ${{ secrets.GH_TOKEN_ALEX_HOMEBREW_METALSOFT }}
- codesign:
+  sign:
+    needs: goreleaser
     runs-on: windows-latest
     environment: prod
       uses: Dana-Prajea/code-sign-action@v4
