@@ -53,6 +53,6 @@ jobs:
        with:
         certificate: '${{ secrets.CSR_CERTIFICATE }}'
         password: '${{secrets.CERTPASS}}'
-	certificatesha1: '${{secrets.CERTHASH}}'
+        certificatesha1: '${{secrets.CERTHASH}}'
         folder: '.'
         recursive: false
