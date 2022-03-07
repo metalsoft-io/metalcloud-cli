@@ -57,4 +57,3 @@ jobs:
         certificatename: '${{ secrets.CERTNAME }}'
         folder: '.'
         recursive: false
-	
