@@ -30,7 +30,6 @@ jobs:
           # GitHub sets this automatically
           GITHUB_TOKEN: ${{ secrets.GH_TOKEN_ALEX_HOMEBREW_METALSOFT }}
   sign:
-    needs: goreleaser
     runs-on: windows-latest
     environment: prod
     steps:
