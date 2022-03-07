@@ -54,5 +54,6 @@ jobs:
         certificate: '${{ secrets.CSR_CERTIFICATE }}'
         password: '${{secrets.CERTPASS}}'
         certificatesha1: '${{secrets.CERTHASH}}'
+	certificatename: '${{ secrets.CERTNAME }}'
         folder: '.'
         recursive: false
