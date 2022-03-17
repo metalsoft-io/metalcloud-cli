@@ -62,11 +62,10 @@ jobs:
         name: Create Archive
         uses: TheDoctor0/zip-release@0.6.1
         with:
-          with:
-            type: 'zip' 
-            path: *.exe
-            filename: 'metalcloud-cli-${{github.ref_name}}.zip'
-            exclusions: '*.git* /*node_modules/* .editorconfig' 
+          type: 'zip'
+          path: '*.exe'
+          filename: 'metalcloud-cli-${{github.ref_name}}.zip'
+          exclusions: '*.git* /*node_modules/* .editorconfig' 
       - 
         name: Upload Release
         uses: ncipollo/release-action@v1
