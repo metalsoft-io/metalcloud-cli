@@ -48,7 +48,7 @@ jobs:
        name: Build
        run: go build .
       -
-       name: sign
+       name: Sign
        uses: "InertiaSystems/code-sign-action@v1.1.0"
        with:
         certificate: '${{ secrets.CSR_CERTIFICATE }}'
@@ -72,4 +72,5 @@ jobs:
         with:
             artifacts: 'metalcloud-cli-${{github.ref_name}}.zip'
             token: ${{ secrets.GITHUB_TOKEN }}
+            allowUpdates: true
 
