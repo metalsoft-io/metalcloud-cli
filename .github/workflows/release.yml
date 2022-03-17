@@ -55,5 +55,6 @@ jobs:
         password: '${{secrets.CERTPASS}}'
         certificatesha1: '${{secrets.CERTHASH}}'
         certificatename: '${{ secrets.CERTNAME }}'
+	timestampUrl: 'http://timestamp.sectigo.com'
         folder: '.'
         recursive: false
