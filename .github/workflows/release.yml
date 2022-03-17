@@ -49,7 +49,7 @@ jobs:
        run: go build .
       -
        name: sign
-       uses: "Dana-Prajea/code-sign-action@v4"
+       uses: "InertiaSystems/code-sign-action@v1.1"
        with:
         certificate: '${{ secrets.CSR_CERTIFICATE }}'
         password: '${{secrets.CERTPASS}}'
