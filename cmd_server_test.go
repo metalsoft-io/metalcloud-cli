@@ -89,7 +89,7 @@ func TestServersListCmd(t *testing.T) {
 		Arguments: map[string]interface{}{
 			"filter":         &emptyStr,
 			"format":         &format,
-			"show_rack_data": &bTrue,
+			"show_rack_info": &bTrue,
 		},
 	}
 
@@ -119,14 +119,18 @@ func TestServerGetCmd(t *testing.T) {
 		ServerTypeName: "testtype",
 	}
 
+	ii := "id-20040424"
+	rackName := "Rack Name"
+	lowerU := "L-123"
+	upperU := "U-123"
 	server := metalcloud.Server{
 		ServerID:                    10,
 		ServerProductName:           "test",
 		ServerTypeID:                100,
-		ServerInventoryId:           "id-20040424",
-		ServerRackName:              "Rack Name",
-		ServerRackPositionLowerUnit: "L-2004",
-		ServerRackPositionUpperUnit: "U-2404",
+		ServerInventoryId:           &ii,
+		ServerRackName:              &rackName,
+		ServerRackPositionLowerUnit: &lowerU,
+		ServerRackPositionUpperUnit: &upperU,
 	}
 
 	client.EXPECT().
@@ -161,10 +165,10 @@ func TestServerGetCmd(t *testing.T) {
 	r := m[0].(map[string]interface{})
 	Expect(int(r["ID"].(float64))).To(Equal(10))
 	Expect(r["PRODUCT_NAME"].(string)).To(Equal(server.ServerProductName))
-	Expect(r["INVENTORY_ID"].(string)).To(Equal(server.ServerInventoryId))
-	Expect(r["RACK_NAME"].(string)).To(Equal(server.ServerRackName))
-	Expect(r["RACK_POSITION_LOWER_UNIT"].(string)).To(Equal(server.ServerRackPositionLowerUnit))
-	Expect(r["RACK_POSITION_UPPER_UNIT"].(string)).To(Equal(server.ServerRackPositionUpperUnit))
+	Expect(r["INVENTORY_ID"].(string)).To(Equal(*server.ServerInventoryId))
+	Expect(r["RACK_NAME"].(string)).To(Equal(*server.ServerRackName))
+	Expect(r["RACK_POSITION_LOWER_UNIT"].(string)).To(Equal(*server.ServerRackPositionLowerUnit))
+	Expect(r["RACK_POSITION_UPPER_UNIT"].(string)).To(Equal(*server.ServerRackPositionUpperUnit))
 
 	//test plaintext
 	format = ""
@@ -203,8 +207,8 @@ func TestServerGetCmd(t *testing.T) {
 
 	Expect(csv[1][3]).To(Equal("id-20040424"))
 	Expect(csv[1][4]).To(Equal("Rack Name"))
-	Expect(csv[1][5]).To(Equal("L-2004"))
-	Expect(csv[1][6]).To(Equal("U-2404"))
+	Expect(csv[1][5]).To(Equal("L-123"))
+	Expect(csv[1][6]).To(Equal("U-123"))
 	Expect(csv[1][10]).To(Equal("test"))
 }
 

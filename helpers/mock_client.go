@@ -2166,6 +2166,20 @@ func (mr *MockMetalCloudClientMockRecorder) ServerEdit(serverID, serverEditType,
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ServerEdit", reflect.TypeOf((*MockMetalCloudClient)(nil).ServerEdit), serverID, serverEditType, server)
 }
 
+// ServerEditProperty mocks base method
+func (m *MockMetalCloudClient) ServerEditProperty(serverID int, serverPropertyToEdit string, serverPropertyValue interface{}) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "ServerEditProperty", serverID, serverPropertyToEdit, serverPropertyValue)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// ServerEditProperty indicates an expected call of ServerEditProperty
+func (mr *MockMetalCloudClientMockRecorder) ServerEditProperty(serverID, serverPropertyToEdit, serverPropertyValue interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ServerEditProperty", reflect.TypeOf((*MockMetalCloudClient)(nil).ServerEditProperty), serverID, serverPropertyToEdit, serverPropertyValue)
+}
+
 // ServerDelete mocks base method
 func (m *MockMetalCloudClient) ServerDelete(serverID int, skipIPMI bool) error {
 	m.ctrl.T.Helper()

@@ -24,7 +24,7 @@ var serversCmds = []Command{
 				"format":              c.FlagSet.String("format", _nilDefaultStr, "The output format. Supported values are 'json','csv','yaml'. The default format is human readable."),
 				"filter":              c.FlagSet.String("filter", "*", "filter to use when searching for servers. Check the documentation for examples. Defaults to '*'"),
 				"show_credentials":    c.FlagSet.Bool("show-credentials", false, green("(Flag)")+" If set returns the servers' IPMI credentials. (Slow for large queries)"),
-				"show_rack_data":      c.FlagSet.Bool("show-rack-data", false, green("(Flag)")+" If set returns the servers' rack metadata"),
+				"show_rack_info":      c.FlagSet.Bool("show-rack-info", false, green("(Flag)")+" If set returns the servers' rack metadata"),
 				"show_hardware":       c.FlagSet.Bool("show-hardware", false, green("(Flag)")+" If set returns the servers' hardware configuration"),
 				"show_decommissioned": c.FlagSet.Bool("show-decommissioned", false, green("(Flag)")+" If set returns decommissioned servers which are normally hidden"),
 			}
@@ -169,6 +169,43 @@ metalcloud-cli server list --show-credentials # to retrieve a list of credential
 		Endpoint:    DeveloperEndpoint,
 	},
 	{
+		Description:  "Change server server type",
+		Subject:      "server",
+		AltSubject:   "srv",
+		Predicate:    "server-type-set",
+		AltPredicate: "server-type",
+		FlagSet:      flag.NewFlagSet("", flag.ExitOnError),
+		InitFunc: func(c *Command) {
+			c.Arguments = map[string]interface{}{
+				"server_id":   c.FlagSet.Int("id", _nilDefaultInt, red("(Required)")+" Server's id."),
+				"server_type": c.FlagSet.String("server-type", _nilDefaultStr, red("(Required)")+" New server type. Can be an ID or label"),
+				"autoconfirm": c.FlagSet.Bool("autoconfirm", false, green("(Flag)")+" If set it will assume action is confirmed"),
+			}
+		},
+		ExecuteFunc: serverServerTypeSetCmd,
+		Endpoint:    DeveloperEndpoint,
+	},
+	{
+		Description:  "Change server rack information",
+		Subject:      "server",
+		AltSubject:   "srv",
+		Predicate:    "rack-info-set",
+		AltPredicate: "rack-info",
+		FlagSet:      flag.NewFlagSet("", flag.ExitOnError),
+		InitFunc: func(c *Command) {
+			c.Arguments = map[string]interface{}{
+				"server_id":    c.FlagSet.Int("id", _nilDefaultInt, red("(Required)")+" Server's id."),
+				"inventory_id": c.FlagSet.String("inventory-id", _nilDefaultStr, " New inventory id"),
+				"rack_name":    c.FlagSet.String("rack-name", _nilDefaultStr, red("(Required)")+" New rack name."),
+				"lower_u":      c.FlagSet.Int("lower-u", _nilDefaultInt, red("(Required)")+" Lower U of the equipment"),
+				"upper_u":      c.FlagSet.Int("upper-u", _nilDefaultInt, red("(Required)")+" Upper U of the equipment"),
+				"autoconfirm":  c.FlagSet.Bool("autoconfirm", false, green("(Flag)")+" If set it will assume action is confirmed"),
+			}
+		},
+		ExecuteFunc: serverRackInfoSetCmd,
+		Endpoint:    DeveloperEndpoint,
+	},
+	{
 		Description:  "Lists server interfaces.",
 		Subject:      "server",
 		AltSubject:   "srv",
@@ -293,6 +330,172 @@ func serverStatusSetCmd(c *Command, client metalcloud.MetalCloudClient) (string,
 	return "", err
 }
 
+func serverServerTypeSetCmd(c *Command, client metalcloud.MetalCloudClient) (string, error) {
+	serverID, ok := getIntParamOk(c.Arguments["server_id"])
+	if !ok {
+		return "", fmt.Errorf("-id is required")
+	}
+
+	serverTypeStr, ok := getStringParamOk(c.Arguments["server_type"])
+	if !ok {
+		return "", fmt.Errorf("-server-type is required")
+	}
+
+	serverTypeID, _, isID := idOrLabel(serverTypeStr)
+	var newServerType metalcloud.ServerType
+	if !isID {
+		fmt.Printf("%s", serverTypeStr)
+		st, err := client.ServerTypeGetByLabel(serverTypeStr)
+		if err != nil {
+			return "", err
+		}
+		fmt.Printf("here: %v", newServerType)
+		newServerType = *st
+
+	} else {
+		st, err := client.ServerTypeGet(serverTypeID)
+		if err != nil {
+			return "", err
+		}
+		newServerType = *st
+	}
+
+	var server metalcloud.Server
+
+	if !getBoolParam(c.Arguments["autoconfirm"]) {
+		serverPtr, err := client.ServerGet(serverID, false)
+		if err != nil {
+			return "", err
+		}
+		server = *serverPtr
+	}
+
+	confirm, err := confirmCommand(c, func() string {
+
+		confirmationMessage := ""
+
+		if !getBoolParam(c.Arguments["autoconfirm"]) {
+
+			oldServerType, err := client.ServerTypeGet(server.ServerTypeID)
+			if err != nil {
+				return err.Error()
+			}
+
+			confirmationMessage = fmt.Sprintf("Server #%s (%s) of datacenter %s. Current server type: %s (#%s) new server type: %s (#%s) Are you sure? Type \"yes\" to continue:",
+				blue(fmt.Sprintf("%d", server.ServerID)),
+				yellow(server.ServerSerialNumber),
+				server.DatacenterName,
+				red(oldServerType.ServerTypeName),
+				red(oldServerType.ServerTypeID),
+				green(newServerType.ServerTypeName),
+				green(newServerType.ServerTypeID),
+			)
+		}
+
+		if strings.HasSuffix(os.Args[0], ".test") {
+			confirmationMessage = ""
+		}
+
+		return confirmationMessage
+	})
+
+	if err != nil {
+		return "", err
+	}
+
+	if confirm {
+		err = client.ServerEditProperty(serverID, "server_type_id", newServerType.ServerTypeID)
+	}
+
+	return "", err
+}
+
+func serverRackInfoSetCmd(c *Command, client metalcloud.MetalCloudClient) (string, error) {
+	serverID, ok := getIntParamOk(c.Arguments["server_id"])
+	if !ok {
+		return "", fmt.Errorf("-id is required")
+	}
+
+	serverRackName, ok := getStringParamOk(c.Arguments["rack_name"])
+	if !ok {
+		return "", fmt.Errorf("-rack-name is required")
+	}
+
+	serverRackLowerU, ok := getIntParamOk(c.Arguments["lower_u"])
+	if !ok {
+		return "", fmt.Errorf("-lower-u is required")
+	}
+
+	serverRackUpperU, ok := getIntParamOk(c.Arguments["upper_u"])
+	if !ok {
+		return "", fmt.Errorf("-upper-u is required")
+	}
+
+	var server metalcloud.Server
+
+	serverPtr, err := client.ServerGet(serverID, false)
+	if err != nil {
+		return "", err
+	}
+	server = *serverPtr
+
+	confirm, err := confirmCommand(c, func() string {
+
+		confirmationMessage := ""
+
+		if !getBoolParam(c.Arguments["autoconfirm"]) {
+
+			oldRackInfo := getRackInfoSafe(server)
+
+			oldServerRackInfo := fmt.Sprintf("InvID:%s Rack:%s U:%s-%s", oldRackInfo.InventoryID, oldRackInfo.RackName, oldRackInfo.LowerU, oldRackInfo.UpperU)
+
+			serverInventoryIDStr := ""
+			serverInventoryID, ok := getStringParamOk(c.Arguments["inventory_id"])
+			if ok {
+				serverInventoryIDStr = serverInventoryID
+			}
+			newServerRackInfo := fmt.Sprintf("InvID:%s Rack:%s U:%d-%d", serverInventoryIDStr, serverRackName, serverRackLowerU, serverRackUpperU)
+
+			confirmationMessage = fmt.Sprintf("Server #%s (%s) of datacenter %s. Current server rack info %s new rack info: %s. Are you sure? Type \"yes\" to continue:",
+				blue(fmt.Sprintf("%d", server.ServerID)),
+				yellow(server.ServerSerialNumber),
+				server.DatacenterName,
+				red(oldServerRackInfo),
+				green(newServerRackInfo),
+			)
+		}
+
+		if strings.HasSuffix(os.Args[0], ".test") {
+			confirmationMessage = ""
+		}
+
+		return confirmationMessage
+	})
+
+	if err != nil {
+		return "", err
+	}
+
+	if confirm {
+		server.ServerRackName = &serverRackName
+
+		lowerUStr := fmt.Sprintf("%d", serverRackLowerU)
+		server.ServerRackPositionLowerUnit = &lowerUStr
+
+		upperUStr := fmt.Sprintf("%d", serverRackUpperU)
+		server.ServerRackPositionUpperUnit = &upperUStr
+
+		serverInventoryID, ok := getStringParamOk(c.Arguments["inventory_id"])
+		if ok {
+			server.ServerInventoryId = &serverInventoryID
+		}
+
+		_, err = client.ServerEdit(serverID, "complete", server)
+	}
+
+	return "", err
+}
+
 func serverReregisterCmd(c *Command, client metalcloud.MetalCloudClient) (string, error) {
 	serverID, ok := getIntParamOk(c.Arguments["server_id"])
 	if !ok {
@@ -406,7 +609,7 @@ func serversListCmd(c *Command, client metalcloud.MetalCloudClient) (string, err
 		},
 	}
 
-	if getBoolParam(c.Arguments["show_rack_data"]) {
+	if getBoolParam(c.Arguments["show_rack_info"]) {
 
 		extraFields := []tableformatter.SchemaField{
 			{
@@ -600,7 +803,8 @@ func serversListCmd(c *Command, client metalcloud.MetalCloudClient) (string, err
 			s.DatacenterName,
 		}
 
-		if getBoolParam(c.Arguments["show_rack_data"]) {
+		if getBoolParam(c.Arguments["show_rack_info"]) {
+
 			row = append(row, []interface{}{
 				strings.Join(s.ServerTags, ","),
 				s.ServerInventoryId,
@@ -807,14 +1011,33 @@ func serverGetCmd(c *Command, client metalcloud.MetalCloudClient) (string, error
 		server.ServerDiskSizeMbytes/1000,
 		server.ServerDiskType)
 
+	serverInventoryID := ""
+	if server.ServerInventoryId != nil {
+		serverInventoryID = *server.ServerInventoryId
+	}
+
+	serverRackName := ""
+	if server.ServerRackName != nil {
+		serverRackName = *server.ServerRackName
+	}
+
+	serverRackPositionLowerUnit := ""
+	if server.ServerRackPositionLowerUnit != nil {
+		serverRackPositionLowerUnit = *server.ServerRackPositionLowerUnit
+	}
+	serverRackPositionUpperUnit := ""
+	if server.ServerRackPositionUpperUnit != nil {
+		serverRackPositionUpperUnit = *server.ServerRackPositionUpperUnit
+	}
+
 	data = append(data, []interface{}{
 		server.ServerID,
 		server.ServerSerialNumber,
 		server.DatacenterName,
-		server.ServerInventoryId,
-		server.ServerRackName,
-		server.ServerRackPositionLowerUnit,
-		server.ServerRackPositionUpperUnit,
+		serverInventoryID,
+		serverRackName,
+		serverRackPositionLowerUnit,
+		serverRackPositionUpperUnit,
 		serverTypeName,
 		server.ServerStatus,
 		server.ServerVendor,
@@ -1138,4 +1361,27 @@ func serverInterfacesListCmd(c *Command, client metalcloud.MetalCloudClient) (st
 	}
 
 	return sb.String(), nil
+}
+
+type rackInfo struct {
+	InventoryID string
+	RackName    string
+	LowerU      string
+	UpperU      string
+}
+
+func getRackInfoSafe(server metalcloud.Server) rackInfo {
+	return rackInfo{
+		InventoryID: getStringFromStringOrEmpty(server.ServerInventoryId),
+		RackName:    getStringFromStringOrEmpty(server.ServerInventoryId),
+		LowerU:      getStringFromStringOrEmpty(server.ServerRackPositionLowerUnit),
+		UpperU:      getStringFromStringOrEmpty(server.ServerRackPositionUpperUnit),
+	}
+}
+
+func getStringFromStringOrEmpty(str *string) string {
+	if str == nil {
+		return ""
+	}
+	return *str
 }
