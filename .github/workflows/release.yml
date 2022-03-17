@@ -64,13 +64,13 @@ jobs:
         with:
           type: 'zip'
           path: '*.exe'
-          filename: 'metalcloud-cli-${{github.ref_name}}.zip'
+          filename: 'metalcloud-cli_${{github.ref_name}}_Windows_x64.zip'
           exclusions: '*.git* /*node_modules/* .editorconfig' 
       - 
         name: Upload Release
         uses: ncipollo/release-action@v1
         with:
-            artifacts: 'metalcloud-cli-${{github.ref_name}}.zip'
+            artifacts: 'metalcloud-cli_${{github.ref_name}}_Windows_x64.zip'
             token: ${{ secrets.GITHUB_TOKEN }}
             allowUpdates: true
 
