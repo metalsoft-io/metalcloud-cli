@@ -4,7 +4,7 @@ on:
     tags:
       - 'v*'
 jobs:
-  goreleaser:
+  build-linux-and-darwin:
     runs-on: ubuntu-latest
     environment: prod
     steps:
@@ -29,7 +29,7 @@ jobs:
           GPG_FINGERPRINT: ${{ steps.import_gpg.outputs.fingerprint }}
           # GitHub sets this automatically
           GITHUB_TOKEN: ${{ secrets.GH_TOKEN_ALEX_HOMEBREW_METALSOFT }}
-  sign:
+  build-windows:
     runs-on: windows-latest
     environment: prod
     steps:
@@ -58,3 +58,19 @@ jobs:
         timestampUrl: 'http://timestamp.sectigo.com'
         folder: '.'
         recursive: false
+      - 
+        name: Create Archive
+        uses: TheDoctor0/zip-release@0.6.1
+        with:
+          with:
+            type: 'zip' 
+            path: *.exe
+            filename: 'metalcloud-cli-${{github.ref_name}}.zip'
+            exclusions: '*.git* /*node_modules/* .editorconfig' 
+      - 
+        name: Upload Release
+        uses: ncipollo/release-action@v1
+        with:
+            artifacts: 'metalcloud-cli-${{github.ref_name}}.zip'
+            token: ${{ secrets.GITHUB_TOKEN }}
+
