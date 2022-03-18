@@ -2350,6 +2350,36 @@ func (mr *MockMetalCloudClientMockRecorder) ServerStatusUpdate(serverID, status 
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ServerStatusUpdate", reflect.TypeOf((*MockMetalCloudClient)(nil).ServerStatusUpdate), serverID, status)
 }
 
+// ServerEditRack mocks base method
+func (m *MockMetalCloudClient) ServerEditRack(serverID int, serverEditRack metalcloud.ServerEditRack) (*metalcloud.Server, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "ServerEditRack", serverID, serverEditRack)
+	ret0, _ := ret[0].(*metalcloud.Server)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// ServerEditRack indicates an expected call of ServerEditRack
+func (mr *MockMetalCloudClientMockRecorder) ServerEditRack(serverID, serverEditRack interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ServerEditRack", reflect.TypeOf((*MockMetalCloudClient)(nil).ServerEditRack), serverID, serverEditRack)
+}
+
+// ServerEditInventory mocks base method
+func (m *MockMetalCloudClient) ServerEditInventory(serverID int, serverEditInventory metalcloud.ServerEditInventory) (*metalcloud.Server, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "ServerEditInventory", serverID, serverEditInventory)
+	ret0, _ := ret[0].(*metalcloud.Server)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// ServerEditInventory indicates an expected call of ServerEditInventory
+func (mr *MockMetalCloudClientMockRecorder) ServerEditInventory(serverID, serverEditInventory interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ServerEditInventory", reflect.TypeOf((*MockMetalCloudClient)(nil).ServerEditInventory), serverID, serverEditInventory)
+}
+
 // ServerFirmwarePolicyGet mocks base method
 func (m *MockMetalCloudClient) ServerFirmwarePolicyGet(serverFirmwarePolicyID int) (*metalcloud.ServerFirmwareUpgradePolicy, error) {
 	m.ctrl.T.Helper()

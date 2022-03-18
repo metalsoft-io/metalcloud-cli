@@ -194,15 +194,30 @@ metalcloud-cli server list --show-credentials # to retrieve a list of credential
 		FlagSet:      flag.NewFlagSet("", flag.ExitOnError),
 		InitFunc: func(c *Command) {
 			c.Arguments = map[string]interface{}{
-				"server_id":    c.FlagSet.Int("id", _nilDefaultInt, red("(Required)")+" Server's id."),
-				"inventory_id": c.FlagSet.String("inventory-id", _nilDefaultStr, " New inventory id"),
-				"rack_name":    c.FlagSet.String("rack-name", _nilDefaultStr, red("(Required)")+" New rack name."),
-				"lower_u":      c.FlagSet.Int("lower-u", _nilDefaultInt, red("(Required)")+" Lower U of the equipment"),
-				"upper_u":      c.FlagSet.Int("upper-u", _nilDefaultInt, red("(Required)")+" Upper U of the equipment"),
-				"autoconfirm":  c.FlagSet.Bool("autoconfirm", false, green("(Flag)")+" If set it will assume action is confirmed"),
+				"server_id":   c.FlagSet.Int("id", _nilDefaultInt, red("(Required)")+" Server's id."),
+				"rack_name":   c.FlagSet.String("rack-name", _nilDefaultStr, red("(Required)")+" New rack name."),
+				"lower_u":     c.FlagSet.Int("lower-u", _nilDefaultInt, red("(Required)")+" Lower U of the equipment"),
+				"upper_u":     c.FlagSet.Int("upper-u", _nilDefaultInt, red("(Required)")+" Upper U of the equipment"),
+				"autoconfirm": c.FlagSet.Bool("autoconfirm", false, green("(Flag)")+" If set it will assume action is confirmed"),
 			}
 		},
 		ExecuteFunc: serverRackInfoSetCmd,
+		Endpoint:    DeveloperEndpoint,
+	},
+	{
+		Description:  "Change server inventory information",
+		Subject:      "server",
+		AltSubject:   "srv",
+		Predicate:    "inventory-info-set",
+		AltPredicate: "inventory-info",
+		FlagSet:      flag.NewFlagSet("", flag.ExitOnError),
+		InitFunc: func(c *Command) {
+			c.Arguments = map[string]interface{}{
+				"server_id":    c.FlagSet.Int("id", _nilDefaultInt, red("(Required)")+" Server's id."),
+				"inventory_id": c.FlagSet.String("inventory-id", _nilDefaultStr, red("(Required)")+" New inventory id"),
+			}
+		},
+		ExecuteFunc: serverInventoryInfoSetCmd,
 		Endpoint:    DeveloperEndpoint,
 	},
 	{
@@ -344,7 +359,6 @@ func serverServerTypeSetCmd(c *Command, client metalcloud.MetalCloudClient) (str
 	serverTypeID, _, isID := idOrLabel(serverTypeStr)
 	var newServerType metalcloud.ServerType
 	if !isID {
-		fmt.Printf("%s", serverTypeStr)
 		st, err := client.ServerTypeGetByLabel(serverTypeStr)
 		if err != nil {
 			return "", err
@@ -376,9 +390,17 @@ func serverServerTypeSetCmd(c *Command, client metalcloud.MetalCloudClient) (str
 
 		if !getBoolParam(c.Arguments["autoconfirm"]) {
 
-			oldServerType, err := client.ServerTypeGet(server.ServerTypeID)
-			if err != nil {
-				return err.Error()
+			oldServerType := metalcloud.ServerType{
+				ServerTypeName: "none",
+				ServerTypeID:   0,
+			}
+
+			if server.ServerTypeID != 0 {
+				st, err := client.ServerTypeGet(server.ServerTypeID)
+				if err != nil {
+					return err.Error()
+				}
+				oldServerType = *st
 			}
 
 			confirmationMessage = fmt.Sprintf("Server #%s (%s) of datacenter %s. Current server type: %s (#%s) new server type: %s (#%s) Are you sure? Type \"yes\" to continue:",
@@ -447,14 +469,9 @@ func serverRackInfoSetCmd(c *Command, client metalcloud.MetalCloudClient) (strin
 
 			oldRackInfo := getRackInfoSafe(server)
 
-			oldServerRackInfo := fmt.Sprintf("InvID:%s Rack:%s U:%s-%s", oldRackInfo.InventoryID, oldRackInfo.RackName, oldRackInfo.LowerU, oldRackInfo.UpperU)
+			oldServerRackInfo := fmt.Sprintf("Rack:%s U:%s-%s", oldRackInfo.RackName, oldRackInfo.LowerU, oldRackInfo.UpperU)
 
-			serverInventoryIDStr := ""
-			serverInventoryID, ok := getStringParamOk(c.Arguments["inventory_id"])
-			if ok {
-				serverInventoryIDStr = serverInventoryID
-			}
-			newServerRackInfo := fmt.Sprintf("InvID:%s Rack:%s U:%d-%d", serverInventoryIDStr, serverRackName, serverRackLowerU, serverRackUpperU)
+			newServerRackInfo := fmt.Sprintf("Rack:%s U:%d-%d", serverRackName, serverRackLowerU, serverRackUpperU)
 
 			confirmationMessage = fmt.Sprintf("Server #%s (%s) of datacenter %s. Current server rack info %s new rack info: %s. Are you sure? Type \"yes\" to continue:",
 				blue(fmt.Sprintf("%d", server.ServerID)),
@@ -477,20 +494,76 @@ func serverRackInfoSetCmd(c *Command, client metalcloud.MetalCloudClient) (strin
 	}
 
 	if confirm {
-		server.ServerRackName = &serverRackName
 
 		lowerUStr := fmt.Sprintf("%d", serverRackLowerU)
-		server.ServerRackPositionLowerUnit = &lowerUStr
-
 		upperUStr := fmt.Sprintf("%d", serverRackUpperU)
-		server.ServerRackPositionUpperUnit = &upperUStr
 
-		serverInventoryID, ok := getStringParamOk(c.Arguments["inventory_id"])
-		if ok {
-			server.ServerInventoryId = &serverInventoryID
+		serverRackEdit := metalcloud.ServerEditRack{
+			ServerRackName:              &serverRackName,
+			ServerRackPositionLowerUnit: &lowerUStr,
+			ServerRackPositionUpperUnit: &upperUStr,
 		}
 
-		_, err = client.ServerEdit(serverID, "complete", server)
+		_, err = client.ServerEditRack(serverID, serverRackEdit)
+	}
+
+	return "", err
+}
+
+func serverInventoryInfoSetCmd(c *Command, client metalcloud.MetalCloudClient) (string, error) {
+	serverID, ok := getIntParamOk(c.Arguments["server_id"])
+	if !ok {
+		return "", fmt.Errorf("-id is required")
+	}
+
+	inventoryID, ok := getStringParamOk(c.Arguments["inventory_id"])
+	if !ok {
+		return "", fmt.Errorf("inventory-id is required")
+	}
+
+	var server metalcloud.Server
+
+	serverPtr, err := client.ServerGet(serverID, false)
+	if err != nil {
+		return "", err
+	}
+	server = *serverPtr
+
+	confirm, err := confirmCommand(c, func() string {
+
+		confirmationMessage := ""
+
+		if !getBoolParam(c.Arguments["autoconfirm"]) {
+
+			oldInventoryID := getStringFromStringOrEmpty(server.ServerInventoryId)
+
+			confirmationMessage = fmt.Sprintf("Server #%s (%s) of datacenter %s. Current inventory id: %s new inventory id: %s. Are you sure? Type \"yes\" to continue:",
+				blue(fmt.Sprintf("%d", server.ServerID)),
+				yellow(server.ServerSerialNumber),
+				server.DatacenterName,
+				red(oldInventoryID),
+				green(inventoryID),
+			)
+		}
+
+		if strings.HasSuffix(os.Args[0], ".test") {
+			confirmationMessage = ""
+		}
+
+		return confirmationMessage
+	})
+
+	if err != nil {
+		return "", err
+	}
+
+	if confirm {
+
+		serverEditInventory := metalcloud.ServerEditInventory{
+			ServerInventoryId: &inventoryID,
+		}
+
+		_, err = client.ServerEditInventory(serverID, serverEditInventory)
 	}
 
 	return "", err
@@ -1373,7 +1446,7 @@ type rackInfo struct {
 func getRackInfoSafe(server metalcloud.Server) rackInfo {
 	return rackInfo{
 		InventoryID: getStringFromStringOrEmpty(server.ServerInventoryId),
-		RackName:    getStringFromStringOrEmpty(server.ServerInventoryId),
+		RackName:    getStringFromStringOrEmpty(server.ServerRackName),
 		LowerU:      getStringFromStringOrEmpty(server.ServerRackPositionLowerUnit),
 		UpperU:      getStringFromStringOrEmpty(server.ServerRackPositionUpperUnit),
 	}
