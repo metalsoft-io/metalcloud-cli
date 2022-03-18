@@ -364,9 +364,7 @@ func serverServerTypeSetCmd(c *Command, client metalcloud.MetalCloudClient) (str
 		if err != nil {
 			return "", err
 		}
-		fmt.Printf("here: %v", newServerType)
 		newServerType = *st
-
 	} else {
 		st, err := client.ServerTypeGet(serverTypeID)
 		if err != nil {
