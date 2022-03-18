@@ -215,6 +215,7 @@ metalcloud-cli server list --show-credentials # to retrieve a list of credential
 			c.Arguments = map[string]interface{}{
 				"server_id":    c.FlagSet.Int("id", _nilDefaultInt, red("(Required)")+" Server's id."),
 				"inventory_id": c.FlagSet.String("inventory-id", _nilDefaultStr, red("(Required)")+" New inventory id"),
+				"autoconfirm":  c.FlagSet.Bool("autoconfirm", false, green("(Flag)")+" If set it will assume action is confirmed"),
 			}
 		},
 		ExecuteFunc: serverInventoryInfoSetCmd,
