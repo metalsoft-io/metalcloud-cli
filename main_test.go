@@ -8,9 +8,9 @@ import (
 	"os"
 	"testing"
 
+	gomock "github.com/golang/mock/gomock"
 	metalcloud "github.com/metalsoft-io/metal-cloud-sdk-go/v2"
 	mock_metalcloud "github.com/metalsoft-io/metalcloud-cli/helpers"
-	gomock "github.com/golang/mock/gomock"
 	. "github.com/onsi/gomega"
 )
 
@@ -45,7 +45,6 @@ func TestInitClient(t *testing.T) {
 		"METALCLOUD_USER_EMAIL",
 		"METALCLOUD_API_KEY",
 		"METALCLOUD_ENDPOINT",
-		"METALCLOUD_DATACENTER",
 	}
 	//remember the current env values, clear them during the test
 	currentEnvVals := map[string]string{}
@@ -78,12 +77,6 @@ func TestInitClient(t *testing.T) {
 		t.Errorf("Should have been able to test for missing env")
 	}
 
-	os.Setenv("METALCLOUD_DATACENTER", "dc")
-
-	if _, err := initClient("METALCLOUD_ENDPOINT"); err == nil {
-		t.Errorf("Should have been able to test for missing env")
-	}
-
 	client, err := initClient("METALCLOUD_ENDPOINT")
 	if client == nil || err == nil {
 		t.Errorf("cannot initialize metalcloud client %v", err)
@@ -104,7 +97,6 @@ func TestInitClients(t *testing.T) {
 		"METALCLOUD_API_KEY",
 		"METALCLOUD_ENDPOINT",
 		"METALCLOUD_ADMIN",
-		"METALCLOUD_DATACENTER",
 	}
 
 	currentEnvVals := map[string]string{}
@@ -116,7 +108,6 @@ func TestInitClients(t *testing.T) {
 	}
 
 	os.Setenv("METALCLOUD_USER_EMAIL", "user@user.com")
-	os.Setenv("METALCLOUD_DATACENTER", "test")
 	os.Setenv("METALCLOUD_API_KEY", fmt.Sprintf("%d:%s", rand.Intn(100), RandStringBytes(63)))
 	os.Setenv("METALCLOUD_ENDPOINT", "http://test1/1")
 
@@ -214,13 +205,6 @@ func TestExecuteCommand(t *testing.T) {
 	Expect(err).To(BeNil())
 	Expect(execFuncExecutedOnDeveloperEndpoint).To(BeTrue())
 
-}
-
-func TestGetDatacenter(t *testing.T) {
-	RegisterTestingT(t)
-	dc := RandStringBytes(10)
-	os.Setenv("METALCLOUD_DATACENTER", dc)
-	Expect(GetDatacenter()).To(Equal(dc))
 }
 
 func TestGetCommandHelp(t *testing.T) {

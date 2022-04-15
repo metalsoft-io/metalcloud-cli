@@ -49,7 +49,6 @@ Configure credentials as environment variables:
 export METALCLOUD_API_KEY="<your key>"
 export METALCLOUD_ENDPOINT="https://api.bigstep.com"
 export METALCLOUD_USER_EMAIL="<your email>"
-export METALCLOUD_DATACENTER="uk-reading"
 ```
 
 ### Getting a list of supported commands
@@ -59,9 +58,9 @@ Use `metalcloud-cli help` for a list of supported commands.
 
 ### Getting started
 
-To create an infrastructure, in the default datacenter, configured via the `METALCLOUD_DATACENTER` environment variable):
+To create an infrastructure:
 ```bash
-metalcloud-cli infrastructure create --label test --return-id
+metalcloud-cli infrastructure create --label test --datacenter test --return-id
 ```
 
 ```bash

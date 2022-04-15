@@ -44,11 +44,6 @@ func GetUserEmail() string {
 	return os.Getenv("METALCLOUD_USER_EMAIL")
 }
 
-//GetDatacenter returns the default datacenter
-func GetDatacenter() string {
-	return os.Getenv("METALCLOUD_DATACENTER")
-}
-
 func main() {
 
 	SetConsoleIOChannel(os.Stdin, os.Stdout)
@@ -319,10 +314,6 @@ func initClient(endpointSuffix string) (metalcloud.MetalCloudClient, error) {
 
 	if v := os.Getenv("METALCLOUD_ENDPOINT"); v == "" {
 		return nil, fmt.Errorf("METALCLOUD_ENDPOINT must be set")
-	}
-
-	if v := os.Getenv("METALCLOUD_DATACENTER"); v == "" {
-		return nil, fmt.Errorf("METALCLOUD_DATACENTER must be set")
 	}
 
 	apiKey := os.Getenv("METALCLOUD_API_KEY")
