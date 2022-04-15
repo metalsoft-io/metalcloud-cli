@@ -111,6 +111,8 @@ func userListCmd(c *Command, client metalcloud.MetalCloudClient) (string, error)
 
 		if i.UserBlocked {
 			status = red("Blocked")
+		} else if i.UserIsSuspended {
+			status = red("Suspended")
 		} else {
 			status = green("Active")
 		}
