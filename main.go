@@ -130,12 +130,16 @@ func executeCommand(args []string, commands []Command, clients map[string]metalc
 	//disable default usage
 	cmd.FlagSet.Usage = func() {}
 
+	setColoringEnabled(true)
+	
 	for _, a := range args {
 		if a == "-h" || a == "-help" || a == "--help" {
 			return fmt.Errorf(getCommandHelp(*cmd, true))
 		}
-
-		setColoringEnabled(a != "--no-color" && a != "-no-color")
+		
+		if a == "--no-color" || a == "-no-color" {
+			setColoringEnabled(false)
+		}
 	}
 
 	err := cmd.FlagSet.Parse(args[count+1:])
