@@ -12,7 +12,7 @@ import (
 	"gopkg.in/yaml.v3"
 )
 
-//infrastructureCmds commands affecting infrastructures
+// datacenterCmds commands affecting datacenters
 var datacenterCmds = []Command{
 
 	{
