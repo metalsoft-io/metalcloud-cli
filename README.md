@@ -141,7 +141,7 @@ The objects and their fields can be found in the [SDK documentation](https://god
 ### Condensed format
 
 The CLI also provides a "condensed format" for most of it's commands:
-* instance=array = ia
+* instance-array = ia
 * drive-array = da
 * infrastructure = infra
 * list = ls
