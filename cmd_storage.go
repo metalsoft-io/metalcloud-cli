@@ -106,6 +106,9 @@ func storageListCmd(c *Command, client metalcloud.MetalCloudClient) (string, err
 
 		statusCounts[s.StoragePoolStatus] = statusCounts[s.StoragePoolStatus] + 1
 
+		if s.StoragePoolInMaintenance == true {
+			statusCounts["maintenance"]++
+		}
 		credentialsUser := ""
 		credentialsPass := ""
 
