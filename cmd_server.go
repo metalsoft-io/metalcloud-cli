@@ -1415,11 +1415,13 @@ func serverInterfacesListCmd(c *Command, client metalcloud.MetalCloudClient) (st
 	format := getStringParam(c.Arguments["format"])
 
 	if getBoolParam(c.Arguments["raw"]) {
-		ret, err := tableformatter.RenderRawObject(*list, format, "Server interfaces")
-		if err != nil {
-			return "", err
+		for _, s := range *list {
+			ret, err := tableformatter.RenderRawObject(s, format, "Server interfaces")
+			if err != nil {
+				return "", err
+			}
+			sb.WriteString(ret)
 		}
-		sb.WriteString(ret)
 	} else {
 		table := tableformatter.Table{
 			Data:   data,
