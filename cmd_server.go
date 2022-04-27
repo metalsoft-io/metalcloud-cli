@@ -754,13 +754,6 @@ func serversListCmd(c *Command, client metalcloud.MetalCloudClient) (string, err
 			FieldType: tableformatter.TypeString,
 			FieldSize: 5,
 		})
-
-		// schema = append(schema, tableformatter.SchemaField{
-		// 	FieldName: "IPMI_SNMP_COMMUNITY",
-		// 	FieldType: tableformatter.TypeString,
-		// 	FieldSize: 5,
-		// })
-
 	}
 
 	data := [][]interface{}{}
