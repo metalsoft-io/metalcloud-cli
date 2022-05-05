@@ -111,7 +111,17 @@ func executeCommand(args []string, commands []Command, clients map[string]metalc
 	if count == 1 {
 		cmds := filterCommandsBySubject(subject, commands)
 		if len(cmds) > 0 {
-			return fmt.Errorf("Invalid command! %s", getPossiblePredicatesForSubjectHelp(subject, cmds))
+			foundNilPredicate := false
+
+			for _, c := range commands {
+				if c.Predicate == _nilDefaultStr {
+					foundNilPredicate = true
+				}
+			}
+
+			if foundNilPredicate == false {
+				return fmt.Errorf("Invalid command! %s", getPossiblePredicatesForSubjectHelp(subject, cmds))
+			}
 		}
 	}
 
