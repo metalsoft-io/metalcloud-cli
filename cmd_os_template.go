@@ -8,6 +8,13 @@ import (
 
 	metalcloud "github.com/metalsoft-io/metal-cloud-sdk-go/v2"
 	"github.com/metalsoft-io/tableformatter"
+
+	"github.com/go-git/go-billy/v5/memfs"
+	git "github.com/go-git/go-git/v5"
+	"github.com/go-git/go-git/v5/plumbing/object"
+	"github.com/go-git/go-git/v5/plumbing/transport/http"
+
+	memory "github.com/go-git/go-git/v5/storage/memory"
 )
 
 var osTemplatesCmds = []Command{
@@ -179,6 +186,35 @@ var osTemplatesCmds = []Command{
 			}
 		},
 		ExecuteFunc: templateListAssociatedAssetsCmd,
+		Endpoint:    ExtendedEndpoint,
+	},
+	{
+		Description:  "Build an OS template.",
+		Subject:      "os-template",
+		AltSubject:   "template",
+		Predicate:    "build",
+		AltPredicate: "build",
+		FlagSet:      flag.NewFlagSet("build an OS template from a source ISO image", flag.ExitOnError),
+		InitFunc: func(c *Command) {
+			c.Arguments = map[string]interface{}{
+				"name":                 c.FlagSet.String("name", _nilDefaultStr, red("(Required)")+" Name of image."),
+				"source-template":      c.FlagSet.String("source-template", _nilDefaultStr, red("(Required)")+" The source template to use as a base. Use --list-supported for a list of accepted values."),
+				"kickstart-append":     c.FlagSet.String("kickstart-append", _nilDefaultStr, yellow("(Optional)")+" Content to append to the default kickstart."),
+				"kickstart":            c.FlagSet.String("kickstart", _nilDefaultStr, yellow("(Optional)")+" The OS's kickstart or equivalent file to be uploaded instead of the default."),
+				"bootloader":           c.FlagSet.String("bootloader", _nilDefaultStr, yellow("(Optional)")+" The OS's instalation bootloader to be uploaded instead of default."),
+				"bootloader-config":    c.FlagSet.String("bootloader-config", _nilDefaultStr, yellow("(Optional)")+" The OS's installation bootloader config file to be uploaded instead of the default."),
+				"dynamic-file":         c.FlagSet.String("dynamic-file", _nilDefaultStr, yellow("(Optional, can be repeated)")+" A file that will be replaced inside the template. Can contain variables. Limited to 2MB in size."),
+				"binary-file":          c.FlagSet.String("binary-file", _nilDefaultStr, yellow("(Optional, can be repeated)")+" A file that will be replaced inside the template. Cannot contain variables."),
+				"github-template-repo": c.FlagSet.String("github-template-repo", _nilDefaultStr, yellow("(Optional)")+" Override the default github url used to download template files for given OS."),
+				"list-supported":       c.FlagSet.Bool("list-supported", false, yellow("(Optional)")+" List supported OS source templates."),
+				"firewall-conf-func":   c.FlagSet.String("firewall-conf-func", _nilDefaultStr, yellow("(Optional)")+" Set the firewall configuration mecahanism: Ansible2, None."),
+				"legacy-boot":          c.FlagSet.Bool("legacy-boot", false, green("(Flag)")+" If set, enables legacy BIOS boot support instead of UEFI."),
+				"quiet":                c.FlagSet.Bool("quiet", false, green("(Flag)")+" If set, eliminates all output."),
+				"debug":                c.FlagSet.Bool("debug", false, green("(Flag)")+" If set, increases log level."),
+				"return-id":            c.FlagSet.Bool("return-id", false, green("(Flag)")+" If set, returns the ID of the generated template. Useful for automation."),
+			}
+		},
+		ExecuteFunc: templateBuildCmd,
 		Endpoint:    ExtendedEndpoint,
 	},
 }
@@ -726,6 +762,112 @@ func templateMakePrivateCmd(c *Command, client metalcloud.MetalCloudClient) (str
 	if err = client.OSTemplateMakePrivate(template.VolumeTemplateID, user.UserID); err != nil {
 		return "", err
 	}
+
+	return "", nil
+}
+
+func templateBuildCmd(c *Command, client metalcloud.MetalCloudClient) (string, error) {
+
+	if getBoolParam(c.Arguments["list-supported"]) {
+		// All of these should be taken from variables, i guess
+		defaultRepositoryName := "https://github.com/alexcorman/os-templates.git"
+		// gitlabPrivateRepositoryName := "https://gitlab.com/alexcorman/os-templates-gitlab.git"
+		gitlabPrivateToken := "glpat-uNVxRMW9ztxUEmH9Ad74"
+
+		// Filesystem abstraction based on memory
+		fs := memfs.New()
+
+		// Git objects storer based on memory
+		storer := memory.NewStorage()
+
+		// Clones the repository into the worktree (fs) and storer all the .git
+		// content into the storer
+		repo, err := git.Clone(storer, fs, &git.CloneOptions{
+			URL: defaultRepositoryName,
+			Auth: &http.BasicAuth{
+				Password: gitlabPrivateToken,
+			},
+			Depth: 1,	// We are only interested in the last commit
+		})
+
+		if err != nil {
+			if err.Error() == "authentication required" {
+				return "", fmt.Errorf("failed to authenticate to the given repository. Please check if the repository exists and/or the given access token is valid.")
+			}
+
+			return "", err
+		}
+
+		// Retrieve the HEAD reference
+		ref, err := repo.Head()
+
+		if err != nil {
+			return "", err
+		}
+
+		commit, err := repo.CommitObject(ref.Hash())
+
+		if err != nil {
+			return "", err
+		}
+
+		tree, err := commit.Tree()
+
+		if err != nil {
+			return "", err
+		}
+
+		// Struct containing the values that will be printed out for a repo template
+		type RepoTemplate struct {
+			Family string
+			Version string
+			Architecture string
+			DeployProcess string
+			BootType string
+			Files []object.File
+			Warnings map[string][]string
+		}
+
+		repoMap := make(map[string]RepoTemplate)
+
+		// This map stores all files for a template and will be used to check if their information is correct
+		repoFilesPerTemplate := make(map[string][]object.File)
+
+		files := tree.Files()
+		files.ForEach(func (file *object.File) error {
+			if file.Mode.IsRegular() {
+				if strings.Count(file.Name, "/") == 2 {
+					parts := strings.Split(file.Name, "/")
+					templatePreffix := strings.Join(parts[:2], "/")
+
+					repoFilesPerTemplate[templatePreffix] = append(repoFilesPerTemplate[templatePreffix], *file)
+
+					if parts[2] == "template.yaml" {
+						if _, ok := repoMap[templatePreffix]; !ok {
+							repoMap[templatePreffix] = RepoTemplate{
+								Family: parts[0],
+								Version: parts[1],
+							}
+						}
+					}
+				}
+			}
+
+			return nil
+		})
+
+		for templatePreffix, repoTemplate := range repoMap {
+			repoTemplate.Files = repoFilesPerTemplate[templatePreffix]
+			fmt.Printf("%v, %v\n", templatePreffix, repoTemplate)
+
+			//TODO: read template.yaml to find architecture, deploy process, boot type
+			//TODO: add to warnings what irregularaties i find
+
+			// warnings := make(map[string][] string) 
+
+			//TODO: Print repoMap as a table
+		}
+	}	
 
 	return "", nil
 }
