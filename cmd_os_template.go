@@ -8,6 +8,7 @@ import (
 
 	metalcloud "github.com/metalsoft-io/metal-cloud-sdk-go/v2"
 	"github.com/metalsoft-io/tableformatter"
+	"gopkg.in/yaml.v3"
 
 	"github.com/go-git/go-billy/v5/memfs"
 	git "github.com/go-git/go-git/v5"
@@ -16,6 +17,15 @@ import (
 
 	memory "github.com/go-git/go-git/v5/storage/memory"
 )
+
+// Constants used with the build command
+const osArchitecture64 = "x86_64"
+
+const bootMethodLocalDrives = "local_drives"
+const bootMethodPxeIscsi = "pxe_iscsi"
+
+const bootTypeUEFI = "uefi"
+const bootTypeClassic = "classic"
 
 var osTemplatesCmds = []Command{
 
@@ -767,108 +777,172 @@ func templateMakePrivateCmd(c *Command, client metalcloud.MetalCloudClient) (str
 }
 
 func templateBuildCmd(c *Command, client metalcloud.MetalCloudClient) (string, error) {
+	// All of these should be taken from variables, i guess
+	// defaultRepositoryName := "https://github.com/alexcorman/os-templates.git"
+	gitlabPrivateRepositoryName := "https://gitlab.com/alexcorman/os-templates-gitlab.git"
+	gitlabPrivateToken := "not-mytoken"
 
-	if getBoolParam(c.Arguments["list-supported"]) {
-		// All of these should be taken from variables, i guess
-		defaultRepositoryName := "https://github.com/alexcorman/os-templates.git"
-		// gitlabPrivateRepositoryName := "https://gitlab.com/alexcorman/os-templates-gitlab.git"
-		gitlabPrivateToken := "glpat-uNVxRMW9ztxUEmH9Ad74"
+	// Filesystem abstraction based on memory
+	fs := memfs.New()
 
-		// Filesystem abstraction based on memory
-		fs := memfs.New()
+	// Git objects storer based on memory
+	storer := memory.NewStorage()
 
-		// Git objects storer based on memory
-		storer := memory.NewStorage()
+	// Clones the repository into the worktree (fs) and storer all the .git
+	// content into the storer
+	repo, err := git.Clone(storer, fs, &git.CloneOptions{
+		URL: gitlabPrivateRepositoryName,
+		Auth: &http.BasicAuth{
+			Password: gitlabPrivateToken,
+		},
+		Depth: 1,	// We are only interested in the last commit
+	})
 
-		// Clones the repository into the worktree (fs) and storer all the .git
-		// content into the storer
-		repo, err := git.Clone(storer, fs, &git.CloneOptions{
-			URL: defaultRepositoryName,
-			Auth: &http.BasicAuth{
-				Password: gitlabPrivateToken,
-			},
-			Depth: 1,	// We are only interested in the last commit
-		})
-
-		if err != nil {
-			if err.Error() == "authentication required" {
-				return "", fmt.Errorf("failed to authenticate to the given repository. Please check if the repository exists and/or the given access token is valid.")
-			}
-
-			return "", err
+	if err != nil {
+		if err.Error() == "authentication required" {
+			return "", fmt.Errorf("failed to authenticate to the given repository. Please check if the repository exists and/or the given access token is valid.")
 		}
 
-		// Retrieve the HEAD reference
-		ref, err := repo.Head()
+		return "", err
+	}
 
-		if err != nil {
-			return "", err
-		}
+	// Retrieve the HEAD reference
+	ref, err := repo.Head()
 
-		commit, err := repo.CommitObject(ref.Hash())
+	if err != nil {
+		return "", err
+	}
 
-		if err != nil {
-			return "", err
-		}
+	commit, err := repo.CommitObject(ref.Hash())
 
-		tree, err := commit.Tree()
+	if err != nil {
+		return "", err
+	}
 
-		if err != nil {
-			return "", err
-		}
+	tree, err := commit.Tree()
 
-		// Struct containing the values that will be printed out for a repo template
-		type RepoTemplate struct {
-			Family string
-			Version string
-			Architecture string
-			DeployProcess string
-			BootType string
-			Files []object.File
-			Warnings map[string][]string
-		}
+	if err != nil {
+		return "", err
+	}
 
-		repoMap := make(map[string]RepoTemplate)
+	// Struct containing the values that will be printed out for a repo template
+	type RepoTemplate struct {
+		Family string
+		Version string
+		Architecture string
+		DeployProcess string
+		BootType string
+		TemplateFile object.File
+		OtherFiles []object.File
+		Warnings []string
+	}
 
-		// This map stores all files for a template and will be used to check if their information is correct
-		repoFilesPerTemplate := make(map[string][]object.File)
+	repoMap := make(map[string]RepoTemplate)
 
-		files := tree.Files()
-		files.ForEach(func (file *object.File) error {
-			if file.Mode.IsRegular() {
-				if strings.Count(file.Name, "/") == 2 {
-					parts := strings.Split(file.Name, "/")
-					templatePreffix := strings.Join(parts[:2], "/")
+	// This map stores all files for a template and will be used to check if their information is correct
+	repoFilesPerTemplate := make(map[string][]object.File)
 
-					repoFilesPerTemplate[templatePreffix] = append(repoFilesPerTemplate[templatePreffix], *file)
+	files := tree.Files()
+	files.ForEach(func (file *object.File) error {
+		if file.Mode.IsRegular() {
+			if strings.Count(file.Name, "/") == 2 {
+				parts := strings.Split(file.Name, "/")
+				templatePreffix := strings.Join(parts[:2], "/")
 
-					if parts[2] == "template.yaml" {
-						if _, ok := repoMap[templatePreffix]; !ok {
-							repoMap[templatePreffix] = RepoTemplate{
-								Family: parts[0],
-								Version: parts[1],
-							}
+				repoFilesPerTemplate[templatePreffix] = append(repoFilesPerTemplate[templatePreffix], *file)
+
+				if parts[2] == "template.yaml" {
+					if _, ok := repoMap[templatePreffix]; !ok {
+						repoMap[templatePreffix] = RepoTemplate{
+							Family: parts[0],
+							Version: parts[1],
+							TemplateFile: *file,
 						}
 					}
 				}
 			}
-
-			return nil
-		})
-
-		for templatePreffix, repoTemplate := range repoMap {
-			repoTemplate.Files = repoFilesPerTemplate[templatePreffix]
-			fmt.Printf("%v, %v\n", templatePreffix, repoTemplate)
-
-			//TODO: read template.yaml to find architecture, deploy process, boot type
-			//TODO: add to warnings what irregularaties i find
-
-			// warnings := make(map[string][] string) 
-
-			//TODO: Print repoMap as a table
 		}
-	}	
 
+		return nil
+	})
+
+	type TemplateAsset struct {
+		Isopath            string `yaml:"isopath"`
+		Mime               string `yaml:"mime"`
+		IsKickstartFile    bool   `yaml:"is-kickstart-file"`
+		IsBootloaderConfig bool   `yaml:"is-bootloader-config"`
+	}
+
+	type TemplateContents struct {
+		OsTemplate struct {
+			BootType                        string `yaml:"boot-type"`
+			BootMethodsSupported            string `yaml:"boot-methods-supported"`
+			OsArchitecture                  string `yaml:"os-architecture"`
+			OsReadyMethod                   string `yaml:"os-ready-method"`
+			ImageBuildRequired              bool   `yaml:"image-build-required"`
+			ProvisionViaOob                 bool   `yaml:"provision-via-oob"`
+			InitialUser                     string `yaml:"initial-user"`
+			InitialSSHPort                  int    `yaml:"initial-ssh-port"`
+			UseAutogeneratedInitialPassword bool   `yaml:"use-autogenerated-initial-password"`
+		} `yaml:"os-template"`
+		Assets map[string]TemplateAsset `yaml:"assets"`
+	}
+
+	for templatePreffix, repoTemplate := range repoMap {
+		repoTemplate.OtherFiles = repoFilesPerTemplate[templatePreffix]
+
+		templateStringContents, err := repoTemplate.TemplateFile.Contents()
+
+		if err != nil {
+			return "", err
+		}
+
+		var templateContents TemplateContents
+		err = yaml.Unmarshal([]byte(templateStringContents), &templateContents)
+
+		if err != nil {
+			return "", err
+		}
+
+		fmt.Printf("%+v\n", templateContents)
+
+		architecture := templateContents.OsTemplate.OsArchitecture
+		deployProcess := templateContents.OsTemplate.BootMethodsSupported
+		bootType := templateContents.OsTemplate.BootType
+
+		validArchitectures := []string{osArchitecture64}
+		validDeployProcesses := []string{bootMethodLocalDrives, bootMethodPxeIscsi}
+		validBootTypes := []string{bootTypeUEFI, bootTypeClassic}
+
+		warnings := []string{}
+
+		if !stringInSlice(architecture, validArchitectures) {
+			warnings = append(warnings, fmt.Sprintf("Found invalid architecture %s. Valid architectures are %+q.", architecture, validArchitectures))
+		}
+
+		if !stringInSlice(deployProcess, validDeployProcesses) {
+			warnings = append(warnings, fmt.Sprintf("Found invalid boot method %s. Valid boot methods are %+q.", deployProcess, validDeployProcesses))
+		}
+
+		if !stringInSlice(bootType, validBootTypes) {
+			warnings = append(warnings, fmt.Sprintf("Found invalid boot type %s. Valid boot types are %+q.", bootType, validBootTypes))
+		}
+
+		repoTemplate.Architecture = architecture
+		repoTemplate.DeployProcess = deployProcess
+		repoTemplate.BootType = bootType
+
+		//TODO: add to warnings what other irregularaties i find
+		repoTemplate.Warnings = warnings
+	}
+
+	//TODO: Print repoMap as a table
+	fmt.Printf("%+v", repoMap)
+
+	// if getBoolParam(c.Arguments["list-supported"])
+	// {
+
+	// }
 	return "", nil
 }
 
@@ -915,4 +989,13 @@ func getUserFromCommand(paramName string, c *Command, client metalcloud.MetalClo
 	} else {
 		return client.UserGetByEmail(email)
 	}
+}
+
+func stringInSlice(a string, list []string) bool {
+    for _, b := range list {
+        if b == a {
+            return true
+        }
+    }
+    return false
 }
