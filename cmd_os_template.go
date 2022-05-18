@@ -780,7 +780,7 @@ func templateBuildCmd(c *Command, client metalcloud.MetalCloudClient) (string, e
 	// All of these should be taken from variables, i guess
 	// defaultRepositoryName := "https://github.com/alexcorman/os-templates.git"
 	gitlabPrivateRepositoryName := "https://gitlab.com/alexcorman/os-templates-gitlab.git"
-	gitlabPrivateToken := "not-mytoken"
+	gitlabPrivateToken := "not-my-key"
 
 	// Filesystem abstraction based on memory
 	fs := memfs.New()
@@ -904,8 +904,6 @@ func templateBuildCmd(c *Command, client metalcloud.MetalCloudClient) (string, e
 			return "", err
 		}
 
-		fmt.Printf("%+v\n", templateContents)
-
 		architecture := templateContents.OsTemplate.OsArchitecture
 		deployProcess := templateContents.OsTemplate.BootMethodsSupported
 		bootType := templateContents.OsTemplate.BootType
@@ -934,15 +932,93 @@ func templateBuildCmd(c *Command, client metalcloud.MetalCloudClient) (string, e
 
 		//TODO: add to warnings what other irregularaties i find
 		repoTemplate.Warnings = warnings
+
+		repoMap[templatePreffix] = repoTemplate
 	}
 
-	//TODO: Print repoMap as a table
-	fmt.Printf("%+v", repoMap)
+	if getBoolParam(c.Arguments["list-supported"]) {
+		schema := []tableformatter.SchemaField{
+			{
+				FieldName: "FAMILY",
+				FieldType: tableformatter.TypeString,
+				FieldSize: 5,
+			},
+			{
+				FieldName: "VERSION",
+				FieldType: tableformatter.TypeString,
+				FieldSize: 5,
+			},
+			{
+				FieldName: "ARCHITECTURE",
+				FieldType: tableformatter.TypeString,
+				FieldSize: 5,
+			},
+			{
+				FieldName: "DEPLOY PROCESS",
+				FieldType: tableformatter.TypeString,
+				FieldSize: 5,
+			},
+			{
+				FieldName: "BOOT TYPE",
+				FieldType: tableformatter.TypeString,
+				FieldSize: 5,
+			},
+			{
+				FieldName: "SOURCE TEMPLATE PATH",
+				FieldType: tableformatter.TypeString,
+				FieldSize: 5,
+			},
+		}
+	
+		data := [][]interface{}{}
+		for templatePreffix, repoTemplate := range repoMap {
+			var architecture, deployProcess, bootType string
 
-	// if getBoolParam(c.Arguments["list-supported"])
-	// {
+			switch repoTemplate.Architecture {
+			case osArchitecture64:
+				architecture = "x64"
+			default:
+				architecture = red("unknown")
+			}
 
-	// }
+			switch repoTemplate.DeployProcess {
+			case bootMethodLocalDrives:
+				deployProcess = "virtual_media"
+			case bootMethodPxeIscsi:
+				deployProcess = "pxe"
+			default:
+				deployProcess = red("unknown")
+			}
+
+			switch repoTemplate.BootType {
+			case bootTypeUEFI:
+				bootType = "UEFI"
+			case bootTypeClassic:
+				bootType = "classic"
+			default:
+				bootType = red("unknown")
+			}
+	
+			data = append(data, []interface{}{
+				repoTemplate.Family,
+				repoTemplate.Version,
+				architecture,
+				deployProcess,
+				bootType,
+				templatePreffix,
+			})
+	
+		}
+	
+		tableformatter.TableSorter(schema).OrderBy(schema[0].FieldName).Sort(data)
+	
+		table := tableformatter.Table{
+			Data:   data,
+			Schema: schema,
+		}
+		return table.RenderTable("Repository templates", "", getStringParam(c.Arguments["format"]))
+	}
+
 	return "", nil
 }
 
