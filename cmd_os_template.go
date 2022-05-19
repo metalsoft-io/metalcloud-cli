@@ -777,10 +777,25 @@ func templateMakePrivateCmd(c *Command, client metalcloud.MetalCloudClient) (str
 }
 
 func templateBuildCmd(c *Command, client metalcloud.MetalCloudClient) (string, error) {
-	// All of these should be taken from variables, i guess
-	// defaultRepositoryName := "https://github.com/alexcorman/os-templates.git"
-	gitlabPrivateRepositoryName := "https://gitlab.com/alexcorman/os-templates-gitlab.git"
-	gitlabPrivateToken := "not-my-key"
+
+	cloneOptions := new(git.CloneOptions)
+	cloneOptions.Depth = 1 // We are only interested in the last commit
+
+	if repositoryName, ok := getStringParamOk(c.Arguments["github-template-repo"]); ok {
+		if userPrivateToken := os.Getenv("METALCLOUD_USER_PRIVATE_REPOSITORY_TOKEN"); userPrivateToken == "" {
+			return "", fmt.Errorf("METALCLOUD_USER_PRIVATE_REPOSITORY_TOKEN must be set when using a user given repository")
+		}
+
+		cloneOptions.Auth = &http.BasicAuth{
+			Password: os.Getenv("METALCLOUD_USER_PRIVATE_REPOSITORY_TOKEN"),
+		}
+
+		cloneOptions.URL = repositoryName
+	} else {
+		// The default repository that is used if the user doesn't specify another one
+		cloneOptions.URL = "https://github.com/alexcorman/os-templates.git"
+	}
+
 
 	// Filesystem abstraction based on memory
 	fs := memfs.New()
@@ -790,13 +805,7 @@ func templateBuildCmd(c *Command, client metalcloud.MetalCloudClient) (string, e
 
 	// Clones the repository into the worktree (fs) and storer all the .git
 	// content into the storer
-	repo, err := git.Clone(storer, fs, &git.CloneOptions{
-		URL: gitlabPrivateRepositoryName,
-		Auth: &http.BasicAuth{
-			Password: gitlabPrivateToken,
-		},
-		Depth: 1,	// We are only interested in the last commit
-	})
+	repo, err := git.Clone(storer, fs, cloneOptions)
 
 	if err != nil {
 		if err.Error() == "authentication required" {
