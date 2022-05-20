@@ -965,10 +965,10 @@ func templateBuildCmd(c *Command, client metalcloud.MetalCloudClient) (string, e
 
 		// Print warnings, if there are any
 		if len(warnings) != 0 {
-			fmt.Printf("Detected the following warnings regarding repository structure for template %s.\n", templatePreffix);
+			fmt.Printf("Detected the following warnings regarding repository structure for template %s:\n", templatePreffix);
 		}
 		for _, warningMessage := range warnings {
-			fmt.Println(warningMessage)
+			fmt.Println("\t" + warningMessage)
 		}
 
 		repoMap[templatePreffix] = repoTemplate
