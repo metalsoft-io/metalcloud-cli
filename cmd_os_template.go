@@ -796,7 +796,6 @@ func templateBuildCmd(c *Command, client metalcloud.MetalCloudClient) (string, e
 		cloneOptions.URL = "https://github.com/alexcorman/os-templates.git"
 	}
 
-
 	// Filesystem abstraction based on memory
 	fs := memfs.New()
 
@@ -858,8 +857,6 @@ func templateBuildCmd(c *Command, client metalcloud.MetalCloudClient) (string, e
 				parts := strings.Split(file.Name, "/")
 				templatePreffix := strings.Join(parts[:2], "/")
 
-				repoFilesPerTemplate[templatePreffix] = append(repoFilesPerTemplate[templatePreffix], *file)
-
 				if parts[2] == "template.yaml" {
 					if _, ok := repoMap[templatePreffix]; !ok {
 						repoMap[templatePreffix] = RepoTemplate{
@@ -868,6 +865,8 @@ func templateBuildCmd(c *Command, client metalcloud.MetalCloudClient) (string, e
 							TemplateFile: *file,
 						}
 					}
+				} else {
+					repoFilesPerTemplate[templatePreffix] = append(repoFilesPerTemplate[templatePreffix], *file)
 				}
 			}
 		}
@@ -935,12 +934,42 @@ func templateBuildCmd(c *Command, client metalcloud.MetalCloudClient) (string, e
 			warnings = append(warnings, fmt.Sprintf("Found invalid boot type %s. Valid boot types are %+q.", bootType, validBootTypes))
 		}
 
+		var repoFileNames, templateFileNames []string
+	
+		for _, file := range repoTemplate.OtherFiles {
+			fileName := strings.ReplaceAll(file.Name, templatePreffix + "/", "")
+			repoFileNames = append(repoFileNames, fileName)
+		}
+
+		for fileName := range templateContents.Assets {
+			templateFileNames = append(templateFileNames, fileName)
+		}
+
+		fileNamesNotInTemplate := difference(repoFileNames, templateFileNames)
+		fileNamesNotInRepository := difference(templateFileNames, repoFileNames)
+
+		if len(fileNamesNotInTemplate) != 0 {
+			warnings = append(warnings, fmt.Sprintf("Found the following repository files that are not in the template.yaml file: %+q.", fileNamesNotInTemplate))
+		}
+
+		if len(fileNamesNotInRepository) != 0 {
+			warnings = append(warnings, fmt.Sprintf("Found the following files declared in template.yaml that are not in the repository: %+q.", fileNamesNotInRepository))
+		}
+
+
+		repoTemplate.Warnings = warnings
+
 		repoTemplate.Architecture = architecture
 		repoTemplate.DeployProcess = deployProcess
 		repoTemplate.BootType = bootType
 
-		//TODO: add to warnings what other irregularaties i find
-		repoTemplate.Warnings = warnings
+		// Print warnings, if there are any
+		if len(warnings) != 0 {
+			fmt.Printf("Detected the following warnings regarding repository structure for template %s.\n", templatePreffix);
+		}
+		for _, warningMessage := range warnings {
+			fmt.Println(warningMessage)
+		}
 
 		repoMap[templatePreffix] = repoTemplate
 	}
@@ -1083,4 +1112,32 @@ func stringInSlice(a string, list []string) bool {
         }
     }
     return false
+}
+
+func difference(slice1 []string, slice2 []string) []string {
+    var diff []string
+
+    // Loop two times, first to find slice1 strings not in slice2,
+    // second loop to find slice2 strings not in slice1
+    for i := 0; i < 2; i++ {
+        for _, s1 := range slice1 {
+            found := false
+            for _, s2 := range slice2 {
+                if s1 == s2 {
+                    found = true
+                    break
+                }
+            }
+            // String not found. We add it to return slice
+            if !found {
+                diff = append(diff, s1)
+            }
+        }
+        // Swap the slices, only if it was the first loop
+        if i == 0 {
+            slice1, slice2 = slice2, slice1
+        }
+    }
+
+    return diff
 }
