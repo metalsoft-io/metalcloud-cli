@@ -109,18 +109,18 @@ func executeCommand(args []string, commands []Command, clients map[string]metalc
 	subject, predicate, count := validateArguments(args)
 
 	if count == 1 {
-		cmds := filterCommandsBySubject(subject, commands)
-		if len(cmds) > 0 {
+		commandsForSubject := filterCommandsBySubject(subject, commands)
+		if len(commandsForSubject) > 0 {
 			foundNilPredicate := false
 
-			for _, c := range commands {
+			for _, c := range commandsForSubject {
 				if c.Predicate == _nilDefaultStr {
 					foundNilPredicate = true
 				}
 			}
 
 			if foundNilPredicate == false {
-				return fmt.Errorf("Invalid command! %s", getPossiblePredicatesForSubjectHelp(subject, cmds))
+				return fmt.Errorf("Invalid command! %s", getPossiblePredicatesForSubjectHelp(subject, commandsForSubject))
 			}
 		}
 	}
@@ -141,12 +141,12 @@ func executeCommand(args []string, commands []Command, clients map[string]metalc
 	cmd.FlagSet.Usage = func() {}
 
 	setColoringEnabled(true)
-	
+
 	for _, a := range args {
 		if a == "-h" || a == "-help" || a == "--help" {
 			return fmt.Errorf(getCommandHelp(*cmd, true))
 		}
-		
+
 		if a == "--no-color" || a == "-no-color" {
 			setColoringEnabled(false)
 		}
