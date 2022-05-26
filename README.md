@@ -23,7 +23,7 @@ $ sudo yum install https://github.com/metalsoft-io/metalcloud-cli/releases/downl
 
 To install on any Debian/Ubuntu distributions:
 ```
-curl -sLO https://github.com/metalsoft-io/metalcloud-cli/releases/download/v1.0.3/metalcloud-cli_1.0.3_linux_amd64.deb && sudo dpkg -i metalcloud-cli_1.0.3_linux_amd64.deb
+curl -skL $(curl -s https://api.github.com/repos/metalsoft-io/metalcloud-cli/releases/latest | grep -i browser_download_url  | grep "$(dpkg --print-architecture)" | grep deb | head -n 1 | cut -d'"' -f4) -o metalcloud-cli.deb && sudo dpkg -i metalcloud-cli.deb
 ```
 
 To install on Windows:

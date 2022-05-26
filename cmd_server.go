@@ -1327,7 +1327,12 @@ func serverInterfacesListCmd(c *Command, client metalcloud.MetalCloudClient) (st
 
 	schema := []tableformatter.SchemaField{
 		{
-			FieldName: "IDX",
+			FieldName: "SRV. ID",
+			FieldType: tableformatter.TypeInt,
+			FieldSize: 5,
+		},
+		{
+			FieldName: "INTF. IDX",
 			FieldType: tableformatter.TypeInt,
 			FieldSize: 5,
 		},
@@ -1388,6 +1393,7 @@ func serverInterfacesListCmd(c *Command, client metalcloud.MetalCloudClient) (st
 		capacity := fmt.Sprintf("%d Gbps", int(s.ServerInterfaceCapacityMBPs/1000))
 
 		data = append(data, []interface{}{
+			server.ServerID,
 			s.ServerInterfaceIndex,
 			networkType,
 			s.ServerInterfaceMACAddress,

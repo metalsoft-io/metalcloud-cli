@@ -205,6 +205,28 @@ func TestExecuteCommand(t *testing.T) {
 	Expect(err).To(BeNil())
 	Expect(execFuncExecutedOnDeveloperEndpoint).To(BeTrue())
 
+	//should show list of possible predicates if correct subject provided
+	err = executeCommand([]string{"", "tests"}, commands, clients)
+	Expect(err).NotTo(BeNil())
+	Expect(err.Error()).To(ContainSubstring("testp"))
+	Expect(execFuncExecuted).To(BeTrue())
+	Expect(initFuncExecuted).To(BeTrue())
+
+	execFuncExecuted = false
+	initFuncExecuted = false
+
+	//should not show list of possible predicates if correct subject provided
+	// but subject has nil predicate
+	commands[0].Predicate = _nilDefaultStr
+	devClient.EXPECT().GetEndpoint().Return("developer").Times(1)
+	err = executeCommand([]string{"", "tests"}, commands, clients)
+	Expect(err).To(BeNil())
+	Expect(execFuncExecuted).To(BeTrue())
+	Expect(initFuncExecuted).To(BeTrue())
+
+	execFuncExecuted = false
+	initFuncExecuted = false
+
 }
 
 func TestGetCommandHelp(t *testing.T) {

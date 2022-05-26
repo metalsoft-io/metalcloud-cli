@@ -33,7 +33,7 @@ func wrapToLength(s string, length int) string {
 		sb.WriteString(fmt.Sprintf("%s\n", s[i*length:(i+1)*length]))
 	}
 	remain := int(len(s) % length)
-	sb.WriteString(fmt.Sprintf("%s", s[len(s)-remain:len(s)]))
+	sb.WriteString(fmt.Sprintf("%s", s[len(s)-remain:]))
 
 	return sb.String()
 }
