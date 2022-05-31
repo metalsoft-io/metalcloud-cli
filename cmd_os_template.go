@@ -3,6 +3,7 @@ package main
 import (
 	"flag"
 	"fmt"
+	"io/ioutil"
 	"os"
 	"strings"
 
@@ -16,6 +17,8 @@ import (
 	"github.com/go-git/go-git/v5/plumbing/transport/http"
 
 	memory "github.com/go-git/go-git/v5/storage/memory"
+
+	"github.com/kdomanski/iso9660"
 )
 
 // Constants used with the build command
@@ -26,6 +29,8 @@ const bootMethodPxeIscsi = "pxe_iscsi"
 
 const bootTypeUEFI = "uefi"
 const bootTypeClassic = "classic"
+
+const bootloaderConfigFileName = "BOOT.CFG"
 
 var osTemplatesCmds = []Command{
 
@@ -1056,6 +1061,53 @@ func templateBuildCmd(c *Command, client metalcloud.MetalCloudClient) (string, e
 		}
 		return table.RenderTable("Repository templates", "", getStringParam(c.Arguments["format"]))
 	}
+
+	//TODO: image patch should be given as a parameter
+	imagePath := "C:/Users/Alexandru.Corman/Downloads/VMware-VMvisor-Installer-7.0.0.update03-19193900.x86_64-DellEMC_Customized-A02.iso"
+	file, err := os.Open(imagePath)
+
+	if err != nil {
+		return "", fmt.Errorf("image not found at path %s", imagePath)
+	}
+
+	image, err := iso9660.OpenImage(file)
+
+	if err != nil {
+		return "", err
+	}
+
+	rootDir, err := image.RootDir()
+
+	if err != nil {
+		return "", err
+	}
+
+	children, err := rootDir.GetChildren()
+
+	if err != nil {
+		return "", err
+	}
+
+	var bootloaderFile *iso9660.File = nil
+
+	for _, child := range children {
+		if !child.IsDir() && child.Name() == bootloaderConfigFileName {
+			bootloaderFile = child
+			break
+		}
+	}
+
+	if bootloaderFile == nil {
+		return "", fmt.Errorf("did not find bootloader config file in the given ISO image")
+	}
+
+	bootloaderData, err := ioutil.ReadAll(bootloaderFile.Reader())
+
+	if err != nil {
+		return "", err
+	}
+
+	fmt.Printf("%s file contents:\n%+s", bootloaderConfigFileName, bootloaderData)
 
 	return "", nil
 }
