@@ -13,6 +13,8 @@ import (
 
 	"github.com/go-git/go-billy/v5/memfs"
 	git "github.com/go-git/go-git/v5"
+
+	diff "github.com/sergi/go-diff/diffmatchpatch"
 	"github.com/go-git/go-git/v5/plumbing/object"
 	"github.com/go-git/go-git/v5/plumbing/transport/http"
 
@@ -838,52 +840,13 @@ func templateBuildCmd(c *Command, client metalcloud.MetalCloudClient) (string, e
 		return "", err
 	}
 
-	// Struct containing the values that will be printed out for a repo template
-	type RepoTemplate struct {
-		Family string
-		Version string
-		Architecture string
-		DeployProcess string
-		BootType string
-		TemplateFile object.File
-		OtherFiles []object.File
-		Warnings []string
-	}
-
-	repoMap := make(map[string]RepoTemplate)
-
-	// This map stores all files for a template and will be used to check if their information is correct
-	repoFilesPerTemplate := make(map[string][]object.File)
-
-	files := tree.Files()
-	files.ForEach(func (file *object.File) error {
-		if file.Mode.IsRegular() {
-			if strings.Count(file.Name, "/") == 2 {
-				parts := strings.Split(file.Name, "/")
-				templatePreffix := strings.Join(parts[:2], "/")
-
-				if parts[2] == "template.yaml" {
-					if _, ok := repoMap[templatePreffix]; !ok {
-						repoMap[templatePreffix] = RepoTemplate{
-							Family: parts[0],
-							Version: parts[1],
-							TemplateFile: *file,
-						}
-					}
-				} else {
-					repoFilesPerTemplate[templatePreffix] = append(repoFilesPerTemplate[templatePreffix], *file)
-				}
-			}
-		}
-
-		return nil
-	})
-
 	type TemplateAsset struct {
+		file			   object.File
 		Isopath            string `yaml:"isopath"`
 		Mime               string `yaml:"mime"`
 		IsKickstartFile    bool   `yaml:"is-kickstart-file"`
 		IsBootloaderConfig bool   `yaml:"is-bootloader-config"`
+		IsPatchFile 	   bool   `yaml:"is-patch-file"`
 	}
 
 	type TemplateContents struct {
@@ -901,8 +864,53 @@ func templateBuildCmd(c *Command, client metalcloud.MetalCloudClient) (string, e
 		Assets map[string]TemplateAsset `yaml:"assets"`
 	}
 
+	// Struct containing the values that will be printed out for a repo template
+	type RepoTemplate struct {
+		Family string
+		Version string
+		Architecture string
+		DeployProcess string
+		BootType string
+		TemplateFile object.File
+		Assets []TemplateAsset
+		Warnings []string
+	}
+
+	repoMap := make(map[string]RepoTemplate)
+
+	// This map stores all files for a template and will be used to check if their information is correct
+	repoAssetsPerTemplate := make(map[string][]TemplateAsset)
+
+	files := tree.Files()
+	files.ForEach(func (file *object.File) error {
+		if file.Mode.IsRegular() {
+			if strings.Count(file.Name, "/") == 2 {
+				parts := strings.Split(file.Name, "/")
+				templatePreffix := strings.Join(parts[:2], "/")
+
+				if parts[2] == "template.yaml" {
+					if _, ok := repoMap[templatePreffix]; !ok {
+						repoMap[templatePreffix] = RepoTemplate{
+							Family: parts[0],
+							Version: parts[1],
+							TemplateFile: *file,
+						}
+					}
+				} else {
+					asset := TemplateAsset{
+						file: *file,
+					}
+					
+					repoAssetsPerTemplate[templatePreffix] = append(repoAssetsPerTemplate[templatePreffix], asset)
+				}
+			}
+		}
+
+		return nil
+	})
+
 	for templatePreffix, repoTemplate := range repoMap {
-		repoTemplate.OtherFiles = repoFilesPerTemplate[templatePreffix]
+		repoTemplate.Assets = repoAssetsPerTemplate[templatePreffix]
 
 		templateStringContents, err := repoTemplate.TemplateFile.Contents()
 
@@ -941,13 +949,21 @@ func templateBuildCmd(c *Command, client metalcloud.MetalCloudClient) (string, e
 
 		var repoFileNames, templateFileNames []string
 	
-		for _, file := range repoTemplate.OtherFiles {
-			fileName := strings.ReplaceAll(file.Name, templatePreffix + "/", "")
+		for key, asset := range repoTemplate.Assets {
+			fileName := strings.ReplaceAll(asset.file.Name, templatePreffix + "/", "")
 			repoFileNames = append(repoFileNames, fileName)
+
+			if asset, ok := templateContents.Assets[fileName]; ok {
+				repoTemplate.Assets[key].Isopath = asset.Isopath
+				repoTemplate.Assets[key].Mime = asset.Mime
+				repoTemplate.Assets[key].IsKickstartFile = asset.IsKickstartFile
+				repoTemplate.Assets[key].IsBootloaderConfig = asset.IsBootloaderConfig
+				repoTemplate.Assets[key].IsPatchFile = asset.IsPatchFile
+			}
 		}
 
-		for fileName := range templateContents.Assets {
-			templateFileNames = append(templateFileNames, fileName)
+		for assetName := range templateContents.Assets {
+			templateFileNames = append(templateFileNames, assetName)
 		}
 
 		fileNamesNotInTemplate := sliceDifference(repoFileNames, templateFileNames)
@@ -960,7 +976,6 @@ func templateBuildCmd(c *Command, client metalcloud.MetalCloudClient) (string, e
 		if len(fileNamesNotInRepository) != 0 {
 			warnings = append(warnings, fmt.Sprintf("Found the following files declared in template.yaml that are not in the repository: %+q.", fileNamesNotInRepository))
 		}
-
 
 		repoTemplate.Warnings = warnings
 
@@ -1062,52 +1077,144 @@ func templateBuildCmd(c *Command, client metalcloud.MetalCloudClient) (string, e
 		return table.RenderTable("Repository templates", "", getStringParam(c.Arguments["format"]))
 	}
 
-	//TODO: image patch should be given as a parameter
-	imagePath := "C:/Users/Alexandru.Corman/Downloads/VMware-VMvisor-Installer-7.0.0.update03-19193900.x86_64-DellEMC_Customized-A02.iso"
-	file, err := os.Open(imagePath)
+	if name, ok := getStringParamOk(c.Arguments["name"]); ok {
 
-	if err != nil {
-		return "", fmt.Errorf("image not found at path %s", imagePath)
-	}
+		if sourceTemplateName, ok := getStringParamOk(c.Arguments["source-template"]); ok {
+			fmt.Println(name)	
+			fmt.Println(sourceTemplateName)	
 
-	image, err := iso9660.OpenImage(file)
+			if _, ok := repoMap[sourceTemplateName]; ok {
+			} else {
+				return "", fmt.Errorf("did not find source template '%s'. Please use the 'list-supported' parameter to see the supported templates", sourceTemplateName)
+			}
+	
+			//TODO: image patch should be given as a parameter
+			imagePath := "C:/Users/Alexandru.Corman/Downloads/VMware-VMvisor-Installer-7.0.0.update03-19193900.x86_64-DellEMC_Customized-A02.iso"
+			file, err := os.Open(imagePath)
+	
+			if err != nil {
+				return "", fmt.Errorf("image not found at path %s", imagePath)
+			}
+	
+			image, err := iso9660.OpenImage(file)
+	
+			if err != nil {
+				return "", err
+			}
+	
+			rootDir, err := image.RootDir()
+	
+			if err != nil {
+				return "", err
+			}
+	
+			children, err := rootDir.GetChildren()
+	
+			if err != nil {
+				return "", err
+			}
+	
+			var bootloaderFile *iso9660.File = nil
+	
+			for _, child := range children {
+				if !child.IsDir() && child.Name() == bootloaderConfigFileName {
+					bootloaderFile = child
+					break
+				}
+			}
+	
+			if bootloaderFile == nil {
+				return "", fmt.Errorf("did not find bootloader config file in the given ISO image")
+			}
+	
+			bootloaderData, err := ioutil.ReadAll(bootloaderFile.Reader())
+	
+			if err != nil {
+				return "", err
+			}
+	
+			sourceTemplate := repoMap[sourceTemplateName]
 
-	if err != nil {
-		return "", err
-	}
+			var patchAsset TemplateAsset
+			foundPatchAsset := false
 
-	rootDir, err := image.RootDir()
+			for _, asset := range sourceTemplate.Assets {
+				if asset.IsPatchFile {
 
-	if err != nil {
-		return "", err
-	}
+					if foundPatchAsset {
+						return "", fmt.Errorf("found more than one patch asset for source template '%s'. Templates should only have one patch asset for the bootloader", sourceTemplateName)
+					}
 
-	children, err := rootDir.GetChildren()
+					foundPatchAsset = true
+					patchAsset = asset
+				}
+			}
 
-	if err != nil {
-		return "", err
-	}
+			if !foundPatchAsset {
+				return "", fmt.Errorf("did not find the patch file for source template '%s'", sourceTemplateName)
+			}
 
-	var bootloaderFile *iso9660.File = nil
+			patchFileStringContents, err := patchAsset.file.Contents()
 
-	for _, child := range children {
-		if !child.IsDir() && child.Name() == bootloaderConfigFileName {
-			bootloaderFile = child
-			break
+			if err != nil {
+				return "", err
+			}
+
+			fmt.Printf("%s", patchFileStringContents)
+
+			expectedText := `
+			bootstate=0
+			title=Loading ESXi installer
+			timeout=5
+			prefix=
+			kernel=/b.b00
+			kernelopt=ks=cdrom:/KS.CFG
+			modules=/jumpstrt.gz --- /useropts.gz --- /features.gz --- /k.b00 --- /uc_intel.b00 --- /uc_amd.b00 --- /uc_hygon.b00 --- /procfs.b00 --- /vmx.v00 --- /vim.v00 --- /tpm.v00 --- /sb.v00 --- /s.v00 --- /bnxtnet.v00 --- /bnxtroce.v00 --- /dellshar.v00 --- /lsimr3.v00 --- /lsimsgpt.v00 --- /dell_dcu.v00 --- /dell_osn.v00 --- /i40en.v00 --- /icen.v00 --- /igbn.v00 --- /irdman.v00 --- /ixgbenen.v00 --- /ixgben.v00 --- /nmlx5cor.v00 --- /nmlx5rdm.v00 --- /qlnative.v00 --- /qcnic.v00 --- /qedentv.v00 --- /qedf.v00 --- /qedi.v00 --- /qedrntv.v00 --- /qfle3.v00 --- /qfle3f.v00 --- /qfle3i.v00 --- /atlantic.v00 --- /brcmfcoe.v00 --- /elxiscsi.v00 --- /elxnet.v00 --- /iavmd.v00 --- /ionic_en.v00 --- /iser.v00 --- /lpfc.v00 --- /lpnic.v00 --- /lsi_msgp.v00 --- /lsi_msgp.v01 --- /mtip32xx.v00 --- /ne1000.v00 --- /nenic.v00 --- /nfnic.v00 --- /nhpsa.v00 --- /nmlx4_co.v00 --- /nmlx4_en.v00 --- /nmlx4_rd.v00 --- /ntg3.v00 --- /nvme_pci.v00 --- /nvmerdma.v00 --- /nvmetcp.v00 --- /nvmxnet3.v00 --- /nvmxnet3.v01 --- /pvscsi.v00 --- /qflge.v00 --- /rste.v00 --- /sfvmk.v00 --- /smartpqi.v00 --- /vmkata.v00 --- /vmkfcoe.v00 --- /vmkusb.v00 --- /vmw_ahci.v00 --- /bmcal.v00 --- /crx.v00 --- /elx_esx_.v00 --- /btldr.v00 --- /esx_dvfi.v00 --- /esx_ui.v00 --- /esxupdt.v00 --- /tpmesxup.v00 --- /weaselin.v00 --- /esxio_co.v00 --- /loadesx.v00 --- /lsuv2_hp.v00 --- /lsuv2_in.v00 --- /lsuv2_ls.v00 --- /lsuv2_nv.v00 --- /lsuv2_oe.v00 --- /lsuv2_oe.v01 --- /lsuv2_oe.v02 --- /lsuv2_sm.v00 --- /native_m.v00 --- /trx.v00 --- /vdfs.v00 --- /vmware_e.v00 --- /vsan.v00 --- /vsanheal.v00 --- /vsanmgmt.v00 --- /tools.t00 --- /dell_con.v00 --- /xorg.v00 --- /gc.v00 --- /imgdb.tgz --- /basemisc.tgz --- /resvibs.tgz --- /imgpayld.tgz
+			build=7.0.3-0.20.19193900
+			updated=0
+			`
+	
+			diffMatchPatch := diff.New()
+	
+			diffs := diffMatchPatch.DiffMain(string(bootloaderData), expectedText, false)
+	
+			fmt.Printf("%+v\n", diffs)
+			fmt.Println(diffMatchPatch.DiffPrettyText(diffs))
+	
+			patches := diffMatchPatch.PatchMake(diffs)
+			fmt.Printf("%+v\n", patches)
+			patchText := diffMatchPatch.PatchToText(patches)
+	
+			fmt.Println(patchText)
+
+			fmt.Println(patchFileStringContents)
+
+			fmt.Println(patchText == patchFileStringContents)
+
+			// diffs = diffMatchPatch.DiffMain(patchText, patchFileStringContents, false)
+			// fmt.Printf("%+v\n", diffs)
+
+
+			// patches, err = diffMatchPatch.PatchFromText(patchFileStringContents)
+
+			// if err != nil {
+			// 	return "", err
+			// }
+
+			// patchedText, _ := diffMatchPatch.PatchApply(patches, string(bootloaderData))
+
+			// fmt.Printf("%s\n", patchedText)
+			// fmt.Println(patchedText == expectedText)
+
+		} else {
+			return "", fmt.Errorf("the 'source-template' parameter must be specified when the 'name'")
 		}
 	}
 
-	if bootloaderFile == nil {
-		return "", fmt.Errorf("did not find bootloader config file in the given ISO image")
-	}
+	
 
-	bootloaderData, err := ioutil.ReadAll(bootloaderFile.Reader())
 
-	if err != nil {
-		return "", err
-	}
 
-	fmt.Printf("%s file contents:\n%+s", bootloaderConfigFileName, bootloaderData)
 
 	return "", nil
 }

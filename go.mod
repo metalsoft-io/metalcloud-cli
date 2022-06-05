@@ -9,10 +9,12 @@ require (
 	github.com/golang/mock v1.6.0
 	github.com/jwalton/gchalk v1.2.1
 	github.com/kdomanski/iso9660 v0.3.0
+	github.com/kr/binarydist v0.1.0
 	github.com/metalsoft-io/metal-cloud-sdk-go/v2 v2.7.0
 	github.com/metalsoft-io/tableformatter v1.0.8
 	github.com/onsi/gomega v1.16.0
 	github.com/savaki/jq v0.0.0-20161209013833-0e6baecebbf8
+	github.com/sergi/go-diff v1.1.0
 	golang.org/x/crypto v0.0.0-20210921155107-089bfa567519
 	gopkg.in/yaml.v2 v2.4.0
 	gopkg.in/yaml.v3 v3.0.0-20210107192922-496545a6307b
