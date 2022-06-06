@@ -24,7 +24,7 @@ var switchCmds = []Command{
 				"format":           c.FlagSet.String("format", _nilDefaultStr, "The output format. Supported values are 'json','csv','yaml'. The default format is human readable."),
 				"datacenter_name":  c.FlagSet.String("datacenter", "", "The optional parameter acts as a filter that restricts the returned results to switch devices located in the specified datacenter."),
 				"switch_type":      c.FlagSet.String("switch-type", "", "The optional parameter acts as a filter that restricts the returned results to switch devices of the specified type."),
-				"show_credentials": c.FlagSet.Bool("show-credentials", false, green("(Flag)") + " If set returns the switch management credentials. (Slow for large queries)"),
+				"show_credentials": c.FlagSet.Bool("show-credentials", false, green("(Flag)")+" If set returns the switch management credentials. (Slow for large queries)"),
 			}
 		},
 		ExecuteFunc: switchListCmd,
@@ -39,15 +39,164 @@ var switchCmds = []Command{
 		FlagSet:      flag.NewFlagSet("Create switch device", flag.ExitOnError),
 		InitFunc: func(c *Command) {
 			c.Arguments = map[string]interface{}{
-				"overwrite_hostname_from_switch": c.FlagSet.Bool("retrieve-hostname-from-switch", false, green("(Flag)") + " Retrieve the hostname from the equipment instead of configuration file."),
+				"overwrite_hostname_from_switch": c.FlagSet.Bool("retrieve-hostname-from-switch", false, green("(Flag)")+" Retrieve the hostname from the equipment instead of configuration file."),
 				"format":                         c.FlagSet.String("format", "json", "The input format. Supported values are 'json','yaml'. The default format is json."),
-				"read_config_from_file":          c.FlagSet.String("raw-config", _nilDefaultStr, red("(Required)") + " Read  configuration from file in the format specified with --format."),
-				"read_config_from_pipe":          c.FlagSet.Bool("pipe", false, green("(Flag)") + " If set, read  configuration from pipe instead of from a file. Either this flag or the --raw-config option must be used."),
+				"read_config_from_file":          c.FlagSet.String("raw-config", _nilDefaultStr, red("(Required)")+" Read  configuration from file in the format specified with --format."),
+				"read_config_from_pipe":          c.FlagSet.Bool("pipe", false, green("(Flag)")+" If set, read  configuration from pipe instead of from a file. Either this flag or the --raw-config option must be used."),
 				"return_id":                      c.FlagSet.Bool("return-id", false, "Will print the ID of the created object. Useful for automating tasks."),
 			}
 		},
 		ExecuteFunc: switchCreateCmd,
 		Endpoint:    DeveloperEndpoint,
+		Example: `
+metalcloud-cli switch create --format yaml --raw-config switch.yml --return-id
+
+#Example configurations:
+
+Dell OS10 - Data leaf
+=========================================================================== 
+identifierString: swd003
+datacenterName: dc-prod
+provisionerType: evpnvxlanl2
+provisionerPosition: leaf
+driver: os_10
+managementUsername: metalsoftadmin
+managementPassword: XXXXX
+managementAddress: 172.16.2.23
+managementPort: 22
+managementProtocol: ssh
+managementMACAddress: "00:00:00:00:00:00"
+primaryWANIPv4SubnetPrefixSize: 22
+primaryWANIPv6SubnetPoolID: 4
+primarySANSubnetPrefixSize: 21
+quarantineSubnetStart: 172.16.240.64
+quarantineSubnetEnd: 172.16.240.127
+quarantineSubnetPrefixSize: 26
+quarantineSubnetGateway: 172.16.240.65
+requiresOSInstall: false
+isBorderDevice: false
+isStorageSwitch: false
+networkTypesAllowed:
+- wan
+- quarantine
+=========================================================================== 
+
+Dell OS10 - Storage leaf
+=========================================================================== 
+identifierString: sws001
+datacenterName: dc-prod
+provisionerType: evpnvxlanl2
+provisionerPosition: leaf
+driver: os_10
+managementUsername: metalsoftadmin
+managementPassword: XXXXX
+managementAddress: 172.16.2.33
+managementPort: 22
+managementProtocol: ssh
+managementMACAddress: "00:00:00:00:00:00"
+primaryWANIPv4SubnetPrefixSize: 22
+primaryWANIPv6SubnetPoolID: 4
+primarySANSubnetPrefixSize: 21
+quarantineSubnetStart: 172.16.240.0
+quarantineSubnetEnd: 172.16.240.63
+quarantineSubnetPrefixSize: 26
+quarantineSubnetGateway: 172.16.240.1
+requiresOSInstall: false
+isBorderDevice: false
+isStorageSwitch: true
+networkTypesAllowed:
+- san
+===========================================================================
+
+Dell OS10 - Border leaf
+=========================================================================== 
+identifierString: swb001
+datacenterName: dc-prod
+provisionerType: evpnvxlanl2
+provisionerPosition: other
+driver: os_10
+managementUsername: metalsoftadmin
+managementPassword: XXXXXXXX
+managementAddress: 172.16.2.19
+managementPort: 22
+managementProtocol: ssh
+managementMACAddress: "00:00:00:00:00:00"
+primaryWANIPv4SubnetPrefixSize: 22
+primaryWANIPv6SubnetPoolID: 4
+primarySANSubnetPrefixSize: 21
+quarantineSubnetStart: 172.16.240.0
+quarantineSubnetEnd: 172.16.240.63
+quarantineSubnetPrefixSize: 26
+quarantineSubnetGateway: 172.16.240.1
+requiresOSInstall: false
+isBorderDevice: true
+isStorageSwitch: false
+networkTypesAllowed:
+- wan
+===========================================================================
+
+JunOS leaf
+===========================================================================
+identifierString: juniper-virtual-chassis-QFX5100
+datacenterName: dc-internal-test
+provisionerType: vlan
+provisionerPosition: leaf
+driver: junos18
+managementUsername: root
+managementPassword: "xxxxx"
+managementAddress: 10.0.5.10
+managementPort: 22
+managementProtocol: ssh
+managementMACAddress: "00:00:00:00:00:00"
+primaryWANIPv4SubnetPool: 192.168.253.0
+primaryWANIPv4SubnetPrefixSize: 24
+primaryWANIPv6SubnetPrefixSize: 48
+primaryWANIPv6SubnetPool: fddf:d958:fb10:0000:0000:0000:0000:0000
+primarySANSubnetPool: 100.64.0.1
+primarySANSubnetPrefixSize: 21
+quarantineSubnetStart: 192.168.254.0
+quarantineSubnetEnd: 192.168.254.255
+quarantineSubnetPrefixSize: 24
+quarantineSubnetGateway: 192.168.254.1
+requiresOSInstall: false
+isBorderDevice: false
+isStorageSwitch: false
+networkTypesAllowed:
+- wan
+- lan
+- san
+- quarantine
+===========================================================================
+
+
+HP VPLS TOR
+===========================================================================
+identifierString: US_CHG_QTS01_01_MJ40_ML43_01
+description: ToR switch
+#the datacenter label
+datacenter: dc-prod
+provisionerType: vpls
+provisionerPosition: tor
+driver: hp5900
+managementAddress: 10.0.2.1
+managementProtocol: ssh
+managementPort: 22
+managementUsername: msprov1
+managementPassword: XXXX
+primaryWANIPv6SubnetPool: 2a02:cb80:1000:0000:0000:0000:0000:0000
+primaryWANIPv6SubnetPrefixSize: 53
+primarySANSubnetPool: 100.64.0.0
+primarySANSubnetPrefixSize: 21
+primaryWANIPv4SubnetPool: 172.24.0.0
+primaryWANIPv4SubnetPrefixSize: 22
+quarantineSubnetStart: 172.16.0.2
+quarantineSubnetEnd: 172.16.0.254
+quarantineSubnetPrefixSize: 24
+quarantineSubnetGateway: 172.16.0.1
+requiresOSInstall: false
+volumeTemplateID: 0
+===========================================================================
+		`,
 	},
 	{
 		Description:  "Edit switch device.",
@@ -58,11 +207,11 @@ var switchCmds = []Command{
 		FlagSet:      flag.NewFlagSet("Edit switch device", flag.ExitOnError),
 		InitFunc: func(c *Command) {
 			c.Arguments = map[string]interface{}{
-				"network_device_id_or_identifier_string": c.FlagSet.String("id", _nilDefaultStr, red("(Required)") + " Switch id or identifier string. "),
-				"overwrite_hostname_from_switch":         c.FlagSet.Bool("retrieve-hostname-from-switch", false, green("(Flag)") + " Retrieve the hostname from the equipment instead of configuration file."),
+				"network_device_id_or_identifier_string": c.FlagSet.String("id", _nilDefaultStr, red("(Required)")+" Switch id or identifier string. "),
+				"overwrite_hostname_from_switch":         c.FlagSet.Bool("retrieve-hostname-from-switch", false, green("(Flag)")+" Retrieve the hostname from the equipment instead of configuration file."),
 				"format":                                 c.FlagSet.String("format", "json", "The input format. Supported values are 'json','yaml'. The default format is json."),
-				"read_config_from_file":                  c.FlagSet.String("raw-config", _nilDefaultStr, red("(Required)") + " Read  configuration from file in the format specified with --format."),
-				"read_config_from_pipe":                  c.FlagSet.Bool("pipe", false, green("(Flag)") + " If set, read  configuration from pipe instead of from a file. Either this flag or the --raw-config option must be used."),
+				"read_config_from_file":                  c.FlagSet.String("raw-config", _nilDefaultStr, red("(Required)")+" Read  configuration from file in the format specified with --format."),
+				"read_config_from_pipe":                  c.FlagSet.Bool("pipe", false, green("(Flag)")+" If set, read  configuration from pipe instead of from a file. Either this flag or the --raw-config option must be used."),
 				"return_id":                              c.FlagSet.Bool("return-id", false, "Will print the ID of the created object. Useful for automating tasks."),
 			}
 		},
@@ -78,10 +227,10 @@ var switchCmds = []Command{
 		FlagSet:      flag.NewFlagSet("get a switch device", flag.ExitOnError),
 		InitFunc: func(c *Command) {
 			c.Arguments = map[string]interface{}{
-				"network_device_id_or_identifier_string": c.FlagSet.String("id", _nilDefaultStr, red("(Required)") + " Switch id or identifier string. "),
-				"show_credentials":                       c.FlagSet.Bool("show-credentials", false, green("(Flag)") + " If set returns the switch credentials"),
+				"network_device_id_or_identifier_string": c.FlagSet.String("id", _nilDefaultStr, red("(Required)")+" Switch id or identifier string. "),
+				"show_credentials":                       c.FlagSet.Bool("show-credentials", false, green("(Flag)")+" If set returns the switch credentials"),
 				"format":                                 c.FlagSet.String("format", "", "The output format. Supported values are 'json','csv','yaml'. The default format is human readable."),
-				"raw":                                    c.FlagSet.Bool("raw", false, green("(Flag)") + " When set the return will be a full dump of the object. This is useful when copying configurations. Only works with json and yaml formats."),
+				"raw":                                    c.FlagSet.Bool("raw", false, green("(Flag)")+" When set the return will be a full dump of the object. This is useful when copying configurations. Only works with json and yaml formats."),
 			}
 		},
 		ExecuteFunc: switchGetCmd,
@@ -96,8 +245,8 @@ var switchCmds = []Command{
 		FlagSet:      flag.NewFlagSet("delete switch", flag.ExitOnError),
 		InitFunc: func(c *Command) {
 			c.Arguments = map[string]interface{}{
-				"network_device_id_or_identifier_string": c.FlagSet.String("id", _nilDefaultStr, red("(Required)") + " Switch id or identifier string. "),
-				"autoconfirm":                            c.FlagSet.Bool("autoconfirm", false, green("(Flag)") + " If set it will assume action is confirmed"),
+				"network_device_id_or_identifier_string": c.FlagSet.String("id", _nilDefaultStr, red("(Required)")+" Switch id or identifier string. "),
+				"autoconfirm":                            c.FlagSet.Bool("autoconfirm", false, green("(Flag)")+" If set it will assume action is confirmed"),
 			}
 		},
 		ExecuteFunc: switchDeleteCmd,
@@ -112,9 +261,9 @@ var switchCmds = []Command{
 		FlagSet:      flag.NewFlagSet("list switch interfaces", flag.ExitOnError),
 		InitFunc: func(c *Command) {
 			c.Arguments = map[string]interface{}{
-				"network_device_id_or_identifier_string": c.FlagSet.String("id", _nilDefaultStr, red("(Required)") + " Switch id or identifier string. "),
+				"network_device_id_or_identifier_string": c.FlagSet.String("id", _nilDefaultStr, red("(Required)")+" Switch id or identifier string. "),
 				"format":                                 c.FlagSet.String("format", _nilDefaultStr, "The output format. Supported values are 'json','csv','yaml'. The default format is human readable."),
-				"raw":                                    c.FlagSet.Bool("raw", false, green("(Flag)") + " When set the return will be a full dump of the object. This is useful when copying configurations. Only works with json and yaml formats."),
+				"raw":                                    c.FlagSet.Bool("raw", false, green("(Flag)")+" When set the return will be a full dump of the object. This is useful when copying configurations. Only works with json and yaml formats."),
 			}
 		},
 		ExecuteFunc: switchInterfacesListCmd,
