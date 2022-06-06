@@ -14,9 +14,9 @@ import (
 	"github.com/go-git/go-billy/v5/memfs"
 	git "github.com/go-git/go-git/v5"
 
-	diff "github.com/sergi/go-diff/diffmatchpatch"
 	"github.com/go-git/go-git/v5/plumbing/object"
 	"github.com/go-git/go-git/v5/plumbing/transport/http"
+	diff "github.com/sergi/go-diff/diffmatchpatch"
 
 	memory "github.com/go-git/go-git/v5/storage/memory"
 
@@ -1160,51 +1160,17 @@ func templateBuildCmd(c *Command, client metalcloud.MetalCloudClient) (string, e
 				return "", err
 			}
 
-			fmt.Printf("%s", patchFileStringContents)
-
-			expectedText := `
-			bootstate=0
-			title=Loading ESXi installer
-			timeout=5
-			prefix=
-			kernel=/b.b00
-			kernelopt=ks=cdrom:/KS.CFG
-			modules=/jumpstrt.gz --- /useropts.gz --- /features.gz --- /k.b00 --- /uc_intel.b00 --- /uc_amd.b00 --- /uc_hygon.b00 --- /procfs.b00 --- /vmx.v00 --- /vim.v00 --- /tpm.v00 --- /sb.v00 --- /s.v00 --- /bnxtnet.v00 --- /bnxtroce.v00 --- /dellshar.v00 --- /lsimr3.v00 --- /lsimsgpt.v00 --- /dell_dcu.v00 --- /dell_osn.v00 --- /i40en.v00 --- /icen.v00 --- /igbn.v00 --- /irdman.v00 --- /ixgbenen.v00 --- /ixgben.v00 --- /nmlx5cor.v00 --- /nmlx5rdm.v00 --- /qlnative.v00 --- /qcnic.v00 --- /qedentv.v00 --- /qedf.v00 --- /qedi.v00 --- /qedrntv.v00 --- /qfle3.v00 --- /qfle3f.v00 --- /qfle3i.v00 --- /atlantic.v00 --- /brcmfcoe.v00 --- /elxiscsi.v00 --- /elxnet.v00 --- /iavmd.v00 --- /ionic_en.v00 --- /iser.v00 --- /lpfc.v00 --- /lpnic.v00 --- /lsi_msgp.v00 --- /lsi_msgp.v01 --- /mtip32xx.v00 --- /ne1000.v00 --- /nenic.v00 --- /nfnic.v00 --- /nhpsa.v00 --- /nmlx4_co.v00 --- /nmlx4_en.v00 --- /nmlx4_rd.v00 --- /ntg3.v00 --- /nvme_pci.v00 --- /nvmerdma.v00 --- /nvmetcp.v00 --- /nvmxnet3.v00 --- /nvmxnet3.v01 --- /pvscsi.v00 --- /qflge.v00 --- /rste.v00 --- /sfvmk.v00 --- /smartpqi.v00 --- /vmkata.v00 --- /vmkfcoe.v00 --- /vmkusb.v00 --- /vmw_ahci.v00 --- /bmcal.v00 --- /crx.v00 --- /elx_esx_.v00 --- /btldr.v00 --- /esx_dvfi.v00 --- /esx_ui.v00 --- /esxupdt.v00 --- /tpmesxup.v00 --- /weaselin.v00 --- /esxio_co.v00 --- /loadesx.v00 --- /lsuv2_hp.v00 --- /lsuv2_in.v00 --- /lsuv2_ls.v00 --- /lsuv2_nv.v00 --- /lsuv2_oe.v00 --- /lsuv2_oe.v01 --- /lsuv2_oe.v02 --- /lsuv2_sm.v00 --- /native_m.v00 --- /trx.v00 --- /vdfs.v00 --- /vmware_e.v00 --- /vsan.v00 --- /vsanheal.v00 --- /vsanmgmt.v00 --- /tools.t00 --- /dell_con.v00 --- /xorg.v00 --- /gc.v00 --- /imgdb.tgz --- /basemisc.tgz --- /resvibs.tgz --- /imgpayld.tgz
-			build=7.0.3-0.20.19193900
-			updated=0
-			`
-	
 			diffMatchPatch := diff.New()
-	
-			diffs := diffMatchPatch.DiffMain(string(bootloaderData), expectedText, false)
-	
-			fmt.Printf("%+v\n", diffs)
-			fmt.Println(diffMatchPatch.DiffPrettyText(diffs))
-	
-			patches := diffMatchPatch.PatchMake(diffs)
-			fmt.Printf("%+v\n", patches)
-			patchText := diffMatchPatch.PatchToText(patches)
-	
-			fmt.Println(patchText)
 
-			fmt.Println(patchFileStringContents)
+			patches, err := diffMatchPatch.PatchFromText(patchFileStringContents)
 
-			fmt.Println(patchText == patchFileStringContents)
+			if err != nil {
+				return "", err
+			}
 
-			// diffs = diffMatchPatch.DiffMain(patchText, patchFileStringContents, false)
-			// fmt.Printf("%+v\n", diffs)
+			patchedText, _ := diffMatchPatch.PatchApply(patches, string(bootloaderData))
 
-
-			// patches, err = diffMatchPatch.PatchFromText(patchFileStringContents)
-
-			// if err != nil {
-			// 	return "", err
-			// }
-
-			// patchedText, _ := diffMatchPatch.PatchApply(patches, string(bootloaderData))
-
-			// fmt.Printf("%s\n", patchedText)
-			// fmt.Println(patchedText == expectedText)
+			fmt.Printf("%s\n", patchedText)
 
 		} else {
 			return "", fmt.Errorf("the 'source-template' parameter must be specified when the 'name'")
