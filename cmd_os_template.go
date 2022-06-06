@@ -216,6 +216,7 @@ var osTemplatesCmds = []Command{
 			c.Arguments = map[string]interface{}{
 				"name":                 c.FlagSet.String("name", _nilDefaultStr, red("(Required)")+" Name of image."),
 				"source-template":      c.FlagSet.String("source-template", _nilDefaultStr, red("(Required)")+" The source template to use as a base. Use --list-supported for a list of accepted values."),
+				"source-iso":			c.FlagSet.String("source-iso", _nilDefaultStr, red("(Required)")+" The source ISO image path."),
 				"kickstart-append":     c.FlagSet.String("kickstart-append", _nilDefaultStr, yellow("(Optional)")+" Content to append to the default kickstart."),
 				"kickstart":            c.FlagSet.String("kickstart", _nilDefaultStr, yellow("(Optional)")+" The OS's kickstart or equivalent file to be uploaded instead of the default."),
 				"bootloader":           c.FlagSet.String("bootloader", _nilDefaultStr, yellow("(Optional)")+" The OS's instalation bootloader to be uploaded instead of default."),
@@ -1083,13 +1084,18 @@ func templateBuildCmd(c *Command, client metalcloud.MetalCloudClient) (string, e
 			fmt.Println(name)	
 			fmt.Println(sourceTemplateName)	
 
-			if _, ok := repoMap[sourceTemplateName]; ok {
-			} else {
+			if _, ok := repoMap[sourceTemplateName]; !ok {
 				return "", fmt.Errorf("did not find source template '%s'. Please use the 'list-supported' parameter to see the supported templates", sourceTemplateName)
 			}
 	
-			//TODO: image patch should be given as a parameter
-			imagePath := "C:/Users/Alexandru.Corman/Downloads/VMware-VMvisor-Installer-7.0.0.update03-19193900.x86_64-DellEMC_Customized-A02.iso"
+			var imagePath string
+
+			if sourceISO, ok := getStringParamOk(c.Arguments["source-iso"]); ok {
+				imagePath = sourceISO
+			} else {
+				return "", fmt.Errorf("the 'source-iso' parameter must be specified with the 'name' and 'source-template' ones")
+			}
+
 			file, err := os.Open(imagePath)
 	
 			if err != nil {
@@ -1173,7 +1179,7 @@ func templateBuildCmd(c *Command, client metalcloud.MetalCloudClient) (string, e
 			fmt.Printf("%s\n", patchedText)
 
 		} else {
-			return "", fmt.Errorf("the 'source-template' parameter must be specified when the 'name'")
+			return "", fmt.Errorf("the 'source-template' parameter must be specified with the 'name' one")
 		}
 	}
 
