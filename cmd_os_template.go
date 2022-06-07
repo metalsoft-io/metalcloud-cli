@@ -214,25 +214,41 @@ var osTemplatesCmds = []Command{
 		FlagSet:      flag.NewFlagSet("build an OS template from a source ISO image", flag.ExitOnError),
 		InitFunc: func(c *Command) {
 			c.Arguments = map[string]interface{}{
-				"name":                 c.FlagSet.String("name", _nilDefaultStr, red("(Required)")+" Name of image."),
-				"source-template":      c.FlagSet.String("source-template", _nilDefaultStr, red("(Required)")+" The source template to use as a base. Use --list-supported for a list of accepted values."),
-				"source-iso":			c.FlagSet.String("source-iso", _nilDefaultStr, red("(Required)")+" The source ISO image path."),
-				"kickstart-append":     c.FlagSet.String("kickstart-append", _nilDefaultStr, yellow("(Optional)")+" Content to append to the default kickstart."),
-				"kickstart":            c.FlagSet.String("kickstart", _nilDefaultStr, yellow("(Optional)")+" The OS's kickstart or equivalent file to be uploaded instead of the default."),
-				"bootloader":           c.FlagSet.String("bootloader", _nilDefaultStr, yellow("(Optional)")+" The OS's instalation bootloader to be uploaded instead of default."),
-				"bootloader-config":    c.FlagSet.String("bootloader-config", _nilDefaultStr, yellow("(Optional)")+" The OS's installation bootloader config file to be uploaded instead of the default."),
-				"dynamic-file":         c.FlagSet.String("dynamic-file", _nilDefaultStr, yellow("(Optional, can be repeated)")+" A file that will be replaced inside the template. Can contain variables. Limited to 2MB in size."),
-				"binary-file":          c.FlagSet.String("binary-file", _nilDefaultStr, yellow("(Optional, can be repeated)")+" A file that will be replaced inside the template. Cannot contain variables."),
-				"github-template-repo": c.FlagSet.String("github-template-repo", _nilDefaultStr, yellow("(Optional)")+" Override the default github url used to download template files for given OS."),
-				"list-supported":       c.FlagSet.Bool("list-supported", false, yellow("(Optional)")+" List supported OS source templates."),
-				"firewall-conf-func":   c.FlagSet.String("firewall-conf-func", _nilDefaultStr, yellow("(Optional)")+" Set the firewall configuration mecahanism: Ansible2, None."),
-				"legacy-boot":          c.FlagSet.Bool("legacy-boot", false, green("(Flag)")+" If set, enables legacy BIOS boot support instead of UEFI."),
-				"quiet":                c.FlagSet.Bool("quiet", false, green("(Flag)")+" If set, eliminates all output."),
-				"debug":                c.FlagSet.Bool("debug", false, green("(Flag)")+" If set, increases log level."),
-				"return-id":            c.FlagSet.Bool("return-id", false, green("(Flag)")+" If set, returns the ID of the generated template. Useful for automation."),
+				"name":                 c.FlagSet.String("name", _nilDefaultStr, red("(Required)") + "Name of image."),
+				"source-template":      c.FlagSet.String("source-template", _nilDefaultStr, red("(Required)") + "The source template to use as a base. Use --list-supported for a list of accepted values."),
+				"source-iso":			c.FlagSet.String("source-iso", _nilDefaultStr, red("(Required)") + "The source ISO image path."),
+				"kickstart-append":     c.FlagSet.String("kickstart-append", _nilDefaultStr, yellow("(Optional)") + "Content to append to the default kickstart."),
+				"kickstart":            c.FlagSet.String("kickstart", _nilDefaultStr, yellow("(Optional)") + "The OS's kickstart or equivalent file to be uploaded instead of the default."),
+				"bootloader":           c.FlagSet.String("bootloader", _nilDefaultStr, yellow("(Optional)") + "The OS's instalation bootloader to be uploaded instead of default."),
+				"bootloader-config":    c.FlagSet.String("bootloader-config", _nilDefaultStr, yellow("(Optional)") + "The OS's installation bootloader config file to be uploaded instead of the default."),
+				"dynamic-file":         c.FlagSet.String("dynamic-file", _nilDefaultStr, yellow("(Optional, can be repeated)") + "A file that will be replaced inside the template. Can contain variables. Limited to 2MB in size."),
+				"binary-file":          c.FlagSet.String("binary-file", _nilDefaultStr, yellow("(Optional, can be repeated)") + "A file that will be replaced inside the template. Cannot contain variables."),
+				"github-template-repo": c.FlagSet.String("github-template-repo", _nilDefaultStr, yellow("(Optional)") + "Override the default github url used to download template files for given OS."),
+				"list-supported":       c.FlagSet.Bool("list-supported", false, yellow("(Optional)") + "List supported OS source templates."),
+				"firewall-conf-func":   c.FlagSet.String("firewall-conf-func", _nilDefaultStr, yellow("(Optional)") + "Set the firewall configuration mecahanism: Ansible2, None."),
+				"legacy-boot":          c.FlagSet.Bool("legacy-boot", false, green("(Flag)") + "If set, enables legacy BIOS boot support instead of UEFI."),
+				"quiet":                c.FlagSet.Bool("quiet", false, green("(Flag)") + "If set, eliminates all output."),
+				"debug":                c.FlagSet.Bool("debug", false, green("(Flag)") + "If set, increases log level."),
+				"return-id":            c.FlagSet.Bool("return-id", false, green("(Flag)") + "If set, returns the ID of the generated template. Useful for automation."),
 			}
 		},
 		ExecuteFunc: templateBuildCmd,
+		Endpoint:    ExtendedEndpoint,
+	},
+	{
+		Description:  "Create a diff file.",
+		Subject:      "os-template",
+		AltSubject:   "template",
+		Predicate:    "create-diff",
+		AltPredicate: "diff",
+		FlagSet:      flag.NewFlagSet("create the diff of 2 files", flag.ExitOnError),
+		InitFunc: func(c *Command) {
+			c.Arguments = map[string]interface{}{
+				"file1":                 c.FlagSet.String("file1", _nilDefaultStr, red("(Required)") + "Path of the first file."),
+				"file2":                 c.FlagSet.String("file2", _nilDefaultStr, red("(Required)") + "Path of the second file."),
+			}
+		},
+		ExecuteFunc: templateDiffCmd,
 		Endpoint:    ExtendedEndpoint,
 	},
 }
@@ -1183,12 +1199,43 @@ func templateBuildCmd(c *Command, client metalcloud.MetalCloudClient) (string, e
 		}
 	}
 
-	
-
-
-
-
 	return "", nil
+}
+
+func templateDiffCmd(c *Command, client metalcloud.MetalCloudClient) (string, error) {
+	var filePath1, filePath2 string
+
+	if file1, ok := getStringParamOk(c.Arguments["file1"]); ok {
+		filePath1 = file1
+	} else {
+		return "", fmt.Errorf("did not find the 'file1' parameter")
+	}
+
+	if file2, ok := getStringParamOk(c.Arguments["file2"]); ok {
+		filePath2 = file2
+	} else {
+		return "", fmt.Errorf("did not find the 'file2' parameter")
+	}
+
+	fileContents1, err := os.ReadFile(filePath1)
+
+	if err != nil {
+		return "", err
+	}
+
+	fileContents2, err := os.ReadFile(filePath2)
+
+	if err != nil {
+		return "", err
+	}
+
+	diffMatchPatch := diff.New()
+	
+	diffs := diffMatchPatch.DiffMain(string(fileContents1), string(fileContents2), false)
+	patches := diffMatchPatch.PatchMake(diffs)
+	patchText := diffMatchPatch.PatchToText(patches)
+
+	return patchText, nil
 }
 
 func getOSTemplateFromCommand(paramName string, c *Command, client metalcloud.MetalCloudClient, decryptPasswd bool) (*metalcloud.OSTemplate, error) {
