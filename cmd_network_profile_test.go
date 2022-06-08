@@ -78,7 +78,7 @@ func TestNetworkProfileListCmd(t *testing.T) {
 
 	r := m[0].(map[string]interface{})
 	Expect(int(r["ID"].(float64))).To(Equal(np1.NetworkProfileID))
-	Expect(r["LABEL"].(string)).To(Equal(np1.NetworkProfileLabel))
+	Expect(r["LABEL"].(string)).To(ContainSubstring(np1.NetworkProfileLabel))
 	Expect(r["NETWORK TYPE"].(string)).To(Equal(np1.NetworkType))
 	Expect(r["VLANs"].(string)).To(Equal(vlans))
 	Expect(r["CREATED"].(string)).To(Equal(np1.NetworkProfileCreatedTimestamp))
