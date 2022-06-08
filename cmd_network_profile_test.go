@@ -24,17 +24,18 @@ func TestNetworkProfileListCmd(t *testing.T) {
 		DatacenterID:   100,
 		DatacenterName: "test",
 	}
-
+	vlanid1 := 1
+	vlanid2 := 2
 	np1 := metalcloud.NetworkProfile{
 		NetworkProfileID:    10,
 		NetworkProfileLabel: "test1",
 		NetworkType:         "wan",
 		NetworkProfileVLANs: []metalcloud.NetworkProfileVLAN{
 			{
-				VlanID: 1,
+				VlanID: &vlanid1,
 			},
 			{
-				VlanID: 2,
+				VlanID: &vlanid2,
 			},
 		},
 		NetworkProfileCreatedTimestamp: "",
@@ -73,7 +74,7 @@ func TestNetworkProfileListCmd(t *testing.T) {
 
 	Expect(err).To(BeNil())
 
-	vlans := strconv.Itoa(np1.NetworkProfileVLANs[0].VlanID) + "," + strconv.Itoa(np1.NetworkProfileVLANs[1].VlanID)
+	vlans := strconv.Itoa(*np1.NetworkProfileVLANs[0].VlanID) + "," + strconv.Itoa(*np1.NetworkProfileVLANs[1].VlanID)
 
 	r := m[0].(map[string]interface{})
 	Expect(int(r["ID"].(float64))).To(Equal(np1.NetworkProfileID))
@@ -124,18 +125,21 @@ func TestNetworkProfileVlansListCmd(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	client := mock_metalcloud.NewMockMetalCloudClient(ctrl)
 
+	vlanid1 := 1
+	vlanid2 := 2
+
 	np := metalcloud.NetworkProfile{
 		NetworkProfileID: 10,
 		NetworkProfileVLANs: []metalcloud.NetworkProfileVLAN{
 			{
-				VlanID:   1,
+				VlanID:   &vlanid1,
 				PortMode: "trunk",
 				ExternalConnectionIDs: []int{
 					1,
 				},
 			},
 			{
-				VlanID:   2,
+				VlanID:   &vlanid2,
 				PortMode: "trunk",
 			},
 		},
@@ -175,7 +179,7 @@ func TestNetworkProfileVlansListCmd(t *testing.T) {
 	ecString := ec.ExternalConnectionLabel + " (#" + strconv.Itoa(ec.ExternalConnectionID) + ")"
 
 	r := m[0].(map[string]interface{})
-	Expect(int(r["VLAN"].(float64))).To(Equal(np.NetworkProfileVLANs[0].VlanID))
+	Expect(r["VLAN"].(string)).To(Equal(strconv.Itoa(*np.NetworkProfileVLANs[0].VlanID)))
 	Expect(r["Port mode"].(string)).To(Equal(np.NetworkProfileVLANs[0].PortMode))
 	Expect(r["External connections"].(string)).To(Equal(ecString))
 	Expect(r["Provision subnet gateways"].(bool)).To(Equal(np.NetworkProfileVLANs[0].ProvisionSubnetGateways))
@@ -191,7 +195,7 @@ func TestNetworkProfileVlansListCmd(t *testing.T) {
 	csv, err := reader.ReadAll()
 
 	Expect(err).To(BeNil())
-	Expect(csv[1][0]).To(Equal(strconv.Itoa(np.NetworkProfileVLANs[0].VlanID)))
+	Expect(csv[1][0]).To(Equal(strconv.Itoa(*np.NetworkProfileVLANs[0].VlanID)))
 	Expect(csv[1][1]).To(Equal(np.NetworkProfileVLANs[0].PortMode))
 
 	//check the human readable output, just check for not empty

@@ -34,9 +34,9 @@ var networkProfileCmds = []Command{
 		Description:  "Lists vlans of network profile.",
 		Subject:      "network-profile",
 		AltSubject:   "np",
-		Predicate:    "vlans-list",
-		AltPredicate: "vlans-ls",
-		FlagSet:      flag.NewFlagSet("vlans-list network_profile", flag.ExitOnError),
+		Predicate:    "vlan-list",
+		AltPredicate: "vlans",
+		FlagSet:      flag.NewFlagSet("vlan-list network_profile", flag.ExitOnError),
 		InitFunc: func(c *Command) {
 			c.Arguments = map[string]interface{}{
 				"network_profile_id": c.FlagSet.Int("id", _nilDefaultInt, red("(Required)")+" Network profile's id."),
@@ -180,17 +180,20 @@ func networkProfileListCmd(c *Command, client metalcloud.MetalCloudClient) (stri
 	for _, np := range *npList {
 		vlans := ""
 
-		for index, vlan := range np.NetworkProfileVLANs {
-			if index == 0 {
-				vlans = strconv.Itoa(vlan.VlanID)
-			} else {
-				vlans = vlans + "," + strconv.Itoa(vlan.VlanID)
+		for _, vlan := range np.NetworkProfileVLANs {
+			if vlan.VlanID != nil {
+				if vlans == "" {
+					vlans = strconv.Itoa(*vlan.VlanID)
+
+				} else {
+					vlans = vlans + "," + strconv.Itoa(*vlan.VlanID)
+				}
 			}
 		}
 
 		data = append(data, []interface{}{
 			np.NetworkProfileID,
-			np.NetworkProfileLabel,
+			blue(np.NetworkProfileLabel),
 			np.NetworkType,
 			vlans,
 			np.NetworkProfileCreatedTimestamp,
@@ -222,7 +225,7 @@ func networkProfileVlansListCmd(c *Command, client metalcloud.MetalCloudClient) 
 	schemaConfiguration := []tableformatter.SchemaField{
 		{
 			FieldName: "VLAN",
-			FieldType: tableformatter.TypeInt,
+			FieldType: tableformatter.TypeString,
 			FieldSize: 6,
 		},
 		{
@@ -263,8 +266,13 @@ func networkProfileVlansListCmd(c *Command, client metalcloud.MetalCloudClient) 
 			}
 		}
 
+		vlanid := "auto"
+		if vlan.VlanID != nil {
+			vlanid = strconv.Itoa(*vlan.VlanID)
+		}
+
 		dataConfiguration = append(dataConfiguration, []interface{}{
-			vlan.VlanID,
+			vlanid,
 			vlan.PortMode,
 			ecIds,
 			vlan.ProvisionSubnetGateways,
