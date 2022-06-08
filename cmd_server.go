@@ -109,9 +109,9 @@ metalcloud-cli server list --show-credentials # to retrieve a list of credential
 		InitFunc: func(c *Command) {
 			c.Arguments = map[string]interface{}{
 				"server_id_or_uuid": c.FlagSet.String("id", _nilDefaultStr, "Server's ID or UUID"),
-				"ipmi_hostname":     c.FlagSet.String("ipmi-host", _nilDefaultStr, "The new IPMI hostname of the server. This command cannot be used in conjunction with config or pipe commands."),
-				"ipmi_username":     c.FlagSet.String("ipmi-user", _nilDefaultStr, "The new IPMI username of the server. This command cannot be used in conjunction with config or pipe commands."),
-				"ipmi_password":     c.FlagSet.String("ipmi-pass", _nilDefaultStr, "The new IPMI password of the server. This command cannot be used in conjunction with config or pipe commands."),
+				"ipmi_hostname":     c.FlagSet.String("ipmi-host", _nilDefaultStr, "The new IPMI hostname of the server."),
+				"ipmi_username":     c.FlagSet.String("ipmi-user", _nilDefaultStr, "The new IPMI username of the server."),
+				"ipmi_password":     c.FlagSet.String("ipmi-pass", _nilDefaultStr, "The new IPMI password of the server."),
 			}
 		},
 		ExecuteFunc: serverEditIPMICmd,
