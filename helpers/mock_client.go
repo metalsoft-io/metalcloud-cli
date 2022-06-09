@@ -2106,6 +2106,21 @@ func (mr *MockMetalCloudClientMockRecorder) ServerCreate(server, autoGenerate in
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ServerCreate", reflect.TypeOf((*MockMetalCloudClient)(nil).ServerCreate), server, autoGenerate)
 }
 
+// ServerCreateAndRegister mocks base method
+func (m *MockMetalCloudClient) ServerCreateAndRegister(server metalcloud.ServerCreateAndRegister) (int, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "ServerCreateAndRegister", server)
+	ret0, _ := ret[0].(int)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// ServerCreateAndRegister indicates an expected call of ServerCreateAndRegister
+func (mr *MockMetalCloudClientMockRecorder) ServerCreateAndRegister(server interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ServerCreateAndRegister", reflect.TypeOf((*MockMetalCloudClient)(nil).ServerCreateAndRegister), server)
+}
+
 // ServerEditComplete mocks base method
 func (m *MockMetalCloudClient) ServerEditComplete(serverID int, server metalcloud.Server) (*metalcloud.Server, error) {
 	m.ctrl.T.Helper()
