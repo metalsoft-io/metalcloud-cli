@@ -189,8 +189,8 @@ func devicesListCmd(c *Command, client metalcloud.MetalCloudClient) (string, err
 
 	totalDevices := totalServers + totalSwitches + totalStorages
 
-	title := fmt.Sprintf("Count of active or in-use equipment per datacenter: %d", totalDevices)
+	title := fmt.Sprint("Count of active or in-use equipment per datacenter")
 
-	return table.RenderTable("Records", title, getStringParam(c.Arguments["format"]))
+	return table.RenderTable(fmt.Sprintf("Records (%d active devices across all datacenters)", totalDevices), title, getStringParam(c.Arguments["format"]))
 
 }
