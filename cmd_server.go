@@ -80,7 +80,7 @@ metalcloud-cli server list --show-credentials # to retrieve a list of credential
 		Subject:      "server",
 		AltSubject:   "srv",
 		Predicate:    "register",
-		AltPredicate: "reg",
+		AltPredicate: "new",
 		FlagSet:      flag.NewFlagSet("register server", flag.ExitOnError),
 		InitFunc: func(c *Command) {
 			c.Arguments = map[string]interface{}{
