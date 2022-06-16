@@ -2380,6 +2380,21 @@ func (mr *MockMetalCloudClientMockRecorder) ServerEditInventory(serverID, server
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ServerEditInventory", reflect.TypeOf((*MockMetalCloudClient)(nil).ServerEditInventory), serverID, serverEditInventory)
 }
 
+// InstanceServerReplace mocks base method
+func (m *MockMetalCloudClient) InstanceServerReplace(instanceID, serverID int) (int, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "InstanceServerReplace", instanceID, serverID)
+	ret0, _ := ret[0].(int)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// InstanceServerReplace indicates an expected call of InstanceServerReplace
+func (mr *MockMetalCloudClientMockRecorder) InstanceServerReplace(instanceID, serverID interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "InstanceServerReplace", reflect.TypeOf((*MockMetalCloudClient)(nil).InstanceServerReplace), instanceID, serverID)
+}
+
 // ServerFirmwarePolicyGet mocks base method
 func (m *MockMetalCloudClient) ServerFirmwarePolicyGet(serverFirmwarePolicyID int) (*metalcloud.ServerFirmwareUpgradePolicy, error) {
 	m.ctrl.T.Helper()
