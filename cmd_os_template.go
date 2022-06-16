@@ -29,8 +29,8 @@ const osArchitecture64 = "x86_64"
 const bootMethodLocalDrives = "local_drives"
 const bootMethodPxeIscsi = "pxe_iscsi"
 
-const bootTypeUEFI = "uefi"
-const bootTypeClassic = "classic"
+const bootTypeUEFIOnly = "uefi_only"
+const bootTypeLegacyOnly = "classic_only"
 
 const bootloaderConfigFileName = "BOOT.CFG"
 
@@ -214,22 +214,22 @@ var osTemplatesCmds = []Command{
 		FlagSet:      flag.NewFlagSet("build an OS template from a source ISO image", flag.ExitOnError),
 		InitFunc: func(c *Command) {
 			c.Arguments = map[string]interface{}{
-				"name":                 c.FlagSet.String("name", _nilDefaultStr, red("(Required)") + "Name of image."),
-				"source-template":      c.FlagSet.String("source-template", _nilDefaultStr, red("(Required)") + "The source template to use as a base. Use --list-supported for a list of accepted values."),
-				"source-iso":			c.FlagSet.String("source-iso", _nilDefaultStr, red("(Required)") + "The source ISO image path."),
-				"kickstart-append":     c.FlagSet.String("kickstart-append", _nilDefaultStr, yellow("(Optional)") + "Content to append to the default kickstart."),
-				"kickstart":            c.FlagSet.String("kickstart", _nilDefaultStr, yellow("(Optional)") + "The OS's kickstart or equivalent file to be uploaded instead of the default."),
-				"bootloader":           c.FlagSet.String("bootloader", _nilDefaultStr, yellow("(Optional)") + "The OS's instalation bootloader to be uploaded instead of default."),
-				"bootloader-config":    c.FlagSet.String("bootloader-config", _nilDefaultStr, yellow("(Optional)") + "The OS's installation bootloader config file to be uploaded instead of the default."),
-				"dynamic-file":         c.FlagSet.String("dynamic-file", _nilDefaultStr, yellow("(Optional, can be repeated)") + "A file that will be replaced inside the template. Can contain variables. Limited to 2MB in size."),
-				"binary-file":          c.FlagSet.String("binary-file", _nilDefaultStr, yellow("(Optional, can be repeated)") + "A file that will be replaced inside the template. Cannot contain variables."),
-				"github-template-repo": c.FlagSet.String("github-template-repo", _nilDefaultStr, yellow("(Optional)") + "Override the default github url used to download template files for given OS."),
-				"list-supported":       c.FlagSet.Bool("list-supported", false, yellow("(Optional)") + "List supported OS source templates."),
-				"firewall-conf-func":   c.FlagSet.String("firewall-conf-func", _nilDefaultStr, yellow("(Optional)") + "Set the firewall configuration mecahanism: Ansible2, None."),
-				"legacy-boot":          c.FlagSet.Bool("legacy-boot", false, green("(Flag)") + "If set, enables legacy BIOS boot support instead of UEFI."),
-				"quiet":                c.FlagSet.Bool("quiet", false, green("(Flag)") + "If set, eliminates all output."),
-				"debug":                c.FlagSet.Bool("debug", false, green("(Flag)") + "If set, increases log level."),
-				"return-id":            c.FlagSet.Bool("return-id", false, green("(Flag)") + "If set, returns the ID of the generated template. Useful for automation."),
+				"name":                 c.FlagSet.String("name", _nilDefaultStr, red("(Required)")+"Name of image."),
+				"source-template":      c.FlagSet.String("source-template", _nilDefaultStr, red("(Required)")+"The source template to use as a base. Use --list-supported for a list of accepted values."),
+				"source-iso":           c.FlagSet.String("source-iso", _nilDefaultStr, red("(Required)")+"The source ISO image path."),
+				"kickstart-append":     c.FlagSet.String("kickstart-append", _nilDefaultStr, yellow("(Optional)")+"Content to append to the default kickstart."),
+				"kickstart":            c.FlagSet.String("kickstart", _nilDefaultStr, yellow("(Optional)")+"The OS's kickstart or equivalent file to be uploaded instead of the default."),
+				"bootloader":           c.FlagSet.String("bootloader", _nilDefaultStr, yellow("(Optional)")+"The OS's instalation bootloader to be uploaded instead of default."),
+				"bootloader-config":    c.FlagSet.String("bootloader-config", _nilDefaultStr, yellow("(Optional)")+"The OS's installation bootloader config file to be uploaded instead of the default."),
+				"dynamic-file":         c.FlagSet.String("dynamic-file", _nilDefaultStr, yellow("(Optional, can be repeated)")+"A file that will be replaced inside the template. Can contain variables. Limited to 2MB in size."),
+				"binary-file":          c.FlagSet.String("binary-file", _nilDefaultStr, yellow("(Optional, can be repeated)")+"A file that will be replaced inside the template. Cannot contain variables."),
+				"github-template-repo": c.FlagSet.String("github-template-repo", _nilDefaultStr, yellow("(Optional)")+"Override the default github url used to download template files for given OS."),
+				"list-supported":       c.FlagSet.Bool("list-supported", false, yellow("(Optional)")+"List supported OS source templates."),
+				"firewall-conf-func":   c.FlagSet.String("firewall-conf-func", _nilDefaultStr, yellow("(Optional)")+"Set the firewall configuration mecahanism: Ansible2, None."),
+				"legacy-boot":          c.FlagSet.Bool("legacy-boot", false, green("(Flag)")+"If set, enables legacy BIOS boot support instead of UEFI."),
+				"quiet":                c.FlagSet.Bool("quiet", false, green("(Flag)")+"If set, eliminates all output."),
+				"debug":                c.FlagSet.Bool("debug", false, green("(Flag)")+"If set, increases log level."),
+				"return-id":            c.FlagSet.Bool("return-id", false, green("(Flag)")+"If set, returns the ID of the generated template. Useful for automation."),
 			}
 		},
 		ExecuteFunc: templateBuildCmd,
@@ -244,8 +244,8 @@ var osTemplatesCmds = []Command{
 		FlagSet:      flag.NewFlagSet("create the diff of 2 files", flag.ExitOnError),
 		InitFunc: func(c *Command) {
 			c.Arguments = map[string]interface{}{
-				"file1":                 c.FlagSet.String("file1", _nilDefaultStr, red("(Required)") + "Path of the first file."),
-				"file2":                 c.FlagSet.String("file2", _nilDefaultStr, red("(Required)") + "Path of the second file."),
+				"file1": c.FlagSet.String("file1", _nilDefaultStr, red("(Required)")+"Path of the first file."),
+				"file2": c.FlagSet.String("file2", _nilDefaultStr, red("(Required)")+"Path of the second file."),
 			}
 		},
 		ExecuteFunc: templateDiffCmd,
@@ -858,39 +858,42 @@ func templateBuildCmd(c *Command, client metalcloud.MetalCloudClient) (string, e
 	}
 
 	type TemplateAsset struct {
-		file			   object.File
+		file               object.File
 		Isopath            string `yaml:"isopath"`
 		Mime               string `yaml:"mime"`
 		IsKickstartFile    bool   `yaml:"is-kickstart-file"`
 		IsBootloaderConfig bool   `yaml:"is-bootloader-config"`
-		IsPatchFile 	   bool   `yaml:"is-patch-file"`
+		IsPatchFile        bool   `yaml:"is-patch-file"`
+	}
+
+	type OsTemplateContents struct {
+		BootType                        string `yaml:"boot-type"`
+		BootMethodsSupported            string `yaml:"boot-methods-supported"`
+		OsArchitecture                  string `yaml:"os-architecture"`
+		OsReadyMethod                   string `yaml:"os-ready-method"`
+		ImageBuildRequired              bool   `yaml:"image-build-required"`
+		ProvisionViaOob                 bool   `yaml:"provision-via-oob"`
+		InitialUser                     string `yaml:"initial-user"`
+		InitialSSHPort                  int    `yaml:"initial-ssh-port"`
+		UseAutogeneratedInitialPassword bool   `yaml:"use-autogenerated-initial-password"`
 	}
 
 	type TemplateContents struct {
-		OsTemplate struct {
-			BootType                        string `yaml:"boot-type"`
-			BootMethodsSupported            string `yaml:"boot-methods-supported"`
-			OsArchitecture                  string `yaml:"os-architecture"`
-			OsReadyMethod                   string `yaml:"os-ready-method"`
-			ImageBuildRequired              bool   `yaml:"image-build-required"`
-			ProvisionViaOob                 bool   `yaml:"provision-via-oob"`
-			InitialUser                     string `yaml:"initial-user"`
-			InitialSSHPort                  int    `yaml:"initial-ssh-port"`
-			UseAutogeneratedInitialPassword bool   `yaml:"use-autogenerated-initial-password"`
-		} `yaml:"os-template"`
-		Assets map[string]TemplateAsset `yaml:"assets"`
+		OsTemplateContents OsTemplateContents       `yaml:"os-template"`
+		Assets             map[string]TemplateAsset `yaml:"assets"`
 	}
 
 	// Struct containing the values that will be printed out for a repo template
 	type RepoTemplate struct {
-		Family string
-		Version string
-		Architecture string
-		DeployProcess string
-		BootType string
-		TemplateFile object.File
-		Assets []TemplateAsset
-		Warnings []string
+		Family             string
+		Version            string
+		Architecture       string
+		DeployProcess      string
+		BootType           string
+		TemplateFile       object.File
+		OsTemplateContents OsTemplateContents
+		Assets             []TemplateAsset
+		Warnings           []string
 	}
 
 	repoMap := make(map[string]RepoTemplate)
@@ -899,7 +902,7 @@ func templateBuildCmd(c *Command, client metalcloud.MetalCloudClient) (string, e
 	repoAssetsPerTemplate := make(map[string][]TemplateAsset)
 
 	files := tree.Files()
-	files.ForEach(func (file *object.File) error {
+	files.ForEach(func(file *object.File) error {
 		if file.Mode.IsRegular() {
 			if strings.Count(file.Name, "/") == 2 {
 				parts := strings.Split(file.Name, "/")
@@ -908,8 +911,8 @@ func templateBuildCmd(c *Command, client metalcloud.MetalCloudClient) (string, e
 				if parts[2] == "template.yaml" {
 					if _, ok := repoMap[templatePreffix]; !ok {
 						repoMap[templatePreffix] = RepoTemplate{
-							Family: parts[0],
-							Version: parts[1],
+							Family:       parts[0],
+							Version:      parts[1],
 							TemplateFile: *file,
 						}
 					}
@@ -917,7 +920,7 @@ func templateBuildCmd(c *Command, client metalcloud.MetalCloudClient) (string, e
 					asset := TemplateAsset{
 						file: *file,
 					}
-					
+
 					repoAssetsPerTemplate[templatePreffix] = append(repoAssetsPerTemplate[templatePreffix], asset)
 				}
 			}
@@ -942,13 +945,15 @@ func templateBuildCmd(c *Command, client metalcloud.MetalCloudClient) (string, e
 			return "", err
 		}
 
-		architecture := templateContents.OsTemplate.OsArchitecture
-		deployProcess := templateContents.OsTemplate.BootMethodsSupported
-		bootType := templateContents.OsTemplate.BootType
+		repoTemplate.OsTemplateContents = templateContents.OsTemplateContents
+
+		architecture := templateContents.OsTemplateContents.OsArchitecture
+		deployProcess := templateContents.OsTemplateContents.BootMethodsSupported
+		bootType := templateContents.OsTemplateContents.BootType
 
 		validArchitectures := []string{osArchitecture64}
 		validDeployProcesses := []string{bootMethodLocalDrives, bootMethodPxeIscsi}
-		validBootTypes := []string{bootTypeUEFI, bootTypeClassic}
+		validBootTypes := []string{bootTypeUEFIOnly, bootTypeLegacyOnly}
 
 		warnings := []string{}
 
@@ -965,9 +970,9 @@ func templateBuildCmd(c *Command, client metalcloud.MetalCloudClient) (string, e
 		}
 
 		var repoFileNames, templateFileNames []string
-	
+
 		for key, asset := range repoTemplate.Assets {
-			fileName := strings.ReplaceAll(asset.file.Name, templatePreffix + "/", "")
+			fileName := strings.ReplaceAll(asset.file.Name, templatePreffix+"/", "")
 			repoFileNames = append(repoFileNames, fileName)
 
 			if asset, ok := templateContents.Assets[fileName]; ok {
@@ -1002,7 +1007,7 @@ func templateBuildCmd(c *Command, client metalcloud.MetalCloudClient) (string, e
 
 		// Print warnings, if there are any
 		if len(warnings) != 0 {
-			fmt.Printf("Detected the following warnings regarding repository structure for template %s:\n", templatePreffix);
+			fmt.Printf("Detected the following warnings regarding repository structure for template %s:\n", templatePreffix)
 		}
 		for _, warningMessage := range warnings {
 			fmt.Println("\t" + warningMessage)
@@ -1044,7 +1049,7 @@ func templateBuildCmd(c *Command, client metalcloud.MetalCloudClient) (string, e
 				FieldSize: 5,
 			},
 		}
-	
+
 		data := [][]interface{}{}
 		for templatePreffix, repoTemplate := range repoMap {
 			var architecture, deployProcess, bootType string
@@ -1066,14 +1071,14 @@ func templateBuildCmd(c *Command, client metalcloud.MetalCloudClient) (string, e
 			}
 
 			switch repoTemplate.BootType {
-			case bootTypeUEFI:
+			case bootTypeUEFIOnly:
 				bootType = "UEFI"
-			case bootTypeClassic:
-				bootType = "classic"
+			case bootTypeLegacyOnly:
+				bootType = "Legacy"
 			default:
 				bootType = red("unknown")
 			}
-	
+
 			data = append(data, []interface{}{
 				repoTemplate.Family,
 				repoTemplate.Version,
@@ -1082,11 +1087,11 @@ func templateBuildCmd(c *Command, client metalcloud.MetalCloudClient) (string, e
 				bootType,
 				templatePreffix,
 			})
-	
+
 		}
-	
+
 		tableformatter.TableSorter(schema).OrderBy(schema[0].FieldName).Sort(data)
-	
+
 		table := tableformatter.Table{
 			Data:   data,
 			Schema: schema,
@@ -1097,13 +1102,10 @@ func templateBuildCmd(c *Command, client metalcloud.MetalCloudClient) (string, e
 	if name, ok := getStringParamOk(c.Arguments["name"]); ok {
 
 		if sourceTemplateName, ok := getStringParamOk(c.Arguments["source-template"]); ok {
-			fmt.Println(name)	
-			fmt.Println(sourceTemplateName)	
-
 			if _, ok := repoMap[sourceTemplateName]; !ok {
 				return "", fmt.Errorf("did not find source template '%s'. Please use the 'list-supported' parameter to see the supported templates", sourceTemplateName)
 			}
-	
+
 			var imagePath string
 
 			if sourceISO, ok := getStringParamOk(c.Arguments["source-iso"]); ok {
@@ -1113,48 +1115,48 @@ func templateBuildCmd(c *Command, client metalcloud.MetalCloudClient) (string, e
 			}
 
 			file, err := os.Open(imagePath)
-	
+
 			if err != nil {
 				return "", fmt.Errorf("image not found at path %s", imagePath)
 			}
-	
+
 			image, err := iso9660.OpenImage(file)
-	
+
 			if err != nil {
 				return "", err
 			}
-	
+
 			rootDir, err := image.RootDir()
-	
+
 			if err != nil {
 				return "", err
 			}
-	
+
 			children, err := rootDir.GetChildren()
-	
+
 			if err != nil {
 				return "", err
 			}
-	
+
 			var bootloaderFile *iso9660.File = nil
-	
+
 			for _, child := range children {
 				if !child.IsDir() && child.Name() == bootloaderConfigFileName {
 					bootloaderFile = child
 					break
 				}
 			}
-	
+
 			if bootloaderFile == nil {
 				return "", fmt.Errorf("did not find bootloader config file in the given ISO image")
 			}
-	
+
 			bootloaderData, err := ioutil.ReadAll(bootloaderFile.Reader())
-	
+
 			if err != nil {
 				return "", err
 			}
-	
+
 			sourceTemplate := repoMap[sourceTemplateName]
 
 			var patchAsset TemplateAsset
@@ -1194,6 +1196,56 @@ func templateBuildCmd(c *Command, client metalcloud.MetalCloudClient) (string, e
 
 			fmt.Printf("%s\n", patchedText)
 
+			if sourceTemplateName != "ESXi/7.0.0u3" {
+				return "", fmt.Errorf("only template ESXi/7.0.0u3 allowed now")
+			}
+
+			/**
+			&{VolumeTemplateID:0 VolumeTemplateLabel:esxi-700u03-uefi-a07 VolumeTemplateDisplayName:ESXI 7.0U1 VolumeTemplateSizeMBytes:0 VolumeTemplateLocalDiskSupported:false VolumeTemplateIsOSTemplate:true VolumeTemplateImageBuildRequired:true
+			VolumeTemplateProvisionViaOOB:true VolumeTemplateBootMethodsSupported:local_drives VolumeTemplateOsBootstrapFunctionName: VolumeTemplateBootType:uefi_only VolumeTemplateDescription:VMWare ESXI 7.0U1 VolumeTemplateCreatedTimestamp:
+			VolumeTemplateUpdatedTimestamp: UserID:0 VolumeTemplateOperatingSystem:0xc0001a4450 VolumeTemplateRepoURL: VolumeTemplateDeprecationStatus: OSTemplateCredentials:0xc0001a28c0 VolumeTemplateTags:[]
+			OSTemplatePreBootArchitecture: OSAssetBootloaderLocalInstall:0 OSAssetBootloaderOSBoot:0 VolumeTemplateVariablesJSON: VolumeTemplateNetworkOperatingSystem:<nil> VolumeTemplateVersion: VolumeTemplateOSReadyMethod:wait_for_power_off}
+			&{OperatingSystemType:ESXi OperatingSystemVersion:7.0.0.u03-DellEMC-A07 OperatingSystemArchitecture:x86_64}
+			&{OSTemplateInitialUser:root OSTemplateInitialPasswordEncrypted: OSTemplateInitialPassword: OSTemplateInitialSSHPort:22 OSTemplateChangePasswordAfterDeploy:false OSTemplateUseAutogeneratedInitialPassword:true}
+			{BootType:uefi BootMethodsSupported:local_drives OsArchitecture:x86_64 OsReadyMethod:wait_for_power_off ImageBuildRequired:true ProvisionViaOob:true InitialUser:root InitialSSHPort:22 UseAutogeneratedInitialPassword:true}
+			*/
+
+			// fmt.Printf("%+v\n", updatedObj)
+			// fmt.Printf("%+v\n", updatedObj.VolumeTemplateOperatingSystem)
+			// fmt.Printf("%+v\n", updatedObj.OSTemplateCredentials)
+
+			OsTemplateContents := repoMap[sourceTemplateName].OsTemplateContents
+			template := metalcloud.OSTemplate{}
+
+			template.VolumeTemplateLabel = name
+			template.VolumeTemplateDisplayName = name
+			template.VolumeTemplateDescription = name
+			template.VolumeTemplateLocalDiskSupported = false
+			template.VolumeTemplateIsOSTemplate = true
+			template.VolumeTemplateImageBuildRequired = OsTemplateContents.ImageBuildRequired
+			template.VolumeTemplateProvisionViaOOB = OsTemplateContents.ProvisionViaOob
+			template.VolumeTemplateBootMethodsSupported = OsTemplateContents.BootMethodsSupported
+			template.VolumeTemplateBootType = OsTemplateContents.BootType
+			template.VolumeTemplateOSReadyMethod = OsTemplateContents.OsReadyMethod
+
+			template.VolumeTemplateOperatingSystem = &metalcloud.OperatingSystem{}
+			template.VolumeTemplateOperatingSystem.OperatingSystemType = repoMap[sourceTemplateName].Family
+			template.VolumeTemplateOperatingSystem.OperatingSystemVersion = repoMap[sourceTemplateName].Version
+			template.VolumeTemplateOperatingSystem.OperatingSystemArchitecture = repoMap[sourceTemplateName].Architecture
+
+			template.OSTemplateCredentials = &metalcloud.OSTemplateCredentials{}
+			template.OSTemplateCredentials.OSTemplateInitialUser = OsTemplateContents.InitialUser
+			template.OSTemplateCredentials.OSTemplateInitialSSHPort = OsTemplateContents.InitialSSHPort
+			template.OSTemplateCredentials.OSTemplateChangePasswordAfterDeploy = false
+			template.OSTemplateCredentials.OSTemplateUseAutogeneratedInitialPassword = OsTemplateContents.UseAutogeneratedInitialPassword
+
+			ret, err := client.OSTemplateCreate(template)
+			if err != nil {
+				return "", err
+			}
+
+			fmt.Printf("%+v", ret)
+
 		} else {
 			return "", fmt.Errorf("the 'source-template' parameter must be specified with the 'name' one")
 		}
@@ -1230,7 +1282,7 @@ func templateDiffCmd(c *Command, client metalcloud.MetalCloudClient) (string, er
 	}
 
 	diffMatchPatch := diff.New()
-	
+
 	diffs := diffMatchPatch.DiffMain(string(fileContents1), string(fileContents2), false)
 	patches := diffMatchPatch.PatchMake(diffs)
 	patchText := diffMatchPatch.PatchToText(patches)
@@ -1284,16 +1336,16 @@ func getUserFromCommand(paramName string, c *Command, client metalcloud.MetalClo
 }
 
 func stringInSlice(a string, list []string) bool {
-    for _, b := range list {
-        if b == a {
-            return true
-        }
-    }
-    return false
+	for _, b := range list {
+		if b == a {
+			return true
+		}
+	}
+	return false
 }
 
 func sliceDifference(slice1 []string, slice2 []string) []string {
-    var diff []string
+	var diff []string
 
 	for _, s1 := range slice1 {
 		found := false
@@ -1310,5 +1362,5 @@ func sliceDifference(slice1 []string, slice2 []string) []string {
 		}
 	}
 
-    return diff
+	return diff
 }
