@@ -46,7 +46,7 @@ var instanceCmds = []Command{
 		ExecuteFunc: instanceCredentialsCmd,
 	},
 	{
-		Description:  "Replace an instance's associated server.",
+		Description:  "Replace an instance's associated server. (EXPERIMENTAL)",
 		Subject:      "instance",
 		AltSubject:   "instance",
 		Predicate:    "server-replace",
@@ -385,8 +385,9 @@ func instanceServerReplaceCmd(c *Command, client metalcloud.MetalCloudClient) (s
 
 		if !getBoolParam(c.Arguments["autoconfirm"]) {
 
-			confirmationMessage = fmt.Sprintf("Instance #%s of instance array (%s) of infrastructure #%s belonging to user %s will "+
+			confirmationMessage = fmt.Sprintf("%s\nInstance #%s of instance array #%s, infrastructure #%s belonging to user %s will "+
 				"have the associated server replaced with the server #%s (SN:%s) MGMT IP:%s on datacenter %s. \nAre you sure? Type \"yes\" to continue:",
+				red("WARNING: This feature is experimental."),
 				red(fmt.Sprintf("%d", instance.InstanceID)),
 				fmt.Sprintf("%d", instanceArray.InstanceArrayID),
 				fmt.Sprintf("%d", infrastructure.InfrastructureID),
