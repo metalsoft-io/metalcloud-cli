@@ -42,6 +42,7 @@ var instanceArrayCmds = []Command{
 			}
 		},
 		ExecuteFunc: instanceArrayCreateCmd,
+		Endpoint:    DeveloperEndpoint,
 	},
 	{
 		Description:  "Lists all instance arrays of an infrastructure.",
@@ -57,6 +58,7 @@ var instanceArrayCmds = []Command{
 			}
 		},
 		ExecuteFunc: instanceArrayListCmd,
+		Endpoint:    DeveloperEndpoint,
 	},
 	{
 		Description:  "Lists all instances of instance array.",
@@ -72,6 +74,9 @@ var instanceArrayCmds = []Command{
 			}
 		},
 		ExecuteFunc: instanceArrayInstancesListCmd,
+		Endpoint:    DeveloperEndpoint,
+
+
 	},
 	{
 		Description:  "Delete instance array.",
@@ -87,6 +92,7 @@ var instanceArrayCmds = []Command{
 			}
 		},
 		ExecuteFunc: instanceArrayDeleteCmd,
+		Endpoint:    DeveloperEndpoint,
 	},
 	{
 		Description:  "Edits an instance array.",
@@ -114,6 +120,7 @@ var instanceArrayCmds = []Command{
 			}
 		},
 		ExecuteFunc: instanceArrayEditCmd,
+		Endpoint:    DeveloperEndpoint,
 	},
 	{
 		Description:  "Get instance array details.",
@@ -132,6 +139,7 @@ var instanceArrayCmds = []Command{
 			}
 		},
 		ExecuteFunc: instanceArrayGetCmd,
+		Endpoint:    DeveloperEndpoint,
 	},
 }
 

@@ -14,7 +14,7 @@ import (
 var instanceCmds = []Command{
 
 	{
-		Description:  "Control power an instance",
+		Description:  "Control power for an instance",
 		Subject:      "instance",
 		AltSubject:   "instance",
 		Predicate:    "power-control",
@@ -22,9 +22,9 @@ var instanceCmds = []Command{
 		FlagSet:      flag.NewFlagSet("instance_array", flag.ExitOnError),
 		InitFunc: func(c *Command) {
 			c.Arguments = map[string]interface{}{
-				"instance_id": c.FlagSet.Int("id", _nilDefaultInt, red("(Required)") + " Instances's id . Note that the 'label' this be ambiguous in certain situations."),
-				"operation":   c.FlagSet.String("operation", _nilDefaultStr, red("(Required)") + " Power control operation, one of: on, off, reset, soft"),
-				"autoconfirm": c.FlagSet.Bool("autoconfirm", false, green("(Flag)") + " If set it will assume action is confirmed"),
+				"instance_id": c.FlagSet.Int("id", _nilDefaultInt, red("(Required)")+" Instances's id . Note that the 'label' this be ambiguous in certain situations."),
+				"operation":   c.FlagSet.String("operation", _nilDefaultStr, red("(Required)")+" Power control operation, one of: on, off, reset, soft"),
+				"autoconfirm": c.FlagSet.Bool("autoconfirm", false, green("(Flag)")+" If set it will assume action is confirmed"),
 			}
 		},
 		ExecuteFunc: instancePowerControlCmd,
@@ -39,11 +39,29 @@ var instanceCmds = []Command{
 		FlagSet:      flag.NewFlagSet("instance credentials", flag.ExitOnError),
 		InitFunc: func(c *Command) {
 			c.Arguments = map[string]interface{}{
-				"instance_id": c.FlagSet.Int("id", _nilDefaultInt, red("(Required)") + " Instances's id . Note that the 'label' this be ambiguous in certain situations."),
+				"instance_id": c.FlagSet.Int("id", _nilDefaultInt, red("(Required)")+" Instances's id . Note that the 'label' this be ambiguous in certain situations."),
 				"format":      c.FlagSet.String("format", "", "The output format. Supported values are 'json','csv','yaml'. The default format is human readable."),
 			}
 		},
 		ExecuteFunc: instanceCredentialsCmd,
+	},
+	{
+		Description:  "Replace an instance's associated server. (EXPERIMENTAL)",
+		Subject:      "instance",
+		AltSubject:   "instance",
+		Predicate:    "server-replace",
+		AltPredicate: "server-change",
+		FlagSet:      flag.NewFlagSet("", flag.ExitOnError),
+		InitFunc: func(c *Command) {
+			c.Arguments = map[string]interface{}{
+				"instance_id":   c.FlagSet.Int("id", _nilDefaultInt, red("(Required)")+" Instance's id."),
+				"server_id":     c.FlagSet.Int("new-server-id", _nilDefaultInt, red("(Required)")+" New server's id."),
+				"autoconfirm":   c.FlagSet.Bool("autoconfirm", false, green("(Flag)")+" If set it will assume action is confirmed"),
+				"return_afc_id": c.FlagSet.Bool("return-afc-id", false, green("(Flag)")+" If set it will return the AFC id of the operation."),
+			}
+		},
+		ExecuteFunc: instanceServerReplaceCmd,
+		Endpoint:    DeveloperEndpoint,
 	},
 }
 
@@ -330,16 +348,10 @@ func getIPsAsStringArray(ips []metalcloud.IP) []string {
 	return sList
 }
 
-/*
-func instanceServerTypeChangeCmd(c *Command, client metalcloud.MetalCloudClient) (string, error) {
-
+func instanceServerReplaceCmd(c *Command, client metalcloud.MetalCloudClient) (string, error) {
 	instanceID, ok := getIntParamOk(c.Arguments["instance_id"])
 	if !ok {
-		return "", fmt.Errorf("-id is required (drive id)")
-	}
-	serverType, ok := getStringParamOk(c.Arguments["server_type"])
-	if !ok {
-		return "", fmt.Errorf("-server-type is required")
+		return "", fmt.Errorf("-id is required")
 	}
 
 	instance, err := client.InstanceGet(instanceID)
@@ -347,65 +359,65 @@ func instanceServerTypeChangeCmd(c *Command, client metalcloud.MetalCloudClient)
 		return "", err
 	}
 
-	ia, err := client.InstanceArrayGet(instance.InstanceArrayID)
+	instanceArray, err := client.InstanceArrayGet(instance.InstanceArrayID)
 	if err != nil {
 		return "", err
 	}
 
-	infra, err := client.InfrastructureGet(ia.InfrastructureID)
+	infrastructure, err := client.InfrastructureGet(instanceArray.InfrastructureID)
 	if err != nil {
 		return "", err
 	}
 
-	currentSt, err := client.ServerTypeGet(instance.ServerTypeID)
-	if err != nil {
-		return "", err
+	newServerID, ok := getIntParamOk(c.Arguments["server_id"])
+	if !ok {
+		return "", fmt.Errorf("-new-server-id is required")
 	}
 
-	newSt, err := client.ServerTypeGetByLabel(serverType)
+	server, err := client.ServerGet(newServerID, false)
 	if err != nil {
 		return "", err
 	}
 
 	confirm, err := confirmCommand(c, func() string {
 
-		confirmationMessage := fmt.Sprintf("Changing server type of instance %s (%d) of instance array %s (#%d) infrastructure %s (#%d)\n %s (#%d) -> %s (#%d)\n:.  Are you sure? Type \"yes\" to continue:",
-			instance.InstanceLabel,
-			instance.InstanceID,
-			ia.InstanceArrayLabel,
-			ia.InstanceArrayID,
-			infra.InfrastructureLabel,
-			infra.InfrastructureID,
-			currentSt.ServerTypeLabel,
-			currentSt.ServerTypeID,
-			newSt.ServerTypeLabel,
-			newSt.ServerTypeID,
-		)
+		confirmationMessage := ""
 
-		//this is simply so that we don't output a text on the command line under go test
+		if !getBoolParam(c.Arguments["autoconfirm"]) {
+
+			confirmationMessage = fmt.Sprintf("%s\nInstance #%s of instance array #%s, infrastructure #%s belonging to user %s will "+
+				"have the associated server replaced with the server #%s (SN:%s) MGMT IP:%s on datacenter %s. \nAre you sure? Type \"yes\" to continue:",
+				red("WARNING: This feature is experimental."),
+				red(fmt.Sprintf("%d", instance.InstanceID)),
+				fmt.Sprintf("%d", instanceArray.InstanceArrayID),
+				fmt.Sprintf("%d", infrastructure.InfrastructureID),
+				yellow(fmt.Sprintf("%s", infrastructure.UserEmailOwner)),
+				red(fmt.Sprintf("%d", server.ServerID)),
+				yellow(server.ServerSerialNumber),
+				server.ServerIPMIHost,
+				server.DatacenterName,
+			)
+		}
+
 		if strings.HasSuffix(os.Args[0], ".test") {
 			confirmationMessage = ""
 		}
 
 		return confirmationMessage
-
 	})
 
 	if err != nil {
 		return "", err
 	}
 
+	afc := 0
 	if confirm {
-		err = client.InstanceServerPowerSet(instanceID, "soft")
-		if err != nil {
-			return "", err
-		}
+		afc, err = client.InstanceServerReplace(instanceID, newServerID)
+	}
 
-		client.InstanceStart
-
-
+	if getBoolParam(c.Arguments["return_afc_id"]) {
+		return fmt.Sprintf("%d", afc), nil
 	}
 
 	return "", err
 }
-*/
