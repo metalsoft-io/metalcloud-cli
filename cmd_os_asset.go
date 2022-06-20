@@ -262,8 +262,16 @@ func assetsListCmd(c *Command, client metalcloud.MetalCloudClient) (string, erro
 }
 
 func assetCreateCmd(c *Command, client metalcloud.MetalCloudClient) (string, error) {
+	return assetCreate(c, client, []byte{})
+}
+
+func assetCreateWithContentCmd(c *Command, client metalcloud.MetalCloudClient, assetContent []byte)  (string, error) {
+	return assetCreate(c, client, assetContent)
+}
+
+func assetCreate(c *Command, client metalcloud.MetalCloudClient, assetContent []byte) (string, error) {
 	newObj := metalcloud.OSAsset{}
-	updatedObj, err := updateAssetFromCommand(newObj, c, client, true)
+	updatedObj, err := updateAssetFromCommand(newObj, c, client, true, assetContent)
 	if err != nil {
 		return "", err
 	}
@@ -443,7 +451,7 @@ func getOSAssetFromCommand(paramName string, internalParamName string, c *Comman
 	return nil, fmt.Errorf("Could not locate asset with file name '%s'", name)
 }
 
-func updateAssetFromCommand(obj metalcloud.OSAsset, c *Command, client metalcloud.MetalCloudClient, checkRequired bool) (*metalcloud.OSAsset, error) {
+func updateAssetFromCommand(obj metalcloud.OSAsset, c *Command, client metalcloud.MetalCloudClient, checkRequired bool, assetContent []byte) (*metalcloud.OSAsset, error) {
 	if v, ok := getStringParamOk(c.Arguments["filename"]); ok {
 		obj.OSAssetFileName = v
 	} else {
@@ -460,28 +468,30 @@ func updateAssetFromCommand(obj metalcloud.OSAsset, c *Command, client metalclou
 		obj.OSAssetFileMime = v
 	}
 
-	content := []byte{}
+	content := assetContent
 	var err error
 
 	if v, ok := getStringParamOk(c.Arguments["url"]); ok {
 		obj.OSAssetSourceURL = v
 	} else {
-		if getBoolParam(c.Arguments["read_content_from_pipe"]) {
-			_content, err := readInputFromPipe()
-			if err != nil {
-				return nil, err
-			}
-			content = _content
-		} else {
-			if runtime.GOOS == "windows" {
-				content, err = requestInput("Asset content:")
-
+		if len(content) == 0 {
+			if getBoolParam(c.Arguments["read_content_from_pipe"]) {
+				_content, err := readInputFromPipe()
+				if err != nil {
+					return nil, err
+				}
+				content = _content
 			} else {
-				content, err = requestInputSilent("Asset content:")
-			}
-
-			if err != nil {
-				return nil, err
+				if runtime.GOOS == "windows" {
+					content, err = requestInput("Asset content:")
+	
+				} else {
+					content, err = requestInputSilent("Asset content:")
+				}
+	
+				if err != nil {
+					return nil, err
+				}
 			}
 		}
 
@@ -626,7 +636,7 @@ func assetEditCmd(c *Command, client metalcloud.MetalCloudClient) (string, error
 
 	newObj := metalcloud.OSAsset{}
 
-	updatedObj, err := updateAssetFromCommand(newObj, c, client, true)
+	updatedObj, err := updateAssetFromCommand(newObj, c, client, true, []byte{})
 
 	if err != nil {
 		return "", err
