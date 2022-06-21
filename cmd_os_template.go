@@ -1324,6 +1324,44 @@ func templateBuildCmd(c *Command, client metalcloud.MetalCloudClient) (string, e
 			if err != nil {
 				return "", err
 			}
+
+			for _, asset := range repoMap[sourceTemplateName].Assets {
+
+				if asset.IsPatchFile {
+					// We skip the patch file, as the boot file has already been created.
+					continue
+				}
+
+				assetContents, err := asset.file.Contents()
+
+				if err != nil {
+					return "", err
+				}
+
+				s := strings.Split(asset.file.Name, "/")
+				assetName := s[len(s)-1]
+
+				createOtherAssetCommand := createAssetCommand
+				createOtherAssetCommand.FlagSet = flag.NewFlagSet("create asset " + assetName, flag.ExitOnError)
+				createOtherAssetCommand.Arguments = map[string]interface{}{
+					"filename":               createOtherAssetCommand.FlagSet.String("filename", assetName, "Asset's filename"),
+					"usage":                  createOtherAssetCommand.FlagSet.String("usage", "build_component", "Asset's usage. Possible values: \"bootloader\""),
+					"mime":                   createOtherAssetCommand.FlagSet.String("mime", asset.Mime, "Asset's mime type. Possible values: \"text/plain\",\"application/octet-stream\""),
+					"url":                    createOtherAssetCommand.FlagSet.String("url", _nilDefaultStr, "Asset's source url. If present it will not read content anymore"),
+					"read_content_from_pipe": createOtherAssetCommand.FlagSet.Bool("pipe", false, "Read assets's content read from pipe instead of terminal input"),
+					"template_id_or_name":    createOtherAssetCommand.FlagSet.String("template-id", name, "Template's id or name to associate. "),
+					"path":                   createOtherAssetCommand.FlagSet.String("path", asset.Isopath, "Path to associate asset to."),
+					"variables_json":         createOtherAssetCommand.FlagSet.String("variables-json", _nilDefaultStr, "JSON encoded variables object"),
+					"delete_if_exists":       createOtherAssetCommand.FlagSet.Bool("delete-if-exists", true, "Automatically delete the existing asset associated with the current template."),
+				}
+
+				_, err = assetCreateWithContentCmd(&createOtherAssetCommand, client, []byte(assetContents))
+
+				if err != nil {
+					return "", err
+				}
+			}
+
 		} else {
 			return "", fmt.Errorf("the 'source-template' parameter must be specified with the 'name' one")
 		}
