@@ -136,6 +136,8 @@ github.com/metalsoft-io/metal-cloud-sdk-go/v2 v2.7.3 h1:gPPQalfYcyqMa7oPwIYPEJqf
 github.com/metalsoft-io/metal-cloud-sdk-go/v2 v2.7.3/go.mod h1:3Nq6p1a7T+9V5TcaHgZSiMhxdOXAwlzeCb8Q6fvxKf4=
 github.com/metalsoft-io/metal-cloud-sdk-go/v2 v2.7.4 h1:t5CD9vmoOvLOC6ogBJlc8VZqllDG9bnwvpi6l1h8RuY=
 github.com/metalsoft-io/metal-cloud-sdk-go/v2 v2.7.4/go.mod h1:3Nq6p1a7T+9V5TcaHgZSiMhxdOXAwlzeCb8Q6fvxKf4=
+github.com/metalsoft-io/metal-cloud-sdk-go/v2 v2.7.5 h1:R0BinUw77c/gZ/D8chCjKNNggcvnADamhyvbdS92fY4=
+github.com/metalsoft-io/metal-cloud-sdk-go/v2 v2.7.5/go.mod h1:3Nq6p1a7T+9V5TcaHgZSiMhxdOXAwlzeCb8Q6fvxKf4=
 github.com/metalsoft-io/tableformatter v1.0.8 h1:06Cu3dYjceull3eDGYoANV3nz8DkBGm5LU9hVgWWK/M=
 github.com/metalsoft-io/tableformatter v1.0.8/go.mod h1:4ldLr91sWT/bIRTJlArzw+FfKkBMQ5IbuuyL8IZKf/Q=
 github.com/nxadm/tail v1.4.4/go.mod h1:kenIhsEOeOJmVchQTgglprH7qJGnHDVpk1VPCcaMI8A=
