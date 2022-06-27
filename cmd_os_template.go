@@ -1198,6 +1198,32 @@ func templateBuildCmd(c *Command, client metalcloud.MetalCloudClient) (string, e
 			patchedText = strings.ReplaceAll(patchedText, "\t", "")
 			patchedText = strings.TrimSpace(patchedText)
 
+			var kickstartContents string
+
+			if filePath, ok := getStringParamOk(c.Arguments["kickstart-append"]); ok {
+				kickstartAppendFilePath := filePath
+
+				appendFileContents, err := os.ReadFile(kickstartAppendFilePath)
+		
+				if err != nil {
+					return "", fmt.Errorf("kickstart append file not found at path %s", kickstartAppendFilePath)
+				}
+	
+				for _, asset := range repoMap[sourceTemplateName].Assets {
+
+					if asset.IsKickstartFile {
+						kickstartContents, err = asset.file.Contents()
+	
+						if err != nil {
+							return "", fmt.Errorf("did not find the kickstart file for source template '%s'", sourceTemplateName)
+						}
+
+						kickstartContents += "\n" + string(appendFileContents)
+						break
+					}
+				}
+			}
+
 			if sourceTemplateName != "ESXi/7.0.0u3" {
 				return "", fmt.Errorf("only template ESXi/7.0.0u3 allowed now")
 			}
@@ -1353,6 +1379,11 @@ func templateBuildCmd(c *Command, client metalcloud.MetalCloudClient) (string, e
 					"path":                   createOtherAssetCommand.FlagSet.String("path", asset.Isopath, "Path to associate asset to."),
 					"variables_json":         createOtherAssetCommand.FlagSet.String("variables-json", _nilDefaultStr, "JSON encoded variables object"),
 					"delete_if_exists":       createOtherAssetCommand.FlagSet.Bool("delete-if-exists", true, "Automatically delete the existing asset associated with the current template."),
+				}
+
+				// If we have a kickstart file and the kickstart-append option was used, we will use the string with the appended text
+				if asset.IsKickstartFile && kickstartContents != "" {
+					assetContents = kickstartContents
 				}
 
 				_, err = assetCreateWithContentCmd(&createOtherAssetCommand, client, []byte(assetContents))
