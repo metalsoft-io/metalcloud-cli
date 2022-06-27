@@ -305,8 +305,19 @@ func driveArrayListCmd(c *Command, client metalcloud.MetalCloudClient) (string, 
 		}
 
 		instanceArrayLabel := ""
-		if da.DriveArrayOperation.InstanceArrayID != 0 {
-			ia, err := client.InstanceArrayGet(da.DriveArrayOperation.InstanceArrayID.(int))
+		if da.DriveArrayOperation.InstanceArrayID != nil && da.DriveArrayOperation.InstanceArrayID != 0 {
+			var instanceArrayID int
+			
+			switch da.DriveArrayOperation.InstanceArrayID.(type) {
+			case int:
+				instanceArrayID = da.DriveArrayOperation.InstanceArrayID.(int)
+			case float64:
+				instanceArrayID = int(da.DriveArrayOperation.InstanceArrayID.(float64))
+			default:
+				return "", fmt.Errorf("Instance array ID type invalid.")
+			}
+
+			ia, err := client.InstanceArrayGet(instanceArrayID)
 			if err != nil {
 				return "", err
 			}

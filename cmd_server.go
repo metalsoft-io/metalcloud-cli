@@ -74,6 +74,27 @@ metalcloud-cli server list --show-credentials # to retrieve a list of credential
 		ExecuteFunc: serverCreateCmd,
 		Endpoint:    DeveloperEndpoint,
 	},
+	
+	{
+		Description:  "Register a server.",
+		Subject:      "server",
+		AltSubject:   "srv",
+		Predicate:    "register",
+		AltPredicate: "new",
+		FlagSet:      flag.NewFlagSet("register server", flag.ExitOnError),
+		InitFunc: func(c *Command) {
+			c.Arguments = map[string]interface{}{
+				"datacenter":    c.FlagSet.String("datacenter", _nilDefaultStr, red("(Required)")+" The datacenter in which this server is to be registered."),
+				"server_vendor": c.FlagSet.String("server-vendor", _nilDefaultStr, red("(Required)")+" Server vendor (driver) to use when interacting with the server. One of: `dell`,'hpe_legacy','hpe'."),
+				"mgmt_address":  c.FlagSet.String("mgmt-address", _nilDefaultStr, red("(Required)")+" IP or DNS record for the server's management interface (BMC)."),
+				"mgmt_user":    c.FlagSet.String("mgmt-user", _nilDefaultStr, red("(Required)")+" Server' BMC username."),
+				"mgmt_pass":     c.FlagSet.String("mgmt-pass", _nilDefaultStr, red("(Required)")+" Server' BMC password."),
+				"return_id":     c.FlagSet.Bool("return-id", false, "Will print the ID of the created object. Useful for automating tasks."),
+			}
+		},
+		ExecuteFunc: serverRegisterCmd,
+		Endpoint:    DeveloperEndpoint,
+	},
 
 	{
 		Description:  "Edit server.",
@@ -109,9 +130,9 @@ metalcloud-cli server list --show-credentials # to retrieve a list of credential
 		InitFunc: func(c *Command) {
 			c.Arguments = map[string]interface{}{
 				"server_id_or_uuid": c.FlagSet.String("id", _nilDefaultStr, "Server's ID or UUID"),
-				"ipmi_hostname":     c.FlagSet.String("ipmi-host", _nilDefaultStr, "The new IPMI hostname of the server. This command cannot be used in conjunction with config or pipe commands."),
-				"ipmi_username":     c.FlagSet.String("ipmi-user", _nilDefaultStr, "The new IPMI username of the server. This command cannot be used in conjunction with config or pipe commands."),
-				"ipmi_password":     c.FlagSet.String("ipmi-pass", _nilDefaultStr, "The new IPMI password of the server. This command cannot be used in conjunction with config or pipe commands."),
+				"ipmi_hostname":     c.FlagSet.String("ipmi-host", _nilDefaultStr, "The new IPMI hostname of the server."),
+				"ipmi_username":     c.FlagSet.String("ipmi-user", _nilDefaultStr, "The new IPMI username of the server."),
+				"ipmi_password":     c.FlagSet.String("ipmi-pass", _nilDefaultStr, "The new IPMI password of the server."),
 			}
 		},
 		ExecuteFunc: serverEditIPMICmd,
@@ -1174,6 +1195,49 @@ func serverCreateCmd(c *Command, client metalcloud.MetalCloudClient) (string, er
 	err := getRawObjectFromCommand(c, &obj)
 
 	ret, err := client.ServerCreate(obj, false)
+	if err != nil {
+		return "", err
+	}
+
+	if getBoolParam(c.Arguments["return_id"]) {
+		return fmt.Sprintf("%d", ret), nil
+	}
+
+	return "", err
+}
+
+func serverRegisterCmd(c *Command, client metalcloud.MetalCloudClient)  (string, error) {
+
+	datacenter, ok := getStringParamOk(c.Arguments["datacenter"])
+	if !ok {
+		return "", fmt.Errorf("-datacenter is required")
+	}
+	server_vendor, ok := getStringParamOk(c.Arguments["server_vendor"])
+	if !ok {
+		return "", fmt.Errorf("-server_vendor is required")
+	}
+	mgmt_address, ok := getStringParamOk(c.Arguments["mgmt_address"])
+	if !ok {
+		return "", fmt.Errorf("-mgmt_address is required")
+	}
+	mgmt_user, ok := getStringParamOk(c.Arguments["mgmt_user"])
+	if !ok {
+		return "", fmt.Errorf("-mgmt_user is required")
+	}
+	mgmt_pass, ok := getStringParamOk(c.Arguments["mgmt_pass"])
+	if !ok {
+		return "", fmt.Errorf("-mgmt_pass is required")
+	}
+
+	obj := metalcloud.ServerCreateAndRegister{
+		DatacenterName: datacenter,
+		ServerVendor: server_vendor,         
+		ServerManagementAddress: mgmt_address,
+		ServerManagementUser: mgmt_user,   
+		ServerManagementPassword: mgmt_pass,
+	}
+
+	ret, err := client.ServerCreateAndRegister(obj)
 	if err != nil {
 		return "", err
 	}
