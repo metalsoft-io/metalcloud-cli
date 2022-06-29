@@ -84,7 +84,7 @@ var osTemplatesCmds = []Command{
 				"os_asset_id_bootloader_os_boot_id_or_name":       c.FlagSet.String("os-boot-bootloader-asset", _nilDefaultStr, "Template's bootloader asset id during regular server boot"),
 				"version": c.FlagSet.String("version", _nilDefaultStr, "Template version. Default value is 0.0.0"),
 
-				"return_id": c.FlagSet.Bool("return-id", false, green("(Flag)")+" If set will print the ID of the created infrastructure. Useful for automating tasks."),
+				"return-id": c.FlagSet.Bool("return-id", false, green("(Flag)")+" If set will print the ID of the created infrastructure. Useful for automating tasks."),
 			}
 		},
 		ExecuteFunc: templateCreateCmd,
@@ -218,15 +218,8 @@ var osTemplatesCmds = []Command{
 				"source-template":      c.FlagSet.String("source-template", _nilDefaultStr, red("(Required)")+"The source template to use as a base. Use --list-supported for a list of accepted values."),
 				"source-iso":           c.FlagSet.String("source-iso", _nilDefaultStr, red("(Required)")+"The source ISO image path."),
 				"kickstart-append":     c.FlagSet.String("kickstart-append", _nilDefaultStr, yellow("(Optional)")+"Content to append to the default kickstart."),
-				"kickstart":            c.FlagSet.String("kickstart", _nilDefaultStr, yellow("(Optional)")+"The OS's kickstart or equivalent file to be uploaded instead of the default."),
-				"bootloader":           c.FlagSet.String("bootloader", _nilDefaultStr, yellow("(Optional)")+"The OS's instalation bootloader to be uploaded instead of default."),
-				"bootloader-config":    c.FlagSet.String("bootloader-config", _nilDefaultStr, yellow("(Optional)")+"The OS's installation bootloader config file to be uploaded instead of the default."),
-				"dynamic-file":         c.FlagSet.String("dynamic-file", _nilDefaultStr, yellow("(Optional, can be repeated)")+"A file that will be replaced inside the template. Can contain variables. Limited to 2MB in size."),
-				"binary-file":          c.FlagSet.String("binary-file", _nilDefaultStr, yellow("(Optional, can be repeated)")+"A file that will be replaced inside the template. Cannot contain variables."),
 				"github-template-repo": c.FlagSet.String("github-template-repo", _nilDefaultStr, yellow("(Optional)")+"Override the default github url used to download template files for given OS."),
 				"list-supported":       c.FlagSet.Bool("list-supported", false, yellow("(Optional)")+"List supported OS source templates."),
-				"firewall-conf-func":   c.FlagSet.String("firewall-conf-func", _nilDefaultStr, yellow("(Optional)")+"Set the firewall configuration mecahanism: Ansible2, None."),
-				"legacy-boot":          c.FlagSet.Bool("legacy-boot", false, green("(Flag)")+"If set, enables legacy BIOS boot support instead of UEFI."),
 				"quiet":                c.FlagSet.Bool("quiet", false, green("(Flag)")+"If set, eliminates all output."),
 				"debug":                c.FlagSet.Bool("debug", false, green("(Flag)")+"If set, increases log level."),
 				"return-id":            c.FlagSet.Bool("return-id", false, green("(Flag)")+"If set, returns the ID of the generated template. Useful for automation."),
@@ -392,7 +385,7 @@ func templateCreateCmd(c *Command, client metalcloud.MetalCloudClient) (string, 
 		return "", err
 	}
 
-	if getBoolParam(c.Arguments["return_id"]) {
+	if getBoolParam(c.Arguments["return-id"]) {
 		return fmt.Sprintf("%d", ret.VolumeTemplateID), nil
 	}
 
@@ -1224,10 +1217,6 @@ func templateBuildCmd(c *Command, client metalcloud.MetalCloudClient) (string, e
 				}
 			}
 
-			if sourceTemplateName != "ESXi/7.0.0u3" {
-				return "", fmt.Errorf("only template ESXi/7.0.0u3 allowed now")
-			}
-
 			OsTemplateContents := repoMap[sourceTemplateName].OsTemplateContents
 
 			createTemplateCommand := Command{
@@ -1266,6 +1255,8 @@ func templateBuildCmd(c *Command, client metalcloud.MetalCloudClient) (string, e
 				"version": createTemplateCommand.FlagSet.String("version", _nilDefaultStr, "Template version. Default value is 0.0.0"),
 			}
 
+			var templateID int
+
 			_, createError := templateCreateCmd(&createTemplateCommand, client)
 
 			if createError != nil {
@@ -1280,6 +1271,7 @@ func templateBuildCmd(c *Command, client metalcloud.MetalCloudClient) (string, e
 				for _, s := range *list {
 					if s.VolumeTemplateLabel == name {
 						templateFound = true
+						templateID = s.VolumeTemplateID
 						break
 					}
 				}
@@ -1391,6 +1383,29 @@ func templateBuildCmd(c *Command, client metalcloud.MetalCloudClient) (string, e
 				if err != nil {
 					return "", err
 				}
+			}
+
+			if getBoolParam(c.Arguments["return-id"]) {
+				if templateID == 0 {
+					list, err := client.OSTemplates()
+
+					if err != nil {
+						return "", err
+					}
+	
+					for _, s := range *list {
+						if s.VolumeTemplateLabel == name {
+							templateID = s.VolumeTemplateID
+							break
+						}
+					}
+				}
+
+				return fmt.Sprintf("%d", templateID), nil
+			}
+
+			if err != nil {
+				return "", err
 			}
 
 		} else {
