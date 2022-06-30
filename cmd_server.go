@@ -74,7 +74,7 @@ metalcloud-cli server list --show-credentials # to retrieve a list of credential
 		ExecuteFunc: serverCreateCmd,
 		Endpoint:    DeveloperEndpoint,
 	},
-	
+
 	{
 		Description:  "Register a server.",
 		Subject:      "server",
@@ -87,7 +87,7 @@ metalcloud-cli server list --show-credentials # to retrieve a list of credential
 				"datacenter":    c.FlagSet.String("datacenter", _nilDefaultStr, red("(Required)")+" The datacenter in which this server is to be registered."),
 				"server_vendor": c.FlagSet.String("server-vendor", _nilDefaultStr, red("(Required)")+" Server vendor (driver) to use when interacting with the server. One of: `dell`,'hpe_legacy','hpe'."),
 				"mgmt_address":  c.FlagSet.String("mgmt-address", _nilDefaultStr, red("(Required)")+" IP or DNS record for the server's management interface (BMC)."),
-				"mgmt_user":    c.FlagSet.String("mgmt-user", _nilDefaultStr, red("(Required)")+" Server' BMC username."),
+				"mgmt_user":     c.FlagSet.String("mgmt-user", _nilDefaultStr, red("(Required)")+" Server' BMC username."),
 				"mgmt_pass":     c.FlagSet.String("mgmt-pass", _nilDefaultStr, red("(Required)")+" Server' BMC password."),
 				"return_id":     c.FlagSet.Bool("return-id", false, "Will print the ID of the created object. Useful for automating tasks."),
 			}
@@ -133,7 +133,7 @@ metalcloud-cli server list --show-credentials # to retrieve a list of credential
 				"ipmi_hostname":      c.FlagSet.String("ipmi-host", _nilDefaultStr, "The new IPMI hostname of the server."),
 				"ipmi_username":      c.FlagSet.String("ipmi-user", _nilDefaultStr, "The new IPMI username of the server."),
 				"ipmi_password":      c.FlagSet.String("ipmi-pass", _nilDefaultStr, "The new IPMI password of the server."),
-				"ipmi_skip_update_in_bmc": c.FlagSet.Bool("do-not-update-bmc", false, "If set, the update will not occur in BMC."),
+				"ipmi_update_in_bmc": c.FlagSet.Bool("update-credentials-on-bmc", false, "If set, the server's BMC credentials on the actual server will also be updated."),
 			}
 		},
 		ExecuteFunc: serverEditIPMICmd,
@@ -1207,7 +1207,7 @@ func serverCreateCmd(c *Command, client metalcloud.MetalCloudClient) (string, er
 	return "", err
 }
 
-func serverRegisterCmd(c *Command, client metalcloud.MetalCloudClient)  (string, error) {
+func serverRegisterCmd(c *Command, client metalcloud.MetalCloudClient) (string, error) {
 
 	datacenter, ok := getStringParamOk(c.Arguments["datacenter"])
 	if !ok {
@@ -1231,10 +1231,10 @@ func serverRegisterCmd(c *Command, client metalcloud.MetalCloudClient)  (string,
 	}
 
 	obj := metalcloud.ServerCreateAndRegister{
-		DatacenterName: datacenter,
-		ServerVendor: server_vendor,         
-		ServerManagementAddress: mgmt_address,
-		ServerManagementUser: mgmt_user,   
+		DatacenterName:           datacenter,
+		ServerVendor:             server_vendor,
+		ServerManagementAddress:  mgmt_address,
+		ServerManagementUser:     mgmt_user,
 		ServerManagementPassword: mgmt_pass,
 	}
 
@@ -1325,7 +1325,7 @@ func serverEditIPMICmd(c *Command, client metalcloud.MetalCloudClient) (string, 
 	newIPMIHostname, setIPMIHostname := getStringParamOk(c.Arguments["ipmi_hostname"])
 	newIPMIUsername, setIPMIUsername := getStringParamOk(c.Arguments["ipmi_username"])
 	newIPMIPassword, setIPMIPassword := getStringParamOk(c.Arguments["ipmi_password"])
-	IPMIUpdateInBMC := !getBoolParam(c.Arguments["ipmi_skip_update_in_bmc"])
+	IPMIUpdateInBMC := getBoolParam(c.Arguments["ipmi_update_in_bmc"])
 
 	newServer := *server
 
