@@ -129,10 +129,11 @@ metalcloud-cli server list --show-credentials # to retrieve a list of credential
 		FlagSet:      flag.NewFlagSet("edit server IPMI", flag.ExitOnError),
 		InitFunc: func(c *Command) {
 			c.Arguments = map[string]interface{}{
-				"server_id_or_uuid": c.FlagSet.String("id", _nilDefaultStr, "Server's ID or UUID"),
-				"ipmi_hostname":     c.FlagSet.String("ipmi-host", _nilDefaultStr, "The new IPMI hostname of the server."),
-				"ipmi_username":     c.FlagSet.String("ipmi-user", _nilDefaultStr, "The new IPMI username of the server."),
-				"ipmi_password":     c.FlagSet.String("ipmi-pass", _nilDefaultStr, "The new IPMI password of the server."),
+				"server_id_or_uuid":  c.FlagSet.String("id", _nilDefaultStr, "Server's ID or UUID"),
+				"ipmi_hostname":      c.FlagSet.String("ipmi-host", _nilDefaultStr, "The new IPMI hostname of the server."),
+				"ipmi_username":      c.FlagSet.String("ipmi-user", _nilDefaultStr, "The new IPMI username of the server."),
+				"ipmi_password":      c.FlagSet.String("ipmi-pass", _nilDefaultStr, "The new IPMI password of the server."),
+				"ipmi_skip_update_in_bmc": c.FlagSet.Bool("do-not-update-bmc", false, "If set, the update will not occur in BMC."),
 			}
 		},
 		ExecuteFunc: serverEditIPMICmd,
@@ -1324,6 +1325,7 @@ func serverEditIPMICmd(c *Command, client metalcloud.MetalCloudClient) (string, 
 	newIPMIHostname, setIPMIHostname := getStringParamOk(c.Arguments["ipmi_hostname"])
 	newIPMIUsername, setIPMIUsername := getStringParamOk(c.Arguments["ipmi_username"])
 	newIPMIPassword, setIPMIPassword := getStringParamOk(c.Arguments["ipmi_password"])
+	IPMIUpdateInBMC := !getBoolParam(c.Arguments["ipmi_skip_update_in_bmc"])
 
 	newServer := *server
 
@@ -1339,7 +1341,7 @@ func serverEditIPMICmd(c *Command, client metalcloud.MetalCloudClient) (string, 
 		newServer.ServerIPMInternalPassword = newIPMIPassword
 	}
 
-	_, err = client.ServerEditIPMI(server.ServerID, newServer)
+	_, err = client.ServerEditIPMI(server.ServerID, newServer, IPMIUpdateInBMC)
 
 	return "", err
 }

@@ -7,7 +7,7 @@ require (
 	github.com/golang/mock v1.6.0
 	github.com/jwalton/gchalk v1.2.1
 	github.com/kr/text v0.2.0 // indirect
-	github.com/metalsoft-io/metal-cloud-sdk-go/v2 v2.7.5
+	github.com/metalsoft-io/metal-cloud-sdk-go/v2 v2.7.7
 	github.com/metalsoft-io/tableformatter v1.0.8
 	github.com/onsi/gomega v1.16.0
 	github.com/savaki/jq v0.0.0-20161209013833-0e6baecebbf8
