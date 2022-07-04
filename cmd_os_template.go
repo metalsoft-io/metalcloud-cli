@@ -1297,7 +1297,7 @@ func templateBuildCmd(c *Command, client metalcloud.MetalCloudClient) (string, e
 			imageFilename := s[len(s)-1]
 
 			isoPath := imageRepositoryURL + "/" + name + "/" + imageFilename
-			fmt.Printf("Please upload ISO image to this path: %s. Automatic upload will be available at a later date.", isoPath)
+			fmt.Printf("Please upload the ISO image at this path: %s. Automatic upload will be available at a later date.", isoPath)
 
 			createIsoCommand := createAssetCommand
 			createIsoCommand.FlagSet = flag.NewFlagSet("create ISO asset", flag.ExitOnError)
