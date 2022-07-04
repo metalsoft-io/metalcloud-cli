@@ -794,13 +794,15 @@ func templateMakePrivateCmd(c *Command, client metalcloud.MetalCloudClient) (str
 }
 
 func templateBuildCmd(c *Command, client metalcloud.MetalCloudClient) (string, error) {
+	//TODO: Implement proper image upload
+	imageRepositoryURL := "https://repo.metalsoft.io/.iso"
 
 	cloneOptions := new(git.CloneOptions)
 	cloneOptions.Depth = 1 // We are only interested in the last commit
 
 	if repositoryName, ok := getStringParamOk(c.Arguments["github-template-repo"]); ok {
 		if userPrivateToken := os.Getenv("METALCLOUD_USER_PRIVATE_REPOSITORY_TOKEN"); userPrivateToken == "" {
-			return "", fmt.Errorf("METALCLOUD_USER_PRIVATE_REPOSITORY_TOKEN must be set when using a user given repository")
+			return "", fmt.Errorf("METALCLOUD_USER_PRIVATE_REPOSITORY_TOKEN must be set when using a user given repository.")
 		}
 
 		cloneOptions.Auth = &http.BasicAuth{
@@ -825,7 +827,7 @@ func templateBuildCmd(c *Command, client metalcloud.MetalCloudClient) (string, e
 
 	if err != nil {
 		if err.Error() == "authentication required" {
-			return "", fmt.Errorf("failed to authenticate to the given repository. Please check if the repository exists and/or the given access token is valid.")
+			return "", fmt.Errorf("Failed to authenticate to the given repository. Please check if the repository exists and/or the given access token is valid.")
 		}
 
 		return "", err
@@ -1096,7 +1098,7 @@ func templateBuildCmd(c *Command, client metalcloud.MetalCloudClient) (string, e
 
 		if sourceTemplateName, ok := getStringParamOk(c.Arguments["source-template"]); ok {
 			if _, ok := repoMap[sourceTemplateName]; !ok {
-				return "", fmt.Errorf("did not find source template '%s'. Please use the 'list-supported' parameter to see the supported templates", sourceTemplateName)
+				return "", fmt.Errorf("Did not find source template '%s'. Please use the 'list-supported' parameter to see the supported templates.", sourceTemplateName)
 			}
 
 			var imagePath string
@@ -1104,13 +1106,13 @@ func templateBuildCmd(c *Command, client metalcloud.MetalCloudClient) (string, e
 			if sourceISO, ok := getStringParamOk(c.Arguments["source-iso"]); ok {
 				imagePath = sourceISO
 			} else {
-				return "", fmt.Errorf("the 'source-iso' parameter must be specified with the 'name' and 'source-template' ones")
+				return "", fmt.Errorf("The 'source-iso' parameter must be specified with the 'name' and 'source-template' ones.")
 			}
 
 			file, err := os.Open(imagePath)
 
 			if err != nil {
-				return "", fmt.Errorf("image not found at path %s", imagePath)
+				return "", fmt.Errorf("Image not found at path %s.", imagePath)
 			}
 
 			image, err := iso9660.OpenImage(file)
@@ -1141,7 +1143,7 @@ func templateBuildCmd(c *Command, client metalcloud.MetalCloudClient) (string, e
 			}
 
 			if bootloaderFile == nil {
-				return "", fmt.Errorf("did not find bootloader config file in the given ISO image")
+				return "", fmt.Errorf("Did not find bootloader config file in the given ISO image.")
 			}
 
 			bootloaderData, err := ioutil.ReadAll(bootloaderFile.Reader())
@@ -1159,7 +1161,7 @@ func templateBuildCmd(c *Command, client metalcloud.MetalCloudClient) (string, e
 				if asset.IsPatchFile {
 
 					if foundPatchAsset {
-						return "", fmt.Errorf("found more than one patch asset for source template '%s'. Templates should only have one patch asset for the bootloader", sourceTemplateName)
+						return "", fmt.Errorf("Found more than one patch asset for source template '%s'. Templates should only have one patch asset for the bootloader.", sourceTemplateName)
 					}
 
 					foundPatchAsset = true
@@ -1168,7 +1170,7 @@ func templateBuildCmd(c *Command, client metalcloud.MetalCloudClient) (string, e
 			}
 
 			if !foundPatchAsset {
-				return "", fmt.Errorf("did not find the patch file for source template '%s'", sourceTemplateName)
+				return "", fmt.Errorf("Did not find the patch file for source template '%s'.", sourceTemplateName)
 			}
 
 			patchFileStringContents, err := patchAsset.file.Contents()
@@ -1199,7 +1201,7 @@ func templateBuildCmd(c *Command, client metalcloud.MetalCloudClient) (string, e
 				appendFileContents, err := os.ReadFile(kickstartAppendFilePath)
 		
 				if err != nil {
-					return "", fmt.Errorf("kickstart append file not found at path %s", kickstartAppendFilePath)
+					return "", fmt.Errorf("Kickstart append file not found at path %s.", kickstartAppendFilePath)
 				}
 	
 				for _, asset := range repoMap[sourceTemplateName].Assets {
@@ -1208,7 +1210,7 @@ func templateBuildCmd(c *Command, client metalcloud.MetalCloudClient) (string, e
 						kickstartContents, err = asset.file.Contents()
 	
 						if err != nil {
-							return "", fmt.Errorf("did not find the kickstart file for source template '%s'", sourceTemplateName)
+							return "", fmt.Errorf("Did not find the kickstart file for source template '%s'.", sourceTemplateName)
 						}
 
 						kickstartContents += "\n" + string(appendFileContents)
@@ -1294,13 +1296,16 @@ func templateBuildCmd(c *Command, client metalcloud.MetalCloudClient) (string, e
 			s := strings.Split(imagePath, "/")
 			imageFilename := s[len(s)-1]
 
+			isoPath := imageRepositoryURL + "/" + name + "/" + imageFilename
+			fmt.Printf("Please upload ISO image to this path: %s. Automatic upload will be available at a later date.", isoPath)
+
 			createIsoCommand := createAssetCommand
 			createIsoCommand.FlagSet = flag.NewFlagSet("create ISO asset", flag.ExitOnError)
 			createIsoCommand.Arguments = map[string]interface{}{
 				"filename":               createIsoCommand.FlagSet.String("filename", imageFilename, "Asset's filename"),
 				"usage":                  createIsoCommand.FlagSet.String("usage", "build_source_image", "Asset's usage. Possible values: \"bootloader\""),
 				"mime":                   createIsoCommand.FlagSet.String("mime", "application/octet-stream", "Asset's mime type. Possible values: \"text/plain\",\"application/octet-stream\""),
-				"url":                    createIsoCommand.FlagSet.String("url", "http://192.168.138.24/file12345.txt", "Asset's source url. If present it will not read content anymore"),
+				"url":                    createIsoCommand.FlagSet.String("url", isoPath, "Asset's source url. If present it will not read content anymore"),
 				"read_content_from_pipe": createIsoCommand.FlagSet.Bool("pipe", false, "Read assets's content read from pipe instead of terminal input"),
 				"template_id_or_name":    createIsoCommand.FlagSet.String("template-id", name, "Template's id or name to associate. "),
 				"path":                   createIsoCommand.FlagSet.String("path", "/source-image", "Path to associate asset to."),
@@ -1409,7 +1414,7 @@ func templateBuildCmd(c *Command, client metalcloud.MetalCloudClient) (string, e
 			}
 
 		} else {
-			return "", fmt.Errorf("the 'source-template' parameter must be specified with the 'name' one")
+			return "", fmt.Errorf("The 'source-template' parameter must be specified with the 'name' one.")
 		}
 	}
 
