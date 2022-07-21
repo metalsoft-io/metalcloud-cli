@@ -56,6 +56,7 @@ var networkProfileCmds = []Command{
 			c.Arguments = map[string]interface{}{
 				"network_profile_id": c.FlagSet.Int("id", _nilDefaultInt, red("(Required)")+" Network profile's id."),
 				"format":             c.FlagSet.String("format", _nilDefaultStr, "The output format. Supported values are 'json','csv','yaml'. The default format is human readable."),
+				"raw":                c.FlagSet.Bool("raw", false, green("(Flag)")+" If set returns the raw object serialized using specified format"),
 			}
 		},
 		ExecuteFunc: networkProfileGetCmd,
@@ -320,27 +321,94 @@ func networkProfileGetCmd(c *Command, client metalcloud.MetalCloudClient) (strin
 			FieldType: tableformatter.TypeString,
 			FieldSize: 6,
 		},
+		{
+			FieldName: "DETAILS",
+			FieldType: tableformatter.TypeString,
+			FieldSize: 6,
+		},
+	}
+
+	networkProfileVlans := retNP.NetworkProfileVLANs
+
+	vlanListDescriptions := []string{}
+
+	for _, vlan := range networkProfileVlans {
+
+		externalConnectionIDs := vlan.ExternalConnectionIDs
+		ecIds := []string{}
+		for _, ecId := range externalConnectionIDs {
+
+			retEC, err := client.ExternalConnectionGet(ecId)
+			if err != nil {
+				return "", err
+			}
+
+			ecIds = append(ecIds, fmt.Sprintf("%s (#%d)", retEC.ExternalConnectionLabel, ecId))
+		}
+
+		vlanid := "auto"
+		if vlan.VlanID != nil {
+			vlanid = strconv.Itoa(*vlan.VlanID)
+		}
+
+		gatewayIsProvisioned := ""
+		if !vlan.ProvisionSubnetGateways {
+			gatewayIsProvisioned = "no GW"
+		}
+
+		vlanDetails := ""
+		if len(ecIds) > 0 {
+			vlanDetails = fmt.Sprintf("VLAN ID: %s (%s) %s %s",
+				yellow(vlanid),
+				vlan.PortMode,
+				strings.Join(ecIds, ","),
+				red(gatewayIsProvisioned),
+			)
+		} else {
+			vlanDetails = fmt.Sprintf("VLAN ID: %s (%s) %s",
+				yellow(vlanid),
+				vlan.PortMode,
+				red(gatewayIsProvisioned),
+			)
+		}
+
+		vlanListDescriptions = append(vlanListDescriptions, vlanDetails)
 	}
 
 	data := [][]interface{}{
 		{
 			"#" + strconv.Itoa(retNP.NetworkProfileID),
-			retNP.NetworkProfileLabel,
+			blue(retNP.NetworkProfileLabel),
 			retNP.DatacenterName,
+			strings.Join(vlanListDescriptions, ","),
 		},
 	}
 
-	table := tableformatter.Table{
-		Data:   data,
-		Schema: schema,
+	var sb strings.Builder
+
+	format := getStringParam(c.Arguments["format"])
+
+	if getBoolParam(c.Arguments["raw"]) {
+		ret, err := tableformatter.RenderRawObject(*retNP, format, "Server interfaces")
+		if err != nil {
+			return "", err
+		}
+		sb.WriteString(ret)
+	} else {
+
+		table := tableformatter.Table{
+			Data:   data,
+			Schema: schema,
+		}
+
+		ret, err := table.RenderTable("", "", format)
+		if err != nil {
+			return "", err
+		}
+		sb.WriteString(ret)
 	}
 
-	retOverviewTable, err := table.RenderTableFoldable("", "", getStringParam(c.Arguments["format"]), 0)
-	if err != nil {
-		return "", err
-	}
-
-	return retOverviewTable, err
+	return sb.String(), nil
 }
 
 func networkProfileCreateCmd(c *Command, client metalcloud.MetalCloudClient) (string, error) {
