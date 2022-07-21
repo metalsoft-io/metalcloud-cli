@@ -80,6 +80,26 @@ var networkProfileCmds = []Command{
 		},
 		ExecuteFunc: networkProfileCreateCmd,
 		Endpoint:    DeveloperEndpoint,
+		Example: `
+#create file network-profile.yaml:
+label: internet01
+dc: us02-chi-qts01-dc
+networkType: wan
+vlans:
+- vlanID: null
+  portMode: native
+  provisionSubnetGateways: false
+  extConnectionIDs: []
+- vlanID: 3205
+  portMode: trunk
+  provisionSubnetGateways: false
+  extConnectionIDs: []
+
+#create the actual profile from the file: 
+metalcloud-cli network-profile create -datacenter us02-chi-qts01-dc -format yaml -raw-config ./network-profile.yaml
+
+More details available https://docs.metalsoft.io/en/latest/guides/adding_a_network_profile.html
+`,
 	},
 	{
 		Description:  "Delete a network profile.",
