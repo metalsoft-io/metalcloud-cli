@@ -229,13 +229,55 @@ func TestNetworkProfileGetCmd(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	client := mock_metalcloud.NewMockMetalCloudClient(ctrl)
 
+	sbnPoolId := 12
 	np := metalcloud.NetworkProfile{
 		NetworkProfileID: 10,
+		NetworkProfileVLANs: []metalcloud.NetworkProfileVLAN{
+			{
+				SubnetPools: []metalcloud.NetworkProfileSubnetPool{{
+					SubnetPoolID:   &sbnPoolId,
+					SubnetPoolType: "ipv4",
+				}},
+				ExternalConnectionIDs: []int{
+					10,
+				},
+			},
+			{
+				SubnetPools: []metalcloud.NetworkProfileSubnetPool{{
+					SubnetPoolID:   nil, //this is important as it crashed previously
+					SubnetPoolType: "ipv4",
+				}},
+				ExternalConnectionIDs: []int{
+					10,
+				},
+			},
+		},
 	}
 
 	client.EXPECT().
 		NetworkProfileGet(np.NetworkProfileID).
 		Return(&np, nil).
+		AnyTimes()
+
+	extC := metalcloud.ExternalConnection{
+		ExternalConnectionID:          10,
+		ExternalConnectionDescription: "asdasd",
+	}
+
+	client.EXPECT().
+		ExternalConnectionGet(10).
+		Return(&extC, nil).
+		AnyTimes()
+
+	subnPool := metalcloud.SubnetPool{
+		SubnetPoolID:                  12,
+		SubnetPoolPrefixHumanReadable: "192.168.0.1",
+		SubnetPoolPrefixSize:          24,
+	}
+
+	client.EXPECT().
+		SubnetPoolGet(12).
+		Return(&subnPool, nil).
 		AnyTimes()
 
 	expectedFirstRow := map[string]interface{}{

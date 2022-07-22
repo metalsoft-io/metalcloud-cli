@@ -29,6 +29,7 @@ var networkProfileCmds = []Command{
 			}
 		},
 		ExecuteFunc: networkProfileListCmd,
+		Endpoint:    DeveloperEndpoint,
 	},
 	{
 		Description:  "Lists vlans of network profile.",
@@ -44,6 +45,7 @@ var networkProfileCmds = []Command{
 			}
 		},
 		ExecuteFunc: networkProfileVlansListCmd,
+		Endpoint:    DeveloperEndpoint,
 	},
 	{
 		Description:  "Get network profile details.",
@@ -60,7 +62,7 @@ var networkProfileCmds = []Command{
 			}
 		},
 		ExecuteFunc: networkProfileGetCmd,
-		Endpoint:    ExtendedEndpoint,
+		Endpoint:    DeveloperEndpoint,
 	},
 	{
 		Description:  "Create network profile.",
@@ -89,7 +91,11 @@ vlans:
 - vlanID: null
   portMode: native
   provisionSubnetGateways: false
-  extConnectionIDs: []
+  extConnectionIDs:
+   - 10
+  subnetPools: 
+  - subnetPoolID: 13
+	subnetPoolType: ipv4
 - vlanID: 3205
   portMode: trunk
   provisionSubnetGateways: false
@@ -355,7 +361,7 @@ func networkProfileGetCmd(c *Command, client metalcloud.MetalCloudClient) (strin
 	for _, vlan := range networkProfileVlans {
 
 		externalConnectionIDs := vlan.ExternalConnectionIDs
-		ecIds := []string{}
+		ecDescriptions := []string{}
 		for _, ecId := range externalConnectionIDs {
 
 			retEC, err := client.ExternalConnectionGet(ecId)
@@ -363,7 +369,23 @@ func networkProfileGetCmd(c *Command, client metalcloud.MetalCloudClient) (strin
 				return "", err
 			}
 
-			ecIds = append(ecIds, fmt.Sprintf("%s (#%d)", retEC.ExternalConnectionLabel, ecId))
+			ecDescriptions = append(ecDescriptions, fmt.Sprintf("%s (#%d)", blue(retEC.ExternalConnectionLabel), ecId))
+		}
+
+		subnetPoolsDescriptions := []string{}
+		subnetPools := vlan.SubnetPools
+
+		for _, subnet := range subnetPools {
+			if subnet.SubnetPoolID == nil { //if nil means that the subnet is automatically allocated
+				subnetPoolsDescriptions = append(subnetPoolsDescriptions, blue(fmt.Sprintf("auto %s", subnet.SubnetPoolType)))
+				continue
+			}
+			retSubnet, err := client.SubnetPoolGet(*subnet.SubnetPoolID)
+			if err != nil {
+				return "", err
+			}
+
+			subnetPoolsDescriptions = append(subnetPoolsDescriptions, fmt.Sprintf("%s/%s (#%d)", blue(retSubnet.SubnetPoolPrefixHumanReadable), blue(retSubnet.SubnetPoolPrefixSize), retSubnet.SubnetPoolID))
 		}
 
 		vlanid := "auto"
@@ -376,20 +398,18 @@ func networkProfileGetCmd(c *Command, client metalcloud.MetalCloudClient) (strin
 			gatewayIsProvisioned = "no GW"
 		}
 
-		vlanDetails := ""
-		if len(ecIds) > 0 {
-			vlanDetails = fmt.Sprintf("VLAN ID: %s (%s) %s %s",
-				yellow(vlanid),
-				vlan.PortMode,
-				strings.Join(ecIds, ","),
-				red(gatewayIsProvisioned),
-			)
-		} else {
-			vlanDetails = fmt.Sprintf("VLAN ID: %s (%s) %s",
-				yellow(vlanid),
-				vlan.PortMode,
-				red(gatewayIsProvisioned),
-			)
+		vlanDetails := fmt.Sprintf("VLAN ID: %s (%s) %s",
+			yellow(vlanid),
+			vlan.PortMode,
+			red(gatewayIsProvisioned),
+		)
+
+		if len(ecDescriptions) > 0 {
+			vlanDetails = fmt.Sprintf("%s EC:[%s]", vlanDetails, strings.Join(ecDescriptions, ","))
+		}
+
+		if len(subnetPoolsDescriptions) > 0 {
+			vlanDetails = fmt.Sprintf("%s Subnets:[%s]", vlanDetails, strings.Join(subnetPoolsDescriptions, ","))
 		}
 
 		vlanListDescriptions = append(vlanListDescriptions, vlanDetails)
@@ -400,7 +420,7 @@ func networkProfileGetCmd(c *Command, client metalcloud.MetalCloudClient) (strin
 			"#" + strconv.Itoa(retNP.NetworkProfileID),
 			blue(retNP.NetworkProfileLabel),
 			retNP.DatacenterName,
-			strings.Join(vlanListDescriptions, ","),
+			strings.Join(vlanListDescriptions, "\n"),
 		},
 	}
 
