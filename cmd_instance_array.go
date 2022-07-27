@@ -23,8 +23,8 @@ var instanceArrayCmds = []Command{
 		FlagSet:      flag.NewFlagSet("instance-array", flag.ExitOnError),
 		InitFunc: func(c *Command) {
 			c.Arguments = map[string]interface{}{
-				"infrastructure_id_or_label":          c.FlagSet.String("infra", _nilDefaultStr, red("(Required)") + " Infrastructure's id or label. Note that the 'label' this be ambiguous in certain situations."),
-				"instance_array_instance_count":       c.FlagSet.Int("instance-count", _nilDefaultInt, red("(Required)") + " Instance count of this instance array"),
+				"infrastructure_id_or_label":          c.FlagSet.String("infra", _nilDefaultStr, red("(Required)")+" Infrastructure's id or label. Note that the 'label' this be ambiguous in certain situations."),
+				"instance_array_instance_count":       c.FlagSet.Int("instance-count", _nilDefaultInt, red("(Required)")+" Instance count of this instance array"),
 				"instance_array_label":                c.FlagSet.String("label", _nilDefaultStr, "InstanceArray's label"),
 				"server_type":                         c.FlagSet.String("server-type", _nilDefaultStr, "InstanceArray's server type."),
 				"instance_array_ram_gbytes":           c.FlagSet.Int("ram", _nilDefaultInt, "InstanceArray's minimum RAM (GB)"),
@@ -34,11 +34,12 @@ var instanceArrayCmds = []Command{
 				"instance_array_disk_count":           c.FlagSet.Int("disks", _nilDefaultInt, "InstanceArray's number of local drives"),
 				"instance_array_disk_size_mbytes":     c.FlagSet.Int("disk-size", _nilDefaultInt, "InstanceArray's local disks' size in MB"),
 				"instance_array_boot_method":          c.FlagSet.String("boot", _nilDefaultStr, "InstanceArray's boot type:'pxe_iscsi','local_drives'"),
-				"instance_array_firewall_not_managed": c.FlagSet.Bool("firewall-management-disabled", false, green("(Flag)") + " If set InstanceArray's firewall management on or off"),
+				"instance_array_firewall_not_managed": c.FlagSet.Bool("firewall-management-disabled", false, green("(Flag)")+" If set InstanceArray's firewall management on or off"),
 				"volume_template_id_or_label":         c.FlagSet.String("local-install-template", _nilDefaultStr, "InstanceArray's volume template when booting from for local drives"),
 				"da_volume_template":                  c.FlagSet.String("drive-array-template", _nilDefaultStr, "The attached DriveArray's  volume template when booting from iscsi drives"),
 				"da_volume_disk_size":                 c.FlagSet.Int("drive-array-disk-size", _nilDefaultInt, "The attached DriveArray's  volume size (in MB) when booting from iscsi drives, If ommited the default size of the volume template will be used."),
-				"return_id":                           c.FlagSet.Bool("return-id", false, green("(Flag)") + " If set will print the ID of the created Instance Array. Useful for automating tasks."),
+				"custom_variables":                    c.FlagSet.String("custom-variables", _nilDefaultStr, "Comma separated list of custom variables such as 'var1=value,var2=value'. If special characters need to be set use urlencode and pass the encoded string"),
+				"return_id":                           c.FlagSet.Bool("return-id", false, green("(Flag)")+" If set will print the ID of the created Instance Array. Useful for automating tasks."),
 			}
 		},
 		ExecuteFunc: instanceArrayCreateCmd,
@@ -53,7 +54,7 @@ var instanceArrayCmds = []Command{
 		FlagSet:      flag.NewFlagSet("list instance_array", flag.ExitOnError),
 		InitFunc: func(c *Command) {
 			c.Arguments = map[string]interface{}{
-				"infrastructure_id_or_label": c.FlagSet.String("infra", _nilDefaultStr, red("(Required)") + " Infrastructure's id or label. Note that the 'label' this be ambiguous in certain situations."),
+				"infrastructure_id_or_label": c.FlagSet.String("infra", _nilDefaultStr, red("(Required)")+" Infrastructure's id or label. Note that the 'label' this be ambiguous in certain situations."),
 				"format":                     c.FlagSet.String("format", "", "The output format. Supported values are 'json','csv','yaml'. The default format is human readable."),
 			}
 		},
@@ -69,14 +70,12 @@ var instanceArrayCmds = []Command{
 		FlagSet:      flag.NewFlagSet("instances-list instance_array", flag.ExitOnError),
 		InitFunc: func(c *Command) {
 			c.Arguments = map[string]interface{}{
-				"instance_array_id_or_label": c.FlagSet.String("id", _nilDefaultStr, red("(Required)") + " InstanceArray's id or label. Note that the label can be ambigous."),
+				"instance_array_id_or_label": c.FlagSet.String("id", _nilDefaultStr, red("(Required)")+" InstanceArray's id or label. Note that the label can be ambigous."),
 				"format":                     c.FlagSet.String("format", "", "The output format. Supported values are 'json','csv','yaml'. The default format is human readable."),
 			}
 		},
 		ExecuteFunc: instanceArrayInstancesListCmd,
 		Endpoint:    DeveloperEndpoint,
-
-
 	},
 	{
 		Description:  "Delete instance array.",
@@ -87,8 +86,8 @@ var instanceArrayCmds = []Command{
 		FlagSet:      flag.NewFlagSet("list instance_array", flag.ExitOnError),
 		InitFunc: func(c *Command) {
 			c.Arguments = map[string]interface{}{
-				"instance_array_id_or_label": c.FlagSet.String("id", _nilDefaultStr, red("(Required)") + " InstanceArray's id or label. Note that the label can be ambigous."),
-				"autoconfirm":                c.FlagSet.Bool("autoconfirm", false, green("(Flag)") + " If set it will assume action is confirmed"),
+				"instance_array_id_or_label": c.FlagSet.String("id", _nilDefaultStr, red("(Required)")+" InstanceArray's id or label. Note that the label can be ambigous."),
+				"autoconfirm":                c.FlagSet.Bool("autoconfirm", false, green("(Flag)")+" If set it will assume action is confirmed"),
 			}
 		},
 		ExecuteFunc: instanceArrayDeleteCmd,
@@ -103,9 +102,9 @@ var instanceArrayCmds = []Command{
 		FlagSet:      flag.NewFlagSet("instance_array", flag.ExitOnError),
 		InitFunc: func(c *Command) {
 			c.Arguments = map[string]interface{}{
-				"instance_array_id_or_label":          c.FlagSet.String("id", _nilDefaultStr, red("(Required)") + " InstanceArray's id or label. Note that the label can be ambigous."),
+				"instance_array_id_or_label":          c.FlagSet.String("id", _nilDefaultStr, red("(Required)")+" InstanceArray's id or label. Note that the label can be ambigous."),
 				"instance_array_instance_count":       c.FlagSet.Int("instance-count", _nilDefaultInt, "Instance count of this instance array"),
-				"instance_array_label":                c.FlagSet.String("label", _nilDefaultStr, red("(Required)") + " InstanceArray's label"),
+				"instance_array_label":                c.FlagSet.String("label", _nilDefaultStr, red("(Required)")+" InstanceArray's label"),
 				"instance_array_ram_gbytes":           c.FlagSet.Int("ram", _nilDefaultInt, "InstanceArray's minimum RAM (GB)"),
 				"instance_array_processor_count":      c.FlagSet.Int("proc", _nilDefaultInt, "InstanceArray's minimum processor count"),
 				"instance_array_processor_core_mhz":   c.FlagSet.Int("proc-freq", _nilDefaultInt, "InstanceArray's minimum processor frequency (Mhz)"),
@@ -113,10 +112,11 @@ var instanceArrayCmds = []Command{
 				"instance_array_disk_count":           c.FlagSet.Int("disks", _nilDefaultInt, "InstanceArray's number of local drives"),
 				"instance_array_disk_size_mbytes":     c.FlagSet.Int("disk-size", _nilDefaultInt, "InstanceArray's local disks' size in MB"),
 				"instance_array_boot_method":          c.FlagSet.String("boot", _nilDefaultStr, "InstanceArray's boot type:'pxe_iscsi','local_drives'"),
-				"instance_array_firewall_not_managed": c.FlagSet.Bool("firewall-management-disabled", false, green("(Flag)") + " If set InstanceArray's firewall management is off"),
+				"instance_array_firewall_not_managed": c.FlagSet.Bool("firewall-management-disabled", false, green("(Flag)")+" If set InstanceArray's firewall management is off"),
 				"volume_template_id_or_label":         c.FlagSet.String("local-install-template", _nilDefaultStr, "InstanceArray's volume template when booting from for local drives"),
-				"bSwapExistingInstancesHardware":      c.FlagSet.Bool("swap-existing-hardware", false, green("(Flag)") + " If set all the hardware of the Instance objects is swapped to match the new InstanceArray specifications"),
-				"no_bKeepDetachingDrives":             c.FlagSet.Bool("do-not-keep-detaching-drives", false, green("(Flag)") + " If set and the number of Instance objects is reduced, then the detaching Drive objects will be deleted. If it's set to true, the detaching Drive objects will not be deleted."),
+				"bSwapExistingInstancesHardware":      c.FlagSet.Bool("swap-existing-hardware", false, green("(Flag)")+" If set all the hardware of the Instance objects is swapped to match the new InstanceArray specifications"),
+				"custom_variables":                    c.FlagSet.String("custom-variables", _nilDefaultStr, "Comma separated list of custom variables such as 'var1=value,var2=value'. If special characters need to be set use urlencode and pass the encoded string"),
+				"no_bKeepDetachingDrives":             c.FlagSet.Bool("do-not-keep-detaching-drives", false, green("(Flag)")+" If set and the number of Instance objects is reduced, then the detaching Drive objects will be deleted. If it's set to true, the detaching Drive objects will not be deleted."),
 			}
 		},
 		ExecuteFunc: instanceArrayEditCmd,
@@ -131,10 +131,11 @@ var instanceArrayCmds = []Command{
 		FlagSet:      flag.NewFlagSet("get instance array", flag.ExitOnError),
 		InitFunc: func(c *Command) {
 			c.Arguments = map[string]interface{}{
-				"instance_array_id_or_label": c.FlagSet.String("id", _nilDefaultStr, red("(Required)") + " Instance array's id or label. Note that using the 'label' might be ambiguous in certain situations."),
-				"show_credentials":           c.FlagSet.Bool("show-credentials", false, green("(Flag)") + " If set returns the instances' credentials"),
-				"show_power_status":          c.FlagSet.Bool("show-power-status", false, green("(Flag)") + " If set returns the instances' power status"),
-				"show_iscsi_credentials":     c.FlagSet.Bool("show-iscsi-credentials", false, green("(Flag)") + " If set returns the instances' iscsi credentials"),
+				"instance_array_id_or_label": c.FlagSet.String("id", _nilDefaultStr, red("(Required)")+" Instance array's id or label. Note that using the 'label' might be ambiguous in certain situations."),
+				"show_credentials":           c.FlagSet.Bool("show-credentials", false, green("(Flag)")+" If set returns the instances' credentials"),
+				"show_power_status":          c.FlagSet.Bool("show-power-status", false, green("(Flag)")+" If set returns the instances' power status"),
+				"show_iscsi_credentials":     c.FlagSet.Bool("show-iscsi-credentials", false, green("(Flag)")+" If set returns the instances' iscsi credentials"),
+				"show_custom_variables":      c.FlagSet.Bool("show-custom-variables", false, green("(Flag)")+" If set returns the instances' custom variables"),
 				"format":                     c.FlagSet.String("format", "", "The output format. Supported values are 'json','csv','yaml'. The default format is human readable."),
 			}
 		},
@@ -150,7 +151,10 @@ func instanceArrayCreateCmd(c *Command, client metalcloud.MetalCloudClient) (str
 		return "", err
 	}
 
-	ia := argsToInstanceArray(c.Arguments, c, client)
+	ia, err := argsToInstanceArray(c.Arguments, c, client)
+	if err != nil {
+		return "", err
+	}
 
 	if ia.InstanceArrayLabel == "" {
 		return "", fmt.Errorf("-label is required")
@@ -223,7 +227,10 @@ func instanceArrayEditCmd(c *Command, client metalcloud.MetalCloudClient) (strin
 		return "", err
 	}
 
-	argsToInstanceArrayOperation(c.Arguments, retIA.InstanceArrayOperation, c, client)
+	err = argsToInstanceArrayOperation(c.Arguments, retIA.InstanceArrayOperation, c, client)
+	if err != nil {
+		return "", err
+	}
 
 	var bKeepDetachingDrives *bool
 	if v := c.Arguments["not_bKeepDetachingDrives"]; v != nil {
@@ -442,6 +449,11 @@ func instanceArrayGetCmd(c *Command, client metalcloud.MetalCloudClient) (string
 			FieldSize: 6,
 		},
 		{
+			FieldName: "STATUS",
+			FieldType: tableformatter.TypeString,
+			FieldSize: 6,
+		},
+		{
 			FieldName: "LABEL",
 			FieldType: tableformatter.TypeString,
 			FieldSize: 6,
@@ -451,13 +463,63 @@ func instanceArrayGetCmd(c *Command, client metalcloud.MetalCloudClient) (string
 			FieldType: tableformatter.TypeString,
 			FieldSize: 6,
 		},
+		{
+			FieldName: "DETAILS",
+			FieldType: tableformatter.TypeString,
+			FieldSize: 6,
+		},
+	}
+
+	if getBoolParam(c.Arguments["show_custom_variables"]) {
+		schema = append(schema, tableformatter.SchemaField{
+			FieldName: "CUSTOM_VARS",
+			FieldType: tableformatter.TypeString,
+			FieldSize: 6,
+		})
+	}
+
+	status := green(retIA.InstanceArrayServiceStatus)
+	if retIA.InstanceArrayServiceStatus != "ordered" && retIA.InstanceArrayOperation.InstanceArrayDeployType == "edit" && retIA.InstanceArrayOperation.InstanceArrayDeployStatus == "not_started" {
+		status = blue("edited")
+	}
+
+	volumeTemplateName := ""
+	if retIA.InstanceArrayOperation.VolumeTemplateID != 0 {
+		vt, err := client.VolumeTemplateGet(retIA.InstanceArrayOperation.VolumeTemplateID)
+		if err != nil {
+			return "", err
+		}
+		volumeTemplateName = fmt.Sprintf("%s [#%d] ", vt.VolumeTemplateDisplayName, vt.VolumeTemplateID)
+	}
+
+	fwMgmtDisabled := ""
+	if !retIA.InstanceArrayFirewallManaged {
+		fwMgmtDisabled = " fw mgmt disabled"
+	}
+
+	details := fmt.Sprintf("%d instances (%d RAM, %d cores, %d disks %s %s%s)",
+		retIA.InstanceArrayOperation.InstanceArrayInstanceCount,
+		retIA.InstanceArrayOperation.InstanceArrayRAMGbytes,
+		retIA.InstanceArrayOperation.InstanceArrayProcessorCount*retIA.InstanceArrayProcessorCoreCount,
+		retIA.InstanceArrayOperation.InstanceArrayDiskCount,
+		retIA.InstanceArrayOperation.InstanceArrayBootMethod,
+		volumeTemplateName,
+		fwMgmtDisabled,
+	)
+
+	custom_vars := ""
+	if getBoolParam(c.Arguments["show_custom_variables"]) {
+		custom_vars = getKeyValueStringFromMap(retIA.InstanceArrayCustomVariables)
 	}
 
 	data := [][]interface{}{
 		{
 			"#" + strconv.Itoa(retIA.InstanceArrayID),
+			status,
 			retIA.InstanceArrayLabel,
 			infra.InfrastructureLabel + " #" + strconv.Itoa(retIA.InfrastructureID),
+			details,
+			custom_vars,
 		},
 	}
 
@@ -466,7 +528,7 @@ func instanceArrayGetCmd(c *Command, client metalcloud.MetalCloudClient) (string
 		Schema: schema,
 	}
 
-	return table.RenderTableFoldable("", "", getStringParam(c.Arguments["format"]), 0)
+	return table.RenderTable("", "", getStringParam(c.Arguments["format"]))
 }
 
 func instanceArrayInstancesListCmd(c *Command, client metalcloud.MetalCloudClient) (string, error) {
@@ -659,7 +721,7 @@ func instanceArrayInstancesListCmd(c *Command, client metalcloud.MetalCloudClien
 	return table.RenderTable("Instances", subtitle, getStringParam(c.Arguments["format"]))
 }
 
-func argsToInstanceArray(m map[string]interface{}, c *Command, client metalcloud.MetalCloudClient) *metalcloud.InstanceArray {
+func argsToInstanceArray(m map[string]interface{}, c *Command, client metalcloud.MetalCloudClient) (*metalcloud.InstanceArray, error) {
 	ia := metalcloud.InstanceArray{}
 
 	if v, ok := getIntParamOk(m["instance_array_instance_count"]); ok {
@@ -717,10 +779,20 @@ func argsToInstanceArray(m map[string]interface{}, c *Command, client metalcloud
 		ia.VolumeTemplateID = vtID
 	}
 
-	return &ia
+	if v, ok := getStringParamOk(c.Arguments["custom_variables"]); ok {
+
+		m, err := getKeyValueMapFromString(v)
+		if err != nil {
+			return nil, err
+		}
+
+		ia.InstanceArrayCustomVariables = m
+	}
+
+	return &ia, nil
 }
 
-func argsToInstanceArrayOperation(m map[string]interface{}, iao *metalcloud.InstanceArrayOperation, c *Command, client metalcloud.MetalCloudClient) {
+func argsToInstanceArrayOperation(m map[string]interface{}, iao *metalcloud.InstanceArrayOperation, c *Command, client metalcloud.MetalCloudClient) error {
 	if v, ok := getIntParamOk(m["instance_array_instance_count"]); ok {
 		iao.InstanceArrayInstanceCount = v
 	}
@@ -775,6 +847,17 @@ func argsToInstanceArrayOperation(m map[string]interface{}, iao *metalcloud.Inst
 		}
 		iao.VolumeTemplateID = vtID
 	}
+
+	if v, ok := getStringParamOk(c.Arguments["custom_variables"]); ok {
+
+		m, err := getKeyValueMapFromString(v)
+		if err != nil {
+			return err
+		}
+
+		iao.InstanceArrayCustomVariables = m
+	}
+	return nil
 }
 
 func copyInstanceArrayToOperation(ia metalcloud.InstanceArray, iao *metalcloud.InstanceArrayOperation) {

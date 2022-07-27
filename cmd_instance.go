@@ -31,19 +31,21 @@ var instanceCmds = []Command{
 	},
 
 	{
-		Description:  "Show an instance's credentials",
+		Description:  "Show an instance details",
 		Subject:      "instance",
 		AltSubject:   "instance",
-		Predicate:    "credentials",
-		AltPredicate: "creds",
-		FlagSet:      flag.NewFlagSet("instance credentials", flag.ExitOnError),
+		Predicate:    "get",
+		AltPredicate: "show",
+		FlagSet:      flag.NewFlagSet("instance get", flag.ExitOnError),
 		InitFunc: func(c *Command) {
 			c.Arguments = map[string]interface{}{
-				"instance_id": c.FlagSet.Int("id", _nilDefaultInt, red("(Required)")+" Instances's id . Note that the 'label' this be ambiguous in certain situations."),
-				"format":      c.FlagSet.String("format", "", "The output format. Supported values are 'json','csv','yaml'. The default format is human readable."),
+				"instance_id":           c.FlagSet.Int("id", _nilDefaultInt, red("(Required)")+" Instances's id . Note that the 'label' this be ambiguous in certain situations."),
+				"show_credentials":      c.FlagSet.Bool("show-credentials", false, green("(Flag)")+" If set returns the instance's credentials"),
+				"show_custom_variables": c.FlagSet.Bool("show-custom-variables", false, green("(Flag)")+" If set returns the instance's custom variables"),
+				"format":                c.FlagSet.String("format", "", "The output format. Supported values are 'json','csv','yaml'. The default format is human readable."),
 			}
 		},
-		ExecuteFunc: instanceCredentialsCmd,
+		ExecuteFunc: instanceGetCmd,
 	},
 	{
 		Description:  "Replace an instance's associated server. (EXPERIMENTAL)",
@@ -61,6 +63,22 @@ var instanceCmds = []Command{
 			}
 		},
 		ExecuteFunc: instanceServerReplaceCmd,
+		Endpoint:    DeveloperEndpoint,
+	},
+	{
+		Description:  "Edit instance",
+		Subject:      "instance",
+		AltSubject:   "instance",
+		Predicate:    "edit",
+		AltPredicate: "update",
+		FlagSet:      flag.NewFlagSet("", flag.ExitOnError),
+		InitFunc: func(c *Command) {
+			c.Arguments = map[string]interface{}{
+				"instance_id":      c.FlagSet.Int("id", _nilDefaultInt, red("(Required)")+" Instance's id."),
+				"custom_variables": c.FlagSet.String("custom-variables", _nilDefaultStr, "Comma separated list of custom variables such as 'var1=value,var2=value'. If special characters need to be set use urlencode and pass the encoded string"),
+			}
+		},
+		ExecuteFunc: instanceEditCmd,
 		Endpoint:    DeveloperEndpoint,
 	},
 }
@@ -135,7 +153,32 @@ func instancePowerControlCmd(c *Command, client metalcloud.MetalCloudClient) (st
 	return "", err
 }
 
-func instanceCredentialsCmd(c *Command, client metalcloud.MetalCloudClient) (string, error) {
+func instanceEditCmd(c *Command, client metalcloud.MetalCloudClient) (string, error) {
+
+	instanceID, ok := getIntParamOk(c.Arguments["instance_id"])
+	if !ok {
+		return "", fmt.Errorf("-id is required (drive id)")
+	}
+
+	instance, err := client.InstanceGet(instanceID)
+	if err != nil {
+		return "", err
+	}
+
+	if v, ok := getStringParamOk(c.Arguments["custom_variables"]); ok {
+		m, err := getKeyValueMapFromString(v)
+		if err != nil {
+			return "", err
+		}
+		instance.InstanceOperation.InstanceCustomVariables = m
+	}
+
+	client.InstanceEdit(instanceID, instance.InstanceOperation)
+
+	return "", err
+}
+
+func instanceGetCmd(c *Command, client metalcloud.MetalCloudClient) (string, error) {
 
 	instanceID, ok := getIntParamOk(c.Arguments["instance_id"])
 	if !ok {
@@ -203,115 +246,82 @@ func instanceCredentialsCmd(c *Command, client metalcloud.MetalCloudClient) (str
 		strings.Join(privateIPS, " "),
 	}
 
-	if v := instance.InstanceCredentials.SSH; v != nil {
+	if getBoolParam(c.Arguments["show_credentials"]) {
 
-		newFields := []tableformatter.SchemaField{
-			{
-				FieldName: "SSH_USERNAME",
-				FieldType: tableformatter.TypeString,
-				FieldSize: 10,
-			},
-			{
-				FieldName: "SSH_PASSWORD",
-				FieldType: tableformatter.TypeString,
-				FieldSize: 10,
-			},
-			{
-				FieldName: "SSH_PORT",
-				FieldType: tableformatter.TypeInt,
-				FieldSize: 10,
-			},
-		}
+		if v := instance.InstanceCredentials.SSH; v != nil {
 
-		schema = append(schema, newFields...)
-
-		newData := []interface{}{
-			v.Username,
-			v.InitialPassword,
-			v.Port,
-		}
-		dataRow = append(dataRow, newData...)
-	}
-
-	if v := instance.InstanceCredentials.RDP; v != nil {
-
-		newFields := []tableformatter.SchemaField{
-			{
-				FieldName: "RDP_USERNAME",
-				FieldType: tableformatter.TypeString,
-				FieldSize: 5,
-			},
-			{
-				FieldName: "RDP_PASSWORD",
-				FieldType: tableformatter.TypeString,
-				FieldSize: 5,
-			},
-			{
-				FieldName: "RDP_PORT",
-				FieldType: tableformatter.TypeInt,
-				FieldSize: 5,
-			},
-		}
-
-		schema = append(schema, newFields...)
-		newData := []interface{}{
-			v.Username,
-			v.InitialPassword,
-			v.Port,
-		}
-		dataRow = append(dataRow, newData...)
-	}
-
-	if v := instance.InstanceCredentials.ISCSI; v != nil {
-
-		newFields := []tableformatter.SchemaField{
-			{
-				FieldName: "INITIATOR_IQN",
-				FieldType: tableformatter.TypeString,
-				FieldSize: 5,
-			},
-			{
-				FieldName: "ISCSI_USERNAME",
-				FieldType: tableformatter.TypeString,
-				FieldSize: 5,
-			},
-			{
-				FieldName: "ISCSI_PASSWORD",
-				FieldType: tableformatter.TypeString,
-				FieldSize: 5,
-			},
-		}
-
-		schema = append(schema, newFields...)
-		newData := []interface{}{
-			v.InitiatorIQN,
-			v.Username,
-			v.Password,
-		}
-		dataRow = append(dataRow, newData...)
-	}
-
-	if v := instance.InstanceCredentials.SharedDrives; v != nil {
-
-		for k, sd := range v {
 			newFields := []tableformatter.SchemaField{
 				{
-					FieldName: fmt.Sprintf("SHARED_DRIVE_%s_TARGET_IP_ADDRESS", k),
+					FieldName: "SSH_USERNAME",
+					FieldType: tableformatter.TypeString,
+					FieldSize: 10,
+				},
+				{
+					FieldName: "SSH_PASSWORD",
+					FieldType: tableformatter.TypeString,
+					FieldSize: 10,
+				},
+				{
+					FieldName: "SSH_PORT",
+					FieldType: tableformatter.TypeInt,
+					FieldSize: 10,
+				},
+			}
+
+			schema = append(schema, newFields...)
+
+			newData := []interface{}{
+				v.Username,
+				v.InitialPassword,
+				v.Port,
+			}
+			dataRow = append(dataRow, newData...)
+		}
+
+		if v := instance.InstanceCredentials.RDP; v != nil {
+
+			newFields := []tableformatter.SchemaField{
+				{
+					FieldName: "RDP_USERNAME",
 					FieldType: tableformatter.TypeString,
 					FieldSize: 5,
 				},
 				{
-					FieldName: fmt.Sprintf("SHARED_DRIVE_%s_TARGET_PORT", k),
+					FieldName: "RDP_PASSWORD",
+					FieldType: tableformatter.TypeString,
+					FieldSize: 5,
+				},
+				{
+					FieldName: "RDP_PORT",
 					FieldType: tableformatter.TypeInt,
 					FieldSize: 5,
 				},
+			}
+
+			schema = append(schema, newFields...)
+			newData := []interface{}{
+				v.Username,
+				v.InitialPassword,
+				v.Port,
+			}
+			dataRow = append(dataRow, newData...)
+		}
+
+		if v := instance.InstanceCredentials.ISCSI; v != nil {
+
+			newFields := []tableformatter.SchemaField{
 				{
-					FieldName: fmt.Sprintf("SHARED_DRIVE_%s_TARGET_IQN", k),
+					FieldName: "INITIATOR_IQN",
 					FieldType: tableformatter.TypeString,
 					FieldSize: 5,
 				},
 				{
-					FieldName: fmt.Sprintf("SHARED_DRIVE_%s_LUN_ID", k),
+					FieldName: "ISCSI_USERNAME",
+					FieldType: tableformatter.TypeString,
+					FieldSize: 5,
+				},
+				{
+					FieldName: "ISCSI_PASSWORD",
 					FieldType: tableformatter.TypeString,
 					FieldSize: 5,
 				},
@@ -319,13 +329,61 @@ func instanceCredentialsCmd(c *Command, client metalcloud.MetalCloudClient) (str
 
 			schema = append(schema, newFields...)
 			newData := []interface{}{
-				sd.StorageIPAddress,
-				sd.StoragePort,
-				sd.TargetIQN,
-				sd.LunID,
+				v.InitiatorIQN,
+				v.Username,
+				v.Password,
 			}
 			dataRow = append(dataRow, newData...)
 		}
+
+		if v := instance.InstanceCredentials.SharedDrives; v != nil {
+
+			for k, sd := range v {
+				newFields := []tableformatter.SchemaField{
+					{
+						FieldName: fmt.Sprintf("SHARED_DRIVE_%s_TARGET_IP_ADDRESS", k),
+						FieldType: tableformatter.TypeString,
+						FieldSize: 5,
+					},
+					{
+						FieldName: fmt.Sprintf("SHARED_DRIVE_%s_TARGET_PORT", k),
+						FieldType: tableformatter.TypeInt,
+						FieldSize: 5,
+					},
+					{
+						FieldName: fmt.Sprintf("SHARED_DRIVE_%s_TARGET_IQN", k),
+						FieldType: tableformatter.TypeString,
+						FieldSize: 5,
+					},
+					{
+						FieldName: fmt.Sprintf("SHARED_DRIVE_%s_LUN_ID", k),
+						FieldType: tableformatter.TypeString,
+						FieldSize: 5,
+					},
+				}
+
+				schema = append(schema, newFields...)
+				newData := []interface{}{
+					sd.StorageIPAddress,
+					sd.StoragePort,
+					sd.TargetIQN,
+					sd.LunID,
+				}
+				dataRow = append(dataRow, newData...)
+			}
+		}
+	}
+
+	if getBoolParam(c.Arguments["show_custom_variables"]) {
+		schema = append(schema, tableformatter.SchemaField{
+			FieldName: "CUSTOM_VARS",
+			FieldType: tableformatter.TypeString,
+			FieldSize: 6,
+		})
+
+		custom_vars := getKeyValueStringFromMap(instance.InstanceCustomVariables)
+		dataRow = append(dataRow, custom_vars)
+
 	}
 
 	data := [][]interface{}{dataRow}

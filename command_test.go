@@ -533,4 +533,26 @@ func TestGetRawObjectFromCommand(t *testing.T) {
 	Expect(sw.NetworkEquipmentPrimarySANSubnetPool).To(Equal("100.64.0.0"))
 }
 
+func TestGetKeyValueMapFromString(t *testing.T) {
+	RegisterTestingT(t)
 
+	Expect(getKeyValueMapFromString("key1=value1,key2=value2")).To(Equal(map[string]string{"key1": "value1", "key2": "value2"}))
+	Expect(getKeyValueMapFromString("key1%3Dvalue1%2Ckey2%3Dvalue2")).To(Equal(map[string]string{"key1": "value1", "key2": "value2"}))
+	Expect(getKeyValueMapFromString("key1%3Dvalue1%2Ckey2%3Dvalue%0A2")).To(Equal(map[string]string{"key1": "value1", "key2": "value\n2"}))
+	Expect(getKeyValueMapFromString("key1=value1, key2=")).To(Equal(map[string]string{"key1": "value1", "key2": ""}))
+	_, err := getKeyValueMapFromString("key1=value1, =value")
+	Expect(err).NotTo(BeNil())
+	_, err = getKeyValueMapFromString("key1=value1, =value=")
+	Expect(err).NotTo(BeNil())
+}
+
+func TestGetKVStringFromMap(t *testing.T) {
+	RegisterTestingT(t)
+
+	m := map[string]interface{}{
+		"key1": "value1",
+		"key2": "value2",
+	}
+
+	Expect(getKeyValueStringFromMap(m)).To(Equal("key1=value1,key2=value2"))
+}
