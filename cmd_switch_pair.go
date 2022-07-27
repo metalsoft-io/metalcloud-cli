@@ -39,7 +39,6 @@ var switchPairCmds = []Command{
 				"network_device_id_or_identifier_string1": c.FlagSet.String("switch1", _nilDefaultStr, red("(Required)")+" First Switch's id or identifier string. "),
 				"network_device_id_or_identifier_string2": c.FlagSet.String("switch2", _nilDefaultStr, red("(Required)")+" Second Switch's id or identifier string. "),
 				"type":      c.FlagSet.String("type", "mlag", "The type of link. The default and only link type supported is `mlag`"),
-				"variant":   c.FlagSet.String("type", "variant", "The variant of link. The default and only link type supported is `mlag`"),
 				"return_id": c.FlagSet.Bool("return-id", false, "Will print the ID of the created object. Useful for automating tasks."),
 			}
 		},
