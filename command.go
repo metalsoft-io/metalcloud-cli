@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"flag"
 	"fmt"
+	"net/url"
 	"strconv"
 	"strings"
 	"time"
@@ -299,4 +300,49 @@ func funcWithWatch(c *Command, client metalcloud.MetalCloudClient, f func(*Comma
 	}
 
 	return f(c, client)
+}
+
+//getKeyValueMapFromString returns a key value map from a kv string such as key1=value,key2=value.
+//the function first does urldecode on the string
+//this means that the values can be provided in normal format key1=value,key2=value but also key1%3Dvalue%2Ckey2%3Dvalue
+func getKeyValueMapFromString(kvmap string) (map[string]string, error) {
+
+	m := map[string]string{}
+
+	str, err := url.QueryUnescape(kvmap)
+	if err != nil {
+		return map[string]string{}, err
+	}
+
+	pairs := strings.Split(str, ",")
+
+	for _, pair := range pairs {
+
+		pair := strings.Trim(pair, " ")
+		elements := strings.Split(pair, "=")
+		//if it ends in = we conclude it is an empty string
+		if len(elements) == 1 && pair[len(pair)-1] != '=' {
+			m[elements[0]] = ""
+		}
+
+		if (len(elements) == 2 && pair[0] == '=') || len(elements) > 2 {
+			return map[string]string{}, fmt.Errorf("pair has invalid format expecting k=v, given %s", pair)
+		}
+
+		m[elements[0]] = elements[1]
+	}
+
+	return m, nil
+}
+
+//getKeyValueStringFromMap is the reverse operation from getKeyValueMapFromString encoding the value into the key=value,key=value pairs
+func getKeyValueStringFromMap(kvmap interface{}) string {
+
+	pairs := []string{}
+	m := kvmap.(map[string]interface{})
+	for k, v := range m {
+		pairs = append(pairs, fmt.Sprintf("%s=%v", k, v))
+	}
+
+	return strings.Join(pairs, ",")
 }

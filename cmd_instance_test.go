@@ -10,7 +10,7 @@ import (
 	. "github.com/onsi/gomega"
 )
 
-func TestInstanceCredentialsCmd(t *testing.T) {
+func TestInstanceGetCmd(t *testing.T) {
 	RegisterTestingT(t)
 
 	ctrl := gomock.NewController(t)
@@ -28,11 +28,19 @@ func TestInstanceCredentialsCmd(t *testing.T) {
 		},
 	}
 
-	ia := metalcloud.InstanceArray{
-		InstanceArraySubdomain: "tst",
-		InstanceArrayID:        10,
+	iao := metalcloud.InstanceArrayOperation{
+		InstanceArraySubdomain:    "tst",
+		InstanceArrayID:           10,
+		InstanceArrayDeployStatus: "not_started",
+		InstanceArrayDeployType:   "edit",
 	}
 
+	ia := metalcloud.InstanceArray{
+		InstanceArraySubdomain:     "tst",
+		InstanceArrayID:            10,
+		InstanceArrayOperation:     &iao,
+		InstanceArrayServiceStatus: "ordered",
+	}
 	infra := metalcloud.Infrastructure{
 		InfrastructureID:    10,
 		InfrastructureLabel: "tsassd",
@@ -53,9 +61,9 @@ func TestInstanceCredentialsCmd(t *testing.T) {
 		Return(&infra, nil).
 		AnyTimes()
 
-	cmd := MakeCommand(map[string]interface{}{"instance_id": 110})
+	cmd := MakeCommand(map[string]interface{}{"instance_id": 110, "show_credentials": true})
 
-	ret, err := instanceCredentialsCmd(&cmd, client)
+	ret, err := instanceGetCmd(&cmd, client)
 	Expect(err).To(BeNil())
 	Expect(ret).To(ContainSubstring("ID"))
 

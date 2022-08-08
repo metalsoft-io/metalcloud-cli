@@ -362,10 +362,18 @@ func TestInstanceArrayGetCmd(t *testing.T) {
 		"LABEL":          "test",
 	}
 
+	iao := metalcloud.InstanceArrayOperation{
+		InstanceArraySubdomain:    "tst",
+		InstanceArrayID:           10,
+		InstanceArrayDeployStatus: "not_started",
+		InstanceArrayDeployType:   "edit",
+	}
+
 	ia := metalcloud.InstanceArray{
-		InstanceArrayID:    10,
-		InstanceArrayLabel: "test",
-		InfrastructureID:   1,
+		InstanceArrayID:        10,
+		InstanceArrayLabel:     "test",
+		InfrastructureID:       1,
+		InstanceArrayOperation: &iao,
 	}
 
 	infra := metalcloud.Infrastructure{

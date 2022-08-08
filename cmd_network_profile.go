@@ -29,6 +29,7 @@ var networkProfileCmds = []Command{
 			}
 		},
 		ExecuteFunc: networkProfileListCmd,
+		Endpoint:    DeveloperEndpoint,
 	},
 	{
 		Description:  "Lists vlans of network profile.",
@@ -44,6 +45,7 @@ var networkProfileCmds = []Command{
 			}
 		},
 		ExecuteFunc: networkProfileVlansListCmd,
+		Endpoint:    DeveloperEndpoint,
 	},
 	{
 		Description:  "Get network profile details.",
@@ -56,10 +58,11 @@ var networkProfileCmds = []Command{
 			c.Arguments = map[string]interface{}{
 				"network_profile_id": c.FlagSet.Int("id", _nilDefaultInt, red("(Required)")+" Network profile's id."),
 				"format":             c.FlagSet.String("format", _nilDefaultStr, "The output format. Supported values are 'json','csv','yaml'. The default format is human readable."),
+				"raw":                c.FlagSet.Bool("raw", false, green("(Flag)")+" If set returns the raw object serialized using specified format"),
 			}
 		},
 		ExecuteFunc: networkProfileGetCmd,
-		Endpoint:    ExtendedEndpoint,
+		Endpoint:    DeveloperEndpoint,
 	},
 	{
 		Description:  "Create network profile.",
@@ -79,6 +82,30 @@ var networkProfileCmds = []Command{
 		},
 		ExecuteFunc: networkProfileCreateCmd,
 		Endpoint:    DeveloperEndpoint,
+		Example: `
+#create file network-profile.yaml:
+label: internet01
+dc: us02-chi-qts01-dc
+networkType: wan
+vlans:
+- vlanID: null
+  portMode: native
+  provisionSubnetGateways: false
+  extConnectionIDs:
+   - 10
+  subnetPools: 
+  - subnetPoolID: 13
+	subnetPoolType: ipv4
+- vlanID: 3205
+  portMode: trunk
+  provisionSubnetGateways: false
+  extConnectionIDs: []
+
+#create the actual profile from the file: 
+metalcloud-cli network-profile create -datacenter us02-chi-qts01-dc -format yaml -raw-config ./network-profile.yaml
+
+More details available https://docs.metalsoft.io/en/latest/guides/adding_a_network_profile.html
+`,
 	},
 	{
 		Description:  "Delete a network profile.",
@@ -320,27 +347,108 @@ func networkProfileGetCmd(c *Command, client metalcloud.MetalCloudClient) (strin
 			FieldType: tableformatter.TypeString,
 			FieldSize: 6,
 		},
+		{
+			FieldName: "DETAILS",
+			FieldType: tableformatter.TypeString,
+			FieldSize: 6,
+		},
+	}
+
+	networkProfileVlans := retNP.NetworkProfileVLANs
+
+	vlanListDescriptions := []string{}
+
+	for _, vlan := range networkProfileVlans {
+
+		externalConnectionIDs := vlan.ExternalConnectionIDs
+		ecDescriptions := []string{}
+		for _, ecId := range externalConnectionIDs {
+
+			retEC, err := client.ExternalConnectionGet(ecId)
+			if err != nil {
+				return "", err
+			}
+
+			ecDescriptions = append(ecDescriptions, fmt.Sprintf("%s (#%d)", blue(retEC.ExternalConnectionLabel), ecId))
+		}
+
+		subnetPoolsDescriptions := []string{}
+		subnetPools := vlan.SubnetPools
+
+		for _, subnet := range subnetPools {
+			if subnet.SubnetPoolID == nil { //if nil means that the subnet is automatically allocated
+				subnetPoolsDescriptions = append(subnetPoolsDescriptions, blue(fmt.Sprintf("auto %s", subnet.SubnetPoolType)))
+				continue
+			}
+			retSubnet, err := client.SubnetPoolGet(*subnet.SubnetPoolID)
+			if err != nil {
+				return "", err
+			}
+
+			subnetPoolsDescriptions = append(subnetPoolsDescriptions, fmt.Sprintf("%s/%s (#%d)", blue(retSubnet.SubnetPoolPrefixHumanReadable), blue(retSubnet.SubnetPoolPrefixSize), retSubnet.SubnetPoolID))
+		}
+
+		vlanid := "auto"
+		if vlan.VlanID != nil {
+			vlanid = strconv.Itoa(*vlan.VlanID)
+		}
+
+		gatewayIsProvisioned := ""
+		if !vlan.ProvisionSubnetGateways {
+			gatewayIsProvisioned = "no GW"
+		}
+
+		vlanDetails := fmt.Sprintf("VLAN ID: %s (%s) %s",
+			yellow(vlanid),
+			vlan.PortMode,
+			red(gatewayIsProvisioned),
+		)
+
+		if len(ecDescriptions) > 0 {
+			vlanDetails = fmt.Sprintf("%s EC:[%s]", vlanDetails, strings.Join(ecDescriptions, ","))
+		}
+
+		if len(subnetPoolsDescriptions) > 0 {
+			vlanDetails = fmt.Sprintf("%s Subnets:[%s]", vlanDetails, strings.Join(subnetPoolsDescriptions, ","))
+		}
+
+		vlanListDescriptions = append(vlanListDescriptions, vlanDetails)
 	}
 
 	data := [][]interface{}{
 		{
 			"#" + strconv.Itoa(retNP.NetworkProfileID),
-			retNP.NetworkProfileLabel,
+			blue(retNP.NetworkProfileLabel),
 			retNP.DatacenterName,
+			strings.Join(vlanListDescriptions, "\n"),
 		},
 	}
 
-	table := tableformatter.Table{
-		Data:   data,
-		Schema: schema,
+	var sb strings.Builder
+
+	format := getStringParam(c.Arguments["format"])
+
+	if getBoolParam(c.Arguments["raw"]) {
+		ret, err := tableformatter.RenderRawObject(*retNP, format, "Server interfaces")
+		if err != nil {
+			return "", err
+		}
+		sb.WriteString(ret)
+	} else {
+
+		table := tableformatter.Table{
+			Data:   data,
+			Schema: schema,
+		}
+
+		ret, err := table.RenderTable("", "", format)
+		if err != nil {
+			return "", err
+		}
+		sb.WriteString(ret)
 	}
 
-	retOverviewTable, err := table.RenderTableFoldable("", "", getStringParam(c.Arguments["format"]), 0)
-	if err != nil {
-		return "", err
-	}
-
-	return retOverviewTable, err
+	return sb.String(), nil
 }
 
 func networkProfileCreateCmd(c *Command, client metalcloud.MetalCloudClient) (string, error) {
