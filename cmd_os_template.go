@@ -219,6 +219,7 @@ var osTemplatesCmds = []Command{
 				"source-iso":           c.FlagSet.String("source-iso", _nilDefaultStr, red("(Required)")+"The source ISO image path."),
 				"kickstart":			c.FlagSet.String("kickstart", _nilDefaultStr, yellow("(Optional)")+"The OS's kickstart or equivalent file to be uploaded instead of the default."),
 				"kickstart-append":     c.FlagSet.String("kickstart-append", _nilDefaultStr, yellow("(Optional)")+"Content to append to the default kickstart."),
+				"bootloader":			c.FlagSet.String("bootloader", _nilDefaultStr, yellow("(Optional)")+"The OS's instalation bootloader to be uploaded instead of default."),
 				"github-template-repo": c.FlagSet.String("github-template-repo", _nilDefaultStr, yellow("(Optional)")+"Override the default github url used to download template files for given OS."),
 				"list-supported":       c.FlagSet.Bool("list-supported", false, yellow("(Optional)")+"List supported OS source templates."),
 				"quiet":                c.FlagSet.Bool("quiet", false, green("(Flag)")+"If set, eliminates all output."),
@@ -1329,10 +1330,28 @@ func templateBuildCmd(c *Command, client metalcloud.MetalCloudClient) (string, e
 				bootConfigPath = "/BOOT.CFG"
 			}
 
+			bootloaderContents := string(patchedText)
+			bootloaderFileName := "BOOT.CFG"
+
+			if filePath, ok := getStringParamOk(c.Arguments["bootloader"]); ok {
+				bootloaderFilePath := filePath
+		
+				bootloaderFileContents, err := os.ReadFile(bootloaderFilePath)
+		
+				if err != nil {
+					return "", fmt.Errorf("Bootloader file not found at path %s.", bootloaderFilePath)
+				}
+
+				bootloaderContents = string(bootloaderFileContents)
+
+				s := strings.Split(bootloaderFilePath, "/")
+				bootloaderFileName = s[len(s)-1]
+			}
+
 			createBootCommand := createAssetCommand
 			createBootCommand.FlagSet = flag.NewFlagSet("create boot asset", flag.ExitOnError)
 			createBootCommand.Arguments = map[string]interface{}{
-				"filename":               createBootCommand.FlagSet.String("filename", "BOOT.CFG", "Asset's filename"),
+				"filename":               createBootCommand.FlagSet.String("filename", bootloaderFileName, "Asset's filename"),
 				"usage":                  createBootCommand.FlagSet.String("usage", "build_component", "Asset's usage. Possible values: \"bootloader\""),
 				"mime":                   createBootCommand.FlagSet.String("mime", "text/plain", "Asset's mime type. Possible values: \"text/plain\",\"application/octet-stream\""),
 				"url":                    createBootCommand.FlagSet.String("url", _nilDefaultStr, "Asset's source url. If present it will not read content anymore"),
@@ -1343,7 +1362,7 @@ func templateBuildCmd(c *Command, client metalcloud.MetalCloudClient) (string, e
 				"delete_if_exists":       createBootCommand.FlagSet.Bool("delete-if-exists", true, "Automatically delete the existing asset associated with the current template."),
 			}
 
-			_, err = assetCreateWithContentCmd(&createBootCommand, client, []byte(patchedText))
+			_, err = assetCreateWithContentCmd(&createBootCommand, client, []byte(bootloaderContents))
 
 			if err != nil {
 				return "", err
