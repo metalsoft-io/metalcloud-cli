@@ -217,6 +217,7 @@ var osTemplatesCmds = []Command{
 				"name":                 c.FlagSet.String("name", _nilDefaultStr, red("(Required)")+"Name of image."),
 				"source-template":      c.FlagSet.String("source-template", _nilDefaultStr, red("(Required)")+"The source template to use as a base. Use --list-supported for a list of accepted values."),
 				"source-iso":           c.FlagSet.String("source-iso", _nilDefaultStr, red("(Required)")+"The source ISO image path."),
+				"kickstart":			c.FlagSet.String("kickstart", _nilDefaultStr, yellow("(Optional)")+"The OS's kickstart or equivalent file to be uploaded instead of the default."),
 				"kickstart-append":     c.FlagSet.String("kickstart-append", _nilDefaultStr, yellow("(Optional)")+"Content to append to the default kickstart."),
 				"github-template-repo": c.FlagSet.String("github-template-repo", _nilDefaultStr, yellow("(Optional)")+"Override the default github url used to download template files for given OS."),
 				"list-supported":       c.FlagSet.Bool("list-supported", false, yellow("(Optional)")+"List supported OS source templates."),
@@ -1297,7 +1298,7 @@ func templateBuildCmd(c *Command, client metalcloud.MetalCloudClient) (string, e
 			imageFilename := s[len(s)-1]
 
 			isoPath := imageRepositoryURL + "/" + name + "/" + imageFilename
-			fmt.Printf("Please upload the ISO image at this path: %s. Automatic upload will be available at a later date.", isoPath)
+			fmt.Printf("Please upload the ISO image at this path: %s. Automatic upload will be available at a later date.\n", isoPath)
 
 			createIsoCommand := createAssetCommand
 			createIsoCommand.FlagSet = flag.NewFlagSet("create ISO asset", flag.ExitOnError)
@@ -1361,7 +1362,32 @@ func templateBuildCmd(c *Command, client metalcloud.MetalCloudClient) (string, e
 					return "", err
 				}
 
-				s := strings.Split(asset.file.Name, "/")
+				assetFileName := asset.file.Name
+
+				// If we have a kickstart file and the kickstart-append option was used, we will use the string with the appended text
+				if asset.IsKickstartFile {
+					if filePath, ok := getStringParamOk(c.Arguments["kickstart"]); ok {
+
+						if kickstartContents != "" {
+							return "", fmt.Errorf("'kickstart' argument cannot be used alongside the 'kickstart-append' one.")
+						}
+						kickstartFilePath := filePath
+		
+						kickstartFileContents, err := os.ReadFile(kickstartFilePath)
+				
+						if err != nil {
+							return "", fmt.Errorf("Kickstart file not found at path %s.", kickstartFilePath)
+						}
+
+						assetContents = string(kickstartFileContents)
+						assetFileName = kickstartFilePath
+						
+					} else if kickstartContents != "" {
+						assetContents = kickstartContents
+					}
+				}
+
+				s := strings.Split(assetFileName, "/")
 				assetName := s[len(s)-1]
 
 				createOtherAssetCommand := createAssetCommand
@@ -1376,11 +1402,6 @@ func templateBuildCmd(c *Command, client metalcloud.MetalCloudClient) (string, e
 					"path":                   createOtherAssetCommand.FlagSet.String("path", asset.Isopath, "Path to associate asset to."),
 					"variables_json":         createOtherAssetCommand.FlagSet.String("variables-json", _nilDefaultStr, "JSON encoded variables object"),
 					"delete_if_exists":       createOtherAssetCommand.FlagSet.Bool("delete-if-exists", true, "Automatically delete the existing asset associated with the current template."),
-				}
-
-				// If we have a kickstart file and the kickstart-append option was used, we will use the string with the appended text
-				if asset.IsKickstartFile && kickstartContents != "" {
-					assetContents = kickstartContents
 				}
 
 				_, err = assetCreateWithContentCmd(&createOtherAssetCommand, client, []byte(assetContents))
