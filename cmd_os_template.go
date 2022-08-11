@@ -34,6 +34,9 @@ const bootTypeLegacyOnly = "classic_only"
 
 const bootloaderConfigFileName = "BOOT.CFG"
 
+const assetTypeDynamic = "text/plain"
+const assetTypeBinary = "application/octet-stream"
+
 var osTemplatesCmds = []Command{
 
 	{
@@ -952,6 +955,7 @@ func templateBuildCmd(c *Command, client metalcloud.MetalCloudClient) (string, e
 		validArchitectures := []string{osArchitecture64}
 		validDeployProcesses := []string{bootMethodLocalDrives, bootMethodPxeIscsi}
 		validBootTypes := []string{bootTypeUEFIOnly, bootTypeLegacyOnly}
+		validMimeTypes := []string{assetTypeBinary, assetTypeDynamic}
 
 		warnings := []string{}
 
@@ -975,6 +979,11 @@ func templateBuildCmd(c *Command, client metalcloud.MetalCloudClient) (string, e
 
 			if asset, ok := templateContents.Assets[fileName]; ok {
 				repoTemplate.Assets[key].Isopath = asset.Isopath
+
+				if !stringInSlice(asset.Mime, validMimeTypes) {
+					warnings = append(warnings, fmt.Sprintf("Found invalid mime type %s for asset %s. Valid mime types are %+q.", asset.Mime, fileName, validDeployProcesses))
+				}
+
 				repoTemplate.Assets[key].Mime = asset.Mime
 				repoTemplate.Assets[key].IsKickstartFile = asset.IsKickstartFile
 				repoTemplate.Assets[key].IsBootloaderConfig = asset.IsBootloaderConfig
@@ -1306,8 +1315,8 @@ func templateBuildCmd(c *Command, client metalcloud.MetalCloudClient) (string, e
 			createIsoCommand.FlagSet = flag.NewFlagSet("create ISO asset", flag.ExitOnError)
 			createIsoCommand.Arguments = map[string]interface{}{
 				"filename":               createIsoCommand.FlagSet.String("filename", imageFilename, "Asset's filename"),
-				"usage":                  createIsoCommand.FlagSet.String("usage", "build_source_image", "Asset's usage. Possible values: \"bootloader\""),
-				"mime":                   createIsoCommand.FlagSet.String("mime", "application/octet-stream", "Asset's mime type. Possible values: \"text/plain\",\"application/octet-stream\""),
+				"usage":                  createIsoCommand.FlagSet.String("usage", "build_source_image", "Asset's usage."),
+				"mime":                   createIsoCommand.FlagSet.String("mime", assetTypeBinary, "Asset's mime type. Possible values: \"" + assetTypeDynamic + "\", \"" + assetTypeBinary + "\""),
 				"url":                    createIsoCommand.FlagSet.String("url", isoPath, "Asset's source url. If present it will not read content anymore"),
 				"read_content_from_pipe": createIsoCommand.FlagSet.Bool("pipe", false, "Read assets's content read from pipe instead of terminal input"),
 				"template_id_or_name":    createIsoCommand.FlagSet.String("template-id", name, "Template's id or name to associate. "),
@@ -1319,7 +1328,7 @@ func templateBuildCmd(c *Command, client metalcloud.MetalCloudClient) (string, e
 			_, err = assetCreateCmd(&createIsoCommand, client)
 
 			if err != nil {
-				return "", err
+				return "", fmt.Errorf("Failed to create asset %s. Received the following error: %s", imageFilename, err)
 			}
 
 			var bootConfigPath string
@@ -1353,8 +1362,8 @@ func templateBuildCmd(c *Command, client metalcloud.MetalCloudClient) (string, e
 			createBootCommand.FlagSet = flag.NewFlagSet("create boot asset", flag.ExitOnError)
 			createBootCommand.Arguments = map[string]interface{}{
 				"filename":               createBootCommand.FlagSet.String("filename", bootloaderFileName, "Asset's filename"),
-				"usage":                  createBootCommand.FlagSet.String("usage", "build_component", "Asset's usage. Possible values: \"bootloader\""),
-				"mime":                   createBootCommand.FlagSet.String("mime", "text/plain", "Asset's mime type. Possible values: \"text/plain\",\"application/octet-stream\""),
+				"usage":                  createBootCommand.FlagSet.String("usage", "build_component", "Asset's usage."),
+				"mime":                   createBootCommand.FlagSet.String("mime", assetTypeDynamic, "Asset's mime type. Possible values: \"" + assetTypeDynamic + "\",\"" + assetTypeBinary + "\""),
 				"url":                    createBootCommand.FlagSet.String("url", _nilDefaultStr, "Asset's source url. If present it will not read content anymore"),
 				"read_content_from_pipe": createBootCommand.FlagSet.Bool("pipe", false, "Read assets's content read from pipe instead of terminal input"),
 				"template_id_or_name":    createBootCommand.FlagSet.String("template-id", name, "Template's id or name to associate. "),
@@ -1366,13 +1375,20 @@ func templateBuildCmd(c *Command, client metalcloud.MetalCloudClient) (string, e
 			_, err = assetCreateWithContentCmd(&createBootCommand, client, []byte(bootloaderContents))
 
 			if err != nil {
-				return "", err
+				return "", fmt.Errorf("Failed to create asset %s. Received the following error: %s", bootloaderFileName, err)
 			}
 
 			for _, asset := range repoMap[sourceTemplateName].Assets {
 
 				if asset.IsPatchFile {
 					// We skip the patch file, as the boot file has already been created.
+					continue
+				}
+
+				validMimeTypes := []string{assetTypeBinary, assetTypeDynamic}
+
+				if !asset.IsKickstartFile && !asset.IsBootloaderConfig && !stringInSlice(asset.Mime, validMimeTypes) {
+					// We skip the files that are not kickstarts, bootloader configs or have invalid mime type.
 					continue
 				}
 
@@ -1418,6 +1434,13 @@ func templateBuildCmd(c *Command, client metalcloud.MetalCloudClient) (string, e
 						assetContents = string(bootloaderConfigFileContents)
 						assetFileName = bootloaderConfigFilePath
 					}
+				} else {
+					switch asset.Mime {
+					case assetTypeBinary:
+						// Handle binary files
+					case assetTypeDynamic:
+						// Handle dynamic files
+					}
 				}
 
 				s := strings.Split(assetFileName, "/")
@@ -1427,8 +1450,8 @@ func templateBuildCmd(c *Command, client metalcloud.MetalCloudClient) (string, e
 				createOtherAssetCommand.FlagSet = flag.NewFlagSet("create asset " + assetName, flag.ExitOnError)
 				createOtherAssetCommand.Arguments = map[string]interface{}{
 					"filename":               createOtherAssetCommand.FlagSet.String("filename", assetName, "Asset's filename"),
-					"usage":                  createOtherAssetCommand.FlagSet.String("usage", "build_component", "Asset's usage. Possible values: \"bootloader\""),
-					"mime":                   createOtherAssetCommand.FlagSet.String("mime", asset.Mime, "Asset's mime type. Possible values: \"text/plain\",\"application/octet-stream\""),
+					"usage":                  createOtherAssetCommand.FlagSet.String("usage", "build_component", "Asset's usage."),
+					"mime":                   createOtherAssetCommand.FlagSet.String("mime", asset.Mime, "Asset's mime type. Possible values: \"" + assetTypeDynamic + "\",\"" + assetTypeBinary + "\""),
 					"url":                    createOtherAssetCommand.FlagSet.String("url", _nilDefaultStr, "Asset's source url. If present it will not read content anymore"),
 					"read_content_from_pipe": createOtherAssetCommand.FlagSet.Bool("pipe", false, "Read assets's content read from pipe instead of terminal input"),
 					"template_id_or_name":    createOtherAssetCommand.FlagSet.String("template-id", name, "Template's id or name to associate. "),
@@ -1440,7 +1463,8 @@ func templateBuildCmd(c *Command, client metalcloud.MetalCloudClient) (string, e
 				_, err = assetCreateWithContentCmd(&createOtherAssetCommand, client, []byte(assetContents))
 
 				if err != nil {
-					return "", err
+					fmt.Printf("Failed to create asset %s. Received the following error: %s", assetName, err)
+					continue
 				}
 			}
 
