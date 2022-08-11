@@ -224,6 +224,8 @@ var osTemplatesCmds = []Command{
 				"kickstart-append":     c.FlagSet.String("kickstart-append", _nilDefaultStr, yellow("(Optional)")+"Content to append to the default kickstart."),
 				"bootloader":			c.FlagSet.String("bootloader", _nilDefaultStr, yellow("(Optional)")+"The OS's instalation bootloader to be uploaded instead of default."),
 				"bootloader-config":	c.FlagSet.String("bootloader-config", _nilDefaultStr, yellow("(Optional)")+"The OS's installation bootloader config file to be uploaded instead of the default."),
+				"dynamic-files":		c.FlagSet.String("dynamic-files", _nilDefaultStr, yellow("(Optional)")+"Dynamic files that will be replaced inside the template. Can contain variables. Limited to 2MB in size."),
+				"binary-files":			c.FlagSet.String("binary-files", _nilDefaultStr, yellow("(Optional)")+"Binary files that will be replaced inside the template. Cannot contain variables."),
 				"github-template-repo": c.FlagSet.String("github-template-repo", _nilDefaultStr, yellow("(Optional)")+"Override the default github url used to download template files for given OS."),
 				"list-supported":       c.FlagSet.Bool("list-supported", false, yellow("(Optional)")+"List supported OS source templates."),
 				"quiet":                c.FlagSet.Bool("quiet", false, green("(Flag)")+"If set, eliminates all output."),
@@ -1305,6 +1307,15 @@ func templateBuildCmd(c *Command, client metalcloud.MetalCloudClient) (string, e
 				Endpoint:     DeveloperEndpoint,
 			}
 
+			// Struct containing assets that are to be created after all checks are done.
+			type Asset struct {
+				Name string
+				Command Command
+				Contents string
+			}
+
+			assets := []Asset{}
+
 			s := strings.Split(imagePath, "/")
 			imageFilename := s[len(s)-1]
 
@@ -1325,11 +1336,10 @@ func templateBuildCmd(c *Command, client metalcloud.MetalCloudClient) (string, e
 				"delete_if_exists":       createIsoCommand.FlagSet.Bool("delete-if-exists", true, "Automatically delete the existing asset associated with the current template."),
 			}
 
-			_, err = assetCreateCmd(&createIsoCommand, client)
-
-			if err != nil {
-				return "", fmt.Errorf("Failed to create asset %s. Received the following error: %s", imageFilename, err)
-			}
+			assets = append(assets, Asset{
+				Name: imageFilename,
+				Command: createIsoCommand,
+			})
 
 			var bootConfigPath string
 
@@ -1372,11 +1382,11 @@ func templateBuildCmd(c *Command, client metalcloud.MetalCloudClient) (string, e
 				"delete_if_exists":       createBootCommand.FlagSet.Bool("delete-if-exists", true, "Automatically delete the existing asset associated with the current template."),
 			}
 
-			_, err = assetCreateWithContentCmd(&createBootCommand, client, []byte(bootloaderContents))
-
-			if err != nil {
-				return "", fmt.Errorf("Failed to create asset %s. Received the following error: %s", bootloaderFileName, err)
-			}
+			assets = append(assets, Asset{
+				Name: bootloaderFileName,
+				Command: createBootCommand,
+				Contents: bootloaderContents,
+			})
 
 			for _, asset := range repoMap[sourceTemplateName].Assets {
 
@@ -1460,11 +1470,24 @@ func templateBuildCmd(c *Command, client metalcloud.MetalCloudClient) (string, e
 					"delete_if_exists":       createOtherAssetCommand.FlagSet.Bool("delete-if-exists", true, "Automatically delete the existing asset associated with the current template."),
 				}
 
-				_, err = assetCreateWithContentCmd(&createOtherAssetCommand, client, []byte(assetContents))
+				assets = append(assets, Asset{
+					Name: assetName,
+					Command: createOtherAssetCommand,
+					Contents: assetContents,
+				})
+			}
+
+			for _, asset := range assets {
+				if asset.Contents != "" {
+					_, err = assetCreateWithContentCmd(&asset.Command, client, []byte(asset.Contents))
+				} else {
+					_, err = assetCreateCmd(&asset.Command, client)
+				}
 
 				if err != nil {
-					fmt.Printf("Failed to create asset %s. Received the following error: %s", assetName, err)
-					continue
+					fmt.Printf("Failed to create asset %s. Received the following error: %s\n", asset.Name, err)
+				} else {
+					fmt.Printf("Created asset %s.\n", asset.Name)
 				}
 			}
 
