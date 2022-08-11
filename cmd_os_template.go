@@ -220,6 +220,7 @@ var osTemplatesCmds = []Command{
 				"kickstart":			c.FlagSet.String("kickstart", _nilDefaultStr, yellow("(Optional)")+"The OS's kickstart or equivalent file to be uploaded instead of the default."),
 				"kickstart-append":     c.FlagSet.String("kickstart-append", _nilDefaultStr, yellow("(Optional)")+"Content to append to the default kickstart."),
 				"bootloader":			c.FlagSet.String("bootloader", _nilDefaultStr, yellow("(Optional)")+"The OS's instalation bootloader to be uploaded instead of default."),
+				"bootloader-config":	c.FlagSet.String("bootloader-config", _nilDefaultStr, yellow("(Optional)")+"The OS's installation bootloader config file to be uploaded instead of the default."),
 				"github-template-repo": c.FlagSet.String("github-template-repo", _nilDefaultStr, yellow("(Optional)")+"Override the default github url used to download template files for given OS."),
 				"list-supported":       c.FlagSet.Bool("list-supported", false, yellow("(Optional)")+"List supported OS source templates."),
 				"quiet":                c.FlagSet.Bool("quiet", false, green("(Flag)")+"If set, eliminates all output."),
@@ -1383,7 +1384,6 @@ func templateBuildCmd(c *Command, client metalcloud.MetalCloudClient) (string, e
 
 				assetFileName := asset.file.Name
 
-				// If we have a kickstart file and the kickstart-append option was used, we will use the string with the appended text
 				if asset.IsKickstartFile {
 					if filePath, ok := getStringParamOk(c.Arguments["kickstart"]); ok {
 
@@ -1402,7 +1402,21 @@ func templateBuildCmd(c *Command, client metalcloud.MetalCloudClient) (string, e
 						assetFileName = kickstartFilePath
 						
 					} else if kickstartContents != "" {
+						// If we have a kickstart file and the kickstart-append option was used, we will use the string with the appended text
 						assetContents = kickstartContents
+					}
+				} else if asset.IsBootloaderConfig {
+					if filePath, ok := getStringParamOk(c.Arguments["bootloader-config"]); ok {
+						bootloaderConfigFilePath := filePath
+		
+						bootloaderConfigFileContents, err := os.ReadFile(bootloaderConfigFilePath)
+				
+						if err != nil {
+							return "", fmt.Errorf("Bootloader configuration file not found at path %s.", bootloaderConfigFilePath)
+						}
+		
+						assetContents = string(bootloaderConfigFileContents)
+						assetFileName = bootloaderConfigFilePath
 					}
 				}
 
