@@ -6,6 +6,7 @@ import (
 	"io/ioutil"
 	"os"
 	"strings"
+	"encoding/json"
 
 	metalcloud "github.com/metalsoft-io/metal-cloud-sdk-go/v2"
 	"github.com/metalsoft-io/tableformatter"
@@ -1388,6 +1389,44 @@ func templateBuildCmd(c *Command, client metalcloud.MetalCloudClient) (string, e
 				Contents: bootloaderContents,
 			})
 
+			type InputFile struct {
+				LocalPath 	string 	 `json:"path"`
+				IsoPath 	string 	 `json:"isopath"`
+			}
+
+			var dynamicFiles, binaryFiles []InputFile
+
+			if dynamicFilesJSON, ok := getStringParamOk(c.Arguments["dynamic-files"]); ok {
+				err := json.Unmarshal([]byte(dynamicFilesJSON), &dynamicFiles)
+				if err != nil {
+					fmt.Println(err)
+					return "", fmt.Errorf("Invalid 'dynamic-files' value sent. The value sent must be a JSON in this format: '[{\"path\":\"<path_value>\", \"isopath\":\"<isopath_value>\"}, {\"path\":\"<path_value>\", \"isopath\":\"<isopath_value>\"}]'.")
+				}
+				
+				for _, dynamicFile := range dynamicFiles {
+					_, err := os.ReadFile(dynamicFile.LocalPath)
+					
+					if err != nil {
+						return "", fmt.Errorf("Dynamic file not found at path %s.", dynamicFile.LocalPath)
+					}
+				}
+			}
+
+			if binaryFilesJSON, ok := getStringParamOk(c.Arguments["binary-files"]); ok {
+				err := json.Unmarshal([]byte(binaryFilesJSON), &binaryFiles)
+				if err != nil {
+					return "", fmt.Errorf("Invalid 'binary-files' value sent. The value sent must be a JSON in this format: '[{\"path\":\"<path_value>\", \"isopath\":\"<isopath_value>\"}, {\"path\":\"<path_value>\", \"isopath\":\"<isopath_value>\"}]'")
+				}
+
+				for _, binaryFile := range binaryFiles {
+					_, err := os.ReadFile(binaryFile.LocalPath)
+					
+					if err != nil {
+						return "", fmt.Errorf("Binary file not found at path %s.", binaryFile.LocalPath)
+					}
+				}
+			}
+
 			for _, asset := range repoMap[sourceTemplateName].Assets {
 
 				if asset.IsPatchFile {
@@ -1447,9 +1486,23 @@ func templateBuildCmd(c *Command, client metalcloud.MetalCloudClient) (string, e
 				} else {
 					switch asset.Mime {
 					case assetTypeBinary:
-						// Handle binary files
+						for _, binaryFile := range binaryFiles {
+							fileContents, _ := os.ReadFile(binaryFile.LocalPath)
+				
+							if asset.Isopath == binaryFile.IsoPath {
+								assetContents = string(fileContents)
+								assetFileName = binaryFile.LocalPath
+							}
+						}
 					case assetTypeDynamic:
-						// Handle dynamic files
+						for _, dynamicFile := range dynamicFiles {
+							fileContents, _ := os.ReadFile(dynamicFile.LocalPath)
+				
+							if asset.Isopath == dynamicFile.IsoPath {
+								assetContents = string(fileContents)
+								assetFileName = dynamicFile.LocalPath
+							}
+						}
 					}
 				}
 
