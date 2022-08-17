@@ -523,7 +523,7 @@ func infrastructureGetCmd(c *Command, client metalcloud.MetalCloudClient) (strin
 		}
 
 		details := fmt.Sprintf("%d GB size, type: %s, i/o limit policy: %s, WWW: %s, storage pool: #%d",
-			int(sda.SharedDriveSizeMbytes/1000),
+			int(sda.SharedDriveSizeMbytes/1024),
 			sda.SharedDriveStorageType,
 			sda.SharedDriveIOLimitPolicy,
 			sda.SharedDriveWWN,
