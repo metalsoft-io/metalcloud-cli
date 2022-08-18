@@ -38,6 +38,9 @@ const bootloaderConfigFileName = "BOOT.CFG"
 const assetTypeDynamic = "text/plain"
 const assetTypeBinary = "application/octet-stream"
 
+const assetJSONTypeDynamic = "dynamic"
+const assetJSONTypeBinary = "binary"
+
 var osTemplatesCmds = []Command{
 
 	{
@@ -225,8 +228,7 @@ var osTemplatesCmds = []Command{
 				"kickstart-append":     c.FlagSet.String("kickstart-append", _nilDefaultStr, yellow("(Optional)")+"Content to append to the default kickstart."),
 				"bootloader":			c.FlagSet.String("bootloader", _nilDefaultStr, yellow("(Optional)")+"The OS's instalation bootloader to be uploaded instead of default."),
 				"bootloader-config":	c.FlagSet.String("bootloader-config", _nilDefaultStr, yellow("(Optional)")+"The OS's installation bootloader config file to be uploaded instead of the default."),
-				"dynamic-files":		c.FlagSet.String("dynamic-files", _nilDefaultStr, yellow("(Optional)")+"Dynamic files that will be replaced inside the template. Can contain variables. Limited to 2MB in size."),
-				"binary-files":			c.FlagSet.String("binary-files", _nilDefaultStr, yellow("(Optional)")+"Binary files that will be replaced inside the template. Cannot contain variables."),
+				"other-assets-json":	c.FlagSet.String("other-assets-json", _nilDefaultStr, yellow("(Optional)")+"Dynamic or binary files that will be replaced inside the template. Can contain variables. Limited to 2MB in size."),
 				"github-template-repo": c.FlagSet.String("github-template-repo", _nilDefaultStr, yellow("(Optional)")+"Override the default github url used to download template files for given OS."),
 				"list-supported":       c.FlagSet.Bool("list-supported", false, yellow("(Optional)")+"List supported OS source templates."),
 				"quiet":                c.FlagSet.Bool("quiet", false, green("(Flag)")+"If set, eliminates all output."),
@@ -236,6 +238,9 @@ var osTemplatesCmds = []Command{
 		},
 		ExecuteFunc: templateBuildCmd,
 		Endpoint:    ExtendedEndpoint,
+		Example: `
+	metalcloud-cli os-template build --name="test-template" --source-template="ESXi/7.0.0u3" --source-iso="VMware-VMvisor-Installer-7.0.0.update03-19193900.x86_64-DellEMC_Customized-A02.iso" --kickstart="custom_kickstart.txt" --bootloader="custom_boot.CFG" --bootloader-config="custom_bootloader_config.CFG" --other-assets-json='[{\"path\":\"custom_dynamic_file_1.png\", \"isopath\":\"/dynamic_file_1.jpg\", \"type\":\"dynamic\"}, {\"path\":\"custom_dynamic_file_2.png\", \"isopath\":\"/dynamic_file_3.jpg\", \"type\":\"dynamic\"}, {\"path\":\"custom_binary_file_1.bin\", \"isopath\":\"/binary_file_1.bin\", \"type\":\"binary\"}, {\"path\":\"custom_binary_file_2.bin\", \"isopath\":\"/binary_file_2.bin\", \"type\":\"binary\"}]'
+		`,
 	},
 	{
 		Description:  "Create a diff file.",
@@ -824,6 +829,8 @@ func templateBuildCmd(c *Command, client metalcloud.MetalCloudClient) (string, e
 		cloneOptions.URL = "https://github.com/alexcorman/os-templates.git"
 	}
 
+	fmt.Printf("Retrieving asset templates from repository %s.\n", cloneOptions.URL)
+
 	// Filesystem abstraction based on memory
 	fs := memfs.New()
 
@@ -1026,6 +1033,8 @@ func templateBuildCmd(c *Command, client metalcloud.MetalCloudClient) (string, e
 		repoMap[templatePreffix] = repoTemplate
 	}
 
+	fmt.Printf("Retrieved asset templates from repository %s.\n", cloneOptions.URL)
+
 	if getBoolParam(c.Arguments["list-supported"]) {
 		schema := []tableformatter.SchemaField{
 			{
@@ -1225,10 +1234,11 @@ func templateBuildCmd(c *Command, client metalcloud.MetalCloudClient) (string, e
 						kickstartContents, err = asset.file.Contents()
 	
 						if err != nil {
-							return "", fmt.Errorf("Did not find the kickstart file for source template '%s'.", sourceTemplateName)
+							return "", fmt.Errorf("Did not find the kickstart asset for source template '%s'.", sourceTemplateName)
 						}
 
 						kickstartContents += "\n" + string(appendFileContents)
+						fmt.Printf("Appended contents from file %s to kickstart asset %s\n.", filePath, asset.file.Name)
 						break
 					}
 				}
@@ -1367,6 +1377,8 @@ func templateBuildCmd(c *Command, client metalcloud.MetalCloudClient) (string, e
 
 				s := strings.Split(bootloaderFilePath, "/")
 				bootloaderFileName = s[len(s)-1]
+
+				fmt.Printf("Replaced template bootloader asset with %s.\n", bootloaderFilePath)
 			}
 
 			createBootCommand := createAssetCommand
@@ -1389,41 +1401,36 @@ func templateBuildCmd(c *Command, client metalcloud.MetalCloudClient) (string, e
 				Contents: bootloaderContents,
 			})
 
-			type InputFile struct {
+			type InputAsset struct {
 				LocalPath 	string 	 `json:"path"`
 				IsoPath 	string 	 `json:"isopath"`
+				Type		string   `json:"type"`
 			}
 
-			var dynamicFiles, binaryFiles []InputFile
+			var otherAssets, dynamicAssets, binaryAssets []InputAsset
 
-			if dynamicFilesJSON, ok := getStringParamOk(c.Arguments["dynamic-files"]); ok {
-				err := json.Unmarshal([]byte(dynamicFilesJSON), &dynamicFiles)
+			if otherAssetsJSON, ok := getStringParamOk(c.Arguments["other-assets-json"]); ok {
+				err := json.Unmarshal([]byte(otherAssetsJSON), &otherAssets)
 				if err != nil {
-					fmt.Println(err)
-					return "", fmt.Errorf("Invalid 'dynamic-files' value sent. The value sent must be a JSON in this format: '[{\"path\":\"<path_value>\", \"isopath\":\"<isopath_value>\"}, {\"path\":\"<path_value>\", \"isopath\":\"<isopath_value>\"}]'.")
+					return "", fmt.Errorf("Invalid 'other-assets-json' value sent. The value sent must be a JSON in this format: '[{\"path\":\"<path_value>\", \"isopath\":\"<isopath_value>\", \"type\":\"<asset_type>\"}, {\"path\":\"<path_value>\", \"isopath\":\"<isopath_value>\", \"type\":\"<asset_type>\"}]'.")
 				}
 				
-				for _, dynamicFile := range dynamicFiles {
-					_, err := os.ReadFile(dynamicFile.LocalPath)
+				for _, asset := range otherAssets {
+					_, err := os.ReadFile(asset.LocalPath)
 					
 					if err != nil {
-						return "", fmt.Errorf("Dynamic file not found at path %s.", dynamicFile.LocalPath)
+						return "", fmt.Errorf("Asset not found at path %s.", asset.LocalPath)
 					}
-				}
-			}
 
-			if binaryFilesJSON, ok := getStringParamOk(c.Arguments["binary-files"]); ok {
-				err := json.Unmarshal([]byte(binaryFilesJSON), &binaryFiles)
-				if err != nil {
-					return "", fmt.Errorf("Invalid 'binary-files' value sent. The value sent must be a JSON in this format: '[{\"path\":\"<path_value>\", \"isopath\":\"<isopath_value>\"}, {\"path\":\"<path_value>\", \"isopath\":\"<isopath_value>\"}]'")
-				}
-
-				for _, binaryFile := range binaryFiles {
-					_, err := os.ReadFile(binaryFile.LocalPath)
-					
-					if err != nil {
-						return "", fmt.Errorf("Binary file not found at path %s.", binaryFile.LocalPath)
+					switch asset.Type {
+					case assetJSONTypeDynamic:
+						dynamicAssets = append(dynamicAssets, asset)
+					case assetJSONTypeBinary:
+						binaryAssets = append(binaryAssets, asset)
+					default:
+						return "", fmt.Errorf("Invalid asset type found %s. It must be one of %v.", asset.Type, []string{assetJSONTypeDynamic, assetJSONTypeBinary})
 					}
+
 				}
 			}
 
@@ -1465,7 +1472,8 @@ func templateBuildCmd(c *Command, client metalcloud.MetalCloudClient) (string, e
 
 						assetContents = string(kickstartFileContents)
 						assetFileName = kickstartFilePath
-						
+
+						fmt.Printf("Replaced template kickstart asset with %s.\n", kickstartFilePath)
 					} else if kickstartContents != "" {
 						// If we have a kickstart file and the kickstart-append option was used, we will use the string with the appended text
 						assetContents = kickstartContents
@@ -1482,25 +1490,31 @@ func templateBuildCmd(c *Command, client metalcloud.MetalCloudClient) (string, e
 		
 						assetContents = string(bootloaderConfigFileContents)
 						assetFileName = bootloaderConfigFilePath
+
+						fmt.Printf("Replaced bootloader config asset with %s.\n", bootloaderConfigFilePath)
 					}
 				} else {
 					switch asset.Mime {
 					case assetTypeBinary:
-						for _, binaryFile := range binaryFiles {
-							fileContents, _ := os.ReadFile(binaryFile.LocalPath)
+						for _, binaryAsset := range binaryAssets {
+							fileContents, _ := os.ReadFile(binaryAsset.LocalPath)
 				
-							if asset.Isopath == binaryFile.IsoPath {
+							if asset.Isopath == binaryAsset.IsoPath {
 								assetContents = string(fileContents)
-								assetFileName = binaryFile.LocalPath
+								assetFileName = binaryAsset.LocalPath
+
+								fmt.Printf("Replaced binary asset with %s.\n", assetFileName)
 							}
 						}
 					case assetTypeDynamic:
-						for _, dynamicFile := range dynamicFiles {
-							fileContents, _ := os.ReadFile(dynamicFile.LocalPath)
+						for _, dynamicAsset := range dynamicAssets {
+							fileContents, _ := os.ReadFile(dynamicAsset.LocalPath)
 				
-							if asset.Isopath == dynamicFile.IsoPath {
+							if asset.Isopath == dynamicAsset.IsoPath {
 								assetContents = string(fileContents)
-								assetFileName = dynamicFile.LocalPath
+								assetFileName = dynamicAsset.LocalPath
+
+								fmt.Printf("Replaced dynamic asset with %s.\n", assetFileName)
 							}
 						}
 					}
@@ -1538,11 +1552,13 @@ func templateBuildCmd(c *Command, client metalcloud.MetalCloudClient) (string, e
 				}
 
 				if err != nil {
-					fmt.Printf("Failed to create asset %s. Received the following error: %s\n", asset.Name, err)
+					fmt.Printf("Failed to upload asset %s. Received the following error: %s\n", asset.Name, err)
 				} else {
-					fmt.Printf("Created asset %s.\n", asset.Name)
+					fmt.Printf("Uploaded asset %s.\n", asset.Name)
 				}
 			}
+
+			fmt.Println("Done.")
 
 			if getBoolParam(c.Arguments["return-id"]) {
 				if templateID == 0 {
