@@ -231,6 +231,7 @@ var osTemplatesCmds = []Command{
 				"other-assets-json":	c.FlagSet.String("other-assets-json", _nilDefaultStr, yellow("(Optional)")+"Dynamic or binary files that will be replaced inside the template. Can contain variables. Limited to 2MB in size."),
 				"github-template-repo": c.FlagSet.String("github-template-repo", _nilDefaultStr, yellow("(Optional)")+"Override the default github url used to download template files for given OS."),
 				"list-supported":       c.FlagSet.Bool("list-supported", false, yellow("(Optional)")+"List supported OS source templates."),
+				"list-warnings":		c.FlagSet.Bool("list-warnings", false, yellow("(Optional)")+"List warnings regarding the repository template structure."),
 				"quiet":                c.FlagSet.Bool("quiet", false, green("(Flag)")+"If set, eliminates all output."),
 				"debug":                c.FlagSet.Bool("debug", false, green("(Flag)")+"If set, increases log level."),
 				"return-id":            c.FlagSet.Bool("return-id", false, green("(Flag)")+"If set, returns the ID of the generated template. Useful for automation."),
@@ -1022,12 +1023,14 @@ func templateBuildCmd(c *Command, client metalcloud.MetalCloudClient) (string, e
 		repoTemplate.DeployProcess = deployProcess
 		repoTemplate.BootType = bootType
 
-		// Print warnings, if there are any
-		if len(warnings) != 0 {
-			fmt.Printf("Detected the following warnings regarding repository structure for template %s:\n", templatePreffix)
-		}
-		for _, warningMessage := range warnings {
-			fmt.Println("\t" + warningMessage)
+		if getBoolParam(c.Arguments["list-warnings"]) {
+			// Print warnings, if there are any
+			if len(warnings) != 0 {
+				fmt.Printf("Detected the following warnings regarding repository structure for template %s:\n", templatePreffix)
+			}
+			for _, warningMessage := range warnings {
+				fmt.Println("\t" + warningMessage)
+			}
 		}
 
 		repoMap[templatePreffix] = repoTemplate
