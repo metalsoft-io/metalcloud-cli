@@ -1,12 +1,13 @@
 package main
 
 import (
+	"encoding/json"
 	"flag"
 	"fmt"
 	"io/ioutil"
+	"net"
 	"os"
 	"strings"
-	"encoding/json"
 
 	metalcloud "github.com/metalsoft-io/metal-cloud-sdk-go/v2"
 	"github.com/metalsoft-io/tableformatter"
@@ -22,6 +23,10 @@ import (
 	memory "github.com/go-git/go-git/v5/storage/memory"
 
 	"github.com/kdomanski/iso9660"
+
+	"github.com/bramvdbogaerde/go-scp"
+	"golang.org/x/crypto/ssh"
+	"golang.org/x/crypto/ssh/agent"
 )
 
 // Constants used with the build command
@@ -224,14 +229,14 @@ var osTemplatesCmds = []Command{
 				"name":                 c.FlagSet.String("name", _nilDefaultStr, red("(Required)")+"Name of image."),
 				"source-template":      c.FlagSet.String("source-template", _nilDefaultStr, red("(Required)")+"The source template to use as a base. Use --list-supported for a list of accepted values."),
 				"source-iso":           c.FlagSet.String("source-iso", _nilDefaultStr, red("(Required)")+"The source ISO image path."),
-				"kickstart":			c.FlagSet.String("kickstart", _nilDefaultStr, yellow("(Optional)")+"The OS's kickstart or equivalent file to be uploaded instead of the default."),
+				"kickstart":            c.FlagSet.String("kickstart", _nilDefaultStr, yellow("(Optional)")+"The OS's kickstart or equivalent file to be uploaded instead of the default."),
 				"kickstart-append":     c.FlagSet.String("kickstart-append", _nilDefaultStr, yellow("(Optional)")+"Content to append to the default kickstart."),
-				"bootloader":			c.FlagSet.String("bootloader", _nilDefaultStr, yellow("(Optional)")+"The OS's instalation bootloader to be uploaded instead of default."),
-				"bootloader-config":	c.FlagSet.String("bootloader-config", _nilDefaultStr, yellow("(Optional)")+"The OS's installation bootloader config file to be uploaded instead of the default."),
-				"other-assets-json":	c.FlagSet.String("other-assets-json", _nilDefaultStr, yellow("(Optional)")+"Dynamic or binary files that will be replaced inside the template. Can contain variables. Limited to 2MB in size."),
+				"bootloader":           c.FlagSet.String("bootloader", _nilDefaultStr, yellow("(Optional)")+"The OS's instalation bootloader to be uploaded instead of default."),
+				"bootloader-config":    c.FlagSet.String("bootloader-config", _nilDefaultStr, yellow("(Optional)")+"The OS's installation bootloader config file to be uploaded instead of the default."),
+				"other-assets-json":    c.FlagSet.String("other-assets-json", _nilDefaultStr, yellow("(Optional)")+"Dynamic or binary files that will be replaced inside the template. Can contain variables. Limited to 2MB in size."),
 				"github-template-repo": c.FlagSet.String("github-template-repo", _nilDefaultStr, yellow("(Optional)")+"Override the default github url used to download template files for given OS."),
 				"list-supported":       c.FlagSet.Bool("list-supported", false, yellow("(Optional)")+"List supported OS source templates."),
-				"list-warnings":		c.FlagSet.Bool("list-warnings", false, yellow("(Optional)")+"List warnings regarding the repository template structure."),
+				"list-warnings":        c.FlagSet.Bool("list-warnings", false, yellow("(Optional)")+"List warnings regarding the repository template structure."),
 				"quiet":                c.FlagSet.Bool("quiet", false, green("(Flag)")+"If set, eliminates all output."),
 				"debug":                c.FlagSet.Bool("debug", false, green("(Flag)")+"If set, increases log level."),
 				"return-id":            c.FlagSet.Bool("return-id", false, green("(Flag)")+"If set, returns the ID of the generated template. Useful for automation."),
@@ -809,8 +814,8 @@ func templateMakePrivateCmd(c *Command, client metalcloud.MetalCloudClient) (str
 }
 
 func templateBuildCmd(c *Command, client metalcloud.MetalCloudClient) (string, error) {
-	//TODO: Implement proper image upload
-	imageRepositoryURL := "https://repo.metalsoft.io/.iso"
+	// TODO: Replace with legit repository URL
+	imageRepositoryURL := "192.168.74.1:4022"
 
 	cloneOptions := new(git.CloneOptions)
 	cloneOptions.Depth = 1 // We are only interested in the last commit
@@ -1226,16 +1231,16 @@ func templateBuildCmd(c *Command, client metalcloud.MetalCloudClient) (string, e
 				kickstartAppendFilePath := filePath
 
 				appendFileContents, err := os.ReadFile(kickstartAppendFilePath)
-		
+
 				if err != nil {
 					return "", fmt.Errorf("Kickstart append file not found at path %s.", kickstartAppendFilePath)
 				}
-	
+
 				for _, asset := range repoMap[sourceTemplateName].Assets {
 
 					if asset.IsKickstartFile {
 						kickstartContents, err = asset.file.Contents()
-	
+
 						if err != nil {
 							return "", fmt.Errorf("Did not find the kickstart asset for source template '%s'.", sourceTemplateName)
 						}
@@ -1323,8 +1328,8 @@ func templateBuildCmd(c *Command, client metalcloud.MetalCloudClient) (string, e
 
 			// Struct containing assets that are to be created after all checks are done.
 			type Asset struct {
-				Name string
-				Command Command
+				Name     string
+				Command  Command
 				Contents string
 			}
 
@@ -1333,15 +1338,53 @@ func templateBuildCmd(c *Command, client metalcloud.MetalCloudClient) (string, e
 			s := strings.Split(imagePath, "/")
 			imageFilename := s[len(s)-1]
 
-			isoPath := imageRepositoryURL + "/" + name + "/" + imageFilename
-			fmt.Printf("Please upload the ISO image at this path: %s. Automatic upload will be available at a later date.\n", isoPath)
+			isoPath := imageRepositoryURL + "/iso/" + name + "/" + imageFilename
+
+			// Use SSH key authentication from the auth package.
+			const testSSHKey = "ssh-rsa AAAAB3NzaC1yc2EAAAABJQAAAQEAmkGL0npd6wgzXwg7Vzfvg0JkNs2AYbEDc7HA8h3kSkVtFNsJB9lxsOsCR8QsPoph6+3kDK2L2QwdRcck7X65XGeAzm7K7LiWIVQoG+Z3ZOvolJ7Bkq/ZLbLhvEC7GohM+/smfBpRl03chRvOM+6JIhNLkX9tKGPzHc8CNQqEY9Fif+Y9qRPvIDIkkkv/QZ9/RdLrwpjLwjQUwmBZSP1In4OQENad8iMfuBz4HBh/Q6vQjtNryvk7WERx9b5scvx9Fv2LSimic6TOrdLfsLzIIdEkln88yTHoOgTtFGVUQIiKcasbaj7pOXm6cHKMATCT/1aFqbkKdM+t43P1kP8Qlw== my-key-alex.corman"
+			publicKey, _, _, _, err := ssh.ParseAuthorizedKey([]byte(testSSHKey))
+
+			if err != nil {
+				return "", fmt.Errorf("Invalid SSH key given. Received error: %s", err)
+			}
+
+			fixedHostKey := ssh.FixedHostKey(publicKey)
+
+			conn, err := net.Dial("tcp", "192.168.74.1:4022")
+			if err != nil {
+				return "", err
+			}
+
+			agentClient := agent.NewClient(conn)
+			clientConfig := ssh.ClientConfig{
+				User: "root",
+				Auth: []ssh.AuthMethod{
+					ssh.PublicKeysCallback(agentClient.Signers),
+				},
+				HostKeyCallback: fixedHostKey,
+			}
+
+			if err != nil {
+				return "", fmt.Errorf("Could not create SSH agent. Received error: %s", err)
+			}
+
+			// Create a new SCP client.
+			scpClient := scp.NewClient(imageRepositoryURL, &clientConfig)
+
+			// Connect to the remote server.
+			err = scpClient.Connect()
+			if err != nil {
+				return "", fmt.Errorf("Couldn't establish a connection to the remote server: %s", err)
+			}
+
+			return "", fmt.Errorf("STOP HERE")
 
 			createIsoCommand := createAssetCommand
 			createIsoCommand.FlagSet = flag.NewFlagSet("create ISO asset", flag.ExitOnError)
 			createIsoCommand.Arguments = map[string]interface{}{
 				"filename":               createIsoCommand.FlagSet.String("filename", imageFilename, "Asset's filename"),
 				"usage":                  createIsoCommand.FlagSet.String("usage", "build_source_image", "Asset's usage."),
-				"mime":                   createIsoCommand.FlagSet.String("mime", assetTypeBinary, "Asset's mime type. Possible values: \"" + assetTypeDynamic + "\", \"" + assetTypeBinary + "\""),
+				"mime":                   createIsoCommand.FlagSet.String("mime", assetTypeBinary, "Asset's mime type. Possible values: \""+assetTypeDynamic+"\", \""+assetTypeBinary+"\""),
 				"url":                    createIsoCommand.FlagSet.String("url", isoPath, "Asset's source url. If present it will not read content anymore"),
 				"read_content_from_pipe": createIsoCommand.FlagSet.Bool("pipe", false, "Read assets's content read from pipe instead of terminal input"),
 				"template_id_or_name":    createIsoCommand.FlagSet.String("template-id", name, "Template's id or name to associate. "),
@@ -1351,7 +1394,7 @@ func templateBuildCmd(c *Command, client metalcloud.MetalCloudClient) (string, e
 			}
 
 			assets = append(assets, Asset{
-				Name: imageFilename,
+				Name:    imageFilename,
 				Command: createIsoCommand,
 			})
 
@@ -1369,9 +1412,9 @@ func templateBuildCmd(c *Command, client metalcloud.MetalCloudClient) (string, e
 
 			if filePath, ok := getStringParamOk(c.Arguments["bootloader"]); ok {
 				bootloaderFilePath := filePath
-		
+
 				bootloaderFileContents, err := os.ReadFile(bootloaderFilePath)
-		
+
 				if err != nil {
 					return "", fmt.Errorf("Bootloader file not found at path %s.", bootloaderFilePath)
 				}
@@ -1389,7 +1432,7 @@ func templateBuildCmd(c *Command, client metalcloud.MetalCloudClient) (string, e
 			createBootCommand.Arguments = map[string]interface{}{
 				"filename":               createBootCommand.FlagSet.String("filename", bootloaderFileName, "Asset's filename"),
 				"usage":                  createBootCommand.FlagSet.String("usage", "build_component", "Asset's usage."),
-				"mime":                   createBootCommand.FlagSet.String("mime", assetTypeDynamic, "Asset's mime type. Possible values: \"" + assetTypeDynamic + "\",\"" + assetTypeBinary + "\""),
+				"mime":                   createBootCommand.FlagSet.String("mime", assetTypeDynamic, "Asset's mime type. Possible values: \""+assetTypeDynamic+"\",\""+assetTypeBinary+"\""),
 				"url":                    createBootCommand.FlagSet.String("url", _nilDefaultStr, "Asset's source url. If present it will not read content anymore"),
 				"read_content_from_pipe": createBootCommand.FlagSet.Bool("pipe", false, "Read assets's content read from pipe instead of terminal input"),
 				"template_id_or_name":    createBootCommand.FlagSet.String("template-id", name, "Template's id or name to associate. "),
@@ -1399,15 +1442,15 @@ func templateBuildCmd(c *Command, client metalcloud.MetalCloudClient) (string, e
 			}
 
 			assets = append(assets, Asset{
-				Name: bootloaderFileName,
-				Command: createBootCommand,
+				Name:     bootloaderFileName,
+				Command:  createBootCommand,
 				Contents: bootloaderContents,
 			})
 
 			type InputAsset struct {
-				LocalPath 	string 	 `json:"path"`
-				IsoPath 	string 	 `json:"isopath"`
-				Type		string   `json:"type"`
+				LocalPath string `json:"path"`
+				IsoPath   string `json:"isopath"`
+				Type      string `json:"type"`
 			}
 
 			var otherAssets, dynamicAssets, binaryAssets []InputAsset
@@ -1417,10 +1460,10 @@ func templateBuildCmd(c *Command, client metalcloud.MetalCloudClient) (string, e
 				if err != nil {
 					return "", fmt.Errorf("Invalid 'other-assets-json' value sent. The value sent must be a JSON in this format: '[{\"path\":\"<path_value>\", \"isopath\":\"<isopath_value>\", \"type\":\"<asset_type>\"}, {\"path\":\"<path_value>\", \"isopath\":\"<isopath_value>\", \"type\":\"<asset_type>\"}]'.")
 				}
-				
+
 				for _, asset := range otherAssets {
 					_, err := os.ReadFile(asset.LocalPath)
-					
+
 					if err != nil {
 						return "", fmt.Errorf("Asset not found at path %s.", asset.LocalPath)
 					}
@@ -1466,9 +1509,9 @@ func templateBuildCmd(c *Command, client metalcloud.MetalCloudClient) (string, e
 							return "", fmt.Errorf("'kickstart' argument cannot be used alongside the 'kickstart-append' one.")
 						}
 						kickstartFilePath := filePath
-		
+
 						kickstartFileContents, err := os.ReadFile(kickstartFilePath)
-				
+
 						if err != nil {
 							return "", fmt.Errorf("Kickstart file not found at path %s.", kickstartFilePath)
 						}
@@ -1484,13 +1527,13 @@ func templateBuildCmd(c *Command, client metalcloud.MetalCloudClient) (string, e
 				} else if asset.IsBootloaderConfig {
 					if filePath, ok := getStringParamOk(c.Arguments["bootloader-config"]); ok {
 						bootloaderConfigFilePath := filePath
-		
+
 						bootloaderConfigFileContents, err := os.ReadFile(bootloaderConfigFilePath)
-				
+
 						if err != nil {
 							return "", fmt.Errorf("Bootloader configuration file not found at path %s.", bootloaderConfigFilePath)
 						}
-		
+
 						assetContents = string(bootloaderConfigFileContents)
 						assetFileName = bootloaderConfigFilePath
 
@@ -1501,7 +1544,7 @@ func templateBuildCmd(c *Command, client metalcloud.MetalCloudClient) (string, e
 					case assetTypeBinary:
 						for _, binaryAsset := range binaryAssets {
 							fileContents, _ := os.ReadFile(binaryAsset.LocalPath)
-				
+
 							if asset.Isopath == binaryAsset.IsoPath {
 								assetContents = string(fileContents)
 								assetFileName = binaryAsset.LocalPath
@@ -1512,7 +1555,7 @@ func templateBuildCmd(c *Command, client metalcloud.MetalCloudClient) (string, e
 					case assetTypeDynamic:
 						for _, dynamicAsset := range dynamicAssets {
 							fileContents, _ := os.ReadFile(dynamicAsset.LocalPath)
-				
+
 							if asset.Isopath == dynamicAsset.IsoPath {
 								assetContents = string(fileContents)
 								assetFileName = dynamicAsset.LocalPath
@@ -1527,11 +1570,11 @@ func templateBuildCmd(c *Command, client metalcloud.MetalCloudClient) (string, e
 				assetName := s[len(s)-1]
 
 				createOtherAssetCommand := createAssetCommand
-				createOtherAssetCommand.FlagSet = flag.NewFlagSet("create asset " + assetName, flag.ExitOnError)
+				createOtherAssetCommand.FlagSet = flag.NewFlagSet("create asset "+assetName, flag.ExitOnError)
 				createOtherAssetCommand.Arguments = map[string]interface{}{
 					"filename":               createOtherAssetCommand.FlagSet.String("filename", assetName, "Asset's filename"),
 					"usage":                  createOtherAssetCommand.FlagSet.String("usage", "build_component", "Asset's usage."),
-					"mime":                   createOtherAssetCommand.FlagSet.String("mime", asset.Mime, "Asset's mime type. Possible values: \"" + assetTypeDynamic + "\",\"" + assetTypeBinary + "\""),
+					"mime":                   createOtherAssetCommand.FlagSet.String("mime", asset.Mime, "Asset's mime type. Possible values: \""+assetTypeDynamic+"\",\""+assetTypeBinary+"\""),
 					"url":                    createOtherAssetCommand.FlagSet.String("url", _nilDefaultStr, "Asset's source url. If present it will not read content anymore"),
 					"read_content_from_pipe": createOtherAssetCommand.FlagSet.Bool("pipe", false, "Read assets's content read from pipe instead of terminal input"),
 					"template_id_or_name":    createOtherAssetCommand.FlagSet.String("template-id", name, "Template's id or name to associate. "),
@@ -1541,8 +1584,8 @@ func templateBuildCmd(c *Command, client metalcloud.MetalCloudClient) (string, e
 				}
 
 				assets = append(assets, Asset{
-					Name: assetName,
-					Command: createOtherAssetCommand,
+					Name:     assetName,
+					Command:  createOtherAssetCommand,
 					Contents: assetContents,
 				})
 			}
@@ -1570,7 +1613,7 @@ func templateBuildCmd(c *Command, client metalcloud.MetalCloudClient) (string, e
 					if err != nil {
 						return "", err
 					}
-	
+
 					for _, s := range *list {
 						if s.VolumeTemplateLabel == name {
 							templateID = s.VolumeTemplateID

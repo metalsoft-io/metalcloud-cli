@@ -4,6 +4,7 @@ go 1.16
 
 require (
 	github.com/atomicgo/cursor v0.0.1
+	github.com/bramvdbogaerde/go-scp v1.2.0
 	github.com/go-git/go-billy/v5 v5.3.1
 	github.com/go-git/go-git/v5 v5.4.2
 	github.com/golang/mock v1.6.0
