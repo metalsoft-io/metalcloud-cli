@@ -5,7 +5,6 @@ import (
 	"flag"
 	"fmt"
 	"io/ioutil"
-	"net"
 	"os"
 	"strings"
 
@@ -25,8 +24,8 @@ import (
 	"github.com/kdomanski/iso9660"
 
 	"github.com/bramvdbogaerde/go-scp"
+	"github.com/bramvdbogaerde/go-scp/auth"
 	"golang.org/x/crypto/ssh"
-	"golang.org/x/crypto/ssh/agent"
 )
 
 // Constants used with the build command
@@ -814,8 +813,9 @@ func templateMakePrivateCmd(c *Command, client metalcloud.MetalCloudClient) (str
 }
 
 func templateBuildCmd(c *Command, client metalcloud.MetalCloudClient) (string, error) {
-	// TODO: Replace with legit repository URL
-	imageRepositoryURL := "192.168.74.1:4022"
+	// TODO: Replace with legit repository URL and host ECDSA public key (or check other keys, depending on the properties in the sshd_config file)
+	const imageRepositoryURL = "192.168.74.1:4022"
+	const hostSSHPublicKeyECDSA = "ecdsa-sha2-nistp256 AAAAE2VjZHNhLXNoYTItbmlzdHAyNTYAAAAIbmlzdHAyNTYAAABBBEtdJbYCWJobS1wlVe4O3yItBUVNyRZsN8m+CqbmAgrQB1J1ksKqM5DEKXyM3Rf4KpfDSQgcBK5LAi8DASPZUH0= root@ubuntu"
 
 	cloneOptions := new(git.CloneOptions)
 	cloneOptions.Depth = 1 // We are only interested in the last commit
@@ -1340,32 +1340,25 @@ func templateBuildCmd(c *Command, client metalcloud.MetalCloudClient) (string, e
 
 			isoPath := imageRepositoryURL + "/iso/" + name + "/" + imageFilename
 
-			// Use SSH key authentication from the auth package.
-			const testSSHKey = "ssh-rsa AAAAB3NzaC1yc2EAAAABJQAAAQEAmkGL0npd6wgzXwg7Vzfvg0JkNs2AYbEDc7HA8h3kSkVtFNsJB9lxsOsCR8QsPoph6+3kDK2L2QwdRcck7X65XGeAzm7K7LiWIVQoG+Z3ZOvolJ7Bkq/ZLbLhvEC7GohM+/smfBpRl03chRvOM+6JIhNLkX9tKGPzHc8CNQqEY9Fif+Y9qRPvIDIkkkv/QZ9/RdLrwpjLwjQUwmBZSP1In4OQENad8iMfuBz4HBh/Q6vQjtNryvk7WERx9b5scvx9Fv2LSimic6TOrdLfsLzIIdEkln88yTHoOgTtFGVUQIiKcasbaj7pOXm6cHKMATCT/1aFqbkKdM+t43P1kP8Qlw== my-key-alex.corman"
-			publicKey, _, _, _, err := ssh.ParseAuthorizedKey([]byte(testSSHKey))
+			hostPublicKey, _, _, _, err := ssh.ParseAuthorizedKey([]byte(hostSSHPublicKeyECDSA))
 
 			if err != nil {
 				return "", fmt.Errorf("Invalid SSH key given. Received error: %s", err)
 			}
 
-			fixedHostKey := ssh.FixedHostKey(publicKey)
+			fixedHostKeyCallback := ssh.FixedHostKey(hostPublicKey)
 
-			conn, err := net.Dial("tcp", "192.168.74.1:4022")
-			if err != nil {
-				return "", err
+			if userPrivateSSHKeyPath := os.Getenv("METALCLOUD_USER_PRIVATE_OPENSSH_KEY_PATH"); userPrivateSSHKeyPath == "" {
+				return "", fmt.Errorf("METALCLOUD_USER_PRIVATE_OPENSSH_KEY_PATH must be set when creating an OS template. The key is needed when uploading to the ISO repository.")
 			}
 
-			agentClient := agent.NewClient(conn)
-			clientConfig := ssh.ClientConfig{
-				User: "root",
-				Auth: []ssh.AuthMethod{
-					ssh.PublicKeysCallback(agentClient.Signers),
-				},
-				HostKeyCallback: fixedHostKey,
-			}
+			userPrivateSSHKeyPath := os.Getenv("METALCLOUD_USER_PRIVATE_OPENSSH_KEY_PATH")
+
+			// Use SSH key authentication from the auth package.
+			clientConfig, err := auth.PrivateKey("root", userPrivateSSHKeyPath, fixedHostKeyCallback)
 
 			if err != nil {
-				return "", fmt.Errorf("Could not create SSH agent. Received error: %s", err)
+				return "", fmt.Errorf("Could not create SSH client config. Received error: %s", err)
 			}
 
 			// Create a new SCP client.
