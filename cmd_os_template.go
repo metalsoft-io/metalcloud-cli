@@ -9,6 +9,8 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
+	"net"
+	"encoding/base64"
 
 	metalcloud "github.com/metalsoft-io/metal-cloud-sdk-go/v2"
 	"github.com/metalsoft-io/tableformatter"
@@ -27,7 +29,7 @@ import (
 
 	"github.com/bramvdbogaerde/go-scp"
 	"github.com/bramvdbogaerde/go-scp/auth"
-	// "golang.org/x/crypto/ssh"
+	"golang.org/x/crypto/ssh"
 
 	kh "golang.org/x/crypto/ssh/knownhosts"
 )
@@ -891,7 +893,7 @@ func templateBuildCmd(c *Command, client metalcloud.MetalCloudClient) (string, e
 	return "", nil
 }
 
-func retrieveRepositoryAssets(c *Command, repoMap map[string]RepoTemplate) (error){
+func retrieveRepositoryAssets(c *Command, repoMap map[string]RepoTemplate) error{
 	cloneOptions := new(git.CloneOptions)
 	cloneOptions.Depth = 1 // We are only interested in the last commit
 
@@ -1080,7 +1082,7 @@ func retrieveRepositoryAssets(c *Command, repoMap map[string]RepoTemplate) (erro
 	return nil
 }
 
-func createRepositoryTemplatesTable(repoMap map[string]RepoTemplate) (tableformatter.Table){
+func createRepositoryTemplatesTable(repoMap map[string]RepoTemplate) (tableformatter.Table) {
 	schema := []tableformatter.SchemaField{
 		{
 			FieldName: "FAMILY",
@@ -1188,7 +1190,7 @@ func handleTemplateBuild(c *Command, client metalcloud.MetalCloudClient, repoMap
 	return "", nil
 }
 
-func checkTemplateIntegrity(c *Command, repoMap map[string]RepoTemplate, sourceTemplateName string) (string, string, error){
+func checkTemplateIntegrity(c *Command, repoMap map[string]RepoTemplate, sourceTemplateName string) (string, string, error) {
 	if _, ok := repoMap[sourceTemplateName]; !ok {
 		return "", "", fmt.Errorf("Did not find source template '%s'. Please use the 'list-supported' parameter to see the supported templates.", sourceTemplateName)
 	}
@@ -1494,8 +1496,14 @@ func createIsoImageAsset(c *Command, repoMap map[string]RepoTemplate, assets *[]
 	return nil
 }
 
-func handleIsoImageUpload(c *Command, imageRepositoryHostname string, isoPath string) (string, error){
+func handleIsoImageUpload(c *Command, imageRepositoryHostname string, isoPath string) (string, error) {
 	if !getBoolParam(c.Arguments["skip-upload-to-repo"]) {
+		if userPrivateSSHKeyPath := os.Getenv("METALCLOUD_USER_PRIVATE_OPENSSH_KEY_PATH"); userPrivateSSHKeyPath == "" {
+			return "", fmt.Errorf("METALCLOUD_USER_PRIVATE_OPENSSH_KEY_PATH must be set when creating an OS template. The key is needed when uploading to the ISO repository.")
+		}
+
+		userPrivateSSHKeyPath := os.Getenv("METALCLOUD_USER_PRIVATE_OPENSSH_KEY_PATH")
+
 		homeDir, err := os.UserHomeDir()
 		if err != nil {
 			return "", err
@@ -1506,7 +1514,7 @@ func handleIsoImageUpload(c *Command, imageRepositoryHostname string, isoPath st
 		if userGivenHostsFilePath := os.Getenv("METALCLOUD_KNOWN_HOSTS_FILE_PATH"); userGivenHostsFilePath != "" {
 			knownHostsFilePath = os.Getenv("METALCLOUD_KNOWN_HOSTS_FILE_PATH")
 		} else {
-			knownHostsFilePath = filepath.Join(homeDir, ".ssh", "known_hosts")
+			knownHostsFilePath = filepath.Join(homeDir, ".ssh", "known_hosts.old")
 
 			// Create the known hosts file if it does not exist.
 			if _, err := os.Stat(knownHostsFilePath); errors.Is(err, os.ErrNotExist) {
@@ -1520,28 +1528,38 @@ func handleIsoImageUpload(c *Command, imageRepositoryHostname string, isoPath st
 			}
 		}
 
-		knownHostsFileContents, err := os.ReadFile(knownHostsFilePath)
-
-		if err != nil {
-			return "", fmt.Errorf("Hosts file not found at path %s.", knownHostsFilePath)
-		}
-
-		fmt.Println(string(knownHostsFileContents))	
-
 		hostKeyCallback, err := kh.New(knownHostsFilePath)
 
 		if err != nil {
 			return "", fmt.Errorf("Received following error when parsing the known_hosts file: %s.", err)
 		}
 
-		if userPrivateSSHKeyPath := os.Getenv("METALCLOUD_USER_PRIVATE_OPENSSH_KEY_PATH"); userPrivateSSHKeyPath == "" {
-			return "", fmt.Errorf("METALCLOUD_USER_PRIVATE_OPENSSH_KEY_PATH must be set when creating an OS template. The key is needed when uploading to the ISO repository.")
-		}
-
-		userPrivateSSHKeyPath := os.Getenv("METALCLOUD_USER_PRIVATE_OPENSSH_KEY_PATH")
-
 		// Use SSH key authentication from the auth package.
-		clientConfig, err := auth.PrivateKey("root", userPrivateSSHKeyPath, hostKeyCallback)
+		clientConfig, err := auth.PrivateKey(
+			"root",
+			userPrivateSSHKeyPath,
+			ssh.HostKeyCallback(func(hostname string, remoteAddress net.Addr, publicKey ssh.PublicKey) error {
+				var keyError *kh.KeyError
+				hostsError := hostKeyCallback(hostname, remoteAddress, publicKey)
+
+				// Reference: https://www.godoc.org/golang.org/x/crypto/ssh/knownhosts#KeyError
+				 //if keyErr.Want is not empty and 
+				if errors.As(hostsError, &keyError) {
+					if len(keyError.Want) > 0 {
+						// If host is known then there is key mismatch and the connection is rejected.
+						fmt.Printf("WARNING: %s is not a key of %s, either a MiTM attack or %s has reconfigured the host pub key.", serializeSSHKey(publicKey), hostname, hostname)
+						return keyError
+					} else {
+						// If keyErr.Want slice is empty then host is unknown.
+						fmt.Printf("WARNING: %s is not trusted, adding this key: %s to %s.", hostname, serializeSSHKey(publicKey), knownHostsFilePath)
+						return addHostKey(knownHostsFilePath, remoteAddress, publicKey)
+					}
+				} 
+
+				fmt.Printf("Public key exists for %s.\n", hostname)
+				return nil
+			}),
+		)
 
 		if err != nil {
 			return "", fmt.Errorf("Could not create SSH client config. Received error: %s", err)
@@ -1559,10 +1577,10 @@ func handleIsoImageUpload(c *Command, imageRepositoryHostname string, isoPath st
 		fmt.Printf("Skipped uploading image to repository at path %s.", isoPath)
 	}
 
-	return "", nil
+	return "", fmt.Errorf("STOP HERE")
 }
 
-func createBootloaderAsset(c *Command, repoMap map[string]RepoTemplate, assets *[]Asset, sourceTemplateName string, name string, patchedText string, createAssetCommand Command) (error) {
+func createBootloaderAsset(c *Command, repoMap map[string]RepoTemplate, assets *[]Asset, sourceTemplateName string, name string, patchedText string, createAssetCommand Command) error {
 	var bootConfigPath string
 	OsTemplateContents := repoMap[sourceTemplateName].OsTemplateContents
 	
@@ -1616,7 +1634,7 @@ func createBootloaderAsset(c *Command, repoMap map[string]RepoTemplate, assets *
 	return nil
 }
 
-func createOtherAssets(c *Command, repoMap map[string]RepoTemplate, assets *[]Asset, sourceTemplateName string, name string, kickstartContents string, createAssetCommand Command) (error) {
+func createOtherAssets(c *Command, repoMap map[string]RepoTemplate, assets *[]Asset, sourceTemplateName string, name string, kickstartContents string, createAssetCommand Command) error {
 	var otherAssets, dynamicAssets, binaryAssets []InputAsset
 
 	if otherAssetsJSON, ok := getStringParamOk(c.Arguments["other-assets-json"]); ok {
@@ -1865,4 +1883,22 @@ func sliceDifference(slice1 []string, slice2 []string) []string {
 	}
 
 	return diff
+}
+
+// Add host key if host is not found in known_hosts.
+// The return object is the error, if nil then connection proceeds, else connection stops.
+func addHostKey(knownHostsFilePath string, remoteAddress net.Addr, publicKey ssh.PublicKey) error {
+    knownHostsFile, err := os.OpenFile(knownHostsFilePath, os.O_APPEND|os.O_WRONLY, 0644)
+    if err != nil {
+        return fmt.Errorf("Hosts file not found at path %s.", knownHostsFilePath)
+    }
+    defer knownHostsFile.Close()
+ 
+    knownHosts := kh.Normalize(remoteAddress.String())
+    _, err = knownHostsFile.WriteString("\n" + kh.Line([]string{knownHosts}, publicKey))
+    return err
+}
+
+func serializeSSHKey(key ssh.PublicKey) string {
+	return key.Type() + " " + base64.StdEncoding.EncodeToString(key.Marshal())
 }
