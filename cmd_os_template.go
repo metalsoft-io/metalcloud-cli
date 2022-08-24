@@ -2,10 +2,12 @@ package main
 
 import (
 	"encoding/json"
+	"errors"
 	"flag"
 	"fmt"
 	"io/ioutil"
 	"os"
+	"path/filepath"
 	"strings"
 
 	metalcloud "github.com/metalsoft-io/metal-cloud-sdk-go/v2"
@@ -25,7 +27,9 @@ import (
 
 	"github.com/bramvdbogaerde/go-scp"
 	"github.com/bramvdbogaerde/go-scp/auth"
-	"golang.org/x/crypto/ssh"
+	// "golang.org/x/crypto/ssh"
+
+	kh "golang.org/x/crypto/ssh/knownhosts"
 )
 
 // Constants used with the build command
@@ -236,6 +240,7 @@ var osTemplatesCmds = []Command{
 				"github-template-repo": c.FlagSet.String("github-template-repo", _nilDefaultStr, yellow("(Optional)")+"Override the default github url used to download template files for given OS."),
 				"list-supported":       c.FlagSet.Bool("list-supported", false, yellow("(Optional)")+"List supported OS source templates."),
 				"list-warnings":        c.FlagSet.Bool("list-warnings", false, yellow("(Optional)")+"List warnings regarding the repository template structure."),
+				"skip-upload-to-repo":  c.FlagSet.Bool("skip-upload-to-repo", false, yellow("(Optional)")+"Skip ISO image upload to the HTTP repository."),
 				"quiet":                c.FlagSet.Bool("quiet", false, green("(Flag)")+"If set, eliminates all output."),
 				"debug":                c.FlagSet.Bool("debug", false, green("(Flag)")+"If set, increases log level."),
 				"return-id":            c.FlagSet.Bool("return-id", false, green("(Flag)")+"If set, returns the ID of the generated template. Useful for automation."),
@@ -813,9 +818,13 @@ func templateMakePrivateCmd(c *Command, client metalcloud.MetalCloudClient) (str
 }
 
 func templateBuildCmd(c *Command, client metalcloud.MetalCloudClient) (string, error) {
-	// TODO: Replace with legit repository URL and host ECDSA public key (or check other keys, depending on the properties in the sshd_config file)
-	const imageRepositoryURL = "192.168.74.1:4022"
-	const hostSSHPublicKeyECDSA = "ecdsa-sha2-nistp256 AAAAE2VjZHNhLXNoYTItbmlzdHAyNTYAAAAIbmlzdHAyNTYAAABBBEtdJbYCWJobS1wlVe4O3yItBUVNyRZsN8m+CqbmAgrQB1J1ksKqM5DEKXyM3Rf4KpfDSQgcBK5LAi8DASPZUH0= root@ubuntu"
+
+	// TODO: replace with real hostname after finishing development
+	imageRepositoryHostname := "192.168.74.1:4022"
+
+	if userGivenImageRepositoryHostname := os.Getenv("METALCLOUD_IMAGE_REPOSITORY_HOSTNAME"); userGivenImageRepositoryHostname != "" {
+		imageRepositoryHostname = os.Getenv("METALCLOUD_IMAGE_REPOSITORY_HOSTNAME")
+	}
 
 	cloneOptions := new(git.CloneOptions)
 	cloneOptions.Depth = 1 // We are only interested in the last commit
@@ -1338,39 +1347,77 @@ func templateBuildCmd(c *Command, client metalcloud.MetalCloudClient) (string, e
 			s := strings.Split(imagePath, "/")
 			imageFilename := s[len(s)-1]
 
-			isoPath := imageRepositoryURL + "/iso/" + name + "/" + imageFilename
+			isoPath := imageRepositoryHostname + "/iso/" + name + "/" + imageFilename
 
-			hostPublicKey, _, _, _, err := ssh.ParseAuthorizedKey([]byte(hostSSHPublicKeyECDSA))
+			if !getBoolParam(c.Arguments["skip-upload-to-repo"]) {
+				homeDir, err := os.UserHomeDir()
+				if err != nil {
+					return "", err
+				}
 
-			if err != nil {
-				return "", fmt.Errorf("Invalid SSH key given. Received error: %s", err)
+				var knownHostsFilePath string
+
+				if userGivenHostsFilePath := os.Getenv("METALCLOUD_KNOWN_HOSTS_FILE_PATH"); userGivenHostsFilePath != "" {
+					knownHostsFilePath = os.Getenv("METALCLOUD_KNOWN_HOSTS_FILE_PATH")
+				} else {
+					knownHostsFilePath = filepath.Join(homeDir, ".ssh", "known_hosts.old")
+
+					// Create the known hosts file if it does not exist.
+					if _, err := os.Stat(knownHostsFilePath); errors.Is(err, os.ErrNotExist) {
+						hostsFile, err := os.Create(knownHostsFilePath)
+
+						if err != nil {
+							return "", err
+						}
+
+						hostsFile.Close()
+					}
+				}
+
+				knownHostsFileContents, err := os.ReadFile(knownHostsFilePath)
+
+				if err != nil {
+					return "", fmt.Errorf("Hosts file not found at path %s.", knownHostsFilePath)
+				}
+
+				fmt.Println(string(knownHostsFileContents))	
+
+				hostKeyCallback, err := kh.New(knownHostsFilePath)
+
+				if err != nil {
+					return "", fmt.Errorf("Received following error when parsing the known_hosts file: %s.", err)
+				}
+
+				fmt.Printf("%+v\n", hostKeyCallback)
+
+				if userPrivateSSHKeyPath := os.Getenv("METALCLOUD_USER_PRIVATE_OPENSSH_KEY_PATH"); userPrivateSSHKeyPath == "" {
+					return "", fmt.Errorf("METALCLOUD_USER_PRIVATE_OPENSSH_KEY_PATH must be set when creating an OS template. The key is needed when uploading to the ISO repository.")
+				}
+
+				userPrivateSSHKeyPath := os.Getenv("METALCLOUD_USER_PRIVATE_OPENSSH_KEY_PATH")
+
+				// Use SSH key authentication from the auth package.
+				clientConfig, err := auth.PrivateKey("root", userPrivateSSHKeyPath, hostKeyCallback)
+
+				if err != nil {
+					return "", fmt.Errorf("Could not create SSH client config. Received error: %s", err)
+				}
+
+				// Create a new SCP client.
+				scpClient := scp.NewClient(imageRepositoryHostname, &clientConfig)
+
+				// Connect to the remote server.
+				err = scpClient.Connect()
+				if err != nil {
+					return "", fmt.Errorf("Couldn't establish a connection to the remote server: %s", err)
+				}
+
+				return "", fmt.Errorf("STOP HERE x1")
+			} else {
+				fmt.Printf("Skipped uploading image to repository at path %s.", isoPath)
 			}
 
-			fixedHostKeyCallback := ssh.FixedHostKey(hostPublicKey)
-
-			if userPrivateSSHKeyPath := os.Getenv("METALCLOUD_USER_PRIVATE_OPENSSH_KEY_PATH"); userPrivateSSHKeyPath == "" {
-				return "", fmt.Errorf("METALCLOUD_USER_PRIVATE_OPENSSH_KEY_PATH must be set when creating an OS template. The key is needed when uploading to the ISO repository.")
-			}
-
-			userPrivateSSHKeyPath := os.Getenv("METALCLOUD_USER_PRIVATE_OPENSSH_KEY_PATH")
-
-			// Use SSH key authentication from the auth package.
-			clientConfig, err := auth.PrivateKey("root", userPrivateSSHKeyPath, fixedHostKeyCallback)
-
-			if err != nil {
-				return "", fmt.Errorf("Could not create SSH client config. Received error: %s", err)
-			}
-
-			// Create a new SCP client.
-			scpClient := scp.NewClient(imageRepositoryURL, &clientConfig)
-
-			// Connect to the remote server.
-			err = scpClient.Connect()
-			if err != nil {
-				return "", fmt.Errorf("Couldn't establish a connection to the remote server: %s", err)
-			}
-
-			return "", fmt.Errorf("STOP HERE")
+			return "", fmt.Errorf("STOP HERE x2")
 
 			createIsoCommand := createAssetCommand
 			createIsoCommand.FlagSet = flag.NewFlagSet("create ISO asset", flag.ExitOnError)
