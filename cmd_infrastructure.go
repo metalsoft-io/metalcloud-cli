@@ -633,7 +633,7 @@ func infrastructureGetCmd(c *Command, client metalcloud.MetalCloudClient) (strin
 		}
 
 		details := fmt.Sprintf("%d GB size, type: %s, i/o limit policy: %s, WWW: %s, storage pool: #%d",
-			int(sda.SharedDriveSizeMbytes/1000),
+			int(sda.SharedDriveSizeMbytes/1024),
 			sda.SharedDriveStorageType,
 			sda.SharedDriveIOLimitPolicy,
 			sda.SharedDriveWWN,
@@ -717,19 +717,24 @@ func listWorkflowStagesCmd(c *Command, client metalcloud.MetalCloudClient) (stri
 	data := [][]interface{}{}
 	for _, s := range *list {
 
-		infra, err := client.InfrastructureGet(s.InfrastructureID)
-		if err != nil {
-			return "", err
-		}
-
 		stage, err := client.StageDefinitionGet(s.StageDefinitionID)
 		if err != nil {
 			return "", err
 		}
 
+		infrastructureLabel := ""
+
+		if stage.StageDefinitionContext != "global" {
+			infra, err := client.InfrastructureGet(s.InfrastructureID)
+			if err != nil {
+				return "", err
+			}
+			infrastructureLabel = infra.InfrastructureLabel
+		}
+
 		data = append(data, []interface{}{
 			s.InfrastructureDeployCustomStageID,
-			infra.InfrastructureLabel,
+			infrastructureLabel,
 			stage.StageDefinitionLabel,
 			s.InfrastructureDeployCustomStageType,
 			s.InfrastructureDeployCustomStageRunLevel,
