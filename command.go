@@ -33,6 +33,7 @@ type Command struct {
 	ExecuteFunc  CommandExecuteFunc
 	Endpoint     string
 	Example      string
+	UserOnly     bool //set if command is to be visible only to users regardless of endpoint
 }
 
 func sameCommand(a *Command, b *Command) bool {

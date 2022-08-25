@@ -23,16 +23,16 @@ var instanceArrayCmds = []Command{
 		FlagSet:      flag.NewFlagSet("instance-array", flag.ExitOnError),
 		InitFunc: func(c *Command) {
 			c.Arguments = map[string]interface{}{
-				"infrastructure_id_or_label":          c.FlagSet.String("infra", _nilDefaultStr, red("(Required)")+" Infrastructure's id or label. Note that the 'label' this be ambiguous in certain situations."),
-				"instance_array_instance_count":       c.FlagSet.Int("instance-count", _nilDefaultInt, red("(Required)")+" Instance count of this instance array"),
-				"instance_array_label":                c.FlagSet.String("label", _nilDefaultStr, "InstanceArray's label"),
-				"server_type":                         c.FlagSet.String("server-type", _nilDefaultStr, "InstanceArray's server type."),
-				"instance_array_ram_gbytes":           c.FlagSet.Int("ram", _nilDefaultInt, "InstanceArray's minimum RAM (GB)"),
-				"instance_array_processor_count":      c.FlagSet.Int("proc", _nilDefaultInt, "InstanceArray's minimum processor count"),
-				"instance_array_processor_core_mhz":   c.FlagSet.Int("proc-freq", _nilDefaultInt, "InstanceArray's minimum processor frequency (Mhz)"),
-				"instance_array_processor_core_count": c.FlagSet.Int("proc-core-count", _nilDefaultInt, "InstanceArray's minimum processor core count"),
-				"instance_array_disk_count":           c.FlagSet.Int("disks", _nilDefaultInt, "InstanceArray's number of local drives"),
-				"instance_array_disk_size_mbytes":     c.FlagSet.Int("disk-size", _nilDefaultInt, "InstanceArray's local disks' size in MB"),
+				"infrastructure_id_or_label":    c.FlagSet.String("infra", _nilDefaultStr, red("(Required)")+" Infrastructure's id or label. Note that the 'label' this be ambiguous in certain situations."),
+				"instance_array_instance_count": c.FlagSet.Int("instance-count", 1, " Instance count of this instance array"),
+				"instance_array_label":          c.FlagSet.String("label", _nilDefaultStr, "InstanceArray's label"),
+				"server_type":                   c.FlagSet.String("server-type", _nilDefaultStr, "InstanceArray's server type."),
+				//	"instance_array_ram_gbytes":           c.FlagSet.Int("ram", _nilDefaultInt, "InstanceArray's minimum RAM (GB)"),
+				//	"instance_array_processor_count":      c.FlagSet.Int("proc", _nilDefaultInt, "InstanceArray's minimum processor count"),
+				//	"instance_array_processor_core_mhz":   c.FlagSet.Int("proc-freq", _nilDefaultInt, "InstanceArray's minimum processor frequency (Mhz)"),
+				//	"instance_array_processor_core_count": c.FlagSet.Int("proc-core-count", _nilDefaultInt, "InstanceArray's minimum processor core count"),
+				//	"instance_array_disk_count":           c.FlagSet.Int("disks", _nilDefaultInt, "InstanceArray's number of local drives"),
+				//	"instance_array_disk_size_mbytes":     c.FlagSet.Int("disk-size", _nilDefaultInt, "InstanceArray's local disks' size in MB"),
 				"instance_array_boot_method":          c.FlagSet.String("boot", _nilDefaultStr, "InstanceArray's boot type:'pxe_iscsi','local_drives'"),
 				"instance_array_firewall_not_managed": c.FlagSet.Bool("firewall-management-disabled", false, green("(Flag)")+" If set InstanceArray's firewall management on or off"),
 				"volume_template_id_or_label":         c.FlagSet.String("local-install-template", _nilDefaultStr, "InstanceArray's volume template when booting from for local drives"),
@@ -43,7 +43,7 @@ var instanceArrayCmds = []Command{
 			}
 		},
 		ExecuteFunc: instanceArrayCreateCmd,
-		Endpoint:    DeveloperEndpoint,
+		Endpoint:    UserEndpoint,
 	},
 	{
 		Description:  "Lists all instance arrays of an infrastructure.",
@@ -59,7 +59,7 @@ var instanceArrayCmds = []Command{
 			}
 		},
 		ExecuteFunc: instanceArrayListCmd,
-		Endpoint:    DeveloperEndpoint,
+		Endpoint:    UserEndpoint,
 	},
 	{
 		Description:  "Lists all instances of instance array.",
@@ -75,7 +75,7 @@ var instanceArrayCmds = []Command{
 			}
 		},
 		ExecuteFunc: instanceArrayInstancesListCmd,
-		Endpoint:    DeveloperEndpoint,
+		Endpoint:    UserEndpoint,
 	},
 	{
 		Description:  "Delete instance array.",
@@ -91,7 +91,7 @@ var instanceArrayCmds = []Command{
 			}
 		},
 		ExecuteFunc: instanceArrayDeleteCmd,
-		Endpoint:    DeveloperEndpoint,
+		Endpoint:    UserEndpoint,
 	},
 	{
 		Description:  "Edits an instance array.",
@@ -120,7 +120,7 @@ var instanceArrayCmds = []Command{
 			}
 		},
 		ExecuteFunc: instanceArrayEditCmd,
-		Endpoint:    DeveloperEndpoint,
+		Endpoint:    UserEndpoint,
 	},
 	{
 		Description:  "Get instance array details.",
@@ -140,7 +140,7 @@ var instanceArrayCmds = []Command{
 			}
 		},
 		ExecuteFunc: instanceArrayGetCmd,
-		Endpoint:    DeveloperEndpoint,
+		Endpoint:    UserEndpoint,
 	},
 }
 
