@@ -1480,13 +1480,16 @@ func createIsoImageAsset(c *Command, repoMap map[string]RepoTemplate, assets *[]
 		return err
 	}
 
+	//TODO: replace me
+	assetURL := "http://" + imageRepositoryHostname + isoPath
+
 	createIsoCommand := createAssetCommand
 	createIsoCommand.FlagSet = flag.NewFlagSet("create ISO asset", flag.ExitOnError)
 	createIsoCommand.Arguments = map[string]interface{}{
 		"filename":               createIsoCommand.FlagSet.String("filename", imageFilename, "Asset's filename"),
 		"usage":                  createIsoCommand.FlagSet.String("usage", "build_source_image", "Asset's usage."),
 		"mime":                   createIsoCommand.FlagSet.String("mime", assetTypeBinary, "Asset's mime type. Possible values: \""+assetTypeDynamic+"\", \""+assetTypeBinary+"\""),
-		"url":                    createIsoCommand.FlagSet.String("url", isoPath, "Asset's source url. If present it will not read content anymore"),
+		"url":                    createIsoCommand.FlagSet.String("url", assetURL, "Asset's source url. If present it will not read content anymore"),
 		"read_content_from_pipe": createIsoCommand.FlagSet.Bool("pipe", false, "Read assets's content read from pipe instead of terminal input"),
 		"template_id_or_name":    createIsoCommand.FlagSet.String("template-id", name, "Template's id or name to associate. "),
 		"path":                   createIsoCommand.FlagSet.String("path", "/source-image", "Path to associate asset to."),
