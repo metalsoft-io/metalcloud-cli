@@ -11,6 +11,8 @@ import (
 	"strings"
 	"net"
 	"encoding/base64"
+	"bufio"
+	"bytes"
 
 	metalcloud "github.com/metalsoft-io/metal-cloud-sdk-go/v2"
 	"github.com/metalsoft-io/tableformatter"
@@ -1514,7 +1516,7 @@ func handleIsoImageUpload(c *Command, imageRepositoryHostname string, isoPath st
 		if userGivenHostsFilePath := os.Getenv("METALCLOUD_KNOWN_HOSTS_FILE_PATH"); userGivenHostsFilePath != "" {
 			knownHostsFilePath = os.Getenv("METALCLOUD_KNOWN_HOSTS_FILE_PATH")
 		} else {
-			knownHostsFilePath = filepath.Join(homeDir, ".ssh", "known_hosts.old")
+			knownHostsFilePath = filepath.Join(homeDir, ".ssh", "known_hosts")
 
 			// Create the known hosts file if it does not exist.
 			if _, err := os.Stat(knownHostsFilePath); errors.Is(err, os.ErrNotExist) {
@@ -1543,20 +1545,63 @@ func handleIsoImageUpload(c *Command, imageRepositoryHostname string, isoPath st
 				hostsError := hostKeyCallback(hostname, remoteAddress, publicKey)
 
 				// Reference: https://www.godoc.org/golang.org/x/crypto/ssh/knownhosts#KeyError
-				 //if keyErr.Want is not empty and 
+				//if keyErr.Want is not empty and 
 				if errors.As(hostsError, &keyError) {
 					if len(keyError.Want) > 0 {
 						// If host is known then there is key mismatch and the connection is rejected.
-						fmt.Printf("WARNING: %s is not a key of %s, either a MiTM attack or %s has reconfigured the host pub key.", serializeSSHKey(publicKey), hostname, hostname)
+						fmt.Printf(`
+@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
+@    WARNING: REMOTE HOST IDENTIFICATION HAS CHANGED!     @
+@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
+IT IS POSSIBLE THAT SOMEONE IS DOING SOMETHING NASTY!
+Someone could be eavesdropping on you right now (man-in-the-middle attack)!
+It is also possible that a host key has just been changed.
+The key sent by the remote host is
+%s.
+Please contact your system administrator.
+Add correct host key in %s to get rid of this message.
+Host key for %s has changed and you have requested strict checking.
+Host key verification failed.
+`,
+							serializeSSHKey(publicKey), knownHostsFilePath, hostname,
+						)
 						return keyError
 					} else {
 						// If keyErr.Want slice is empty then host is unknown.
-						fmt.Printf("WARNING: %s is not trusted, adding this key: %s to %s.", hostname, serializeSSHKey(publicKey), knownHostsFilePath)
+						fmt.Printf(`
+The authenticity of host '%s' can't be established.
+SSH key is %s.
+This key is not known by any other names.
+It will be added to known_hosts file %s.
+Are you sure you want to continue connecting (yes/no)?
+`,
+							hostname, serializeSSHKey(publicKey), knownHostsFilePath,
+						)
+						reader := bufio.NewReader(os.Stdin)
+						input, err := reader.ReadString('\n')
+						
+						if err != nil {
+							return err
+						}
+
+						// Remove \r and \n from input
+						input = string(bytes.TrimSuffix([]byte(input), []byte("\r\n")))
+
+						if input != "yes" {
+							if input == "no" {
+								fmt.Println("Aborting connection.")
+							} else {
+								fmt.Println("Invalid response given. Aborting connection.")
+							}
+
+							return keyError
+							
+						}
 						return addHostKey(knownHostsFilePath, remoteAddress, publicKey)
 					}
 				} 
 
-				fmt.Printf("Public key exists for %s.\n", hostname)
+				fmt.Printf("Public key exists for remote %s. Establishing connection.\n", hostname)
 				return nil
 			}),
 		)
@@ -1573,6 +1618,8 @@ func handleIsoImageUpload(c *Command, imageRepositoryHostname string, isoPath st
 		if err != nil {
 			return "", fmt.Errorf("Couldn't establish a connection to the remote server: %s", err)
 		}
+
+		fmt.Printf("Established connection to hostname %s.\n", imageRepositoryHostname)
 	} else {
 		fmt.Printf("Skipped uploading image to repository at path %s.", isoPath)
 	}
@@ -1893,9 +1940,10 @@ func addHostKey(knownHostsFilePath string, remoteAddress net.Addr, publicKey ssh
         return fmt.Errorf("Hosts file not found at path %s.", knownHostsFilePath)
     }
     defer knownHostsFile.Close()
- 
+
     knownHosts := kh.Normalize(remoteAddress.String())
     _, err = knownHostsFile.WriteString("\n" + kh.Line([]string{knownHosts}, publicKey))
+	fmt.Printf("Added key %s to known_hosts file %s.", serializeSSHKey(publicKey), knownHostsFilePath)
     return err
 }
 
