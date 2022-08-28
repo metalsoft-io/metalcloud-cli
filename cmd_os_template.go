@@ -13,6 +13,7 @@ import (
 	"encoding/base64"
 	"bufio"
 	"bytes"
+	"context"
 
 	metalcloud "github.com/metalsoft-io/metal-cloud-sdk-go/v2"
 	"github.com/metalsoft-io/tableformatter"
@@ -1468,9 +1469,9 @@ func createIsoImageAsset(c *Command, repoMap map[string]RepoTemplate, assets *[]
 	s := strings.Split(imagePath, "/")
 	imageFilename := s[len(s)-1]
 
-	isoPath := imageRepositoryHostname + "/iso/" + name + "/" + imageFilename
+	isoPath := "/iso/" + name + "-" + imageFilename
 
-	_, err := handleIsoImageUpload(c, imageRepositoryHostname, isoPath)
+	_, err := handleIsoImageUpload(c, imageRepositoryHostname, isoPath, imagePath)
 
 	if err != nil {
 		return err
@@ -1498,7 +1499,7 @@ func createIsoImageAsset(c *Command, repoMap map[string]RepoTemplate, assets *[]
 	return nil
 }
 
-func handleIsoImageUpload(c *Command, imageRepositoryHostname string, isoPath string) (string, error) {
+func handleIsoImageUpload(c *Command, imageRepositoryHostname string, isoPath string, imagePath string) (string, error) {
 	if !getBoolParam(c.Arguments["skip-upload-to-repo"]) {
 		if userPrivateSSHKeyPath := os.Getenv("METALCLOUD_USER_PRIVATE_OPENSSH_KEY_PATH"); userPrivateSSHKeyPath == "" {
 			return "", fmt.Errorf("METALCLOUD_USER_PRIVATE_OPENSSH_KEY_PATH must be set when creating an OS template. The key is needed when uploading to the ISO repository.")
@@ -1619,12 +1620,32 @@ Are you sure you want to continue connecting (yes/no)?
 			return "", fmt.Errorf("Couldn't establish a connection to the remote server: %s", err)
 		}
 
+		defer scpClient.Close()
+
 		fmt.Printf("Established connection to hostname %s.\n", imageRepositoryHostname)
+
+		isoImagefile, err := os.Open(imagePath)
+
+		if err != nil {
+			return "", fmt.Errorf("Image not found at path %s.", imagePath)
+		}
+
+		remotePath := "/var/www/html/" + isoPath
+
+		fmt.Printf("Starting image upload to repository at path %s.\n", isoPath)
+		err = scpClient.CopyFile(context.Background(), isoImagefile, remotePath, "0777")
+
+		if err != nil {
+			return "", fmt.Errorf("Error while copying file: %s", err)
+		}
+
+		fmt.Printf("Finished image upload to repository at path %s.\n", isoPath)
+
 	} else {
 		fmt.Printf("Skipped uploading image to repository at path %s.", isoPath)
 	}
 
-	return "", fmt.Errorf("STOP HERE")
+	return "", nil
 }
 
 func createBootloaderAsset(c *Command, repoMap map[string]RepoTemplate, assets *[]Asset, sourceTemplateName string, name string, patchedText string, createAssetCommand Command) error {
