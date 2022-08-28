@@ -1505,7 +1505,7 @@ func createIsoImageAsset(c *Command, repoMap map[string]RepoTemplate, assets *[]
 func handleIsoImageUpload(c *Command, imageRepositoryHostname string, isoPath string, imagePath string) (string, error) {
 	if !getBoolParam(c.Arguments["skip-upload-to-repo"]) {
 
-		s := strings.Split(imagePath, "/")
+		s := strings.Split(isoPath, "/")
 		imageFilename := s[len(s)-1]
 
 		//TODO: test with hostname, not IP
