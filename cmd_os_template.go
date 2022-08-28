@@ -1,19 +1,19 @@
 package main
 
 import (
+	"bufio"
+	"bytes"
+	"context"
+	"encoding/base64"
 	"encoding/json"
 	"errors"
 	"flag"
 	"fmt"
 	"io/ioutil"
+	"net"
 	"os"
 	"path/filepath"
 	"strings"
-	"net"
-	"encoding/base64"
-	"bufio"
-	"bytes"
-	"context"
 
 	metalcloud "github.com/metalsoft-io/metal-cloud-sdk-go/v2"
 	"github.com/metalsoft-io/tableformatter"
@@ -35,6 +35,8 @@ import (
 	"golang.org/x/crypto/ssh"
 
 	kh "golang.org/x/crypto/ssh/knownhosts"
+
+	netHTTP "net/http"
 )
 
 // Constants used with the build command
@@ -53,6 +55,8 @@ const assetTypeBinary = "application/octet-stream"
 
 const assetJSONTypeDynamic = "dynamic"
 const assetJSONTypeBinary = "binary"
+
+const remoteDirectoryPath = "/var/www/html/"
 
 type TemplateAsset struct {
 	file               object.File
@@ -298,6 +302,7 @@ var osTemplatesCmds = []Command{
 				"list-supported":       c.FlagSet.Bool("list-supported", false, yellow("(Optional)")+"List supported OS source templates."),
 				"list-warnings":        c.FlagSet.Bool("list-warnings", false, yellow("(Optional)")+"List warnings regarding the repository template structure."),
 				"skip-upload-to-repo":  c.FlagSet.Bool("skip-upload-to-repo", false, yellow("(Optional)")+"Skip ISO image upload to the HTTP repository."),
+				"replace-if-exists":	c.FlagSet.Bool("replace-if-exists", false, yellow("(Optional)")+"Replaces ISO image if one already exists in the HTTP repository."),
 				"quiet":                c.FlagSet.Bool("quiet", false, green("(Flag)")+"If set, eliminates all output."),
 				"debug":                c.FlagSet.Bool("debug", false, green("(Flag)")+"If set, increases log level."),
 				"return-id":            c.FlagSet.Bool("return-id", false, green("(Flag)")+"If set, returns the ID of the generated template. Useful for automation."),
@@ -896,7 +901,7 @@ func templateBuildCmd(c *Command, client metalcloud.MetalCloudClient) (string, e
 	return "", nil
 }
 
-func retrieveRepositoryAssets(c *Command, repoMap map[string]RepoTemplate) error{
+func retrieveRepositoryAssets(c *Command, repoMap map[string]RepoTemplate) error {
 	cloneOptions := new(git.CloneOptions)
 	cloneOptions.Depth = 1 // We are only interested in the last commit
 
@@ -953,7 +958,6 @@ func retrieveRepositoryAssets(c *Command, repoMap map[string]RepoTemplate) error
 	if err != nil {
 		return err
 	}
-
 
 	// This map stores all files for a template and will be used to check if their information is correct
 	repoAssetsPerTemplate := make(map[string][]TemplateAsset)
@@ -1085,7 +1089,7 @@ func retrieveRepositoryAssets(c *Command, repoMap map[string]RepoTemplate) error
 	return nil
 }
 
-func createRepositoryTemplatesTable(repoMap map[string]RepoTemplate) (tableformatter.Table) {
+func createRepositoryTemplatesTable(repoMap map[string]RepoTemplate) tableformatter.Table {
 	schema := []tableformatter.SchemaField{
 		{
 			FieldName: "FAMILY",
@@ -1395,7 +1399,6 @@ func createTemplateAssets(c *Command, client metalcloud.MetalCloudClient, repoMa
 		Endpoint:     DeveloperEndpoint,
 	}
 
-
 	assets := []Asset{}
 
 	err := createIsoImageAsset(c, repoMap, &assets, sourceTemplateName, name, imagePath, createAssetCommand)
@@ -1458,14 +1461,14 @@ func createTemplateAssets(c *Command, client metalcloud.MetalCloudClient, repoMa
 	return "", nil
 }
 
-func createIsoImageAsset(c *Command, repoMap map[string]RepoTemplate, assets *[]Asset, sourceTemplateName string, name string, imagePath string, createAssetCommand Command) (error) {
+func createIsoImageAsset(c *Command, repoMap map[string]RepoTemplate, assets *[]Asset, sourceTemplateName string, name string, imagePath string, createAssetCommand Command) error {
 	// TODO: replace with real hostname after finishing development
 	imageRepositoryHostname := "192.168.74.1:4022"
 
 	if userGivenImageRepositoryHostname := os.Getenv("METALCLOUD_IMAGE_REPOSITORY_HOSTNAME"); userGivenImageRepositoryHostname != "" {
 		imageRepositoryHostname = os.Getenv("METALCLOUD_IMAGE_REPOSITORY_HOSTNAME")
 	}
-	
+
 	s := strings.Split(imagePath, "/")
 	imageFilename := s[len(s)-1]
 
@@ -1501,6 +1504,30 @@ func createIsoImageAsset(c *Command, repoMap map[string]RepoTemplate, assets *[]
 
 func handleIsoImageUpload(c *Command, imageRepositoryHostname string, isoPath string, imagePath string) (string, error) {
 	if !getBoolParam(c.Arguments["skip-upload-to-repo"]) {
+
+		s := strings.Split(imagePath, "/")
+		imageFilename := s[len(s)-1]
+
+		//TODO: test with hostname, not IP
+		const remoteURL = "http://192.168.74.1:4080/iso"
+	
+		imageExists, err := checkRemoteFileExists(remoteURL, imageFilename)
+
+		if err != nil {
+			return "", err
+		}
+
+		if imageExists && !getBoolParam(c.Arguments["replace-if-exists"]){
+			fmt.Printf("Image %s already exists at path %s. Skipping upload. Use the 'replace-if-exists' parameter to replace the existing image.\n", imageFilename, isoPath)
+			return "", nil
+		}
+
+		if imageExists {
+			fmt.Printf("Replacing image %s at path %s.\n", imageFilename, isoPath)
+		} else {
+			fmt.Printf("Uploading new image %s at path %s.\n", imageFilename, isoPath)
+		}
+
 		if userPrivateSSHKeyPath := os.Getenv("METALCLOUD_USER_PRIVATE_OPENSSH_KEY_PATH"); userPrivateSSHKeyPath == "" {
 			return "", fmt.Errorf("METALCLOUD_USER_PRIVATE_OPENSSH_KEY_PATH must be set when creating an OS template. The key is needed when uploading to the ISO repository.")
 		}
@@ -1546,7 +1573,7 @@ func handleIsoImageUpload(c *Command, imageRepositoryHostname string, isoPath st
 				hostsError := hostKeyCallback(hostname, remoteAddress, publicKey)
 
 				// Reference: https://www.godoc.org/golang.org/x/crypto/ssh/knownhosts#KeyError
-				//if keyErr.Want is not empty and 
+				//if keyErr.Want is not empty and
 				if errors.As(hostsError, &keyError) {
 					if len(keyError.Want) > 0 {
 						// If host is known then there is key mismatch and the connection is rejected.
@@ -1580,7 +1607,7 @@ Are you sure you want to continue connecting (yes/no)?
 						)
 						reader := bufio.NewReader(os.Stdin)
 						input, err := reader.ReadString('\n')
-						
+
 						if err != nil {
 							return err
 						}
@@ -1596,11 +1623,11 @@ Are you sure you want to continue connecting (yes/no)?
 							}
 
 							return keyError
-							
+
 						}
 						return addHostKey(knownHostsFilePath, remoteAddress, publicKey)
 					}
-				} 
+				}
 
 				fmt.Printf("Public key exists for remote %s. Establishing connection.\n", hostname)
 				return nil
@@ -1630,7 +1657,7 @@ Are you sure you want to continue connecting (yes/no)?
 			return "", fmt.Errorf("Image not found at path %s.", imagePath)
 		}
 
-		remotePath := "/var/www/html/" + isoPath
+		remotePath := remoteDirectoryPath + isoPath
 
 		fmt.Printf("Starting image upload to repository at path %s.\n", isoPath)
 		err = scpClient.CopyFile(context.Background(), isoImagefile, remotePath, "0777")
@@ -1651,7 +1678,7 @@ Are you sure you want to continue connecting (yes/no)?
 func createBootloaderAsset(c *Command, repoMap map[string]RepoTemplate, assets *[]Asset, sourceTemplateName string, name string, patchedText string, createAssetCommand Command) error {
 	var bootConfigPath string
 	OsTemplateContents := repoMap[sourceTemplateName].OsTemplateContents
-	
+
 	switch OsTemplateContents.BootType {
 	case bootTypeUEFIOnly:
 		bootConfigPath = "/EFI/BOOT/BOOT.CFG"
@@ -1729,7 +1756,7 @@ func createOtherAssets(c *Command, repoMap map[string]RepoTemplate, assets *[]As
 
 		}
 	}
-	
+
 	for _, asset := range repoMap[sourceTemplateName].Assets {
 		if asset.IsPatchFile {
 			// We skip the patch file, as the boot file has already been created.
@@ -1956,18 +1983,34 @@ func sliceDifference(slice1 []string, slice2 []string) []string {
 // Add host key if host is not found in known_hosts.
 // The return object is the error, if nil then connection proceeds, else connection stops.
 func addHostKey(knownHostsFilePath string, remoteAddress net.Addr, publicKey ssh.PublicKey) error {
-    knownHostsFile, err := os.OpenFile(knownHostsFilePath, os.O_APPEND|os.O_WRONLY, 0644)
-    if err != nil {
-        return fmt.Errorf("Hosts file not found at path %s.", knownHostsFilePath)
-    }
-    defer knownHostsFile.Close()
+	knownHostsFile, err := os.OpenFile(knownHostsFilePath, os.O_APPEND|os.O_WRONLY, 0644)
+	if err != nil {
+		return fmt.Errorf("Hosts file not found at path %s.", knownHostsFilePath)
+	}
+	defer knownHostsFile.Close()
 
-    knownHosts := kh.Normalize(remoteAddress.String())
-    _, err = knownHostsFile.WriteString("\n" + kh.Line([]string{knownHosts}, publicKey))
+	knownHosts := kh.Normalize(remoteAddress.String())
+	_, err = knownHostsFile.WriteString("\n" + kh.Line([]string{knownHosts}, publicKey))
 	fmt.Printf("Added key %s to known_hosts file %s.", serializeSSHKey(publicKey), knownHostsFilePath)
-    return err
+	return err
 }
 
 func serializeSSHKey(key ssh.PublicKey) string {
 	return key.Type() + " " + base64.StdEncoding.EncodeToString(key.Marshal())
+}
+
+func checkRemoteFileExists(remoteURL string, fileName string) (bool, error) {
+	resp, err := netHTTP.Get(remoteURL)
+
+	if err != nil {
+	   return false, err
+	}
+
+	body, err := ioutil.ReadAll(resp.Body)
+	if err != nil {
+		return false, err
+	}
+
+	responseBody := string(body)
+	return strings.Contains(responseBody, fileName), nil
 }
