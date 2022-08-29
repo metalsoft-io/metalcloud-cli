@@ -57,6 +57,7 @@ const assetJSONTypeDynamic = "dynamic"
 const assetJSONTypeBinary = "binary"
 
 const remoteDirectoryPath = "/var/www/html/"
+const otherAssetsMaximumSizeBytes = 2097152
 
 type TemplateAsset struct {
 	file               object.File
@@ -1746,6 +1747,23 @@ func createOtherAssets(c *Command, repoMap map[string]RepoTemplate, assets *[]As
 
 			if err != nil {
 				return fmt.Errorf("Asset not found at path %s.", asset.LocalPath)
+			}
+
+			file, err := os.Open(asset.LocalPath)
+			if err != nil {
+				return err
+			}
+			defer file.Close()
+
+			// Check that file size is below the maximum allowed.
+			stat, err := file.Stat()
+			if err != nil {
+				return err
+			}
+
+			if stat.Size() > otherAssetsMaximumSizeBytes {
+				sizeInMB := float64(stat.Size())/(1<<20)
+				return fmt.Errorf("Asset %s has a size of %f MB which exceeds maximum allowed size of 2MB.\n", file.Name(), sizeInMB)
 			}
 
 			switch asset.Type {
