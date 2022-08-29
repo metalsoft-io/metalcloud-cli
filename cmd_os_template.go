@@ -303,7 +303,7 @@ var osTemplatesCmds = []Command{
 				"list-supported":       c.FlagSet.Bool("list-supported", false, yellow("(Optional)")+"List supported OS source templates."),
 				"list-warnings":        c.FlagSet.Bool("list-warnings", false, yellow("(Optional)")+"List warnings regarding the repository template structure."),
 				"skip-upload-to-repo":  c.FlagSet.Bool("skip-upload-to-repo", false, yellow("(Optional)")+"Skip ISO image upload to the HTTP repository."),
-				"replace-if-exists":	c.FlagSet.Bool("replace-if-exists", false, yellow("(Optional)")+"Replaces ISO image if one already exists in the HTTP repository."),
+				"replace-if-exists":    c.FlagSet.Bool("replace-if-exists", false, yellow("(Optional)")+"Replaces ISO image if one already exists in the HTTP repository."),
 				"quiet":                c.FlagSet.Bool("quiet", false, green("(Flag)")+"If set, eliminates all output."),
 				"debug":                c.FlagSet.Bool("debug", false, green("(Flag)")+"If set, increases log level."),
 				"return-id":            c.FlagSet.Bool("return-id", false, green("(Flag)")+"If set, returns the ID of the generated template. Useful for automation."),
@@ -1514,14 +1514,14 @@ func handleIsoImageUpload(c *Command, imageRepositoryHostname string, isoPath st
 
 		//TODO: test with hostname, not IP
 		const remoteURL = "http://192.168.74.1:4080/iso"
-	
+
 		imageExists, err := checkRemoteFileExists(remoteURL, imageFilename)
 
 		if err != nil {
 			return "", err
 		}
 
-		if imageExists && !getBoolParam(c.Arguments["replace-if-exists"]){
+		if imageExists && !getBoolParam(c.Arguments["replace-if-exists"]) {
 			fmt.Printf("Image %s already exists at path %s. Skipping upload. Use the 'replace-if-exists' parameter to replace the existing image.\n", imageFilename, isoPath)
 			return "", nil
 		}
@@ -1762,7 +1762,7 @@ func createOtherAssets(c *Command, repoMap map[string]RepoTemplate, assets *[]As
 			}
 
 			if stat.Size() > otherAssetsMaximumSizeBytes {
-				sizeInMB := float64(stat.Size())/(1<<20)
+				sizeInMB := float64(stat.Size()) / (1 << 20)
 				return fmt.Errorf("Asset %s has a size of %f MB which exceeds maximum allowed size of 2MB.\n", file.Name(), sizeInMB)
 			}
 
@@ -2010,8 +2010,20 @@ func addHostKey(knownHostsFilePath string, remoteAddress net.Addr, publicKey ssh
 	}
 	defer knownHostsFile.Close()
 
+	fileBytes, err := os.ReadFile(knownHostsFilePath)
+
+	// We add an empty line if the file doesn't end in one and if it's not empty to begin with.
+	if len(fileBytes) > 0 && string(fileBytes[len(fileBytes)-1]) != "\r" && string(fileBytes[len(fileBytes)-1]) != "\n" {
+		_, err = knownHostsFile.WriteString("\n")
+
+		if err != nil {
+			return err
+		}
+	}
+
 	knownHosts := kh.Normalize(remoteAddress.String())
-	_, err = knownHostsFile.WriteString("\n" + kh.Line([]string{knownHosts}, publicKey))
+	_, err = knownHostsFile.WriteString(kh.Line([]string{knownHosts}, publicKey))
+
 	fmt.Printf("Added key %s to known_hosts file %s.", serializeSSHKey(publicKey), knownHostsFilePath)
 	return err
 }
@@ -2024,7 +2036,7 @@ func checkRemoteFileExists(remoteURL string, fileName string) (bool, error) {
 	resp, err := netHTTP.Get(remoteURL)
 
 	if err != nil {
-	   return false, err
+		return false, err
 	}
 
 	body, err := ioutil.ReadAll(resp.Body)
