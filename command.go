@@ -33,6 +33,7 @@ type Command struct {
 	ExecuteFunc  CommandExecuteFunc
 	Endpoint     string
 	Example      string
+	UserOnly     bool //set if command is to be visible only to users regardless of endpoint
 }
 
 func sameCommand(a *Command, b *Command) bool {
@@ -338,11 +339,16 @@ func getKeyValueMapFromString(kvmap string) (map[string]string, error) {
 //getKeyValueStringFromMap is the reverse operation from getKeyValueMapFromString encoding the value into the key=value,key=value pairs
 func getKeyValueStringFromMap(kvmap interface{}) string {
 
-	pairs := []string{}
-	m := kvmap.(map[string]interface{})
-	for k, v := range m {
-		pairs = append(pairs, fmt.Sprintf("%s=%v", k, v))
+	switch m := kvmap.(type) {
+	case map[string]interface{}:
+		pairs := []string{}
+		for k, v := range m {
+			pairs = append(pairs, fmt.Sprintf("%s=%v", k, v))
+		}
+		return strings.Join(pairs, ",")
+	case []interface{}:
+		return ""
 	}
 
-	return strings.Join(pairs, ",")
+	return ""
 }

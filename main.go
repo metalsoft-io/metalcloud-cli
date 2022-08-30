@@ -347,10 +347,25 @@ func initClient(endpointSuffix string) (metalcloud.MetalCloudClient, error) {
 
 }
 
+//endpointAvailableForCommand Checks if the instantiated endpoint clients include the one needed for the command
+func endpointAvailableForCommand(command Command, clients map[string]metalcloud.MetalCloudClient) bool {
+	return clients[command.Endpoint] != nil
+}
+
+//commandVisibleForUser returns true if the current user (which could be admin or not) has the ability to see the respective command
+func commandVisibleForUser(command Command) bool {
+	if command.UserOnly && isAdmin() {
+		return false
+	}
+
+	return true
+}
+
+//fitlerCommandSet Filters commands based on endpoint availability for client
 func fitlerCommandSet(commandSet []Command, clients map[string]metalcloud.MetalCloudClient) []Command {
 	filteredCommands := []Command{}
 	for _, command := range commandSet {
-		if _, ok := clients[command.Endpoint]; ok {
+		if endpointAvailableForCommand(command, clients) && commandVisibleForUser(command) {
 			filteredCommands = append(filteredCommands, command)
 		}
 	}

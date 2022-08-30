@@ -555,4 +555,8 @@ func TestGetKVStringFromMap(t *testing.T) {
 	}
 
 	Expect(getKeyValueStringFromMap(m)).To(Equal("key1=value1,key2=value2"))
+
+	a := []interface{}{} //should support empty array instead of map. Reported by MS-1390
+
+	Expect(getKeyValueStringFromMap(a)).To(Equal(""))
 }

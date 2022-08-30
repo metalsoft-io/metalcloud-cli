@@ -45,8 +45,26 @@ var infrastructureCmds = []Command{
 				"show_deleted": c.FlagSet.Bool("show-deleted", false, green("(Flag)")+" If set will also return deleted infrastructures. Default is false."),
 			}
 		},
-		ExecuteFunc: infrastructureListCmd,
+		ExecuteFunc: infrastructureListAdminCmd,
 		Endpoint:    DeveloperEndpoint,
+	},
+	{ // This is a second version of the list command for users. It uses a different function that needs a different set
+		//of permissions and returns only the user's infrastructures instead of all user's infrastructures.
+		Description:  "Lists all infrastructures.",
+		Subject:      "infrastructure",
+		AltSubject:   "infra",
+		Predicate:    "list",
+		AltPredicate: "ls",
+		FlagSet:      flag.NewFlagSet("list infrastructure", flag.ExitOnError),
+		InitFunc: func(c *Command) {
+			c.Arguments = map[string]interface{}{
+				"format":       c.FlagSet.String("format", "", "The output format. Supported values are 'json','csv','yaml'. The default format is human readable."),
+				"show_deleted": c.FlagSet.Bool("show-deleted", false, green("(Flag)")+" If set will also return deleted infrastructures. Default is false."),
+			}
+		},
+		ExecuteFunc: infrastructureListUserCmd,
+		Endpoint:    UserEndpoint,
+		UserOnly:    true, //notice this
 	},
 	{
 		Description:  "Delete an infrastructure.",
@@ -62,7 +80,7 @@ var infrastructureCmds = []Command{
 			}
 		},
 		ExecuteFunc: infrastructureDeleteCmd,
-		Endpoint:    DeveloperEndpoint,
+		Endpoint:    UserEndpoint,
 	},
 	{
 		Description:  "Deploy an infrastructure.",
@@ -86,7 +104,7 @@ var infrastructureCmds = []Command{
 			}
 		},
 		ExecuteFunc: infrastructureDeployCmd,
-		Endpoint:    DeveloperEndpoint,
+		Endpoint:    UserEndpoint,
 	},
 	{
 		Description:  "Get infrastructure details.",
@@ -102,7 +120,7 @@ var infrastructureCmds = []Command{
 			}
 		},
 		ExecuteFunc: infrastructureGetCmd,
-		Endpoint:    DeveloperEndpoint,
+		Endpoint:    UserEndpoint,
 	},
 	{
 		Description:  "Revert all changes of an infrastructure.",
@@ -118,7 +136,7 @@ var infrastructureCmds = []Command{
 			}
 		},
 		ExecuteFunc: infrastructureRevertCmd,
-		Endpoint:    DeveloperEndpoint,
+		Endpoint:    UserEndpoint,
 	},
 	{
 		Description:  "List stages of a workflow.",
@@ -169,7 +187,7 @@ func infrastructureCreateCmd(c *Command, client metalcloud.MetalCloudClient) (st
 	return "", nil
 }
 
-func infrastructureListCmd(c *Command, client metalcloud.MetalCloudClient) (string, error) {
+func infrastructureListAdminCmd(c *Command, client metalcloud.MetalCloudClient) (string, error) {
 
 	filter := getStringParam(c.Arguments["filter"])
 	iList, err := client.InfrastructureSearch(filter)
@@ -259,6 +277,98 @@ func infrastructureListCmd(c *Command, client metalcloud.MetalCloudClient) (stri
 			i.InfrastructureLabel,
 			status,
 			userEmail,
+			i.DatacenterName,
+			i.InfrastructureCreatedTimestamp,
+			i.InfrastructureUpdatedTimestamp,
+		})
+
+	}
+
+	tableformatter.TableSorter(schema).OrderBy(
+		schema[3].FieldName,
+		schema[0].FieldName,
+		schema[1].FieldName).Sort(data)
+
+	topLine := fmt.Sprintf("Infrastructures")
+
+	table := tableformatter.Table{
+		Data:   data,
+		Schema: schema,
+	}
+	return table.RenderTable("Infrastructures", topLine, getStringParam(c.Arguments["format"]))
+}
+
+func infrastructureListUserCmd(c *Command, client metalcloud.MetalCloudClient) (string, error) {
+
+	iList, err := client.Infrastructures()
+	if err != nil {
+		return "", err
+	}
+
+	schema := []tableformatter.SchemaField{
+		{
+			FieldName: "ID",
+			FieldType: tableformatter.TypeInt,
+			FieldSize: 6,
+		},
+		{
+			FieldName: "LABEL",
+			FieldType: tableformatter.TypeString,
+			FieldSize: 15,
+		},
+		{
+			FieldName: "STATUS",
+			FieldType: tableformatter.TypeString,
+			FieldSize: 5,
+		},
+		{
+			FieldName: "OWNER",
+			FieldType: tableformatter.TypeString,
+			FieldSize: 20,
+		},
+		{
+			FieldName: "DATACENTER",
+			FieldType: tableformatter.TypeString,
+			FieldSize: 10,
+		},
+		{
+			FieldName: "CREATED",
+			FieldType: tableformatter.TypeString,
+			FieldSize: 10,
+		},
+		{
+			FieldName: "UPDATED",
+			FieldType: tableformatter.TypeString,
+			FieldSize: 10,
+		},
+	}
+
+	data := [][]interface{}{}
+	for _, i := range *iList {
+
+		if i.InfrastructureServiceStatus == "deleted" && !getBoolParam(c.Arguments["show_deleted"]) {
+			continue
+		}
+
+		status := ""
+
+		if i.InfrastructureServiceStatus == "active" {
+			status = green("Deployed")
+		}
+
+		if i.InfrastructureServiceStatus == "ordered" {
+			status = blue("Ordered (deploy not started)")
+		}
+
+		if i.InfrastructureServiceStatus == "deleted" {
+			status = magenta("Deleted")
+		}
+
+		data = append(data, []interface{}{
+			i.InfrastructureID,
+			i.InfrastructureLabel,
+			status,
+			i.UserEmailOwner,
 			i.DatacenterName,
 			i.InfrastructureCreatedTimestamp,
 			i.InfrastructureUpdatedTimestamp,
@@ -523,7 +633,7 @@ func infrastructureGetCmd(c *Command, client metalcloud.MetalCloudClient) (strin
 		}
 
 		details := fmt.Sprintf("%d GB size, type: %s, i/o limit policy: %s, WWW: %s, storage pool: #%d",
-			int(sda.SharedDriveSizeMbytes/1000),
+			int(sda.SharedDriveSizeMbytes/1024),
 			sda.SharedDriveStorageType,
 			sda.SharedDriveIOLimitPolicy,
 			sda.SharedDriveWWN,

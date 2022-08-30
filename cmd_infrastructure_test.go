@@ -388,7 +388,7 @@ func TestInfrastructureGetCmd(t *testing.T) {
 	Expect(err).To(BeNil())
 }
 
-func TestInfrastructureListCmd(t *testing.T) {
+func TestInfrastructureListAdminCmd(t *testing.T) {
 	RegisterTestingT(t)
 	ctrl := gomock.NewController(t)
 
@@ -442,7 +442,7 @@ func TestInfrastructureListCmd(t *testing.T) {
 		},
 	}
 
-	ret, err := infrastructureListCmd(&cmd, client)
+	ret, err := infrastructureListAdminCmd(&cmd, client)
 	Expect(err).To(BeNil())
 	Expect(ret).To(Not(Equal("")))
 	Expect(ret).To(ContainSubstring(infra.InfrastructureLabel))
@@ -454,7 +454,7 @@ func TestInfrastructureListCmd(t *testing.T) {
 	format = "json"
 	cmd.Arguments["format"] = &format
 
-	ret, err = infrastructureListCmd(&cmd, client)
+	ret, err = infrastructureListAdminCmd(&cmd, client)
 	Expect(err).To(BeNil())
 	Expect(ret).To(Not(Equal("")))
 
@@ -466,7 +466,92 @@ func TestInfrastructureListCmd(t *testing.T) {
 	format = "csv"
 	cmd.Arguments["format"] = &format
 
-	ret, err = infrastructureListCmd(&cmd, client)
+	ret, err = infrastructureListAdminCmd(&cmd, client)
+	Expect(err).To(BeNil())
+	Expect(ret).To(Not(Equal("")))
+
+	reader := csv.NewReader(strings.NewReader(ret))
+
+	csv, err := reader.ReadAll()
+	Expect(err).To(BeNil())
+	Expect(csv).NotTo(BeNil())
+
+}
+
+func TestInfrastructureListUserCmd(t *testing.T) {
+	RegisterTestingT(t)
+	ctrl := gomock.NewController(t)
+
+	infra := metalcloud.Infrastructure{
+		InfrastructureID:            10002,
+		InfrastructureLabel:         "testinfra",
+		InfrastructureServiceStatus: "active",
+	}
+
+	infra2 := metalcloud.Infrastructure{
+		InfrastructureID:            10003,
+		InfrastructureLabel:         "testinfra2",
+		InfrastructureServiceStatus: "ordered",
+	}
+	infra3 := metalcloud.Infrastructure{
+		InfrastructureID:            10003,
+		InfrastructureLabel:         "testinfra3",
+		InfrastructureServiceStatus: "active",
+	}
+
+	infra4 := metalcloud.Infrastructure{
+		InfrastructureID:            10003,
+		InfrastructureLabel:         "testinfra4",
+		InfrastructureServiceStatus: "active",
+	}
+
+	infraList := map[string]metalcloud.Infrastructure{
+
+		"infra1": infra,
+		"infra2": infra2,
+		"infra3": infra3,
+		"infra4": infra4,
+	}
+
+	client := helper.NewMockMetalCloudClient(ctrl)
+
+	client.EXPECT().
+		Infrastructures().
+		Return(&infraList, nil).
+		AnyTimes()
+
+	//test plaintext return
+	format := ""
+	cmd := Command{
+		Arguments: map[string]interface{}{
+			"format": &format,
+		},
+	}
+
+	ret, err := infrastructureListUserCmd(&cmd, client)
+	Expect(err).To(BeNil())
+	Expect(ret).To(Not(Equal("")))
+	Expect(ret).To(ContainSubstring(infra.InfrastructureLabel))
+	Expect(ret).To(ContainSubstring(infra2.InfrastructureLabel)) //shows ordered infra by default to avoid user confusion
+	Expect(ret).To(ContainSubstring(infra3.InfrastructureLabel))
+
+	//test json return
+	format = "json"
+	cmd.Arguments["format"] = &format
+
+	ret, err = infrastructureListUserCmd(&cmd, client)
+	Expect(err).To(BeNil())
+	Expect(ret).To(Not(Equal("")))
+
+	var m []interface{}
+	err = json.Unmarshal([]byte(ret), &m)
+	Expect(err).To(BeNil())
+
+	//test csv return
+	format = "csv"
+	cmd.Arguments["format"] = &format
+
+	ret, err = infrastructureListUserCmd(&cmd, client)
 	Expect(err).To(BeNil())
 	Expect(ret).To(Not(Equal("")))
 
