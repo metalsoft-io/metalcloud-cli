@@ -292,11 +292,11 @@ var osTemplatesCmds = []Command{
 		InitFunc: func(c *Command) {
 			c.Arguments = map[string]interface{}{
 				"name":                 c.FlagSet.String("name", _nilDefaultStr, red("(Required)")+"Name of image."),
-				"source-template":      c.FlagSet.String("source-template", _nilDefaultStr, red("(Required)")+"The source template to use as a base. Use --list-supported for a list of accepted values."),
+				"source-template":      c.FlagSet.String("source-template", _nilDefaultStr, red("(Required)")+"The source template to use as a base. It has the format of 'family/architecture'. Use --list-supported for a list of accepted values."),
 				"source-iso":           c.FlagSet.String("source-iso", _nilDefaultStr, red("(Required)")+"The source ISO image path."),
 				"kickstart":            c.FlagSet.String("kickstart", _nilDefaultStr, yellow("(Optional)")+"The OS's kickstart or equivalent file to be uploaded instead of the default."),
 				"kickstart-append":     c.FlagSet.String("kickstart-append", _nilDefaultStr, yellow("(Optional)")+"Content to append to the default kickstart."),
-				"bootloader":           c.FlagSet.String("bootloader", _nilDefaultStr, yellow("(Optional)")+"The OS's instalation bootloader to be uploaded instead of default."),
+				"bootloader":           c.FlagSet.String("bootloader", _nilDefaultStr, yellow("(Optional)")+"The OS's instalation bootloader to be uploaded instead of the default."),
 				"bootloader-config":    c.FlagSet.String("bootloader-config", _nilDefaultStr, yellow("(Optional)")+"The OS's installation bootloader config file to be uploaded instead of the default."),
 				"other-assets-json":    c.FlagSet.String("other-assets-json", _nilDefaultStr, yellow("(Optional)")+"Dynamic or binary files that will be replaced inside the template. Can contain variables. Limited to 2MB in size."),
 				"github-template-repo": c.FlagSet.String("github-template-repo", _nilDefaultStr, yellow("(Optional)")+"Override the default github url used to download template files for given OS."),
@@ -306,12 +306,14 @@ var osTemplatesCmds = []Command{
 				"replace-if-exists":    c.FlagSet.Bool("replace-if-exists", false, yellow("(Optional)")+"Replaces ISO image if one already exists in the HTTP repository."),
 				"quiet":                c.FlagSet.Bool("quiet", false, green("(Flag)")+"If set, eliminates all output."),
 				"debug":                c.FlagSet.Bool("debug", false, green("(Flag)")+"If set, increases log level."),
+				"format":               c.FlagSet.String("format", _nilDefaultStr, "The output format. Supported values are 'json','csv','yaml'. The default format is human readable."),
 				"return-id":            c.FlagSet.Bool("return-id", false, green("(Flag)")+"If set, returns the ID of the generated template. Useful for automation."),
 			}
 		},
 		ExecuteFunc: templateBuildCmd,
 		Endpoint:    ExtendedEndpoint,
 		Example: `
+	metalcloud-cli os-template build --list-supported --list-warnings
 	metalcloud-cli os-template build --name="test-template" --source-template="ESXi/7.0.0u3" --source-iso="VMware-VMvisor-Installer-7.0.0.update03-19193900.x86_64-DellEMC_Customized-A02.iso" --kickstart="custom_kickstart.txt" --bootloader="custom_boot.CFG" --bootloader-config="custom_bootloader_config.CFG" --other-assets-json='[{\"path\":\"custom_dynamic_file_1.png\", \"isopath\":\"/dynamic_file_1.jpg\", \"type\":\"dynamic\"}, {\"path\":\"custom_dynamic_file_2.png\", \"isopath\":\"/dynamic_file_3.jpg\", \"type\":\"dynamic\"}, {\"path\":\"custom_binary_file_1.bin\", \"isopath\":\"/binary_file_1.bin\", \"type\":\"binary\"}, {\"path\":\"custom_binary_file_2.bin\", \"isopath\":\"/binary_file_2.bin\", \"type\":\"binary\"}]'
 		`,
 	},
