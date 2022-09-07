@@ -326,8 +326,9 @@ var osTemplatesCmds = []Command{
 		FlagSet:      flag.NewFlagSet("create the diff of 2 files", flag.ExitOnError),
 		InitFunc: func(c *Command) {
 			c.Arguments = map[string]interface{}{
-				"file1": c.FlagSet.String("file1", _nilDefaultStr, red("(Required)")+"Path of the first file."),
-				"file2": c.FlagSet.String("file2", _nilDefaultStr, red("(Required)")+"Path of the second file."),
+				"file1":       c.FlagSet.String("file1", _nilDefaultStr, red("(Required)")+"Path of the first file."),
+				"file2":       c.FlagSet.String("file2", _nilDefaultStr, red("(Required)")+"Path of the second file."),
+				"output-file": c.FlagSet.String("output-file", _nilDefaultStr, red("(Required)")+"Path of the output file. This file must have Unix(LF) end of line encoding to be used as a patch file later."),
 			}
 		},
 		ExecuteFunc: templateDiffCmd,
@@ -1891,18 +1892,24 @@ func createOtherAssets(c *Command, repoMap map[string]RepoTemplate, assets *[]As
 }
 
 func templateDiffCmd(c *Command, client metalcloud.MetalCloudClient) (string, error) {
-	var filePath1, filePath2 string
+	var filePath1, filePath2, outputFilePath string
 
 	if file1, ok := getStringParamOk(c.Arguments["file1"]); ok {
 		filePath1 = file1
 	} else {
-		return "", fmt.Errorf("did not find the 'file1' parameter")
+		return "", fmt.Errorf("Did not find the 'file1' parameter.")
 	}
 
 	if file2, ok := getStringParamOk(c.Arguments["file2"]); ok {
 		filePath2 = file2
 	} else {
-		return "", fmt.Errorf("did not find the 'file2' parameter")
+		return "", fmt.Errorf("Did not find the 'file2' parameter.")
+	}
+
+	if outputFile, ok := getStringParamOk(c.Arguments["output-file"]); ok {
+		outputFilePath = outputFile
+	} else {
+		return "", fmt.Errorf("Did not find the 'output-file' parameter.")
 	}
 
 	fileContents1, err := os.ReadFile(filePath1)
@@ -1923,7 +1930,22 @@ func templateDiffCmd(c *Command, client metalcloud.MetalCloudClient) (string, er
 	patches := diffMatchPatch.PatchMake(diffs)
 	patchText := diffMatchPatch.PatchToText(patches)
 
-	return patchText, nil
+	file, err := os.Create(outputFilePath)
+
+	if err != nil {
+		return "", nil
+	}
+	defer file.Close()
+
+	writer := bufio.NewWriter(file)
+
+	_, err = fmt.Fprintf(writer, "%s", patchText)
+	if err != nil {
+		return "", nil
+	}
+
+	writer.Flush()
+	return "", nil
 }
 
 func getOSTemplateFromCommand(paramName string, c *Command, client metalcloud.MetalCloudClient, decryptPasswd bool) (*metalcloud.OSTemplate, error) {
