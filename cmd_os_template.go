@@ -65,6 +65,8 @@ const assetJSONTypeBinary = "binary"
 const remoteDirectoryPath = "/var/www/html/"
 const otherAssetsMaximumSizeBytes = 2097152
 
+const readMeFileName = "README.md"
+
 type TemplateAsset struct {
 	file    object.File
 	Isopath string `yaml:"isopath"`
@@ -106,7 +108,7 @@ type RepoTemplate struct {
 	TemplateFile       object.File
 	OsTemplateContents OsTemplateContents
 	Assets             []TemplateAsset
-	Warnings           []string
+	Errors             []string
 }
 
 // Struct containing assets that are to be created after all checks are done.
@@ -311,7 +313,6 @@ var osTemplatesCmds = []Command{
 				"bootloader-config":    c.FlagSet.String("bootloader-config", _nilDefaultStr, yellow("(Optional)")+"The OS's installation bootloader config file to be uploaded instead of the default."),
 				"other-assets-json":    c.FlagSet.String("other-assets-json", _nilDefaultStr, yellow("(Optional)")+"Dynamic or binary files that will be replaced inside the template. Can contain variables. Limited to 2MB in size."),
 				"github-template-repo": c.FlagSet.String("github-template-repo", _nilDefaultStr, yellow("(Optional)")+"Override the default github url used to download template files for given OS."),
-				"list-warnings":        c.FlagSet.Bool("list-warnings", false, yellow("(Optional)")+"List warnings regarding the repository template structure."),
 				"skip-upload-to-repo":  c.FlagSet.Bool("skip-upload-to-repo", false, yellow("(Optional)")+"Skip ISO image upload to the HTTP repository."),
 				"replace-if-exists":    c.FlagSet.Bool("replace-if-exists", false, yellow("(Optional)")+"Replaces ISO image if one already exists in the HTTP repository."),
 				"quiet":                c.FlagSet.Bool("quiet", false, green("(Flag)")+"If set, eliminates all output."),
@@ -358,6 +359,21 @@ var osTemplatesCmds = []Command{
 			}
 		},
 		ExecuteFunc: templateListRepoTemplatesCmd,
+		Endpoint:    ExtendedEndpoint,
+	},
+	{
+		Description:  "Validates OS source templates from a repository.",
+		Subject:      "os-template",
+		AltSubject:   "template",
+		Predicate:    "validate-repo",
+		AltPredicate: "validate-repo",
+		FlagSet:      flag.NewFlagSet("validate OS source templates from a repository ", flag.ExitOnError),
+		InitFunc: func(c *Command) {
+			c.Arguments = map[string]interface{}{
+				"github-template-repo": c.FlagSet.String("github-template-repo", _nilDefaultStr, yellow("(Optional)")+"Override the default github url used to download template files for given OS."),
+			}
+		},
+		ExecuteFunc: templateValidateRepoCmd,
 		Endpoint:    ExtendedEndpoint,
 	},
 }
@@ -1018,6 +1034,8 @@ func retrieveRepositoryAssets(c *Command, repoMap map[string]RepoTemplate) error
 		return nil
 	})
 
+	repoHasErrors := false
+
 	for templatePreffix, repoTemplate := range repoMap {
 		repoTemplate.Assets = repoAssetsPerTemplate[templatePreffix]
 
@@ -1047,48 +1065,68 @@ func retrieveRepositoryAssets(c *Command, repoMap map[string]RepoTemplate) error
 		validMimeTypes := []string{assetMimeTypeBinary, assetMimeTypeDynamic}
 		validAssetTypes := []string{assetTypeBootloader, assetTypeBootloaderConfig, assetTypeInstallerConfig, assetTypePatch, assetTypeOther}
 
-		warnings := []string{}
+		errors := []string{}
 
-		if !stringInSlice(architecture, validArchitectures) {
-			warnings = append(warnings, fmt.Sprintf("Found invalid architecture %s. Valid architectures are %+q.", architecture, validArchitectures))
+		if version == "" {
+			errors = append(errors, fmt.Sprintf("Found no OS version. There must be one in the os-template section with the key name 'os-version'."))
 		}
 
-		if !stringInSlice(deployProcess, validDeployProcesses) {
-			warnings = append(warnings, fmt.Sprintf("Found invalid boot method %s. Valid boot methods are %+q.", deployProcess, validDeployProcesses))
+		if architecture == "" {
+			errors = append(errors, fmt.Sprintf("Found no OS architecture. There must be one in the os-template section with the key name 'os-architecture'. Valid architectures are %+q.", validArchitectures))
+		} else if !stringInSlice(architecture, validArchitectures) {
+			errors = append(errors, fmt.Sprintf("Found invalid architecture %s. Valid architectures are %+q.", architecture, validArchitectures))
 		}
 
-		if !stringInSlice(bootType, validBootTypes) {
-			warnings = append(warnings, fmt.Sprintf("Found invalid boot type %s. Valid boot types are %+q.", bootType, validBootTypes))
+		if deployProcess == "" {
+			errors = append(errors, fmt.Sprintf("Found no deploy process. There must be one in the os-template section with the key name 'boot-methods-supported'. Valid boot methods are %+q.", validDeployProcesses))
+		} else if !stringInSlice(deployProcess, validDeployProcesses) {
+			errors = append(errors, fmt.Sprintf("Found invalid boot method %s. Valid boot methods are %+q.", deployProcess, validDeployProcesses))
 		}
 
-		if !stringInSlice(bootType, validBootTypes) {
-			warnings = append(warnings, fmt.Sprintf("Found invalid boot type %s. Valid boot types are %+q.", bootType, validBootTypes))
+		if bootType == "" {
+			errors = append(errors, fmt.Sprintf("Found no boot type. There must be one in the os-template section with the key name 'boot-type'. Valid boot types are %+q.", validBootTypes))
+		} else if !stringInSlice(bootType, validBootTypes) {
+			errors = append(errors, fmt.Sprintf("Found invalid boot type %s. Valid boot types are %+q.", bootType, validBootTypes))
 		}
 
 		var repoFileNames, templateFileNames []string
 
 		for key, asset := range repoTemplate.Assets {
 			fileName := strings.ReplaceAll(asset.file.Name, templatePreffix+"/", "")
+
+			// We ignore the ReadMe file
+			if fileName == readMeFileName {
+				continue
+			}
 			repoFileNames = append(repoFileNames, fileName)
 
 			if asset, ok := templateContents.Assets[fileName]; ok {
 				repoTemplate.Assets[key].Isopath = asset.Isopath
 
-				if !stringInSlice(asset.Mime, validMimeTypes) {
-					warnings = append(warnings, fmt.Sprintf("Found invalid mime type %s for asset %s. Valid mime types are %+q.", asset.Mime, fileName, validDeployProcesses))
+				if asset.Mime == "" {
+					errors = append(errors, fmt.Sprintf("Found no mime type. There must be one for the asset with the key name 'mime'. Valid mime types are %+q.", validMimeTypes))
+				} else if !stringInSlice(asset.Mime, validMimeTypes) {
+					errors = append(errors, fmt.Sprintf("Found invalid mime type %s for asset %s. Valid mime types are %+q.", asset.Mime, fileName, validMimeTypes))
 				}
 
-				if !stringInSlice(asset.Type, validAssetTypes) {
-					warnings = append(warnings, fmt.Sprintf("Found invalid asset type %s for asset %s. Valid asset types are %+q.", asset.Type, fileName, validAssetTypes))
+				if asset.Type == "" {
+					errors = append(errors, fmt.Sprintf("Found no asset type. There must be one for the asset with the key name 'type'. Valid asset types are %+q.", validAssetTypes))
+				} else if !stringInSlice(asset.Type, validAssetTypes) {
+					errors = append(errors, fmt.Sprintf("Found invalid asset type %v for asset %s. Valid asset types are %+q.", asset.Type, fileName, validAssetTypes))
 				}
 
 				repoTemplate.Assets[key].Mime = asset.Mime
 				repoTemplate.Assets[key].Type = asset.Type
 				repoTemplate.Assets[key].Url = asset.Url
 				repoTemplate.Assets[key].Path = asset.Path
+			}
 		}
 
-		for assetName := range templateContents.Assets {
+		for assetName, asset := range templateContents.Assets {
+			// We ignore files that have an URL, since they don't need to be in the repository.
+			if asset.Url != "" {
+				continue
+			}
 			templateFileNames = append(templateFileNames, assetName)
 		}
 
@@ -1096,14 +1134,18 @@ func retrieveRepositoryAssets(c *Command, repoMap map[string]RepoTemplate) error
 		fileNamesNotInRepository := sliceDifference(templateFileNames, repoFileNames)
 
 		if len(fileNamesNotInTemplate) != 0 {
-			warnings = append(warnings, fmt.Sprintf("Found the following repository files that are not in the template.yaml file: %+q.", fileNamesNotInTemplate))
+			errors = append(errors, fmt.Sprintf("Found the following repository files that are not in the template.yaml file: %+q.", fileNamesNotInTemplate))
 		}
 
 		if len(fileNamesNotInRepository) != 0 {
-			warnings = append(warnings, fmt.Sprintf("Found the following files declared in template.yaml that are not in the repository: %+q.", fileNamesNotInRepository))
+			errors = append(errors, fmt.Sprintf("Found the following files declared in template.yaml that are not in the repository: %+q.", fileNamesNotInRepository))
 		}
 
-		repoTemplate.Warnings = warnings
+		repoTemplate.Errors = errors
+
+		if len(errors) != 0 {
+			repoHasErrors = true
+		}
 
 		repoTemplate.Architecture = architecture
 		repoTemplate.DeployProcess = deployProcess
@@ -1111,10 +1153,14 @@ func retrieveRepositoryAssets(c *Command, repoMap map[string]RepoTemplate) error
 		repoTemplate.Version = version
 
 		repoMap[templatePreffix] = repoTemplate
-		}
 	}
 
 	fmt.Printf("Retrieved asset templates from repository %s.\n", cloneOptions.URL)
+
+	if repoHasErrors {
+		fmt.Printf("Found errors for repository %s! Use the 'validate-repo' function to see them and fix them.\n", cloneOptions.URL)
+	}
+
 	return nil
 }
 
@@ -1154,7 +1200,7 @@ func createRepositoryTemplatesTable(repoMap map[string]RepoTemplate) tableformat
 
 	data := [][]interface{}{}
 	for templatePreffix, repoTemplate := range repoMap {
-		var architecture, deployProcess, bootType string
+		var architecture, deployProcess, bootType, version string
 
 		switch repoTemplate.Architecture {
 		case osArchitecture64:
@@ -1181,9 +1227,15 @@ func createRepositoryTemplatesTable(repoMap map[string]RepoTemplate) tableformat
 			bootType = red("unknown")
 		}
 
+		if repoTemplate.Version == "" {
+			version = red("unknown")
+		} else {
+			version = repoTemplate.Version
+		}
+
 		data = append(data, []interface{}{
 			repoTemplate.Family,
-			repoTemplate.Version,
+			version,
 			architecture,
 			deployProcess,
 			bootType,
@@ -1814,7 +1866,7 @@ func createOtherAssets(c *Command, repoMap map[string]RepoTemplate, assets *[]As
 
 		validMimeTypes := []string{assetMimeTypeBinary, assetMimeTypeDynamic}
 
-		if asset.Type != assetTypeInstallerConfig  && asset.Type != assetTypeBootloaderConfig && !stringInSlice(asset.Mime, validMimeTypes) {
+		if asset.Type != assetTypeInstallerConfig && asset.Type != assetTypeBootloaderConfig && !stringInSlice(asset.Mime, validMimeTypes) {
 			// We skip the files that are not kickstarts, bootloader configs or have invalid mime type.
 			continue
 		}
@@ -1985,6 +2037,34 @@ func templateListRepoTemplatesCmd(c *Command, client metalcloud.MetalCloudClient
 
 	table := createRepositoryTemplatesTable(repoMap)
 	return table.RenderTable("Repository templates", "", getStringParam(c.Arguments["format"]))
+}
+
+func templateValidateRepoCmd(c *Command, client metalcloud.MetalCloudClient) (string, error) {
+	repoMap := make(map[string]RepoTemplate)
+	err := retrieveRepositoryAssets(c, repoMap)
+
+	if err != nil {
+		return "", err
+	}
+
+	repoHasErrors := false
+
+	for templatePreffix, repoTemplate := range repoMap {
+		if len(repoTemplate.Errors) != 0 {
+			fmt.Printf("Detected the following errors regarding repository structure for template %s:\n", templatePreffix)
+			repoHasErrors = true
+		}
+
+		for _, errorMessage := range repoTemplate.Errors {
+			fmt.Println("\t" + errorMessage)
+		}
+	}
+
+	if !repoHasErrors {
+		fmt.Printf("Detected no errors for the given repository.\n")
+	}
+
+	return "", err
 }
 
 func getOSTemplateFromCommand(paramName string, c *Command, client metalcloud.MetalCloudClient, decryptPasswd bool) (*metalcloud.OSTemplate, error) {
