@@ -374,7 +374,7 @@ var osTemplatesCmds = []Command{
 		InitFunc: func(c *Command) {
 			c.Arguments = map[string]interface{}{
 				"github-template-repo": c.FlagSet.String("github-template-repo", _nilDefaultStr, yellow("(Optional)")+"Override the default github url used to download template files for given OS."),
-				"source-template":      c.FlagSet.String("source-template", _nilDefaultStr, red("(Required)")+"The source template to use as a base. It's either the source path from a repository or a local path to the templaye.yaml file."),
+				"source-template":      c.FlagSet.String("source-template", _nilDefaultStr, red("(Required)")+"The source template to use as a base. It's either the source path from a repository or a local path to the template.yaml file."),
 				"format":               c.FlagSet.String("format", _nilDefaultStr, "The output format. Supported values are 'json','csv','yaml'. The default format is human readable."),
 			}
 		},
@@ -394,6 +394,22 @@ var osTemplatesCmds = []Command{
 			}
 		},
 		ExecuteFunc: templateValidateRepoCmd,
+		Endpoint:    ExtendedEndpoint,
+	},
+	{
+		Description:  "Validates an OS source template.",
+		Subject:      "os-template",
+		AltSubject:   "template",
+		Predicate:    "validate-template",
+		AltPredicate: "validate-template",
+		FlagSet:      flag.NewFlagSet("validate an OS source templates", flag.ExitOnError),
+		InitFunc: func(c *Command) {
+			c.Arguments = map[string]interface{}{
+				"github-template-repo": c.FlagSet.String("github-template-repo", _nilDefaultStr, yellow("(Optional)")+"Override the default github url used to download template files for given OS."),
+				"source-template":      c.FlagSet.String("source-template", _nilDefaultStr, red("(Required)")+"The source template to use as a base. It's either the source path from a repository or a local path to the template.yaml file."),
+			}
+		},
+		ExecuteFunc: templateValidateCmd,
 		Endpoint:    ExtendedEndpoint,
 	},
 }
@@ -2056,6 +2072,56 @@ func templateValidateRepoCmd(c *Command, client metalcloud.MetalCloudClient) (st
 
 	if !repoHasErrors {
 		fmt.Printf("Detected no errors for the given repository.\n")
+	}
+
+	return "", err
+}
+
+func templateValidateCmd(c *Command, client metalcloud.MetalCloudClient) (string, error) {
+	var sourceTemplate string
+
+	if sourceTemplateValue, ok := getStringParamOk(c.Arguments["source-template"]); !ok {
+		return "", fmt.Errorf("The 'source-template' parameter must be specified when using the 'validate-template' command.")
+	} else {
+		sourceTemplate = sourceTemplateValue
+	}
+
+	repoMap := make(map[string]RepoTemplate)
+	err := retrieveRepositoryAssets(c, repoMap)
+
+	if err != nil {
+		return "", err
+	}
+
+	var repoTemplate RepoTemplate
+
+	if _, ok := repoMap[sourceTemplate]; !ok {
+		fmt.Printf("Did not find source template '%s' in the repository, checking for local file.\n", sourceTemplate)
+
+		_, err := os.ReadFile(sourceTemplate)
+
+		if err != nil {
+			return "", fmt.Errorf("Template file not found at path %s.", sourceTemplate)
+		}
+
+		getLocalTemplateAssets(filepath.Dir(sourceTemplate), &repoTemplate)
+		_, err = populateTemplateValues(&repoTemplate)
+
+		if err != nil {
+			return "", err
+		}
+	} else {
+		repoTemplate = repoMap[sourceTemplate]
+	}
+
+	if len(repoTemplate.Errors) != 0 {
+		fmt.Printf("Detected the following errors regarding template structure for template %s:\n", sourceTemplate)
+	} else {
+		fmt.Printf("Detected no errors for the given template.\n")
+	}
+
+	for _, errorMessage := range repoTemplate.Errors {
+		fmt.Println("\t" + errorMessage)
 	}
 
 	return "", err
