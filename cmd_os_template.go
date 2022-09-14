@@ -40,6 +40,8 @@ import (
 )
 
 // Constants used with the build command
+const templateFileName = "template.yaml"
+
 const osArchitecture64 = "x86_64"
 
 const bootMethodLocalDrives = "local_drives"
@@ -68,13 +70,14 @@ const otherAssetsMaximumSizeBytes = 2097152
 const readMeFileName = "README.md"
 
 type TemplateAsset struct {
-	file    object.File
-	Isopath string `yaml:"isopath"`
-	Mime    string `yaml:"mime"`
-	Usage   string `yaml:"usage"`
-	Type    string `yaml:"type"`
-	Url     string `yaml:"url"`
-	Path    string `yaml:"path"`
+	name     string
+	contents string
+	Isopath  string `yaml:"isopath"`
+	Mime     string `yaml:"mime"`
+	Usage    string `yaml:"usage"`
+	Type     string `yaml:"type"`
+	Url      string `yaml:"url"`
+	Path     string `yaml:"path"`
 }
 
 type OsTemplateContents struct {
@@ -99,16 +102,16 @@ type TemplateContents struct {
 
 // Struct containing the values that will be printed out for a repo template
 type RepoTemplate struct {
-	Family             string
-	Version            string
-	Architecture       string
-	DeployProcess      string
-	BootType           string
-	SourcePath         string
-	TemplateFile       object.File
-	OsTemplateContents OsTemplateContents
-	Assets             []TemplateAsset
-	Errors             []string
+	Family               string
+	Version              string
+	Architecture         string
+	DeployProcess        string
+	BootType             string
+	SourcePath           string
+	TemplateFileContents string
+	OsTemplateContents   OsTemplateContents
+	Assets               []TemplateAsset
+	Errors               []string
 }
 
 // Struct containing assets that are to be created after all checks are done.
@@ -1023,151 +1026,18 @@ func retrieveRepositoryAssets(c *Command, repoMap map[string]RepoTemplate) error
 	// This map stores all files for a template and will be used to check if their information is correct
 	repoAssetsPerTemplate := make(map[string][]TemplateAsset)
 
-	files := tree.Files()
-	files.ForEach(func(file *object.File) error {
-		if file.Mode.IsRegular() {
-			if strings.Count(file.Name, "/") == 2 {
-				parts := strings.Split(file.Name, "/")
-				templatePreffix := strings.Join(parts[:2], "/")
-
-				if parts[2] == "template.yaml" {
-					if _, ok := repoMap[templatePreffix]; !ok {
-						repoMap[templatePreffix] = RepoTemplate{
-							Family:       parts[0],
-							SourcePath:   templatePreffix,
-							TemplateFile: *file,
-						}
-					}
-				} else {
-					asset := TemplateAsset{
-						file: *file,
-					}
-
-					repoAssetsPerTemplate[templatePreffix] = append(repoAssetsPerTemplate[templatePreffix], asset)
-				}
-			}
-		}
-
-		return nil
-	})
+	getRepositoryTemplateAssets(tree, repoMap, repoAssetsPerTemplate)
 
 	repoHasErrors := false
 
 	for templatePreffix, repoTemplate := range repoMap {
 		repoTemplate.Assets = repoAssetsPerTemplate[templatePreffix]
 
-		templateStringContents, err := repoTemplate.TemplateFile.Contents()
+		repoHasErrors, err = populateTemplateValues(&repoTemplate)
 
 		if err != nil {
 			return err
 		}
-
-		var templateContents TemplateContents
-		err = yaml.Unmarshal([]byte(templateStringContents), &templateContents)
-
-		if err != nil {
-			return err
-		}
-
-		repoTemplate.OsTemplateContents = templateContents.OsTemplateContents
-
-		architecture := templateContents.OsTemplateContents.OsArchitecture
-		deployProcess := templateContents.OsTemplateContents.BootMethodsSupported
-		bootType := templateContents.OsTemplateContents.BootType
-		version := templateContents.OsTemplateContents.OsVersion
-
-		validArchitectures := []string{osArchitecture64}
-		validDeployProcesses := []string{bootMethodLocalDrives, bootMethodPxeIscsi}
-		validBootTypes := []string{bootTypeUEFIOnly, bootTypeLegacyOnly}
-		validMimeTypes := []string{assetMimeTypeBinary, assetMimeTypeDynamic}
-		validAssetTypes := []string{assetTypeBootloader, assetTypeBootloaderConfig, assetTypeInstallerConfig, assetTypePatch, assetTypeOther}
-
-		errors := []string{}
-
-		if version == "" {
-			errors = append(errors, fmt.Sprintf("Found no OS version. There must be one in the os-template section with the key name 'os-version'."))
-		}
-
-		if architecture == "" {
-			errors = append(errors, fmt.Sprintf("Found no OS architecture. There must be one in the os-template section with the key name 'os-architecture'. Valid architectures are %+q.", validArchitectures))
-		} else if !stringInSlice(architecture, validArchitectures) {
-			errors = append(errors, fmt.Sprintf("Found invalid architecture %s. Valid architectures are %+q.", architecture, validArchitectures))
-		}
-
-		if deployProcess == "" {
-			errors = append(errors, fmt.Sprintf("Found no deploy process. There must be one in the os-template section with the key name 'boot-methods-supported'. Valid boot methods are %+q.", validDeployProcesses))
-		} else if !stringInSlice(deployProcess, validDeployProcesses) {
-			errors = append(errors, fmt.Sprintf("Found invalid boot method %s. Valid boot methods are %+q.", deployProcess, validDeployProcesses))
-		}
-
-		if bootType == "" {
-			errors = append(errors, fmt.Sprintf("Found no boot type. There must be one in the os-template section with the key name 'boot-type'. Valid boot types are %+q.", validBootTypes))
-		} else if !stringInSlice(bootType, validBootTypes) {
-			errors = append(errors, fmt.Sprintf("Found invalid boot type %s. Valid boot types are %+q.", bootType, validBootTypes))
-		}
-
-		var repoFileNames, templateFileNames []string
-
-		for key, asset := range repoTemplate.Assets {
-			fileName := strings.ReplaceAll(asset.file.Name, templatePreffix+"/", "")
-
-			// We ignore the ReadMe file
-			if fileName == readMeFileName {
-				continue
-			}
-			repoFileNames = append(repoFileNames, fileName)
-
-			if asset, ok := templateContents.Assets[fileName]; ok {
-				repoTemplate.Assets[key].Isopath = asset.Isopath
-
-				if asset.Mime == "" {
-					errors = append(errors, fmt.Sprintf("Found no mime type for asset %s. There must be one for the asset with the key name 'mime'. Valid mime types are %+q.", fileName, validMimeTypes))
-				} else if !stringInSlice(asset.Mime, validMimeTypes) {
-					errors = append(errors, fmt.Sprintf("Found invalid mime type %s for asset %s. Valid mime types are %+q.", asset.Mime, fileName, validMimeTypes))
-				}
-
-				if asset.Type == "" {
-					errors = append(errors, fmt.Sprintf("Found no asset type for asset %s. There must be one for the asset with the key name 'type'. Valid asset types are %+q.", fileName, validAssetTypes))
-				} else if !stringInSlice(asset.Type, validAssetTypes) {
-					errors = append(errors, fmt.Sprintf("Found invalid asset type %v for asset %s. Valid asset types are %+q.", asset.Type, fileName, validAssetTypes))
-				}
-
-				repoTemplate.Assets[key].Mime = asset.Mime
-				repoTemplate.Assets[key].Type = asset.Type
-				repoTemplate.Assets[key].Url = asset.Url
-				repoTemplate.Assets[key].Path = asset.Path
-			}
-		}
-
-		for assetName, asset := range templateContents.Assets {
-			// We ignore files that have an URL, since they don't need to be in the repository.
-			if asset.Url != "" {
-				continue
-			}
-			templateFileNames = append(templateFileNames, assetName)
-		}
-
-		fileNamesNotInTemplate := sliceDifference(repoFileNames, templateFileNames)
-		fileNamesNotInRepository := sliceDifference(templateFileNames, repoFileNames)
-
-		if len(fileNamesNotInTemplate) != 0 {
-			errors = append(errors, fmt.Sprintf("Found the following repository files that are not in the template.yaml file: %+q.", fileNamesNotInTemplate))
-		}
-
-		if len(fileNamesNotInRepository) != 0 {
-			errors = append(errors, fmt.Sprintf("Found the following files declared in template.yaml that are not in the repository: %+q.", fileNamesNotInRepository))
-		}
-
-		repoTemplate.Errors = errors
-
-		if len(errors) != 0 {
-			repoHasErrors = true
-		}
-
-		repoTemplate.Architecture = architecture
-		repoTemplate.DeployProcess = deployProcess
-		repoTemplate.BootType = bootType
-		repoTemplate.Version = version
 
 		repoMap[templatePreffix] = repoTemplate
 	}
@@ -1312,7 +1182,7 @@ func createTemplateAssetsTable(repoTemplate RepoTemplate) tableformatter.Table {
 
 	data := [][]interface{}{}
 	for _, asset := range repoTemplate.Assets {
-		s := strings.Split(asset.file.Name, "/")
+		s := strings.Split(asset.name, "/")
 		assetName := s[len(s)-1]
 
 		// We ignore the ReadMe file
@@ -1443,11 +1313,7 @@ func checkTemplateIntegrity(c *Command, repoMap map[string]RepoTemplate, sourceT
 		return "", "", fmt.Errorf("Did not find the patch file for source template '%s'.", sourceTemplateName)
 	}
 
-	patchFileStringContents, err := patchAsset.file.Contents()
-
-	if err != nil {
-		return "", "", err
-	}
+	patchFileStringContents := patchAsset.contents
 
 	diffMatchPatch := diff.New()
 
@@ -1481,14 +1347,10 @@ func createTemplateAssets(c *Command, client metalcloud.MetalCloudClient, repoMa
 		for _, asset := range repoMap[sourceTemplateName].Assets {
 
 			if asset.Type == assetTypeInstallerConfig {
-				kickstartContents, err = asset.file.Contents()
-
-				if err != nil {
-					return "", fmt.Errorf("Did not find the kickstart asset for source template '%s'.", sourceTemplateName)
-				}
+				kickstartContents = asset.contents
 
 				kickstartContents += "\n" + string(appendFileContents)
-				fmt.Printf("Appended contents from file %s to kickstart asset %s\n.", filePath, asset.file.Name)
+				fmt.Printf("Appended contents from file %s to kickstart asset %s\n.", filePath, asset.name)
 				break
 			}
 		}
@@ -1959,13 +1821,8 @@ func createOtherAssets(c *Command, repoMap map[string]RepoTemplate, assets *[]As
 			continue
 		}
 
-		assetContents, err := asset.file.Contents()
-
-		if err != nil {
-			return err
-		}
-
-		assetFileName := asset.file.Name
+		assetContents := asset.contents
+		assetFileName := asset.name
 
 		if asset.Type == assetTypeInstallerConfig {
 			if filePath, ok := getStringParamOk(c.Arguments["kickstart"]); ok {
@@ -2143,11 +2000,36 @@ func templateListAssetsCmd(c *Command, client metalcloud.MetalCloudClient) (stri
 		return "", err
 	}
 
+	var table tableformatter.Table
+	validTemplateFound := true
+
 	if _, ok := repoMap[sourceTemplate]; !ok {
-		return "", fmt.Errorf("Did not find source template '%s'. Please use the 'list-repo-templates' parameter to see the supported templates.", sourceTemplate)
+		fmt.Printf("Did not find source template '%s' in the repository, checking for local file.\n", sourceTemplate)
+
+		_, err := os.ReadFile(sourceTemplate)
+
+		if err != nil {
+			return "", fmt.Errorf("Template file not found at path %s.", sourceTemplate)
+		}
+
+		repoTemplate := RepoTemplate{}
+
+		getLocalTemplateAssets(filepath.Dir(sourceTemplate), &repoTemplate)
+		validTemplateFound, err = populateTemplateValues(&repoTemplate)
+
+		if err != nil {
+			return "", err
+		}
+
+		if !validTemplateFound {
+			fmt.Printf("Found errors for template file %s! Use the 'validate-template' function to see them and fix them.\n", sourceTemplate)
+		}
+
+		table = createTemplateAssetsTable(repoTemplate)
+	} else {
+		table = createTemplateAssetsTable(repoMap[sourceTemplate])
 	}
 
-	table := createTemplateAssetsTable(repoMap[sourceTemplate])
 	return table.RenderTable("Repository templates", "", getStringParam(c.Arguments["format"]))
 }
 
@@ -2299,4 +2181,201 @@ func checkRemoteFileExists(remoteURL string, fileName string) (bool, error) {
 
 	responseBody := string(body)
 	return strings.Contains(responseBody, fileName), nil
+}
+
+func getRepositoryTemplateAssets(tree *object.Tree, repoMap map[string]RepoTemplate, repoAssetsPerTemplate map[string][]TemplateAsset) {
+	files := tree.Files()
+	files.ForEach(func(file *object.File) error {
+		if file.Mode.IsRegular() {
+			if strings.Count(file.Name, "/") == 2 {
+				parts := strings.Split(file.Name, "/")
+				templatePreffix := strings.Join(parts[:2], "/")
+
+				fileContents, err := file.Contents()
+
+				if err != nil {
+					return err
+				}
+
+				if parts[2] == templateFileName {
+					if _, ok := repoMap[templatePreffix]; !ok {
+						repoMap[templatePreffix] = RepoTemplate{
+							Family:               parts[0],
+							SourcePath:           templatePreffix,
+							TemplateFileContents: fileContents,
+						}
+					}
+				} else {
+					asset := TemplateAsset{
+						name:     file.Name,
+						contents: fileContents,
+					}
+
+					repoAssetsPerTemplate[templatePreffix] = append(repoAssetsPerTemplate[templatePreffix], asset)
+				}
+			}
+		}
+
+		return nil
+	})
+}
+
+func getLocalTemplateAssets(dirName string, repoTemplate *RepoTemplate) error {
+	f, err := os.Open(dirName)
+
+	if err != nil {
+		return err
+	}
+
+	files, err := f.Readdir(-1)
+	f.Close()
+	if err != nil {
+		return err
+	}
+
+	repoAssets := []TemplateAsset{}
+
+	for _, file := range files {
+		if file.IsDir() {
+			continue
+		}
+
+		fileBytes, err := os.ReadFile(file.Name())
+
+		if err != nil {
+			return err
+		}
+
+		fileContents := string(fileBytes)
+
+		if file.Name() == templateFileName {
+			repoTemplate.SourcePath = templateFileName
+			repoTemplate.TemplateFileContents = fileContents
+		} else {
+			asset := TemplateAsset{
+				name:     file.Name(),
+				contents: fileContents,
+			}
+
+			repoAssets = append(repoAssets, asset)
+		}
+	}
+
+	repoTemplate.Assets = repoAssets
+	return nil
+}
+
+func populateTemplateValues(repoTemplate *RepoTemplate) (bool, error) {
+	templateHasErrors := false
+	templateStringContents := repoTemplate.TemplateFileContents
+
+	var templateContents TemplateContents
+	err := yaml.Unmarshal([]byte(templateStringContents), &templateContents)
+
+	if err != nil {
+		return templateHasErrors, err
+	}
+
+	repoTemplate.OsTemplateContents = templateContents.OsTemplateContents
+
+	architecture := templateContents.OsTemplateContents.OsArchitecture
+	deployProcess := templateContents.OsTemplateContents.BootMethodsSupported
+	bootType := templateContents.OsTemplateContents.BootType
+	version := templateContents.OsTemplateContents.OsVersion
+
+	validArchitectures := []string{osArchitecture64}
+	validDeployProcesses := []string{bootMethodLocalDrives, bootMethodPxeIscsi}
+	validBootTypes := []string{bootTypeUEFIOnly, bootTypeLegacyOnly}
+	validMimeTypes := []string{assetMimeTypeBinary, assetMimeTypeDynamic}
+	validAssetTypes := []string{assetTypeBootloader, assetTypeBootloaderConfig, assetTypeInstallerConfig, assetTypePatch, assetTypeOther}
+
+	errors := []string{}
+
+	if version == "" {
+		errors = append(errors, fmt.Sprintf("Found no OS version. There must be one in the os-template section with the key name 'os-version'."))
+	}
+
+	if architecture == "" {
+		errors = append(errors, fmt.Sprintf("Found no OS architecture. There must be one in the os-template section with the key name 'os-architecture'. Valid architectures are %+q.", validArchitectures))
+	} else if !stringInSlice(architecture, validArchitectures) {
+		errors = append(errors, fmt.Sprintf("Found invalid architecture %s. Valid architectures are %+q.", architecture, validArchitectures))
+	}
+
+	if deployProcess == "" {
+		errors = append(errors, fmt.Sprintf("Found no deploy process. There must be one in the os-template section with the key name 'boot-methods-supported'. Valid boot methods are %+q.", validDeployProcesses))
+	} else if !stringInSlice(deployProcess, validDeployProcesses) {
+		errors = append(errors, fmt.Sprintf("Found invalid boot method %s. Valid boot methods are %+q.", deployProcess, validDeployProcesses))
+	}
+
+	if bootType == "" {
+		errors = append(errors, fmt.Sprintf("Found no boot type. There must be one in the os-template section with the key name 'boot-type'. Valid boot types are %+q.", validBootTypes))
+	} else if !stringInSlice(bootType, validBootTypes) {
+		errors = append(errors, fmt.Sprintf("Found invalid boot type %s. Valid boot types are %+q.", bootType, validBootTypes))
+	}
+
+	var repoFileNames, templateFileNames []string
+
+	for key, asset := range repoTemplate.Assets {
+		s := strings.Split(asset.name, "/")
+		fileName := s[len(s)-1]
+
+		// We ignore the ReadMe file
+		if fileName == readMeFileName {
+			continue
+		}
+		repoFileNames = append(repoFileNames, fileName)
+
+		if asset, ok := templateContents.Assets[fileName]; ok {
+			repoTemplate.Assets[key].Isopath = asset.Isopath
+
+			if asset.Mime == "" {
+				errors = append(errors, fmt.Sprintf("Found no mime type for asset %s. There must be one for the asset with the key name 'mime'. Valid mime types are %+q.", fileName, validMimeTypes))
+			} else if !stringInSlice(asset.Mime, validMimeTypes) {
+				errors = append(errors, fmt.Sprintf("Found invalid mime type %s for asset %s. Valid mime types are %+q.", asset.Mime, fileName, validMimeTypes))
+			}
+
+			if asset.Type == "" {
+				errors = append(errors, fmt.Sprintf("Found no asset type for asset %s. There must be one for the asset with the key name 'type'. Valid asset types are %+q.", fileName, validAssetTypes))
+			} else if !stringInSlice(asset.Type, validAssetTypes) {
+				errors = append(errors, fmt.Sprintf("Found invalid asset type %v for asset %s. Valid asset types are %+q.", asset.Type, fileName, validAssetTypes))
+			}
+
+			repoTemplate.Assets[key].Mime = asset.Mime
+			repoTemplate.Assets[key].Type = asset.Type
+			repoTemplate.Assets[key].Url = asset.Url
+			repoTemplate.Assets[key].Path = asset.Path
+		}
+	}
+
+	for assetName, asset := range templateContents.Assets {
+		// We ignore files that have an URL, since they don't need to be in the repository.
+		if asset.Url != "" {
+			continue
+		}
+		templateFileNames = append(templateFileNames, assetName)
+	}
+
+	fileNamesNotInTemplate := sliceDifference(repoFileNames, templateFileNames)
+	fileNamesNotInRepository := sliceDifference(templateFileNames, repoFileNames)
+
+	if len(fileNamesNotInTemplate) != 0 {
+		errors = append(errors, fmt.Sprintf("Found the following repository files that are not in the %s file: %+q.", templateFileName, fileNamesNotInTemplate))
+	}
+
+	if len(fileNamesNotInRepository) != 0 {
+		errors = append(errors, fmt.Sprintf("Found the following files declared in %s that are not in the repository: %+q.", templateFileName, fileNamesNotInRepository))
+	}
+
+	repoTemplate.Errors = errors
+
+	if len(errors) != 0 {
+		templateHasErrors = true
+	}
+
+	repoTemplate.Architecture = architecture
+	repoTemplate.DeployProcess = deployProcess
+	repoTemplate.BootType = bootType
+	repoTemplate.Version = version
+
+	return templateHasErrors, err
 }
