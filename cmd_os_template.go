@@ -351,14 +351,31 @@ var osTemplatesCmds = []Command{
 		AltSubject:   "template",
 		Predicate:    "list-repo-templates",
 		AltPredicate: "repo-templates",
-		FlagSet:      flag.NewFlagSet("list OS source templates from a repository ", flag.ExitOnError),
+		FlagSet:      flag.NewFlagSet("list OS source templates from a repository", flag.ExitOnError),
 		InitFunc: func(c *Command) {
 			c.Arguments = map[string]interface{}{
 				"github-template-repo": c.FlagSet.String("github-template-repo", _nilDefaultStr, yellow("(Optional)")+"Override the default github url used to download template files for given OS."),
 				"format":               c.FlagSet.String("format", _nilDefaultStr, "The output format. Supported values are 'json','csv','yaml'. The default format is human readable."),
 			}
 		},
-		ExecuteFunc: templateListRepoTemplatesCmd,
+		ExecuteFunc: templateListRepoCmd,
+		Endpoint:    ExtendedEndpoint,
+	},
+	{
+		Description:  "List the assets from an OS source template.",
+		Subject:      "os-template",
+		AltSubject:   "template",
+		Predicate:    "list-template-assets",
+		AltPredicate: "repo-templates",
+		FlagSet:      flag.NewFlagSet("list assets from an OS source template", flag.ExitOnError),
+		InitFunc: func(c *Command) {
+			c.Arguments = map[string]interface{}{
+				"github-template-repo": c.FlagSet.String("github-template-repo", _nilDefaultStr, yellow("(Optional)")+"Override the default github url used to download template files for given OS."),
+				"source-template":      c.FlagSet.String("source-template", _nilDefaultStr, red("(Required)")+"The source template to use as a base. It's either the source path from a repository or a local path to the templaye.yaml file."),
+				"format":               c.FlagSet.String("format", _nilDefaultStr, "The output format. Supported values are 'json','csv','yaml'. The default format is human readable."),
+			}
+		},
+		ExecuteFunc: templateListAssetsCmd,
 		Endpoint:    ExtendedEndpoint,
 	},
 	{
@@ -367,7 +384,7 @@ var osTemplatesCmds = []Command{
 		AltSubject:   "template",
 		Predicate:    "validate-repo",
 		AltPredicate: "validate-repo",
-		FlagSet:      flag.NewFlagSet("validate OS source templates from a repository ", flag.ExitOnError),
+		FlagSet:      flag.NewFlagSet("validate OS source templates from a repository", flag.ExitOnError),
 		InitFunc: func(c *Command) {
 			c.Arguments = map[string]interface{}{
 				"github-template-repo": c.FlagSet.String("github-template-repo", _nilDefaultStr, yellow("(Optional)")+"Override the default github url used to download template files for given OS."),
@@ -1104,13 +1121,13 @@ func retrieveRepositoryAssets(c *Command, repoMap map[string]RepoTemplate) error
 				repoTemplate.Assets[key].Isopath = asset.Isopath
 
 				if asset.Mime == "" {
-					errors = append(errors, fmt.Sprintf("Found no mime type. There must be one for the asset with the key name 'mime'. Valid mime types are %+q.", validMimeTypes))
+					errors = append(errors, fmt.Sprintf("Found no mime type for asset %s. There must be one for the asset with the key name 'mime'. Valid mime types are %+q.", fileName, validMimeTypes))
 				} else if !stringInSlice(asset.Mime, validMimeTypes) {
 					errors = append(errors, fmt.Sprintf("Found invalid mime type %s for asset %s. Valid mime types are %+q.", asset.Mime, fileName, validMimeTypes))
 				}
 
 				if asset.Type == "" {
-					errors = append(errors, fmt.Sprintf("Found no asset type. There must be one for the asset with the key name 'type'. Valid asset types are %+q.", validAssetTypes))
+					errors = append(errors, fmt.Sprintf("Found no asset type for asset %s. There must be one for the asset with the key name 'type'. Valid asset types are %+q.", fileName, validAssetTypes))
 				} else if !stringInSlice(asset.Type, validAssetTypes) {
 					errors = append(errors, fmt.Sprintf("Found invalid asset type %v for asset %s. Valid asset types are %+q.", asset.Type, fileName, validAssetTypes))
 				}
@@ -1240,6 +1257,77 @@ func createRepositoryTemplatesTable(repoMap map[string]RepoTemplate) tableformat
 			deployProcess,
 			bootType,
 			templatePreffix,
+		})
+
+	}
+
+	tableformatter.TableSorter(schema).OrderBy(schema[0].FieldName).Sort(data)
+
+	table := tableformatter.Table{
+		Data:   data,
+		Schema: schema,
+	}
+
+	return table
+}
+
+func createTemplateAssetsTable(repoTemplate RepoTemplate) tableformatter.Table {
+	schema := []tableformatter.SchemaField{
+		{
+			FieldName: "ASSET NAME",
+			FieldType: tableformatter.TypeString,
+			FieldSize: 5,
+		},
+		{
+			FieldName: "ISO_PATH",
+			FieldType: tableformatter.TypeString,
+			FieldSize: 5,
+		},
+		{
+			FieldName: "MIME",
+			FieldType: tableformatter.TypeString,
+			FieldSize: 5,
+		},
+		{
+			FieldName: "USAGE",
+			FieldType: tableformatter.TypeString,
+			FieldSize: 5,
+		},
+		{
+			FieldName: "TYPE",
+			FieldType: tableformatter.TypeString,
+			FieldSize: 5,
+		},
+		{
+			FieldName: "URL",
+			FieldType: tableformatter.TypeString,
+			FieldSize: 10,
+		},
+		{
+			FieldName: "PATH",
+			FieldType: tableformatter.TypeString,
+			FieldSize: 5,
+		},
+	}
+
+	data := [][]interface{}{}
+	for _, asset := range repoTemplate.Assets {
+		s := strings.Split(asset.file.Name, "/")
+		assetName := s[len(s)-1]
+
+		// We ignore the ReadMe file
+		if assetName == readMeFileName {
+			continue
+		}
+
+		data = append(data, []interface{}{
+			assetName,
+			asset.Isopath,
+			asset.Mime,
+			asset.Usage,
+			asset.Type,
+			asset.Url,
+			asset.Path,
 		})
 
 	}
@@ -2027,7 +2115,7 @@ func templateDiffCmd(c *Command, client metalcloud.MetalCloudClient) (string, er
 	return "", nil
 }
 
-func templateListRepoTemplatesCmd(c *Command, client metalcloud.MetalCloudClient) (string, error) {
+func templateListRepoCmd(c *Command, client metalcloud.MetalCloudClient) (string, error) {
 	repoMap := make(map[string]RepoTemplate)
 	err := retrieveRepositoryAssets(c, repoMap)
 
@@ -2036,6 +2124,30 @@ func templateListRepoTemplatesCmd(c *Command, client metalcloud.MetalCloudClient
 	}
 
 	table := createRepositoryTemplatesTable(repoMap)
+	return table.RenderTable("Repository templates", "", getStringParam(c.Arguments["format"]))
+}
+
+func templateListAssetsCmd(c *Command, client metalcloud.MetalCloudClient) (string, error) {
+	var sourceTemplate string
+
+	if sourceTemplateValue, ok := getStringParamOk(c.Arguments["source-template"]); !ok {
+		return "", fmt.Errorf("The 'source-template' parameter must be specified when using the 'list-template-assets' command.")
+	} else {
+		sourceTemplate = sourceTemplateValue
+	}
+
+	repoMap := make(map[string]RepoTemplate)
+	err := retrieveRepositoryAssets(c, repoMap)
+
+	if err != nil {
+		return "", err
+	}
+
+	if _, ok := repoMap[sourceTemplate]; !ok {
+		return "", fmt.Errorf("Did not find source template '%s'. Please use the 'list-repo-templates' parameter to see the supported templates.", sourceTemplate)
+	}
+
+	table := createTemplateAssetsTable(repoMap[sourceTemplate])
 	return table.RenderTable("Repository templates", "", getStringParam(c.Arguments["format"]))
 }
 
