@@ -112,7 +112,7 @@ type RepoTemplate struct {
 	SourcePath           string
 	TemplateFileContents string
 	OsTemplateContents   OsTemplateContents
-	Assets               []TemplateAsset
+	Assets               map[string]TemplateAsset
 	Errors               []string
 }
 
@@ -306,8 +306,8 @@ var osTemplatesCmds = []Command{
 				"name":                     c.FlagSet.String("name", _nilDefaultStr, red("(Required)")+"Name of the template."),
 				"source-template":          c.FlagSet.String("source-template", _nilDefaultStr, red("(Required)")+"The source template to use as a base. It has the format of 'family/architecture'. Use --list-supported for a list of accepted values."),
 				"source-iso":               c.FlagSet.String("source-iso", _nilDefaultStr, red("(Required)")+"The source ISO image path."),
-				"label":                    c.FlagSet.String("label", _nilDefaultStr, yellow("(Optional)")+"Label of the template. If not present, name of the template will be used."),
-				"description":              c.FlagSet.String("description", _nilDefaultStr, yellow("(Optional)")+"Description of the template. If not present, name of the template will be used."),
+				"label":                    c.FlagSet.String("label", _nilDefaultStr, yellow("(Optional)")+"Label of the template."),
+				"description":              c.FlagSet.String("description", _nilDefaultStr, yellow("(Optional)")+"Description of the template."),
 				"assets-update":            c.FlagSet.String("assets-update", _nilDefaultStr, yellow("(Optional)")+"Assets that will have their contents replaced inside the template. Check examples for format."),
 				"repo":                     c.FlagSet.String("repo", _nilDefaultStr, yellow("(Optional)")+"Override the default github url used to download template files for given OS."),
 				"skip-upload-to-repo":      c.FlagSet.Bool("skip-upload-to-repo", false, yellow("(Optional)")+"Skip ISO image upload to the HTTP repository."),
@@ -1087,11 +1087,13 @@ func retrieveRepositoryAssets(c *Command, repoMap map[string]RepoTemplate) error
 	repoAssetsPerTemplate := make(map[string][]TemplateAsset)
 
 	getRepositoryTemplateAssets(tree, repoMap, repoAssetsPerTemplate)
-
 	repoHasErrors := false
 
 	for templatePreffix, repoTemplate := range repoMap {
-		repoTemplate.Assets = repoAssetsPerTemplate[templatePreffix]
+		repoTemplate.Assets = make(map[string]TemplateAsset)
+		for _, asset := range repoAssetsPerTemplate[templatePreffix] {
+			repoTemplate.Assets[asset.name] = asset
+		}
 
 		repoHasErrors, err = populateTemplateValues(&repoTemplate)
 
@@ -1242,11 +1244,8 @@ func createTemplateAssetsTable(repoTemplate RepoTemplate) tableformatter.Table {
 
 	data := [][]interface{}{}
 	for _, asset := range repoTemplate.Assets {
-		s := strings.Split(asset.name, "/")
-		assetName := s[len(s)-1]
-
 		data = append(data, []interface{}{
-			assetName,
+			asset.name,
 			asset.Isopath,
 			asset.Mime,
 			asset.Usage,
@@ -1325,17 +1324,13 @@ func checkOOBTemplateIntegrity(c *Command, repoTemplate RepoTemplate) error {
 		return err
 	}
 
-	assetPatches := make(map[string]*TemplateAsset)
-
-	for _, asset := range repoTemplate.Assets {
-		if asset.Type == assetTypePatch {
-			assetPatches[asset.name] = &asset
-		}
-	}
-
 	var bootloaderFile *iso9660.File = nil
 
-	for _, asset := range assetPatches {
+	for _, asset := range repoTemplate.Assets {
+		if asset.Type != assetTypePatch {
+			continue
+		}
+
 		for _, child := range children {
 			if !child.IsDir() && child.Name() == asset.name {
 				bootloaderFile = child
@@ -1360,7 +1355,7 @@ func checkOOBTemplateIntegrity(c *Command, repoTemplate RepoTemplate) error {
 		patches, err := diffMatchPatch.PatchFromText(patchFileStringContents)
 
 		if err != nil {
-			return err
+			return fmt.Errorf("Failed to apply patch for asset %s. Make sure the file has a Unix (LF) End Of Line sequence.", asset.name)
 		}
 
 		patchedText, _ := diffMatchPatch.PatchApply(patches, string(bootloaderData))
@@ -1369,10 +1364,10 @@ func checkOOBTemplateIntegrity(c *Command, repoTemplate RepoTemplate) error {
 		patchedText = strings.ReplaceAll(patchedText, "\t", "")
 		patchedText = strings.TrimSpace(patchedText)
 		asset.contents = string(patchedText)
+
+		repoTemplate.Assets[asset.name] = asset
 	}
 
-	fmt.Println(repoTemplate.Assets)
-	return fmt.Errorf("STOOOOP")
 	return nil
 }
 
@@ -1391,7 +1386,7 @@ func createTemplateAssets(c *Command, client metalcloud.MetalCloudClient, repoTe
 	}
 
 	templateLabel := templateName
-	templateDescription := templateName
+	templateDescription := _nilDefaultStr
 
 	if label, ok := getStringParamOk(c.Arguments["label"]); ok {
 		templateLabel = label
@@ -2159,7 +2154,7 @@ func getRepositoryTemplateAssets(tree *object.Tree, repoMap map[string]RepoTempl
 					}
 				} else if parts[2] != readMeFileName {
 					asset := TemplateAsset{
-						name:     file.Name,
+						name:     parts[2],
 						contents: fileContents,
 					}
 
@@ -2213,7 +2208,11 @@ func getLocalTemplateAssets(dirName string, repoTemplate *RepoTemplate) error {
 		}
 	}
 
-	repoTemplate.Assets = repoAssets
+	repoTemplate.Assets = make(map[string]TemplateAsset)
+	for _, asset := range repoAssets {
+		repoTemplate.Assets[asset.name] = asset
+	}
+
 	return nil
 }
 
@@ -2273,49 +2272,44 @@ func populateTemplateValues(repoTemplate *RepoTemplate) (bool, error) {
 
 	var repoFileNames, templateFileNames []string
 
-	for key, asset := range repoTemplate.Assets {
-		s := strings.Split(asset.name, "/")
-		fileName := s[len(s)-1]
+	for assetName, asset := range repoTemplate.Assets {
+		assetContents := asset.contents
 
 		// We ignore the ReadMe file
-		if fileName == readMeFileName {
+		if assetName == readMeFileName {
 			continue
 		}
-		repoFileNames = append(repoFileNames, fileName)
+		repoFileNames = append(repoFileNames, assetName)
 
-		if asset, ok := templateContents.Assets[fileName]; ok {
-			repoTemplate.Assets[key].Isopath = asset.Isopath
-
+		if asset, ok := templateContents.Assets[assetName]; ok {
 			if asset.Mime == "" {
-				errors = append(errors, fmt.Sprintf("Found no mime type for asset %s. There must be one for the asset with the key name 'mime'. Valid mime types are %+q.", fileName, validMimeTypes))
+				errors = append(errors, fmt.Sprintf("Found no mime type for asset %s. There must be one for the asset with the key name 'mime'. Valid mime types are %+q.", assetName, validMimeTypes))
 			} else if !stringInSlice(asset.Mime, validMimeTypes) {
-				errors = append(errors, fmt.Sprintf("Found invalid mime type %s for asset %s. Valid mime types are %+q.", asset.Mime, fileName, validMimeTypes))
+				errors = append(errors, fmt.Sprintf("Found invalid mime type %s for asset %s. Valid mime types are %+q.", asset.Mime, assetName, validMimeTypes))
 			}
 
 			if asset.Type == "" {
-				errors = append(errors, fmt.Sprintf("Found no asset type for asset %s. There must be one for the asset with the key name 'type'. Valid asset types are %+q.", fileName, validAssetTypes))
+				errors = append(errors, fmt.Sprintf("Found no asset type for asset %s. There must be one for the asset with the key name 'type'. Valid asset types are %+q.", assetName, validAssetTypes))
 			} else if !stringInSlice(asset.Type, validAssetTypes) {
-				errors = append(errors, fmt.Sprintf("Found invalid asset type %v for asset %s. Valid asset types are %+q.", asset.Type, fileName, validAssetTypes))
+				errors = append(errors, fmt.Sprintf("Found invalid asset type %v for asset %s. Valid asset types are %+q.", asset.Type, assetName, validAssetTypes))
 			}
 
 			if asset.Usage != "" && !stringInSlice(asset.Usage, validUsageType) {
-				errors = append(errors, fmt.Sprintf("Found invalid usage type %v for asset %s. Property is not required and the valid usage types are %+q.", asset.Usage, fileName, validUsageType))
+				errors = append(errors, fmt.Sprintf("Found invalid usage type %v for asset %s. Property is not required and the valid usage types are %+q.", asset.Usage, assetName, validUsageType))
 			}
 
 			// For OOB templates, isopath is populated, for non-OOB ones, path is used instead.
 			if repoTemplate.OsTemplateContents.ProvisionViaOob {
 				if asset.Isopath == "" {
-					errors = append(errors, fmt.Sprintf("Found no isopath for asset %s. There must be one for the asset with the key name 'isopath', as the asset is part of an OOB template.", fileName))
+					errors = append(errors, fmt.Sprintf("Found no isopath for asset %s. There must be one for the asset with the key name 'isopath', as the asset is part of an OOB template.", assetName))
 				}
 			} else if asset.Path == "" {
-				errors = append(errors, fmt.Sprintf("Found no path for asset %s. There must be one for the asset with the key name 'path', as the asset is part of a non-OOB template.", fileName))
+				errors = append(errors, fmt.Sprintf("Found no path for asset %s. There must be one for the asset with the key name 'path', as the asset is part of a non-OOB template.", assetName))
 			}
 
-			repoTemplate.Assets[key].Mime = asset.Mime
-			repoTemplate.Assets[key].Type = asset.Type
-			repoTemplate.Assets[key].Url = asset.Url
-			repoTemplate.Assets[key].Path = asset.Path
-			repoTemplate.Assets[key].Usage = asset.Usage
+			asset.name = assetName
+			asset.contents = assetContents
+			repoTemplate.Assets[assetName] = asset
 		}
 	}
 
