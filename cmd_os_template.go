@@ -84,6 +84,7 @@ type TemplateAsset struct {
 type OsTemplateContents struct {
 	BootType                        string `yaml:"boot-type"`
 	BootMethodsSupported            string `yaml:"boot-methods-supported"`
+	OsFamily                        string `yaml:"os-family"`
 	OsVersion                       string `yaml:"os-version"`
 	OsArchitecture                  string `yaml:"os-architecture"`
 	OsReadyMethod                   string `yaml:"os-ready-method"`
@@ -308,21 +309,21 @@ var osTemplatesCmds = []Command{
 		FlagSet:      flag.NewFlagSet("build an OS template from a source ISO image", flag.ExitOnError),
 		InitFunc: func(c *Command) {
 			c.Arguments = map[string]interface{}{
-				"name":                 c.FlagSet.String("name", _nilDefaultStr, red("(Required)")+"Name of image."),
-				"source-template":      c.FlagSet.String("source-template", _nilDefaultStr, red("(Required)")+"The source template to use as a base. It has the format of 'family/architecture'. Use --list-supported for a list of accepted values."),
-				"source-iso":           c.FlagSet.String("source-iso", _nilDefaultStr, red("(Required)")+"The source ISO image path."),
-				"kickstart":            c.FlagSet.String("kickstart", _nilDefaultStr, yellow("(Optional)")+"The OS's kickstart or equivalent file to be uploaded instead of the default."),
-				"kickstart-append":     c.FlagSet.String("kickstart-append", _nilDefaultStr, yellow("(Optional)")+"Content to append to the default kickstart."),
-				"bootloader":           c.FlagSet.String("bootloader", _nilDefaultStr, yellow("(Optional)")+"The OS's instalation bootloader to be uploaded instead of the default."),
-				"bootloader-config":    c.FlagSet.String("bootloader-config", _nilDefaultStr, yellow("(Optional)")+"The OS's installation bootloader config file to be uploaded instead of the default."),
-				"other-assets-json":    c.FlagSet.String("other-assets-json", _nilDefaultStr, yellow("(Optional)")+"Dynamic or binary files that will be replaced inside the template. Can contain variables. Limited to 2MB in size."),
-				"repo": c.FlagSet.String("repo", _nilDefaultStr, yellow("(Optional)")+"Override the default github url used to download template files for given OS."),
-				"skip-upload-to-repo":  c.FlagSet.Bool("skip-upload-to-repo", false, yellow("(Optional)")+"Skip ISO image upload to the HTTP repository."),
-				"replace-if-exists":    c.FlagSet.Bool("replace-if-exists", false, yellow("(Optional)")+"Replaces ISO image if one already exists in the HTTP repository."),
-				"quiet":                c.FlagSet.Bool("quiet", false, green("(Flag)")+"If set, eliminates all output."),
-				"debug":                c.FlagSet.Bool("debug", false, green("(Flag)")+"If set, increases log level."),
-				"format":               c.FlagSet.String("format", _nilDefaultStr, "The output format. Supported values are 'json','csv','yaml'. The default format is human readable."),
-				"return-id":            c.FlagSet.Bool("return-id", false, green("(Flag)")+"If set, returns the ID of the generated template. Useful for automation."),
+				"name":                c.FlagSet.String("name", _nilDefaultStr, red("(Required)")+"Name of image."),
+				"source-template":     c.FlagSet.String("source-template", _nilDefaultStr, red("(Required)")+"The source template to use as a base. It has the format of 'family/architecture'. Use --list-supported for a list of accepted values."),
+				"source-iso":          c.FlagSet.String("source-iso", _nilDefaultStr, red("(Required)")+"The source ISO image path."),
+				"kickstart":           c.FlagSet.String("kickstart", _nilDefaultStr, yellow("(Optional)")+"The OS's kickstart or equivalent file to be uploaded instead of the default."),
+				"kickstart-append":    c.FlagSet.String("kickstart-append", _nilDefaultStr, yellow("(Optional)")+"Content to append to the default kickstart."),
+				"bootloader":          c.FlagSet.String("bootloader", _nilDefaultStr, yellow("(Optional)")+"The OS's instalation bootloader to be uploaded instead of the default."),
+				"bootloader-config":   c.FlagSet.String("bootloader-config", _nilDefaultStr, yellow("(Optional)")+"The OS's installation bootloader config file to be uploaded instead of the default."),
+				"other-assets-json":   c.FlagSet.String("other-assets-json", _nilDefaultStr, yellow("(Optional)")+"Dynamic or binary files that will be replaced inside the template. Can contain variables. Limited to 2MB in size."),
+				"repo":                c.FlagSet.String("repo", _nilDefaultStr, yellow("(Optional)")+"Override the default github url used to download template files for given OS."),
+				"skip-upload-to-repo": c.FlagSet.Bool("skip-upload-to-repo", false, yellow("(Optional)")+"Skip ISO image upload to the HTTP repository."),
+				"replace-if-exists":   c.FlagSet.Bool("replace-if-exists", false, yellow("(Optional)")+"Replaces ISO image if one already exists in the HTTP repository."),
+				"quiet":               c.FlagSet.Bool("quiet", false, green("(Flag)")+"If set, eliminates all output."),
+				"debug":               c.FlagSet.Bool("debug", false, green("(Flag)")+"If set, increases log level."),
+				"format":              c.FlagSet.String("format", _nilDefaultStr, "The output format. Supported values are 'json','csv','yaml'. The default format is human readable."),
+				"return-id":           c.FlagSet.Bool("return-id", false, green("(Flag)")+"If set, returns the ID of the generated template. Useful for automation."),
 			}
 		},
 		ExecuteFunc: templateBuildCmd,
@@ -358,8 +359,8 @@ var osTemplatesCmds = []Command{
 		FlagSet:      flag.NewFlagSet("list OS source templates from a repository", flag.ExitOnError),
 		InitFunc: func(c *Command) {
 			c.Arguments = map[string]interface{}{
-				"repo": c.FlagSet.String("repo", _nilDefaultStr, yellow("(Optional)")+"Override the default github url used to download template files for given OS."),
-				"format":               c.FlagSet.String("format", _nilDefaultStr, "The output format. Supported values are 'json','csv','yaml'. The default format is human readable."),
+				"repo":   c.FlagSet.String("repo", _nilDefaultStr, yellow("(Optional)")+"Override the default github url used to download template files for given OS."),
+				"format": c.FlagSet.String("format", _nilDefaultStr, "The output format. Supported values are 'json','csv','yaml'. The default format is human readable."),
 			}
 		},
 		ExecuteFunc: templateListRepoCmd,
@@ -374,9 +375,9 @@ var osTemplatesCmds = []Command{
 		FlagSet:      flag.NewFlagSet("list assets from an OS source template", flag.ExitOnError),
 		InitFunc: func(c *Command) {
 			c.Arguments = map[string]interface{}{
-				"repo": c.FlagSet.String("repo", _nilDefaultStr, yellow("(Optional)")+"Override the default github url used to download template files for given OS."),
-				"source-template":      c.FlagSet.String("source-template", _nilDefaultStr, red("(Required)")+"The source template to use as a base. It's either the source path from a repository or a local path to the template.yaml file."),
-				"format":               c.FlagSet.String("format", _nilDefaultStr, "The output format. Supported values are 'json','csv','yaml'. The default format is human readable."),
+				"repo":            c.FlagSet.String("repo", _nilDefaultStr, yellow("(Optional)")+"Override the default github url used to download template files for given OS."),
+				"source-template": c.FlagSet.String("source-template", _nilDefaultStr, red("(Required)")+"The source template to use as a base. It's either the source path from a repository or a local path to the template.yaml file."),
+				"format":          c.FlagSet.String("format", _nilDefaultStr, "The output format. Supported values are 'json','csv','yaml'. The default format is human readable."),
 			}
 		},
 		ExecuteFunc: templateListAssetsCmd,
@@ -406,8 +407,8 @@ var osTemplatesCmds = []Command{
 		FlagSet:      flag.NewFlagSet("validate an OS source templates", flag.ExitOnError),
 		InitFunc: func(c *Command) {
 			c.Arguments = map[string]interface{}{
-				"repo": c.FlagSet.String("repo", _nilDefaultStr, yellow("(Optional)")+"Override the default github url used to download template files for given OS."),
-				"source-template":      c.FlagSet.String("source-template", _nilDefaultStr, red("(Required)")+"The source template to use as a base. It's either the source path from a repository or a local path to the template.yaml file."),
+				"repo":            c.FlagSet.String("repo", _nilDefaultStr, yellow("(Optional)")+"Override the default github url used to download template files for given OS."),
+				"source-template": c.FlagSet.String("source-template", _nilDefaultStr, red("(Required)")+"The source template to use as a base. It's either the source path from a repository or a local path to the template.yaml file."),
 			}
 		},
 		ExecuteFunc: templateValidateCmd,
@@ -2010,7 +2011,7 @@ func templateListAssetsCmd(c *Command, client metalcloud.MetalCloudClient) (stri
 		sourceTemplate = sourceTemplateValue
 	}
 
-	useLocalTemplate := false 
+	useLocalTemplate := false
 
 	if repoValue, ok := getStringParamOk(c.Arguments["repo"]); ok {
 		if repoValue == localRepositoryName {
@@ -2097,7 +2098,7 @@ func templateValidateCmd(c *Command, client metalcloud.MetalCloudClient) (string
 		sourceTemplate = sourceTemplateValue
 	}
 
-	useLocalTemplate := false 
+	useLocalTemplate := false
 
 	if repoValue, ok := getStringParamOk(c.Arguments["repo"]); ok {
 		if repoValue == localRepositoryName {
@@ -2110,11 +2111,11 @@ func templateValidateCmd(c *Command, client metalcloud.MetalCloudClient) (string
 	if !useLocalTemplate {
 		repoMap := make(map[string]RepoTemplate)
 		err := retrieveRepositoryAssets(c, repoMap)
-	
+
 		if err != nil {
 			return "", err
 		}
-	
+
 		if _, ok := repoMap[sourceTemplate]; !ok {
 			return "", fmt.Errorf("Did not find source template '%s' in the repository.", sourceTemplate)
 		}
@@ -2289,7 +2290,6 @@ func getRepositoryTemplateAssets(tree *object.Tree, repoMap map[string]RepoTempl
 				if parts[2] == templateFileName {
 					if _, ok := repoMap[templatePreffix]; !ok {
 						repoMap[templatePreffix] = RepoTemplate{
-							Family:               parts[0],
 							SourcePath:           templatePreffix,
 							TemplateFileContents: fileContents,
 						}
@@ -2370,6 +2370,7 @@ func populateTemplateValues(repoTemplate *RepoTemplate) (bool, error) {
 	architecture := templateContents.OsTemplateContents.OsArchitecture
 	deployProcess := templateContents.OsTemplateContents.BootMethodsSupported
 	bootType := templateContents.OsTemplateContents.BootType
+	family := templateContents.OsTemplateContents.OsFamily
 	version := templateContents.OsTemplateContents.OsVersion
 
 	validArchitectures := []string{osArchitecture64}
@@ -2379,6 +2380,10 @@ func populateTemplateValues(repoTemplate *RepoTemplate) (bool, error) {
 	validAssetTypes := []string{assetTypeBootloader, assetTypeBootloaderConfig, assetTypeInstallerConfig, assetTypePatch, assetTypeOther}
 
 	errors := []string{}
+
+	if family == "" {
+		errors = append(errors, fmt.Sprintf("Found no OS family. There must be one in the os-template section with the key name 'os-family'."))
+	}
 
 	if version == "" {
 		errors = append(errors, fmt.Sprintf("Found no OS version. There must be one in the os-template section with the key name 'os-version'."))
@@ -2464,6 +2469,7 @@ func populateTemplateValues(repoTemplate *RepoTemplate) (bool, error) {
 	repoTemplate.Architecture = architecture
 	repoTemplate.DeployProcess = deployProcess
 	repoTemplate.BootType = bootType
+	repoTemplate.Family = family
 	repoTemplate.Version = version
 
 	return templateHasErrors, err
