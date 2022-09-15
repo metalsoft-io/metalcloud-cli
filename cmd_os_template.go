@@ -5,7 +5,6 @@ import (
 	"bytes"
 	"context"
 	"encoding/base64"
-	"encoding/json"
 	"errors"
 	"flag"
 	"fmt"
@@ -50,8 +49,6 @@ const bootMethodPxeIscsi = "pxe_iscsi"
 const bootTypeUEFIOnly = "uefi_only"
 const bootTypeLegacyOnly = "legacy_only"
 
-const bootloaderConfigFileName = "BOOT.CFG"
-
 const assetTypeBootloader = "bootloader"
 const assetTypeBootloaderConfig = "bootloader-config"
 const assetTypeInstallerConfig = "installer-config"
@@ -60,6 +57,9 @@ const assetTypeOther = "other"
 
 const assetMimeTypeDynamic = "text/plain"
 const assetMimeTypeBinary = "application/octet-stream"
+
+const assetUsageTypeBootloader = "bootloader"
+const assetUsageTypeBuildComponent = "build_component"
 
 const assetJSONTypeDynamic = "dynamic"
 const assetJSONTypeBinary = "binary"
@@ -121,12 +121,6 @@ type Asset struct {
 	Name     string
 	Command  Command
 	Contents string
-}
-
-type InputAsset struct {
-	LocalPath string `json:"path"`
-	IsoPath   string `json:"isopath"`
-	Type      string `json:"type"`
 }
 
 var osTemplatesCmds = []Command{
@@ -309,28 +303,26 @@ var osTemplatesCmds = []Command{
 		FlagSet:      flag.NewFlagSet("build an OS template from a source ISO image", flag.ExitOnError),
 		InitFunc: func(c *Command) {
 			c.Arguments = map[string]interface{}{
-				"name":                c.FlagSet.String("name", _nilDefaultStr, red("(Required)")+"Name of image."),
-				"source-template":     c.FlagSet.String("source-template", _nilDefaultStr, red("(Required)")+"The source template to use as a base. It has the format of 'family/architecture'. Use --list-supported for a list of accepted values."),
-				"source-iso":          c.FlagSet.String("source-iso", _nilDefaultStr, red("(Required)")+"The source ISO image path."),
-				"kickstart":           c.FlagSet.String("kickstart", _nilDefaultStr, yellow("(Optional)")+"The OS's kickstart or equivalent file to be uploaded instead of the default."),
-				"kickstart-append":    c.FlagSet.String("kickstart-append", _nilDefaultStr, yellow("(Optional)")+"Content to append to the default kickstart."),
-				"bootloader":          c.FlagSet.String("bootloader", _nilDefaultStr, yellow("(Optional)")+"The OS's instalation bootloader to be uploaded instead of the default."),
-				"bootloader-config":   c.FlagSet.String("bootloader-config", _nilDefaultStr, yellow("(Optional)")+"The OS's installation bootloader config file to be uploaded instead of the default."),
-				"other-assets-json":   c.FlagSet.String("other-assets-json", _nilDefaultStr, yellow("(Optional)")+"Dynamic or binary files that will be replaced inside the template. Can contain variables. Limited to 2MB in size."),
-				"repo":                c.FlagSet.String("repo", _nilDefaultStr, yellow("(Optional)")+"Override the default github url used to download template files for given OS."),
-				"skip-upload-to-repo": c.FlagSet.Bool("skip-upload-to-repo", false, yellow("(Optional)")+"Skip ISO image upload to the HTTP repository."),
-				"replace-if-exists":   c.FlagSet.Bool("replace-if-exists", false, yellow("(Optional)")+"Replaces ISO image if one already exists in the HTTP repository."),
-				"quiet":               c.FlagSet.Bool("quiet", false, green("(Flag)")+"If set, eliminates all output."),
-				"debug":               c.FlagSet.Bool("debug", false, green("(Flag)")+"If set, increases log level."),
-				"format":              c.FlagSet.String("format", _nilDefaultStr, "The output format. Supported values are 'json','csv','yaml'. The default format is human readable."),
-				"return-id":           c.FlagSet.Bool("return-id", false, green("(Flag)")+"If set, returns the ID of the generated template. Useful for automation."),
+				"name":                     c.FlagSet.String("name", _nilDefaultStr, red("(Required)")+"Name of the template."),
+				"source-template":          c.FlagSet.String("source-template", _nilDefaultStr, red("(Required)")+"The source template to use as a base. It has the format of 'family/architecture'. Use --list-supported for a list of accepted values."),
+				"source-iso":               c.FlagSet.String("source-iso", _nilDefaultStr, red("(Required)")+"The source ISO image path."),
+				"label":                    c.FlagSet.String("label", _nilDefaultStr, yellow("(Optional)")+"Label of the template. If not present, name of the template will be used."),
+				"description":              c.FlagSet.String("name", _nilDefaultStr, yellow("(Optional)")+"Description of the template. If not present, name of the template will be used."),
+				"assets-update":            c.FlagSet.String("assets-update", _nilDefaultStr, yellow("(Optional)")+"Assets that will have their contents replaced inside the template. Check examples for format."),
+				"repo":                     c.FlagSet.String("repo", _nilDefaultStr, yellow("(Optional)")+"Override the default github url used to download template files for given OS."),
+				"skip-upload-to-repo":      c.FlagSet.Bool("skip-upload-to-repo", false, yellow("(Optional)")+"Skip ISO image upload to the HTTP repository."),
+				"strict-host-key-checking": c.FlagSet.Bool("strict-host-key-checking", true, yellow("(Optional)")+"Skip the manual check when adding a host key to the known_hosts file in the ISO image upload process."),
+				"replace-if-exists":        c.FlagSet.Bool("replace-if-exists", false, yellow("(Optional)")+"Replaces ISO image if one already exists in the HTTP repository."),
+				"quiet":                    c.FlagSet.Bool("quiet", false, green("(Flag)")+"If set, eliminates all output."),
+				"debug":                    c.FlagSet.Bool("debug", false, green("(Flag)")+"If set, increases log level."),
+				"format":                   c.FlagSet.String("format", _nilDefaultStr, "The output format. Supported values are 'json','csv','yaml'. The default format is human readable."),
+				"return-id":                c.FlagSet.Bool("return-id", false, green("(Flag)")+"If set, returns the ID of the generated template. Useful for automation."),
 			}
 		},
 		ExecuteFunc: templateBuildCmd,
 		Endpoint:    ExtendedEndpoint,
 		Example: `
-	metalcloud-cli os-template build --list-supported --list-warnings
-	metalcloud-cli os-template build --name="test-template" --source-template="ESXi/7.0.0u3" --source-iso="VMware-VMvisor-Installer-7.0.0.update03-19193900.x86_64-DellEMC_Customized-A02.iso" --kickstart="custom_kickstart.txt" --bootloader="custom_boot.CFG" --bootloader-config="custom_bootloader_config.CFG" --other-assets-json='[{\"path\":\"custom_dynamic_file_1.png\", \"isopath\":\"/dynamic_file_1.jpg\", \"type\":\"dynamic\"}, {\"path\":\"custom_dynamic_file_2.png\", \"isopath\":\"/dynamic_file_3.jpg\", \"type\":\"dynamic\"}, {\"path\":\"custom_binary_file_1.bin\", \"isopath\":\"/binary_file_1.bin\", \"type\":\"binary\"}, {\"path\":\"custom_binary_file_2.bin\", \"isopath\":\"/binary_file_2.bin\", \"type\":\"binary\"}]'
+	metalcloud-cli os-template build --name="test-template" --source-template="ESXi/7.0.0u3" --source-iso="VMware-VMvisor-Installer-7.0.0.update03-19193900.x86_64-DellEMC_Customized-A02.iso" —-assets-update oob-meta-data:/new-file,oob-vendor-data:/new-file-2
 		`,
 	},
 	{
@@ -964,19 +956,69 @@ func templateMakePrivateCmd(c *Command, client metalcloud.MetalCloudClient) (str
 }
 
 func templateBuildCmd(c *Command, client metalcloud.MetalCloudClient) (string, error) {
-	repoMap := make(map[string]RepoTemplate)
-	err := retrieveRepositoryAssets(c, repoMap)
+	var sourceTemplate string
 
-	if err != nil {
-		return "", err
+	if sourceTemplateValue, ok := getStringParamOk(c.Arguments["source-template"]); !ok {
+		return "", fmt.Errorf("The 'source-template' parameter must be specified when using the 'build' command.")
+	} else {
+		sourceTemplate = sourceTemplateValue
 	}
 
-	if getBoolParam(c.Arguments["list-supported"]) {
-		table := createRepositoryTemplatesTable(repoMap)
-		return table.RenderTable("Repository templates", "", getStringParam(c.Arguments["format"]))
+	useLocalTemplate := false
+
+	if repoValue, ok := getStringParamOk(c.Arguments["repo"]); ok {
+		if repoValue == localRepositoryName {
+			useLocalTemplate = true
+		}
 	}
 
-	_, err = handleTemplateBuild(c, client, repoMap)
+	var repoTemplate RepoTemplate
+
+	if !useLocalTemplate {
+		repoMap := make(map[string]RepoTemplate)
+		err := retrieveRepositoryAssets(c, repoMap)
+
+		if err != nil {
+			return "", err
+		}
+
+		if _, ok := repoMap[sourceTemplate]; !ok {
+			return "", fmt.Errorf("Did not find source template '%s' in the repository.", sourceTemplate)
+		}
+
+		repoTemplate = repoMap[sourceTemplate]
+	} else {
+		fmt.Printf("Did not find source template '%s' in the repository, checking for local file.\n", sourceTemplate)
+
+		_, err := os.ReadFile(sourceTemplate)
+
+		if err != nil {
+			return "", fmt.Errorf("Template file not found at path %s.", sourceTemplate)
+		}
+
+		getLocalTemplateAssets(filepath.Dir(sourceTemplate), &repoTemplate)
+		_, err = populateTemplateValues(&repoTemplate)
+
+		if err != nil {
+			return "", err
+		}
+	}
+
+	if len(repoTemplate.Errors) != 0 {
+		fmt.Printf("Detected the following errors regarding template structure for template %s:\n", sourceTemplate)
+	} else {
+		fmt.Printf("Detected no errors for the given template.\n")
+	}
+
+	for _, errorMessage := range repoTemplate.Errors {
+		fmt.Println("\t" + errorMessage)
+	}
+
+	if len(repoTemplate.Errors) != 0 {
+		return "", fmt.Errorf("Aborting build due to errors regarding the source template.\n")
+	}
+
+	_, err := handleTemplateBuild(c, client, repoTemplate)
 
 	if err != nil {
 		return "", err
@@ -1230,33 +1272,30 @@ func createTemplateAssetsTable(repoTemplate RepoTemplate) tableformatter.Table {
 	return table
 }
 
-func handleTemplateBuild(c *Command, client metalcloud.MetalCloudClient, repoMap map[string]RepoTemplate) (string, error) {
-	if name, ok := getStringParamOk(c.Arguments["name"]); ok {
+func handleTemplateBuild(c *Command, client metalcloud.MetalCloudClient, repoTemplate RepoTemplate) (string, error) {
+	if templateName, ok := getStringParamOk(c.Arguments["name"]); ok {
+		// ISO images are required only for the OOB templates and the patch files are only applied to the bootloader file retrieved from the ISO image.
+		err := checkOOBTemplateIntegrity(c, repoTemplate)
 
-		if sourceTemplateName, ok := getStringParamOk(c.Arguments["source-template"]); ok {
-			imagePath, patchedText, err := checkTemplateIntegrity(c, repoMap, sourceTemplateName)
-
-			if err != nil {
-				return "", err
-			}
-
-			_, err = createTemplateAssets(c, client, repoMap, sourceTemplateName, name, imagePath, patchedText)
-
-			if err != nil {
-				return "", err
-			}
-
-		} else {
-			return "", fmt.Errorf("The 'source-template' parameter must be specified with the 'name' one.")
+		if err != nil {
+			return "", err
 		}
+
+		_, err = createTemplateAssets(c, client, repoTemplate, templateName)
+
+		if err != nil {
+			return "", err
+		}
+	} else {
+		return "", fmt.Errorf("The 'name' parameter must be specified when using the 'build' command.")
 	}
 
 	return "", nil
 }
 
-func checkTemplateIntegrity(c *Command, repoMap map[string]RepoTemplate, sourceTemplateName string) (string, string, error) {
-	if _, ok := repoMap[sourceTemplateName]; !ok {
-		return "", "", fmt.Errorf("Did not find source template '%s'. Please use the 'list-supported' parameter to see the supported templates.", sourceTemplateName)
+func checkOOBTemplateIntegrity(c *Command, repoTemplate RepoTemplate) error {
+	if !repoTemplate.OsTemplateContents.ProvisionViaOob {
+		return nil
 	}
 
 	var imagePath string
@@ -1264,117 +1303,85 @@ func checkTemplateIntegrity(c *Command, repoMap map[string]RepoTemplate, sourceT
 	if sourceISO, ok := getStringParamOk(c.Arguments["source-iso"]); ok {
 		imagePath = sourceISO
 	} else {
-		return "", "", fmt.Errorf("The 'source-iso' parameter must be specified with the 'name' and 'source-template' ones.")
+		return fmt.Errorf("The 'source-iso' parameter must be specified with the 'name' and 'source-template' ones for OOB templates.")
 	}
 
 	file, err := os.Open(imagePath)
 
 	if err != nil {
-		return "", "", fmt.Errorf("Image not found at path %s.", imagePath)
+		return fmt.Errorf("Image not found at path %s.", imagePath)
 	}
 
 	image, err := iso9660.OpenImage(file)
 
 	if err != nil {
-		return "", "", err
+		return err
 	}
 
 	rootDir, err := image.RootDir()
 
 	if err != nil {
-		return "", "", err
+		return err
 	}
 
 	children, err := rootDir.GetChildren()
 
 	if err != nil {
-		return "", "", err
+		return err
+	}
+
+	assetPatches := make(map[string]*TemplateAsset)
+
+	for _, asset := range repoTemplate.Assets {
+		if asset.Type == assetTypePatch {
+			assetPatches[asset.name] = &asset
+		}
 	}
 
 	var bootloaderFile *iso9660.File = nil
 
-	for _, child := range children {
-		if !child.IsDir() && child.Name() == bootloaderConfigFileName {
-			bootloaderFile = child
-			break
-		}
-	}
-
-	if bootloaderFile == nil {
-		return "", "", fmt.Errorf("Did not find bootloader config file in the given ISO image.")
-	}
-
-	bootloaderData, err := ioutil.ReadAll(bootloaderFile.Reader())
-
-	if err != nil {
-		return "", "", err
-	}
-
-	sourceTemplate := repoMap[sourceTemplateName]
-
-	var patchAsset TemplateAsset
-	foundPatchAsset := false
-
-	for _, asset := range sourceTemplate.Assets {
-		if asset.Type == assetTypePatch {
-
-			if foundPatchAsset {
-				return "", "", fmt.Errorf("Found more than one patch asset for source template '%s'. Templates should only have one patch asset for the bootloader.", sourceTemplateName)
-			}
-
-			foundPatchAsset = true
-			patchAsset = asset
-		}
-	}
-
-	if !foundPatchAsset {
-		return "", "", fmt.Errorf("Did not find the patch file for source template '%s'.", sourceTemplateName)
-	}
-
-	patchFileStringContents := patchAsset.contents
-
-	diffMatchPatch := diff.New()
-
-	patches, err := diffMatchPatch.PatchFromText(patchFileStringContents)
-
-	if err != nil {
-		return "", "", err
-	}
-
-	patchedText, _ := diffMatchPatch.PatchApply(patches, string(bootloaderData))
-
-	//Remove tabs and blank lines, somehow they get added when applying the patch
-	patchedText = strings.ReplaceAll(patchedText, "\t", "")
-	patchedText = strings.TrimSpace(patchedText)
-
-	return imagePath, patchedText, nil
-}
-
-func createTemplateAssets(c *Command, client metalcloud.MetalCloudClient, repoMap map[string]RepoTemplate, sourceTemplateName string, name string, imagePath string, patchedText string) (string, error) {
-	var kickstartContents string
-
-	if filePath, ok := getStringParamOk(c.Arguments["kickstart-append"]); ok {
-		kickstartAppendFilePath := filePath
-
-		appendFileContents, err := os.ReadFile(kickstartAppendFilePath)
-
-		if err != nil {
-			return "", fmt.Errorf("Kickstart append file not found at path %s.", kickstartAppendFilePath)
-		}
-
-		for _, asset := range repoMap[sourceTemplateName].Assets {
-
-			if asset.Type == assetTypeInstallerConfig {
-				kickstartContents = asset.contents
-
-				kickstartContents += "\n" + string(appendFileContents)
-				fmt.Printf("Appended contents from file %s to kickstart asset %s\n.", filePath, asset.name)
+	for patchedAssetName, asset := range assetPatches {
+		for _, child := range children {
+			if !child.IsDir() && child.Name() == patchedAssetName {
+				bootloaderFile = child
 				break
 			}
 		}
+
+		if bootloaderFile == nil {
+			return fmt.Errorf("Could not apply patch asset as the bootloader config file with name '%s' was not found in the given ISO image.", patchedAssetName)
+		}
+
+		bootloaderData, err := ioutil.ReadAll(bootloaderFile.Reader())
+
+		if err != nil {
+			return err
+		}
+
+		patchFileStringContents := asset.contents
+
+		diffMatchPatch := diff.New()
+
+		patches, err := diffMatchPatch.PatchFromText(patchFileStringContents)
+
+		if err != nil {
+			return err
+		}
+
+		patchedText, _ := diffMatchPatch.PatchApply(patches, string(bootloaderData))
+
+		//Remove tabs and blank lines, somehow they get added when applying the patch
+		patchedText = strings.ReplaceAll(patchedText, "\t", "")
+		patchedText = strings.TrimSpace(patchedText)
+		asset.contents = string(patchedText)
 	}
 
-	OsTemplateContents := repoMap[sourceTemplateName].OsTemplateContents
+	fmt.Println(repoTemplate.Assets)
+	return nil
+}
+
+func createTemplateAssets(c *Command, client metalcloud.MetalCloudClient, repoTemplate RepoTemplate, templateName string) (string, error) {
+	OsTemplateContents := repoTemplate.OsTemplateContents
 
 	createTemplateCommand := Command{
 		Description:  "Create a template.",
@@ -1387,17 +1394,28 @@ func createTemplateAssets(c *Command, client metalcloud.MetalCloudClient, repoMa
 		Endpoint:     ExtendedEndpoint,
 	}
 
+	templateLabel := templateName
+	templateDescription := templateName
+
+	if label, ok := getStringParamOk(c.Arguments["label"]); ok {
+		templateLabel = label
+	}
+
+	if description, ok := getStringParamOk(c.Arguments["description"]); ok {
+		templateDescription = description
+	}
+
 	createTemplateCommand.Arguments = map[string]interface{}{
-		"label":                              createTemplateCommand.FlagSet.String("label", name, red("(Required)")+" Template's label"),
-		"display_name":                       createTemplateCommand.FlagSet.String("display-name", name, red("(Required)")+" Template's display name"),
+		"label":                              createTemplateCommand.FlagSet.String("label", templateLabel, red("(Required)")+" Template's label"),
+		"display_name":                       createTemplateCommand.FlagSet.String("display-name", templateName, red("(Required)")+" Template's display name"),
 		"size":                               createTemplateCommand.FlagSet.Int("size", _nilDefaultInt, "Template's size (bytes)"),
 		"boot_methods_supported":             createTemplateCommand.FlagSet.String("boot-methods-supported", OsTemplateContents.BootMethodsSupported, red("(Required)")+" Template boot methods supported. Defaults to pxe_iscsi."),
 		"os_bootstrap_function_name":         createTemplateCommand.FlagSet.String("os-bootstrap-function-name", _nilDefaultStr, "Optional property that selects the cloudinit configuration function. Can be one of: provisioner_os_cloudinit_prepare_centos, provisioner_os_cloudinit_prepare_rhel, provisioner_os_cloudinit_prepare_ubuntu, provisioner_os_cloudinit_prepare_windows."),
 		"boot_type":                          createTemplateCommand.FlagSet.String("boot-type", OsTemplateContents.BootType, red("(Required)")+" Template boot type. Possible values: 'uefi_only','legacy_only' "),
-		"description":                        createTemplateCommand.FlagSet.String("description", name, "Template description"),
-		"os_type":                            createTemplateCommand.FlagSet.String("os-type", repoMap[sourceTemplateName].Family, red("(Required)")+" Template operating system type. For example, Ubuntu or CentOS."),
-		"os_version":                         createTemplateCommand.FlagSet.String("os-version", repoMap[sourceTemplateName].Version, red("(Required)")+" Template operating system version."),
-		"os_architecture":                    createTemplateCommand.FlagSet.String("os-architecture", repoMap[sourceTemplateName].Architecture, red("(Required)")+" Template operating system architecture.Possible values: none, unknown, x86, x86_64."),
+		"description":                        createTemplateCommand.FlagSet.String("description", templateDescription, "Template description"),
+		"os_type":                            createTemplateCommand.FlagSet.String("os-type", repoTemplate.Family, red("(Required)")+" Template operating system type. For example, Ubuntu or CentOS."),
+		"os_version":                         createTemplateCommand.FlagSet.String("os-version", repoTemplate.Version, red("(Required)")+" Template operating system version."),
+		"os_architecture":                    createTemplateCommand.FlagSet.String("os-architecture", repoTemplate.Architecture, red("(Required)")+" Template operating system architecture.Possible values: none, unknown, x86, x86_64."),
 		"initial_user":                       createTemplateCommand.FlagSet.String("initial-user", OsTemplateContents.InitialUser, red("(Required)")+" Template's initial username, used to verify install."),
 		"initial_password":                   createTemplateCommand.FlagSet.String("initial-password", _nilDefaultStr, red("(Required)")+" Template's initial password, used to verify install."),
 		"use_autogenerated_initial_password": createTemplateCommand.FlagSet.Bool("use-autogenerated-initial-password", OsTemplateContents.UseAutogeneratedInitialPassword, green("(Flag)")+" If set will automatically generate a password for the template and provide it during install via the initial_password and initial_user variables. Cannot be used withinitial-password and initial-user params."),
@@ -1426,7 +1444,7 @@ func createTemplateAssets(c *Command, client metalcloud.MetalCloudClient, repoMa
 		templateFound := false
 
 		for _, s := range *list {
-			if s.VolumeTemplateLabel == name {
+			if s.VolumeTemplateLabel == templateName {
 				templateFound = true
 				templateID = s.VolumeTemplateID
 				break
@@ -1450,19 +1468,13 @@ func createTemplateAssets(c *Command, client metalcloud.MetalCloudClient, repoMa
 
 	assets := []Asset{}
 
-	err := createIsoImageAsset(c, repoMap, &assets, sourceTemplateName, name, imagePath, createAssetCommand)
+	err := createIsoImageAsset(c, repoTemplate, &assets, templateName, createAssetCommand)
 
 	if err != nil {
 		return "", err
 	}
 
-	err = createBootloaderAsset(c, repoMap, &assets, sourceTemplateName, name, patchedText, createAssetCommand)
-
-	if err != nil {
-		return "", err
-	}
-
-	err = createOtherAssets(c, repoMap, &assets, sourceTemplateName, name, kickstartContents, createAssetCommand)
+	err = createOtherAssets(c, repoTemplate, &assets, templateName, createAssetCommand)
 
 	if err != nil {
 		return "", err
@@ -1493,7 +1505,7 @@ func createTemplateAssets(c *Command, client metalcloud.MetalCloudClient, repoMa
 			}
 
 			for _, s := range *list {
-				if s.VolumeTemplateLabel == name {
+				if s.VolumeTemplateLabel == templateName {
 					templateID = s.VolumeTemplateID
 					break
 				}
@@ -1510,7 +1522,11 @@ func createTemplateAssets(c *Command, client metalcloud.MetalCloudClient, repoMa
 	return "", nil
 }
 
-func createIsoImageAsset(c *Command, repoMap map[string]RepoTemplate, assets *[]Asset, sourceTemplateName string, name string, imagePath string, createAssetCommand Command) error {
+func createIsoImageAsset(c *Command, repoTemplate RepoTemplate, assets *[]Asset, templateName string, createAssetCommand Command) error {
+	// Only OOB templates handle ISO image upload
+	if !repoTemplate.OsTemplateContents.ProvisionViaOob {
+		return nil
+	}
 	// TODO: replace with real hostname after finishing development
 	imageRepositoryHostname := "192.168.74.1:4022"
 
@@ -1518,10 +1534,12 @@ func createIsoImageAsset(c *Command, repoMap map[string]RepoTemplate, assets *[]
 		imageRepositoryHostname = os.Getenv("METALCLOUD_IMAGE_REPOSITORY_HOSTNAME")
 	}
 
+	imagePath, _ := getStringParamOk(c.Arguments["source-iso"])
+
 	s := strings.Split(imagePath, "/")
 	imageFilename := s[len(s)-1]
 
-	isoPath := "/iso/" + name + "-" + imageFilename
+	isoPath := "/iso/" + templateName + "-" + imageFilename
 
 	_, err := handleIsoImageUpload(c, imageRepositoryHostname, isoPath, imagePath)
 
@@ -1540,7 +1558,7 @@ func createIsoImageAsset(c *Command, repoMap map[string]RepoTemplate, assets *[]
 		"mime":                   createIsoCommand.FlagSet.String("mime", assetMimeTypeBinary, "Asset's mime type. Possible values: \""+assetMimeTypeDynamic+"\", \""+assetMimeTypeBinary+"\""),
 		"url":                    createIsoCommand.FlagSet.String("url", assetURL, "Asset's source url. If present it will not read content anymore"),
 		"read_content_from_pipe": createIsoCommand.FlagSet.Bool("pipe", false, "Read assets's content read from pipe instead of terminal input"),
-		"template_id_or_name":    createIsoCommand.FlagSet.String("template-id", name, "Template's id or name to associate. "),
+		"template_id_or_name":    createIsoCommand.FlagSet.String("template-id", templateName, "Template's id or name to associate. "),
 		"path":                   createIsoCommand.FlagSet.String("path", "/source-image", "Path to associate asset to."),
 		"variables_json":         createIsoCommand.FlagSet.String("variables-json", _nilDefaultStr, "JSON encoded variables object"),
 		"delete_if_exists":       createIsoCommand.FlagSet.Bool("delete-if-exists", true, "Automatically delete the existing asset associated with the current template."),
@@ -1657,26 +1675,31 @@ Are you sure you want to continue connecting (yes/no)?
 `,
 							hostname, serializeSSHKey(publicKey), knownHostsFilePath,
 						)
-						reader := bufio.NewReader(os.Stdin)
-						input, err := reader.ReadString('\n')
 
-						if err != nil {
-							return err
-						}
+						if getBoolParam(c.Arguments["strict-host-key-checking"]) {
+							reader := bufio.NewReader(os.Stdin)
+							input, err := reader.ReadString('\n')
 
-						// Remove \r and \n from input
-						input = string(bytes.TrimSuffix([]byte(input), []byte("\r\n")))
-
-						if input != "yes" {
-							if input == "no" {
-								fmt.Println("Aborting connection.")
-							} else {
-								fmt.Println("Invalid response given. Aborting connection.")
+							if err != nil {
+								return err
 							}
 
-							return keyError
+							// Remove \r and \n from input
+							input = string(bytes.TrimSuffix([]byte(input), []byte("\r\n")))
 
+							if input != "yes" {
+								if input == "no" {
+									fmt.Println("Aborting connection.")
+								} else {
+									fmt.Println("Invalid response given. Aborting connection.")
+								}
+
+								return keyError
+							}
+						} else {
+							fmt.Printf("Skipped manual check because 'strict-host-key-checking' is set to false.")
 						}
+
 						return addHostKey(knownHostsFilePath, remoteAddress, publicKey)
 					}
 				}
@@ -1727,183 +1750,27 @@ Are you sure you want to continue connecting (yes/no)?
 	return "", nil
 }
 
-func createBootloaderAsset(c *Command, repoMap map[string]RepoTemplate, assets *[]Asset, sourceTemplateName string, name string, patchedText string, createAssetCommand Command) error {
-	var bootConfigPath string
-	OsTemplateContents := repoMap[sourceTemplateName].OsTemplateContents
-
-	switch OsTemplateContents.BootType {
-	case bootTypeUEFIOnly:
-		bootConfigPath = "/EFI/BOOT/BOOT.CFG"
-	case bootTypeLegacyOnly:
-		bootConfigPath = "/BOOT.CFG"
-	}
-
-	bootloaderContents := string(patchedText)
-	bootloaderFileName := "BOOT.CFG"
-
-	if filePath, ok := getStringParamOk(c.Arguments["bootloader"]); ok {
-		bootloaderFilePath := filePath
-
-		bootloaderFileContents, err := os.ReadFile(bootloaderFilePath)
-
-		if err != nil {
-			return fmt.Errorf("Bootloader file not found at path %s.", bootloaderFilePath)
-		}
-
-		bootloaderContents = string(bootloaderFileContents)
-
-		s := strings.Split(bootloaderFilePath, "/")
-		bootloaderFileName = s[len(s)-1]
-
-		fmt.Printf("Replaced template bootloader asset with %s.\n", bootloaderFilePath)
-	}
-
-	createBootCommand := createAssetCommand
-	createBootCommand.FlagSet = flag.NewFlagSet("create boot asset", flag.ExitOnError)
-	createBootCommand.Arguments = map[string]interface{}{
-		"filename":               createBootCommand.FlagSet.String("filename", bootloaderFileName, "Asset's filename"),
-		"usage":                  createBootCommand.FlagSet.String("usage", "build_component", "Asset's usage."),
-		"mime":                   createBootCommand.FlagSet.String("mime", assetMimeTypeDynamic, "Asset's mime type. Possible values: \""+assetMimeTypeDynamic+"\",\""+assetMimeTypeBinary+"\""),
-		"url":                    createBootCommand.FlagSet.String("url", _nilDefaultStr, "Asset's source url. If present it will not read content anymore"),
-		"read_content_from_pipe": createBootCommand.FlagSet.Bool("pipe", false, "Read assets's content read from pipe instead of terminal input"),
-		"template_id_or_name":    createBootCommand.FlagSet.String("template-id", name, "Template's id or name to associate. "),
-		"path":                   createBootCommand.FlagSet.String("path", bootConfigPath, "Path to associate asset to."),
-		"variables_json":         createBootCommand.FlagSet.String("variables-json", _nilDefaultStr, "JSON encoded variables object"),
-		"delete_if_exists":       createBootCommand.FlagSet.Bool("delete-if-exists", true, "Automatically delete the existing asset associated with the current template."),
-	}
-
-	*assets = append(*assets, Asset{
-		Name:     bootloaderFileName,
-		Command:  createBootCommand,
-		Contents: bootloaderContents,
-	})
-
-	return nil
-}
-
-func createOtherAssets(c *Command, repoMap map[string]RepoTemplate, assets *[]Asset, sourceTemplateName string, name string, kickstartContents string, createAssetCommand Command) error {
-	var otherAssets, dynamicAssets, binaryAssets []InputAsset
-
-	if otherAssetsJSON, ok := getStringParamOk(c.Arguments["other-assets-json"]); ok {
-		err := json.Unmarshal([]byte(otherAssetsJSON), &otherAssets)
-		if err != nil {
-			return fmt.Errorf("Invalid 'other-assets-json' value sent. The value sent must be a JSON in this format: '[{\"path\":\"<path_value>\", \"isopath\":\"<isopath_value>\", \"type\":\"<asset_type>\"}, {\"path\":\"<path_value>\", \"isopath\":\"<isopath_value>\", \"type\":\"<asset_type>\"}]'.")
-		}
-
-		for _, asset := range otherAssets {
-			_, err := os.ReadFile(asset.LocalPath)
-
-			if err != nil {
-				return fmt.Errorf("Asset not found at path %s.", asset.LocalPath)
-			}
-
-			file, err := os.Open(asset.LocalPath)
-			if err != nil {
-				return err
-			}
-			defer file.Close()
-
-			// Check that file size is below the maximum allowed.
-			stat, err := file.Stat()
-			if err != nil {
-				return err
-			}
-
-			if stat.Size() > otherAssetsMaximumSizeBytes {
-				sizeInMB := float64(stat.Size()) / (1 << 20)
-				return fmt.Errorf("Asset %s has a size of %f MB which exceeds maximum allowed size of 2MB.\n", file.Name(), sizeInMB)
-			}
-
-			switch asset.Type {
-			case assetJSONTypeDynamic:
-				dynamicAssets = append(dynamicAssets, asset)
-			case assetJSONTypeBinary:
-				binaryAssets = append(binaryAssets, asset)
-			default:
-				return fmt.Errorf("Invalid asset type found %s. It must be one of %v.", asset.Type, []string{assetJSONTypeDynamic, assetJSONTypeBinary})
-			}
-
-		}
-	}
-
-	for _, asset := range repoMap[sourceTemplateName].Assets {
-		if asset.Type == assetTypePatch {
-			// We skip the patch file, as the boot file has already been created.
-			continue
-		}
-
-		validMimeTypes := []string{assetMimeTypeBinary, assetMimeTypeDynamic}
-
-		if asset.Type != assetTypeInstallerConfig && asset.Type != assetTypeBootloaderConfig && !stringInSlice(asset.Mime, validMimeTypes) {
-			// We skip the files that are not kickstarts, bootloader configs or have invalid mime type.
-			continue
-		}
-
+func createOtherAssets(c *Command, repoTemplate RepoTemplate, assets *[]Asset, templateName string, createAssetCommand Command) error {
+	//TODO: implement assets-update here
+	for _, asset := range repoTemplate.Assets {
 		assetContents := asset.contents
 		assetFileName := asset.name
 
-		if asset.Type == assetTypeInstallerConfig {
-			if filePath, ok := getStringParamOk(c.Arguments["kickstart"]); ok {
+		if asset.Usage == "" {
+			asset.Usage = assetUsageTypeBuildComponent
+		}
 
-				if kickstartContents != "" {
-					return fmt.Errorf("'kickstart' argument cannot be used alongside the 'kickstart-append' one.")
-				}
-				kickstartFilePath := filePath
+		if asset.Url == "" {
+			asset.Url = _nilDefaultStr
+		}
 
-				kickstartFileContents, err := os.ReadFile(kickstartFilePath)
+		// For OOB templates, isopath is populated, for non-OOB ones, path is used instead.
+		var assetPath string
 
-				if err != nil {
-					return fmt.Errorf("Kickstart file not found at path %s.", kickstartFilePath)
-				}
-
-				assetContents = string(kickstartFileContents)
-				assetFileName = kickstartFilePath
-
-				fmt.Printf("Replaced template kickstart asset with %s.\n", kickstartFilePath)
-			} else if kickstartContents != "" {
-				// If we have a kickstart file and the kickstart-append option was used, we will use the string with the appended text
-				assetContents = kickstartContents
-			}
-		} else if asset.Type == assetTypeBootloaderConfig {
-			if filePath, ok := getStringParamOk(c.Arguments["bootloader-config"]); ok {
-				bootloaderConfigFilePath := filePath
-
-				bootloaderConfigFileContents, err := os.ReadFile(bootloaderConfigFilePath)
-
-				if err != nil {
-					return fmt.Errorf("Bootloader configuration file not found at path %s.", bootloaderConfigFilePath)
-				}
-
-				assetContents = string(bootloaderConfigFileContents)
-				assetFileName = bootloaderConfigFilePath
-
-				fmt.Printf("Replaced bootloader config asset with %s.\n", bootloaderConfigFilePath)
-			}
+		if repoTemplate.OsTemplateContents.ProvisionViaOob {
+			assetPath = asset.Isopath
 		} else {
-			switch asset.Mime {
-			case assetMimeTypeBinary:
-				for _, binaryAsset := range binaryAssets {
-					fileContents, _ := os.ReadFile(binaryAsset.LocalPath)
-
-					if asset.Isopath == binaryAsset.IsoPath {
-						assetContents = string(fileContents)
-						assetFileName = binaryAsset.LocalPath
-
-						fmt.Printf("Replaced binary asset with %s.\n", assetFileName)
-					}
-				}
-			case assetMimeTypeDynamic:
-				for _, dynamicAsset := range dynamicAssets {
-					fileContents, _ := os.ReadFile(dynamicAsset.LocalPath)
-
-					if asset.Isopath == dynamicAsset.IsoPath {
-						assetContents = string(fileContents)
-						assetFileName = dynamicAsset.LocalPath
-
-						fmt.Printf("Replaced dynamic asset with %s.\n", assetFileName)
-					}
-				}
-			}
+			assetPath = asset.Path
 		}
 
 		s := strings.Split(assetFileName, "/")
@@ -1913,12 +1780,12 @@ func createOtherAssets(c *Command, repoMap map[string]RepoTemplate, assets *[]As
 		createOtherAssetCommand.FlagSet = flag.NewFlagSet("create asset "+assetName, flag.ExitOnError)
 		createOtherAssetCommand.Arguments = map[string]interface{}{
 			"filename":               createOtherAssetCommand.FlagSet.String("filename", assetName, "Asset's filename"),
-			"usage":                  createOtherAssetCommand.FlagSet.String("usage", "build_component", "Asset's usage."),
+			"usage":                  createOtherAssetCommand.FlagSet.String("usage", asset.Usage, "Asset's usage."),
 			"mime":                   createOtherAssetCommand.FlagSet.String("mime", asset.Mime, "Asset's mime type. Possible values: \""+assetMimeTypeDynamic+"\",\""+assetMimeTypeBinary+"\""),
-			"url":                    createOtherAssetCommand.FlagSet.String("url", _nilDefaultStr, "Asset's source url. If present it will not read content anymore"),
+			"url":                    createOtherAssetCommand.FlagSet.String("url", asset.Url, "Asset's source url. If present it will not read content anymore"),
 			"read_content_from_pipe": createOtherAssetCommand.FlagSet.Bool("pipe", false, "Read assets's content read from pipe instead of terminal input"),
-			"template_id_or_name":    createOtherAssetCommand.FlagSet.String("template-id", name, "Template's id or name to associate. "),
-			"path":                   createOtherAssetCommand.FlagSet.String("path", asset.Isopath, "Path to associate asset to."),
+			"template_id_or_name":    createOtherAssetCommand.FlagSet.String("template-id", templateName, "Template's id or name to associate. "),
+			"path":                   createOtherAssetCommand.FlagSet.String("path", assetPath, "Path to associate asset to."),
 			"variables_json":         createOtherAssetCommand.FlagSet.String("variables-json", _nilDefaultStr, "JSON encoded variables object"),
 			"delete_if_exists":       createOtherAssetCommand.FlagSet.Bool("delete-if-exists", true, "Automatically delete the existing asset associated with the current template."),
 		}
@@ -2378,6 +2245,7 @@ func populateTemplateValues(repoTemplate *RepoTemplate) (bool, error) {
 	validBootTypes := []string{bootTypeUEFIOnly, bootTypeLegacyOnly}
 	validMimeTypes := []string{assetMimeTypeBinary, assetMimeTypeDynamic}
 	validAssetTypes := []string{assetTypeBootloader, assetTypeBootloaderConfig, assetTypeInstallerConfig, assetTypePatch, assetTypeOther}
+	validUsageType := []string{assetUsageTypeBootloader, assetUsageTypeBuildComponent}
 
 	errors := []string{}
 
@@ -2434,10 +2302,24 @@ func populateTemplateValues(repoTemplate *RepoTemplate) (bool, error) {
 				errors = append(errors, fmt.Sprintf("Found invalid asset type %v for asset %s. Valid asset types are %+q.", asset.Type, fileName, validAssetTypes))
 			}
 
+			if asset.Usage != "" && !stringInSlice(asset.Usage, validUsageType) {
+				errors = append(errors, fmt.Sprintf("Found invalid usage type %v for asset %s. Property is not required and the valid usage types are %+q.", asset.Usage, fileName, validUsageType))
+			}
+
+			// For OOB templates, isopath is populated, for non-OOB ones, path is used instead.
+			if repoTemplate.OsTemplateContents.ProvisionViaOob {
+				if asset.Isopath == "" {
+					errors = append(errors, fmt.Sprintf("Found no isopath for asset %s. There must be one for the asset with the key name 'isopath', as the asset is part of an OOB template.", fileName))
+				}
+			} else if asset.Path == "" {
+				errors = append(errors, fmt.Sprintf("Found no path for asset %s. There must be one for the asset with the key name 'path', as the asset is part of a non-OOB template.", fileName))
+			}
+
 			repoTemplate.Assets[key].Mime = asset.Mime
 			repoTemplate.Assets[key].Type = asset.Type
 			repoTemplate.Assets[key].Url = asset.Url
 			repoTemplate.Assets[key].Path = asset.Path
+			repoTemplate.Assets[key].Usage = asset.Usage
 		}
 	}
 
