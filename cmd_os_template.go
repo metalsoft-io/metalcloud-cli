@@ -306,7 +306,7 @@ var osTemplatesCmds = []Command{
 				"name":                     c.FlagSet.String("name", _nilDefaultStr, red("(Required)")+"Name of the template."),
 				"source-template":          c.FlagSet.String("source-template", _nilDefaultStr, red("(Required)")+"The source template to use as a base. It has the format of 'family/architecture'. Use --list-supported for a list of accepted values."),
 				"source-iso":               c.FlagSet.String("source-iso", _nilDefaultStr, red("(Required)")+"The source ISO image path."),
-				"label":                    c.FlagSet.String("label", _nilDefaultStr, yellow("(Optional)")+"Label of the template."),
+				"label":                    c.FlagSet.String("label", _nilDefaultStr, yellow("(Optional)")+"Label of the template. If not present, is the name of the template."),
 				"description":              c.FlagSet.String("description", _nilDefaultStr, yellow("(Optional)")+"Description of the template."),
 				"assets-update":            c.FlagSet.String("assets-update", _nilDefaultStr, yellow("(Optional)")+"Assets that will have their contents replaced inside the template. Check examples for format."),
 				"repo":                     c.FlagSet.String("repo", _nilDefaultStr, yellow("(Optional)")+"Override the default github url used to download template files for given OS."),
@@ -1748,7 +1748,7 @@ func createOtherAssets(c *Command, repoTemplate RepoTemplate, assets *[]Asset, t
 		assetFileName := asset.name
 
 		if asset.Usage == "" {
-			asset.Usage = assetUsageTypeBuildComponent
+			asset.Usage = _nilDefaultStr
 		}
 
 		if asset.Url == "" {
