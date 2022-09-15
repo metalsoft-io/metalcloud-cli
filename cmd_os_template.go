@@ -307,7 +307,7 @@ var osTemplatesCmds = []Command{
 				"source-template":          c.FlagSet.String("source-template", _nilDefaultStr, red("(Required)")+"The source template to use as a base. It has the format of 'family/architecture'. Use --list-supported for a list of accepted values."),
 				"source-iso":               c.FlagSet.String("source-iso", _nilDefaultStr, red("(Required)")+"The source ISO image path."),
 				"label":                    c.FlagSet.String("label", _nilDefaultStr, yellow("(Optional)")+"Label of the template. If not present, name of the template will be used."),
-				"description":              c.FlagSet.String("name", _nilDefaultStr, yellow("(Optional)")+"Description of the template. If not present, name of the template will be used."),
+				"description":              c.FlagSet.String("description", _nilDefaultStr, yellow("(Optional)")+"Description of the template. If not present, name of the template will be used."),
 				"assets-update":            c.FlagSet.String("assets-update", _nilDefaultStr, yellow("(Optional)")+"Assets that will have their contents replaced inside the template. Check examples for format."),
 				"repo":                     c.FlagSet.String("repo", _nilDefaultStr, yellow("(Optional)")+"Override the default github url used to download template files for given OS."),
 				"skip-upload-to-repo":      c.FlagSet.Bool("skip-upload-to-repo", false, yellow("(Optional)")+"Skip ISO image upload to the HTTP repository."),
@@ -1245,11 +1245,6 @@ func createTemplateAssetsTable(repoTemplate RepoTemplate) tableformatter.Table {
 		s := strings.Split(asset.name, "/")
 		assetName := s[len(s)-1]
 
-		// We ignore the ReadMe file
-		if assetName == readMeFileName {
-			continue
-		}
-
 		data = append(data, []interface{}{
 			assetName,
 			asset.Isopath,
@@ -1340,16 +1335,16 @@ func checkOOBTemplateIntegrity(c *Command, repoTemplate RepoTemplate) error {
 
 	var bootloaderFile *iso9660.File = nil
 
-	for patchedAssetName, asset := range assetPatches {
+	for _, asset := range assetPatches {
 		for _, child := range children {
-			if !child.IsDir() && child.Name() == patchedAssetName {
+			if !child.IsDir() && child.Name() == asset.name {
 				bootloaderFile = child
 				break
 			}
 		}
 
 		if bootloaderFile == nil {
-			return fmt.Errorf("Could not apply patch asset as the bootloader config file with name '%s' was not found in the given ISO image.", patchedAssetName)
+			return fmt.Errorf("Could not apply patch asset as the bootloader config file with name '%s' was not found in the given ISO image.", asset.name)
 		}
 
 		bootloaderData, err := ioutil.ReadAll(bootloaderFile.Reader())
@@ -1377,6 +1372,7 @@ func checkOOBTemplateIntegrity(c *Command, repoTemplate RepoTemplate) error {
 	}
 
 	fmt.Println(repoTemplate.Assets)
+	return fmt.Errorf("STOOOOP")
 	return nil
 }
 
@@ -2161,7 +2157,7 @@ func getRepositoryTemplateAssets(tree *object.Tree, repoMap map[string]RepoTempl
 							TemplateFileContents: fileContents,
 						}
 					}
-				} else {
+				} else if parts[2] != readMeFileName {
 					asset := TemplateAsset{
 						name:     file.Name,
 						contents: fileContents,
@@ -2192,7 +2188,7 @@ func getLocalTemplateAssets(dirName string, repoTemplate *RepoTemplate) error {
 	repoAssets := []TemplateAsset{}
 
 	for _, file := range files {
-		if file.IsDir() {
+		if file.IsDir() || file.Name() == readMeFileName {
 			continue
 		}
 
