@@ -322,7 +322,7 @@ var osTemplatesCmds = []Command{
 		ExecuteFunc: templateBuildCmd,
 		Endpoint:    ExtendedEndpoint,
 		Example: `
-	metalcloud-cli os-template build --name="test-template" --source-template="ESXi/7.0.0u3" --source-iso="VMware-VMvisor-Installer-7.0.0.update03-19193900.x86_64-DellEMC_Customized-A02.iso" —-assets-update oob-meta-data:/new-file,oob-vendor-data:/new-file-2
+	metalcloud-cli os-template build --name test-template --source-template Ubuntu/OOB-20.04 --source-iso ubuntu-20.04.4-live-server-amd64.iso —-assets-update oob-meta-data:./replace_asset_1,oob-vendor-data:./replace_asset_2
 		`,
 	},
 	{
@@ -1305,6 +1305,7 @@ func checkOOBTemplateIntegrity(c *Command, repoTemplate RepoTemplate) error {
 	if err != nil {
 		return fmt.Errorf("Image not found at path %s.", imagePath)
 	}
+	defer file.Close()
 
 	image, err := iso9660.OpenImage(file)
 
@@ -1718,10 +1719,10 @@ Are you sure you want to continue connecting (yes/no)?
 		fmt.Printf("Established connection to hostname %s.\n", imageRepositoryHostname)
 
 		isoImagefile, err := os.Open(imagePath)
-
 		if err != nil {
 			return "", fmt.Errorf("Image not found at path %s.", imagePath)
 		}
+		defer isoImagefile.Close()
 
 		remotePath := remoteDirectoryPath + isoPath
 
@@ -1742,7 +1743,39 @@ Are you sure you want to continue connecting (yes/no)?
 }
 
 func createOtherAssets(c *Command, repoTemplate RepoTemplate, assets *[]Asset, templateName string, createAssetCommand Command) error {
-	//TODO: implement assets-update here
+	if value, ok := getStringParamOk(c.Arguments["assets-update"]); ok {
+		assetsUpdateString := value
+
+		// Format is: template_asset_1:/local_replace_asset_1,template_asset_2:/local_replace_asset_2
+		assetParts := strings.Split(assetsUpdateString, ",")
+		for _, assetPart := range assetParts {
+			parts := strings.Split(assetPart, ":")
+
+			if len(parts) != 2 {
+				return fmt.Errorf("Invalid format detected for 'assets-update' parameter. Asset update parts must be separated by commas and each asset update part must have the name of the asset file which contents will be replaced, followed by ':' and the local path to the new asset. Check build command for an example.")
+			}
+
+			templateAssetName := parts[0]
+			localAssetPath := parts[1]
+
+			if _, ok := repoTemplate.Assets[templateAssetName]; !ok {
+				return fmt.Errorf("Asset with name %s not found in the template.yaml file. Only assets found there can have their contents replaced.", templateAssetName)
+			}
+
+			localAssetFile, err := os.Open(localAssetPath)
+
+			if err != nil {
+				return fmt.Errorf("Asset file not found at path %s.", localAssetPath)
+			}
+			defer localAssetFile.Close()
+
+			fileBytes, err := os.ReadFile(localAssetPath)
+			asset := repoTemplate.Assets[templateAssetName]
+			asset.contents = string(fileBytes)
+			repoTemplate.Assets[templateAssetName] = asset
+		}
+	}
+
 	for _, asset := range repoTemplate.Assets {
 		assetContents := asset.contents
 		assetFileName := asset.name
