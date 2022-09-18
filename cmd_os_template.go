@@ -1486,24 +1486,50 @@ func createTemplateAssets(c *Command, client metalcloud.MetalCloudClient, repoTe
 		}
 	}
 
-	fmt.Println("Done.")
+	var template metalcloud.OSTemplate
 
-	if getBoolParam(c.Arguments["return-id"]) {
-		if templateID == 0 {
-			list, err := client.OSTemplates()
+	if templateID == 0 {
+		list, err := client.OSTemplates()
+
+		if err != nil {
+			return "", err
+		}
+
+		for _, s := range *list {
+			if s.VolumeTemplateLabel == templateName {
+				template = s
+				templateID = s.VolumeTemplateID
+				break
+			}
+		}
+	}
+
+	if !repoTemplate.OsTemplateContents.ProvisionViaOob{
+		if repoTemplate.OsTemplateContents.InstallBootloaderAsset != "" || repoTemplate.OsTemplateContents.OsBootBootloaderAsset != ""{
+			list, err := client.OSTemplateOSAssets(templateID)
 
 			if err != nil {
 				return "", err
 			}
 
-			for _, s := range *list {
-				if s.VolumeTemplateLabel == templateName {
-					templateID = s.VolumeTemplateID
-					break
+			for _, a := range *list {
+				if a.OSAsset.OSAssetFileName == repoTemplate.OsTemplateContents.InstallBootloaderAsset {
+					template.OSAssetBootloaderLocalInstall = a.OSAsset.OSAssetID
+				} else if a.OSAsset.OSAssetFileName == repoTemplate.OsTemplateContents.OsBootBootloaderAsset {
+					template.OSAssetBootloaderOSBoot = a.OSAsset.OSAssetID
 				}
 			}
-		}
+			_, err = client.OSTemplateUpdate(templateID, template)
 
+			if err != nil {
+				return "", err
+			}
+		}
+	}
+
+	fmt.Println("Done.")
+
+	if getBoolParam(c.Arguments["return-id"]) {
 		return fmt.Sprintf("%d", templateID), nil
 	}
 
