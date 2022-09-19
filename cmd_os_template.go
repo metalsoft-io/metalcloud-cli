@@ -84,7 +84,7 @@ type TemplateAsset struct {
 type OsTemplateContents struct {
 	BootType                        string `yaml:"boot-type"`
 	BootMethodsSupported            string `yaml:"boot-methods-supported"`
-	OsFamily                        string `yaml:"os-family"`
+	OsType                        	string `yaml:"os-type"`
 	OsVersion                       string `yaml:"os-version"`
 	OsArchitecture                  string `yaml:"os-architecture"`
 	OsReadyMethod                   string `yaml:"os-ready-method"`
@@ -104,7 +104,7 @@ type TemplateContents struct {
 
 // Struct containing the values that will be printed out for a repo template
 type RepoTemplate struct {
-	Family               string
+	Type               string
 	Version              string
 	Architecture         string
 	DeployProcess        string
@@ -304,7 +304,7 @@ var osTemplatesCmds = []Command{
 		InitFunc: func(c *Command) {
 			c.Arguments = map[string]interface{}{
 				"name":                     c.FlagSet.String("name", _nilDefaultStr, red("(Required)")+"Name of the template."),
-				"source-template":          c.FlagSet.String("source-template", _nilDefaultStr, red("(Required)")+"The source template to use as a base. It has the format of 'family/architecture'. Use --list-supported for a list of accepted values."),
+				"source-template":          c.FlagSet.String("source-template", _nilDefaultStr, red("(Required)")+"The source template to use as a base. It is either the source template path from a repository or a local path to a template.yaml file."),
 				"source-iso":               c.FlagSet.String("source-iso", _nilDefaultStr, red("(Required)")+"The source ISO image path."),
 				"label":                    c.FlagSet.String("label", _nilDefaultStr, yellow("(Optional)")+"Label of the template. If not present, is the name of the template."),
 				"description":              c.FlagSet.String("description", _nilDefaultStr, yellow("(Optional)")+"Description of the template."),
@@ -1116,7 +1116,7 @@ func retrieveRepositoryAssets(c *Command, repoMap map[string]RepoTemplate) error
 func createRepositoryTemplatesTable(repoMap map[string]RepoTemplate) tableformatter.Table {
 	schema := []tableformatter.SchemaField{
 		{
-			FieldName: "FAMILY",
+			FieldName: "TYPE",
 			FieldType: tableformatter.TypeString,
 			FieldSize: 5,
 		},
@@ -1183,7 +1183,7 @@ func createRepositoryTemplatesTable(repoMap map[string]RepoTemplate) tableformat
 		}
 
 		data = append(data, []interface{}{
-			repoTemplate.Family,
+			repoTemplate.Type,
 			version,
 			architecture,
 			deployProcess,
@@ -1405,7 +1405,7 @@ func createTemplateAssets(c *Command, client metalcloud.MetalCloudClient, repoTe
 		"os_bootstrap_function_name":         createTemplateCommand.FlagSet.String("os-bootstrap-function-name", _nilDefaultStr, "Optional property that selects the cloudinit configuration function. Can be one of: provisioner_os_cloudinit_prepare_centos, provisioner_os_cloudinit_prepare_rhel, provisioner_os_cloudinit_prepare_ubuntu, provisioner_os_cloudinit_prepare_windows."),
 		"boot_type":                          createTemplateCommand.FlagSet.String("boot-type", OsTemplateContents.BootType, red("(Required)")+" Template boot type. Possible values: 'uefi_only','legacy_only' "),
 		"description":                        createTemplateCommand.FlagSet.String("description", templateDescription, "Template description"),
-		"os_type":                            createTemplateCommand.FlagSet.String("os-type", repoTemplate.Family, red("(Required)")+" Template operating system type. For example, Ubuntu or CentOS."),
+		"os_type":                            createTemplateCommand.FlagSet.String("os-type", repoTemplate.Type, red("(Required)")+" Template operating system type. For example, Ubuntu or CentOS."),
 		"os_version":                         createTemplateCommand.FlagSet.String("os-version", repoTemplate.Version, red("(Required)")+" Template operating system version."),
 		"os_architecture":                    createTemplateCommand.FlagSet.String("os-architecture", repoTemplate.Architecture, red("(Required)")+" Template operating system architecture.Possible values: none, unknown, x86, x86_64."),
 		"initial_user":                       createTemplateCommand.FlagSet.String("initial-user", OsTemplateContents.InitialUser, red("(Required)")+" Template's initial username, used to verify install."),
@@ -2291,7 +2291,7 @@ func populateTemplateValues(repoTemplate *RepoTemplate) (bool, error) {
 	architecture := templateContents.OsTemplateContents.OsArchitecture
 	deployProcess := templateContents.OsTemplateContents.BootMethodsSupported
 	bootType := templateContents.OsTemplateContents.BootType
-	family := templateContents.OsTemplateContents.OsFamily
+	osType := templateContents.OsTemplateContents.OsType
 	version := templateContents.OsTemplateContents.OsVersion
 
 	validArchitectures := []string{osArchitecture64}
@@ -2303,8 +2303,8 @@ func populateTemplateValues(repoTemplate *RepoTemplate) (bool, error) {
 
 	errors := []string{}
 
-	if family == "" {
-		errors = append(errors, fmt.Sprintf("Found no OS family. There must be one in the os-template section with the key name 'os-family'."))
+	if osType == "" {
+		errors = append(errors, fmt.Sprintf("Found no OS type. There must be one in the os-template section with the key name 'os-type'."))
 	}
 
 	if version == "" {
@@ -2400,7 +2400,7 @@ func populateTemplateValues(repoTemplate *RepoTemplate) (bool, error) {
 	repoTemplate.Architecture = architecture
 	repoTemplate.DeployProcess = deployProcess
 	repoTemplate.BootType = bootType
-	repoTemplate.Family = family
+	repoTemplate.Type = osType
 	repoTemplate.Version = version
 
 	return templateHasErrors, err
