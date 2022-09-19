@@ -84,7 +84,7 @@ type TemplateAsset struct {
 type OsTemplateContents struct {
 	BootType                        string `yaml:"boot-type"`
 	BootMethodsSupported            string `yaml:"boot-methods-supported"`
-	OsType                        	string `yaml:"os-type"`
+	OsType                          string `yaml:"os-type"`
 	OsVersion                       string `yaml:"os-version"`
 	OsArchitecture                  string `yaml:"os-architecture"`
 	OsReadyMethod                   string `yaml:"os-ready-method"`
@@ -104,7 +104,7 @@ type TemplateContents struct {
 
 // Struct containing the values that will be printed out for a repo template
 type RepoTemplate struct {
-	Type               string
+	Type                 string
 	Version              string
 	Architecture         string
 	DeployProcess        string
@@ -1503,8 +1503,8 @@ func createTemplateAssets(c *Command, client metalcloud.MetalCloudClient, repoTe
 		}
 	}
 
-	if !repoTemplate.OsTemplateContents.ProvisionViaOob{
-		if repoTemplate.OsTemplateContents.InstallBootloaderAsset != "" || repoTemplate.OsTemplateContents.OsBootBootloaderAsset != ""{
+	if !repoTemplate.OsTemplateContents.ProvisionViaOob {
+		if repoTemplate.OsTemplateContents.InstallBootloaderAsset != "" || repoTemplate.OsTemplateContents.OsBootBootloaderAsset != "" {
 			list, err := client.OSTemplateOSAssets(templateID)
 
 			if err != nil {
@@ -1803,14 +1803,21 @@ func createOtherAssets(c *Command, repoTemplate RepoTemplate, assets *[]Asset, t
 
 	for _, asset := range repoTemplate.Assets {
 		assetContents := asset.contents
-		assetFileName := asset.name
 
 		if asset.Usage == "" {
 			asset.Usage = _nilDefaultStr
 		}
 
+		var assetURL string
+
 		if asset.Url == "" {
-			asset.Url = _nilDefaultStr
+			assetURL = _nilDefaultStr
+		} else {
+			// TODO: replace with real hostname after finishing development
+			imageRepositoryHostname := "192.168.74.1:4022"
+
+			//TODO: replace me
+			assetURL = "http://" + imageRepositoryHostname + asset.Url
 		}
 
 		// For OOB templates, isopath is populated, for non-OOB ones, path is used instead.
@@ -1822,16 +1829,13 @@ func createOtherAssets(c *Command, repoTemplate RepoTemplate, assets *[]Asset, t
 			assetPath = asset.Path
 		}
 
-		s := strings.Split(assetFileName, "/")
-		assetName := s[len(s)-1]
-
 		createOtherAssetCommand := createAssetCommand
-		createOtherAssetCommand.FlagSet = flag.NewFlagSet("create asset "+assetName, flag.ExitOnError)
+		createOtherAssetCommand.FlagSet = flag.NewFlagSet("create asset "+asset.name, flag.ExitOnError)
 		createOtherAssetCommand.Arguments = map[string]interface{}{
-			"filename":               createOtherAssetCommand.FlagSet.String("filename", assetName, "Asset's filename"),
+			"filename":               createOtherAssetCommand.FlagSet.String("filename", asset.name, "Asset's filename"),
 			"usage":                  createOtherAssetCommand.FlagSet.String("usage", asset.Usage, "Asset's usage."),
 			"mime":                   createOtherAssetCommand.FlagSet.String("mime", asset.Mime, "Asset's mime type. Possible values: \""+assetMimeTypeDynamic+"\",\""+assetMimeTypeBinary+"\""),
-			"url":                    createOtherAssetCommand.FlagSet.String("url", asset.Url, "Asset's source url. If present it will not read content anymore"),
+			"url":                    createOtherAssetCommand.FlagSet.String("url", assetURL, "Asset's source url. If present it will not read content anymore"),
 			"read_content_from_pipe": createOtherAssetCommand.FlagSet.Bool("pipe", false, "Read assets's content read from pipe instead of terminal input"),
 			"template_id_or_name":    createOtherAssetCommand.FlagSet.String("template-id", templateName, "Template's id or name to associate. "),
 			"path":                   createOtherAssetCommand.FlagSet.String("path", assetPath, "Path to associate asset to."),
@@ -1840,7 +1844,7 @@ func createOtherAssets(c *Command, repoTemplate RepoTemplate, assets *[]Asset, t
 		}
 
 		*assets = append(*assets, Asset{
-			Name:     assetName,
+			Name:     asset.name,
 			Command:  createOtherAssetCommand,
 			Contents: assetContents,
 		})
@@ -2368,6 +2372,20 @@ func populateTemplateValues(repoTemplate *RepoTemplate) (bool, error) {
 			asset.name = assetName
 			asset.contents = assetContents
 			repoTemplate.Assets[assetName] = asset
+		}
+	}
+
+	// Add the assets that are part of non-OOB templates and are not physically in the repository.
+	if !repoTemplate.OsTemplateContents.ProvisionViaOob {
+		for assetName, asset := range templateContents.Assets {
+			if asset.Url != "" {
+				if asset.Path == "" {
+					errors = append(errors, fmt.Sprintf("Found no path for asset %s. There must be one for the asset with the key name 'path', as the asset is part of a non-OOB template.", assetName))
+				}
+
+				asset.name = assetName
+				repoTemplate.Assets[assetName] = asset
+			}
 		}
 	}
 
