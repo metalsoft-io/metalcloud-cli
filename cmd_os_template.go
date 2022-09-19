@@ -315,7 +315,6 @@ var osTemplatesCmds = []Command{
 				"replace-if-exists":        c.FlagSet.Bool("replace-if-exists", false, yellow("(Optional)")+"Replaces ISO image if one already exists in the HTTP repository."),
 				"quiet":                    c.FlagSet.Bool("quiet", false, green("(Flag)")+"If set, eliminates all output."),
 				"debug":                    c.FlagSet.Bool("debug", false, green("(Flag)")+"If set, increases log level."),
-				"format":                   c.FlagSet.String("format", _nilDefaultStr, "The output format. Supported values are 'json','csv','yaml'. The default format is human readable."),
 				"return-id":                c.FlagSet.Bool("return-id", false, green("(Flag)")+"If set, returns the ID of the generated template. Useful for automation."),
 			}
 		},
@@ -367,7 +366,7 @@ var osTemplatesCmds = []Command{
 		FlagSet:      flag.NewFlagSet("list assets from an OS source template", flag.ExitOnError),
 		InitFunc: func(c *Command) {
 			c.Arguments = map[string]interface{}{
-				"repo":            c.FlagSet.String("repo", _nilDefaultStr, yellow("(Optional)")+"Override the default github url used to download template files for given OS."),
+				"repo":            c.FlagSet.String("repo", _nilDefaultStr, yellow("(Optional)")+"Override the default github url used to download template files for given OS. If using a local template, use the keyword 'local'."),
 				"source-template": c.FlagSet.String("source-template", _nilDefaultStr, red("(Required)")+"The source template to use as a base. It's either the source path from a repository or a local path to the template.yaml file."),
 				"format":          c.FlagSet.String("format", _nilDefaultStr, "The output format. Supported values are 'json','csv','yaml'. The default format is human readable."),
 			}
@@ -399,7 +398,7 @@ var osTemplatesCmds = []Command{
 		FlagSet:      flag.NewFlagSet("validate an OS source templates", flag.ExitOnError),
 		InitFunc: func(c *Command) {
 			c.Arguments = map[string]interface{}{
-				"repo":            c.FlagSet.String("repo", _nilDefaultStr, yellow("(Optional)")+"Override the default github url used to download template files for given OS."),
+				"repo":            c.FlagSet.String("repo", _nilDefaultStr, yellow("(Optional)")+"Override the default github url used to download template files for given OS. If using a local template, use the keyword 'local'."),
 				"source-template": c.FlagSet.String("source-template", _nilDefaultStr, red("(Required)")+"The source template to use as a base. It's either the source path from a repository or a local path to the template.yaml file."),
 			}
 		},
