@@ -583,20 +583,34 @@ func TestOSTemplateMakePublicCmd(t *testing.T) {
 	testCreateCommand(templateMakePublicCmd, cases, client, t)
 }
 
-func TestOSTemplateBuildCmd(t *testing.T) {
+func TestOSTemplateListRepositoryCmd(t *testing.T) {
 	RegisterTestingT(t)
 	client := mock_metalcloud.NewMockMetalCloudClient(gomock.NewController(t))
 
 	cases := []CommandTestCase{
 		{
-			name: "list repo with warnings",
+			name: "list repository",
 			cmd: MakeCommand(map[string]interface{}{
-				"list-supported": true,
-				"list-warnings":  true,
 			}),
 			good: true,
 		},
 	}
 
-	testCreateCommand(templateBuildCmd, cases, client, t)
+	testCreateCommand(templateListRepoCmd, cases, client, t)
+}
+
+func TestOSTemplateValidateRepositoryCmd(t *testing.T) {
+	RegisterTestingT(t)
+	client := mock_metalcloud.NewMockMetalCloudClient(gomock.NewController(t))
+
+	cases := []CommandTestCase{
+		{
+			name: "validate repository",
+			cmd: MakeCommand(map[string]interface{}{
+			}),
+			good: true,
+		},
+	}
+
+	testCreateCommand(templateValidateRepoCmd, cases, client, t)
 }
