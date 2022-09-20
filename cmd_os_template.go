@@ -313,7 +313,6 @@ var osTemplatesCmds = []Command{
 				"skip-upload-to-repo":      c.FlagSet.Bool("skip-upload-to-repo", false, yellow("(Optional)")+"Skip ISO image upload to the HTTP repository."),
 				"strict-host-key-checking": c.FlagSet.Bool("strict-host-key-checking", true, yellow("(Optional)")+"Skip the manual check when adding a host key to the known_hosts file in the ISO image upload process."),
 				"replace-if-exists":        c.FlagSet.Bool("replace-if-exists", false, yellow("(Optional)")+"Replaces ISO image if one already exists in the HTTP repository."),
-				"quiet":                    c.FlagSet.Bool("quiet", false, green("(Flag)")+"If set, eliminates all output."),
 				"debug":                    c.FlagSet.Bool("debug", false, green("(Flag)")+"If set, increases log level."),
 				"return-id":                c.FlagSet.Bool("return-id", false, green("(Flag)")+"If set, returns the ID of the generated template. Useful for automation."),
 			}
