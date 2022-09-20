@@ -64,11 +64,14 @@ const assetUsageTypeBuildComponent = "build_component"
 const assetJSONTypeDynamic = "dynamic"
 const assetJSONTypeBinary = "binary"
 
-const remoteDirectoryPath = "/var/www/html/"
+// Home directory path might also be a parameter
+const remoteDirectoryPath = "/home/repo/data/"
 const otherAssetsMaximumSizeBytes = 2097152
 
 const localRepositoryName = "local"
 const readMeFileName = "README.md"
+
+const imageRepositoryHostname = "repointegration.bigstepcloud.com"
 
 type TemplateAsset struct {
 	name     string
@@ -1544,8 +1547,8 @@ func createIsoImageAsset(c *Command, repoTemplate RepoTemplate, assets *[]Asset,
 	if !repoTemplate.OsTemplateContents.ProvisionViaOob {
 		return nil
 	}
-	// TODO: replace with real hostname after finishing development
-	imageRepositoryHostname := "192.168.74.1:4022"
+
+	imageRepositoryHostname := imageRepositoryHostname
 
 	if userGivenImageRepositoryHostname := os.Getenv("METALCLOUD_IMAGE_REPOSITORY_HOSTNAME"); userGivenImageRepositoryHostname != "" {
 		imageRepositoryHostname = os.Getenv("METALCLOUD_IMAGE_REPOSITORY_HOSTNAME")
@@ -1556,7 +1559,7 @@ func createIsoImageAsset(c *Command, repoTemplate RepoTemplate, assets *[]Asset,
 	s := strings.Split(imagePath, "/")
 	imageFilename := s[len(s)-1]
 
-	isoPath := "/iso/" + templateName + "-" + imageFilename
+	isoPath := "/.iso/" + templateName + "-" + imageFilename
 
 	_, err := handleIsoImageUpload(c, imageRepositoryHostname, isoPath, imagePath)
 
@@ -1564,8 +1567,7 @@ func createIsoImageAsset(c *Command, repoTemplate RepoTemplate, assets *[]Asset,
 		return err
 	}
 
-	//TODO: replace me
-	assetURL := "http://" + imageRepositoryHostname + isoPath
+	assetURL := "https://" + imageRepositoryHostname + isoPath
 
 	createIsoCommand := createAssetCommand
 	createIsoCommand.FlagSet = flag.NewFlagSet("create ISO asset", flag.ExitOnError)
@@ -1595,8 +1597,8 @@ func handleIsoImageUpload(c *Command, imageRepositoryHostname string, isoPath st
 		s := strings.Split(isoPath, "/")
 		imageFilename := s[len(s)-1]
 
-		//TODO: test with hostname, not IP
-		const remoteURL = "http://192.168.74.1:4080/iso"
+		sshRepositoryHostname := imageRepositoryHostname + ":22"
+		remoteURL := "https://" + imageRepositoryHostname + "/.iso"
 
 		imageExists, err := checkRemoteFileExists(remoteURL, imageFilename)
 
@@ -1731,7 +1733,7 @@ Are you sure you want to continue connecting (yes/no)?
 		}
 
 		// Create a new SCP client.
-		scpClient := scp.NewClient(imageRepositoryHostname, &clientConfig)
+		scpClient := scp.NewClient(sshRepositoryHostname, &clientConfig)
 
 		// Connect to the remote server.
 		err = scpClient.Connect()
@@ -1741,7 +1743,7 @@ Are you sure you want to continue connecting (yes/no)?
 
 		defer scpClient.Close()
 
-		fmt.Printf("Established connection to hostname %s.\n", imageRepositoryHostname)
+		fmt.Printf("Established connection to hostname %s.\n", sshRepositoryHostname)
 
 		isoImagefile, err := os.Open(imagePath)
 		if err != nil {
@@ -1813,11 +1815,7 @@ func createOtherAssets(c *Command, repoTemplate RepoTemplate, assets *[]Asset, t
 		if asset.Url == "" {
 			assetURL = _nilDefaultStr
 		} else {
-			// TODO: replace with real hostname after finishing development
-			imageRepositoryHostname := "192.168.74.1:4022"
-
-			//TODO: replace me
-			assetURL = "http://" + imageRepositoryHostname + asset.Url
+			assetURL = "https://" + imageRepositoryHostname + asset.Url
 		}
 
 		// For OOB templates, isopath is populated, for non-OOB ones, path is used instead.
