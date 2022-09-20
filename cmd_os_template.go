@@ -1940,7 +1940,6 @@ func templateListAssetsCmd(c *Command, client metalcloud.MetalCloudClient) (stri
 	}
 
 	var table tableformatter.Table
-	validTemplateFound := true
 
 	if !useLocalTemplate {
 		repoMap := make(map[string]RepoTemplate)
@@ -1965,13 +1964,13 @@ func templateListAssetsCmd(c *Command, client metalcloud.MetalCloudClient) (stri
 		repoTemplate := RepoTemplate{}
 
 		getLocalTemplateAssets(filepath.Dir(sourceTemplate), &repoTemplate)
-		validTemplateFound, err = populateTemplateValues(&repoTemplate)
+		templateHasErrors, err := populateTemplateValues(&repoTemplate)
 
 		if err != nil {
 			return "", err
 		}
 
-		if !validTemplateFound {
+		if templateHasErrors {
 			fmt.Printf("Found errors for template file %s! Use the 'validate-template' function to see them and fix them.\n", sourceTemplate)
 		}
 
