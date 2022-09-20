@@ -321,7 +321,8 @@ var osTemplatesCmds = []Command{
 		Endpoint:    ExtendedEndpoint,
 		Example: `
 	metalcloud-cli os-template build --name test-template --source-template Ubuntu/OOB-20.04 --source-iso ubuntu-20.04.4-live-server-amd64.iso —-assets-update oob-meta-data:./replace_asset_1,oob-vendor-data:./replace_asset_2
-		`,
+	metalcloud-cli os-template build --name test-100 --source-template Ubuntu/OOB-20.04 --source-iso ubuntu-20.04.4-live-server-amd64.iso --replace-if-exists --strict-host-key-checking=false
+	`,
 	},
 	{
 		Description:  "Create a diff file.",
