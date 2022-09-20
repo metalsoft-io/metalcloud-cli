@@ -1978,7 +1978,7 @@ func templateListAssetsCmd(c *Command, client metalcloud.MetalCloudClient) (stri
 		table = createTemplateAssetsTable(repoTemplate)
 	}
 
-	return table.RenderTable("Repository templates", "", getStringParam(c.Arguments["format"]))
+	return table.RenderTable("Template assets", "", getStringParam(c.Arguments["format"]))
 }
 
 func templateValidateRepoCmd(c *Command, client metalcloud.MetalCloudClient) (string, error) {
