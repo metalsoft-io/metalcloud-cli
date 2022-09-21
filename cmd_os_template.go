@@ -64,14 +64,15 @@ const assetUsageTypeBuildComponent = "build_component"
 const assetJSONTypeDynamic = "dynamic"
 const assetJSONTypeBinary = "binary"
 
-// Home directory path might also be a parameter
-const remoteDirectoryPath = "/home/repo/data/"
 const otherAssetsMaximumSizeBytes = 2097152
 
 const localRepositoryName = "local"
 const readMeFileName = "README.md"
 
-const imageRepositoryHostname = "repointegration.bigstepcloud.com"
+const defaultImageRepositorySSHPath = "/home/repo/data/.iso"
+const defaultImageRepositorySSHPort = "22"
+const defaultImageRepositoryHostname = "repointegration.bigstepcloud.com"
+const defaultImageRepositoryIsoPath = "/.iso"
 
 type TemplateAsset struct {
 	name     string
@@ -1548,7 +1549,7 @@ func createIsoImageAsset(c *Command, repoTemplate RepoTemplate, assets *[]Asset,
 		return nil
 	}
 
-	imageRepositoryHostname := imageRepositoryHostname
+	imageRepositoryHostname := defaultImageRepositoryHostname
 
 	if userGivenImageRepositoryHostname := os.Getenv("METALCLOUD_IMAGE_REPOSITORY_HOSTNAME"); userGivenImageRepositoryHostname != "" {
 		imageRepositoryHostname = os.Getenv("METALCLOUD_IMAGE_REPOSITORY_HOSTNAME")
@@ -1559,7 +1560,7 @@ func createIsoImageAsset(c *Command, repoTemplate RepoTemplate, assets *[]Asset,
 	s := strings.Split(imagePath, "/")
 	imageFilename := s[len(s)-1]
 
-	isoPath := "/.iso/" + templateName + "-" + imageFilename
+	isoPath := "/" + templateName + "-" + imageFilename
 
 	_, err := handleIsoImageUpload(c, imageRepositoryHostname, isoPath, imagePath)
 
@@ -1592,13 +1593,33 @@ func createIsoImageAsset(c *Command, repoTemplate RepoTemplate, assets *[]Asset,
 }
 
 func handleIsoImageUpload(c *Command, imageRepositoryHostname string, isoPath string, imagePath string) (string, error) {
+	remoteDirectoryPath := defaultImageRepositorySSHPath
+
+	if userGivenRemoteDirectoryPath := os.Getenv("METALCLOUD_IMAGE_REPOSITORY_SSH_PATH"); userGivenRemoteDirectoryPath != "" {
+		remoteDirectoryPath = os.Getenv("METALCLOUD_IMAGE_REPOSITORY_SSH_PATH")
+	}
+
+	remotePath := remoteDirectoryPath + isoPath
+
+	remoteSSHPort := defaultImageRepositorySSHPort
+
+	if userGivenSSHPort := os.Getenv("METALCLOUD_IMAGE_REPOSITORY_SSH_PORT"); userGivenSSHPort != "" {
+		remoteSSHPort = os.Getenv("METALCLOUD_IMAGE_REPOSITORY_SSH_PORT")
+	}
+
+	imageRepositoryIsoPath := defaultImageRepositoryIsoPath
+
+	if userGivenIsoPath := os.Getenv("METALCLOUD_IMAGE_REPOSITORY_ISO_PATH"); userGivenIsoPath != "" {
+		imageRepositoryIsoPath = os.Getenv("METALCLOUD_IMAGE_REPOSITORY_ISO_PATH")
+	}
+
 	if !getBoolParam(c.Arguments["skip-upload-to-repo"]) {
 
 		s := strings.Split(isoPath, "/")
 		imageFilename := s[len(s)-1]
 
-		sshRepositoryHostname := imageRepositoryHostname + ":22"
-		remoteURL := "https://" + imageRepositoryHostname + "/.iso"
+		sshRepositoryHostname := imageRepositoryHostname + ":" + remoteSSHPort
+		remoteURL := "https://" + imageRepositoryHostname + imageRepositoryIsoPath
 
 		imageExists, err := checkRemoteFileExists(remoteURL, imageFilename)
 
@@ -1607,14 +1628,14 @@ func handleIsoImageUpload(c *Command, imageRepositoryHostname string, isoPath st
 		}
 
 		if imageExists && !getBoolParam(c.Arguments["replace-if-exists"]) {
-			fmt.Printf("Image %s already exists at path %s. Skipping upload. Use the 'replace-if-exists' parameter to replace the existing image.\n", imageFilename, isoPath)
+			fmt.Printf("Image %s already exists at path %s. Skipping upload. Use the 'replace-if-exists' parameter to replace the existing image.\n", imageFilename, remotePath)
 			return "", nil
 		}
 
 		if imageExists {
-			fmt.Printf("Replacing image %s at path %s.\n", imageFilename, isoPath)
+			fmt.Printf("Replacing image %s at path %s.\n", imageFilename, remotePath)
 		} else {
-			fmt.Printf("Uploading new image %s at path %s.\n", imageFilename, isoPath)
+			fmt.Printf("Uploading new image %s at path %s.\n", imageFilename, remotePath)
 		}
 
 		if userPrivateSSHKeyPath := os.Getenv("METALCLOUD_USER_PRIVATE_OPENSSH_KEY_PATH"); userPrivateSSHKeyPath == "" {
@@ -1751,19 +1772,17 @@ Are you sure you want to continue connecting (yes/no)?
 		}
 		defer isoImagefile.Close()
 
-		remotePath := remoteDirectoryPath + isoPath
-
-		fmt.Printf("Starting image upload to repository at path %s.\n", isoPath)
+		fmt.Printf("Starting image upload to repository at path %s.\n", remotePath)
 		err = scpClient.CopyFile(context.Background(), isoImagefile, remotePath, "0777")
 
 		if err != nil {
 			return "", fmt.Errorf("Error while copying file: %s", err)
 		}
 
-		fmt.Printf("Finished image upload to repository at path %s.\n", isoPath)
+		fmt.Printf("Finished image upload to repository at path %s.\n", remotePath)
 
 	} else {
-		fmt.Printf("Skipped uploading image to repository at path %s.", isoPath)
+		fmt.Printf("Skipped uploading image to repository at path %s.", remotePath)
 	}
 
 	return "", nil
@@ -1801,6 +1820,12 @@ func createOtherAssets(c *Command, repoTemplate RepoTemplate, assets *[]Asset, t
 			asset.contents = string(fileBytes)
 			repoTemplate.Assets[templateAssetName] = asset
 		}
+	}
+
+	imageRepositoryHostname := defaultImageRepositoryHostname
+
+	if userGivenImageRepositoryHostname := os.Getenv("METALCLOUD_IMAGE_REPOSITORY_HOSTNAME"); userGivenImageRepositoryHostname != "" {
+		imageRepositoryHostname = os.Getenv("METALCLOUD_IMAGE_REPOSITORY_HOSTNAME")
 	}
 
 	for _, asset := range repoTemplate.Assets {
