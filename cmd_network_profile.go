@@ -192,6 +192,11 @@ func networkProfileListCmd(c *Command, client metalcloud.MetalCloudClient) (stri
 			FieldSize: 30,
 		},
 		{
+			FieldName: "PUBLIC",
+			FieldType: tableformatter.TypeBool,
+			FieldSize: 10,
+		},
+		{
 			FieldName: "CREATED",
 			FieldType: tableformatter.TypeString,
 			FieldSize: 10,
@@ -223,6 +228,7 @@ func networkProfileListCmd(c *Command, client metalcloud.MetalCloudClient) (stri
 			blue(np.NetworkProfileLabel),
 			np.NetworkType,
 			vlans,
+			np.NetworkProfileIsPublic,
 			np.NetworkProfileCreatedTimestamp,
 			np.NetworkProfileUpdatedTimestamp,
 		})
