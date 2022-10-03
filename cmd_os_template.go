@@ -1035,10 +1035,19 @@ func retrieveRepositoryAssets(c *Command, repoMap map[string]RepoTemplate) error
 	cloneOptions.Depth = 1 // We are only interested in the last commit
 
 	if repositoryName, ok := getStringParamOk(c.Arguments["repo"]); ok {
+		var username, password string
+
+		if userPrivateUsername := os.Getenv("METALCLOUD_USER_PRIVATE_REPOSITORY_USERNAME"); userPrivateUsername != "" {
+			username = userPrivateUsername
+		}
+
 		if userPrivateToken := os.Getenv("METALCLOUD_USER_PRIVATE_REPOSITORY_TOKEN"); userPrivateToken != "" {
-			cloneOptions.Auth = &http.BasicAuth{
-				Password: os.Getenv("METALCLOUD_USER_PRIVATE_REPOSITORY_TOKEN"),
-			}
+			password = userPrivateToken
+		}
+
+		cloneOptions.Auth = &http.BasicAuth{
+			Username: username,
+			Password: password,
 		}
 
 		cloneOptions.URL = repositoryName
@@ -1061,7 +1070,7 @@ func retrieveRepositoryAssets(c *Command, repoMap map[string]RepoTemplate) error
 
 	if err != nil {
 		if err.Error() == "authentication required" {
-			return fmt.Errorf("Failed to authenticate to the given repository. Please check if the repository exists and/or the given access token is valid in the METALCLOUD_USER_PRIVATE_REPOSITORY_TOKEN environment variable.")
+			return fmt.Errorf("Failed to authenticate to the given repository. Please check if the repository exists and/or the given username is valid in the METALCLOUD_USER_PRIVATE_REPOSITORY_USERNAME environment variable and the given access token is valid in the METALCLOUD_USER_PRIVATE_REPOSITORY_TOKEN environment variable.")
 		}
 
 		return err
