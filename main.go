@@ -297,9 +297,9 @@ func initClients() (map[string]metalcloud.MetalCloudClient, error) {
 	clients := map[string]metalcloud.MetalCloudClient{}
 	endpointSuffixes := map[string]string{
 		DeveloperEndpoint: "/api/developer/developer",
-		ExtendedEndpoint:  "/metal-cloud/extended",
-		UserEndpoint:      "/metal-cloud",
-		"":                "/metal-cloud",
+		ExtendedEndpoint:  "/api/extended",
+		UserEndpoint:      "/api",
+		"":                "/api",
 	}
 
 	for clientName, suffix := range endpointSuffixes {
