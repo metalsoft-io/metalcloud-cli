@@ -1021,10 +1021,60 @@ func templateBuildCmd(c *Command, client metalcloud.MetalCloudClient) (string, e
 		return "", fmt.Errorf("Aborting build due to errors regarding the source template.\n")
 	}
 
-	_, err := handleTemplateBuild(c, client, repoTemplate)
+	templateLabel, err := handleTemplateBuild(c, client, repoTemplate)
 
 	if err != nil {
 		return "", err
+	}
+
+	var templateID int
+	var template metalcloud.OSTemplate
+
+	list, err := client.OSTemplates()
+
+	if err != nil {
+		return "", err
+	}
+
+	for _, s := range *list {
+		if s.VolumeTemplateLabel == templateLabel {
+			template = s
+			templateID = s.VolumeTemplateID
+			break
+		}
+	}
+
+	if !repoTemplate.OsTemplateContents.ProvisionViaOob {
+		if repoTemplate.OsTemplateContents.InstallBootloaderAsset != "" || repoTemplate.OsTemplateContents.OsBootBootloaderAsset != "" {
+			list, err := client.OSTemplateOSAssets(templateID)
+
+			if err != nil {
+				return "", err
+			}
+
+			for _, a := range *list {
+				if a.OSAsset.OSAssetFileName == repoTemplate.OsTemplateContents.InstallBootloaderAsset {
+					template.OSAssetBootloaderLocalInstall = a.OSAsset.OSAssetID
+				} else if a.OSAsset.OSAssetFileName == repoTemplate.OsTemplateContents.OsBootBootloaderAsset {
+					template.OSAssetBootloaderOSBoot = a.OSAsset.OSAssetID
+				}
+			}
+			_, err = client.OSTemplateUpdate(templateID, template)
+
+			if err != nil {
+				return "", err
+			}
+		}
+	}
+
+	if err != nil {
+		return "", fmt.Errorf("Failed to create template. Received error: %s", err)
+	} else {
+		fmt.Println("Done.")
+	}
+
+	if getBoolParam(c.Arguments["return-id"]) {
+		return fmt.Sprintf("%d", templateID), nil
 	}
 
 	return "", nil
@@ -1287,16 +1337,16 @@ func handleTemplateBuild(c *Command, client metalcloud.MetalCloudClient, repoTem
 			return "", err
 		}
 
-		_, err = createTemplateAssets(c, client, repoTemplate, templateName)
+		templateLabel, err := createTemplateAssets(c, client, repoTemplate, templateName)
 
 		if err != nil {
 			return "", err
 		}
+
+		return templateLabel, nil
 	} else {
 		return "", fmt.Errorf("The 'name' parameter must be specified when using the 'build' command.")
 	}
-
-	return "", nil
 }
 
 func checkOOBTemplateIntegrity(c *Command, repoTemplate RepoTemplate) error {
@@ -1434,7 +1484,6 @@ func createTemplateAssets(c *Command, client metalcloud.MetalCloudClient, repoTe
 		"version": createTemplateCommand.FlagSet.String("version", _nilDefaultStr, "Template version. Default value is 0.0.0"),
 	}
 
-	var templateID int
 	_, createError := templateCreateCmd(&createTemplateCommand, client)
 
 	if createError != nil {
@@ -1486,9 +1535,8 @@ func createTemplateAssets(c *Command, client metalcloud.MetalCloudClient, repoTe
 		templateFound := false
 
 		for _, s := range *list {
-			if s.VolumeTemplateDisplayName == templateName {
+			if s.VolumeTemplateLabel == templateLabel {
 				templateFound = true
-				templateID = s.VolumeTemplateID
 				break
 			}
 		}
@@ -1510,13 +1558,13 @@ func createTemplateAssets(c *Command, client metalcloud.MetalCloudClient, repoTe
 
 	assets := []Asset{}
 
-	err := createIsoImageAsset(c, repoTemplate, &assets, templateName, createAssetCommand)
+	err := createIsoImageAsset(c, repoTemplate, &assets, templateName, templateLabel, createAssetCommand)
 
 	if err != nil {
 		return "", err
 	}
 
-	err = createOtherAssets(c, repoTemplate, &assets, templateName, createAssetCommand)
+	err = createOtherAssets(c, repoTemplate, &assets, templateName, templateLabel, createAssetCommand)
 
 	if err != nil {
 		return "", err
@@ -1536,65 +1584,10 @@ func createTemplateAssets(c *Command, client metalcloud.MetalCloudClient, repoTe
 		}
 	}
 
-	var template metalcloud.OSTemplate
-
-	if templateID == 0 {
-		list, err := client.OSTemplates()
-
-		if err != nil {
-			return "", err
-		}
-
-		for _, s := range *list {
-			if s.VolumeTemplateDisplayName == templateName {
-				template = s
-				templateID = s.VolumeTemplateID
-				break
-			}
-		}
-	}
-
-	if !repoTemplate.OsTemplateContents.ProvisionViaOob {
-		if repoTemplate.OsTemplateContents.InstallBootloaderAsset != "" || repoTemplate.OsTemplateContents.OsBootBootloaderAsset != "" {
-			list, err := client.OSTemplateOSAssets(templateID)
-
-			if err != nil {
-				return "", err
-			}
-
-			for _, a := range *list {
-				if a.OSAsset.OSAssetFileName == repoTemplate.OsTemplateContents.InstallBootloaderAsset {
-					template.OSAssetBootloaderLocalInstall = a.OSAsset.OSAssetID
-				} else if a.OSAsset.OSAssetFileName == repoTemplate.OsTemplateContents.OsBootBootloaderAsset {
-					template.OSAssetBootloaderOSBoot = a.OSAsset.OSAssetID
-				}
-			}
-			_, err = client.OSTemplateUpdate(templateID, template)
-
-			if err != nil {
-				return "", err
-			}
-		}
-	}
-
-	if err != nil {
-		fmt.Println("Failed to create template.")
-	} else {
-		fmt.Println("Done.")
-	}
-
-	if getBoolParam(c.Arguments["return-id"]) {
-		return fmt.Sprintf("%d", templateID), nil
-	}
-
-	if err != nil {
-		return "", err
-	}
-
-	return "", nil
+	return templateLabel, nil
 }
 
-func createIsoImageAsset(c *Command, repoTemplate RepoTemplate, assets *[]Asset, templateName string, createAssetCommand Command) error {
+func createIsoImageAsset(c *Command, repoTemplate RepoTemplate, assets *[]Asset, templateName string, templateLabel string, createAssetCommand Command) error {
 	// Only OOB templates handle ISO image upload
 	if !repoTemplate.OsTemplateContents.ProvisionViaOob {
 		return nil
@@ -1629,7 +1622,7 @@ func createIsoImageAsset(c *Command, repoTemplate RepoTemplate, assets *[]Asset,
 		"mime":                   createIsoCommand.FlagSet.String("mime", assetMimeTypeBinary, "Asset's mime type. Possible values: \""+assetMimeTypeDynamic+"\", \""+assetMimeTypeBinary+"\""),
 		"url":                    createIsoCommand.FlagSet.String("url", assetURL, "Asset's source url. If present it will not read content anymore"),
 		"read_content_from_pipe": createIsoCommand.FlagSet.Bool("pipe", false, "Read assets's content read from pipe instead of terminal input"),
-		"template_id_or_name":    createIsoCommand.FlagSet.String("template-id", templateName, "Template's id or name to associate."),
+		"template_id_or_name":    createIsoCommand.FlagSet.String("template-id", templateLabel, "Template's id or name to associate."),
 		"path":                   createIsoCommand.FlagSet.String("path", "/source-image", "Path to associate asset to."),
 		"variables_json":         createIsoCommand.FlagSet.String("variables-json", _nilDefaultStr, "JSON encoded variables object"),
 		"delete_if_exists":       createIsoCommand.FlagSet.Bool("delete-if-exists", true, "Automatically delete the existing asset associated with the current template."),
@@ -1839,7 +1832,7 @@ Are you sure you want to continue connecting (yes/no)?
 	return "", nil
 }
 
-func createOtherAssets(c *Command, repoTemplate RepoTemplate, assets *[]Asset, templateName string, createAssetCommand Command) error {
+func createOtherAssets(c *Command, repoTemplate RepoTemplate, assets *[]Asset, templateName string, templateLabel string, createAssetCommand Command) error {
 	if value, ok := getStringParamOk(c.Arguments["assets-update"]); ok {
 		assetsUpdateString := value
 
@@ -1911,7 +1904,7 @@ func createOtherAssets(c *Command, repoTemplate RepoTemplate, assets *[]Asset, t
 			"mime":                   createOtherAssetCommand.FlagSet.String("mime", asset.Mime, "Asset's mime type. Possible values: \""+assetMimeTypeDynamic+"\",\""+assetMimeTypeBinary+"\""),
 			"url":                    createOtherAssetCommand.FlagSet.String("url", assetURL, "Asset's source url. If present it will not read content anymore"),
 			"read_content_from_pipe": createOtherAssetCommand.FlagSet.Bool("pipe", false, "Read assets's content read from pipe instead of terminal input"),
-			"template_id_or_name":    createOtherAssetCommand.FlagSet.String("template-id", templateName, "Template's id or name to associate. "),
+			"template_id_or_name":    createOtherAssetCommand.FlagSet.String("template-id", templateLabel, "Template's id or name to associate. "),
 			"path":                   createOtherAssetCommand.FlagSet.String("path", assetPath, "Path to associate asset to."),
 			"variables_json":         createOtherAssetCommand.FlagSet.String("variables-json", _nilDefaultStr, "JSON encoded variables object"),
 			"delete_if_exists":       createOtherAssetCommand.FlagSet.Bool("delete-if-exists", true, "Automatically delete the existing asset associated with the current template."),
@@ -2162,8 +2155,7 @@ func getOSTemplateFromCommand(paramName string, c *Command, client metalcloud.Me
 	}
 
 	for _, s := range *list {
-		// When creating a template via the build command, the display name is used as template name, instead of label.
-		if s.VolumeTemplateLabel == label || s.VolumeTemplateDisplayName == label {
+		if s.VolumeTemplateLabel == label {
 			return &s, nil
 		}
 	}
