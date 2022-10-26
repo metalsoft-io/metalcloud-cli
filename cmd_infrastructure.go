@@ -11,7 +11,7 @@ import (
 	"github.com/metalsoft-io/tableformatter"
 )
 
-//infrastructureCmds commands affecting infrastructures
+// infrastructureCmds commands affecting infrastructures
 var infrastructureCmds = []Command{
 
 	{
@@ -66,7 +66,7 @@ var infrastructureCmds = []Command{
 		Endpoint:    UserEndpoint,
 		UserOnly:    true, //notice this
 	},
-	{
+	{ //User version
 		Description:  "Delete an infrastructure.",
 		Subject:      "infrastructure",
 		AltSubject:   "infra",
@@ -81,6 +81,26 @@ var infrastructureCmds = []Command{
 		},
 		ExecuteFunc: infrastructureDeleteCmd,
 		Endpoint:    UserEndpoint,
+		UserOnly:    true,
+	},
+	{ //admin version
+		Description:  "Delete an infrastructure.",
+		Subject:      "infrastructure",
+		AltSubject:   "infra",
+		Predicate:    "delete",
+		AltPredicate: "rm",
+		FlagSet:      flag.NewFlagSet("delete infrastructure", flag.ExitOnError),
+		InitFunc: func(c *Command) {
+			c.Arguments = map[string]interface{}{
+				"infrastructure_id_or_label": c.FlagSet.String("id", _nilDefaultStr, red("(Required)")+" Infrastructure's id or label. Note that using the 'label' might be ambiguous in certain situations."),
+				"autoconfirm":                c.FlagSet.Bool("autoconfirm", false, green("(Flag)")+" If set it will assume action is confirmed"),
+			}
+		},
+		ExecuteFunc: infrastructureDeleteCmd,
+		//admin uses the developer endpoint as without the admin would need to be a
+		//delegate of the user to be able to delete the infrastructure
+		Endpoint:  DeveloperEndpoint,
+		AdminOnly: true,
 	},
 	{
 		Description:  "Deploy an infrastructure.",
@@ -106,7 +126,7 @@ var infrastructureCmds = []Command{
 		ExecuteFunc: infrastructureDeployCmd,
 		Endpoint:    UserEndpoint,
 	},
-	{
+	{ //User version
 		Description:  "Get infrastructure details.",
 		Subject:      "infrastructure",
 		AltSubject:   "infra",
@@ -121,6 +141,26 @@ var infrastructureCmds = []Command{
 		},
 		ExecuteFunc: infrastructureGetCmd,
 		Endpoint:    UserEndpoint,
+		UserOnly:    true,
+	},
+	{ //Admin version
+		Description:  "Get infrastructure details.",
+		Subject:      "infrastructure",
+		AltSubject:   "infra",
+		Predicate:    "get",
+		AltPredicate: "show",
+		FlagSet:      flag.NewFlagSet("get infrastructure", flag.ExitOnError),
+		InitFunc: func(c *Command) {
+			c.Arguments = map[string]interface{}{
+				"infrastructure_id_or_label": c.FlagSet.String("id", _nilDefaultStr, red("(Required)")+" Infrastructure's id or label. Note that using the 'label' might be ambiguous in certain situations."),
+				"format":                     c.FlagSet.String("format", "", "The output format. Supported values are 'json','csv','yaml'. The default format is human readable."),
+			}
+		},
+		ExecuteFunc: infrastructureGetCmd,
+		//admin uses the developer endpoint as without the admin would need to be a
+		//delegate of the user to be able to see the details
+		Endpoint:  DeveloperEndpoint,
+		AdminOnly: true,
 	},
 	{
 		Description:  "Revert all changes of an infrastructure.",
@@ -392,7 +432,7 @@ func infrastructureListUserCmd(c *Command, client metalcloud.MetalCloudClient) (
 
 type infrastructureConfirmAndDoFunc func(infraID int, c *Command, client metalcloud.MetalCloudClient) (string, error)
 
-//infrastructureConfirmAndDo asks for confirmation and executes the given function
+// infrastructureConfirmAndDo asks for confirmation and executes the given function
 func infrastructureConfirmAndDo(operation string, c *Command, client metalcloud.MetalCloudClient, f infrastructureConfirmAndDoFunc) (string, error) {
 
 	val, err := getParam(c, "infrastructure_id_or_label", "infra")
@@ -750,7 +790,7 @@ func listWorkflowStagesCmd(c *Command, client metalcloud.MetalCloudClient) (stri
 	return table.RenderTable("Workflow Stages", "", getStringParam(c.Arguments["format"]))
 }
 
-//getInfrastructureFromCommand returns an Infrastructure object using the infrastructure_id_or_label argument
+// getInfrastructureFromCommand returns an Infrastructure object using the infrastructure_id_or_label argument
 func getInfrastructureFromCommand(paramName string, c *Command, client metalcloud.MetalCloudClient) (*metalcloud.Infrastructure, error) {
 
 	m, err := getParam(c, "infrastructure_id_or_label", paramName)
@@ -767,7 +807,7 @@ func getInfrastructureFromCommand(paramName string, c *Command, client metalclou
 	return client.InfrastructureGetByLabel(label)
 }
 
-//loop until infra is ready
+// loop until infra is ready
 func loopUntilInfraReady(infraID int, timeoutSeconds int, checkIntervalSeconds int, client metalcloud.MetalCloudClient) error {
 	c := make(chan error, 1)
 
