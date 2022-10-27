@@ -25,8 +25,9 @@ var stageDefinitionsCmds = []Command{
 				"format": c.FlagSet.String("format", _nilDefaultStr, "The output format. Supported values are 'json','csv','yaml'. The default format is human readable."),
 			}
 		},
-		ExecuteFunc: stageDefinitionsListCmd,
-		Endpoint:    ExtendedEndpoint,
+		ExecuteFunc:   stageDefinitionsListCmd,
+		Endpoint:      ExtendedEndpoint,
+		AdminEndpoint: DeveloperEndpoint,
 	},
 	{
 		Description:  "Create a stage definition.",
@@ -62,11 +63,12 @@ var stageDefinitionsCmds = []Command{
 
 				"workflow_id_or_label": c.FlagSet.String("workflow", _nilDefaultStr, "workflow to reference. Can only be used when type=WorkflowReference"),
 
-				"return_id": c.FlagSet.Bool("return-id", false, green("(Flag)") + " If set will print the ID of the created object. Useful for automating tasks."),
+				"return_id": c.FlagSet.Bool("return-id", false, green("(Flag)")+" If set will print the ID of the created object. Useful for automating tasks."),
 			}
 		},
-		ExecuteFunc: stageDefinitionCreateCmd,
-		Endpoint:    ExtendedEndpoint,
+		ExecuteFunc:   stageDefinitionCreateCmd,
+		Endpoint:      ExtendedEndpoint,
+		AdminEndpoint: DeveloperEndpoint,
 	},
 	{
 		Description:  "Delete a stage definition.",
@@ -78,11 +80,12 @@ var stageDefinitionsCmds = []Command{
 		InitFunc: func(c *Command) {
 			c.Arguments = map[string]interface{}{
 				"stage_id_or_name": c.FlagSet.String("id", _nilDefaultStr, "stage's id or name"),
-				"autoconfirm":      c.FlagSet.Bool("autoconfirm", false, green("(Flag)") + " If set it will assume action is confirmed"),
+				"autoconfirm":      c.FlagSet.Bool("autoconfirm", false, green("(Flag)")+" If set it will assume action is confirmed"),
 			}
 		},
-		ExecuteFunc: stageDefinitionDeleteCmd,
-		Endpoint:    ExtendedEndpoint,
+		ExecuteFunc:   stageDefinitionDeleteCmd,
+		Endpoint:      ExtendedEndpoint,
+		AdminEndpoint: DeveloperEndpoint,
 	},
 	{
 		Description:  "Add a stage to an infrastructure pre or post deploy workflows.",
@@ -99,8 +102,9 @@ var stageDefinitionsCmds = []Command{
 				"group":                      c.FlagSet.String("group", _nilDefaultStr, "When to run the stage"),
 			}
 		},
-		ExecuteFunc: stageDefinitionAddToInfrastructureCmd,
-		Endpoint:    ExtendedEndpoint,
+		ExecuteFunc:   stageDefinitionAddToInfrastructureCmd,
+		Endpoint:      ExtendedEndpoint,
+		AdminEndpoint: DeveloperEndpoint,
 	},
 	{
 		Description:  "Add stage into workflow.",
@@ -116,8 +120,9 @@ var stageDefinitionsCmds = []Command{
 				"runlevel":             c.FlagSet.Int("runlevel", _nilDefaultInt, "The runlevel"),
 			}
 		},
-		ExecuteFunc: stageDefinitionAddToWorkflowCmd,
-		Endpoint:    ExtendedEndpoint,
+		ExecuteFunc:   stageDefinitionAddToWorkflowCmd,
+		Endpoint:      ExtendedEndpoint,
+		AdminEndpoint: DeveloperEndpoint,
 	},
 }
 

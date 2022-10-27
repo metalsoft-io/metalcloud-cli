@@ -158,9 +158,15 @@ func executeCommand(args []string, commands []Command, clients map[string]metalc
 		return helpMessage(err, subject, predicate)
 	}
 
-	client, ok := clients[cmd.Endpoint]
+	endpoint := cmd.Endpoint
+
+	if isAdmin() && cmd.AdminEndpoint != "" {
+		endpoint = cmd.AdminEndpoint
+	}
+
+	client, ok := clients[endpoint]
 	if !ok {
-		return fmt.Errorf("Client not set for endpoint %s on command %s %s", cmd.Endpoint, subject, predicate)
+		return fmt.Errorf("Client not set for endpoint %s on command %s %s", endpoint, subject, predicate)
 	}
 
 	ret, err := cmd.ExecuteFunc(cmd, client)
@@ -349,6 +355,9 @@ func initClient(endpointSuffix string) (metalcloud.MetalCloudClient, error) {
 
 // endpointAvailableForCommand Checks if the instantiated endpoint clients include the one needed for the command
 func endpointAvailableForCommand(command Command, clients map[string]metalcloud.MetalCloudClient) bool {
+	if isAdmin() {
+		return clients[command.AdminEndpoint] != nil
+	}
 	return clients[command.Endpoint] != nil
 }
 

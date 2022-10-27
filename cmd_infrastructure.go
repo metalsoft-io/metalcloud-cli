@@ -47,6 +47,7 @@ var infrastructureCmds = []Command{
 		},
 		ExecuteFunc: infrastructureListAdminCmd,
 		Endpoint:    DeveloperEndpoint,
+		AdminOnly:   true,
 	},
 	{ // This is a second version of the list command for users. It uses a different function that needs a different set
 		//of permissions and returns only the user's infrastructures instead of all user's infrastructures.
@@ -66,7 +67,7 @@ var infrastructureCmds = []Command{
 		Endpoint:    UserEndpoint,
 		UserOnly:    true, //notice this
 	},
-	{ //User version
+	{
 		Description:  "Delete an infrastructure.",
 		Subject:      "infrastructure",
 		AltSubject:   "infra",
@@ -79,28 +80,9 @@ var infrastructureCmds = []Command{
 				"autoconfirm":                c.FlagSet.Bool("autoconfirm", false, green("(Flag)")+" If set it will assume action is confirmed"),
 			}
 		},
-		ExecuteFunc: infrastructureDeleteCmd,
-		Endpoint:    UserEndpoint,
-		UserOnly:    true,
-	},
-	{ //admin version
-		Description:  "Delete an infrastructure.",
-		Subject:      "infrastructure",
-		AltSubject:   "infra",
-		Predicate:    "delete",
-		AltPredicate: "rm",
-		FlagSet:      flag.NewFlagSet("delete infrastructure", flag.ExitOnError),
-		InitFunc: func(c *Command) {
-			c.Arguments = map[string]interface{}{
-				"infrastructure_id_or_label": c.FlagSet.String("id", _nilDefaultStr, red("(Required)")+" Infrastructure's id or label. Note that using the 'label' might be ambiguous in certain situations."),
-				"autoconfirm":                c.FlagSet.Bool("autoconfirm", false, green("(Flag)")+" If set it will assume action is confirmed"),
-			}
-		},
-		ExecuteFunc: infrastructureDeleteCmd,
-		//admin uses the developer endpoint as without the admin would need to be a
-		//delegate of the user to be able to delete the infrastructure
-		Endpoint:  DeveloperEndpoint,
-		AdminOnly: true,
+		ExecuteFunc:   infrastructureDeleteCmd,
+		Endpoint:      UserEndpoint,
+		AdminEndpoint: DeveloperEndpoint,
 	},
 	{
 		Description:  "Deploy an infrastructure.",
@@ -123,8 +105,9 @@ var infrastructureCmds = []Command{
 				"autoconfirm":                    c.FlagSet.Bool("autoconfirm", false, green("(Flag)")+" If set it will assume action is confirmed"),
 			}
 		},
-		ExecuteFunc: infrastructureDeployCmd,
-		Endpoint:    UserEndpoint,
+		ExecuteFunc:   infrastructureDeployCmd,
+		Endpoint:      UserEndpoint,
+		AdminEndpoint: DeveloperEndpoint,
 	},
 	{ //User version
 		Description:  "Get infrastructure details.",
@@ -139,28 +122,9 @@ var infrastructureCmds = []Command{
 				"format":                     c.FlagSet.String("format", "", "The output format. Supported values are 'json','csv','yaml'. The default format is human readable."),
 			}
 		},
-		ExecuteFunc: infrastructureGetCmd,
-		Endpoint:    UserEndpoint,
-		UserOnly:    true,
-	},
-	{ //Admin version
-		Description:  "Get infrastructure details.",
-		Subject:      "infrastructure",
-		AltSubject:   "infra",
-		Predicate:    "get",
-		AltPredicate: "show",
-		FlagSet:      flag.NewFlagSet("get infrastructure", flag.ExitOnError),
-		InitFunc: func(c *Command) {
-			c.Arguments = map[string]interface{}{
-				"infrastructure_id_or_label": c.FlagSet.String("id", _nilDefaultStr, red("(Required)")+" Infrastructure's id or label. Note that using the 'label' might be ambiguous in certain situations."),
-				"format":                     c.FlagSet.String("format", "", "The output format. Supported values are 'json','csv','yaml'. The default format is human readable."),
-			}
-		},
-		ExecuteFunc: infrastructureGetCmd,
-		//admin uses the developer endpoint as without the admin would need to be a
-		//delegate of the user to be able to see the details
-		Endpoint:  DeveloperEndpoint,
-		AdminOnly: true,
+		ExecuteFunc:   infrastructureGetCmd,
+		Endpoint:      UserEndpoint,
+		AdminEndpoint: DeveloperEndpoint,
 	},
 	{
 		Description:  "Revert all changes of an infrastructure.",
@@ -175,8 +139,9 @@ var infrastructureCmds = []Command{
 				"autoconfirm":                c.FlagSet.Bool("autoconfirm", false, green("(Flag)")+" If set it will assume action is confirmed"),
 			}
 		},
-		ExecuteFunc: infrastructureRevertCmd,
-		Endpoint:    UserEndpoint,
+		ExecuteFunc:   infrastructureRevertCmd,
+		Endpoint:      UserEndpoint,
+		AdminEndpoint: DeveloperEndpoint,
 	},
 	{
 		Description:  "List stages of a workflow.",
@@ -191,8 +156,9 @@ var infrastructureCmds = []Command{
 				"type":                       c.FlagSet.String("type", _nilDefaultStr, "stage definition type. possible values: pre_deploy, post_deploy"),
 			}
 		},
-		ExecuteFunc: listWorkflowStagesCmd,
-		Endpoint:    DeveloperEndpoint,
+		ExecuteFunc:   listWorkflowStagesCmd,
+		Endpoint:      DeveloperEndpoint,
+		AdminEndpoint: DeveloperEndpoint,
 	},
 }
 

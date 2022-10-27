@@ -236,7 +236,7 @@ func TestIdOrLabel(t *testing.T) {
 	Expect(isID).To(BeTrue())
 }
 
-//checks the various outputs
+// checks the various outputs
 func testListCommand(f CommandExecuteFunc, cmd *Command, client metalcloud.MetalCloudClient, firstRow map[string]interface{}, t *testing.T) {
 	//RegisterTestingT(t)
 
@@ -270,7 +270,7 @@ func testListCommand(f CommandExecuteFunc, cmd *Command, client metalcloud.Metal
 	//Expect(CSVFirstRowEquals(ret, firstRow)).To(BeNil())
 }
 
-//JSONFirstRowEquals checks if values of the table returned in the json match the values provided. Type is not checked (we check string equality)
+// JSONFirstRowEquals checks if values of the table returned in the json match the values provided. Type is not checked (we check string equality)
 func JSONFirstRowEquals(jsonString string, testVals map[string]interface{}) error {
 	m, err := JSONUnmarshal(jsonString)
 	if err != nil {
@@ -303,7 +303,7 @@ func CSVUnmarshal(csvString string) ([][]string, error) {
 	return reader.ReadAll()
 }
 
-//checks the various outputs
+// checks the various outputs
 func testGetCommand(f CommandExecuteFunc, cases []CommandTestCase, client metalcloud.MetalCloudClient, firstRow map[string]interface{}, t *testing.T) {
 	for _, c := range cases {
 		t.Run(c.name, func(t *testing.T) {
@@ -330,7 +330,7 @@ type CommandTestCase struct {
 	id   int
 }
 
-//KeysOfMapAsString returns the keys of a map as a string separated by " "
+// KeysOfMapAsString returns the keys of a map as a string separated by " "
 func KeysOfMapAsString(m map[string]interface{}) string {
 	keys := []string{}
 	for k := range m {
@@ -339,7 +339,7 @@ func KeysOfMapAsString(m map[string]interface{}) string {
 	return strings.Join(keys, " ")
 }
 
-//MakeCommand utility function that creates a command from a kv map
+// MakeCommand utility function that creates a command from a kv map
 func MakeCommand(arguments map[string]interface{}) Command {
 	cmd := Command{
 		Arguments: map[string]interface{}{},
@@ -366,7 +366,7 @@ func MakeEmptyCommand() Command {
 	return MakeCommand(map[string]interface{}{})
 }
 
-//GenerateCommandTestCases generate commands with wrong arguments by cycling through all of them
+// GenerateCommandTestCases generate commands with wrong arguments by cycling through all of them
 func GenerateCommandTestCases(arguments map[string]interface{}) []CommandTestCase {
 	cmds := []CommandTestCase{}
 
@@ -422,7 +422,7 @@ func GenerateCommandTestCases(arguments map[string]interface{}) []CommandTestCas
 	return cmds
 }
 
-//checks command with and without return_id
+// checks command with and without return_id
 func testCreateCommand(f CommandExecuteFunc, cases []CommandTestCase, client metalcloud.MetalCloudClient, t *testing.T) {
 
 	for _, c := range cases {
@@ -554,7 +554,9 @@ func TestGetKVStringFromMap(t *testing.T) {
 		"key2": "value2",
 	}
 
-	Expect(getKeyValueStringFromMap(m)).To(Equal("key1=value1,key2=value2"))
+	s := getKeyValueStringFromMap(m)
+	Expect(s).To(ContainSubstring("key1=value1"))
+	Expect(s).To(ContainSubstring("key2=value2"))
 
 	a := []interface{}{} //should support empty array instead of map. Reported by MS-1390
 

@@ -25,8 +25,9 @@ var workflowCmds = []Command{
 				"format": c.FlagSet.String("format", _nilDefaultStr, "The output format. Supported values are 'json','csv','yaml'. The default format is human readable."),
 			}
 		},
-		ExecuteFunc: workflowsListCmd,
-		Endpoint:    ExtendedEndpoint,
+		ExecuteFunc:   workflowsListCmd,
+		Endpoint:      ExtendedEndpoint,
+		AdminEndpoint: DeveloperEndpoint,
 	},
 	{
 		Description:  "Get workflow details.",
@@ -41,8 +42,9 @@ var workflowCmds = []Command{
 				"format":               c.FlagSet.String("format", _nilDefaultStr, "The output format. Supported values are 'json','csv','yaml'. The default format is human readable."),
 			}
 		},
-		ExecuteFunc: workflowGetCmd,
-		Endpoint:    ExtendedEndpoint,
+		ExecuteFunc:   workflowGetCmd,
+		Endpoint:      ExtendedEndpoint,
+		AdminEndpoint: DeveloperEndpoint,
 	},
 	{
 		Description:  "Create a workflow",
@@ -59,7 +61,7 @@ var workflowCmds = []Command{
 				"description":         c.FlagSet.String("description", _nilDefaultStr, "Workflow's description"),
 				"deprecated":          c.FlagSet.Bool("deprecated", false, "Flag. Workflow's deprecation status. Default false"),
 				"icon_asset_data_uri": c.FlagSet.String("icon", _nilDefaultStr, "Workflow's icon data"),
-				"return_id":           c.FlagSet.Bool("return-id", false, green("(Flag)") + " If set will print the ID of the created workflow. Useful for automating tasks."),
+				"return_id":           c.FlagSet.Bool("return-id", false, green("(Flag)")+" If set will print the ID of the created workflow. Useful for automating tasks."),
 			}
 		},
 		ExecuteFunc: workflowCreateCmd,
@@ -75,11 +77,12 @@ var workflowCmds = []Command{
 		InitFunc: func(c *Command) {
 			c.Arguments = map[string]interface{}{
 				"workflow_stage_id": c.FlagSet.Int("id", _nilDefaultInt, "Workflow's stage id "),
-				"autoconfirm":       c.FlagSet.Bool("autoconfirm", false, green("(Flag)") + " If set it will assume action is confirmed"),
+				"autoconfirm":       c.FlagSet.Bool("autoconfirm", false, green("(Flag)")+" If set it will assume action is confirmed"),
 			}
 		},
-		ExecuteFunc: workflowDeleteStageCmd,
-		Endpoint:    ExtendedEndpoint,
+		ExecuteFunc:   workflowDeleteStageCmd,
+		Endpoint:      ExtendedEndpoint,
+		AdminEndpoint: DeveloperEndpoint,
 	},
 }
 

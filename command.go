@@ -22,19 +22,20 @@ type CommandInitFunc = func(c *Command)
 
 // Command defines a command, arguments, description etc
 type Command struct {
-	Description  string
-	Subject      string
-	AltSubject   string
-	Predicate    string
-	AltPredicate string
-	FlagSet      *flag.FlagSet
-	Arguments    map[string]interface{}
-	InitFunc     CommandInitFunc
-	ExecuteFunc  CommandExecuteFunc
-	Endpoint     string
-	Example      string
-	UserOnly     bool //set if command is to be visible only to users regardless of endpoint
-	AdminOnly    bool //set if command is to be visible only to admins regardless of endpoint
+	Description   string
+	Subject       string
+	AltSubject    string
+	Predicate     string
+	AltPredicate  string
+	FlagSet       *flag.FlagSet
+	Arguments     map[string]interface{}
+	InitFunc      CommandInitFunc
+	ExecuteFunc   CommandExecuteFunc
+	Endpoint      string
+	Example       string
+	UserOnly      bool   //set if command is to be visible only to users regardless of endpoint
+	AdminOnly     bool   //set if command is to be visible only to admins regardless of endpoint
+	AdminEndpoint string //if set will be used instead of Endpoint for admins
 }
 
 func sameCommand(a *Command, b *Command) bool {
