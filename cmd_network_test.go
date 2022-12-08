@@ -123,7 +123,7 @@ func TestNetworkListCmd(t *testing.T) {
 
 	//check the human readable output, just check for not empty
 
-	format = "text"
+	format = "json"
 	cmd.Arguments["format"] = &format
 	ret, err = networkListCmd(&cmd, client)
 	Expect(ret).NotTo(BeEmpty())

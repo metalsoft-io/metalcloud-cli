@@ -3,9 +3,9 @@ package main
 import (
 	"testing"
 
+	gomock "github.com/golang/mock/gomock"
 	metalcloud "github.com/metalsoft-io/metal-cloud-sdk-go/v2"
 	mock_metalcloud "github.com/metalsoft-io/metalcloud-cli/helpers"
-	gomock "github.com/golang/mock/gomock"
 	. "github.com/onsi/gomega"
 )
 
@@ -247,7 +247,6 @@ func TestOSTemplateCreateCmd(t *testing.T) {
 	}
 
 	testCreateCommand(templateCreateCmd, cases, client, t)
-
 }
 
 func TestOSTemplateEditCmd(t *testing.T) {
@@ -414,7 +413,6 @@ func TestOSTemplateEditCmd(t *testing.T) {
 	}
 
 	testCreateCommand(templateEditCmd, cases, client, t)
-
 }
 
 func TestOSTemplateMakePrivateCmd(t *testing.T) {
@@ -583,4 +581,36 @@ func TestOSTemplateMakePublicCmd(t *testing.T) {
 	}
 
 	testCreateCommand(templateMakePublicCmd, cases, client, t)
+}
+
+func TestOSTemplateListRepositoryCmd(t *testing.T) {
+	RegisterTestingT(t)
+	client := mock_metalcloud.NewMockMetalCloudClient(gomock.NewController(t))
+
+	cases := []CommandTestCase{
+		{
+			name: "list repository",
+			cmd: MakeCommand(map[string]interface{}{
+			}),
+			good: true,
+		},
+	}
+
+	testCreateCommand(templateListRepoCmd, cases, client, t)
+}
+
+func TestOSTemplateValidateRepositoryCmd(t *testing.T) {
+	RegisterTestingT(t)
+	client := mock_metalcloud.NewMockMetalCloudClient(gomock.NewController(t))
+
+	cases := []CommandTestCase{
+		{
+			name: "validate repository",
+			cmd: MakeCommand(map[string]interface{}{
+			}),
+			good: true,
+		},
+	}
+
+	testCreateCommand(templateValidateRepoCmd, cases, client, t)
 }

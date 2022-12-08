@@ -527,8 +527,7 @@ func TestInstanceArrayInstancesListCmd(t *testing.T) {
 		Return(&iaNetworkProfiles, nil).
 		AnyTimes()
 
-	//test with text output
-	format := "text"
+	format := "json"
 	cmd := Command{
 		Arguments: map[string]interface{}{
 			"instance_array_id_or_label": &ia.InstanceArrayID,
