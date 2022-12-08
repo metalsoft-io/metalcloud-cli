@@ -14,26 +14,28 @@ import (
 	"gopkg.in/yaml.v3"
 )
 
-//CommandExecuteFunc a function type a command can take for executing the content
+// CommandExecuteFunc a function type a command can take for executing the content
 type CommandExecuteFunc = func(c *Command, client metalcloud.MetalCloudClient) (string, error)
 
-//CommandInitFunc a function type a command can take for initializing the command
+// CommandInitFunc a function type a command can take for initializing the command
 type CommandInitFunc = func(c *Command)
 
-//Command defines a command, arguments, description etc
+// Command defines a command, arguments, description etc
 type Command struct {
-	Description  string
-	Subject      string
-	AltSubject   string
-	Predicate    string
-	AltPredicate string
-	FlagSet      *flag.FlagSet
-	Arguments    map[string]interface{}
-	InitFunc     CommandInitFunc
-	ExecuteFunc  CommandExecuteFunc
-	Endpoint     string
-	Example      string
-	UserOnly     bool //set if command is to be visible only to users regardless of endpoint
+	Description   string
+	Subject       string
+	AltSubject    string
+	Predicate     string
+	AltPredicate  string
+	FlagSet       *flag.FlagSet
+	Arguments     map[string]interface{}
+	InitFunc      CommandInitFunc
+	ExecuteFunc   CommandExecuteFunc
+	Endpoint      string
+	Example       string
+	UserOnly      bool   //set if command is to be visible only to users regardless of endpoint
+	AdminOnly     bool   //set if command is to be visible only to admins regardless of endpoint
+	AdminEndpoint string //if set will be used instead of Endpoint for admins
 }
 
 func sameCommand(a *Command, b *Command) bool {
@@ -46,7 +48,7 @@ func sameCommand(a *Command, b *Command) bool {
 const _nilDefaultStr = "__NIL__"
 const _nilDefaultInt = -14234
 
-//confirms command
+// confirms command
 func confirmCommand(c *Command, f func() string) (bool, error) {
 
 	if getBoolParam(c.Arguments["autoconfirm"]) {
@@ -56,7 +58,7 @@ func confirmCommand(c *Command, f func() string) (bool, error) {
 	return requestConfirmation(f())
 }
 
-//getPtrValueIfExistsOk returns a string or an int from a map of pointers if the key exists
+// getPtrValueIfExistsOk returns a string or an int from a map of pointers if the key exists
 func getPtrValueIfExistsOk(m map[string]interface{}, key string) (interface{}, bool) {
 
 	if v := m[key]; v != nil {
@@ -74,13 +76,13 @@ func getPtrValueIfExistsOk(m map[string]interface{}, key string) (interface{}, b
 	return nil, false
 }
 
-//getIDFromStringOk returns the id and true if valid number
+// getIDFromStringOk returns the id and true if valid number
 func getIDFromStringOk(s string) (int, bool) {
 	i, err := strconv.Atoi(s)
 	return i, err == nil
 }
 
-//verifyParam returns error if param is not present
+// verifyParam returns error if param is not present
 func getParam(c *Command, label string, name string) (interface{}, error) {
 	v := c.Arguments[label]
 	if v == nil {
@@ -112,7 +114,7 @@ func idOrLabelString(v string) (int, string, bool) {
 	return 0, v, false
 }
 
-//idOrLabel returns an int or a string contained in the interface. The last param is true if int is returned.
+// idOrLabel returns an int or a string contained in the interface. The last param is true if int is returned.
 func idOrLabel(v interface{}) (int, string, bool) {
 	switch v.(type) {
 	case *int:
@@ -240,7 +242,7 @@ func getRawObjectFromCommand(c *Command, obj interface{}) error {
 	return nil
 }
 
-//watch prints the return of the f function every refreshInterval intervals. The interval is in human readable format 1m 1s etc.
+// watch prints the return of the f function every refreshInterval intervals. The interval is in human readable format 1m 1s etc.
 func watch(f func() (string, error), refreshInterval string) error {
 
 	interval, err := time.ParseDuration(refreshInterval)
@@ -303,9 +305,9 @@ func funcWithWatch(c *Command, client metalcloud.MetalCloudClient, f func(*Comma
 	return f(c, client)
 }
 
-//getKeyValueMapFromString returns a key value map from a kv string such as key1=value,key2=value.
-//the function first does urldecode on the string
-//this means that the values can be provided in normal format key1=value,key2=value but also key1%3Dvalue%2Ckey2%3Dvalue
+// getKeyValueMapFromString returns a key value map from a kv string such as key1=value,key2=value.
+// the function first does urldecode on the string
+// this means that the values can be provided in normal format key1=value,key2=value but also key1%3Dvalue%2Ckey2%3Dvalue
 func getKeyValueMapFromString(kvmap string) (map[string]string, error) {
 
 	m := map[string]string{}
@@ -336,7 +338,7 @@ func getKeyValueMapFromString(kvmap string) (map[string]string, error) {
 	return m, nil
 }
 
-//getKeyValueStringFromMap is the reverse operation from getKeyValueMapFromString encoding the value into the key=value,key=value pairs
+// getKeyValueStringFromMap is the reverse operation from getKeyValueMapFromString encoding the value into the key=value,key=value pairs
 func getKeyValueStringFromMap(kvmap interface{}) string {
 
 	switch m := kvmap.(type) {

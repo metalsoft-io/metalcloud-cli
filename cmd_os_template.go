@@ -71,7 +71,7 @@ const readMeFileName = "README.md"
 
 const defaultImageRepositorySSHPath = "/home/repo/data/.iso"
 const defaultImageRepositorySSHPort = "22"
-const defaultImageRepositoryHostname = "repointegration.bigstepcloud.com"
+const defaultImageRepositoryHostname = "repo.metalsoft.io"
 const defaultImageRepositoryIsoPath = "/.iso"
 
 type TemplateAsset struct {
@@ -307,14 +307,15 @@ var osTemplatesCmds = []Command{
 		FlagSet:      flag.NewFlagSet("build an OS template from a source ISO image", flag.ExitOnError),
 		InitFunc: func(c *Command) {
 			c.Arguments = map[string]interface{}{
-				"name":                     c.FlagSet.String("name", _nilDefaultStr, red("(Required)")+"Name of the template."),
-				"source-template":          c.FlagSet.String("source-template", _nilDefaultStr, red("(Required)")+"The source template to use as a base. It is either the source template path from a repository or a local path to a template.yaml file."),
-				"source-iso":               c.FlagSet.String("source-iso", _nilDefaultStr, red("(Required)")+"The local path for the source ISO image path."),
-				"label":                    c.FlagSet.String("label", _nilDefaultStr, yellow("(Optional)")+"Label of the template. If not present, is the name of the template. Using a different label name on subsequent runs will create a new template."),
-				"description":              c.FlagSet.String("description", _nilDefaultStr, yellow("(Optional)")+"Description of the template."),
-				"assets-update":            c.FlagSet.String("assets-update", _nilDefaultStr, yellow("(Optional)")+"Assets that will have their contents replaced inside the template. Check examples for format."),
-				"repo":                     c.FlagSet.String("repo", _nilDefaultStr, yellow("(Optional)")+"Override the default github url used to download template files for given OS."),
-				"skip-upload-to-repo":      c.FlagSet.Bool("skip-upload-to-repo", false, yellow("(Optional)")+"Skip ISO image upload to the HTTP repository."),
+				"name":            c.FlagSet.String("name", _nilDefaultStr, red("(Required)")+"Name of the template."),
+				"source-template": c.FlagSet.String("source-template", _nilDefaultStr, red("(Required)")+"The source template to use as a base. It is either the source template path from a repository or a local path to a template.yaml file."),
+				"source-iso":      c.FlagSet.String("source-iso", _nilDefaultStr, red("(Required)")+"The local path for the source ISO image path."),
+				"label":           c.FlagSet.String("label", _nilDefaultStr, yellow("(Optional)")+"Label of the template. If not present, is the name of the template. Using a different label name on subsequent runs will create a new template."),
+				"description":     c.FlagSet.String("description", _nilDefaultStr, yellow("(Optional)")+"Description of the template."),
+				"assets-update":   c.FlagSet.String("assets-update", _nilDefaultStr, yellow("(Optional)")+"Assets that will have their contents replaced inside the template. Check examples for format."),
+				"repo":            c.FlagSet.String("repo", _nilDefaultStr, yellow("(Optional)")+"Override the default github url used to download template files for given OS."),
+				// Add this parameter when ISO upload is allowed
+				// "skip-upload-to-repo":      c.FlagSet.Bool("skip-upload-to-repo", false, yellow("(Optional)")+"Skip ISO image upload to the HTTP repository."),
 				"strict-host-key-checking": c.FlagSet.Bool("strict-host-key-checking", true, yellow("(Optional)")+"Skip the manual check when adding a host key to the known_hosts file in the ISO image upload process."),
 				"replace-if-exists":        c.FlagSet.Bool("replace-if-exists", false, yellow("(Optional)")+"Replaces ISO image if one already exists in the HTTP repository."),
 				"debug":                    c.FlagSet.Bool("debug", false, green("(Flag)")+"If set, increases log level."),
@@ -1103,7 +1104,7 @@ func retrieveRepositoryAssets(c *Command, repoMap map[string]RepoTemplate) error
 		cloneOptions.URL = repositoryName
 	} else {
 		// The default repository that is used if the user doesn't specify another one
-		cloneOptions.URL = "https://github.com/alexcorman/os-templates.git"
+		cloneOptions.URL = "https://github.com/metalsoft-io/os-templates.git"
 	}
 
 	fmt.Printf("Retrieving asset templates from repository %s.\n", cloneOptions.URL)
@@ -1494,30 +1495,30 @@ func createTemplateAssets(c *Command, client metalcloud.MetalCloudClient, repoTe
 			Predicate:    "update",
 			AltPredicate: "edit",
 			FlagSet:      flag.NewFlagSet("update template", flag.ExitOnError),
-			ExecuteFunc: templateEditCmd,
-			Endpoint:    ExtendedEndpoint,
+			ExecuteFunc:  templateEditCmd,
+			Endpoint:     ExtendedEndpoint,
 		}
 
 		updateTemplateCommand.Arguments = map[string]interface{}{
-				"template_id_or_name":       		  updateTemplateCommand.FlagSet.String("id", templateLabel, red("(Required)")+" Template's id or label"),
-				"label":                              updateTemplateCommand.FlagSet.String("label", templateLabel, red("(Required)")+" Template's label"),
-				"display_name":                       updateTemplateCommand.FlagSet.String("display-name", templateName, red("(Required)")+" Template's display name"),
-				"size":                               updateTemplateCommand.FlagSet.Int("size", _nilDefaultInt, "Template's size (bytes)"),
-				"boot_methods_supported":             updateTemplateCommand.FlagSet.String("boot-methods-supported", OsTemplateContents.BootMethodsSupported, red("(Required)")+" Template boot methods supported. Defaults to pxe_iscsi."),
-				"os_bootstrap_function_name":         updateTemplateCommand.FlagSet.String("os-bootstrap-function-name", _nilDefaultStr, "Optional property that selects the cloudinit configuration function. Can be one of: provisioner_os_cloudinit_prepare_centos, provisioner_os_cloudinit_prepare_rhel, provisioner_os_cloudinit_prepare_ubuntu, provisioner_os_cloudinit_prepare_windows."),
-				"boot_type":                          updateTemplateCommand.FlagSet.String("boot-type", OsTemplateContents.BootType, red("(Required)")+" Template boot type. Possible values: 'uefi_only','legacy_only' "),
-				"description":                        updateTemplateCommand.FlagSet.String("description", templateDescription, "Template description"),
-				"os_type":                            updateTemplateCommand.FlagSet.String("os-type", repoTemplate.Type, red("(Required)")+" Template operating system type. For example, Ubuntu or CentOS."),
-				"os_version":                         updateTemplateCommand.FlagSet.String("os-version", repoTemplate.Version, red("(Required)")+" Template operating system version."),
-				"os_architecture":                    updateTemplateCommand.FlagSet.String("os-architecture", repoTemplate.Architecture, red("(Required)")+" Template operating system architecture.Possible values: none, unknown, x86, x86_64."),
-				"initial_user":                       updateTemplateCommand.FlagSet.String("initial-user", OsTemplateContents.InitialUser, red("(Required)")+" Template's initial username, used to verify install."),
-				"initial_password":                   updateTemplateCommand.FlagSet.String("initial-password", _nilDefaultStr, red("(Required)")+" Template's initial password, used to verify install."),
-				"use_autogenerated_initial_password": updateTemplateCommand.FlagSet.Bool("use-autogenerated-initial-password", OsTemplateContents.UseAutogeneratedInitialPassword, green("(Flag)")+" If set will automatically generate a password for the template and provide it during install via the initial_password and initial_user variables. Cannot be used withinitial-password and initial-user params."),
-				"initial_ssh_port":                   updateTemplateCommand.FlagSet.Int("initial-ssh-port", OsTemplateContents.InitialSSHPort, red("(Required)")+" Template's initial ssh port, used to verify install."),
-				"change_password_after_deploy":       updateTemplateCommand.FlagSet.Bool("change-password-after-deploy", false, "Option to change the initial_user password on the installed OS after deploy."),
-				"image_build_required":               updateTemplateCommand.FlagSet.Bool("image-build-required", OsTemplateContents.ImageBuildRequired, green("(Flag)")+" If set will determine the image building process building an ISO. Needed for the OOB only install process."),
-				"provision_via_oob":                  updateTemplateCommand.FlagSet.Bool("provision-via-oob", OsTemplateContents.ProvisionViaOob, green("(Flag)")+" If set will perform the installation process via the OOB. Always set this together with the image-build-required flag."),
-				"repo_url":                           updateTemplateCommand.FlagSet.String("repo-url", _nilDefaultStr, "Template's location the repository"),
+			"template_id_or_name":                updateTemplateCommand.FlagSet.String("id", templateLabel, red("(Required)")+" Template's id or label"),
+			"label":                              updateTemplateCommand.FlagSet.String("label", templateLabel, red("(Required)")+" Template's label"),
+			"display_name":                       updateTemplateCommand.FlagSet.String("display-name", templateName, red("(Required)")+" Template's display name"),
+			"size":                               updateTemplateCommand.FlagSet.Int("size", _nilDefaultInt, "Template's size (bytes)"),
+			"boot_methods_supported":             updateTemplateCommand.FlagSet.String("boot-methods-supported", OsTemplateContents.BootMethodsSupported, red("(Required)")+" Template boot methods supported. Defaults to pxe_iscsi."),
+			"os_bootstrap_function_name":         updateTemplateCommand.FlagSet.String("os-bootstrap-function-name", _nilDefaultStr, "Optional property that selects the cloudinit configuration function. Can be one of: provisioner_os_cloudinit_prepare_centos, provisioner_os_cloudinit_prepare_rhel, provisioner_os_cloudinit_prepare_ubuntu, provisioner_os_cloudinit_prepare_windows."),
+			"boot_type":                          updateTemplateCommand.FlagSet.String("boot-type", OsTemplateContents.BootType, red("(Required)")+" Template boot type. Possible values: 'uefi_only','legacy_only' "),
+			"description":                        updateTemplateCommand.FlagSet.String("description", templateDescription, "Template description"),
+			"os_type":                            updateTemplateCommand.FlagSet.String("os-type", repoTemplate.Type, red("(Required)")+" Template operating system type. For example, Ubuntu or CentOS."),
+			"os_version":                         updateTemplateCommand.FlagSet.String("os-version", repoTemplate.Version, red("(Required)")+" Template operating system version."),
+			"os_architecture":                    updateTemplateCommand.FlagSet.String("os-architecture", repoTemplate.Architecture, red("(Required)")+" Template operating system architecture.Possible values: none, unknown, x86, x86_64."),
+			"initial_user":                       updateTemplateCommand.FlagSet.String("initial-user", OsTemplateContents.InitialUser, red("(Required)")+" Template's initial username, used to verify install."),
+			"initial_password":                   updateTemplateCommand.FlagSet.String("initial-password", _nilDefaultStr, red("(Required)")+" Template's initial password, used to verify install."),
+			"use_autogenerated_initial_password": updateTemplateCommand.FlagSet.Bool("use-autogenerated-initial-password", OsTemplateContents.UseAutogeneratedInitialPassword, green("(Flag)")+" If set will automatically generate a password for the template and provide it during install via the initial_password and initial_user variables. Cannot be used withinitial-password and initial-user params."),
+			"initial_ssh_port":                   updateTemplateCommand.FlagSet.Int("initial-ssh-port", OsTemplateContents.InitialSSHPort, red("(Required)")+" Template's initial ssh port, used to verify install."),
+			"change_password_after_deploy":       updateTemplateCommand.FlagSet.Bool("change-password-after-deploy", false, "Option to change the initial_user password on the installed OS after deploy."),
+			"image_build_required":               updateTemplateCommand.FlagSet.Bool("image-build-required", OsTemplateContents.ImageBuildRequired, green("(Flag)")+" If set will determine the image building process building an ISO. Needed for the OOB only install process."),
+			"provision_via_oob":                  updateTemplateCommand.FlagSet.Bool("provision-via-oob", OsTemplateContents.ProvisionViaOob, green("(Flag)")+" If set will perform the installation process via the OOB. Always set this together with the image-build-required flag."),
+			"repo_url":                           updateTemplateCommand.FlagSet.String("repo-url", _nilDefaultStr, "Template's location the repository"),
 		}
 
 		_, updateError := templateEditCmd(&updateTemplateCommand, client)
@@ -1657,13 +1658,17 @@ func handleIsoImageUpload(c *Command, imageRepositoryHostname string, isoPath st
 		imageRepositoryIsoPath = os.Getenv("METALCLOUD_IMAGE_REPOSITORY_ISO_PATH")
 	}
 
+	// ISO upload is disabled for the moment
+	s := strings.Split(isoPath, "/")
+	imageFilename := s[len(s)-1]
+
+	remoteURL := "https://" + imageRepositoryHostname + imageRepositoryIsoPath
+
+	fmt.Printf("Please upload ISO image %s to this path: %s.\n", imageFilename, remoteURL + "/" + imageFilename)
+	return "", nil
+
 	if !getBoolParam(c.Arguments["skip-upload-to-repo"]) {
-
-		s := strings.Split(isoPath, "/")
-		imageFilename := s[len(s)-1]
-
 		sshRepositoryHostname := imageRepositoryHostname + ":" + remoteSSHPort
-		remoteURL := "https://" + imageRepositoryHostname + imageRepositoryIsoPath
 
 		imageExists, err := checkRemoteFileExists(remoteURL, imageFilename)
 

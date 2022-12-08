@@ -11,7 +11,7 @@ import (
 	"github.com/metalsoft-io/tableformatter"
 )
 
-//infrastructureCmds commands affecting infrastructures
+// infrastructureCmds commands affecting infrastructures
 var infrastructureCmds = []Command{
 
 	{
@@ -47,6 +47,7 @@ var infrastructureCmds = []Command{
 		},
 		ExecuteFunc: infrastructureListAdminCmd,
 		Endpoint:    DeveloperEndpoint,
+		AdminOnly:   true,
 	},
 	{ // This is a second version of the list command for users. It uses a different function that needs a different set
 		//of permissions and returns only the user's infrastructures instead of all user's infrastructures.
@@ -79,8 +80,9 @@ var infrastructureCmds = []Command{
 				"autoconfirm":                c.FlagSet.Bool("autoconfirm", false, green("(Flag)")+" If set it will assume action is confirmed"),
 			}
 		},
-		ExecuteFunc: infrastructureDeleteCmd,
-		Endpoint:    UserEndpoint,
+		ExecuteFunc:   infrastructureDeleteCmd,
+		Endpoint:      UserEndpoint,
+		AdminEndpoint: DeveloperEndpoint,
 	},
 	{
 		Description:  "Deploy an infrastructure.",
@@ -103,10 +105,11 @@ var infrastructureCmds = []Command{
 				"autoconfirm":                    c.FlagSet.Bool("autoconfirm", false, green("(Flag)")+" If set it will assume action is confirmed"),
 			}
 		},
-		ExecuteFunc: infrastructureDeployCmd,
-		Endpoint:    UserEndpoint,
+		ExecuteFunc:   infrastructureDeployCmd,
+		Endpoint:      UserEndpoint,
+		AdminEndpoint: DeveloperEndpoint,
 	},
-	{
+	{ //User version
 		Description:  "Get infrastructure details.",
 		Subject:      "infrastructure",
 		AltSubject:   "infra",
@@ -119,8 +122,9 @@ var infrastructureCmds = []Command{
 				"format":                     c.FlagSet.String("format", "", "The output format. Supported values are 'json','csv','yaml'. The default format is human readable."),
 			}
 		},
-		ExecuteFunc: infrastructureGetCmd,
-		Endpoint:    UserEndpoint,
+		ExecuteFunc:   infrastructureGetCmd,
+		Endpoint:      UserEndpoint,
+		AdminEndpoint: DeveloperEndpoint,
 	},
 	{
 		Description:  "Revert all changes of an infrastructure.",
@@ -135,8 +139,9 @@ var infrastructureCmds = []Command{
 				"autoconfirm":                c.FlagSet.Bool("autoconfirm", false, green("(Flag)")+" If set it will assume action is confirmed"),
 			}
 		},
-		ExecuteFunc: infrastructureRevertCmd,
-		Endpoint:    UserEndpoint,
+		ExecuteFunc:   infrastructureRevertCmd,
+		Endpoint:      UserEndpoint,
+		AdminEndpoint: DeveloperEndpoint,
 	},
 	{
 		Description:  "List stages of a workflow.",
@@ -151,8 +156,9 @@ var infrastructureCmds = []Command{
 				"type":                       c.FlagSet.String("type", _nilDefaultStr, "stage definition type. possible values: pre_deploy, post_deploy"),
 			}
 		},
-		ExecuteFunc: listWorkflowStagesCmd,
-		Endpoint:    DeveloperEndpoint,
+		ExecuteFunc:   listWorkflowStagesCmd,
+		Endpoint:      DeveloperEndpoint,
+		AdminEndpoint: DeveloperEndpoint,
 	},
 }
 
@@ -392,7 +398,7 @@ func infrastructureListUserCmd(c *Command, client metalcloud.MetalCloudClient) (
 
 type infrastructureConfirmAndDoFunc func(infraID int, c *Command, client metalcloud.MetalCloudClient) (string, error)
 
-//infrastructureConfirmAndDo asks for confirmation and executes the given function
+// infrastructureConfirmAndDo asks for confirmation and executes the given function
 func infrastructureConfirmAndDo(operation string, c *Command, client metalcloud.MetalCloudClient, f infrastructureConfirmAndDoFunc) (string, error) {
 
 	val, err := getParam(c, "infrastructure_id_or_label", "infra")
@@ -750,7 +756,7 @@ func listWorkflowStagesCmd(c *Command, client metalcloud.MetalCloudClient) (stri
 	return table.RenderTable("Workflow Stages", "", getStringParam(c.Arguments["format"]))
 }
 
-//getInfrastructureFromCommand returns an Infrastructure object using the infrastructure_id_or_label argument
+// getInfrastructureFromCommand returns an Infrastructure object using the infrastructure_id_or_label argument
 func getInfrastructureFromCommand(paramName string, c *Command, client metalcloud.MetalCloudClient) (*metalcloud.Infrastructure, error) {
 
 	m, err := getParam(c, "infrastructure_id_or_label", paramName)
@@ -767,7 +773,7 @@ func getInfrastructureFromCommand(paramName string, c *Command, client metalclou
 	return client.InfrastructureGetByLabel(label)
 }
 
-//loop until infra is ready
+// loop until infra is ready
 func loopUntilInfraReady(infraID int, timeoutSeconds int, checkIntervalSeconds int, client metalcloud.MetalCloudClient) error {
 	c := make(chan error, 1)
 

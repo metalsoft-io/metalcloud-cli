@@ -30,16 +30,16 @@ var (
 	builtBy string
 )
 
-//UserEndpoint exposes regular user functions
+// UserEndpoint exposes regular user functions
 const UserEndpoint = "user"
 
-//ExtendedEndpoint exposes power functions
+// ExtendedEndpoint exposes power functions
 const ExtendedEndpoint = "extended"
 
-//DeveloperEndpoint exposes admin functions
+// DeveloperEndpoint exposes admin functions
 const DeveloperEndpoint = "developer"
 
-//GetUserEmail returns the API key's owner
+// GetUserEmail returns the API key's owner
 func GetUserEmail() string {
 	return os.Getenv("METALCLOUD_USER_EMAIL")
 }
@@ -158,9 +158,15 @@ func executeCommand(args []string, commands []Command, clients map[string]metalc
 		return helpMessage(err, subject, predicate)
 	}
 
-	client, ok := clients[cmd.Endpoint]
+	endpoint := cmd.Endpoint
+
+	if isAdmin() && cmd.AdminEndpoint != "" {
+		endpoint = cmd.AdminEndpoint
+	}
+
+	client, ok := clients[endpoint]
 	if !ok {
-		return fmt.Errorf("Client not set for endpoint %s on command %s %s", cmd.Endpoint, subject, predicate)
+		return fmt.Errorf("Client not set for endpoint %s on command %s %s", endpoint, subject, predicate)
 	}
 
 	ret, err := cmd.ExecuteFunc(cmd, client)
@@ -173,7 +179,7 @@ func executeCommand(args []string, commands []Command, clients map[string]metalc
 	return nil
 }
 
-//identifies command, returns nil if no matching command found
+// identifies command, returns nil if no matching command found
 func locateCommand(predicate string, subject string, commands []Command) *Command {
 	for _, c := range commands {
 		if (c.Subject == subject || c.AltSubject == subject) &&
@@ -184,7 +190,7 @@ func locateCommand(predicate string, subject string, commands []Command) *Comman
 	return nil
 }
 
-//identifies commands for given subjects
+// identifies commands for given subjects
 func filterCommandsBySubject(subject string, commands []Command) []Command {
 	cmds := []Command{}
 	for _, c := range commands {
@@ -297,9 +303,9 @@ func initClients() (map[string]metalcloud.MetalCloudClient, error) {
 	clients := map[string]metalcloud.MetalCloudClient{}
 	endpointSuffixes := map[string]string{
 		DeveloperEndpoint: "/api/developer/developer",
-		ExtendedEndpoint:  "/metal-cloud/extended",
-		UserEndpoint:      "/metal-cloud",
-		"":                "/metal-cloud",
+		ExtendedEndpoint:  "/api/extended",
+		UserEndpoint:      "/api",
+		"":                "/api",
 	}
 
 	for clientName, suffix := range endpointSuffixes {
@@ -347,21 +353,28 @@ func initClient(endpointSuffix string) (metalcloud.MetalCloudClient, error) {
 
 }
 
-//endpointAvailableForCommand Checks if the instantiated endpoint clients include the one needed for the command
+// endpointAvailableForCommand Checks if the instantiated endpoint clients include the one needed for the command
 func endpointAvailableForCommand(command Command, clients map[string]metalcloud.MetalCloudClient) bool {
+	if isAdmin() {
+		return clients[command.AdminEndpoint] != nil
+	}
 	return clients[command.Endpoint] != nil
 }
 
-//commandVisibleForUser returns true if the current user (which could be admin or not) has the ability to see the respective command
+// commandVisibleForUser returns true if the current user (which could be admin or not) has the ability to see the respective command
 func commandVisibleForUser(command Command) bool {
 	if command.UserOnly && isAdmin() {
+		return false
+	}
+
+	if command.AdminOnly && !isAdmin() {
 		return false
 	}
 
 	return true
 }
 
-//fitlerCommandSet Filters commands based on endpoint availability for client
+// fitlerCommandSet Filters commands based on endpoint availability for client
 func fitlerCommandSet(commandSet []Command, clients map[string]metalcloud.MetalCloudClient) []Command {
 	filteredCommands := []Command{}
 	for _, command := range commandSet {
@@ -516,7 +529,7 @@ func readInputFromFile(path string) ([]byte, error) {
 	return buf.Bytes(), nil
 }
 
-//ConsoleIOChannel represents an IO channel, typically stdin and stdout but could be anything
+// ConsoleIOChannel represents an IO channel, typically stdin and stdout but could be anything
 type ConsoleIOChannel struct {
 	Stdin  io.Reader
 	Stdout io.Writer
@@ -526,7 +539,7 @@ var consoleIOChannelInstance ConsoleIOChannel
 
 var once sync.Once
 
-//GetConsoleIOChannel returns the console channel singleton
+// GetConsoleIOChannel returns the console channel singleton
 func GetConsoleIOChannel() *ConsoleIOChannel {
 	once.Do(func() {
 
@@ -539,17 +552,17 @@ func GetConsoleIOChannel() *ConsoleIOChannel {
 	return &consoleIOChannelInstance
 }
 
-//GetStdout returns the configured output channel
+// GetStdout returns the configured output channel
 func GetStdout() io.Writer {
 	return GetConsoleIOChannel().Stdout
 }
 
-//GetStdin returns the configured input channel
+// GetStdin returns the configured input channel
 func GetStdin() io.Reader {
 	return GetConsoleIOChannel().Stdin
 }
 
-//SetConsoleIOChannel configures the stdin and stdout to be used by all io with
+// SetConsoleIOChannel configures the stdin and stdout to be used by all io with
 func SetConsoleIOChannel(in io.Reader, out io.Writer) {
 	channel := GetConsoleIOChannel()
 	channel.Stdin = in

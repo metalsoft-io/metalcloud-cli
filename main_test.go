@@ -156,6 +156,7 @@ func TestExecuteCommand(t *testing.T) {
 				execFuncExecutedOnDeveloperEndpoint = client.GetEndpoint() == "developer"
 				return "", nil
 			},
+			Endpoint: UserEndpoint,
 		},
 	}
 
@@ -226,6 +227,42 @@ func TestExecuteCommand(t *testing.T) {
 
 	execFuncExecuted = false
 	initFuncExecuted = false
+	execFuncExecutedOnDeveloperEndpoint = false
+
+	//should support overriding the endpoint for admins
+	commands[0].Predicate = "testp"
+	commands[0].AdminEndpoint = DeveloperEndpoint
+
+	devClient.EXPECT().GetEndpoint().Return("developer").Times(1)
+
+	err = executeCommand([]string{"", "tests", "testp"}, commands, clients)
+	Expect(err).To(BeNil())
+	Expect(execFuncExecuted).To(BeTrue())
+	Expect(initFuncExecuted).To(BeTrue())
+	Expect(execFuncExecutedOnDeveloperEndpoint).To(BeTrue())
+
+	execFuncExecuted = false
+	initFuncExecuted = false
+	execFuncExecutedOnDeveloperEndpoint = false
+
+	execFuncExecuted = false
+	initFuncExecuted = false
+	execFuncExecutedOnDeveloperEndpoint = false
+
+	//should not override if the admin endpoint is empty
+	commands[0].Predicate = "testp"
+	commands[0].AdminEndpoint = ""
+	commands[0].Endpoint = UserEndpoint
+
+	err = executeCommand([]string{"", "tests", "testp"}, commands, clients)
+	Expect(err).To(BeNil())
+	Expect(execFuncExecuted).To(BeTrue())
+	Expect(initFuncExecuted).To(BeTrue())
+	Expect(execFuncExecutedOnDeveloperEndpoint).To(BeFalse())
+
+	execFuncExecuted = false
+	initFuncExecuted = false
+	execFuncExecutedOnDeveloperEndpoint = false
 
 }
 

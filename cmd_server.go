@@ -857,7 +857,7 @@ func serversListCmd(c *Command, client metalcloud.MetalCloudClient) (string, err
 		if s.ServerProcessorCount > 0 {
 			hardwareConfig = fmt.Sprintf("%s x %s cores(ht), %s GB RAM, %s, %s",
 				blue(s.ServerProcessorCount),
-				blue(s.ServerProcessorThreads*s.ServerProcessorCoreCount),
+				blue(s.ServerProcessorCoreCount),
 				red(s.ServerRAMGbytes),
 				diskDescription,
 				interfaceDescription,
