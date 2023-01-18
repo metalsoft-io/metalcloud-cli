@@ -38,7 +38,7 @@ import (
 	netHTTP "net/http"
 )
 
-// Constants used with the build command
+// Constants used with the deploy command
 const templateFileName = "template.yaml"
 
 const osArchitecture64 = "x86_64"
@@ -146,7 +146,7 @@ var osTemplatesCmds = []Command{
 		Endpoint:    ExtendedEndpoint,
 	},
 	{
-		Description:  "Create a template.",
+		Description:  "Create an empty template record.",
 		Subject:      "os-template",
 		AltSubject:   "template",
 		Predicate:    "create",
@@ -220,7 +220,7 @@ var osTemplatesCmds = []Command{
 		Endpoint:    ExtendedEndpoint,
 	},
 	{
-		Description:  "Get a template.",
+		Description:  "Get details about a template.",
 		Subject:      "os-template",
 		AltSubject:   "template",
 		Predicate:    "get",
@@ -253,7 +253,7 @@ var osTemplatesCmds = []Command{
 		Endpoint:    ExtendedEndpoint,
 	},
 	{
-		Description:  "Allow other users of the platform to use the template.",
+		Description:  "Allow other users of the platform to use the OS template.",
 		Subject:      "os-template",
 		AltSubject:   "template",
 		Predicate:    "make-public",
@@ -268,7 +268,7 @@ var osTemplatesCmds = []Command{
 		Endpoint:    DeveloperEndpoint,
 	},
 	{
-		Description:  "Stop other users of the platform from being able to use the template by allocating a specific owner.",
+		Description:  "Stop other users of the platform from being able to use the OS template by allocating a specific owner.",
 		Subject:      "os-template",
 		AltSubject:   "template",
 		Predicate:    "make-private",
@@ -299,12 +299,12 @@ var osTemplatesCmds = []Command{
 		Endpoint:    ExtendedEndpoint,
 	},
 	{
-		Description:  "Build an OS template.",
+		Description:  "Register a template from the template repository.",
 		Subject:      "os-template",
 		AltSubject:   "template",
-		Predicate:    "build",
+		Predicate:    "register",
 		AltPredicate: "build",
-		FlagSet:      flag.NewFlagSet("build an OS template from a source ISO image", flag.ExitOnError),
+		FlagSet:      flag.NewFlagSet("register template from repo", flag.ExitOnError),
 		InitFunc: func(c *Command) {
 			c.Arguments = map[string]interface{}{
 				"name":            c.FlagSet.String("name", _nilDefaultStr, red("(Required)")+"Name of the template."),
@@ -322,11 +322,11 @@ var osTemplatesCmds = []Command{
 				"return-id":                c.FlagSet.Bool("return-id", false, green("(Flag)")+"If set, returns the ID of the generated template. Useful for automation."),
 			}
 		},
-		ExecuteFunc: templateBuildCmd,
+		ExecuteFunc: templateRegisterCmd,
 		Endpoint:    ExtendedEndpoint,
 		Example: `
-	metalcloud-cli os-template build --name test-template --source-template Ubuntu/OOB-20.04 --source-iso ubuntu-20.04.4-live-server-amd64.iso —-assets-update oob-meta-data:./replace_asset_1,oob-vendor-data:./replace_asset_2
-	metalcloud-cli os-template build --name test-100 --source-template Ubuntu/OOB-20.04 --source-iso ubuntu-20.04.4-live-server-amd64.iso --replace-if-exists --strict-host-key-checking=false
+	metalcloud-cli os-template register --name test-template --source-template Ubuntu/OOB-20.04 --source-iso ubuntu-20.04.4-live-server-amd64.iso —-assets-update oob-meta-data:./replace_asset_1,oob-vendor-data:./replace_asset_2
+	metalcloud-cli os-template register --name test-100 --source-template Ubuntu/OOB-20.04 --source-iso ubuntu-20.04.4-live-server-amd64.iso --replace-if-exists --strict-host-key-checking=false
 	`,
 	},
 	{
@@ -350,8 +350,8 @@ var osTemplatesCmds = []Command{
 		Description:  "List OS source templates from a repository.",
 		Subject:      "os-template",
 		AltSubject:   "template",
-		Predicate:    "list-repo-templates",
-		AltPredicate: "repo-templates",
+		Predicate:    "list-source-templates",
+		AltPredicate: "source-templates",
 		FlagSet:      flag.NewFlagSet("list OS source templates from a repository", flag.ExitOnError),
 		InitFunc: func(c *Command) {
 			c.Arguments = map[string]interface{}{
@@ -366,8 +366,8 @@ var osTemplatesCmds = []Command{
 		Description:  "List the assets from an OS source template.",
 		Subject:      "os-template",
 		AltSubject:   "template",
-		Predicate:    "list-template-assets",
-		AltPredicate: "repo-templates",
+		Predicate:    "list-source-template-assets",
+		AltPredicate: "source-template-assets",
 		FlagSet:      flag.NewFlagSet("list assets from an OS source template", flag.ExitOnError),
 		InitFunc: func(c *Command) {
 			c.Arguments = map[string]interface{}{
@@ -959,7 +959,7 @@ func templateMakePrivateCmd(c *Command, client metalcloud.MetalCloudClient) (str
 	return "", nil
 }
 
-func templateBuildCmd(c *Command, client metalcloud.MetalCloudClient) (string, error) {
+func templateRegisterCmd(c *Command, client metalcloud.MetalCloudClient) (string, error) {
 	var sourceTemplate string
 
 	if sourceTemplateValue, ok := getStringParamOk(c.Arguments["source-template"]); !ok {
@@ -1107,8 +1107,6 @@ func retrieveRepositoryAssets(c *Command, repoMap map[string]RepoTemplate) error
 		cloneOptions.URL = "https://github.com/metalsoft-io/os-templates.git"
 	}
 
-	fmt.Printf("Retrieving asset templates from repository %s.\n", cloneOptions.URL)
-
 	// Filesystem abstraction based on memory
 	fs := memfs.New()
 
@@ -1166,8 +1164,6 @@ func retrieveRepositoryAssets(c *Command, repoMap map[string]RepoTemplate) error
 
 		repoMap[templatePreffix] = repoTemplate
 	}
-
-	fmt.Printf("Retrieved asset templates from repository %s.\n", cloneOptions.URL)
 
 	if repoHasErrors {
 		fmt.Printf("Found errors for repository %s! Use the 'validate-repo' function to see them and fix them.\n", cloneOptions.URL)
@@ -1449,7 +1445,11 @@ func createTemplateAssets(c *Command, client metalcloud.MetalCloudClient, repoTe
 		Endpoint:     ExtendedEndpoint,
 	}
 
-	templateLabel := templateName
+	templateLabel, err := makeLabel(templateName)
+	if err != nil {
+		return "", err
+	}
+
 	templateDescription := _nilDefaultStr
 
 	if label, ok := getStringParamOk(c.Arguments["label"]); ok {
@@ -1559,7 +1559,7 @@ func createTemplateAssets(c *Command, client metalcloud.MetalCloudClient, repoTe
 
 	assets := []Asset{}
 
-	err := createIsoImageAsset(c, repoTemplate, &assets, templateName, templateLabel, createAssetCommand)
+	err = createIsoImageAsset(c, repoTemplate, &assets, templateName, templateLabel, createAssetCommand)
 
 	if err != nil {
 		return "", err
@@ -1664,7 +1664,7 @@ func handleIsoImageUpload(c *Command, imageRepositoryHostname string, isoPath st
 
 	remoteURL := "https://" + imageRepositoryHostname + imageRepositoryIsoPath
 
-	fmt.Printf("Please upload ISO image %s to this path: %s.\n", imageFilename, remoteURL + "/" + imageFilename)
+	fmt.Printf("Please upload ISO image %s to this path: %s.\n", imageFilename, remoteURL+"/"+imageFilename)
 	return "", nil
 
 	if !getBoolParam(c.Arguments["skip-upload-to-repo"]) {
@@ -1998,7 +1998,7 @@ func templateListAssetsCmd(c *Command, client metalcloud.MetalCloudClient) (stri
 	var sourceTemplate string
 
 	if sourceTemplateValue, ok := getStringParamOk(c.Arguments["source-template"]); !ok {
-		return "", fmt.Errorf("The 'source-template' parameter must be specified when using the 'list-template-assets' command.")
+		return "", fmt.Errorf("The 'source-template' parameter must be specified when using the 'list-source-template-assets' command.")
 	} else {
 		sourceTemplate = sourceTemplateValue
 	}
@@ -2060,21 +2060,14 @@ func templateValidateRepoCmd(c *Command, client metalcloud.MetalCloudClient) (st
 		return "", err
 	}
 
-	repoHasErrors := false
-
 	for templatePreffix, repoTemplate := range repoMap {
 		if len(repoTemplate.Errors) != 0 {
 			fmt.Printf("Detected the following errors regarding repository structure for template %s:\n", templatePreffix)
-			repoHasErrors = true
 		}
 
 		for _, errorMessage := range repoTemplate.Errors {
 			fmt.Println("\t" + errorMessage)
 		}
-	}
-
-	if !repoHasErrors {
-		fmt.Printf("Detected no errors for the given repository.\n")
 	}
 
 	return "", err
