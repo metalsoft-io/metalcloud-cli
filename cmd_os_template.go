@@ -325,8 +325,8 @@ var osTemplatesCmds = []Command{
 		ExecuteFunc: templateRegisterCmd,
 		Endpoint:    ExtendedEndpoint,
 		Example: `
-	metalcloud-cli os-template register --name test-template --source-template Ubuntu/OOB-20.04 --source-iso ubuntu-20.04.4-live-server-amd64.iso —-assets-update oob-meta-data:./replace_asset_1,oob-vendor-data:./replace_asset_2
-	metalcloud-cli os-template register --name test-100 --source-template Ubuntu/OOB-20.04 --source-iso ubuntu-20.04.4-live-server-amd64.iso --replace-if-exists --strict-host-key-checking=false
+		metalcloud-cli os-template register --name test-template --source-template Ubuntu/20.04/oob-uefi-boot --source-iso ubuntu-20.04.4-live-server-amd64.iso —-assets-update user-data:./replace_asset_1,vendor-data:./replace_asset_2
+		metalcloud-cli os-template register --name test-100 --source-template Ubuntu/20.04/oob-uefi-boot --source-iso ubuntu-20.04.4-live-server-amd64.iso --replace-if-exists --strict-host-key-checking=false
 	`,
 	},
 	{
@@ -2261,9 +2261,9 @@ func getRepositoryTemplateAssets(tree *object.Tree, repoMap map[string]RepoTempl
 	files := tree.Files()
 	files.ForEach(func(file *object.File) error {
 		if file.Mode.IsRegular() {
-			if strings.Count(file.Name, "/") == 2 {
+			if strings.Count(file.Name, "/") == 3 {
 				parts := strings.Split(file.Name, "/")
-				templatePreffix := strings.Join(parts[:2], "/")
+				templatePreffix := strings.Join(parts[:3], "/")
 
 				fileContents, err := file.Contents()
 
@@ -2271,16 +2271,16 @@ func getRepositoryTemplateAssets(tree *object.Tree, repoMap map[string]RepoTempl
 					return err
 				}
 
-				if parts[2] == templateFileName {
+				if parts[3] == templateFileName {
 					if _, ok := repoMap[templatePreffix]; !ok {
 						repoMap[templatePreffix] = RepoTemplate{
 							SourcePath:           templatePreffix,
 							TemplateFileContents: fileContents,
 						}
 					}
-				} else if parts[2] != readMeFileName {
+				} else if parts[3] != readMeFileName {
 					asset := TemplateAsset{
-						name:     parts[2],
+						name:     parts[3],
 						contents: fileContents,
 					}
 
