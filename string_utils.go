@@ -51,6 +51,9 @@ func makeLabel(s string) (string, error) {
 
 	label := ""
 
+	s = strings.ReplaceAll(s, " ", "-")
+	s = strings.ReplaceAll(s, ".", "-")
+
 	for i, r := range strings.ToLower(s) {
 		if i == 0 {
 			if !unicode.IsLetter(r) {
