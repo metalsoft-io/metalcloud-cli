@@ -1603,7 +1603,9 @@ func createIsoImageAsset(c *Command, repoTemplate RepoTemplate, assets *[]Asset,
 	imagePath, _ := getStringParamOk(c.Arguments["source-iso"])
 
 	s := strings.Split(imagePath, "/")
-	imageFilename := s[len(s)-1]
+	ss := s[len(s)-1]
+	ss = strings.ReplaceAll(ss, " ", "_")
+	imageFilename := ss
 
 	isoPath := "/" + templateName + "-" + imageFilename
 
@@ -1660,11 +1662,15 @@ func handleIsoImageUpload(c *Command, imageRepositoryHostname string, isoPath st
 
 	// ISO upload is disabled for the moment
 	s := strings.Split(isoPath, "/")
-	imageFilename := s[len(s)-1]
+	ss := s[len(s)-1]
+	ss = strings.ReplaceAll(ss, " ", "_")
+	imageFilename := ss
+
+	originalImagePath, _ := getStringParamOk(c.Arguments["source-iso"])
 
 	remoteURL := "https://" + imageRepositoryHostname + imageRepositoryIsoPath
 
-	fmt.Printf("Please upload ISO image %s to this path: %s.\n", imageFilename, remoteURL+"/"+imageFilename)
+	fmt.Printf("Please upload ISO image %s to this path: %s\n", originalImagePath, remoteURL+"/"+imageFilename)
 	return "", nil
 
 	if !getBoolParam(c.Arguments["skip-upload-to-repo"]) {
