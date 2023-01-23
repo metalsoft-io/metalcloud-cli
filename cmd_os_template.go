@@ -12,6 +12,7 @@ import (
 	"net"
 	"os"
 	"path/filepath"
+	"regexp"
 	"strings"
 
 	metalcloud "github.com/metalsoft-io/metal-cloud-sdk-go/v2"
@@ -1359,73 +1360,74 @@ func checkOOBTemplateIntegrity(c *Command, repoTemplate RepoTemplate) error {
 		return fmt.Errorf("The 'source-iso' parameter must be specified with the 'name' and 'source-template' ones for OOB templates.")
 	}
 
-	file, err := os.Open(imagePath)
+    if !regexCheckIfUrl(imagePath){
+		file, err := os.Open(imagePath)
 
-	if err != nil {
-		return fmt.Errorf("Image not found at path %s.", imagePath)
-	}
-	defer file.Close()
-
-	image, err := iso9660.OpenImage(file)
-
-	if err != nil {
-		return err
-	}
-
-	rootDir, err := image.RootDir()
-
-	if err != nil {
-		return err
-	}
-
-	children, err := rootDir.GetChildren()
-
-	if err != nil {
-		return err
-	}
-
-	var bootloaderFile *iso9660.File = nil
-
-	for _, asset := range repoTemplate.Assets {
-		if asset.Type != assetTypePatch {
-			continue
+		if err != nil {
+			return fmt.Errorf("Image not found at path %s.", imagePath)
 		}
+		defer file.Close()
 
-		for _, child := range children {
-			if !child.IsDir() && child.Name() == asset.name {
-				bootloaderFile = child
-				break
-			}
+		image, err := iso9660.OpenImage(file)
+
+		if err != nil {
+			return err
 		}
-
-		if bootloaderFile == nil {
-			return fmt.Errorf("Could not apply patch asset as the bootloader config file with name '%s' was not found in the given ISO image.", asset.name)
-		}
-
-		bootloaderData, err := ioutil.ReadAll(bootloaderFile.Reader())
+		rootDir, err := image.RootDir()
 
 		if err != nil {
 			return err
 		}
 
-		patchFileStringContents := asset.contents
-
-		diffMatchPatch := diff.New()
-
-		patches, err := diffMatchPatch.PatchFromText(patchFileStringContents)
+		children, err := rootDir.GetChildren()
 
 		if err != nil {
-			return fmt.Errorf("Failed to apply patch for asset %s. Make sure the file has a Unix (LF) End Of Line sequence.", asset.name)
+			return err
 		}
 
-		patchedText, _ := diffMatchPatch.PatchApply(patches, string(bootloaderData))
+		var bootloaderFile *iso9660.File = nil
 
-		//Remove tabs and blank lines, somehow they get added when applying the patch
-		patchedText = strings.ReplaceAll(patchedText, "\t", "")
-		patchedText = strings.TrimSpace(patchedText)
-		asset.contents = string(patchedText)
+		for _, asset := range repoTemplate.Assets {
+			if asset.Type != assetTypePatch {
+				continue
+			}
 
-		repoTemplate.Assets[asset.name] = asset
+			for _, child := range children {
+				if !child.IsDir() && child.Name() == asset.name {
+					bootloaderFile = child
+					break
+				}
+			}
+
+			if bootloaderFile == nil {
+				return fmt.Errorf("Could not apply patch asset as the bootloader config file with name '%s' was not found in the given ISO image.", asset.name)
+			}
+
+			bootloaderData, err := ioutil.ReadAll(bootloaderFile.Reader())
+
+			if err != nil {
+				return err
+			}
+
+			patchFileStringContents := asset.contents
+
+			diffMatchPatch := diff.New()
+
+			patches, err := diffMatchPatch.PatchFromText(patchFileStringContents)
+
+			if err != nil {
+				return fmt.Errorf("Failed to apply patch for asset %s. Make sure the file has a Unix (LF) End Of Line sequence.", asset.name)
+			}
+
+			patchedText, _ := diffMatchPatch.PatchApply(patches, string(bootloaderData))
+
+			//Remove tabs and blank lines, somehow they get added when applying the patch
+			patchedText = strings.ReplaceAll(patchedText, "\t", "")
+			patchedText = strings.TrimSpace(patchedText)
+			asset.contents = string(patchedText)
+
+			repoTemplate.Assets[asset.name] = asset
+		}
 	}
 
 	return nil
@@ -1640,6 +1642,21 @@ func createIsoImageAsset(c *Command, repoTemplate RepoTemplate, assets *[]Asset,
 	return nil
 }
 
+func regexCheckIfUrl(result string) bool {
+	m, err := regexp.MatchString(`(?m)(http:|https:).*`, result)
+	if err != nil {
+		//fmt.Println("your regex is faulty")
+		// you should log it or throw an error
+		//return err.Error()
+		return false
+	}
+	if m {
+		return true
+	} else {
+		return false
+	}
+}
+
 func handleIsoImageUpload(c *Command, imageRepositoryHostname string, isoPath string, imagePath string) (string, error) {
 	remoteDirectoryPath := defaultImageRepositorySSHPath
 
@@ -1662,85 +1679,87 @@ func handleIsoImageUpload(c *Command, imageRepositoryHostname string, isoPath st
 	}
 
 	originalImagePath, _ := getStringParamOk(c.Arguments["source-iso"])
-	originalImageFilenameArr := strings.Split(originalImagePath, "/")
-	originalImageFilename := originalImageFilenameArr[len(originalImageFilenameArr)-1]
-	imageFilename := strings.ReplaceAll(originalImageFilename, " ", "_")
+	if !regexCheckIfUrl(originalImagePath) {
 
-	remoteURL := "https://" + imageRepositoryHostname + imageRepositoryIsoPath
+		originalImageFilenameArr := strings.Split(originalImagePath, "/")
+		originalImageFilename := originalImageFilenameArr[len(originalImageFilenameArr)-1]
+		imageFilename := strings.ReplaceAll(originalImageFilename, " ", "_")
 
-	fmt.Printf(green("Please upload ISO image %s to this path: %s\n"), originalImagePath, remoteURL+"/"+imageFilename)
-	return "", nil
+		remoteURL := "https://" + imageRepositoryHostname + imageRepositoryIsoPath
 
-	if !getBoolParam(c.Arguments["skip-upload-to-repo"]) {
-		sshRepositoryHostname := imageRepositoryHostname + ":" + remoteSSHPort
+		fmt.Printf(green("Please upload ISO image %s to this path: %s\n"), originalImagePath, remoteURL+"/"+imageFilename)
+		return "", nil
 
-		imageExists, err := checkRemoteFileExists(remoteURL, imageFilename)
+		if !getBoolParam(c.Arguments["skip-upload-to-repo"]) {
+			sshRepositoryHostname := imageRepositoryHostname + ":" + remoteSSHPort
 
-		if err != nil {
-			return "", err
-		}
+			imageExists, err := checkRemoteFileExists(remoteURL, imageFilename)
 
-		if imageExists && !getBoolParam(c.Arguments["replace-if-exists"]) {
-			fmt.Printf("Image %s already exists at path %s. Skipping upload. Use the 'replace-if-exists' parameter to replace the existing image.\n", imageFilename, remotePath)
-			return "", nil
-		}
-
-		if imageExists {
-			fmt.Printf("Replacing image %s at path %s.\n", imageFilename, remotePath)
-		} else {
-			fmt.Printf("Uploading new image %s at path %s.\n", imageFilename, remotePath)
-		}
-
-		if userPrivateSSHKeyPath := os.Getenv("METALCLOUD_USER_PRIVATE_OPENSSH_KEY_PATH"); userPrivateSSHKeyPath == "" {
-			return "", fmt.Errorf("METALCLOUD_USER_PRIVATE_OPENSSH_KEY_PATH must be set when creating an OS template. The key is needed when uploading to the ISO repository.")
-		}
-
-		userPrivateSSHKeyPath := os.Getenv("METALCLOUD_USER_PRIVATE_OPENSSH_KEY_PATH")
-
-		homeDir, err := os.UserHomeDir()
-		if err != nil {
-			return "", err
-		}
-
-		var knownHostsFilePath string
-
-		if userGivenHostsFilePath := os.Getenv("METALCLOUD_KNOWN_HOSTS_FILE_PATH"); userGivenHostsFilePath != "" {
-			knownHostsFilePath = os.Getenv("METALCLOUD_KNOWN_HOSTS_FILE_PATH")
-		} else {
-			knownHostsFilePath = filepath.Join(homeDir, ".ssh", "known_hosts")
-
-			// Create the known hosts file if it does not exist.
-			if _, err := os.Stat(knownHostsFilePath); errors.Is(err, os.ErrNotExist) {
-				hostsFile, err := os.Create(knownHostsFilePath)
-
-				if err != nil {
-					return "", err
-				}
-
-				hostsFile.Close()
+			if err != nil {
+				return "", err
 			}
-		}
 
-		hostKeyCallback, err := kh.New(knownHostsFilePath)
+			if imageExists && !getBoolParam(c.Arguments["replace-if-exists"]) {
+				fmt.Printf("Image %s already exists at path %s. Skipping upload. Use the 'replace-if-exists' parameter to replace the existing image.\n", imageFilename, remotePath)
+				return "", nil
+			}
 
-		if err != nil {
-			return "", fmt.Errorf("Received following error when parsing the known_hosts file: %s.", err)
-		}
+			if imageExists {
+				fmt.Printf("Replacing image %s at path %s.\n", imageFilename, remotePath)
+			} else {
+				fmt.Printf("Uploading new image %s at path %s.\n", imageFilename, remotePath)
+			}
 
-		// Use SSH key authentication from the auth package.
-		clientConfig, err := auth.PrivateKey(
-			"root",
-			userPrivateSSHKeyPath,
-			ssh.HostKeyCallback(func(hostname string, remoteAddress net.Addr, publicKey ssh.PublicKey) error {
-				var keyError *kh.KeyError
-				hostsError := hostKeyCallback(hostname, remoteAddress, publicKey)
+			if userPrivateSSHKeyPath := os.Getenv("METALCLOUD_USER_PRIVATE_OPENSSH_KEY_PATH"); userPrivateSSHKeyPath == "" {
+				return "", fmt.Errorf("METALCLOUD_USER_PRIVATE_OPENSSH_KEY_PATH must be set when creating an OS template. The key is needed when uploading to the ISO repository.")
+			}
 
-				// Reference: https://www.godoc.org/golang.org/x/crypto/ssh/knownhosts#KeyError
-				//if keyErr.Want is not empty and
-				if errors.As(hostsError, &keyError) {
-					if len(keyError.Want) > 0 {
-						// If host is known then there is key mismatch and the connection is rejected.
-						fmt.Printf(`
+			userPrivateSSHKeyPath := os.Getenv("METALCLOUD_USER_PRIVATE_OPENSSH_KEY_PATH")
+
+			homeDir, err := os.UserHomeDir()
+			if err != nil {
+				return "", err
+			}
+
+			var knownHostsFilePath string
+
+			if userGivenHostsFilePath := os.Getenv("METALCLOUD_KNOWN_HOSTS_FILE_PATH"); userGivenHostsFilePath != "" {
+				knownHostsFilePath = os.Getenv("METALCLOUD_KNOWN_HOSTS_FILE_PATH")
+			} else {
+				knownHostsFilePath = filepath.Join(homeDir, ".ssh", "known_hosts")
+
+				// Create the known hosts file if it does not exist.
+				if _, err := os.Stat(knownHostsFilePath); errors.Is(err, os.ErrNotExist) {
+					hostsFile, err := os.Create(knownHostsFilePath)
+
+					if err != nil {
+						return "", err
+					}
+
+					hostsFile.Close()
+				}
+			}
+
+			hostKeyCallback, err := kh.New(knownHostsFilePath)
+
+			if err != nil {
+				return "", fmt.Errorf("Received following error when parsing the known_hosts file: %s.", err)
+			}
+
+			// Use SSH key authentication from the auth package.
+			clientConfig, err := auth.PrivateKey(
+				"root",
+				userPrivateSSHKeyPath,
+				ssh.HostKeyCallback(func(hostname string, remoteAddress net.Addr, publicKey ssh.PublicKey) error {
+					var keyError *kh.KeyError
+					hostsError := hostKeyCallback(hostname, remoteAddress, publicKey)
+
+					// Reference: https://www.godoc.org/golang.org/x/crypto/ssh/knownhosts#KeyError
+					//if keyErr.Want is not empty and
+					if errors.As(hostsError, &keyError) {
+						if len(keyError.Want) > 0 {
+							// If host is known then there is key mismatch and the connection is rejected.
+							fmt.Printf(`
 @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
 @    WARNING: REMOTE HOST IDENTIFICATION HAS CHANGED!     @
 @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
@@ -1754,90 +1773,91 @@ Add correct host key in %s to get rid of this message.
 Host key for %s has changed and you have requested strict checking.
 Host key verification failed.
 `,
-							serializeSSHKey(publicKey), knownHostsFilePath, hostname,
-						)
-						return keyError
-					} else {
-						// If keyErr.Want slice is empty then host is unknown.
-						fmt.Printf(`
+								serializeSSHKey(publicKey), knownHostsFilePath, hostname,
+							)
+							return keyError
+						} else {
+							// If keyErr.Want slice is empty then host is unknown.
+							fmt.Printf(`
 The authenticity of host '%s' can't be established.
 SSH key is %s.
 This key is not known by any other names.
 It will be added to known_hosts file %s.
 Are you sure you want to continue connecting (yes/no)?
 `,
-							hostname, serializeSSHKey(publicKey), knownHostsFilePath,
-						)
+								hostname, serializeSSHKey(publicKey), knownHostsFilePath,
+							)
 
-						if getBoolParam(c.Arguments["strict-host-key-checking"]) {
-							reader := bufio.NewReader(os.Stdin)
-							input, err := reader.ReadString('\n')
+							if getBoolParam(c.Arguments["strict-host-key-checking"]) {
+								reader := bufio.NewReader(os.Stdin)
+								input, err := reader.ReadString('\n')
 
-							if err != nil {
-								return err
-							}
-
-							// Remove \r and \n from input
-							input = string(bytes.TrimSuffix([]byte(input), []byte("\r\n")))
-
-							if input != "yes" {
-								if input == "no" {
-									fmt.Println("Aborting connection.")
-								} else {
-									fmt.Println("Invalid response given. Aborting connection.")
+								if err != nil {
+									return err
 								}
 
-								return keyError
+								// Remove \r and \n from input
+								input = string(bytes.TrimSuffix([]byte(input), []byte("\r\n")))
+
+								if input != "yes" {
+									if input == "no" {
+										fmt.Println("Aborting connection.")
+									} else {
+										fmt.Println("Invalid response given. Aborting connection.")
+									}
+
+									return keyError
+								}
+							} else {
+								fmt.Printf("Skipped manual check because 'strict-host-key-checking' is set to false.")
 							}
-						} else {
-							fmt.Printf("Skipped manual check because 'strict-host-key-checking' is set to false.")
+
+							return addHostKey(knownHostsFilePath, remoteAddress, publicKey)
 						}
-
-						return addHostKey(knownHostsFilePath, remoteAddress, publicKey)
 					}
-				}
 
-				fmt.Printf("Public key exists for remote %s. Establishing connection.\n", hostname)
-				return nil
-			}),
-		)
+					fmt.Printf("Public key exists for remote %s. Establishing connection.\n", hostname)
+					return nil
+				}),
+			)
 
-		if err != nil {
-			return "", fmt.Errorf("Could not create SSH client config. Received error: %s", err)
+			if err != nil {
+				return "", fmt.Errorf("Could not create SSH client config. Received error: %s", err)
+			}
+
+			// Create a new SCP client.
+			scpClient := scp.NewClient(sshRepositoryHostname, &clientConfig)
+
+			// Connect to the remote server.
+			err = scpClient.Connect()
+			if err != nil {
+				return "", fmt.Errorf("Couldn't establish a connection to the remote server: %s", err)
+			}
+
+			defer scpClient.Close()
+
+			fmt.Printf("Established connection to hostname %s.\n", sshRepositoryHostname)
+
+			isoImagefile, err := os.Open(imagePath)
+			if err != nil {
+				return "", fmt.Errorf("Image not found at path %s.", imagePath)
+			}
+			defer isoImagefile.Close()
+
+			fmt.Printf("Starting image upload to repository at path %s.\n", remotePath)
+			err = scpClient.CopyFile(context.Background(), isoImagefile, remotePath, "0777")
+
+			if err != nil {
+				return "", fmt.Errorf("Error while copying file: %s", err)
+			}
+
+			fmt.Printf("Finished image upload to repository at path %s.\n", remotePath)
+
+		} else {
+			fmt.Printf("Skipped uploading image to repository at path %s.", remotePath)
 		}
 
-		// Create a new SCP client.
-		scpClient := scp.NewClient(sshRepositoryHostname, &clientConfig)
-
-		// Connect to the remote server.
-		err = scpClient.Connect()
-		if err != nil {
-			return "", fmt.Errorf("Couldn't establish a connection to the remote server: %s", err)
-		}
-
-		defer scpClient.Close()
-
-		fmt.Printf("Established connection to hostname %s.\n", sshRepositoryHostname)
-
-		isoImagefile, err := os.Open(imagePath)
-		if err != nil {
-			return "", fmt.Errorf("Image not found at path %s.", imagePath)
-		}
-		defer isoImagefile.Close()
-
-		fmt.Printf("Starting image upload to repository at path %s.\n", remotePath)
-		err = scpClient.CopyFile(context.Background(), isoImagefile, remotePath, "0777")
-
-		if err != nil {
-			return "", fmt.Errorf("Error while copying file: %s", err)
-		}
-
-		fmt.Printf("Finished image upload to repository at path %s.\n", remotePath)
-
-	} else {
-		fmt.Printf("Skipped uploading image to repository at path %s.", remotePath)
 	}
-
 	return "", nil
 }
 
