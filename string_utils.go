@@ -51,6 +51,7 @@ func makeLabel(s string) (string, error) {
 
 	label := ""
 
+	s = strings.TrimSpace(s)
 	s = strings.ReplaceAll(s, " ", "-")
 	s = strings.ReplaceAll(s, ".", "-")
 
