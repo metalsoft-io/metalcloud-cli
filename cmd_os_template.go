@@ -1602,12 +1602,13 @@ func createIsoImageAsset(c *Command, repoTemplate RepoTemplate, assets *[]Asset,
 
 	imagePath, _ := getStringParamOk(c.Arguments["source-iso"])
 
-	s := strings.Split(imagePath, "/")
-	ss := s[len(s)-1]
-	ss = strings.ReplaceAll(ss, " ", "_")
-	imageFilename := ss
+	// ISO upload is disabled for the moment
+	originalImageFilenameArr := strings.Split(imagePath, "/")
+	originalImageFilename := originalImageFilenameArr[len(originalImageFilenameArr)-1]
+	imageFilename := strings.ReplaceAll(originalImageFilename, " ", "_")
 
-	isoPath := "/" + templateName + "-" + imageFilename
+	//isoPath := "/" + templateName + "-" + imageFilename
+	isoPath := defaultImageRepositoryIsoPath + "/" + imageFilename
 
 	_, err := handleIsoImageUpload(c, imageRepositoryHostname, isoPath, imagePath)
 
@@ -1660,17 +1661,14 @@ func handleIsoImageUpload(c *Command, imageRepositoryHostname string, isoPath st
 		imageRepositoryIsoPath = os.Getenv("METALCLOUD_IMAGE_REPOSITORY_ISO_PATH")
 	}
 
-	// ISO upload is disabled for the moment
-	s := strings.Split(isoPath, "/")
-	ss := s[len(s)-1]
-	ss = strings.ReplaceAll(ss, " ", "_")
-	imageFilename := ss
-
 	originalImagePath, _ := getStringParamOk(c.Arguments["source-iso"])
+	originalImageFilenameArr := strings.Split(originalImagePath, "/")
+	originalImageFilename := originalImageFilenameArr[len(originalImageFilenameArr)-1]
+	imageFilename := strings.ReplaceAll(originalImageFilename, " ", "_")
 
 	remoteURL := "https://" + imageRepositoryHostname + imageRepositoryIsoPath
 
-	fmt.Printf("Please upload ISO image %s to this path: %s\n", originalImagePath, remoteURL+"/"+imageFilename)
+	fmt.Printf(green("Please upload ISO image %s to this path: %s\n"), originalImagePath, remoteURL+"/"+imageFilename)
 	return "", nil
 
 	if !getBoolParam(c.Arguments["skip-upload-to-repo"]) {
