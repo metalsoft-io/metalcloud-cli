@@ -2,6 +2,8 @@ module github.com/metalsoft-io/metalcloud-cli
 
 go 1.16
 
+replace github.com/metalsoft-io/metal-cloud-sdk-go/v2 v2.8.4 => github.com/metalsoft-io/metal-cloud-sdk-go/v2 v2.8.6
+
 require (
 	github.com/atomicgo/cursor v0.0.1
 	github.com/bramvdbogaerde/go-scp v1.2.0
