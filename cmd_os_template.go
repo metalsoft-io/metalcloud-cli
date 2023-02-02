@@ -58,6 +58,9 @@ const assetTypeOther = "other"
 const assetMimeTypeDynamic = "text/plain"
 const assetMimeTypeBinary = "application/octet-stream"
 
+const assetTemplateTypeSimple = "simple"
+const assetTemplateTypeAdvanced = "advanced"
+
 const assetUsageTypeBootloader = "bootloader"
 const assetUsageTypeBuildComponent = "build_component"
 
@@ -75,14 +78,15 @@ const defaultImageRepositoryHostname = "repo.metalsoft.io"
 const defaultImageRepositoryIsoPath = "/.iso"
 
 type TemplateAsset struct {
-	name     string
-	contents string
-	Isopath  string `yaml:"isopath"`
-	Mime     string `yaml:"mime"`
-	Usage    string `yaml:"usage"`
-	Type     string `yaml:"type"`
-	Url      string `yaml:"url"`
-	Path     string `yaml:"path"`
+	name            string
+	contents        string
+	Isopath         string `yaml:"isopath"`
+	Mime            string `yaml:"mime"`
+	TemplateType    string `yaml:"template-type"`
+	Usage           string `yaml:"usage"`
+	Type            string `yaml:"type"`
+	Url             string `yaml:"url"`
+	Path            string `yaml:"path"`
 }
 
 type OsTemplateContents struct {
@@ -1621,6 +1625,7 @@ func createIsoImageAsset(c *Command, repoTemplate RepoTemplate, assets *[]Asset,
 		"filename":               createIsoCommand.FlagSet.String("filename", imageFilename, "Asset's filename"),
 		"usage":                  createIsoCommand.FlagSet.String("usage", "build_source_image", "Asset's usage."),
 		"mime":                   createIsoCommand.FlagSet.String("mime", assetMimeTypeBinary, "Asset's mime type. Possible values: \""+assetMimeTypeDynamic+"\", \""+assetMimeTypeBinary+"\""),
+		"template_type":          createIsoCommand.FlagSet.String("template-type", assetTemplateTypeSimple, "Asset's template type. Possible values: \""+assetTemplateTypeSimple+"\", \""+assetTemplateTypeAdvanced+"\""),
 		"url":                    createIsoCommand.FlagSet.String("url", assetURL, "Asset's source url. If present it will not read content anymore"),
 		"read_content_from_pipe": createIsoCommand.FlagSet.Bool("pipe", false, "Read assets's content read from pipe instead of terminal input"),
 		"template_id_or_name":    createIsoCommand.FlagSet.String("template-id", templateLabel, "Template's id or name to associate."),
@@ -1907,6 +1912,7 @@ func createOtherAssets(c *Command, repoTemplate RepoTemplate, assets *[]Asset, t
 			"filename":               createOtherAssetCommand.FlagSet.String("filename", asset.name, "Asset's filename"),
 			"usage":                  createOtherAssetCommand.FlagSet.String("usage", asset.Usage, "Asset's usage."),
 			"mime":                   createOtherAssetCommand.FlagSet.String("mime", asset.Mime, "Asset's mime type. Possible values: \""+assetMimeTypeDynamic+"\",\""+assetMimeTypeBinary+"\""),
+			"template_type":          createOtherAssetCommand.FlagSet.String("template-type", asset.TemplateType, "Asset's template type. Possible values: \""+assetTemplateTypeSimple+"\", \""+assetTemplateTypeAdvanced+"\""),
 			"url":                    createOtherAssetCommand.FlagSet.String("url", assetURL, "Asset's source url. If present it will not read content anymore"),
 			"read_content_from_pipe": createOtherAssetCommand.FlagSet.Bool("pipe", false, "Read assets's content read from pipe instead of terminal input"),
 			"template_id_or_name":    createOtherAssetCommand.FlagSet.String("template-id", templateLabel, "Template's id or name to associate. "),
@@ -2365,6 +2371,7 @@ func populateTemplateValues(repoTemplate *RepoTemplate) (bool, error) {
 	validDeployProcesses := []string{bootMethodLocalDrives, bootMethodPxeIscsi}
 	validBootTypes := []string{bootTypeUEFIOnly, bootTypeLegacyOnly}
 	validMimeTypes := []string{assetMimeTypeBinary, assetMimeTypeDynamic}
+	validTemplateTypes := []string{assetTemplateTypeSimple, assetTemplateTypeAdvanced}
 	validAssetTypes := []string{assetTypeBootloader, assetTypeBootloaderConfig, assetTypeInstallerConfig, assetTypePatch, assetTypeOther}
 	validUsageType := []string{assetUsageTypeBootloader, assetUsageTypeBuildComponent}
 
@@ -2412,6 +2419,12 @@ func populateTemplateValues(repoTemplate *RepoTemplate) (bool, error) {
 				errors = append(errors, fmt.Sprintf("Found no mime type for asset %s. There must be one for the asset with the key name 'mime'. Valid mime types are %+q.", assetName, validMimeTypes))
 			} else if !stringInSlice(asset.Mime, validMimeTypes) {
 				errors = append(errors, fmt.Sprintf("Found invalid mime type %s for asset %s. Valid mime types are %+q.", asset.Mime, assetName, validMimeTypes))
+			}
+
+			if asset.TemplateType == "" {
+				errors = append(errors, fmt.Sprintf("Found no template type for asset %s. There must be one for the asset with the key name 'template-type'. Valid asset template types are %+q.", assetName, validTemplateTypes))
+			} else if !stringInSlice(asset.TemplateType, validTemplateTypes) {
+				errors = append(errors, fmt.Sprintf("Found invalid template type %s for asset %s. Valid asset template types are %+q.", asset.TemplateType, assetName, validTemplateTypes))
 			}
 
 			if asset.Type == "" {
