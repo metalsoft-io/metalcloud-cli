@@ -2,6 +2,8 @@ module github.com/metalsoft-io/metalcloud-cli
 
 go 1.16
 
+replace github.com/metalsoft-io/metal-cloud-sdk-go/v2 v2.8.4 => github.com/metalsoft-io/metal-cloud-sdk-go/v2 v2.8.6
+
 require (
 	github.com/atomicgo/cursor v0.0.1
 	github.com/bramvdbogaerde/go-scp v1.2.0
@@ -11,7 +13,7 @@ require (
 	github.com/jinzhu/copier v0.3.5 // indirect
 	github.com/jwalton/gchalk v1.2.1
 	github.com/kdomanski/iso9660 v0.3.1
-	github.com/metalsoft-io/metal-cloud-sdk-go/v2 v2.8.4
+	github.com/metalsoft-io/metal-cloud-sdk-go/v2 v2.8.6
 	github.com/metalsoft-io/tableformatter v1.0.9
 	github.com/onsi/gomega v1.16.0
 	github.com/savaki/jq v0.0.0-20161209013833-0e6baecebbf8
