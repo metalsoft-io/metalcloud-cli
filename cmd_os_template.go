@@ -59,6 +59,7 @@ const assetTypeOther = "other"
 const assetMimeTypeDynamic = "text/plain"
 const assetMimeTypeBinary = "application/octet-stream"
 
+const assetTemplateTypeNone = "none"
 const assetTemplateTypeSimple = "simple"
 const assetTemplateTypeAdvanced = "advanced"
 
@@ -1630,7 +1631,7 @@ func createIsoImageAsset(c *Command, repoTemplate RepoTemplate, assets *[]Asset,
 		"filename":               createIsoCommand.FlagSet.String("filename", imageFilename, "Asset's filename"),
 		"usage":                  createIsoCommand.FlagSet.String("usage", "build_source_image", "Asset's usage."),
 		"mime":                   createIsoCommand.FlagSet.String("mime", assetMimeTypeBinary, "Asset's mime type. Possible values: \""+assetMimeTypeDynamic+"\", \""+assetMimeTypeBinary+"\""),
-		"template_type":          createIsoCommand.FlagSet.String("template-type", assetTemplateTypeSimple, "Asset's template type. Possible values: \""+assetTemplateTypeSimple+"\", \""+assetTemplateTypeAdvanced+"\""),
+		"template_type":          createIsoCommand.FlagSet.String("template-type", assetTemplateTypeSimple, "Asset's template type. Possible values: \""+assetTemplateTypeNone+"\",\""+assetTemplateTypeSimple+"\", \""+assetTemplateTypeAdvanced+"\""),
 		"url":                    createIsoCommand.FlagSet.String("url", assetURL, "Asset's source url. If present it will not read content anymore"),
 		"read_content_from_pipe": createIsoCommand.FlagSet.Bool("pipe", false, "Read assets's content read from pipe instead of terminal input"),
 		"template_id_or_name":    createIsoCommand.FlagSet.String("template-id", templateLabel, "Template's id or name to associate."),
@@ -1936,7 +1937,7 @@ func createOtherAssets(c *Command, repoTemplate RepoTemplate, assets *[]Asset, t
 			"filename":               createOtherAssetCommand.FlagSet.String("filename", asset.name, "Asset's filename"),
 			"usage":                  createOtherAssetCommand.FlagSet.String("usage", asset.Usage, "Asset's usage."),
 			"mime":                   createOtherAssetCommand.FlagSet.String("mime", asset.Mime, "Asset's mime type. Possible values: \""+assetMimeTypeDynamic+"\",\""+assetMimeTypeBinary+"\""),
-			"template_type":          createOtherAssetCommand.FlagSet.String("template-type", asset.TemplateType, "Asset's template type. Possible values: \""+assetTemplateTypeSimple+"\", \""+assetTemplateTypeAdvanced+"\""),
+			"template_type":          createOtherAssetCommand.FlagSet.String("template-type", asset.TemplateType, "Asset's template type. Possible values: \""+assetTemplateTypeNone+"\",\""+assetTemplateTypeSimple+"\", \""+assetTemplateTypeAdvanced+"\""),
 			"url":                    createOtherAssetCommand.FlagSet.String("url", assetURL, "Asset's source url. If present it will not read content anymore"),
 			"read_content_from_pipe": createOtherAssetCommand.FlagSet.Bool("pipe", false, "Read assets's content read from pipe instead of terminal input"),
 			"template_id_or_name":    createOtherAssetCommand.FlagSet.String("template-id", templateLabel, "Template's id or name to associate. "),
@@ -2395,7 +2396,7 @@ func populateTemplateValues(repoTemplate *RepoTemplate) (bool, error) {
 	validDeployProcesses := []string{bootMethodLocalDrives, bootMethodPxeIscsi}
 	validBootTypes := []string{bootTypeUEFIOnly, bootTypeLegacyOnly}
 	validMimeTypes := []string{assetMimeTypeBinary, assetMimeTypeDynamic}
-	validTemplateTypes := []string{assetTemplateTypeSimple, assetTemplateTypeAdvanced}
+	validTemplateTypes := []string{assetTemplateTypeNone, assetTemplateTypeSimple, assetTemplateTypeAdvanced}
 	validAssetTypes := []string{assetTypeBootloader, assetTypeBootloaderConfig, assetTypeInstallerConfig, assetTypePatch, assetTypeOther}
 	validUsageType := []string{assetUsageTypeBootloader, assetUsageTypeBuildComponent}
 
