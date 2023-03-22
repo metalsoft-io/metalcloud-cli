@@ -42,6 +42,7 @@ var osAssetsCmds = []Command{
 				"filename":               c.FlagSet.String("filename", _nilDefaultStr, "Asset's filename"),
 				"usage":                  c.FlagSet.String("usage", _nilDefaultStr, "Asset's usage. Possible values: \"bootloader\""),
 				"mime":                   c.FlagSet.String("mime", _nilDefaultStr, "Asset's mime type. Possible values: \"text/plain\",\"application/octet-stream\""),
+				"template_type":          c.FlagSet.String("template-type", _nilDefaultStr, "Asset's template type. Possible values: \"none\",\"simple\",\"advanced\""),
 				"url":                    c.FlagSet.String("url", _nilDefaultStr, "Asset's source url. If present it will not read content anymore"),
 				"read_content_from_pipe": c.FlagSet.Bool("pipe", false, "Read assets's content read from pipe instead of terminal input"),
 				"template_id_or_name":    c.FlagSet.String("template-id", _nilDefaultStr, "Template's id or name to associate. "),
@@ -132,6 +133,7 @@ var osAssetsCmds = []Command{
 				"filename":               c.FlagSet.String("filename", _nilDefaultStr, "Asset's filename"),
 				"usage":                  c.FlagSet.String("usage", _nilDefaultStr, "Asset's usage. Possible values: \"bootloader\""),
 				"mime":                   c.FlagSet.String("mime", _nilDefaultStr, "Required. Asset's mime type. Possible values: \"text/plain\",\"application/octet-stream\""),
+				"template_type":          c.FlagSet.String("template-type", _nilDefaultStr, "Asset's template type. Possible values: \"none\",\"simple\",\"advanced\""),
 				"url":                    c.FlagSet.String("url", _nilDefaultStr, "Asset's source url. If present it will not read content anymore"),
 				"read_content_from_pipe": c.FlagSet.Bool("pipe", false, "Read assets's content read from pipe instead of terminal input"),
 				"template_id_or_name":    c.FlagSet.String("template-id", _nilDefaultStr, "Template's id or name to associate. "),
@@ -206,6 +208,11 @@ func assetsListCmd(c *Command, client metalcloud.MetalCloudClient) (string, erro
 			FieldSize: 20,
 		},
 		{
+			FieldName: "TEMPLATE_TYPE",
+			FieldType: tableformatter.TypeString,
+			FieldSize: 14,
+		},
+		{
 			FieldName: "USAGE",
 			FieldType: tableformatter.TypeString,
 			FieldSize: 5,
@@ -230,6 +237,7 @@ func assetsListCmd(c *Command, client metalcloud.MetalCloudClient) (string, erro
 			s.OSAssetFileName,
 			s.OSAssetFileSizeBytes,
 			s.OSAssetFileMime,
+			s.OSAssetTemplateType,
 			s.OSAssetUsage,
 			s.OSAssetSourceURL,
 			strings.Join(s.OSAssetVariableNamesRequired, ","),
@@ -445,6 +453,14 @@ func updateAssetFromCommand(obj metalcloud.OSAsset, c *Command, client metalclou
 		}
 	}
 
+	if v, ok := getStringParamOk(c.Arguments["template_type"]); ok {
+		obj.OSAssetTemplateType = v
+	} else {
+		if checkRequired {
+			return nil, fmt.Errorf("--template-type is required")
+		}
+	}
+
 	if v, ok := getStringParamOk(c.Arguments["usage"]); ok {
 		obj.OSAssetUsage = v
 	}
@@ -566,6 +582,11 @@ func templateListAssociatedAssetsCmd(c *Command, client metalcloud.MetalCloudCli
 			FieldSize: 20,
 		},
 		{
+			FieldName: "TEMPLATE_TYPE",
+			FieldType: tableformatter.TypeString,
+			FieldSize: 14,
+		},
+		{
 			FieldName: "USAGE",
 			FieldType: tableformatter.TypeString,
 			FieldSize: 5,
@@ -591,6 +612,7 @@ func templateListAssociatedAssetsCmd(c *Command, client metalcloud.MetalCloudCli
 			s.OSAsset.OSAssetFileName,
 			s.OSAsset.OSAssetFileSizeBytes,
 			s.OSAsset.OSAssetFileMime,
+			s.OSAsset.OSAssetTemplateType,
 			s.OSAsset.OSAssetUsage,
 			s.OSAsset.OSAssetSourceURL,
 			s.OSTemplateOSAssetVariablesJSON,
