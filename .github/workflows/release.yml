@@ -39,16 +39,16 @@ jobs:
           go-version: 1.18
       - name: Build
         run: go build .
-      - name: Sign
-        uses: "InertiaSystems/code-sign-action@v1.1.0"
-        with:
-          certificate: "${{ secrets.CSR_CERTIFICATE }}"
-          password: "${{secrets.CERTPASS}}"
-          certificatesha1: "${{secrets.CERTHASH}}"
-          certificatename: "${{ secrets.CERTNAME }}"
-          timestampUrl: "http://timestamp.sectigo.com"
-          folder: "."
-          recursive: false
+      #- name: Sign
+      #  uses: "InertiaSystems/code-sign-action@v1.1.0"
+      #  with:
+      #    certificate: "${{ secrets.CSR_CERTIFICATE }}"
+      #    password: "${{secrets.CERTPASS}}"
+      #    certificatesha1: "${{secrets.CERTHASH}}"
+      #    certificatename: "${{ secrets.CERTNAME }}"
+      #    timestampUrl: "http://timestamp.sectigo.com"
+      #    folder: "."
+      #    recursive: false
       - name: Create Archive
         uses: TheDoctor0/zip-release@0.6.1
         with:
