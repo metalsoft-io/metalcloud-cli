@@ -2122,10 +2122,10 @@ func (mr *MockMetalCloudClientMockRecorder) ServerUnmanagedImport(server interfa
 }
 
 // ServerUnmanagedImportBatch mocks base method
-func (m *MockMetalCloudClient) ServerUnmanagedImportBatch(servers []metalcloud.ServerCreateUnmanaged) (*[]metalcloud.Server, error) {
+func (m *MockMetalCloudClient) ServerUnmanagedImportBatch(servers []metalcloud.ServerCreateUnmanaged) (*map[string]metalcloud.Server, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "ServerUnmanagedImportBatch", servers)
-	ret0, _ := ret[0].(*[]metalcloud.Server)
+	ret0, _ := ret[0].(*map[string]metalcloud.Server)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }

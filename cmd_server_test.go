@@ -743,16 +743,16 @@ func TestImportServersBatch(t *testing.T) {
 		Return(&i, nil).
 		AnyTimes()
 
-	servers := []metalcloud.Server{
-		{
+	servers := map[string]metalcloud.Server{
+		"10": {
 			ServerID:           10,
 			ServerSerialNumber: "FMAAA",
 		},
-		{
+		"11": {
 			ServerID:           11,
 			ServerSerialNumber: "FMAAB",
 		},
-		{
+		"12": {
 			ServerID:           12,
 			ServerSerialNumber: "FMAAC",
 		},
@@ -762,17 +762,22 @@ func TestImportServersBatch(t *testing.T) {
 		Return(&servers, nil).
 		AnyTimes()
 
+	s1 := servers["10"]
 	client.EXPECT().
 		ServerGet(10, false).
-		Return(&servers[0], nil).
+		Return(&s1, nil).
 		AnyTimes()
+
+	s2 := servers["11"]
 	client.EXPECT().
 		ServerGet(11, false).
-		Return(&servers[1], nil).
+		Return(&s2, nil).
 		AnyTimes()
+
+	s3 := servers["12"]
 	client.EXPECT().
 		ServerGet(12, false).
-		Return(&servers[2], nil).
+		Return(&s3, nil).
 		AnyTimes()
 
 	f1, err := ioutil.TempFile("/tmp", "test-*.yaml")

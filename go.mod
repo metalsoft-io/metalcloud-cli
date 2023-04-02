@@ -10,7 +10,7 @@ require (
 	github.com/golang/mock v1.6.0
 	github.com/jwalton/gchalk v1.2.1
 	github.com/kdomanski/iso9660 v0.3.1
-	github.com/metalsoft-io/metal-cloud-sdk-go/v2 v2.9.2
+	github.com/metalsoft-io/metal-cloud-sdk-go/v2 v2.9.3
 	github.com/metalsoft-io/tableformatter v1.0.9
 	github.com/onsi/gomega v1.16.0
 	github.com/savaki/jq v0.0.0-20161209013833-0e6baecebbf8

@@ -1685,6 +1685,7 @@ func serverImportBatchCmd(c *Command, client metalcloud.MetalCloudClient) (strin
 
 	//set server type ids if they are set as labels
 	for i, r := range records {
+
 		if r.ServerTypeLabel != nil {
 			serverType, err := client.ServerTypeGetByLabel(*r.ServerTypeLabel)
 			if err != nil {
