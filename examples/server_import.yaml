@@ -8,10 +8,10 @@ serverTypeID: 9
 interfaces:
    - mac: 00:B0:D0:63:C2:26
      switch: leaf-124
-     switchInterface: Ethernet14
+     switchInterface: Ethernet10
    - mac: aa:bb:cc:dd:02:ff
      switch: leaf-124
-     switchInterface: Ethernet15
+     switchInterface: Ethernet11
 
 
 

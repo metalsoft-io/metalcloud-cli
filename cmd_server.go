@@ -1,14 +1,17 @@
 package main
 
 import (
+	"errors"
 	"flag"
 	"fmt"
+	"io"
 	"log"
 	"os"
 	"strings"
 
 	metalcloud "github.com/metalsoft-io/metal-cloud-sdk-go/v2"
 	"github.com/metalsoft-io/tableformatter"
+	"gopkg.in/yaml.v2"
 )
 
 var serversCmds = []Command{
@@ -183,26 +186,71 @@ $ metalcloud-cli server import -format yaml -file ./input.yaml
 		Endpoint:    DeveloperEndpoint,
 	},
 
-	/*
-		{
-			Description:  "Import server batch.",
-			Subject:      "server",
-			AltSubject:   "srv",
-			Predicate:    "import-batch",
-			AltPredicate: "import-batch",
-			FlagSet:      flag.NewFlagSet("import server", flag.ExitOnError),
-			InitFunc: func(c *Command) {
-				c.Arguments = map[string]interface{}{
-					"format":                c.FlagSet.String("format", "json", "The input format. Supported values are 'json','yaml'. The default format is json."),
-					"read_config_from_file": c.FlagSet.String("file", _nilDefaultStr, red("(Required)")+" Read raw object from file"),
-					"read_config_from_pipe": c.FlagSet.Bool("pipe", false, green("(Flag)")+" If set, read raw object from pipe instead of from a file. Either this flag or the --raw-config option must be used."),
-					"return_id":             c.FlagSet.Bool("return-id", false, "Will print the ID of the created object. Useful for automating tasks."),
-				}
-			},
-			ExecuteFunc: serverImportBatchCmd,
-			Endpoint:    DeveloperEndpoint,
+	{
+		Description:  "Import server batch.",
+		Subject:      "server",
+		AltSubject:   "srv",
+		Predicate:    "import-batch",
+		AltPredicate: "import-batch",
+		FlagSet:      flag.NewFlagSet("import server", flag.ExitOnError),
+		InitFunc: func(c *Command) {
+			c.Arguments = map[string]interface{}{
+				"format":                c.FlagSet.String("format", "json", "The input format. Supported values are 'json','yaml'. The only supported format is yaml."),
+				"read_config_from_file": c.FlagSet.String("file", _nilDefaultStr, red("(Required)")+" Read raw object from file"),
+				"add_to_infra":          c.FlagSet.String("add-to-infra", _nilDefaultStr, green("(Optional)")+" The infrastructure to use to add this server to. If set to 'auto' will use the settings in the file instead."),
+				"return_id":             c.FlagSet.Bool("return-id", false, "(Optional) Will print the ID of the created object. Useful for automating tasks."),
+			}
 		},
-	*/
+		ExecuteFunc: serverImportBatchCmd,
+		Endpoint:    DeveloperEndpoint,
+		Example: `
+This command is the batch version of server import. The file format uses "---" separator between records. For example:
+
+
+datacenter: sonic-qts
+serialNumber: NNAACC2
+serverType: M.15.15.1
+label: testserv
+infrastructure: myinfra
+userEmail: alex@test.io
+interfaces:
+- mac: 00:B0:D0:63:C2:26
+	switch: leaf-124
+	switchInterface: Ethernet216
+- mac: aa:bb:cc:dd:02:ff
+	switch: leaf-124
+	switchInterface: Ethernet217
+---
+datacenter: sonic-qts
+serialNumber: NNAACC3
+serverType: M.15.15.1
+label: testserv
+infrastructure: myinfra
+userEmail: alex@test.io
+interfaces:
+- mac: 00:B0:D0:63:C2:26
+	switch: leaf-124
+	switchInterface: Ethernet218
+- mac: aa:bb:cc:dd:02:ff
+	switch: leaf-124
+	switchInterface: Ethernet219
+---
+datacenter: sonic-qts
+serialNumber: NNAACC3
+serverType: M.15.15.1
+label: testserv
+infrastructure: myinfra
+userEmail: alex@test.io
+interfaces:
+- mac: 00:B0:D0:63:C2:26
+	switch: leaf-124
+	switchInterface: Ethernet220
+- mac: aa:bb:cc:dd:02:ff
+	switch: leaf-124
+	switchInterface: Ethernet221
+`,
+	},
+
 	{
 		Description:  "Edit server.",
 		Subject:      "server",
@@ -1585,47 +1633,113 @@ func serverAddToInfraCmd(c *Command, client metalcloud.MetalCloudClient) (string
 	return "", err
 }
 
-/*
+func getMultipleServerCreateUnmanagedInternalFromYamlFile(filePath string) ([]ServerCreateUnmanagedInternal, error) {
+
+	file, err := os.Open(filePath)
+	if err != nil {
+		if errors.Is(err, os.ErrNotExist) {
+			return []ServerCreateUnmanagedInternal{}, nil
+		} else {
+			return []ServerCreateUnmanagedInternal{}, err
+		}
+	}
+
+	decoder := yaml.NewDecoder(file)
+
+	records := []ServerCreateUnmanagedInternal{}
+
+	for true {
+
+		var record ServerCreateUnmanagedInternal
+
+		err = decoder.Decode(&record)
+		if err == nil {
+			records = append(records, record)
+		}
+
+		if err != nil {
+			if errors.Is(err, io.EOF) {
+				break
+			} else {
+				return nil, fmt.Errorf("Error while reading %s: %v", filePath, err)
+			}
+		}
+	}
+
+	file.Close()
+
+	return records, nil
+}
+
 func serverImportBatchCmd(c *Command, client metalcloud.MetalCloudClient) (string, error) {
 
-		var obj []ServerCreateUnmanagedInternal
+	filePath, ok := getStringParamOk(c.Arguments["read_config_from_file"])
+	if !ok {
+		return "", fmt.Errorf("-file is required")
+	}
 
-		err := getRawObjectFromCommand(c, &obj)
-		if err != nil {
-			return "", err
+	records, err := getMultipleServerCreateUnmanagedInternalFromYamlFile(filePath)
+	if err != nil {
+		return "", err
+	}
+
+	//set server type ids if they are set as labels
+	for i, r := range records {
+		if r.ServerTypeLabel != nil {
+			serverType, err := client.ServerTypeGetByLabel(*r.ServerTypeLabel)
+			if err != nil {
+				return "", err
+			}
+			records[i].ServerCreateUnmanaged.ServerTypeID = serverType.ServerTypeID
 		}
-		for i, _ := range obj {
-			if obj[i].ServerTypeName != nil {
-				serverType, err := client.ServerTypeGetByLabel(*obj[i].ServerTypeName)
+	}
+
+	//perform a batch update. This helps perform interface swaps in one go
+	embeddedObjects := []metalcloud.ServerCreateUnmanaged{}
+	for _, o := range records {
+		embeddedObjects = append(embeddedObjects, o.ServerCreateUnmanaged)
+	}
+
+	createdServerRecords, err := client.ServerUnmanagedImportBatch(embeddedObjects)
+	if err != nil {
+		return "", err
+	}
+
+	if v, ok := getStringParamOk(c.Arguments["add_to_infra"]); ok {
+		for _, record := range records {
+
+			//because the order might have changed
+			//find the server creation object in records for the
+			//returned object for the same serial number
+			serverID := 0
+			for _, cr := range *createdServerRecords {
+				if strings.ToLower(cr.ServerSerialNumber) == strings.ToLower(record.ServerCreateUnmanaged.ServerSerialNumber) {
+					serverID = cr.ServerID
+					break
+				}
+			}
+			if serverID != 0 {
+				_, err := addServerToInfrastructure(serverID, &v, &record, client)
 				if err != nil {
 					return "", err
 				}
-				obj[i].ServerCreateUnmanaged.ServerTypeID = serverType.ServerTypeID
 			}
 		}
-
-		embeddedObjects := []metalcloud.ServerCreateUnmanaged{}
-		for _, o := range obj {
-			embeddedObjects = append(embeddedObjects, o.ServerCreateUnmanaged)
-		}
-
-		ret, err := client.ServerUnmanagedImportBatch(embeddedObjects)
-		if err != nil {
-			return "", err
-		}
-
-		var s strings.Builder
-		if getBoolParam(c.Arguments["return_id"]) {
-			for _, r := range *ret {
-				s.WriteString(fmt.Sprintf("%d", r.ServerID))
-			}
-
-			return s.String(), nil
-		}
-
-		return "", err
 	}
-*/
+
+	var s strings.Builder
+
+	if getBoolParam(c.Arguments["return_id"]) {
+		for _, r := range *createdServerRecords {
+			s.WriteString(fmt.Sprintf("%d\n", r.ServerID))
+		}
+
+		return s.String(), nil
+	}
+
+	return "", err
+}
+
 func serverEditCmd(c *Command, client metalcloud.MetalCloudClient) (string, error) {
 
 	server, err := getServerFromCommand("id", c, client, false)
