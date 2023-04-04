@@ -55,7 +55,8 @@ func main() {
 	}
 
 	if len(os.Args) < 2 {
-		fmt.Fprintf(GetStdout(), "Invalid command! Use 'help' for a list of commands.\n")
+		//fmt.Fprintf(GetStdout(), "Invalid command! Use 'help' for a list of commands.\n")
+		fmt.Fprintf(GetStdout(), "%s\n", getHelp(clients, false))
 		os.Exit(-1)
 	}
 
