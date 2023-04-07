@@ -80,15 +80,15 @@ const defaultImageRepositoryHostname = "repo.metalsoft.io"
 const defaultImageRepositoryIsoPath = "/.iso"
 
 type TemplateAsset struct {
-	name            string
-	contents        string
-	Isopath         string `yaml:"isopath"`
-	Mime            string `yaml:"mime"`
-	TemplateType    string `yaml:"template-type"`
-	Usage           string `yaml:"usage"`
-	Type            string `yaml:"type"`
-	Url             string `yaml:"url"`
-	Path            string `yaml:"path"`
+	name         string
+	contents     string
+	Isopath      string `yaml:"isopath"`
+	Mime         string `yaml:"mime"`
+	TemplateType string `yaml:"template-type"`
+	Usage        string `yaml:"usage"`
+	Type         string `yaml:"type"`
+	Url          string `yaml:"url"`
+	Path         string `yaml:"path"`
 }
 
 type OsTemplateContents struct {
@@ -181,9 +181,16 @@ var osTemplatesCmds = []Command{
 				"os_ready_method":                    c.FlagSet.String("os-ready-method", _nilDefaultStr, "Possible values: 'wait_for_ssh', 'wait_for_signal_from_os'. Default value: 'wait_for_ssh'."),
 				"os_asset_id_bootloader_local_install_id_or_name": c.FlagSet.String("install-bootloader-asset", _nilDefaultStr, "Template's bootloader asset id during install"),
 				"os_asset_id_bootloader_os_boot_id_or_name":       c.FlagSet.String("os-boot-bootloader-asset", _nilDefaultStr, "Template's bootloader asset id during regular server boot"),
-				"version": c.FlagSet.String("version", _nilDefaultStr, "Template version. Default value is 0.0.0"),
-
-				"return-id": c.FlagSet.Bool("return-id", false, green("(Flag)")+" If set will print the ID of the created infrastructure. Useful for automating tasks."),
+				"version":                    c.FlagSet.String("version", _nilDefaultStr, "Template version. Default value is 0.0.0"),
+				"network_os":                 c.FlagSet.Bool("network-os", false, green("(Flag)")+" Must be set for network operating system (NOS) templates."),
+				"network_os_switch_driver":   c.FlagSet.String("network-os-switch-driver", _nilDefaultStr, yellow("(Required if network_os)")+"Network operating system (NOS) switch driver, e.g. 'sonic_enterprise'."),
+				"network_os_switch_role":     c.FlagSet.String("network-os-switch-role", _nilDefaultStr, yellow("(Flag)")+"Network operating system (NOS) switch role. Possible values: 'leaf', 'spine'."),
+				"network_os_datacenter_name": c.FlagSet.String("network-os-datacenter-name", _nilDefaultStr, yellow("(Flag)")+"Network operating system (NOS) datacenter name, e.g. 'dc1'"),
+				"network_os_version":         c.FlagSet.String("network-os-version", _nilDefaultStr, yellow("(Required if network_os)")+"Network operating system (NOS) version, e.g. '4.0.2'"),
+				"network_os_architecture":    c.FlagSet.String("network-os-architecture", _nilDefaultStr, yellow("(Required if network_os)")+"Network operating system (NOS) architecture. Possible values: 'x86_64', 'aarch64'."),
+				"network_os_vendor":          c.FlagSet.String("network-os-vendor", _nilDefaultStr, yellow("(Required if network_os)")+"Network operating system (NOS) vendor, e.g. 'dellemc'"),
+				"network_os_machine":         c.FlagSet.String("network-os-machine", _nilDefaultStr, yellow("(Required if network_os)")+"Network operating system (NOS) machine(equipment model) e.g.'s5212f_c3538'"),
+				"return-id":                  c.FlagSet.Bool("return-id", false, green("(Flag)")+" If set will print the ID of the created infrastructure. Useful for automating tasks."),
 			}
 		},
 		ExecuteFunc: templateCreateCmd,
@@ -220,6 +227,14 @@ var osTemplatesCmds = []Command{
 				"image_build_required":               c.FlagSet.Bool("image-build-required", false, green("(Flag)")+" If set will determine the image building process building an ISO. Needed for the OOB only install process."),
 				"provision_via_oob":                  c.FlagSet.Bool("provision-via-oob", false, green("(Flag)")+" If set will perform the installation process via the OOB. Always set this together with the image-build-required flag."),
 				"repo_url":                           c.FlagSet.String("repo-url", _nilDefaultStr, "Template description"),
+				"network_os":                         c.FlagSet.Bool("network-os", false, green("(Flag)")+" Must be set for network operating system (NOS) templates."),
+				"network_os_switch_driver":           c.FlagSet.String("network-os-switch-driver", _nilDefaultStr, yellow("(Required if network_os)")+"Network operating system (NOS) switch driver, e.g. 'sonic_enterprise'."),
+				"network_os_switch_role":             c.FlagSet.String("network-os-switch-role", _nilDefaultStr, yellow("(Flag)")+"Network operating system (NOS) switch role. Possible values: 'leaf', 'spine'."),
+				"network_os_datacenter_name":         c.FlagSet.String("network-os-datacenter-name", _nilDefaultStr, yellow("(Flag)")+"Network operating system (NOS) datacenter name, e.g. 'dc1'"),
+				"network_os_version":                 c.FlagSet.String("network-os-version", _nilDefaultStr, yellow("(Required if network_os)")+"Network operating system (NOS) version, e.g. '4.0.2'"),
+				"network_os_architecture":            c.FlagSet.String("network-os-architecture", _nilDefaultStr, yellow("(Required if network_os)")+"Network operating system (NOS) architecture. Possible values: 'x86_64', 'aarch64'."),
+				"network_os_vendor":                  c.FlagSet.String("network-os-vendor", _nilDefaultStr, yellow("(Required if network_os)")+"Network operating system (NOS) vendor, e.g. 'dellemc'"),
+				"network_os_machine":                 c.FlagSet.String("network-os-machine", _nilDefaultStr, yellow("(Required if network_os)")+"Network operating system (NOS) machine(equipment model) e.g.'s5212f_c3538'"),
 			}
 		},
 		ExecuteFunc: templateEditCmd,
@@ -632,26 +647,35 @@ func updateTemplateFromCommand(obj metalcloud.OSTemplate, c *Command, client met
 		obj.VolumeTemplateDescription = v
 	}
 
-	//OS Data
-	os, err := getOperatingSystemFromCommand(c)
-
-	if err != nil {
-		return nil, err
-	} else if checkRequired && *os == (metalcloud.OperatingSystem{}) {
-		return nil, fmt.Errorf("os flags are required")
-	}
-	if *os != (metalcloud.OperatingSystem{}) {
-		obj.VolumeTemplateOperatingSystem = os
+	if getBoolParam(c.Arguments["network_os"]) {
+		obj.VolumeTemplateIsForSwitch = true
 	}
 
-	//Network OS Data
-	nos, err := getNetworkOperatingSystemFromCommand(c)
+	if obj.VolumeTemplateIsForSwitch {
+		//Network OS Data
+		nos, err := getNetworkOperatingSystemFromCommand(c)
 
-	if err != nil {
-		return nil, err
-	}
-	if *nos != (metalcloud.NetworkOperatingSystem{}) {
-		obj.VolumeTemplateNetworkOperatingSystem = nos
+		if err != nil {
+			return nil, err
+		} else if checkRequired && *nos == (metalcloud.NetworkOperatingSystem{}) {
+			return nil, fmt.Errorf("network-os flags are required")
+		}
+
+		if *nos != (metalcloud.NetworkOperatingSystem{}) {
+			obj.VolumeTemplateNetworkOperatingSystem = nos
+		}
+	} else {
+		//OS Data
+		os, err := getOperatingSystemFromCommand(c)
+
+		if err != nil {
+			return nil, err
+		} else if checkRequired && *os == (metalcloud.OperatingSystem{}) {
+			return nil, fmt.Errorf("os flags are required")
+		}
+		if *os != (metalcloud.OperatingSystem{}) {
+			obj.VolumeTemplateOperatingSystem = os
+		}
 	}
 
 	// Boot options
@@ -1365,7 +1389,7 @@ func checkOOBTemplateIntegrity(c *Command, repoTemplate RepoTemplate) error {
 		return fmt.Errorf("The 'source-iso' parameter must be specified with the 'name' and 'source-template' ones for OOB templates.")
 	}
 
-    if !regexCheckIfUrl(imagePath){
+	if !regexCheckIfUrl(imagePath) {
 		file, err := os.Open(imagePath)
 
 		if err != nil {
@@ -1489,7 +1513,15 @@ func createTemplateAssets(c *Command, client metalcloud.MetalCloudClient, repoTe
 		"os_ready_method":                    createTemplateCommand.FlagSet.String("os-ready-method", OsTemplateContents.OsReadyMethod, "Possible values: 'wait_for_ssh', 'wait_for_signal_from_os'. Default value: 'wait_for_ssh'."),
 		"os_asset_id_bootloader_local_install_id_or_name": createTemplateCommand.FlagSet.String("install-bootloader-asset", _nilDefaultStr, "Template's bootloader asset id during install"),
 		"os_asset_id_bootloader_os_boot_id_or_name":       createTemplateCommand.FlagSet.String("os-boot-bootloader-asset", _nilDefaultStr, "Template's bootloader asset id during regular server boot"),
-		"version": createTemplateCommand.FlagSet.String("version", _nilDefaultStr, "Template version. Default value is 0.0.0"),
+		"version":                    createTemplateCommand.FlagSet.String("version", _nilDefaultStr, "Template version. Default value is 0.0.0"),
+		"network_os":                 createTemplateCommand.FlagSet.Bool("network-os", false, "Must be set for network operating system (NOS) templates. Default value is false"),
+		"network_os_switch_driver":   createTemplateCommand.FlagSet.String("network-os-switch-driver", _nilDefaultStr, yellow("(Required if network_os)")+"Network operating system (NOS) switch driver, e.g. 'sonic_enterprise'."),
+		"network_os_switch_role":     createTemplateCommand.FlagSet.String("network-os-switch-role", _nilDefaultStr, yellow("(Flag)")+"Network operating system (NOS) switch role. Possible values: 'leaf', 'spine'."),
+		"network_os_datacenter_name": createTemplateCommand.FlagSet.String("network-os-datacenter-name", _nilDefaultStr, yellow("(Flag)")+"Network operating system (NOS) datacenter name, e.g. 'dc1'"),
+		"network_os_version":         createTemplateCommand.FlagSet.String("network-os-version", _nilDefaultStr, yellow("(Required if network_os)")+"Network operating system (NOS) version, e.g. '4.0.2'"),
+		"network_os_architecture":    createTemplateCommand.FlagSet.String("network-os-architecture", _nilDefaultStr, yellow("(Required if network_os)")+"Network operating system (NOS) architecture. Possible values: 'x86_64', 'aarch64'."),
+		"network_os_vendor":          createTemplateCommand.FlagSet.String("network-os-vendor", _nilDefaultStr, yellow("(Required if network_os)")+"Network operating system (NOS) vendor, e.g. 'dellemc'"),
+		"network_os_machine":         createTemplateCommand.FlagSet.String("network-os-machine", _nilDefaultStr, yellow("(Required if network_os)")+"Network operating system (NOS) machine(equipment model) e.g.'s5212f_c3538'"),
 	}
 
 	_, createError := templateCreateCmd(&createTemplateCommand, client)
@@ -1526,6 +1558,14 @@ func createTemplateAssets(c *Command, client metalcloud.MetalCloudClient, repoTe
 			"image_build_required":               updateTemplateCommand.FlagSet.Bool("image-build-required", OsTemplateContents.ImageBuildRequired, green("(Flag)")+" If set will determine the image building process building an ISO. Needed for the OOB only install process."),
 			"provision_via_oob":                  updateTemplateCommand.FlagSet.Bool("provision-via-oob", OsTemplateContents.ProvisionViaOob, green("(Flag)")+" If set will perform the installation process via the OOB. Always set this together with the image-build-required flag."),
 			"repo_url":                           updateTemplateCommand.FlagSet.String("repo-url", _nilDefaultStr, "Template's location the repository"),
+			"network_os":                         createTemplateCommand.FlagSet.Bool("network-os", false, "Must be set for network operating system (NOS) templates. Default value is false"),
+			"network_os_switch_driver":           createTemplateCommand.FlagSet.String("network-os-switch-driver", _nilDefaultStr, yellow("(Required if network_os)")+"Network operating system (NOS) switch driver, e.g. 'sonic_enterprise'."),
+			"network_os_switch_role":             createTemplateCommand.FlagSet.String("network-os-switch-role", _nilDefaultStr, yellow("(Flag)")+"Network operating system (NOS) switch role. Possible values: 'leaf', 'spine'."),
+			"network_os_datacenter_name":         createTemplateCommand.FlagSet.String("network-os-datacenter-name", _nilDefaultStr, yellow("(Flag)")+"Network operating system (NOS) datacenter name, e.g. 'dc1'"),
+			"network_os_version":                 createTemplateCommand.FlagSet.String("network-os-version", _nilDefaultStr, yellow("(Required if network_os)")+"Network operating system (NOS) version, e.g. '4.0.2'"),
+			"network_os_architecture":            createTemplateCommand.FlagSet.String("network-os-architecture", _nilDefaultStr, yellow("(Required if network_os)")+"Network operating system (NOS) architecture. Possible values: 'x86_64', 'aarch64'."),
+			"network_os_vendor":                  createTemplateCommand.FlagSet.String("network-os-vendor", _nilDefaultStr, yellow("(Required if network_os)")+"Network operating system (NOS) vendor, e.g. 'dellemc'"),
+			"network_os_machine":                 createTemplateCommand.FlagSet.String("network-os-machine", _nilDefaultStr, yellow("(Required if network_os)")+"Network operating system (NOS) machine(equipment model) e.g.'s5212f_c3538'"),
 		}
 
 		_, updateError := templateEditCmd(&updateTemplateCommand, client)
