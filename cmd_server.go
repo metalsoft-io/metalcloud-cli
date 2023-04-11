@@ -111,7 +111,7 @@ metalcloud-cli server list --show-credentials # to retrieve a list of credential
 			c.Arguments = map[string]interface{}{
 				"format":                c.FlagSet.String("format", "json", "The input format. Supported values are 'json','yaml'. The default format is json."),
 				"read_config_from_file": c.FlagSet.String("file", _nilDefaultStr, red("(Required)")+" Read raw object from file"),
-				"read_config_from_pipe": c.FlagSet.Bool("pipe", false, green("(Flag)")+" If set, read raw object from pipe instead of from a file. Either this flag or the --raw-config option must be used."),
+				"read_config_from_pipe": c.FlagSet.Bool("pipe", false, green("(Flag)")+" If set, read raw object from pipe instead of from a file. Either this flag or the --file option must be used."),
 				"add_to_infra":          c.FlagSet.String("add-to-infra", _nilDefaultStr, green("(Optional)")+" The infrastructure to use to add this server to. If set to 'auto' will use the settings in the file instead."),
 				"return_id":             c.FlagSet.Bool("return-id", false, "Will print the ID of the created object. Useful for automating tasks."),
 			}
