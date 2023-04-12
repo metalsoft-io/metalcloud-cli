@@ -1561,6 +1561,11 @@ func addServerToInfrastructure(serverID int, infrastructureIDOrLabel *string, ob
 	if err != nil {
 		return nil, err
 	}
+
+	if server.ServerStatus == "decommissioned" {
+		return nil, fmt.Errorf("The specified server is decomissioned")
+	}
+
 	serverTypeID := server.ServerTypeID
 
 	instanceArrayLabel := server.ServerSerialNumber
