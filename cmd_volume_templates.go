@@ -37,10 +37,10 @@ var volumeTemplateCmds = []Command{
 		FlagSet:      flag.NewFlagSet("create volume templates", flag.ExitOnError),
 		InitFunc: func(c *Command) {
 			c.Arguments = map[string]interface{}{
-				"drive_id":                   c.FlagSet.Int("id", _nilDefaultInt, red("(Required)") + " The id of the drive to create the volume template from"),
-				"label":                      c.FlagSet.String("label", _nilDefaultStr, red("(Required)") + " The label of the volume template"),
-				"description":                c.FlagSet.String("description", _nilDefaultStr, red("(Required)") + " The description of the volume template"),
-				"display_name":               c.FlagSet.String("name", _nilDefaultStr, red("(Required)") + " The display name of the volume template"),
+				"drive_id":                   c.FlagSet.Int("id", _nilDefaultInt, red("(Required)")+" The id of the drive to create the volume template from"),
+				"label":                      c.FlagSet.String("label", _nilDefaultStr, red("(Required)")+" The label of the volume template"),
+				"description":                c.FlagSet.String("description", _nilDefaultStr, red("(Required)")+" The description of the volume template"),
+				"display_name":               c.FlagSet.String("name", _nilDefaultStr, red("(Required)")+" The display name of the volume template"),
 				"boot_type":                  c.FlagSet.String("boot-type", _nilDefaultStr, "The boot_type of the volume template. Possible values: 'uefi_only','legacy_only' "),
 				"boot_methods_supported":     c.FlagSet.String("boot-methods-supported", _nilDefaultStr, "The boot_methods_supported of the volume template. Defaults to 'pxe_iscsi'."),
 				"deprecation_status":         c.FlagSet.String("deprecation-status", _nilDefaultStr, "Deprecation status. Possible values: not_deprecated,deprecated_deny_provision,deprecated_allow_expand. Defaults to 'not_deprecated'."),
@@ -51,6 +51,14 @@ var volumeTemplateCmds = []Command{
 				"os_architecture":            c.FlagSet.String("os-architecture", _nilDefaultStr, "Template operating system architecture.Possible values: none, unknown, x86, x86_64. If set, os-version and os-type flags are required as well."),
 				"version":                    c.FlagSet.String("version", _nilDefaultStr, "Template version. Default value is 0.0.0"),
 				"os_ready_method":            c.FlagSet.String("os-ready-method", _nilDefaultStr, "Possible values: 'wait_for_ssh', 'wait_for_signal_from_os'. Default value: 'wait_for_ssh'."),
+				"network_os":                 c.FlagSet.Bool("network-os", false, green("(Flag)")+" Must be set for network operating system (NOS) templates."),
+				"network_os_switch_driver":   c.FlagSet.String("network-os-switch-driver", _nilDefaultStr, yellow("(Required if network_os)")+"Network operating system (NOS) switch driver, e.g. 'sonic_enterprise'."),
+				"network_os_switch_role":     c.FlagSet.String("network-os-switch-role", _nilDefaultStr, yellow("(Flag)")+"Network operating system (NOS) switch role. Possible values: 'leaf', 'spine'."),
+				"network_os_datacenter_name": c.FlagSet.String("network-os-datacenter-name", _nilDefaultStr, yellow("(Flag)")+"Network operating system (NOS) datacenter name, e.g. 'dc1'"),
+				"network_os_version":         c.FlagSet.String("network-os-version", _nilDefaultStr, yellow("(Required if network_os)")+"Network operating system (NOS) version, e.g. '4.0.2'"),
+				"network_os_architecture":    c.FlagSet.String("network-os-architecture", _nilDefaultStr, yellow("(Required if network_os)")+"Network operating system (NOS) architecture. Possible values: 'x86_64', 'aarch64'."),
+				"network_os_vendor":          c.FlagSet.String("network-os-vendor", _nilDefaultStr, yellow("(Required if network_os)")+"Network operating system (NOS) vendor, e.g. 'dellemc'"),
+				"network_os_machine":         c.FlagSet.String("network-os-machine", _nilDefaultStr, yellow("(Required if network_os)")+"Network operating system (NOS) machine(equipment model) e.g.'s5212f_c3538'"),
 				"return_id":                  c.FlagSet.Bool("return-id", false, "(Optional) Will print the ID of the created Volume Template. Useful for automating tasks."),
 			}
 		},
@@ -67,7 +75,7 @@ var volumeTemplateCmds = []Command{
 		InitFunc: func(c *Command) {
 			c.Arguments = map[string]interface{}{
 				"template_id_or_name":        c.FlagSet.String("id", _nilDefaultStr, "Volume template id or name"),
-				"os_bootstrap_function_name": c.FlagSet.String("os-bootstrap-function-name", _nilDefaultStr, red("(Required)") + " Selects the cloudinit configuration function. Can be one of: provisioner_os_cloudinit_prepare_centos, provisioner_os_cloudinit_prepare_rhel, provisioner_os_cloudinit_prepare_ubuntu, provisioner_os_cloudinit_prepare_windows."),
+				"os_bootstrap_function_name": c.FlagSet.String("os-bootstrap-function-name", _nilDefaultStr, red("(Required)")+" Selects the cloudinit configuration function. Can be one of: provisioner_os_cloudinit_prepare_centos, provisioner_os_cloudinit_prepare_rhel, provisioner_os_cloudinit_prepare_ubuntu, provisioner_os_cloudinit_prepare_windows."),
 			}
 		},
 		ExecuteFunc: volumeTemplateMakePublicCmd,
@@ -257,58 +265,54 @@ func getOperatingSystemFromCommand(c *Command) (*metalcloud.OperatingSystem, err
 }
 
 func getNetworkOperatingSystemFromCommand(c *Command) (*metalcloud.NetworkOperatingSystem, error) {
-	var operatingSystem = metalcloud.NetworkOperatingSystem{}
-	present := false
+	var networkOperatingSystem = metalcloud.NetworkOperatingSystem{}
 
-	if osType, ok := getStringParamOk(c.Arguments["network_os_type"]); ok {
-		present = true
-		operatingSystem.OperatingSystemType = osType
+	nosSwitchDriver := getStringParam(c.Arguments["network_os_switch_driver"])
+	if nosSwitchDriver != "" {
+		networkOperatingSystem.OperatingSystemSwitchDriver = nosSwitchDriver
+	} else {
+		return nil, fmt.Errorf("network-os-switch-driver is required")
 	}
 
-	if osVersion, ok := getStringParamOk(c.Arguments["network_os_version"]); ok {
-		if !present {
-			return nil, fmt.Errorf("some of the network operating system flags are missing")
-		}
-		operatingSystem.OperatingSystemVersion = osVersion
-	} else if present {
+	nosSwitchRole := getStringParam(c.Arguments["network_os_switch_role"])
+	if nosSwitchRole != "" {
+		networkOperatingSystem.OperatingSystemSwitchRole = nosSwitchRole
+	}
+
+	nosVersion := getStringParam(c.Arguments["network_os_version"])
+	if nosVersion != "" {
+		networkOperatingSystem.OperatingSystemVersion = nosVersion
+	} else {
 		return nil, fmt.Errorf("network-os-version is required")
 	}
 
-	if osArchitecture, ok := getStringParamOk(c.Arguments["network_os_architecture"]); ok {
-		if !present {
-			return nil, fmt.Errorf("some of the network operating system flags are missing")
-		}
-		operatingSystem.OperatingSystemArchitecture = osArchitecture
-	} else if present {
+	nosArchitecture := getStringParam(c.Arguments["network_os_architecture"])
+	if nosArchitecture != "" {
+		networkOperatingSystem.OperatingSystemArchitecture = nosArchitecture
+	} else {
 		return nil, fmt.Errorf("network-os-architecture is required")
 	}
 
-	if osVendor, ok := getStringParamOk(c.Arguments["network_os_vendor"]); ok {
-		if !present {
-			return nil, fmt.Errorf("some of the network operating system flags are missing")
-		}
-		operatingSystem.OperatingSystemVendor = osVendor
-	} else if present {
+	nosVendor := getStringParam(c.Arguments["network_os_vendor"])
+	if nosVendor != "" {
+		networkOperatingSystem.OperatingSystemVendor = nosVendor
+	} else {
 		return nil, fmt.Errorf("network-os-vendor is required")
 	}
 
-	if osMachine, ok := getStringParamOk(c.Arguments["network_os_machine"]); ok {
-		if !present {
-			return nil, fmt.Errorf("some of the network operating system flags are missing")
-		}
-		operatingSystem.OperatingSystemMachine = osMachine
-	} else if present {
+	nosMachine := getStringParam(c.Arguments["network_os_machine"])
+	if nosMachine != "" {
+		networkOperatingSystem.OperatingSystemMachine = nosMachine
+	} else {
 		return nil, fmt.Errorf("network-os-machine is required")
 	}
-	if osMachineRevision, ok := getStringParamOk(c.Arguments["network_os_machine_revision"]); ok {
-		if !present {
-			return nil, fmt.Errorf("some of the network operating system flags are missing")
-		}
-		operatingSystem.OperatingSystemMachineRevision = osMachineRevision
-	} else if present {
-		return nil, fmt.Errorf("network-os-machine-revision is required")
+
+	nosDatacenterName := getStringParam(c.Arguments["network_os_datacenter_name"])
+	if nosDatacenterName != "" {
+		networkOperatingSystem.OperatingSystemDatacenterName = nosDatacenterName
 	}
-	return &operatingSystem, nil
+
+	return &networkOperatingSystem, nil
 }
 
 func getVolumeTemplateFromCommand(paramName string, c *Command, client metalcloud.MetalCloudClient) (*metalcloud.VolumeTemplate, error) {

@@ -1,4 +1,5 @@
 .vscode
+*.code-workspace
 .DS_Store
 examples/.DS_Store
 set_envs.sh
@@ -15,3 +16,8 @@ dist
 set_poc.sh
 set_integration.sh
 __debug*
+
+# direnv
+.envrc
+
+/bin

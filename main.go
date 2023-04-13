@@ -2,7 +2,7 @@ package main
 
 // to regenerate the interface and mocking object for the underlying sdk client run 'go generate'. Make sure you have pulled or used go get on the sdk
 
-//go:generate mockgen -source=$GOPATH/src/github.com/metalsoft-io/metal-cloud-sdk-go/metal_cloud_client.go -destination=helpers/mock_client.go
+//go:generate mockgen -source=../metal-cloud-sdk-go/metal_cloud_client.go -destination=helpers/mock_client.go
 
 import (
 	"bufio"
@@ -55,7 +55,8 @@ func main() {
 	}
 
 	if len(os.Args) < 2 {
-		fmt.Fprintf(GetStdout(), "Invalid command! Use 'help' for a list of commands.\n")
+		//fmt.Fprintf(GetStdout(), "Invalid command! Use 'help' for a list of commands.\n")
+		fmt.Fprintf(GetStdout(), "%s\n", getHelp(clients, false))
 		os.Exit(-1)
 	}
 
