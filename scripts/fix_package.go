@@ -60,7 +60,6 @@ const packageName = "metalcloud"
 const sdkPackage = "github.com/metalsoft-io/metal-cloud-sdk-go"
 
 func main() {
-
 	var input = flag.String("input", "", "input")
 
 	flag.Parse()
