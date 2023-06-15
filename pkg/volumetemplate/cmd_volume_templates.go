@@ -6,10 +6,11 @@ import (
 	"strings"
 
 	metalcloud "github.com/metalsoft-io/metal-cloud-sdk-go/v2"
+	"github.com/metalsoft-io/tableformatter"
+
 	"github.com/metalsoft-io/metalcloud-cli/internal/colors"
 	"github.com/metalsoft-io/metalcloud-cli/internal/command"
 	"github.com/metalsoft-io/metalcloud-cli/internal/configuration"
-	"github.com/metalsoft-io/tableformatter"
 )
 
 var VolumeTemplateCmds = []command.Command{
@@ -53,6 +54,14 @@ var VolumeTemplateCmds = []command.Command{
 				"os_architecture":            c.FlagSet.String("os-architecture", command.NilDefaultStr, "Template operating system architecture.Possible values: none, unknown, x86, x86_64. If set, os-version and os-type flags are required as well."),
 				"version":                    c.FlagSet.String("version", command.NilDefaultStr, "Template version. Default value is 0.0.0"),
 				"os_ready_method":            c.FlagSet.String("os-ready-method", command.NilDefaultStr, "Possible values: 'wait_for_ssh', 'wait_for_signal_from_os'. Default value: 'wait_for_ssh'."),
+				"network_os":                 c.FlagSet.Bool("network-os", false, colors.Green("(Flag)")+" Must be set for network operating system (NOS) templates."),
+				"network_os_switch_driver":   c.FlagSet.String("network-os-switch-driver", command.NilDefaultStr, colors.Yellow("(Required if network_os)")+"Network operating system (NOS) switch driver, e.g. 'sonic_enterprise'."),
+				"network_os_switch_role":     c.FlagSet.String("network-os-switch-role", command.NilDefaultStr, colors.Yellow("(Flag)")+"Network operating system (NOS) switch role. Possible values: 'leaf', 'spine'."),
+				"network_os_datacenter_name": c.FlagSet.String("network-os-datacenter-name", command.NilDefaultStr, colors.Yellow("(Flag)")+"Network operating system (NOS) datacenter name, e.g. 'dc1'"),
+				"network_os_version":         c.FlagSet.String("network-os-version", command.NilDefaultStr, colors.Yellow("(Required if network_os)")+"Network operating system (NOS) version, e.g. '4.0.2'"),
+				"network_os_architecture":    c.FlagSet.String("network-os-architecture", command.NilDefaultStr, colors.Yellow("(Required if network_os)")+"Network operating system (NOS) architecture. Possible values: 'x86_64', 'aarch64'."),
+				"network_os_vendor":          c.FlagSet.String("network-os-vendor", command.NilDefaultStr, colors.Yellow("(Required if network_os)")+"Network operating system (NOS) vendor, e.g. 'dellemc'"),
+				"network_os_machine":         c.FlagSet.String("network-os-machine", command.NilDefaultStr, colors.Yellow("(Required if network_os)")+"Network operating system (NOS) machine(equipment model) e.g.'s5212f_c3538'"),
 				"return_id":                  c.FlagSet.Bool("return-id", false, "(Optional) Will print the ID of the created Volume Template. Useful for automating tasks."),
 			}
 		},
@@ -209,7 +218,7 @@ func volumeTemplateCreateFromDriveCmd(c *command.Command, client metalcloud.Meta
 		return "", fmt.Errorf("-name is required")
 	}
 
-	os, err := command.GetOperatingSystemFromCommand(c)
+	os, err := getOperatingSystemFromCommand(c)
 
 	if err != nil {
 		return "", err
@@ -228,8 +237,88 @@ func volumeTemplateCreateFromDriveCmd(c *command.Command, client metalcloud.Meta
 	return "", nil
 }
 
-func getVolumeTemplateFromCommand(paramName string, c *command.Command, client metalcloud.MetalCloudClient) (*metalcloud.VolumeTemplate, error) {
+func getOperatingSystemFromCommand(c *command.Command) (*metalcloud.OperatingSystem, error) {
+	var operatingSystem = metalcloud.OperatingSystem{}
+	present := false
 
+	if osType, ok := command.GetStringParamOk(c.Arguments["os_type"]); ok {
+		present = true
+		operatingSystem.OperatingSystemType = osType
+	}
+
+	if osVersion, ok := command.GetStringParamOk(c.Arguments["os_version"]); ok {
+		if !present {
+			return nil, fmt.Errorf("some of the operating system flags are missing")
+		}
+		operatingSystem.OperatingSystemVersion = osVersion
+	} else if present {
+		return nil, fmt.Errorf("os-version is required")
+	}
+
+	if osArchitecture, ok := command.GetStringParamOk(c.Arguments["os_architecture"]); ok {
+		if !present {
+			return nil, fmt.Errorf("some of the operating system flags are missing")
+		}
+		operatingSystem.OperatingSystemArchitecture = osArchitecture
+	} else if present {
+		return nil, fmt.Errorf("os-architecture is required")
+	}
+
+	return &operatingSystem, nil
+}
+
+func getNetworkOperatingSystemFromCommand(c *command.Command) (*metalcloud.NetworkOperatingSystem, error) {
+	var networkOperatingSystem = metalcloud.NetworkOperatingSystem{}
+
+	nosSwitchDriver := command.GetStringParam(c.Arguments["network_os_switch_driver"])
+	if nosSwitchDriver != "" {
+		networkOperatingSystem.OperatingSystemSwitchDriver = nosSwitchDriver
+	} else {
+		return nil, fmt.Errorf("network-os-switch-driver is required")
+	}
+
+	nosSwitchRole := command.GetStringParam(c.Arguments["network_os_switch_role"])
+	if nosSwitchRole != "" {
+		networkOperatingSystem.OperatingSystemSwitchRole = nosSwitchRole
+	}
+
+	nosVersion := command.GetStringParam(c.Arguments["network_os_version"])
+	if nosVersion != "" {
+		networkOperatingSystem.OperatingSystemVersion = nosVersion
+	} else {
+		return nil, fmt.Errorf("network-os-version is required")
+	}
+
+	nosArchitecture := command.GetStringParam(c.Arguments["network_os_architecture"])
+	if nosArchitecture != "" {
+		networkOperatingSystem.OperatingSystemArchitecture = nosArchitecture
+	} else {
+		return nil, fmt.Errorf("network-os-architecture is required")
+	}
+
+	nosVendor := command.GetStringParam(c.Arguments["network_os_vendor"])
+	if nosVendor != "" {
+		networkOperatingSystem.OperatingSystemVendor = nosVendor
+	} else {
+		return nil, fmt.Errorf("network-os-vendor is required")
+	}
+
+	nosMachine := command.GetStringParam(c.Arguments["network_os_machine"])
+	if nosMachine != "" {
+		networkOperatingSystem.OperatingSystemMachine = nosMachine
+	} else {
+		return nil, fmt.Errorf("network-os-machine is required")
+	}
+
+	nosDatacenterName := command.GetStringParam(c.Arguments["network_os_datacenter_name"])
+	if nosDatacenterName != "" {
+		networkOperatingSystem.OperatingSystemDatacenterName = nosDatacenterName
+	}
+
+	return &networkOperatingSystem, nil
+}
+
+func getVolumeTemplateFromCommand(paramName string, c *command.Command, client metalcloud.MetalCloudClient) (*metalcloud.VolumeTemplate, error) {
 	v, err := command.GetParam(c, "template_id_or_name", paramName)
 	if err != nil {
 		return nil, err

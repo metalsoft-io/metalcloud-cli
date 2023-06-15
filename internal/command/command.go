@@ -987,58 +987,54 @@ func GetOSAssetFromCommand(paramName string, internalParamName string, c *Comman
 }
 
 func GetNetworkOperatingSystemFromCommand(c *Command) (*metalcloud.NetworkOperatingSystem, error) {
-	var operatingSystem = metalcloud.NetworkOperatingSystem{}
-	present := false
+	var networkOperatingSystem = metalcloud.NetworkOperatingSystem{}
 
-	if osType, ok := GetStringParamOk(c.Arguments["network_os_type"]); ok {
-		present = true
-		operatingSystem.OperatingSystemType = osType
+	nosSwitchDriver := GetStringParam(c.Arguments["network_os_switch_driver"])
+	if nosSwitchDriver != "" {
+		networkOperatingSystem.OperatingSystemSwitchDriver = nosSwitchDriver
+	} else {
+		return nil, fmt.Errorf("network-os-switch-driver is required")
 	}
 
-	if osVersion, ok := GetStringParamOk(c.Arguments["network_os_version"]); ok {
-		if !present {
-			return nil, fmt.Errorf("some of the network operating system flags are missing")
-		}
-		operatingSystem.OperatingSystemVersion = osVersion
-	} else if present {
+	nosSwitchRole := GetStringParam(c.Arguments["network_os_switch_role"])
+	if nosSwitchRole != "" {
+		networkOperatingSystem.OperatingSystemSwitchRole = nosSwitchRole
+	}
+
+	nosVersion := GetStringParam(c.Arguments["network_os_version"])
+	if nosVersion != "" {
+		networkOperatingSystem.OperatingSystemVersion = nosVersion
+	} else {
 		return nil, fmt.Errorf("network-os-version is required")
 	}
 
-	if osArchitecture, ok := GetStringParamOk(c.Arguments["network_os_architecture"]); ok {
-		if !present {
-			return nil, fmt.Errorf("some of the network operating system flags are missing")
-		}
-		operatingSystem.OperatingSystemArchitecture = osArchitecture
-	} else if present {
+	nosArchitecture := GetStringParam(c.Arguments["network_os_architecture"])
+	if nosArchitecture != "" {
+		networkOperatingSystem.OperatingSystemArchitecture = nosArchitecture
+	} else {
 		return nil, fmt.Errorf("network-os-architecture is required")
 	}
 
-	if osVendor, ok := GetStringParamOk(c.Arguments["network_os_vendor"]); ok {
-		if !present {
-			return nil, fmt.Errorf("some of the network operating system flags are missing")
-		}
-		operatingSystem.OperatingSystemVendor = osVendor
-	} else if present {
+	nosVendor := GetStringParam(c.Arguments["network_os_vendor"])
+	if nosVendor != "" {
+		networkOperatingSystem.OperatingSystemVendor = nosVendor
+	} else {
 		return nil, fmt.Errorf("network-os-vendor is required")
 	}
 
-	if osMachine, ok := GetStringParamOk(c.Arguments["network_os_machine"]); ok {
-		if !present {
-			return nil, fmt.Errorf("some of the network operating system flags are missing")
-		}
-		operatingSystem.OperatingSystemMachine = osMachine
-	} else if present {
+	nosMachine := GetStringParam(c.Arguments["network_os_machine"])
+	if nosMachine != "" {
+		networkOperatingSystem.OperatingSystemMachine = nosMachine
+	} else {
 		return nil, fmt.Errorf("network-os-machine is required")
 	}
-	if osMachineRevision, ok := GetStringParamOk(c.Arguments["network_os_machine_revision"]); ok {
-		if !present {
-			return nil, fmt.Errorf("some of the network operating system flags are missing")
-		}
-		operatingSystem.OperatingSystemMachineRevision = osMachineRevision
-	} else if present {
-		return nil, fmt.Errorf("network-os-machine-revision is required")
+
+	nosDatacenterName := GetStringParam(c.Arguments["network_os_datacenter_name"])
+	if nosDatacenterName != "" {
+		networkOperatingSystem.OperatingSystemDatacenterName = nosDatacenterName
 	}
-	return &operatingSystem, nil
+
+	return &networkOperatingSystem, nil
 }
 
 func GetOperatingSystemFromCommand(c *Command) (*metalcloud.OperatingSystem, error) {
