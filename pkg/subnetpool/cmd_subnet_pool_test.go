@@ -2,7 +2,7 @@ package subnetpool
 
 import (
 	"encoding/json"
-	"io/ioutil"
+	"os"
 	"syscall"
 	"testing"
 
@@ -66,7 +66,7 @@ func TestSubnetCreate(t *testing.T) {
 		Return(&sw, nil).
 		AnyTimes()
 
-	f, err := ioutil.TempFile("/tmp", "testconf-*.json")
+	f, err := os.CreateTemp(os.TempDir(), "testconf-*.json")
 	if err != nil {
 		t.Error(err)
 	}
@@ -76,7 +76,7 @@ func TestSubnetCreate(t *testing.T) {
 	f.Close()
 	defer syscall.Unlink(f.Name())
 
-	f2, err := ioutil.TempFile("/tmp", "testconf-*.yaml")
+	f2, err := os.CreateTemp(os.TempDir(), "testconf-*.yaml")
 	if err != nil {
 		t.Error(err)
 	}

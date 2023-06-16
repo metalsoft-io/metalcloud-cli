@@ -2,7 +2,9 @@ package switchdevice
 
 import (
 	"encoding/json"
-	"io/ioutil"
+	"os"
+	"path/filepath"
+	"runtime"
 	"syscall"
 	"testing"
 
@@ -62,7 +64,7 @@ func TestSwitchCreate(t *testing.T) {
 		Return(&sw, nil).
 		AnyTimes()
 
-	f, err := ioutil.TempFile("/tmp", "testconf-*.json")
+	f, err := os.CreateTemp(os.TempDir(), "testconf-*.json")
 	if err != nil {
 		t.Error(err)
 	}
@@ -72,7 +74,7 @@ func TestSwitchCreate(t *testing.T) {
 	f.Close()
 	defer syscall.Unlink(f.Name())
 
-	f2, err := ioutil.TempFile("/tmp", "testconf-*.yaml")
+	f2, err := os.CreateTemp(os.TempDir(), "testconf-*.yaml")
 	if err != nil {
 		t.Error(err)
 	}
@@ -85,29 +87,14 @@ func TestSwitchCreate(t *testing.T) {
 	f2.Close()
 	defer syscall.Unlink(f2.Name())
 
+	_, b, _, _ := runtime.Caller(0)
+    basePath := filepath.Join(filepath.Dir(b), "..", "..")
+
 	cases := []command.CommandTestCase{
-		/*	{
-				Name: "sw-create-good1",
-				Cmd: command.MakeCommand(map[string]interface{}{
-					"read_config_from_file": f.Name(),
-					"format":                "json",
-				}),
-				Good: true,
-				Id:   1,
-			},
-			{
-				Name: "sw-create-good-yaml",
-				Cmd: command.MakeCommand(map[string]interface{}{
-					"read_config_from_file": f2.Name(),
-					"format":                "yaml",
-				}),
-				Good: true,
-				Id:   1,
-			},*/
 		{
 			Name: "sw-create-good-yaml",
 			Cmd: command.MakeCommand(map[string]interface{}{
-				"read_config_from_file": "examples/switch.yaml",
+				"read_config_from_file": filepath.Join(basePath, "examples", "switch.yaml"),
 				"format":                "yaml",
 			}),
 			Good: true,
@@ -131,7 +118,7 @@ func TestSwitchEditCmd(t *testing.T) {
 		t.Error(err)
 	}
 
-	f, err := ioutil.TempFile("/tmp", "testconf-*.json")
+	f, err := os.CreateTemp(os.TempDir(), "testconf-*.json")
 	if err != nil {
 		t.Error(err)
 	}
@@ -141,7 +128,7 @@ func TestSwitchEditCmd(t *testing.T) {
 	f.Close()
 	defer syscall.Unlink(f.Name())
 
-	f2, err := ioutil.TempFile("/tmp", "testconf-*.yaml")
+	f2, err := os.CreateTemp(os.TempDir(), "testconf-*.yaml")
 	if err != nil {
 		t.Error(err)
 	}
@@ -289,8 +276,11 @@ func TestSwitchObjectYamlUnmarshal(t *testing.T) {
 
 	var obj metalcloud.SwitchDevice
 
+	_, b, _, _ := runtime.Caller(0)
+    basePath := filepath.Join(filepath.Dir(b), "..", "..")
+
 	cmd := command.MakeCommand(map[string]interface{}{
-		"read_config_from_file": "examples/switch2.yaml",
+		"read_config_from_file": filepath.Join(basePath, "examples", "switch2.yaml"),
 		"format":                "yaml",
 	})
 

@@ -5,7 +5,7 @@ import (
 	"encoding/json"
 	"flag"
 	"fmt"
-	"io/ioutil"
+	"os"
 	"syscall"
 	"testing"
 
@@ -210,7 +210,7 @@ func TestGetRawObjectFromCommand(t *testing.T) {
 		t.Error(err)
 	}
 
-	f, err := ioutil.TempFile("/tmp", "testconf-*.json")
+	f, err := os.CreateTemp(os.TempDir(), "testconf-*.json")
 	if err != nil {
 		t.Error(err)
 	}

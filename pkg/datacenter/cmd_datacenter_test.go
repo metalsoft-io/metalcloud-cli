@@ -2,9 +2,11 @@ package datacenter
 
 import (
 	"encoding/json"
-	"io/ioutil"
+	"os"
 	"syscall"
 	"testing"
+	"path/filepath"
+	"runtime"
 
 	gomock "github.com/golang/mock/gomock"
 	metalcloud "github.com/metalsoft-io/metal-cloud-sdk-go/v2"
@@ -68,7 +70,7 @@ func TestDatacenterCreate(t *testing.T) {
 		Return(&_userFixture1, nil).
 		AnyTimes()
 
-	f, err := ioutil.TempFile("/tmp", "testconf-*.json")
+	f, err := os.CreateTemp(os.TempDir(), "testconf-*.json")
 	if err != nil {
 		t.Error(err)
 	}
@@ -133,7 +135,11 @@ func TestDatacenterYamlUnmarshal(t *testing.T) {
 	RegisterTestingT(t)
 
 	var dcConf metalcloud.DatacenterConfig
-	content, err := configuration.ReadInputFromFile("examples/datacenter.yaml")
+
+	_, b, _, _ := runtime.Caller(0)
+    basePath := filepath.Join(filepath.Dir(b), "..", "..")
+
+	content, err := configuration.ReadInputFromFile(filepath.Join(basePath, "examples", "datacenter.yaml"))
 	Expect(err).To(BeNil())
 	Expect(content).NotTo(BeNil())
 
@@ -165,7 +171,7 @@ func TestDatacenterUpdate(t *testing.T) {
 		Return(&_userFixture1, nil).
 		AnyTimes()
 
-	f, err := ioutil.TempFile("/tmp", "testconf-*.json")
+	f, err := os.CreateTemp(os.TempDir(), "testconf-*.json")
 	if err != nil {
 		t.Error(err)
 	}

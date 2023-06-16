@@ -4,7 +4,7 @@ import (
 	"encoding/csv"
 	"encoding/json"
 	"fmt"
-	"io/ioutil"
+	"os"
 	"strings"
 	"syscall"
 	"testing"
@@ -265,7 +265,7 @@ func TestGetMultipleServerCreateUnmanagedInternalFromYamlFile(t *testing.T) {
 	RegisterTestingT(t)
 	//ctrl := gomock.NewController(t)
 
-	f1, err := ioutil.TempFile("/tmp", "test-*.yaml")
+	f1, err := os.CreateTemp(os.TempDir(), "test-*.yaml")
 	if err != nil {
 		panic(err)
 	}
@@ -295,7 +295,7 @@ func TestServerEditCmd(t *testing.T) {
 			t.Error(err)
 		}
 
-		f, err := ioutil.TempFile("/tmp", "testconf-*.json")
+		f, err := os.CreateTemp(os.TempDir(), "testconf-*.json")
 		if err != nil {
 			t.Error(err)
 		}
@@ -305,7 +305,7 @@ func TestServerEditCmd(t *testing.T) {
 		f.Close()
 		defer syscall.Unlink(f.Name())
 
-		f2, err := ioutil.TempFile("/tmp", "testconf-*.yaml")
+		f2, err := os.CreateTemp(os.TempDir(), "testconf-*.yaml")
 		if err != nil {
 			t.Error(err)
 		}
@@ -781,7 +781,7 @@ func TestImportServersBatch(t *testing.T) {
 		Return(&s3, nil).
 		AnyTimes()
 
-	f1, err := ioutil.TempFile("/tmp", "test-*.yaml")
+	f1, err := os.CreateTemp(os.TempDir(), "test-*.yaml")
 	if err != nil {
 		panic(err)
 	}
@@ -806,7 +806,7 @@ func TestImportServersBatch(t *testing.T) {
 
 func createYamlFileFromObject(obj interface{}) string {
 	//create an input yaml file
-	f1, err := ioutil.TempFile("/tmp", "test-*.yaml")
+	f1, err := os.CreateTemp(os.TempDir(), "test-*.yaml")
 	if err != nil {
 		panic(err)
 	}

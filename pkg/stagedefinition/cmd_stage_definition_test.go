@@ -1,7 +1,7 @@
 package stagedefinition
 
 import (
-	"io/ioutil"
+	"os"
 	"syscall"
 	"testing"
 
@@ -75,7 +75,7 @@ func TestStageDefinitionCreateCmdAnsible(t *testing.T) {
 		Return(&stage1, nil).
 		MinTimes(1)
 
-	f, err := ioutil.TempFile("/tmp", "testansible.zip")
+	f, err := os.CreateTemp(os.TempDir(), "testansible.zip")
 	if err != nil {
 		panic(err)
 	}

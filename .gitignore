@@ -16,6 +16,7 @@ dist
 set_poc.sh
 set_integration.sh
 __debug*
+*.exe
 
 # direnv
 .envrc
