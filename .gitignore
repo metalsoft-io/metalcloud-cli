@@ -17,6 +17,7 @@ set_poc.sh
 set_integration.sh
 __debug*
 *.exe
+!cmd/metalcloud-cli
 
 # direnv
 .envrc

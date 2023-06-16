@@ -463,7 +463,6 @@ var OsTemplatesCmds = []command.Command{
 }
 
 func templatesListCmd(c *command.Command, client metalcloud.MetalCloudClient) (string, error) {
-
 	list, err := client.OSTemplates()
 
 	if err != nil {
