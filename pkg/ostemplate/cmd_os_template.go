@@ -1335,9 +1335,9 @@ func retrieveRepositoryAssets(c *command.Command, repoMap map[string]RepoTemplat
 	getRepositoryTemplateAssets(tree, repoMap, repoAssetsPerTemplate)
 	repoHasErrors := false
 
-	for templatePreffix, repoTemplate := range repoMap {
+	for templatePrefix, repoTemplate := range repoMap {
 		repoTemplate.Assets = make(map[string]TemplateAsset)
-		for _, asset := range repoAssetsPerTemplate[templatePreffix] {
+		for _, asset := range repoAssetsPerTemplate[templatePrefix] {
 			repoTemplate.Assets[asset.name] = asset
 		}
 
@@ -1347,7 +1347,7 @@ func retrieveRepositoryAssets(c *command.Command, repoMap map[string]RepoTemplat
 			return err
 		}
 
-		repoMap[templatePreffix] = repoTemplate
+		repoMap[templatePrefix] = repoTemplate
 	}
 
 	if repoHasErrors {
@@ -2300,9 +2300,9 @@ func templateValidateRepoCmd(c *command.Command, client metalcloud.MetalCloudCli
 		return "", err
 	}
 
-	for templatePreffix, repoTemplate := range repoMap {
+	for templatePrefix, repoTemplate := range repoMap {
 		if len(repoTemplate.Errors) != 0 {
-			fmt.Printf("Detected the following errors regarding repository structure for template %s:\n", templatePreffix)
+			fmt.Printf("Detected the following errors regarding repository structure for template %s:\n", templatePrefix)
 		}
 
 		for _, errorMessage := range repoTemplate.Errors {
@@ -2458,7 +2458,7 @@ func getRepositoryTemplateAssets(tree *object.Tree, repoMap map[string]RepoTempl
 		if file.Mode.IsRegular() {
 			if strings.Count(file.Name, "/") == 3 {
 				parts := strings.Split(file.Name, "/")
-				templatePreffix := strings.Join(parts[:3], "/")
+				templatePrefix := strings.Join(parts[:3], "/")
 
 				fileContents, err := file.Contents()
 
@@ -2467,9 +2467,9 @@ func getRepositoryTemplateAssets(tree *object.Tree, repoMap map[string]RepoTempl
 				}
 
 				if parts[3] == templateFileName {
-					if _, ok := repoMap[templatePreffix]; !ok {
-						repoMap[templatePreffix] = RepoTemplate{
-							SourcePath:           templatePreffix,
+					if _, ok := repoMap[templatePrefix]; !ok {
+						repoMap[templatePrefix] = RepoTemplate{
+							SourcePath:           templatePrefix,
 							TemplateFileContents: fileContents,
 						}
 					}
@@ -2479,7 +2479,7 @@ func getRepositoryTemplateAssets(tree *object.Tree, repoMap map[string]RepoTempl
 						contents: fileContents,
 					}
 
-					repoAssetsPerTemplate[templatePreffix] = append(repoAssetsPerTemplate[templatePreffix], asset)
+					repoAssetsPerTemplate[templatePrefix] = append(repoAssetsPerTemplate[templatePrefix], asset)
 				}
 			}
 		}
