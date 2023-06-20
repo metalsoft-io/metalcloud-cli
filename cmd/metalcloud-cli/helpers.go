@@ -14,6 +14,7 @@ import (
 	"github.com/metalsoft-io/metalcloud-cli/pkg/datacenter"
 	"github.com/metalsoft-io/metalcloud-cli/pkg/drive"
 	"github.com/metalsoft-io/metalcloud-cli/pkg/firewall"
+	"github.com/metalsoft-io/metalcloud-cli/pkg/firmware"
 	"github.com/metalsoft-io/metalcloud-cli/pkg/infrastructure"
 	"github.com/metalsoft-io/metalcloud-cli/pkg/instance"
 	"github.com/metalsoft-io/metalcloud-cli/pkg/jobs"
@@ -126,6 +127,7 @@ func getCommands(clients map[string]metalcloud.MetalCloudClient) []command.Comma
 		drive.DriveSnapshotCmds,
 		drive.SharedDriveCmds,
 		firewall.FirewallRuleCmds,
+		firmware.FirmwareCatalogCmds,
 		infrastructure.InfrastructureCmds,
 		instance.InstanceArrayCmds,
 		instance.InstanceCmds,
