@@ -16,6 +16,11 @@ const (
 	catalogVendorHp = "Hp"
 )
 
+type serverInfo struct {
+	MachineType string `json:"machineType" yaml:"machine_type"`
+	SerialNumber string `json:"serialNumber" yaml:"serial_number"`
+}
+
 type rawConfigFile struct {
 	Name string `json:"name" yaml:"name"`
 	Description string `json:"description" yaml:"description"`
@@ -23,6 +28,7 @@ type rawConfigFile struct {
 	CatalogUrl string `json:"catalogUrl" yaml:"catalog_url"`
 	DownloadCatalog bool `json:"downloadCatalog" yaml:"download_catalog"`
 	CatalogPath string `json:"catalogPath" yaml:"catalog_path"`
+	ServersList []serverInfo `json:"serversList" yaml:"servers_list"`
 }
 
 func parseConfigFile(configFormat string, rawConfigFileContents []byte, configFile *rawConfigFile) error {

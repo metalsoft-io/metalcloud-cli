@@ -73,7 +73,7 @@ func retrieveAvailableFirmwareUpdates(targetInfos map[string]string) (string, er
 	return string(responseBody), nil
 }
 
-func SearchLenovoCatalog(machineType string, serialNumber string) (*LenovoCatalog, error) {
+func searchLenovoCatalog(machineType string, serialNumber string) (*LenovoCatalog, error) {
 	targetInfos := map[string]string{
 		"MachineType":  machineType,
 		"SerialNumber": serialNumber,
@@ -92,7 +92,7 @@ func SearchLenovoCatalog(machineType string, serialNumber string) (*LenovoCatalo
 	return &lenovoCatalog, nil
 }
 
-func ExtractAvailableFirmwareUpdates(lenovoCatalog *LenovoCatalog) (UpdateType, UpdateRequiredType) {
+func extractAvailableFirmwareUpdates(lenovoCatalog *LenovoCatalog) (UpdateType, UpdateRequiredType) {
 	firmwareUpdates := lenovoCatalog.Data
 
 	firmwareUpdate := map[string]map[string]string{
@@ -177,15 +177,34 @@ func findFirmwareFix(files []File, fileType string) *File {
 	return nil
 }
 
+func parseLenovoCatalog(configFile rawConfigFile) {
+	for _, serverInfo := range configFile.ServersList {
+		currentLenovoCatalog, err := searchLenovoCatalog(serverInfo.MachineType, serverInfo.SerialNumber)
+		if err != nil {
+			fmt.Println("Error:", err)
+			continue
+		}
+
+		firmwareUpdate, _ := extractAvailableFirmwareUpdates(currentLenovoCatalog)
+		prettyFirmwareUpdate, err := json.MarshalIndent(firmwareUpdate, "", "  ")
+		if err != nil {
+			fmt.Println("Error:", err)
+			return
+		}
+	
+		fmt.Println(string(prettyFirmwareUpdate))
+	}
+}
+
 func test1() {
 
-	lenovoCatalog, err := SearchLenovoCatalog("7Y51", "J10227CF")
+	lenovoCatalog, err := searchLenovoCatalog("7Y51", "J10227CF")
 	if err != nil {
 		fmt.Println("Error:", err)
 		return
 	}
 
-	firmwareUpdate, _ := ExtractAvailableFirmwareUpdates(lenovoCatalog)
+	firmwareUpdate, _ := extractAvailableFirmwareUpdates(lenovoCatalog)
 
 	prettyFirmwareUpdate, err := json.MarshalIndent(firmwareUpdate, "", "  ")
 	if err != nil {
