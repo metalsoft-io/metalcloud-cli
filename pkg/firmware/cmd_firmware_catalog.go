@@ -82,7 +82,7 @@ func firmwareCatalogCreateCmd(c *command.Command, client metalcloud.MetalCloudCl
 			parseDellCatalog(configFile)
 
 		case catalogVendorLenovo:
-			return "", fmt.Errorf("vendor '%s' is not yet supported", catalogVendorLenovo)
+			parseLenovoCatalog(configFile)
 
 		case catalogVendorHp:
 			return "", fmt.Errorf("vendor '%s' is not yet supported", catalogVendorHp)
