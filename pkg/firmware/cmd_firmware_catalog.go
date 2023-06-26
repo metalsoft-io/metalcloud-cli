@@ -78,18 +78,22 @@ func firmwareCatalogCreateCmd(c *command.Command, client metalcloud.MetalCloudCl
 	fmt.Printf("Parsed config file: %+v\n", configFile)
 
 	switch configFile.Vendor {
-		case catalogVendorDell:
-			parseDellCatalog(configFile)
+	case catalogVendorDell:
+		err := parseDellCatalog(configFile)
 
-		case catalogVendorLenovo:
-			parseLenovoCatalog(configFile)
+		if err != nil {
+			return "", err
+		}
 
-		case catalogVendorHp:
-			return "", fmt.Errorf("vendor '%s' is not yet supported", catalogVendorHp)
+	case catalogVendorLenovo:
+		parseLenovoCatalog(configFile)
 
-		default:
-			validVendors := []string{catalogVendorDell, catalogVendorLenovo, catalogVendorHp}
-			return "", fmt.Errorf("invalid vendor '%s' found in the raw-config file. Supported vendors are %v", configFile.Vendor, validVendors)
+	case catalogVendorHp:
+		return "", fmt.Errorf("vendor '%s' is not yet supported", catalogVendorHp)
+
+	default:
+		validVendors := []string{catalogVendorDell, catalogVendorLenovo, catalogVendorHp}
+		return "", fmt.Errorf("invalid vendor '%s' found in the raw-config file. Supported vendors are %v", configFile.Vendor, validVendors)
 	}
 
 	return "", nil
