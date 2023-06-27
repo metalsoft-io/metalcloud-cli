@@ -10,6 +10,8 @@ import (
 )
 
 const (
+	repositoryURL = "https://repo.metalsoft.com/firmware/"
+
 	configFormatJSON          = "json"
 	configFormatYAML          = "yaml"
 	catalogVendorDell         = "Dell"
@@ -56,6 +58,7 @@ type catalog struct {
 type firmwareBinary struct {
 	ExternalId             string
 	Name                   string
+	Description            string
 	PackageId              string
 	PackageVersion         string
 	RebootRequired         bool
@@ -65,6 +68,8 @@ type firmwareBinary struct {
 	VendorProperties       map[string]string
 	VendorReleaseTimestamp string
 	CreatedTimestamp       string
+	DownloadURL            string
+	RepoURL                string
 }
 
 func parseConfigFile(configFormat string, rawConfigFileContents []byte, configFile *rawConfigFile) error {

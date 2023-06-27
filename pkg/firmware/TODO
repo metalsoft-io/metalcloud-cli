@@ -1,0 +1,4 @@
+- Function for Lenovo servers to get serial number and machine type (we can mock this for now, it should be a function that will be called from API Gateway)
+- Function createCatalog for lenovo where we create catalog instance and software components instances
+- Function to upload firmware binaries to repo
+- Function to send the catalog and software components to API Gateway -> Blueprints

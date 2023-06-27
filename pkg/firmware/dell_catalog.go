@@ -8,6 +8,7 @@ import (
 	"io"
 	"log"
 	"net/http"
+	"net/url"
 	"os"
 	"time"
 
@@ -15,10 +16,11 @@ import (
 )
 
 const (
-	STOP_AFTER int = 1
+	STOP_AFTER            int = 1
+	componentTypeFirmware     = "FRMW"
 )
 
-type Manifest struct {
+type manifest struct {
 	BaseLocation                string              `xml:"baseLocation,attr"`
 	BaseLocationAccessProtocols string              `xml:"baseLocationAccessProtocols,attr"`
 	DateTime                    string              `xml:"dateTime,attr"`
@@ -26,80 +28,90 @@ type Manifest struct {
 	ReleaseID                   string              `xml:"releaseID,attr"`
 	Version                     string              `xml:"version,attr"`
 	PredecessorID               string              `xml:"predecessorID,attr"`
-	Software                    []SoftwareBundle    `xml:"SoftwareBundle"`
-	Components                  []SoftwareComponent `xml:"SoftwareComponent"`
+	Software                    []softwareBundle    `xml:"SoftwareBundle"`
+	Components                  []softwareComponent `xml:"SoftwareComponent"`
 }
 
-type SoftwareBundle struct {
+type softwareBundle struct {
 	XMLName          xml.Name         `xml:"SoftwareBundle"`
 	DateTime         string           `xml:"dateTime,attr"`
 	Path             string           `xml:"path,attr"`
 	RebootRequired   string           `xml:"rebootRequired,attr"`
-	Name             Name             `xml:"Name"`
-	SupportedDevices SupportedDevices `xml:"SupportedDevices"`
-	SupportedSystems SupportedSystems `xml:"SupportedSystems"`
+	Name             name             `xml:"Name"`
+	SupportedDevices supportedDevices `xml:"SupportedDevices"`
+	SupportedSystems supportedSystems `xml:"SupportedSystems"`
 }
 
-type Name struct {
+type name struct {
 	Display string `xml:"Display"`
 }
 
-type Criticality struct {
+type criticality struct {
 	Value string `xml:"value,attr"`
 }
 
-type ImportantInfo struct {
+type importantInfo struct {
 	URL string `xml:"URL,attr"`
 }
 
-type Category struct {
+type category struct {
 	Display string `xml:"Display"`
 }
 
-type SupportedDevices struct {
-	Devices []Device `xml:"Device"`
+type supportedDevices struct {
+	Devices []device `xml:"Device"`
 }
 
-type Device struct {
+type componentType struct {
+	Value string `xml:"value,attr"`
+}
+
+type description struct {
+	Display string `xml:"Display"`
+}
+
+type device struct {
 	ComponentID string `xml:"componentID,attr"`
 	Display     string `xml:"Display"`
 	Prefix      string `xml:"prefix,attr"`
 }
 
-type SupportedSystems struct {
-	Brands []Brand `xml:"Brand"`
+type supportedSystems struct {
+	Brands []brand `xml:"Brand"`
 }
 
-type Brand struct {
-	Models  []Model `xml:"Model"`
+type brand struct {
+	Models  []model `xml:"Model"`
 	Display string  `xml:"Display"`
 	Prefix  string  `xml:"prefix,attr"`
 }
 
-type Model struct {
+type model struct {
 	SystemID     string `xml:"systemID,attr"`
 	SystemIDType string `xml:"systemIDType,attr"`
 	Display      string `xml:"Display"`
 }
 
-type SoftwareComponent struct {
+type softwareComponent struct {
 	XMLName          xml.Name         `xml:"SoftwareComponent"`
 	DateTime         string           `xml:"dateTime,attr"`
 	Path             string           `xml:"path,attr"`
 	PackageID        string           `xml:"packageID,attr"`
 	VendorVersion    string           `xml:"vendorVersion,attr"`
 	RebootRequired   string           `xml:"rebootRequired,attr"`
-	UpdateSeverity   Criticality      `xml:"Criticality"`
+	UpdateSeverity   criticality      `xml:"Criticality"`
 	ReleaseDate      string           `xml:"releaseDate,attr"`
 	Size             string           `xml:"size,attr"`
-	Hashmd5          string           `xml:"hashMD5,attr"`
-	Category         Category         `xml:"Category"`
+	HashMD5          string           `xml:"hashMD5,attr"`
+	Category         category         `xml:"Category"`
 	ReleaseID        string           `xml:"releaseID,attr"`
 	PackageType      string           `xml:"packageType,attr"`
-	ImportantInfo    ImportantInfo    `xml:"ImportantInfo"`
-	Name             Name             `xml:"Name"`
-	SupportedDevices SupportedDevices `xml:"SupportedDevices"`
-	SupportedSystems SupportedSystems `xml:"SupportedSystems"`
+	ImportantInfo    importantInfo    `xml:"ImportantInfo"`
+	ComponentType    componentType    `xml:"ComponentType"`
+	Name             name             `xml:"Name"`
+	Description      description      `xml:"Description"`
+	SupportedDevices supportedDevices `xml:"SupportedDevices"`
+	SupportedSystems supportedSystems `xml:"SupportedSystems"`
 }
 
 func downloadCatalog(catalogURL string, catalogFilePath string) error {
@@ -165,7 +177,7 @@ func parseDellCatalog(configFile rawConfigFile) error {
 	decoder := xml.NewDecoder(reader)
 	decoder.CharsetReader = BypassReader
 
-	var manifest Manifest
+	var manifest manifest
 
 	err = decoder.Decode(&manifest)
 	if err != nil {
@@ -201,25 +213,24 @@ func parseDellCatalog(configFile rawConfigFile) error {
 	catalogJSON, err := json.MarshalIndent(catalog, "", "  ")
 	fmt.Printf("Created catalog for %s: %+v\n", configFile.Name, string(catalogJSON))
 
-	/**
-	(
-		server_firmware_binary_id -> 1,
-		server_firmware_binary_catalog_id -> 1,
-		server_firmware_binary_external_id -> 'FOLDER04177723M/1/Serial-ATA_Firmware_H09VC_LN_MA8F_A00.BIN',
-		server_firmware_binary_name -> 'Seagate MA8F for model number(s) ST6000NM0024-1US17Z..',
-		server_firmware_binary_package_id- > 'H09VC',
-		server_firmware_binary_package_version -> 'MA8F',
-		server_firmware_binary_reboot_required -> 'no',
-		server_firmware_binary_update_severity -> 'recommended',
-		server_firmware_binary_vendor_supported_devices_json -> '[{\"id\": \"103733\", \"name\": \"Makara SATA 512e\"}]',
-		server_firmware_binary_vendor_supported_systems_json -> '[{\"id\": \"0723\", \"idType\": \"BIOS\", \"brandName\": \"PowerEdge\", \"modelName\": \"DSS1500\", \"brandPrefix\": \"PE\"}, {\"id\": \"0722\", \"idType\": \"BIOS\", \"brandName\": \"PowerEdge\", \"modelName\": \"DSS1510\", \"brandPrefix\": \"PE\"}, {\"id\": \"0724\", \"idType\": \"BIOS\", \"brandName\": \"PowerEdge\", \"modelName\": \"DSS2500\", \"brandPrefix\": \"PE\"}, {\"id\": \"06A5\", \"idType\": \"BIOS\", \"brandName\": \"PowerEdge\", \"modelName\": \"R230\", \"brandPrefix\": \"PE\"}, {\"id\": \"0627\", \"idType\": \"BIOS\", \"brandName\": \"PowerEdge\", \"modelName\": \"R730xd\", \"brandPrefix\": \"PE\"}, {\"id\": \"0639\", \"idType\": \"BIOS\", \"brandName\": \"PowerEdge\", \"modelName\": \"R430\", \"brandPrefix\": \"PE\"}, {\"id\": \"063A\", \"idType\": \"BIOS\", \"brandName\": \"PowerEdge\", \"modelName\": \"R530\", \"brandPrefix\": \"PE\"}, {\"id\": \"06A6\", \"idType\": \"BIOS\", \"brandName\": \"PowerEdge\", \"modelName\": \"R330\", \"brandPrefix\": \"PE\"}, {\"id\": \"063B\", \"idType\": \"BIOS\", \"brandName\": \"PowerEdge\", \"modelName\": \"T430\", \"brandPrefix\": \"PE\"}, {\"id\": \"0600\", \"idType\": \"BIOS\", \"brandName\": \"PowerEdge\", \"modelName\": \"R730\", \"brandPrefix\": \"PE\"}, {\"id\": \"06A7\", \"idType\": \"BIOS\", \"brandName\": \"PowerEdge\", \"modelName\": \"T330\", \"brandPrefix\": \"PE\"}, {\"id\": \"0602\", \"idType\": \"BIOS\", \"brandName\": \"PowerEdge\", \"modelName\": \"T630\", \"brandPrefix\": \"PE\"}]',
-		server_firmware_binary_vendor_json -> '{\"path\": \"FOLDER04177723M/1/Serial-ATA_Firmware_H09VC_LN_MA8F_A00.BIN\", \"size\": \"40821221\", \"hashmd5\": \"3979c65df3c67a5342d707af89923de5\", \"category\": \"Serial ATA\", \"datetime\": \"2017-03-24T21:05:18+05:30\", \"packageId\": \"H09VC\", \"releaseId\": \"H09VC\", \"packageType\": \"LLXP\"}',
-		server_firmware_binary_vendor_release_timestamp -> '2017-03-23 22:00:00',
-		server_firmware_binary_created_timestamp -> '2023-06-23 12:46:59'
-	),
-	*/
+	baseCatalogURL := ""
+
+	if configFile.DownloadCatalog {
+		url, err := url.Parse(configFile.CatalogUrl)
+
+		if err != nil {
+			return fmt.Errorf("Unable to parse catalog URL: %v", err)
+		}
+
+		baseCatalogURL = url.Scheme + "://" + url.Host
+	}
 
 	for idx, component := range manifest.Components {
+		// We only check for components that are of type firmware
+		if component.ComponentType.Value != "FRMW" {
+			continue
+		}
+
 		rebootRequired := false
 		if component.RebootRequired == "true" {
 			rebootRequired = true
@@ -251,7 +262,7 @@ func parseDellCatalog(configFile rawConfigFile) error {
 		componentVendorConfiguration := map[string]string{
 			"path":          component.Path,
 			"size":          component.Size,
-			"hashmd5":       component.Hashmd5,
+			"hashmd5":       component.HashMD5,
 			"category":      component.Category.Display,
 			"datetime":      component.DateTime,
 			"packageId":     component.PackageID,
@@ -260,7 +271,6 @@ func parseDellCatalog(configFile rawConfigFile) error {
 			"importantInfo": component.ImportantInfo.URL,
 		}
 
-		fmt.Println(component.ReleaseDate)
 		timestamp, err := time.Parse("January 02, 2006", component.ReleaseDate)
 
 		if err != nil {
@@ -273,9 +283,15 @@ func parseDellCatalog(configFile rawConfigFile) error {
 			return fmt.Errorf("Error parsing severity: %v", err)
 		}
 
+		downloadURL := ""
+		if configFile.DownloadCatalog {
+			downloadURL = baseCatalogURL + "/" + component.Path
+		}
+
 		firmwareBinary := firmwareBinary{
 			ExternalId:             component.Path,
 			Name:                   component.Name.Display,
+			Description:            component.Description.Display,
 			PackageId:              component.PackageID,
 			PackageVersion:         component.VendorVersion,
 			RebootRequired:         rebootRequired,
@@ -285,6 +301,8 @@ func parseDellCatalog(configFile rawConfigFile) error {
 			VendorProperties:       componentVendorConfiguration,
 			VendorReleaseTimestamp: timestamp.Format(time.RFC3339),
 			CreatedTimestamp:       time.Now().Format(time.RFC3339),
+			DownloadURL:            downloadURL,
+			RepoURL:                repositoryURL + "/" + component.Path,
 		}
 
 		firmwareBinaryJson, _ := json.MarshalIndent(firmwareBinary, "", "  ")
