@@ -16,8 +16,8 @@ import (
 )
 
 const (
-	STOP_AFTER            int = 1
-	componentTypeFirmware     = "FRMW"
+	STOP_AFTER            int    = 1
+	componentTypeFirmware string = "FRMW"
 )
 
 type manifest struct {
