@@ -468,8 +468,8 @@ func ExecuteCommand(args []string, commands []Command, clients map[string]metalc
 
 	cmd.InitFunc(cmd)
 
-	if flag := cmd.FlagSet.Lookup("no-color"); flag == nil {
-		cmd.Arguments["no_color"] = cmd.FlagSet.Bool("no-color", false, "Disable coloring.")
+	if flag := cmd.FlagSet.Lookup("no_color"); flag == nil {
+		cmd.Arguments["no_color"] = cmd.FlagSet.Bool("no_color", false, "Disable coloring.")
 	}
 
 	//disable default usage
@@ -482,7 +482,7 @@ func ExecuteCommand(args []string, commands []Command, clients map[string]metalc
 			return fmt.Errorf(GetCommandHelp(*cmd, true))
 		}
 
-		if a == "--no-color" || a == "-no-color" {
+		if a == "--no_color" || a == "-no_color" {
 			colors.SetColoringEnabled(false)
 		}
 	}
