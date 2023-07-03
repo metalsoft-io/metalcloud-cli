@@ -308,7 +308,6 @@ func switchControllerEditCmd(c *command.Command, client metalcloud.MetalCloudCli
 	return "", err
 }
 
-
 func switchControllerGetCmd(c *command.Command, client metalcloud.MetalCloudClient) (string, error) {
 	switchController, err := getSwitchControllerFromCommandLine("id", c, client)
 	if err != nil {
