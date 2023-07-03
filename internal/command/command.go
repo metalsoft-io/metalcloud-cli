@@ -243,7 +243,6 @@ func GetRawObjectFromCommand(c *Command, obj interface{}) error {
 			return err
 		}
 	case "yaml":
-
 		err := yaml.Unmarshal(content, obj)
 		if err != nil {
 			return err
