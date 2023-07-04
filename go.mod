@@ -10,7 +10,7 @@ require (
 	github.com/golang/mock v1.6.0
 	github.com/jwalton/gchalk v1.2.1
 	github.com/kdomanski/iso9660 v0.3.1
-	github.com/metalsoft-io/metal-cloud-sdk-go/v2 v2.9.6
+	github.com/metalsoft-io/metal-cloud-sdk-go/v2 v2.9.7
 	github.com/metalsoft-io/tableformatter v1.0.9
 	github.com/onsi/gomega v1.16.0
 	github.com/savaki/jq v0.0.0-20161209013833-0e6baecebbf8
@@ -36,7 +36,6 @@ require (
 	github.com/mitchellh/go-homedir v1.1.0 // indirect
 	github.com/xanzy/ssh-agent v0.3.0 // indirect
 	github.com/ybbus/jsonrpc v2.1.2+incompatible // indirect
-	golang.org/x/exp v0.0.0-20230522175609-2e198f4a06a1
 	golang.org/x/net v0.7.0 // indirect
 	golang.org/x/oauth2 v0.0.0-20220909003341-f21342109be1 // indirect
 	golang.org/x/sys v0.5.0 // indirect
