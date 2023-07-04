@@ -10,7 +10,7 @@ require (
 	github.com/golang/mock v1.6.0
 	github.com/jwalton/gchalk v1.2.1
 	github.com/kdomanski/iso9660 v0.3.1
-	github.com/metalsoft-io/metal-cloud-sdk-go/v2 v2.9.6
+	github.com/metalsoft-io/metal-cloud-sdk-go/v2 v2.9.7
 	github.com/metalsoft-io/tableformatter v1.0.9
 	github.com/onsi/gomega v1.16.0
 	github.com/savaki/jq v0.0.0-20161209013833-0e6baecebbf8
@@ -45,5 +45,3 @@ require (
 	google.golang.org/protobuf v1.28.1 // indirect
 	gopkg.in/warnings.v0 v0.1.2 // indirect
 )
-
-replace github.com/metalsoft-io/metal-cloud-sdk-go/v2 => C:\Users\Alex\go\src\github.com\metalsoft-io\metal-cloud-sdk-go
