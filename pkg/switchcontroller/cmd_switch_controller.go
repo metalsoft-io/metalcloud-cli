@@ -395,7 +395,7 @@ func switchControllerGetCmd(c *command.Command, client metalcloud.MetalCloudClie
 			Data:   data,
 			Schema: schema,
 		}
-		ret, err := table.RenderTransposedTable("switch device controller", "", format)
+		ret, err := table.RenderTransposedTable("properties", "", format)
 		if err != nil {
 			return "", err
 		}
