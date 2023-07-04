@@ -18,7 +18,7 @@ builds:
     - linux
     - darwin
 #   - windows
-  main: cmd/metalcloud-cli
+  main: ./cmd/metalcloud-cli
 
 archives:
 - id: archive
