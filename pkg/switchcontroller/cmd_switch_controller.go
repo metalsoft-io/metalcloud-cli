@@ -32,7 +32,7 @@ var SwitchControllerCmds = []command.Command{
 		ExecuteFunc: switchControllerCreateCmd,
 		Endpoint:    configuration.DeveloperEndpoint,
 		Example: `
-	metalcloud-cli switch create --format yaml --raw-config switch.yml --return-id
+	metalcloud-cli switch create --format yaml --raw-config switch-controller.yaml --return-id
 
 	#Example configuration:
 	identifierString: Cisco ACI 5.1
@@ -92,12 +92,12 @@ var SwitchControllerCmds = []command.Command{
 		FlagSet:      flag.NewFlagSet("Edit switch controller configuration", flag.ExitOnError),
 		InitFunc: func(c *command.Command) {
 			c.Arguments = map[string]interface{}{
-				"network_device_id_or_identifier_string": c.FlagSet.String("id", command.NilDefaultStr, colors.Red("(Required)")+" Switch id or identifier string. "),
-				"format":                                 c.FlagSet.String("format", "json", "The input format. Supported values are 'json','yaml'. The default format is json."),
-				"read_config_from_file":                  c.FlagSet.String("raw-config", command.NilDefaultStr, colors.Red("(Required)")+" Read configuration from file in the format specified with --format."),
-				"read_config_from_pipe":                  c.FlagSet.Bool("pipe", false, colors.Green("(Flag)")+" If set, read  configuration from pipe instead of from a file. Either this flag or the --raw-config option must be used."),
-				"return_id":                              c.FlagSet.Bool("return-id", false, "Will print the ID of the created object. Useful for automating tasks."),
-				"no_color":                               c.FlagSet.Bool("no_color", false, " Disable coloring."),
+				"network_controller_id_or_identifier_string": c.FlagSet.String("id", command.NilDefaultStr, colors.Red("(Required)")+" Switch id or identifier string. "),
+				"format":                c.FlagSet.String("format", "json", "The input format. Supported values are 'json','yaml'. The default format is json."),
+				"read_config_from_file": c.FlagSet.String("raw-config", command.NilDefaultStr, colors.Red("(Required)")+" Read configuration from file in the format specified with --format."),
+				"read_config_from_pipe": c.FlagSet.Bool("pipe", false, colors.Green("(Flag)")+" If set, read  configuration from pipe instead of from a file. Either this flag or the --raw-config option must be used."),
+				"return_id":             c.FlagSet.Bool("return-id", false, "Will print the ID of the created object. Useful for automating tasks."),
+				"no_color":              c.FlagSet.Bool("no_color", false, " Disable coloring."),
 			}
 		},
 		ExecuteFunc: switchControllerEditCmd,
@@ -140,7 +140,6 @@ var SwitchControllerCmds = []command.Command{
 		ExecuteFunc: switchControllerSwitchesListCmd,
 		Endpoint:    configuration.DeveloperEndpoint,
 	},
-
 }
 
 func switchControllerCreateCmd(c *command.Command, client metalcloud.MetalCloudClient) (string, error) {
@@ -292,11 +291,11 @@ func switchControllerEditCmd(c *command.Command, client metalcloud.MetalCloudCli
 		return "", err
 	}
 
-	if obj.DatacenterName == "" {
-		return "", fmt.Errorf("Datacenter name is required.")
+	networkEquipmentControllerOptions := map[string]interface{}{
+		"network_equipment_controller_options": obj.NetworkEquipmentControllerOptions,
 	}
 
-	updatedSwCtrl, err := client.SwitchDeviceControllerUpdate(retSwCtrl.NetworkEquipmentControllerID, retSwCtrl.NetworkEquipmentControllerOptions)
+	updatedSwCtrl, err := client.SwitchDeviceControllerUpdate(retSwCtrl.NetworkEquipmentControllerID, networkEquipmentControllerOptions)
 	if err != nil {
 		return "", err
 	}
@@ -429,7 +428,6 @@ func getSwitchControllerFromCommandLineWithPrivateParam(private_paramName string
 	}
 
 	if err != nil {
-		fmt.Println("AICI")
 		return nil, err
 	}
 
