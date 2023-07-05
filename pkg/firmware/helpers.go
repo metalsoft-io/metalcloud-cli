@@ -7,6 +7,7 @@ import (
 
 	"golang.org/x/exp/slices"
 	"gopkg.in/yaml.v3"
+	"github.com/jlaffaye/ftp"
 )
 
 const (
@@ -157,4 +158,48 @@ func getSeverity(input string) (string, error) {
 	default:
 		return "", fmt.Errorf("invalid severity value: %s", input)
 	}
+}
+
+func uploadFileToRepo(
+	url string, 
+	fileName string, 
+	repoHost string, 
+	repoPath string, 
+	repoUser string, 
+	repoPassword string
+) error {
+	resp, err := http.Get(url)
+	if err != nil {
+		return err
+	}
+	defer resp.Body.Close()
+
+	ftpConn, err := ftp.Connect(repoHost)
+	if err != nil {
+		return err
+	}
+	defer ftpConn.Quit()
+
+	err = ftpConn.Login(repoUser, repoPassword)
+	if err != nil {
+		return err
+	}
+
+	err = ftpConn.ChangeDir(repoPath)
+	if err != nil {
+		return err
+	}
+
+	file, err := ftpConn.RetrWriter(fileName)
+	if err != nil {
+		return err
+	}
+	defer file.Close()
+
+	_, err = io.Copy(file, resp.Body)
+	if err != nil {
+		return err
+	}
+
+	return nil
 }

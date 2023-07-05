@@ -225,6 +225,8 @@ func parseDellCatalog(configFile rawConfigFile) error {
 		baseCatalogURL = url.Scheme + "://" + url.Host
 	}
 
+	firmwareBinaryCollection := []firmwareBinary
+
 	for idx, component := range manifest.Components {
 		// We only check for components that are of type firmware
 		if component.ComponentType.Value != "FRMW" {
@@ -304,6 +306,8 @@ func parseDellCatalog(configFile rawConfigFile) error {
 			DownloadURL:            downloadURL,
 			RepoURL:                repositoryURL + "/" + component.Path,
 		}
+
+		firmwareBinaryCollection = append(firmwareBinaryCollection, firmwareBinary)
 
 		firmwareBinaryJson, _ := json.MarshalIndent(firmwareBinary, "", "  ")
 		fmt.Printf("Created firmware binary: %v\n", string(firmwareBinaryJson))

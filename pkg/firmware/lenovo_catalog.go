@@ -7,6 +7,8 @@ import (
 	"io/ioutil"
 	"net/http"
 	"strings"
+
+	metalcloud "github.com/metalsoft-io/metal-cloud-sdk-go/v2"
 )
 
 const ENDPOINT_URL = "https://support.lenovo.com/services/ContentService/"
@@ -177,23 +179,91 @@ func findFirmwareFix(files []File, fileType string) *File {
 	return nil
 }
 
-func parseLenovoCatalog(configFile rawConfigFile) {
-	for _, serverInfo := range configFile.ServersList {
-		currentLenovoCatalog, err := searchLenovoCatalog(serverInfo.MachineType, serverInfo.SerialNumber)
+func parseLenovoCatalog(configFile rawConfigFile) error {
+
+	catalogConfiguration := map[string]string{}
+
+	vendorId := configFile.Vendor
+	checkStringSize(vendorId)
+
+	catalog := catalog{
+		Name:                   configFile.Name,
+		Description:            configFile.Description,
+		Vendor:                 configFile.Vendor,
+		VendorID:               vendorId,
+		VendorURL:              configFile.CatalogUrl,
+		VendorReleaseTimestamp: time.Now().Format(time.RFC3339),
+		UpdateType:             getUpdateType(configFile),
+		ServerTypesSupported:   []string{},
+		Configuration:          catalogConfiguration,
+		CreatedTimestamp:       time.Now().Format(time.RFC3339),
+	}
+
+	firmwareBinaryCollection := []firmwareBinary
+
+	var serverList []serverInfo;
+	if len(configFile.ServersList) != 0 {
+		serverList = configFile.ServersList
+	} else {
+		client := metalcloud.MetalCloudClient{}
+		list, err := client.ServersSearch(filtering.ConvertToSearchFieldFormat(filter))
+		if err != nil {
+			return err
+		}
+	
+		for _, server := range *list {
+			serverList = append(serverList, serverInfo{
+				MachineType: server.ServerSubmodel,
+				SerialNumber: server.ServerSerialNumber,
+			})
+		}
+	}
+
+
+	for _, server := range serverList {
+		currentLenovoCatalog, err := searchLenovoCatalog(server.MachineType, server.SerialNumber)
 		if err != nil {
 			fmt.Println("Error:", err)
 			continue
 		}
 
-		firmwareUpdate, _ := extractAvailableFirmwareUpdates(currentLenovoCatalog)
+		firmwareUpdates, _ := extractAvailableFirmwareUpdates(currentLenovoCatalog)
+
+		for componentType, updateVersions := range firmwareUpdates {
+			for version, downloadURL := range updateVersions {
+				componentVendorConfiguration := map[string]string{}
+		
+				firmwareBinary := firmwareBinary{
+					ExternalId:             downloadURL,
+					Name:                   componentType,
+					Description:            componentType,
+					PackageId:              "",
+					PackageVersion:         version,
+					RebootRequired:         true,
+					UpdateSeverity:         updateSeverityUnknown,
+					SupportedDevices:       []map[string]string{},
+					SupportedSystems:       []map[string]string{},
+					VendorProperties:       componentVendorConfiguration,
+					VendorReleaseTimestamp: time.Now().Format(time.RFC3339),
+					CreatedTimestamp:       time.Now().Format(time.RFC3339),
+					DownloadURL:            downloadURL,
+					RepoURL:                downloadURL,
+				}
+		
+				firmwareBinaryCollection = append(firmwareBinaryCollection, firmwareBinary)
+			}
+		}
+
+
 		prettyFirmwareUpdate, err := json.MarshalIndent(firmwareUpdate, "", "  ")
 		if err != nil {
-			fmt.Println("Error:", err)
-			return
+			return err
 		}
 	
 		fmt.Println(string(prettyFirmwareUpdate))
 	}
+
+	return nil
 }
 
 func test1() {
