@@ -7,8 +7,10 @@ import (
 	"io/ioutil"
 	"net/http"
 	"strings"
+	"time"
 
 	metalcloud "github.com/metalsoft-io/metal-cloud-sdk-go/v2"
+	"github.com/metalsoft-io/metalcloud-cli/internal/filtering"
 )
 
 const ENDPOINT_URL = "https://support.lenovo.com/services/ContentService/"
@@ -179,14 +181,13 @@ func findFirmwareFix(files []File, fileType string) *File {
 	return nil
 }
 
-func parseLenovoCatalog(configFile rawConfigFile) error {
-
+func parseLenovoCatalog(configFile rawConfigFile, client metalcloud.MetalCloudClient, filter string) (firmwareCatalog, []firmwareBinary, error) {
 	catalogConfiguration := map[string]string{}
 
 	vendorId := configFile.Vendor
 	checkStringSize(vendorId)
 
-	catalog := catalog{
+	catalog := firmwareCatalog{
 		Name:                   configFile.Name,
 		Description:            configFile.Description,
 		Vendor:                 configFile.Vendor,
@@ -199,26 +200,25 @@ func parseLenovoCatalog(configFile rawConfigFile) error {
 		CreatedTimestamp:       time.Now().Format(time.RFC3339),
 	}
 
-	firmwareBinaryCollection := []firmwareBinary
+	fmt.Printf("Created catalog object %+v\n", catalog)
+	firmwareBinaryCollection := []firmwareBinary{}
 
-	var serverList []serverInfo;
+	var serverList []serverInfo
 	if len(configFile.ServersList) != 0 {
 		serverList = configFile.ServersList
 	} else {
-		client := metalcloud.MetalCloudClient{}
 		list, err := client.ServersSearch(filtering.ConvertToSearchFieldFormat(filter))
 		if err != nil {
-			return err
+			return firmwareCatalog{}, nil, err
 		}
-	
+
 		for _, server := range *list {
 			serverList = append(serverList, serverInfo{
-				MachineType: server.ServerSubmodel,
+				MachineType:  server.ServerSubmodel,
 				SerialNumber: server.ServerSerialNumber,
 			})
 		}
 	}
-
 
 	for _, server := range serverList {
 		currentLenovoCatalog, err := searchLenovoCatalog(server.MachineType, server.SerialNumber)
@@ -232,7 +232,7 @@ func parseLenovoCatalog(configFile rawConfigFile) error {
 		for componentType, updateVersions := range firmwareUpdates {
 			for version, downloadURL := range updateVersions {
 				componentVendorConfiguration := map[string]string{}
-		
+
 				firmwareBinary := firmwareBinary{
 					ExternalId:             downloadURL,
 					Name:                   componentType,
@@ -249,21 +249,22 @@ func parseLenovoCatalog(configFile rawConfigFile) error {
 					DownloadURL:            downloadURL,
 					RepoURL:                downloadURL,
 				}
-		
+
 				firmwareBinaryCollection = append(firmwareBinaryCollection, firmwareBinary)
 			}
 		}
 
-
-		prettyFirmwareUpdate, err := json.MarshalIndent(firmwareUpdate, "", "  ")
-		if err != nil {
-			return err
-		}
+		for _, firmwareBinary := range firmwareBinaryCollection {
+			prettyFirmwareBinary, err := json.MarshalIndent(firmwareBinary, "", "  ")
+			if err != nil {
+				return firmwareCatalog{}, nil, err
+			}
 	
-		fmt.Println(string(prettyFirmwareUpdate))
+			fmt.Println(string(prettyFirmwareBinary))
+		}
 	}
 
-	return nil
+	return catalog, firmwareBinaryCollection, nil
 }
 
 func test1() {

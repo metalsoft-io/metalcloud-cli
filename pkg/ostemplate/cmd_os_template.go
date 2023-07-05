@@ -4,7 +4,6 @@ import (
 	"bufio"
 	"bytes"
 	"context"
-	"encoding/base64"
 	"errors"
 	"flag"
 	"fmt"
@@ -12,7 +11,6 @@ import (
 	"net"
 	"os"
 	"path/filepath"
-	"regexp"
 	"strings"
 
 	metalcloud "github.com/metalsoft-io/metal-cloud-sdk-go/v2"
@@ -36,11 +34,10 @@ import (
 
 	kh "golang.org/x/crypto/ssh/knownhosts"
 
-	netHTTP "net/http"
-
 	"github.com/metalsoft-io/metalcloud-cli/internal/colors"
 	"github.com/metalsoft-io/metalcloud-cli/internal/command"
 	"github.com/metalsoft-io/metalcloud-cli/internal/configuration"
+	"github.com/metalsoft-io/metalcloud-cli/internal/networking"
 	"github.com/metalsoft-io/metalcloud-cli/internal/stringutils"
 
 	"github.com/metalsoft-io/metalcloud-cli/pkg/osasset"
@@ -1558,7 +1555,7 @@ func checkOOBTemplateIntegrity(c *command.Command, repoTemplate RepoTemplate) er
 		return fmt.Errorf("The 'source-iso' parameter must be specified with the 'name' and 'source-template' ones for OOB templates.")
 	}
 
-	if !regexCheckIfUrl(imagePath) {
+	if !networking.RegexCheckIfUrl(imagePath) {
 		file, err := os.Open(imagePath)
 
 		if err != nil {
@@ -1857,21 +1854,6 @@ func createIsoImageAsset(c *command.Command, repoTemplate RepoTemplate, assets *
 	return nil
 }
 
-func regexCheckIfUrl(result string) bool {
-	m, err := regexp.MatchString(`(?m)(http:|https:).*`, result)
-	if err != nil {
-		//fmt.Println("your regex is faulty")
-		// you should log it or throw an error
-		//return err.Error()
-		return false
-	}
-	if m {
-		return true
-	} else {
-		return false
-	}
-}
-
 func handleIsoImageUpload(c *command.Command, imageRepositoryHostname string, isoPath string, imagePath string) (string, error) {
 	remoteDirectoryPath := defaultImageRepositorySSHPath
 
@@ -1894,7 +1876,7 @@ func handleIsoImageUpload(c *command.Command, imageRepositoryHostname string, is
 	}
 
 	originalImagePath, _ := command.GetStringParamOk(c.Arguments["source-iso"])
-	if !regexCheckIfUrl(originalImagePath) {
+	if !networking.RegexCheckIfUrl(originalImagePath) {
 
 		originalImageFilenameArr := strings.Split(originalImagePath, "/")
 		originalImageFilename := originalImageFilenameArr[len(originalImageFilenameArr)-1]
@@ -1908,7 +1890,7 @@ func handleIsoImageUpload(c *command.Command, imageRepositoryHostname string, is
 		if !command.GetBoolParam(c.Arguments["skip-upload-to-repo"]) {
 			sshRepositoryHostname := imageRepositoryHostname + ":" + remoteSSHPort
 
-			imageExists, err := checkRemoteFileExists(remoteURL, imageFilename)
+			imageExists, err := networking.CheckRemoteFileExists(remoteURL, imageFilename)
 
 			if err != nil {
 				return "", err
@@ -1988,7 +1970,7 @@ Add correct host key in %s to get rid of this message.
 Host key for %s has changed and you have requested strict checking.
 Host key verification failed.
 `,
-								serializeSSHKey(publicKey), knownHostsFilePath, hostname,
+								networking.SerializeSSHKey(publicKey), knownHostsFilePath, hostname,
 							)
 							return keyError
 						} else {
@@ -2000,7 +1982,7 @@ This key is not known by any other names.
 It will be added to known_hosts file %s.
 Are you sure you want to continue connecting (yes/no)?
 `,
-								hostname, serializeSSHKey(publicKey), knownHostsFilePath,
+								hostname, networking.SerializeSSHKey(publicKey), knownHostsFilePath,
 							)
 
 							if command.GetBoolParam(c.Arguments["strict-host-key-checking"]) {
@@ -2027,7 +2009,7 @@ Are you sure you want to continue connecting (yes/no)?
 								fmt.Printf("Skipped manual check because 'strict-host-key-checking' is set to false.")
 							}
 
-							return addHostKey(knownHostsFilePath, remoteAddress, publicKey)
+							return networking.AddHostKey(knownHostsFilePath, remoteAddress, publicKey)
 						}
 					}
 
@@ -2403,53 +2385,6 @@ func sliceDifference(slice1 []string, slice2 []string) []string {
 	}
 
 	return diff
-}
-
-// Add host key if host is not found in known_hosts.
-// The return object is the error, if nil then connection proceeds, else connection stops.
-func addHostKey(knownHostsFilePath string, remoteAddress net.Addr, publicKey ssh.PublicKey) error {
-	knownHostsFile, err := os.OpenFile(knownHostsFilePath, os.O_APPEND|os.O_WRONLY, 0644)
-	if err != nil {
-		return fmt.Errorf("Hosts file not found at path %s.", knownHostsFilePath)
-	}
-	defer knownHostsFile.Close()
-
-	fileBytes, err := os.ReadFile(knownHostsFilePath)
-
-	// We add an empty line if the file doesn't end in one and if it's not empty to begin with.
-	if len(fileBytes) > 0 && string(fileBytes[len(fileBytes)-1]) != "\r" && string(fileBytes[len(fileBytes)-1]) != "\n" {
-		_, err = knownHostsFile.WriteString("\n")
-
-		if err != nil {
-			return err
-		}
-	}
-
-	knownHosts := kh.Normalize(remoteAddress.String())
-	_, err = knownHostsFile.WriteString(kh.Line([]string{knownHosts}, publicKey))
-
-	fmt.Printf("Added key %s to known_hosts file %s.", serializeSSHKey(publicKey), knownHostsFilePath)
-	return err
-}
-
-func serializeSSHKey(key ssh.PublicKey) string {
-	return key.Type() + " " + base64.StdEncoding.EncodeToString(key.Marshal())
-}
-
-func checkRemoteFileExists(remoteURL string, fileName string) (bool, error) {
-	resp, err := netHTTP.Get(remoteURL)
-
-	if err != nil {
-		return false, err
-	}
-
-	body, err := ioutil.ReadAll(resp.Body)
-	if err != nil {
-		return false, err
-	}
-
-	responseBody := string(body)
-	return strings.Contains(responseBody, fileName), nil
 }
 
 func getRepositoryTemplateAssets(tree *object.Tree, repoMap map[string]RepoTemplate, repoAssetsPerTemplate map[string][]TemplateAsset) {

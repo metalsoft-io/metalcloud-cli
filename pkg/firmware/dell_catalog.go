@@ -151,27 +151,27 @@ func BypassReader(label string, input io.Reader) (io.Reader, error) {
 	return input, nil
 }
 
-func parseDellCatalog(configFile rawConfigFile) error {
+func parseDellCatalog(configFile rawConfigFile) (firmwareCatalog, []firmwareBinary, error) {
 	if configFile.DownloadCatalog {
 		err := downloadCatalog(configFile.CatalogUrl, configFile.CatalogPath)
 		if err != nil {
-			return err
+			return firmwareCatalog{}, nil, err
 		}
 	}
 
 	xmlFile, err := os.Open(configFile.CatalogPath)
 	if err != nil {
-		return err
+		return firmwareCatalog{}, nil, err
 	}
 	defer xmlFile.Close()
 
 	if err != nil {
-		return err
+		return firmwareCatalog{}, nil, err
 	}
 
 	reader, err := charset.NewReader(xmlFile, "utf-16")
 	if err != nil {
-		return err
+		return firmwareCatalog{}, nil, err
 	}
 
 	decoder := xml.NewDecoder(reader)
@@ -197,7 +197,7 @@ func parseDellCatalog(configFile rawConfigFile) error {
 	vendorId := configFile.Vendor //TODO: What is this???
 	checkStringSize(vendorId)
 
-	catalog := catalog{
+	catalog := firmwareCatalog{
 		Name:                   configFile.Name,
 		Description:            configFile.Description,
 		Vendor:                 configFile.Vendor,
@@ -210,22 +210,20 @@ func parseDellCatalog(configFile rawConfigFile) error {
 		CreatedTimestamp:       time.Now().Format(time.RFC3339),
 	}
 
-	catalogJSON, err := json.MarshalIndent(catalog, "", "  ")
-	fmt.Printf("Created catalog for %s: %+v\n", configFile.Name, string(catalogJSON))
-
 	baseCatalogURL := ""
 
 	if configFile.DownloadCatalog {
 		url, err := url.Parse(configFile.CatalogUrl)
 
 		if err != nil {
-			return fmt.Errorf("Unable to parse catalog URL: %v", err)
+			return firmwareCatalog{}, nil, fmt.Errorf("Unable to parse catalog URL: %v", err)
 		}
 
 		baseCatalogURL = url.Scheme + "://" + url.Host
 	}
 
-	firmwareBinaryCollection := []firmwareBinary
+	firmwareBinaryCollection := []firmwareBinary{}
+	repositoryURL := getFirmwareRepositoryURL()
 
 	for idx, component := range manifest.Components {
 		// We only check for components that are of type firmware
@@ -276,13 +274,13 @@ func parseDellCatalog(configFile rawConfigFile) error {
 		timestamp, err := time.Parse("January 02, 2006", component.ReleaseDate)
 
 		if err != nil {
-			return fmt.Errorf("Error parsing release date: %v", err)
+			return firmwareCatalog{}, nil, fmt.Errorf("Error parsing release date: %v", err)
 		}
 
 		severity, err := getSeverity(component.UpdateSeverity.Value)
 
 		if err != nil {
-			return fmt.Errorf("Error parsing severity: %v", err)
+			return firmwareCatalog{}, nil, fmt.Errorf("Error parsing severity: %v", err)
 		}
 
 		downloadURL := ""
@@ -317,5 +315,5 @@ func parseDellCatalog(configFile rawConfigFile) error {
 		}
 	}
 
-	return nil
+	return catalog, firmwareBinaryCollection, nil
 }

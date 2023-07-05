@@ -1,6 +1,8 @@
 package firmware
 
 import (
+	"encoding/json"
+
 	metalcloud "github.com/metalsoft-io/metal-cloud-sdk-go/v2"
 	"github.com/metalsoft-io/metalcloud-cli/internal/colors"
 	"github.com/metalsoft-io/metalcloud-cli/internal/command"
@@ -77,16 +79,30 @@ func firmwareCatalogCreateCmd(c *command.Command, client metalcloud.MetalCloudCl
 
 	fmt.Printf("Parsed config file: %+v\n", configFile)
 
+	uploadToRepo := false
+	if command.GetBoolParam(c.Arguments["skip-upload-to-repo"]) {
+		uploadToRepo = true
+	}
+
+	fmt.Printf("Uploading to repo: %v\n", uploadToRepo)
+
+	var catalog firmwareCatalog
+	var binaryCollection []firmwareBinary
+
 	switch configFile.Vendor {
 	case catalogVendorDell:
-		err := parseDellCatalog(configFile)
+		catalog, binaryCollection, err = parseDellCatalog(configFile)
 
 		if err != nil {
 			return "", err
 		}
 
 	case catalogVendorLenovo:
-		parseLenovoCatalog(configFile)
+		catalog, binaryCollection, err = parseLenovoCatalog(configFile, client, "*")
+
+		if err != nil {
+			return "", err
+		}
 
 	case catalogVendorHp:
 		return "", fmt.Errorf("vendor '%s' is not yet supported", catalogVendorHp)
@@ -94,6 +110,13 @@ func firmwareCatalogCreateCmd(c *command.Command, client metalcloud.MetalCloudCl
 	default:
 		validVendors := []string{catalogVendorDell, catalogVendorLenovo, catalogVendorHp}
 		return "", fmt.Errorf("invalid vendor '%s' found in the raw-config file. Supported vendors are %v", configFile.Vendor, validVendors)
+	}
+
+	catalogJSON, err := json.MarshalIndent(catalog, "", "  ")
+	fmt.Printf("Created catalog for %s: %+v\n", configFile.Name, string(catalogJSON))
+
+	for _, firmwareBinary := range binaryCollection {
+		// handleFirmwareBinariesUpload()
 	}
 
 	return "", nil
