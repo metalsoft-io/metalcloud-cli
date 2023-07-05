@@ -28,6 +28,7 @@ import (
 	"github.com/metalsoft-io/metalcloud-cli/pkg/stagedefinition"
 	"github.com/metalsoft-io/metalcloud-cli/pkg/storage"
 	"github.com/metalsoft-io/metalcloud-cli/pkg/subnetpool"
+	"github.com/metalsoft-io/metalcloud-cli/pkg/switchcontroller"
 	"github.com/metalsoft-io/metalcloud-cli/pkg/switchdevice"
 	"github.com/metalsoft-io/metalcloud-cli/pkg/user"
 	"github.com/metalsoft-io/metalcloud-cli/pkg/variable"
@@ -143,6 +144,7 @@ func getCommands(clients map[string]metalcloud.MetalCloudClient) []command.Comma
 		stagedefinition.StageDefinitionsCmds,
 		storage.StorageCmds,
 		subnetpool.SubnetPoolCmds,
+		switchcontroller.SwitchControllerCmds,
 		switchdevice.SwitchPairCmds,
 		switchdevice.SwitchCmds,
 		user.UserCmds,

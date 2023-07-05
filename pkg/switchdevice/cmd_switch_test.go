@@ -88,7 +88,7 @@ func TestSwitchCreate(t *testing.T) {
 	defer syscall.Unlink(f2.Name())
 
 	_, b, _, _ := runtime.Caller(0)
-    basePath := filepath.Join(filepath.Dir(b), "..", "..")
+	basePath := filepath.Join(filepath.Dir(b), "..", "..")
 
 	cases := []command.CommandTestCase{
 		{
@@ -277,7 +277,7 @@ func TestSwitchObjectYamlUnmarshal(t *testing.T) {
 	var obj metalcloud.SwitchDevice
 
 	_, b, _, _ := runtime.Caller(0)
-    basePath := filepath.Join(filepath.Dir(b), "..", "..")
+	basePath := filepath.Join(filepath.Dir(b), "..", "..")
 
 	cmd := command.MakeCommand(map[string]interface{}{
 		"read_config_from_file": filepath.Join(basePath, "examples", "switch2.yaml"),

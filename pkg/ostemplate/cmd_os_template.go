@@ -38,9 +38,9 @@ import (
 
 	netHTTP "net/http"
 
-	"github.com/metalsoft-io/metalcloud-cli/internal/configuration"
-	"github.com/metalsoft-io/metalcloud-cli/internal/command"
 	"github.com/metalsoft-io/metalcloud-cli/internal/colors"
+	"github.com/metalsoft-io/metalcloud-cli/internal/command"
+	"github.com/metalsoft-io/metalcloud-cli/internal/configuration"
 	"github.com/metalsoft-io/metalcloud-cli/internal/stringutils"
 
 	"github.com/metalsoft-io/metalcloud-cli/pkg/osasset"
