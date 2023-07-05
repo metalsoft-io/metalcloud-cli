@@ -7,6 +7,8 @@ import (
 	"io/ioutil"
 	"net/http"
 	"strings"
+
+	metalcloud "github.com/metalsoft-io/metal-cloud-sdk-go/v2"
 )
 
 const ENDPOINT_URL = "https://support.lenovo.com/services/ContentService/"
@@ -177,7 +179,7 @@ func findFirmwareFix(files []File, fileType string) *File {
 	return nil
 }
 
-func parseLenovoCatalog(configFile rawConfigFile) {
+func parseLenovoCatalog(configFile rawConfigFile) error {
 
 	catalogConfiguration := map[string]string{}
 
@@ -199,8 +201,27 @@ func parseLenovoCatalog(configFile rawConfigFile) {
 
 	firmwareBinaryCollection := []firmwareBinary
 
-	for _, serverInfo := range configFile.ServersList {
-		currentLenovoCatalog, err := searchLenovoCatalog(serverInfo.MachineType, serverInfo.SerialNumber)
+	var serverList []serverInfo;
+	if len(configFile.ServersList) != 0 {
+		serverList = configFile.ServersList
+	} else {
+		client := metalcloud.MetalCloudClient{}
+		list, err := client.ServersSearch(filtering.ConvertToSearchFieldFormat(filter))
+		if err != nil {
+			return err
+		}
+	
+		for _, server := range *list {
+			serverList = append(serverList, serverInfo{
+				MachineType: server.ServerSubmodel,
+				SerialNumber: server.ServerSerialNumber,
+			})
+		}
+	}
+
+
+	for _, server := range serverList {
+		currentLenovoCatalog, err := searchLenovoCatalog(server.MachineType, server.SerialNumber)
 		if err != nil {
 			fmt.Println("Error:", err)
 			continue
@@ -236,12 +257,13 @@ func parseLenovoCatalog(configFile rawConfigFile) {
 
 		prettyFirmwareUpdate, err := json.MarshalIndent(firmwareUpdate, "", "  ")
 		if err != nil {
-			fmt.Println("Error:", err)
-			return
+			return err
 		}
 	
 		fmt.Println(string(prettyFirmwareUpdate))
 	}
+
+	return nil
 }
 
 func test1() {
