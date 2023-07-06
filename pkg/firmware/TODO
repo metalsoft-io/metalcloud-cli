@@ -2,3 +2,15 @@
 - Test upload for binaries
 - Add params to command (replace_if_exists, download_binaries, skip_upload_to_repo, filter_server_types, strict-host-key-checking)
 - BSI_server_type to catalog_server_type matching
+
+1) parsam si cream obiectul de catalog
+2.1) daca nu avem filtru, in obiectul de catalog populam ServerTypesSupported cu ce gasim in binare
+2.2) daca avem filtru, facem procedura de mai jos
+
+    daca functia de create catalog e apelata cu --filter-server-types ["M.3.2.2", "M3.3.3.2"], 
+        2.2.1) apelam client.ServerTypes(false), luam server types prezente in filtrul nostru si intoarcem SKU IDs parsate din server_type_allowed_vendor_sku_ids_json 
+        2.2.2) populam ServerTypesSupported 
+
+3) parsam si cream colectia de binare, daca avem filtru putem doar binarele care ne intereseaza
+4) upload de binare
+5) trimitem obiectele catre API Gateway

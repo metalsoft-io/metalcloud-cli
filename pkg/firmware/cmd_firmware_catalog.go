@@ -1,8 +1,6 @@
 package firmware
 
 import (
-	"encoding/json"
-
 	metalcloud "github.com/metalsoft-io/metal-cloud-sdk-go/v2"
 	"github.com/metalsoft-io/metalcloud-cli/internal/colors"
 	"github.com/metalsoft-io/metalcloud-cli/internal/command"
@@ -112,12 +110,10 @@ func firmwareCatalogCreateCmd(c *command.Command, client metalcloud.MetalCloudCl
 		return "", fmt.Errorf("invalid vendor '%s' found in the raw-config file. Supported vendors are %v", configFile.Vendor, validVendors)
 	}
 
-	catalogJSON, err := json.MarshalIndent(catalog, "", "  ")
-	fmt.Printf("Created catalog for %s: %+v\n", configFile.Name, string(catalogJSON))
+	// TODO: upload binaries to repo
 
-	for _, firmwareBinary := range binaryCollection {
-		// handleFirmwareBinariesUpload()
-	}
+	sendCatalog(catalog)
+	sendBinaries(binaryCollection)
 
 	return "", nil
 }

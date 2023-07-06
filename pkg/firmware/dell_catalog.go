@@ -2,7 +2,6 @@ package firmware
 
 import (
 	"compress/gzip"
-	"encoding/json"
 	"encoding/xml"
 	"fmt"
 	"io"
@@ -306,9 +305,6 @@ func parseDellCatalog(configFile rawConfigFile) (firmwareCatalog, []firmwareBina
 		}
 
 		firmwareBinaryCollection = append(firmwareBinaryCollection, firmwareBinary)
-
-		firmwareBinaryJson, _ := json.MarshalIndent(firmwareBinary, "", "  ")
-		fmt.Printf("Created firmware binary: %v\n", string(firmwareBinaryJson))
 
 		if idx > STOP_AFTER {
 			break

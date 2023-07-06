@@ -218,27 +218,27 @@ func getFirmwareRepositoryPath() string {
 	return firmwareRepositoryPath
 }
 
-// handleFirmwareBinariesUpload <- primeste array de binare ce trebuie uploadate
-// in interior for each binary -> handleFirmwareBinaryUpload
-func handleFirmwareBinariesUpload(c *command.Command, sourceFirmwareBinaryPath string, firmwareBinaryRepositoryHostname string, isoPath string, imagePath string) (string, error) {
-	firmwareRepositoryHostname := defaultFirmwareRepositoryHostname
+// // handleFirmwareBinariesUpload <- primeste array de binare ce trebuie uploadate
+// // in interior for each binary -> handleFirmwareBinaryUpload
+// func handleFirmwareBinariesUpload(c *command.Command, sourceFirmwareBinaryPath string, firmwareBinaryRepositoryHostname string, isoPath string, imagePath string) (string, error) {
+// 	firmwareRepositoryHostname := defaultFirmwareRepositoryHostname
 
-	if userGivenFirmwareRepositoryHostname := os.Getenv("METALCLOUD_FIRMWARE_REPOSITORY_HOSTNAME"); userGivenFirmwareRepositoryHostname != "" {
-		firmwareRepositoryHostname = os.Getenv("METALCLOUD_FIRMWARE_REPOSITORY_HOSTNAME")
-	}
+// 	if userGivenFirmwareRepositoryHostname := os.Getenv("METALCLOUD_FIRMWARE_REPOSITORY_HOSTNAME"); userGivenFirmwareRepositoryHostname != "" {
+// 		firmwareRepositoryHostname = os.Getenv("METALCLOUD_FIRMWARE_REPOSITORY_HOSTNAME")
+// 	}
 
-	imagePath, _ := command.GetStringParamOk(c.Arguments["source-iso"])
+// 	imagePath, _ := command.GetStringParamOk(c.Arguments["source-iso"])
 
-	// ISO upload is disabled for the moment
-	originalImageFilenameArr := strings.Split(imagePath, "/")
-	originalImageFilename := originalImageFilenameArr[len(originalImageFilenameArr)-1]
-	imageFilename := strings.ReplaceAll(originalImageFilename, " ", "_")
+// 	// ISO upload is disabled for the moment
+// 	originalImageFilenameArr := strings.Split(imagePath, "/")
+// 	originalImageFilename := originalImageFilenameArr[len(originalImageFilenameArr)-1]
+// 	imageFilename := strings.ReplaceAll(originalImageFilename, " ", "_")
 
-	//isoPath := "/" + templateName + "-" + imageFilename
-	isoPath := defaultImageRepositoryIsoPath + "/" + imageFilename
+// 	//isoPath := "/" + templateName + "-" + imageFilename
+// 	isoPath := defaultImageRepositoryIsoPath + "/" + imageFilename
 
-	_, err := handleIsoImageUpload(c, firmwareRepositoryHostname, isoPath, imagePath)
-}
+// 	_, err := handleIsoImageUpload(c, firmwareRepositoryHostname, isoPath, imagePath)
+// }
 
 func handleFirmwareBinaryUpload(c *command.Command, sourceFirmwareBinaryPath string, firmwareBinaryRepositoryHostname string, isoPath string, imagePath string) (string, error) {
 	remoteDirectoryPath := defaultImageRepositorySSHPath
@@ -437,6 +437,30 @@ Are you sure you want to continue connecting (yes/no)?
 	return "", nil
 }
 
-func sendCatalog(catalog firmwareCatalog) {
-	
+// TODO: this function should send the catalog to the gateway microservice
+func sendCatalog(catalog firmwareCatalog) error {
+	catalogJSON, err := json.MarshalIndent(catalog, "", "  ")
+
+	if err != nil {
+		return fmt.Errorf("Error while marshalling catalog to JSON: %s", err)
+	}
+
+	fmt.Printf("Created catalog: %+v\n", string(catalogJSON))
+
+	return nil
+}
+
+// TODO: this function should send the binaries to the gateway microservice
+func sendBinaries(binaryCollection []firmwareBinary) error {
+	for _, firmwareBinary := range binaryCollection {
+		firmwareBinaryJson, err := json.MarshalIndent(firmwareBinary, "", "  ")
+
+		if err != nil {
+			return fmt.Errorf("Error while marshalling binary to JSON: %s", err)
+		}
+
+		fmt.Printf("Created firmware binary: %v\n", string(firmwareBinaryJson))
+	}
+
+	return nil
 }
