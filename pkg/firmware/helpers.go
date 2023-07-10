@@ -52,10 +52,10 @@ const (
 	updateSeverityCritical    = "critical"
 	updateSeverityOptional    = "optional"
 
-	defaultImageRepositorySSHPath  = "/var/www/html/firmware"
-	defaultImageRepositorySSHPort  = "22"
+	defaultFirmwareRepositorySSHPath  = "/var/www/html/firmware"
+	defaultFirmwareRepositorySSHPort  = "22"
 	defaultFirmwareRepositoryHostname = "192.168.20.10"
-	defaultRepositoryFirmwarePath  = "/firmware"
+	defaultRepositoryFirmwarePath     = "/firmware"
 )
 
 type serverInfo struct {
@@ -71,6 +71,7 @@ type rawConfigFile struct {
 	DownloadCatalog bool         `json:"downloadCatalog" yaml:"download_catalog"`
 	CatalogPath     string       `json:"catalogPath" yaml:"catalog_path"`
 	ServersList     []serverInfo `json:"serversList" yaml:"servers_list"`
+	DownloadPath    string       `json:"downloadPath" yaml:"download_path"`
 }
 
 type firmwareCatalog struct {
@@ -101,9 +102,10 @@ type firmwareBinary struct {
 	CreatedTimestamp       string
 	DownloadURL            string
 	RepoURL                string
+	LocalPath              string
 }
 
-func parseConfigFile(configFormat string, rawConfigFileContents []byte, configFile *rawConfigFile) error {
+func parseConfigFile(configFormat string, rawConfigFileContents []byte, configFile *rawConfigFile, downloadBinaries bool) error {
 	switch configFormat {
 	case configFormatJSON:
 		err := json.Unmarshal(rawConfigFileContents, &configFile)
@@ -127,7 +129,7 @@ func parseConfigFile(configFormat string, rawConfigFileContents []byte, configFi
 	structValue := reflect.ValueOf(configFile).Elem()
 	fieldNum := structValue.NumField()
 
-	optionalFields := []string{"CatalogUrl", "ServersList"}
+	optionalFields := []string{"CatalogUrl", "ServersList", "DownloadPath"}
 
 	for i := 0; i < fieldNum; i++ {
 		field := structValue.Field(i)
@@ -141,11 +143,33 @@ func parseConfigFile(configFormat string, rawConfigFileContents []byte, configFi
 	}
 
 	if configFile.DownloadCatalog && configFile.CatalogUrl == "" {
-		return fmt.Errorf("the 'catalogUrl' field must be set in the raw-config file when 'downloadCatalog' is set to true")
+		if configFormat == configFormatJSON {
+			return fmt.Errorf("the 'catalogUrl' field must be set in the raw-config file when 'downloadCatalog' is set to true")
+		}
+
+		if configFormat == configFormatYAML {
+			return fmt.Errorf("the 'catalog_url' field must be set in the raw-config file when 'download_catalog' is set to true")
+		}
 	}
 
 	if configFile.Vendor == catalogVendorLenovo && configFile.ServersList == nil {
-		return fmt.Errorf("the 'serversList' field must be set in the raw-config file when 'vendor' is set to '%s'", catalogVendorLenovo)
+		if configFormat == configFormatJSON {
+			return fmt.Errorf("the 'serversList' field must be set in the raw-config file when 'vendor' is set to '%s'", catalogVendorLenovo)
+		}
+
+		if configFormat == configFormatYAML {
+			return fmt.Errorf("the 'servers_list' field must be set in the raw-config file when 'vendor' is set to '%s'", catalogVendorLenovo)
+		}
+	}
+
+	if downloadBinaries && (configFile.DownloadPath == "" || configFile.CatalogUrl == "") {
+		if configFormat == configFormatJSON {
+			return fmt.Errorf("the 'downloadPath' and 'catalogUrl' fields must be set in the raw-config file when downloading binaries")
+		}
+
+		if configFormat == configFormatYAML {
+			return fmt.Errorf("the 'download_path' and 'catalog_url' fields must be set in the raw-config file when downloading binaries")
+		}
 	}
 
 	checkStringSize(configFile.Name)
@@ -207,8 +231,8 @@ func getFirmwareRepositoryHostname() string {
 func getFirmwareRepositoryPath() string {
 	firmwareRepositoryPath := defaultRepositoryFirmwarePath
 
-	if userGivenFirmwarePath := os.Getenv("METALCLOUD_IMAGE_REPOSITORY_ISO_PATH"); userGivenFirmwarePath != "" {
-		firmwareRepositoryPath = os.Getenv("METALCLOUD_IMAGE_REPOSITORY_ISO_PATH")
+	if userGivenFirmwarePath := os.Getenv("METALCLOUD_FIRMWARE_REPOSITORY_ISO_PATH"); userGivenFirmwarePath != "" {
+		firmwareRepositoryPath = os.Getenv("METALCLOUD_FIRMWARE_REPOSITORY_ISO_PATH")
 
 		if !strings.HasPrefix(firmwareRepositoryPath, "/") {
 			firmwareRepositoryPath = "/" + firmwareRepositoryPath
@@ -241,7 +265,7 @@ func getFirmwareRepositoryPath() string {
 // }
 
 func handleFirmwareBinaryUpload(c *command.Command, sourceFirmwareBinaryPath string, firmwareBinaryRepositoryHostname string, isoPath string, imagePath string) (string, error) {
-	remoteDirectoryPath := defaultImageRepositorySSHPath
+	remoteDirectoryPath := defaultFirmwareRepositorySSHPath
 
 	if userGivenRemoteDirectoryPath := os.Getenv("METALCLOUD_FIRMWARE_REPOSITORY_SSH_PATH"); userGivenRemoteDirectoryPath != "" {
 		remoteDirectoryPath = os.Getenv("METALCLOUD_FIRMWARE_REPOSITORY_SSH_PATH")
@@ -249,7 +273,7 @@ func handleFirmwareBinaryUpload(c *command.Command, sourceFirmwareBinaryPath str
 
 	remotePath := remoteDirectoryPath + isoPath
 
-	remoteSSHPort := defaultImageRepositorySSHPort
+	remoteSSHPort := defaultFirmwareRepositorySSHPort
 
 	if userGivenSSHPort := os.Getenv("METALCLOUD_FIRMWARE_REPOSITORY_SSH_PORT"); userGivenSSHPort != "" {
 		remoteSSHPort = os.Getenv("METALCLOUD_FIRMWARE_REPOSITORY_SSH_PORT")
@@ -261,82 +285,80 @@ func handleFirmwareBinaryUpload(c *command.Command, sourceFirmwareBinaryPath str
 		imageRepositoryIsoPath = os.Getenv("METALCLOUD_FIRMWARE_REPOSITORY_ISO_PATH")
 	}
 
-	if networking.RegexCheckIfUrl(sourceFirmwareBinaryPath) {
+	originalFirmwareBinaryArr := strings.Split(sourceFirmwareBinaryPath, "/")
+	originalFirmwareBinaryFilename := originalFirmwareBinaryArr[len(originalFirmwareBinaryArr)-1]
+	firmwareBinaryFilename := strings.ReplaceAll(originalFirmwareBinaryFilename, " ", "_")
 
-		originalFirmwareBinaryArr := strings.Split(sourceFirmwareBinaryPath, "/")
-		originalFirmwareBinaryFilename := originalFirmwareBinaryArr[len(originalFirmwareBinaryArr)-1]
-		firmwareBinaryFilename := strings.ReplaceAll(originalFirmwareBinaryFilename, " ", "_")
+	remoteURL := "https://" + firmwareBinaryRepositoryHostname + imageRepositoryIsoPath
+	sshRepositoryHostname := firmwareBinaryRepositoryHostname + ":" + remoteSSHPort
 
-		remoteURL := "https://" + firmwareBinaryRepositoryHostname + imageRepositoryIsoPath
-		sshRepositoryHostname := firmwareBinaryRepositoryHostname + ":" + remoteSSHPort
+	firmwareBinaryExists, err := networking.CheckRemoteFileExists(remoteURL, firmwareBinaryFilename)
 
-		firmwareBinaryExists, err := networking.CheckRemoteFileExists(remoteURL, firmwareBinaryFilename)
+	if err != nil {
+		return "", err
+	}
 
-		if err != nil {
-			return "", err
-		}
+	if firmwareBinaryExists && !command.GetBoolParam(c.Arguments["replace_if_exists"]) {
+		fmt.Printf("Firmware binary %s already exists at path %s. Skipping upload. Use the 'replace-if-exists' parameter to replace the existing firmware binary.\n", firmwareBinaryFilename, remotePath)
+		return "", nil
+	}
 
-		if firmwareBinaryExists && !command.GetBoolParam(c.Arguments["replace-if-exists"]) {
-			fmt.Printf("Firmware binary %s already exists at path %s. Skipping upload. Use the 'replace-if-exists' parameter to replace the existing firmware binary.\n", firmwareBinaryFilename, remotePath)
-			return "", nil
-		}
+	if firmwareBinaryExists {
+		fmt.Printf("Replacing firmware binary %s at path %s.\n", firmwareBinaryFilename, remotePath)
+	} else {
+		fmt.Printf("Uploading new firmware binary %s at path %s.\n", firmwareBinaryFilename, remotePath)
+	}
 
-		if firmwareBinaryExists {
-			fmt.Printf("Replacing firmware binary %s at path %s.\n", firmwareBinaryFilename, remotePath)
-		} else {
-			fmt.Printf("Uploading new firmware binary %s at path %s.\n", firmwareBinaryFilename, remotePath)
-		}
+	if userPrivateSSHKeyPath := os.Getenv("METALCLOUD_USER_PRIVATE_OPENSSH_KEY_PATH"); userPrivateSSHKeyPath == "" {
+		return "", fmt.Errorf("METALCLOUD_USER_PRIVATE_OPENSSH_KEY_PATH must be set when creating a firmware binary. The key is needed when uploading to the firmware binary repository.")
+	}
 
-		if userPrivateSSHKeyPath := os.Getenv("METALCLOUD_USER_PRIVATE_OPENSSH_KEY_PATH"); userPrivateSSHKeyPath == "" {
-			return "", fmt.Errorf("METALCLOUD_USER_PRIVATE_OPENSSH_KEY_PATH must be set when creating a firmware binary. The key is needed when uploading to the firmware binary repository.")
-		}
+	userPrivateSSHKeyPath := os.Getenv("METALCLOUD_USER_PRIVATE_OPENSSH_KEY_PATH")
 
-		userPrivateSSHKeyPath := os.Getenv("METALCLOUD_USER_PRIVATE_OPENSSH_KEY_PATH")
+	homeDir, err := os.UserHomeDir()
+	if err != nil {
+		return "", err
+	}
 
-		homeDir, err := os.UserHomeDir()
-		if err != nil {
-			return "", err
-		}
+	var knownHostsFilePath string
 
-		var knownHostsFilePath string
+	if userGivenHostsFilePath := os.Getenv("METALCLOUD_KNOWN_HOSTS_FILE_PATH"); userGivenHostsFilePath != "" {
+		knownHostsFilePath = os.Getenv("METALCLOUD_KNOWN_HOSTS_FILE_PATH")
+	} else {
+		knownHostsFilePath = filepath.Join(homeDir, ".ssh", "known_hosts")
 
-		if userGivenHostsFilePath := os.Getenv("METALCLOUD_KNOWN_HOSTS_FILE_PATH"); userGivenHostsFilePath != "" {
-			knownHostsFilePath = os.Getenv("METALCLOUD_KNOWN_HOSTS_FILE_PATH")
-		} else {
-			knownHostsFilePath = filepath.Join(homeDir, ".ssh", "known_hosts")
+		// Create the known hosts file if it does not exist.
+		if _, err := os.Stat(knownHostsFilePath); errors.Is(err, os.ErrNotExist) {
+			hostsFile, err := os.Create(knownHostsFilePath)
 
-			// Create the known hosts file if it does not exist.
-			if _, err := os.Stat(knownHostsFilePath); errors.Is(err, os.ErrNotExist) {
-				hostsFile, err := os.Create(knownHostsFilePath)
-
-				if err != nil {
-					return "", err
-				}
-
-				hostsFile.Close()
+			if err != nil {
+				return "", err
 			}
+
+			hostsFile.Close()
 		}
+	}
 
-		hostKeyCallback, err := kh.New(knownHostsFilePath)
+	hostKeyCallback, err := kh.New(knownHostsFilePath)
 
-		if err != nil {
-			return "", fmt.Errorf("Received following error when parsing the known_hosts file: %s.", err)
-		}
+	if err != nil {
+		return "", fmt.Errorf("Received following error when parsing the known_hosts file: %s.", err)
+	}
 
-		// Use SSH key authentication from the auth package.
-		clientConfig, err := auth.PrivateKey(
-			"root",
-			userPrivateSSHKeyPath,
-			ssh.HostKeyCallback(func(hostname string, remoteAddress net.Addr, publicKey ssh.PublicKey) error {
-				var keyError *kh.KeyError
-				hostsError := hostKeyCallback(hostname, remoteAddress, publicKey)
+	// Use SSH key authentication from the auth package.
+	clientConfig, err := auth.PrivateKey(
+		"root",
+		userPrivateSSHKeyPath,
+		ssh.HostKeyCallback(func(hostname string, remoteAddress net.Addr, publicKey ssh.PublicKey) error {
+			var keyError *kh.KeyError
+			hostsError := hostKeyCallback(hostname, remoteAddress, publicKey)
 
-				// Reference: https://www.godoc.org/golang.org/x/crypto/ssh/knownhosts#KeyError
-				//if keyErr.Want is not empty and
-				if errors.As(hostsError, &keyError) {
-					if len(keyError.Want) > 0 {
-						// If host is known then there is key mismatch and the connection is rejected.
-						fmt.Printf(`
+			// Reference: https://www.godoc.org/golang.org/x/crypto/ssh/knownhosts#KeyError
+			//if keyErr.Want is not empty and
+			if errors.As(hostsError, &keyError) {
+				if len(keyError.Want) > 0 {
+					// If host is known then there is key mismatch and the connection is rejected.
+					fmt.Printf(`
 @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
 @    WARNING: REMOTE HOST IDENTIFICATION HAS CHANGED!     @
 @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
@@ -350,96 +372,115 @@ Add correct host key in %s to get rid of this message.
 Host key for %s has changed and you have requested strict checking.
 Host key verification failed.
 `,
-							networking.SerializeSSHKey(publicKey), knownHostsFilePath, hostname,
-						)
-						return keyError
-					} else {
-						// If keyErr.Want slice is empty then host is unknown.
-						fmt.Printf(`
+						networking.SerializeSSHKey(publicKey), knownHostsFilePath, hostname,
+					)
+					return keyError
+				} else {
+					// If keyErr.Want slice is empty then host is unknown.
+					fmt.Printf(`
 The authenticity of host '%s' can't be established.
 SSH key is %s.
 This key is not known by any other names.
 It will be added to known_hosts file %s.
 Are you sure you want to continue connecting (yes/no)?
 `,
-							hostname, networking.SerializeSSHKey(publicKey), knownHostsFilePath,
-						)
+						hostname, networking.SerializeSSHKey(publicKey), knownHostsFilePath,
+					)
 
-						if command.GetBoolParam(c.Arguments["strict-host-key-checking"]) {
-							reader := bufio.NewReader(os.Stdin)
-							input, err := reader.ReadString('\n')
+					if command.GetBoolParam(c.Arguments["strict_host_key_checking"]) {
+						reader := bufio.NewReader(os.Stdin)
+						input, err := reader.ReadString('\n')
 
-							if err != nil {
-								return err
-							}
-
-							// Remove \r and \n from input
-							input = string(bytes.TrimSuffix([]byte(input), []byte("\r\n")))
-
-							if input != "yes" {
-								if input == "no" {
-									fmt.Println("Aborting connection.")
-								} else {
-									fmt.Println("Invalid response given. Aborting connection.")
-								}
-
-								return keyError
-							}
-						} else {
-							fmt.Printf("Skipped manual check because 'strict-host-key-checking' is set to false.")
+						if err != nil {
+							return err
 						}
 
-						return networking.AddHostKey(knownHostsFilePath, remoteAddress, publicKey)
+						// Remove \r and \n from input
+						input = string(bytes.TrimSuffix([]byte(input), []byte("\r\n")))
+
+						if input != "yes" {
+							if input == "no" {
+								fmt.Println("Aborting connection.")
+							} else {
+								fmt.Println("Invalid response given. Aborting connection.")
+							}
+
+							return keyError
+						}
+					} else {
+						fmt.Printf("Skipped manual check because 'strict-host-key-checking' is set to false.")
 					}
+
+					return networking.AddHostKey(knownHostsFilePath, remoteAddress, publicKey)
 				}
+			}
 
-				fmt.Printf("Public key exists for remote %s. Establishing connection.\n", hostname)
-				return nil
-			}),
-		)
+			fmt.Printf("Public key exists for remote %s. Establishing connection.\n", hostname)
+			return nil
+		}),
+	)
 
-		if err != nil {
-			return "", fmt.Errorf("Could not create SSH client config. Received error: %s", err)
-		}
-
-		// Create a new SCP client.
-		scpClient := scp.NewClient(sshRepositoryHostname, &clientConfig)
-
-		// Connect to the remote server.
-		err = scpClient.Connect()
-		if err != nil {
-			return "", fmt.Errorf("Couldn't establish a connection to the remote server: %s", err)
-		}
-
-		defer scpClient.Close()
-
-		fmt.Printf("Established connection to hostname %s.\n", sshRepositoryHostname)
-
-		firmwareBinaryFile, err := os.Open(imagePath)
-		if err != nil {
-			return "", fmt.Errorf("File not found at path %s.", imagePath)
-		}
-		defer firmwareBinaryFile.Close()
-
-		fmt.Printf("Starting file upload to repository at path %s.\n", remotePath)
-		err = scpClient.CopyFile(context.Background(), firmwareBinaryFile, remotePath, "0777")
-
-		if err != nil {
-			return "", fmt.Errorf("Error while copying file: %s", err)
-		}
-
-		fmt.Printf("Finished file upload to repository at path %s.\n", remotePath)
-
-	} else {
-		fmt.Printf("Skipped uploading file to repository at path %s.", remotePath)
+	if err != nil {
+		return "", fmt.Errorf("Could not create SSH client config. Received error: %s", err)
 	}
+
+	// Create a new SCP client.
+	scpClient := scp.NewClient(sshRepositoryHostname, &clientConfig)
+
+	// Connect to the remote server.
+	err = scpClient.Connect()
+	if err != nil {
+		return "", fmt.Errorf("Couldn't establish a connection to the remote server: %s", err)
+	}
+
+	defer scpClient.Close()
+
+	fmt.Printf("Established connection to hostname %s.\n", sshRepositoryHostname)
+
+	firmwareBinaryFile, err := os.Open(imagePath)
+	if err != nil {
+		return "", fmt.Errorf("File not found at path %s.", imagePath)
+	}
+	defer firmwareBinaryFile.Close()
+
+	fmt.Printf("Starting file upload to repository at path %s.\n", remotePath)
+	err = scpClient.CopyFile(context.Background(), firmwareBinaryFile, remotePath, "0777")
+
+	if err != nil {
+		return "", fmt.Errorf("Error while copying file: %s", err)
+	}
+
+	fmt.Printf("Finished file upload to repository at path %s.\n", remotePath)
 
 	return "", nil
 }
 
+func downloadBinariesFromCatalog(binaryCollection []firmwareBinary) error {
+	fmt.Println("Downloading binaries.")
+
+	for _, firmwareBinary := range binaryCollection {
+		if !networking.CheckValidUrl(firmwareBinary.DownloadURL) {
+			return fmt.Errorf("download URL '%s' is not valid.", firmwareBinary.DownloadURL)
+		}
+
+		fmt.Printf("Downloading binary with name '%s' from path '%s' to path '%s'.\n", firmwareBinary.Name, firmwareBinary.DownloadURL, firmwareBinary.LocalPath)
+
+		err := networking.DownloadFile(firmwareBinary.DownloadURL, firmwareBinary.LocalPath)
+
+		if err != nil {
+			return fmt.Errorf("error while downloading file: %s", err)
+		}
+
+		fmt.Printf("Finished downloading binary with name '%s' from path '%s' to path '%s'.\n", firmwareBinary.Name, firmwareBinary.DownloadURL, firmwareBinary.LocalPath)
+	}
+
+	fmt.Println("Finished downloading binaries.")
+	return nil
+}
+
 // TODO: this function should send the catalog to the gateway microservice
 func sendCatalog(catalog firmwareCatalog) error {
-	catalogJSON, err := json.MarshalIndent(catalog, "", "  ")
+	catalogJSON, err := json.MarshalIndent(catalog, "", " ")
 
 	if err != nil {
 		return fmt.Errorf("Error while marshalling catalog to JSON: %s", err)
@@ -453,7 +494,7 @@ func sendCatalog(catalog firmwareCatalog) error {
 // TODO: this function should send the binaries to the gateway microservice
 func sendBinaries(binaryCollection []firmwareBinary) error {
 	for _, firmwareBinary := range binaryCollection {
-		firmwareBinaryJson, err := json.MarshalIndent(firmwareBinary, "", "  ")
+		firmwareBinaryJson, err := json.MarshalIndent(firmwareBinary, "", " ")
 
 		if err != nil {
 			return fmt.Errorf("Error while marshalling binary to JSON: %s", err)

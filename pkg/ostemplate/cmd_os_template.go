@@ -1555,7 +1555,7 @@ func checkOOBTemplateIntegrity(c *command.Command, repoTemplate RepoTemplate) er
 		return fmt.Errorf("The 'source-iso' parameter must be specified with the 'name' and 'source-template' ones for OOB templates.")
 	}
 
-	if !networking.RegexCheckIfUrl(imagePath) {
+	if !networking.CheckValidUrl(imagePath) {
 		file, err := os.Open(imagePath)
 
 		if err != nil {
@@ -1876,8 +1876,8 @@ func handleIsoImageUpload(c *command.Command, imageRepositoryHostname string, is
 	}
 
 	originalImagePath, _ := command.GetStringParamOk(c.Arguments["source-iso"])
-	if !networking.RegexCheckIfUrl(originalImagePath) {
 
+	if !networking.CheckValidUrl(imagePath) {
 		originalImageFilenameArr := strings.Split(originalImagePath, "/")
 		originalImageFilename := originalImageFilenameArr[len(originalImageFilenameArr)-1]
 		imageFilename := strings.ReplaceAll(originalImageFilename, " ", "_")
@@ -2053,8 +2053,8 @@ Are you sure you want to continue connecting (yes/no)?
 		} else {
 			fmt.Printf("Skipped uploading image to repository at path %s.", remotePath)
 		}
-
 	}
+	
 	return "", nil
 }
 

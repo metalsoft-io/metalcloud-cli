@@ -1,6 +1,6 @@
 - Function to send the catalog and software components to API Gateway -> Blueprints
 - Test upload for binaries
-- Add params to command (replace_if_exists, download_binaries, skip_upload_to_repo, filter_server_types, strict-host-key-checking)
+- Add params to command (replace_if_exists, download_binaries, skip_upload_to_repo, filter_server_types, strict_host_key_checking)
 - BSI_server_type to catalog_server_type matching
 
 1) parsam si cream obiectul de catalog

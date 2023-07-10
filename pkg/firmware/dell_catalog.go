@@ -9,6 +9,8 @@ import (
 	"net/http"
 	"net/url"
 	"os"
+	"path/filepath"
+	"strings"
 	"time"
 
 	"golang.org/x/net/html/charset"
@@ -126,6 +128,7 @@ func downloadCatalog(catalogURL string, catalogFilePath string) error {
 	if err != nil {
 		return err
 	}
+	defer resp.Body.Close()
 
 	gzReader, err := gzip.NewReader(resp.Body)
 	if err != nil {
@@ -287,6 +290,19 @@ func parseDellCatalog(configFile rawConfigFile) (firmwareCatalog, []firmwareBina
 			downloadURL = baseCatalogURL + "/" + component.Path
 		}
 
+		componentPathArr := strings.Split(component.Path, "/")
+		componentName := componentPathArr[len(componentPathArr)-1]
+		componentRepoUrl := repositoryURL + "/" + componentName
+
+		localPath := ""
+		if configFile.DownloadPath != "" {
+			localPath, err = filepath.Abs(filepath.Join(configFile.DownloadPath, componentName))
+
+			if err != nil {
+				return firmwareCatalog{}, nil, fmt.Errorf("Error getting download binary absolute path: %v", err)
+			}
+		}
+
 		firmwareBinary := firmwareBinary{
 			ExternalId:             component.Path,
 			Name:                   component.Name.Display,
@@ -301,7 +317,8 @@ func parseDellCatalog(configFile rawConfigFile) (firmwareCatalog, []firmwareBina
 			VendorReleaseTimestamp: timestamp.Format(time.RFC3339),
 			CreatedTimestamp:       time.Now().Format(time.RFC3339),
 			DownloadURL:            downloadURL,
-			RepoURL:                repositoryURL + "/" + component.Path,
+			RepoURL:                componentRepoUrl,
+			LocalPath:              localPath,
 		}
 
 		firmwareBinaryCollection = append(firmwareBinaryCollection, firmwareBinary)
