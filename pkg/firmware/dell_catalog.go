@@ -3,6 +3,7 @@ package firmware
 import (
 	"compress/gzip"
 	"encoding/xml"
+	"encoding/json"
 	"fmt"
 	"io"
 	"log"
@@ -12,7 +13,6 @@ import (
 	"path/filepath"
 	"strings"
 	"time"
-	"strings"
 
 	"golang.org/x/net/html/charset"
 
@@ -345,20 +345,24 @@ func parseDellCatalog(configFile rawConfigFile, client metalcloud.MetalCloudClie
 			serverTypesSupported = append(serverTypesSupported, serverType)
 		}
 	} else {
-		serverTypeObjects := client.ServerTypes(false)
+		serverTypeObjects, err := client.ServerTypes(false)
 
-		for _, serverTypeObject := range serverTypeObjects {
-			for _, serverType := filterServerTypes {
+		if err != nil {
+			return firmwareCatalog{}, nil, fmt.Errorf("Error getting server types: %v", err)
+		}
+
+		for _, serverTypeObject := range *serverTypeObjects {
+			for _, serverType := range filterServerTypes {
 				if serverTypeObject.ServerTypeLabel == serverType {
 					var serverTypes []string
-					_ = json.Unmarshal([]byte(serverTypeObject.ServerTypeAllowedVendorSkuIdsJson), &serverTypes)
+					_ = json.Unmarshal([]byte(serverTypeObject.ServerTypeAllowedVendorSkuIdsJSON), &serverTypes)
 					serverTypesSupported = append(serverTypesSupported, serverTypes...)
 				}
 			}
 		}
 
 		filteredFirmwareBinaryCollection := []firmwareBinary{}
-		for _, serverType := serverTypesSupported {
+		for _, serverType := range serverTypesSupported {
 			for _, firmwareBinary := range firmwareBinaryCollection {
 				for _, supportedSystem := range firmwareBinary.SupportedSystems {
 					systemName := supportedSystem["brandName"] + " " + supportedSystem["modelName"]

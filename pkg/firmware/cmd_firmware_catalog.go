@@ -131,7 +131,7 @@ func firmwareCatalogCreateCmd(c *command.Command, client metalcloud.MetalCloudCl
 	}	
 
 	sendCatalog(catalog)
-	// sendBinaries(binaryCollection)
+	sendBinaries(binaryCollection)
 
 	return "", nil
 }
