@@ -89,9 +89,9 @@ func firmwareCatalogCreateCmd(c *command.Command, client metalcloud.MetalCloudCl
 
 	fmt.Printf("Parsed config file: %+v\n", configFile)
 
-	uploadToRepo := false
+	uploadToRepo := true
 	if command.GetBoolParam(c.Arguments["skip_upload_to_repo"]) {
-		uploadToRepo = true
+		uploadToRepo = false
 	}
 
 	fmt.Printf("Uploading to repo is set to: %v\n", uploadToRepo)

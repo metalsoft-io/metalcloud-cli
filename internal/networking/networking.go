@@ -10,7 +10,7 @@ import (
 	"strings"
 
 	"net/http"
-	"net/url"
+	urlVerifier "github.com/davidmytton/url-verifier"
 
 	"golang.org/x/crypto/ssh"
 
@@ -18,13 +18,14 @@ import (
 )
 
 func CheckValidUrl(rawUrl string) bool {
-	_, err := url.ParseRequestURI(rawUrl)
+	verifier := urlVerifier.NewVerifier()
+	ret, err := verifier.Verify(rawUrl)
 
 	if err != nil {
 		return false
 	}
 
-	return true
+	return ret.IsURL
 }
 
 func CheckRemoteFileExists(remoteURL, fileName string) (bool, error) {

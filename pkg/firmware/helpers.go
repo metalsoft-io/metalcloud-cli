@@ -463,15 +463,13 @@ func downloadBinariesFromCatalog(binaryCollection []firmwareBinary) error {
 			return fmt.Errorf("download URL '%s' is not valid.", firmwareBinary.DownloadURL)
 		}
 
-		fmt.Printf("Downloading binary with name '%s' from path '%s' to path '%s'.\n", firmwareBinary.Name, firmwareBinary.DownloadURL, firmwareBinary.LocalPath)
-
 		err := networking.DownloadFile(firmwareBinary.DownloadURL, firmwareBinary.LocalPath)
 
 		if err != nil {
 			return fmt.Errorf("error while downloading file: %s", err)
 		}
 
-		fmt.Printf("Finished downloading binary with name '%s' from path '%s' to path '%s'.\n", firmwareBinary.Name, firmwareBinary.DownloadURL, firmwareBinary.LocalPath)
+		fmt.Printf("Downloaded binary '%s' from URL '%s' to path '%s'.\n", filepath.Base(firmwareBinary.DownloadURL), firmwareBinary.DownloadURL, firmwareBinary.LocalPath)
 	}
 
 	fmt.Println("Finished downloading binaries.")
