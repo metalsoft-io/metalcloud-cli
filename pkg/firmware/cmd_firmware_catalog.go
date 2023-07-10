@@ -89,7 +89,7 @@ func firmwareCatalogCreateCmd(c *command.Command, client metalcloud.MetalCloudCl
 
 	switch configFile.Vendor {
 	case catalogVendorDell:
-		catalog, binaryCollection, err = parseDellCatalog(configFile)
+		catalog, binaryCollection, err = parseDellCatalog(configFile, client, []string{})
 
 		if err != nil {
 			return "", err
