@@ -12,8 +12,11 @@ import (
 	"path/filepath"
 	"strings"
 	"time"
+	"strings"
 
 	"golang.org/x/net/html/charset"
+
+	metalcloud "github.com/metalsoft-io/metal-cloud-sdk-go/v2"
 )
 
 const (
@@ -153,7 +156,7 @@ func BypassReader(label string, input io.Reader) (io.Reader, error) {
 	return input, nil
 }
 
-func parseDellCatalog(configFile rawConfigFile) (firmwareCatalog, []firmwareBinary, error) {
+func parseDellCatalog(configFile rawConfigFile, client metalcloud.MetalCloudClient, filterServerTypes []string) (firmwareCatalog, []firmwareBinary, error) {
 	if configFile.DownloadCatalog {
 		err := downloadCatalog(configFile.CatalogUrl, configFile.CatalogPath)
 		if err != nil {
@@ -327,6 +330,50 @@ func parseDellCatalog(configFile rawConfigFile) (firmwareCatalog, []firmwareBina
 			break
 		}
 	}
+
+	var serverTypesSupported []string
+	serverTypesUniqueMap := make(map[string]bool)
+	if len(filterServerTypes) == 0 {
+		for _, firmwareBinary := range firmwareBinaryCollection {
+			for _, supportedSystem := range firmwareBinary.SupportedSystems {
+				systemName := supportedSystem["brandName"] + " " + supportedSystem["modelName"]
+				serverTypesUniqueMap[systemName] = true
+			}
+		}
+
+		for serverType, _ := range serverTypesUniqueMap {
+			serverTypesSupported = append(serverTypesSupported, serverType)
+		}
+	} else {
+		serverTypeObjects := client.ServerTypes(false)
+
+		for _, serverTypeObject := range serverTypeObjects {
+			for _, serverType := filterServerTypes {
+				if serverTypeObject.ServerTypeLabel == serverType {
+					var serverTypes []string
+					_ = json.Unmarshal([]byte(serverTypeObject.ServerTypeAllowedVendorSkuIdsJson), &serverTypes)
+					serverTypesSupported = append(serverTypesSupported, serverTypes...)
+				}
+			}
+		}
+
+		filteredFirmwareBinaryCollection := []firmwareBinary{}
+		for _, serverType := serverTypesSupported {
+			for _, firmwareBinary := range firmwareBinaryCollection {
+				for _, supportedSystem := range firmwareBinary.SupportedSystems {
+					systemName := supportedSystem["brandName"] + " " + supportedSystem["modelName"]
+					if strings.Contains(systemName, serverType) {
+						filteredFirmwareBinaryCollection = append(filteredFirmwareBinaryCollection, firmwareBinary)
+						break
+					}
+				}
+			}
+		}
+
+		firmwareBinaryCollection = filteredFirmwareBinaryCollection
+	}
+
+	catalog.ServerTypesSupported = serverTypesSupported
 
 	return catalog, firmwareBinaryCollection, nil
 }
