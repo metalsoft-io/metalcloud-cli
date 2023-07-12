@@ -128,10 +128,24 @@ func firmwareCatalogCreateCmd(c *command.Command, client metalcloud.MetalCloudCl
 		if err != nil {
 			return "", err
 		}
-	}	
+	}
+	
+	replaceIfExists := false
+	if command.GetBoolParam(c.Arguments["replace_if_exists"]) {
+		replaceIfExists = true
+	}
+
+	strictHostKeyChecking := false
+	if command.GetBoolParam(c.Arguments["strict_host_key_checking"]) {
+		strictHostKeyChecking = true
+	}
+
+	if uploadToRepo {
+		uploadBinariesToRepository(binaryCollection, replaceIfExists, strictHostKeyChecking, downloadBinaries)
+	}
 
 	sendCatalog(catalog)
-	sendBinaries(binaryCollection)
+	//sendBinaries(binaryCollection)
 
 	return "", nil
 }

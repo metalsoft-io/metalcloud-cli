@@ -15,7 +15,6 @@ import (
 
 	"github.com/bramvdbogaerde/go-scp"
 	"github.com/bramvdbogaerde/go-scp/auth"
-	"github.com/metalsoft-io/metalcloud-cli/internal/command"
 	"github.com/metalsoft-io/metalcloud-cli/internal/networking"
 	"golang.org/x/crypto/ssh"
 	"golang.org/x/exp/slices"
@@ -242,55 +241,102 @@ func getFirmwareRepositoryPath() string {
 	return firmwareRepositoryPath
 }
 
-// // handleFirmwareBinariesUpload <- primeste array de binare ce trebuie uploadate
-// // in interior for each binary -> handleFirmwareBinaryUpload
-// func handleFirmwareBinariesUpload(c *command.Command, sourceFirmwareBinaryPath string, firmwareBinaryRepositoryHostname string, isoPath string, imagePath string) (string, error) {
-// 	firmwareRepositoryHostname := defaultFirmwareRepositoryHostname
-
-// 	if userGivenFirmwareRepositoryHostname := os.Getenv("METALCLOUD_FIRMWARE_REPOSITORY_HOSTNAME"); userGivenFirmwareRepositoryHostname != "" {
-// 		firmwareRepositoryHostname = os.Getenv("METALCLOUD_FIRMWARE_REPOSITORY_HOSTNAME")
-// 	}
-
-// 	imagePath, _ := command.GetStringParamOk(c.Arguments["source-iso"])
-
-// 	// ISO upload is disabled for the moment
-// 	originalImageFilenameArr := strings.Split(imagePath, "/")
-// 	originalImageFilename := originalImageFilenameArr[len(originalImageFilenameArr)-1]
-// 	imageFilename := strings.ReplaceAll(originalImageFilename, " ", "_")
-
-// 	//isoPath := "/" + templateName + "-" + imageFilename
-// 	isoPath := defaultImageRepositoryIsoPath + "/" + imageFilename
-
-// 	_, err := handleIsoImageUpload(c, firmwareRepositoryHostname, isoPath, imagePath)
-// }
-
-func handleFirmwareBinaryUpload(c *command.Command, sourceFirmwareBinaryPath string, firmwareBinaryRepositoryHostname string, isoPath string, imagePath string) (string, error) {
+func getFirmwareRepositorySSHPath() string {
 	remoteDirectoryPath := defaultFirmwareRepositorySSHPath
 
 	if userGivenRemoteDirectoryPath := os.Getenv("METALCLOUD_FIRMWARE_REPOSITORY_SSH_PATH"); userGivenRemoteDirectoryPath != "" {
 		remoteDirectoryPath = os.Getenv("METALCLOUD_FIRMWARE_REPOSITORY_SSH_PATH")
 	}
 
-	remotePath := remoteDirectoryPath + isoPath
+	return remoteDirectoryPath
+}
 
+func getFirmwareRepositorySSHPort() string {
 	remoteSSHPort := defaultFirmwareRepositorySSHPort
 
 	if userGivenSSHPort := os.Getenv("METALCLOUD_FIRMWARE_REPOSITORY_SSH_PORT"); userGivenSSHPort != "" {
 		remoteSSHPort = os.Getenv("METALCLOUD_FIRMWARE_REPOSITORY_SSH_PORT")
 	}
 
-	imageRepositoryIsoPath := defaultRepositoryFirmwarePath
+	return remoteSSHPort
+}
 
-	if userGivenFirmwarePath := os.Getenv("METALCLOUD_FIRMWARE_REPOSITORY_ISO_PATH"); userGivenFirmwarePath != "" {
-		imageRepositoryIsoPath = os.Getenv("METALCLOUD_FIRMWARE_REPOSITORY_ISO_PATH")
+func getUserPrivateSSHKeyPath() (string, error) {
+	if userPrivateSSHKeyPath := os.Getenv("METALCLOUD_USER_PRIVATE_OPENSSH_KEY_PATH"); userPrivateSSHKeyPath == "" {
+		return "", fmt.Errorf("METALCLOUD_USER_PRIVATE_OPENSSH_KEY_PATH must be set when creating a firmware binary. The key is needed when uploading to the firmware binary repository.")
 	}
 
-	originalFirmwareBinaryArr := strings.Split(sourceFirmwareBinaryPath, "/")
-	originalFirmwareBinaryFilename := originalFirmwareBinaryArr[len(originalFirmwareBinaryArr)-1]
-	firmwareBinaryFilename := strings.ReplaceAll(originalFirmwareBinaryFilename, " ", "_")
+	userPrivateSSHKeyPath := os.Getenv("METALCLOUD_USER_PRIVATE_OPENSSH_KEY_PATH")
 
-	remoteURL := "https://" + firmwareBinaryRepositoryHostname + imageRepositoryIsoPath
-	sshRepositoryHostname := firmwareBinaryRepositoryHostname + ":" + remoteSSHPort
+	return userPrivateSSHKeyPath, nil
+}
+
+func getKnownHostsPath() string {
+	var knownHostsFilePath string
+
+	if userGivenHostsFilePath := os.Getenv("METALCLOUD_KNOWN_HOSTS_FILE_PATH"); userGivenHostsFilePath != "" {
+		knownHostsFilePath = os.Getenv("METALCLOUD_KNOWN_HOSTS_FILE_PATH")
+	}
+
+	return knownHostsFilePath
+}
+
+func downloadBinariesFromCatalog(binaryCollection []firmwareBinary) error {
+	fmt.Println("Downloading binaries.")
+
+	for _, firmwareBinary := range binaryCollection {
+		if !networking.CheckValidUrl(firmwareBinary.DownloadURL) {
+			return fmt.Errorf("download URL '%s' is not valid.", firmwareBinary.DownloadURL)
+		}
+
+		err := networking.DownloadFile(firmwareBinary.DownloadURL, firmwareBinary.LocalPath)
+
+		if err != nil {
+			return fmt.Errorf("error while downloading file: %s", err)
+		}
+
+		fmt.Printf("Downloaded binary '%s' from URL '%s' to path '%s'.\n", filepath.Base(firmwareBinary.DownloadURL), firmwareBinary.DownloadURL, firmwareBinary.LocalPath)
+	}
+
+	fmt.Println("Finished downloading binaries.")
+	return nil
+}
+
+func uploadBinariesToRepository(binaryCollection []firmwareBinary, replaceIfExists, strictHostKeyChecking, downloadBinaries bool) error {
+	//(c.Arguments["replace_if_exists"])
+	//"strict_host_key_checking"
+
+	for _, firmwareBinary := range binaryCollection {
+		handleFirmwareBinaryUpload(firmwareBinary, replaceIfExists, strictHostKeyChecking, downloadBinaries)
+	}
+
+	return nil
+}
+
+func getFirmwareBinaryName(binary firmwareBinary) string {
+	firmwareBinaryNameArr := strings.Split(binary.LocalPath, "/")
+	firmwareBinaryName := firmwareBinaryNameArr[len(firmwareBinaryNameArr)-1]
+
+	return firmwareBinaryName
+}
+
+func handleFirmwareBinaryUpload(binary firmwareBinary, replaceIfExists, strictHostKeyChecking, downloadBinaries bool) (string, error) {
+	var firmwareBinaryPath string
+
+	if downloadBinaries {
+		firmwareBinaryPath = binary.LocalPath
+	} else {
+		return "", fmt.Errorf("Unsupported for the moment")
+	}
+
+	firmwareBinaryFilename := getFirmwareBinaryName(binary)
+	remotePath := getFirmwareRepositorySSHPath() + firmwareBinaryFilename
+
+	firmwareBinaryRepositoryHostname := getFirmwareRepositoryHostname()
+	firmwareRepositoryPath := getFirmwareRepositoryPath()
+
+	remoteURL := "https://" + firmwareBinaryRepositoryHostname + firmwareRepositoryPath
+	sshRepositoryHostname := firmwareBinaryRepositoryHostname + ":" + getFirmwareRepositorySSHPort()
 
 	firmwareBinaryExists, err := networking.CheckRemoteFileExists(remoteURL, firmwareBinaryFilename)
 
@@ -298,7 +344,7 @@ func handleFirmwareBinaryUpload(c *command.Command, sourceFirmwareBinaryPath str
 		return "", err
 	}
 
-	if firmwareBinaryExists && !command.GetBoolParam(c.Arguments["replace_if_exists"]) {
+	if firmwareBinaryExists && !replaceIfExists {
 		fmt.Printf("Firmware binary %s already exists at path %s. Skipping upload. Use the 'replace-if-exists' parameter to replace the existing firmware binary.\n", firmwareBinaryFilename, remotePath)
 		return "", nil
 	}
@@ -309,22 +355,20 @@ func handleFirmwareBinaryUpload(c *command.Command, sourceFirmwareBinaryPath str
 		fmt.Printf("Uploading new firmware binary %s at path %s.\n", firmwareBinaryFilename, remotePath)
 	}
 
-	if userPrivateSSHKeyPath := os.Getenv("METALCLOUD_USER_PRIVATE_OPENSSH_KEY_PATH"); userPrivateSSHKeyPath == "" {
-		return "", fmt.Errorf("METALCLOUD_USER_PRIVATE_OPENSSH_KEY_PATH must be set when creating a firmware binary. The key is needed when uploading to the firmware binary repository.")
-	}
+	userPrivateSSHKeyPath, err := getUserPrivateSSHKeyPath()
 
-	userPrivateSSHKeyPath := os.Getenv("METALCLOUD_USER_PRIVATE_OPENSSH_KEY_PATH")
+	if err != nil {
+		return "", err
+	}
 
 	homeDir, err := os.UserHomeDir()
 	if err != nil {
 		return "", err
 	}
 
-	var knownHostsFilePath string
+	knownHostsFilePath := getKnownHostsPath()
 
-	if userGivenHostsFilePath := os.Getenv("METALCLOUD_KNOWN_HOSTS_FILE_PATH"); userGivenHostsFilePath != "" {
-		knownHostsFilePath = os.Getenv("METALCLOUD_KNOWN_HOSTS_FILE_PATH")
-	} else {
+	if knownHostsFilePath == "" {
 		knownHostsFilePath = filepath.Join(homeDir, ".ssh", "known_hosts")
 
 		// Create the known hosts file if it does not exist.
@@ -387,7 +431,7 @@ Are you sure you want to continue connecting (yes/no)?
 						hostname, networking.SerializeSSHKey(publicKey), knownHostsFilePath,
 					)
 
-					if command.GetBoolParam(c.Arguments["strict_host_key_checking"]) {
+					if strictHostKeyChecking {
 						reader := bufio.NewReader(os.Stdin)
 						input, err := reader.ReadString('\n')
 
@@ -437,9 +481,9 @@ Are you sure you want to continue connecting (yes/no)?
 
 	fmt.Printf("Established connection to hostname %s.\n", sshRepositoryHostname)
 
-	firmwareBinaryFile, err := os.Open(imagePath)
+	firmwareBinaryFile, err := os.Open(firmwareBinaryPath)
 	if err != nil {
-		return "", fmt.Errorf("File not found at path %s.", imagePath)
+		return "", fmt.Errorf("File not found at path %s.", firmwareBinaryPath)
 	}
 	defer firmwareBinaryFile.Close()
 
@@ -453,27 +497,6 @@ Are you sure you want to continue connecting (yes/no)?
 	fmt.Printf("Finished file upload to repository at path %s.\n", remotePath)
 
 	return "", nil
-}
-
-func downloadBinariesFromCatalog(binaryCollection []firmwareBinary) error {
-	fmt.Println("Downloading binaries.")
-
-	for _, firmwareBinary := range binaryCollection {
-		if !networking.CheckValidUrl(firmwareBinary.DownloadURL) {
-			return fmt.Errorf("download URL '%s' is not valid.", firmwareBinary.DownloadURL)
-		}
-
-		err := networking.DownloadFile(firmwareBinary.DownloadURL, firmwareBinary.LocalPath)
-
-		if err != nil {
-			return fmt.Errorf("error while downloading file: %s", err)
-		}
-
-		fmt.Printf("Downloaded binary '%s' from URL '%s' to path '%s'.\n", filepath.Base(firmwareBinary.DownloadURL), firmwareBinary.DownloadURL, firmwareBinary.LocalPath)
-	}
-
-	fmt.Println("Finished downloading binaries.")
-	return nil
 }
 
 // TODO: this function should send the catalog to the gateway microservice

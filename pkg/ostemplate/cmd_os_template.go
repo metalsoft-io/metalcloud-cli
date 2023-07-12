@@ -2054,7 +2054,7 @@ Are you sure you want to continue connecting (yes/no)?
 			fmt.Printf("Skipped uploading image to repository at path %s.", remotePath)
 		}
 	}
-	
+
 	return "", nil
 }
 
