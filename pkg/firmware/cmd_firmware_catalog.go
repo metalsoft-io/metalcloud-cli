@@ -141,11 +141,15 @@ func firmwareCatalogCreateCmd(c *command.Command, client metalcloud.MetalCloudCl
 	}
 
 	if uploadToRepo {
-		uploadBinariesToRepository(binaryCollection, replaceIfExists, strictHostKeyChecking, downloadBinaries)
+		err := uploadBinariesToRepository(binaryCollection, replaceIfExists, strictHostKeyChecking, downloadBinaries)
+
+		if err != nil {
+			return "", err
+		}
 	}
 
 	sendCatalog(catalog)
-	//sendBinaries(binaryCollection)
+	// sendBinaries(binaryCollection)
 
 	return "", nil
 }

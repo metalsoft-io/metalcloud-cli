@@ -1,19 +1,26 @@
 package networking
 
 import (
+	"bufio"
+	"bytes"
 	"encoding/base64"
+	"errors"
 	"fmt"
 	"io"
 	"io/ioutil"
 	"net"
 	"os"
+	"path/filepath"
 	"strings"
 
 	"net/http"
+
+	"github.com/bramvdbogaerde/go-scp"
+	"github.com/bramvdbogaerde/go-scp/auth"
 	urlVerifier "github.com/davidmytton/url-verifier"
 
+	"github.com/metalsoft-io/metalcloud-cli/internal/configuration"
 	"golang.org/x/crypto/ssh"
-
 	kh "golang.org/x/crypto/ssh/knownhosts"
 )
 
@@ -42,6 +49,31 @@ func CheckRemoteFileExists(remoteURL, fileName string) (bool, error) {
 
 	responseBody := string(body)
 	return strings.Contains(responseBody, fileName), nil
+}
+
+// Returns a list of files that do not exist on the remote URL.
+func GetMissingRemoteFiles(remoteURL string, fileNames []string) ([]string, error) {
+	var missingFiles []string
+	resp, err := http.Get(remoteURL)
+
+	if err != nil {
+		return missingFiles, err
+	}
+
+	body, err := ioutil.ReadAll(resp.Body)
+	if err != nil {
+		return missingFiles, err
+	}
+
+	responseBody := string(body)
+
+	for _, fileName := range fileNames {
+		if !strings.Contains(responseBody, fileName) {
+			missingFiles = append(missingFiles, fileName)
+		}
+	}
+
+	return missingFiles, nil
 }
 
 func SerializeSSHKey(key ssh.PublicKey) string {
@@ -106,4 +138,165 @@ func DownloadFile(url, filepath string) error {
 	}
 
 	return nil
+}
+
+func HandleKnownHostsFile() (ssh.HostKeyCallback, error) {
+	homeDir, err := os.UserHomeDir()
+	if err != nil {
+		return nil, err
+	}
+
+	knownHostsFilePath := configuration.GetKnownHostsPath()
+
+	if knownHostsFilePath == "" {
+		knownHostsFilePath = filepath.Join(homeDir, ".ssh", "known_hosts")
+
+		// Create the known hosts file if it does not exist.
+		if _, err := os.Stat(knownHostsFilePath); errors.Is(err, os.ErrNotExist) {
+			hostsFile, err := os.Create(knownHostsFilePath)
+
+			if err != nil {
+				return nil, err
+			}
+
+			hostsFile.Close()
+		}
+	}
+
+	hostKeyCallback, err := kh.New(knownHostsFilePath)
+
+	if err != nil {
+		return nil, fmt.Errorf("Received following error when parsing the known_hosts file: %s.", err)
+	}
+
+	return hostKeyCallback, nil
+}
+
+func CreateSSHClientConfig(strictHostKeyChecking bool) (ssh.ClientConfig, error) {
+	userPrivateSSHKeyPath, err := configuration.GetUserPrivateSSHKeyPath()
+
+	if err != nil {
+		return ssh.ClientConfig{}, err
+	}
+
+	knownHostsFilePath := configuration.GetKnownHostsPath()
+	hostKeyCallback, err := HandleKnownHostsFile()
+
+	if err != nil {
+		return ssh.ClientConfig{}, err
+	}
+
+	// Use SSH key authentication from the auth package.
+	clientConfig, err := auth.PrivateKey(
+		"root",
+		userPrivateSSHKeyPath,
+		ssh.HostKeyCallback(func(hostname string, remoteAddress net.Addr, publicKey ssh.PublicKey) error {
+			var keyError *kh.KeyError
+			hostsError := hostKeyCallback(hostname, remoteAddress, publicKey)
+
+			// Reference: https://www.godoc.org/golang.org/x/crypto/ssh/knownhosts#KeyError
+			//if keyErr.Want is not empty and
+			if errors.As(hostsError, &keyError) {
+				if len(keyError.Want) > 0 {
+					// If host is known then there is key mismatch and the connection is rejected.
+					fmt.Printf(`
+	@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
+	@    WARNING: REMOTE HOST IDENTIFICATION HAS CHANGED!     @
+	@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
+	IT IS POSSIBLE THAT SOMEONE IS DOING SOMETHING NASTY!
+	Someone could be eavesdropping on you right now (man-in-the-middle attack)!
+	It is also possible that a host key has just been changed.
+	The key sent by the remote host is
+	%s.
+	Please contact your system administrator.
+	Add correct host key in %s to get rid of this message.
+	Host key for %s has changed and you have requested strict checking.
+	Host key verification failed.
+	`,
+						SerializeSSHKey(publicKey), knownHostsFilePath, hostname,
+					)
+					return keyError
+				} else {
+					// If keyErr.Want slice is empty then host is unknown.
+					fmt.Printf(`
+	The authenticity of host '%s' can't be established.
+	SSH key is %s.
+	This key is not known by any other names.
+	It will be added to known_hosts file %s.
+	Are you sure you want to continue connecting (yes/no)?
+	`,
+						hostname, SerializeSSHKey(publicKey), knownHostsFilePath,
+					)
+
+					if strictHostKeyChecking {
+						reader := bufio.NewReader(os.Stdin)
+						input, err := reader.ReadString('\n')
+
+						if err != nil {
+							return err
+						}
+
+						// Remove \r and \n from input
+						input = string(bytes.TrimSuffix([]byte(input), []byte("\r\n")))
+
+						if input != "yes" {
+							if input == "no" {
+								fmt.Println("Aborting connection.")
+							} else {
+								fmt.Println("Invalid response given. Aborting connection.")
+							}
+
+							return keyError
+						}
+					} else {
+						fmt.Printf("Skipped manual check because 'strict-host-key-checking' is set to false.")
+					}
+
+					return AddHostKey(knownHostsFilePath, remoteAddress, publicKey)
+				}
+			}
+
+			fmt.Printf("Public key exists for remote %s. Establishing connection.\n", hostname)
+			return nil
+		}),
+	)
+
+	if err != nil {
+		return ssh.ClientConfig{}, fmt.Errorf("Could not create SSH client config. Received error: %s", err)
+	}
+
+	return clientConfig, nil
+}
+
+func CreateSSHConnection(strictHostKeyChecking bool) (scp.Client, *ssh.Client, error) {
+	clientConfig, err := CreateSSHClientConfig(strictHostKeyChecking)
+
+	if err != nil {
+		return scp.Client{}, &ssh.Client{}, err
+	}
+
+	sshRepositoryHostname := configuration.GetFirmwareRepositoryHostname() + ":" + configuration.GetFirmwareRepositorySSHPort()
+
+	fmt.Printf("Establishing connection to hostname %s.\n", sshRepositoryHostname)
+
+	// Create a new SCP client.
+	scpClient := scp.NewClient(sshRepositoryHostname, &clientConfig)
+
+	// Connect to the remote server.
+	sshClient, err := ssh.Dial("tcp", scpClient.Host, scpClient.ClientConfig)
+	if err != nil {
+		return scp.Client{}, &ssh.Client{}, err
+	}
+
+	if scpClient.Session != nil {
+		return scpClient, sshClient, nil
+	}
+
+	scpClient.Conn = sshClient.Conn
+	scpClient.Session, err = sshClient.NewSession()
+	if err != nil {
+		return scp.Client{}, &ssh.Client{}, nil
+	}
+
+	return scpClient, sshClient, nil
 }

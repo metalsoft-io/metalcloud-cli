@@ -1,26 +1,19 @@
 package firmware
 
 import (
-	"bufio"
-	"bytes"
 	"context"
 	"encoding/json"
-	"errors"
 	"fmt"
-	"net"
 	"os"
 	"path/filepath"
 	"reflect"
-	"strings"
 
 	"github.com/bramvdbogaerde/go-scp"
-	"github.com/bramvdbogaerde/go-scp/auth"
+	"github.com/metalsoft-io/metalcloud-cli/internal/configuration"
 	"github.com/metalsoft-io/metalcloud-cli/internal/networking"
 	"golang.org/x/crypto/ssh"
 	"golang.org/x/exp/slices"
 	"gopkg.in/yaml.v3"
-
-	kh "golang.org/x/crypto/ssh/knownhosts"
 )
 
 /**
@@ -50,11 +43,6 @@ const (
 	updateSeverityRecommended = "recommended"
 	updateSeverityCritical    = "critical"
 	updateSeverityOptional    = "optional"
-
-	defaultFirmwareRepositorySSHPath  = "/var/www/html/firmware"
-	defaultFirmwareRepositorySSHPort  = "22"
-	defaultFirmwareRepositoryHostname = "192.168.20.10"
-	defaultRepositoryFirmwarePath     = "/firmware"
 )
 
 type serverInfo struct {
@@ -89,6 +77,7 @@ type firmwareCatalog struct {
 type firmwareBinary struct {
 	ExternalId             string
 	Name                   string
+	FileName               string
 	Description            string
 	PackageId              string
 	PackageVersion         string
@@ -213,74 +202,6 @@ func getSeverity(input string) (string, error) {
 	}
 }
 
-func getFirmwareRepositoryURL() string {
-	return "https://" + getFirmwareRepositoryHostname() + getFirmwareRepositoryPath()
-}
-
-func getFirmwareRepositoryHostname() string {
-	firmwareRepositoryHostname := defaultFirmwareRepositoryHostname
-
-	if userGivenFirmwareRepositoryHostname := os.Getenv("METALCLOUD_FIRMWARE_REPOSITORY_HOSTNAME"); userGivenFirmwareRepositoryHostname != "" {
-		firmwareRepositoryHostname = os.Getenv("METALCLOUD_FIRMWARE_REPOSITORY_HOSTNAME")
-	}
-
-	return firmwareRepositoryHostname
-}
-
-func getFirmwareRepositoryPath() string {
-	firmwareRepositoryPath := defaultRepositoryFirmwarePath
-
-	if userGivenFirmwarePath := os.Getenv("METALCLOUD_FIRMWARE_REPOSITORY_ISO_PATH"); userGivenFirmwarePath != "" {
-		firmwareRepositoryPath = os.Getenv("METALCLOUD_FIRMWARE_REPOSITORY_ISO_PATH")
-
-		if !strings.HasPrefix(firmwareRepositoryPath, "/") {
-			firmwareRepositoryPath = "/" + firmwareRepositoryPath
-		}
-	}
-
-	return firmwareRepositoryPath
-}
-
-func getFirmwareRepositorySSHPath() string {
-	remoteDirectoryPath := defaultFirmwareRepositorySSHPath
-
-	if userGivenRemoteDirectoryPath := os.Getenv("METALCLOUD_FIRMWARE_REPOSITORY_SSH_PATH"); userGivenRemoteDirectoryPath != "" {
-		remoteDirectoryPath = os.Getenv("METALCLOUD_FIRMWARE_REPOSITORY_SSH_PATH")
-	}
-
-	return remoteDirectoryPath
-}
-
-func getFirmwareRepositorySSHPort() string {
-	remoteSSHPort := defaultFirmwareRepositorySSHPort
-
-	if userGivenSSHPort := os.Getenv("METALCLOUD_FIRMWARE_REPOSITORY_SSH_PORT"); userGivenSSHPort != "" {
-		remoteSSHPort = os.Getenv("METALCLOUD_FIRMWARE_REPOSITORY_SSH_PORT")
-	}
-
-	return remoteSSHPort
-}
-
-func getUserPrivateSSHKeyPath() (string, error) {
-	if userPrivateSSHKeyPath := os.Getenv("METALCLOUD_USER_PRIVATE_OPENSSH_KEY_PATH"); userPrivateSSHKeyPath == "" {
-		return "", fmt.Errorf("METALCLOUD_USER_PRIVATE_OPENSSH_KEY_PATH must be set when creating a firmware binary. The key is needed when uploading to the firmware binary repository.")
-	}
-
-	userPrivateSSHKeyPath := os.Getenv("METALCLOUD_USER_PRIVATE_OPENSSH_KEY_PATH")
-
-	return userPrivateSSHKeyPath, nil
-}
-
-func getKnownHostsPath() string {
-	var knownHostsFilePath string
-
-	if userGivenHostsFilePath := os.Getenv("METALCLOUD_KNOWN_HOSTS_FILE_PATH"); userGivenHostsFilePath != "" {
-		knownHostsFilePath = os.Getenv("METALCLOUD_KNOWN_HOSTS_FILE_PATH")
-	}
-
-	return knownHostsFilePath
-}
-
 func downloadBinariesFromCatalog(binaryCollection []firmwareBinary) error {
 	fmt.Println("Downloading binaries.")
 
@@ -303,200 +224,108 @@ func downloadBinariesFromCatalog(binaryCollection []firmwareBinary) error {
 }
 
 func uploadBinariesToRepository(binaryCollection []firmwareBinary, replaceIfExists, strictHostKeyChecking, downloadBinaries bool) error {
-	//(c.Arguments["replace_if_exists"])
-	//"strict_host_key_checking"
+	if !downloadBinaries {
+		return fmt.Errorf("Unsupported for the moment")
+	}
 
+	firmwareBinaryRepositoryHostname := configuration.GetFirmwareRepositoryHostname()
+	firmwareRepositoryPath := configuration.GetFirmwareRepositoryPath()
+
+	//TODO: change this to https
+	remoteURL := "http://" + firmwareBinaryRepositoryHostname + firmwareRepositoryPath
+
+	fmt.Println("Checking if binaries already exist in the repository.")
+	firmwareBinaryNames := make([]string, len(binaryCollection))
 	for _, firmwareBinary := range binaryCollection {
-		handleFirmwareBinaryUpload(firmwareBinary, replaceIfExists, strictHostKeyChecking, downloadBinaries)
+		firmwareBinaryNames = append(firmwareBinaryNames, firmwareBinary.FileName)
 	}
 
-	return nil
-}
-
-func getFirmwareBinaryName(binary firmwareBinary) string {
-	firmwareBinaryNameArr := strings.Split(binary.LocalPath, "/")
-	firmwareBinaryName := firmwareBinaryNameArr[len(firmwareBinaryNameArr)-1]
-
-	return firmwareBinaryName
-}
-
-func handleFirmwareBinaryUpload(binary firmwareBinary, replaceIfExists, strictHostKeyChecking, downloadBinaries bool) (string, error) {
-	var firmwareBinaryPath string
-
-	if downloadBinaries {
-		firmwareBinaryPath = binary.LocalPath
-	} else {
-		return "", fmt.Errorf("Unsupported for the moment")
-	}
-
-	firmwareBinaryFilename := getFirmwareBinaryName(binary)
-	remotePath := getFirmwareRepositorySSHPath() + firmwareBinaryFilename
-
-	firmwareBinaryRepositoryHostname := getFirmwareRepositoryHostname()
-	firmwareRepositoryPath := getFirmwareRepositoryPath()
-
-	remoteURL := "https://" + firmwareBinaryRepositoryHostname + firmwareRepositoryPath
-	sshRepositoryHostname := firmwareBinaryRepositoryHostname + ":" + getFirmwareRepositorySSHPort()
-
-	firmwareBinaryExists, err := networking.CheckRemoteFileExists(remoteURL, firmwareBinaryFilename)
+	missingBinaries, err := networking.GetMissingRemoteFiles(remoteURL, firmwareBinaryNames)
 
 	if err != nil {
-		return "", err
+		return err
 	}
 
-	if firmwareBinaryExists && !replaceIfExists {
-		fmt.Printf("Firmware binary %s already exists at path %s. Skipping upload. Use the 'replace-if-exists' parameter to replace the existing firmware binary.\n", firmwareBinaryFilename, remotePath)
-		return "", nil
+	if len(missingBinaries) == 0 {
+		fmt.Println("All binaries already exist in the repository. Skipping upload.")
+		return nil
 	}
 
-	if firmwareBinaryExists {
-		fmt.Printf("Replacing firmware binary %s at path %s.\n", firmwareBinaryFilename, remotePath)
-	} else {
-		fmt.Printf("Uploading new firmware binary %s at path %s.\n", firmwareBinaryFilename, remotePath)
-	}
-
-	userPrivateSSHKeyPath, err := getUserPrivateSSHKeyPath()
+	scpClient, sshClient, err := networking.CreateSSHConnection(strictHostKeyChecking)
 
 	if err != nil {
-		return "", err
-	}
-
-	homeDir, err := os.UserHomeDir()
-	if err != nil {
-		return "", err
-	}
-
-	knownHostsFilePath := getKnownHostsPath()
-
-	if knownHostsFilePath == "" {
-		knownHostsFilePath = filepath.Join(homeDir, ".ssh", "known_hosts")
-
-		// Create the known hosts file if it does not exist.
-		if _, err := os.Stat(knownHostsFilePath); errors.Is(err, os.ErrNotExist) {
-			hostsFile, err := os.Create(knownHostsFilePath)
-
-			if err != nil {
-				return "", err
-			}
-
-			hostsFile.Close()
-		}
-	}
-
-	hostKeyCallback, err := kh.New(knownHostsFilePath)
-
-	if err != nil {
-		return "", fmt.Errorf("Received following error when parsing the known_hosts file: %s.", err)
-	}
-
-	// Use SSH key authentication from the auth package.
-	clientConfig, err := auth.PrivateKey(
-		"root",
-		userPrivateSSHKeyPath,
-		ssh.HostKeyCallback(func(hostname string, remoteAddress net.Addr, publicKey ssh.PublicKey) error {
-			var keyError *kh.KeyError
-			hostsError := hostKeyCallback(hostname, remoteAddress, publicKey)
-
-			// Reference: https://www.godoc.org/golang.org/x/crypto/ssh/knownhosts#KeyError
-			//if keyErr.Want is not empty and
-			if errors.As(hostsError, &keyError) {
-				if len(keyError.Want) > 0 {
-					// If host is known then there is key mismatch and the connection is rejected.
-					fmt.Printf(`
-@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
-@    WARNING: REMOTE HOST IDENTIFICATION HAS CHANGED!     @
-@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
-IT IS POSSIBLE THAT SOMEONE IS DOING SOMETHING NASTY!
-Someone could be eavesdropping on you right now (man-in-the-middle attack)!
-It is also possible that a host key has just been changed.
-The key sent by the remote host is
-%s.
-Please contact your system administrator.
-Add correct host key in %s to get rid of this message.
-Host key for %s has changed and you have requested strict checking.
-Host key verification failed.
-`,
-						networking.SerializeSSHKey(publicKey), knownHostsFilePath, hostname,
-					)
-					return keyError
-				} else {
-					// If keyErr.Want slice is empty then host is unknown.
-					fmt.Printf(`
-The authenticity of host '%s' can't be established.
-SSH key is %s.
-This key is not known by any other names.
-It will be added to known_hosts file %s.
-Are you sure you want to continue connecting (yes/no)?
-`,
-						hostname, networking.SerializeSSHKey(publicKey), knownHostsFilePath,
-					)
-
-					if strictHostKeyChecking {
-						reader := bufio.NewReader(os.Stdin)
-						input, err := reader.ReadString('\n')
-
-						if err != nil {
-							return err
-						}
-
-						// Remove \r and \n from input
-						input = string(bytes.TrimSuffix([]byte(input), []byte("\r\n")))
-
-						if input != "yes" {
-							if input == "no" {
-								fmt.Println("Aborting connection.")
-							} else {
-								fmt.Println("Invalid response given. Aborting connection.")
-							}
-
-							return keyError
-						}
-					} else {
-						fmt.Printf("Skipped manual check because 'strict-host-key-checking' is set to false.")
-					}
-
-					return networking.AddHostKey(knownHostsFilePath, remoteAddress, publicKey)
-				}
-			}
-
-			fmt.Printf("Public key exists for remote %s. Establishing connection.\n", hostname)
-			return nil
-		}),
-	)
-
-	if err != nil {
-		return "", fmt.Errorf("Could not create SSH client config. Received error: %s", err)
-	}
-
-	// Create a new SCP client.
-	scpClient := scp.NewClient(sshRepositoryHostname, &clientConfig)
-
-	// Connect to the remote server.
-	err = scpClient.Connect()
-	if err != nil {
-		return "", fmt.Errorf("Couldn't establish a connection to the remote server: %s", err)
+		return fmt.Errorf("Couldn't establish a connection to the remote server: %s", err)
 	}
 
 	defer scpClient.Close()
 
+	sshRepositoryHostname := configuration.GetFirmwareRepositoryHostname() + ":" + configuration.GetFirmwareRepositorySSHPort()
 	fmt.Printf("Established connection to hostname %s.\n", sshRepositoryHostname)
+
+	fmt.Printf("Detected %d missing binaries.\n", len(missingBinaries))
+	if replaceIfExists {
+		fmt.Println("The 'replace-if-exists' parameter is set to true. All binaries will be replaced.")
+	}
+
+	for _, firmwareBinary := range binaryCollection {
+		firmwareBinaryExists := !slices.Contains[string](missingBinaries, firmwareBinary.FileName)
+		remotePath := configuration.GetFirmwareRepositorySSHPath() + "/" + firmwareBinary.FileName
+
+		if firmwareBinaryExists && !replaceIfExists {
+			continue
+		}
+
+		if firmwareBinaryExists {
+			fmt.Printf("Replacing firmware binary %s at path %s.\n", firmwareBinary.FileName, remotePath)
+		} else {
+			fmt.Printf("Uploading new firmware binary %s at path %s.\n", firmwareBinary.FileName, remotePath)
+		}
+
+		err := uploadBinaryToRepository(firmwareBinary, &scpClient, sshClient)
+
+		if err != nil {
+			return err
+		}
+	}
+
+	fmt.Println("Finished uploading binaries.")
+	return nil
+}
+
+func uploadBinaryToRepository(binary firmwareBinary, scpClient *scp.Client, sshClient *ssh.Client) error {
+	firmwareBinaryPath := binary.LocalPath
+
+	if firmwareBinaryPath == "" {
+		return fmt.Errorf("No local path specified for firmware binary %s.", binary.FileName)
+	}
+
+	firmwareBinaryFilename := binary.FileName
+	remotePath := configuration.GetFirmwareRepositorySSHPath() + "/" + firmwareBinaryFilename
 
 	firmwareBinaryFile, err := os.Open(firmwareBinaryPath)
 	if err != nil {
-		return "", fmt.Errorf("File not found at path %s.", firmwareBinaryPath)
+		return fmt.Errorf("File not found at path %s.", firmwareBinaryPath)
 	}
 	defer firmwareBinaryFile.Close()
 
-	fmt.Printf("Starting file upload to repository at path %s.\n", remotePath)
 	err = scpClient.CopyFile(context.Background(), firmwareBinaryFile, remotePath, "0777")
 
 	if err != nil {
-		return "", fmt.Errorf("Error while copying file: %s", err)
+		// Regenerate the session if it was previously closed
+		scpSession, err := sshClient.NewSession()
+		if err != nil {
+			return err
+		}
+	
+		scpClient.Session = scpSession
+		err = scpClient.CopyFile(context.Background(), firmwareBinaryFile, remotePath, "0777")
+
+		if err != nil {
+			return fmt.Errorf("Error while copying file: %s", err)
+		}
 	}
 
-	fmt.Printf("Finished file upload to repository at path %s.\n", remotePath)
-
-	return "", nil
+	return nil
 }
 
 // TODO: this function should send the catalog to the gateway microservice

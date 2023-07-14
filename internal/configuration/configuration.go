@@ -3,8 +3,10 @@ package configuration
 import (
 	"bufio"
 	"bytes"
+	"fmt"
 	"io"
 	"os"
+	"strings"
 	"sync"
 )
 
@@ -13,6 +15,13 @@ var (
 	Date    string
 	Commit  string
 	BuiltBy string
+)
+
+const (
+	defaultFirmwareRepositorySSHPath  = "/var/www/html/firmware"
+	defaultFirmwareRepositorySSHPort  = "22"
+	defaultFirmwareRepositoryHostname = "192.168.20.10"
+	defaultRepositoryFirmwarePath     = "/firmware"
 )
 
 func IsAdmin() bool {
@@ -100,4 +109,72 @@ func SetConsoleIOChannel(in io.Reader, out io.Writer) {
 // GetUserEmail returns the API key's owner
 func GetUserEmail() string {
 	return os.Getenv("METALCLOUD_USER_EMAIL")
+}
+
+func GetFirmwareRepositoryURL() string {
+	return "https://" + GetFirmwareRepositoryHostname() + GetFirmwareRepositoryPath()
+}
+
+func GetFirmwareRepositoryHostname() string {
+	firmwareRepositoryHostname := defaultFirmwareRepositoryHostname
+
+	if userGivenFirmwareRepositoryHostname := os.Getenv("METALCLOUD_FIRMWARE_REPOSITORY_HOSTNAME"); userGivenFirmwareRepositoryHostname != "" {
+		firmwareRepositoryHostname = os.Getenv("METALCLOUD_FIRMWARE_REPOSITORY_HOSTNAME")
+	}
+
+	return firmwareRepositoryHostname
+}
+
+func GetFirmwareRepositoryPath() string {
+	firmwareRepositoryPath := defaultRepositoryFirmwarePath
+
+	if userGivenFirmwarePath := os.Getenv("METALCLOUD_FIRMWARE_REPOSITORY_ISO_PATH"); userGivenFirmwarePath != "" {
+		firmwareRepositoryPath = os.Getenv("METALCLOUD_FIRMWARE_REPOSITORY_ISO_PATH")
+
+		if !strings.HasPrefix(firmwareRepositoryPath, "/") {
+			firmwareRepositoryPath = "/" + firmwareRepositoryPath
+		}
+	}
+
+	return firmwareRepositoryPath
+}
+
+func GetFirmwareRepositorySSHPath() string {
+	remoteDirectoryPath := defaultFirmwareRepositorySSHPath
+
+	if userGivenRemoteDirectoryPath := os.Getenv("METALCLOUD_FIRMWARE_REPOSITORY_SSH_PATH"); userGivenRemoteDirectoryPath != "" {
+		remoteDirectoryPath = os.Getenv("METALCLOUD_FIRMWARE_REPOSITORY_SSH_PATH")
+	}
+
+	return remoteDirectoryPath
+}
+
+func GetFirmwareRepositorySSHPort() string {
+	remoteSSHPort := defaultFirmwareRepositorySSHPort
+
+	if userGivenSSHPort := os.Getenv("METALCLOUD_FIRMWARE_REPOSITORY_SSH_PORT"); userGivenSSHPort != "" {
+		remoteSSHPort = os.Getenv("METALCLOUD_FIRMWARE_REPOSITORY_SSH_PORT")
+	}
+
+	return remoteSSHPort
+}
+
+func GetUserPrivateSSHKeyPath() (string, error) {
+	if userPrivateSSHKeyPath := os.Getenv("METALCLOUD_USER_PRIVATE_OPENSSH_KEY_PATH"); userPrivateSSHKeyPath == "" {
+		return "", fmt.Errorf("METALCLOUD_USER_PRIVATE_OPENSSH_KEY_PATH must be set when creating a firmware binary. The key is needed when uploading to the firmware binary repository.")
+	}
+
+	userPrivateSSHKeyPath := os.Getenv("METALCLOUD_USER_PRIVATE_OPENSSH_KEY_PATH")
+
+	return userPrivateSSHKeyPath, nil
+}
+
+func GetKnownHostsPath() string {
+	var knownHostsFilePath string
+
+	if userGivenHostsFilePath := os.Getenv("METALCLOUD_KNOWN_HOSTS_FILE_PATH"); userGivenHostsFilePath != "" {
+		knownHostsFilePath = os.Getenv("METALCLOUD_KNOWN_HOSTS_FILE_PATH")
+	}
+
+	return knownHostsFilePath
 }

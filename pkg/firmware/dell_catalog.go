@@ -2,8 +2,8 @@ package firmware
 
 import (
 	"compress/gzip"
-	"encoding/xml"
 	"encoding/json"
+	"encoding/xml"
 	"fmt"
 	"io"
 	"log"
@@ -15,6 +15,8 @@ import (
 	"time"
 
 	"golang.org/x/net/html/charset"
+
+	"github.com/metalsoft-io/metalcloud-cli/internal/configuration"
 
 	metalcloud "github.com/metalsoft-io/metal-cloud-sdk-go/v2"
 )
@@ -228,7 +230,7 @@ func parseDellCatalog(configFile rawConfigFile, client metalcloud.MetalCloudClie
 	}
 
 	firmwareBinaryCollection := []firmwareBinary{}
-	repositoryURL := getFirmwareRepositoryURL()
+	repositoryURL := configuration.GetFirmwareRepositoryURL()
 
 	for idx, component := range manifest.Components {
 		// We only check for components that are of type firmware
@@ -309,6 +311,7 @@ func parseDellCatalog(configFile rawConfigFile, client metalcloud.MetalCloudClie
 		firmwareBinary := firmwareBinary{
 			ExternalId:             component.Path,
 			Name:                   component.Name.Display,
+			FileName:               componentName,
 			Description:            component.Description.Display,
 			PackageId:              component.PackageID,
 			PackageVersion:         component.VendorVersion,
