@@ -17,14 +17,15 @@ import (
 )
 
 /**
- * Firmware related environment variables:
+ * Firmware related environment variables (all required):
  	METALCLOUD_FIRMWARE_REPOSITORY_HOSTNAME
+	METALCLOUD_FIRMWARE_REPOSITORY_PATH
+	METALCLOUD_FIRMWARE_REPOSITORY_SSH_PATH
 	METALCLOUD_FIRMWARE_REPOSITORY_SSH_PORT
-	METALCLOUD_FIRMWARE_REPOSITORY_ISO_PATH
 
  * SCP related environment variables:
-	METALCLOUD_USER_PRIVATE_OPENSSH_KEY_PATH
-	METALCLOUD_KNOWN_HOSTS_FILE_PATH
+	METALCLOUD_USER_PRIVATE_OPENSSH_KEY_PATH (required)
+	METALCLOUD_KNOWN_HOSTS_FILE_PATH (optional, defaults to ~/.ssh/known_hosts)
 */
 
 const (
@@ -228,8 +229,25 @@ func uploadBinariesToRepository(binaryCollection []firmwareBinary, replaceIfExis
 		return fmt.Errorf("Unsupported for the moment")
 	}
 
-	firmwareBinaryRepositoryHostname := configuration.GetFirmwareRepositoryHostname()
-	firmwareRepositoryPath := configuration.GetFirmwareRepositoryPath()
+	firmwareBinaryRepositoryHostname, err := configuration.GetFirmwareRepositoryHostname()
+	if err != nil {
+		return err
+	}
+
+	firmwareRepositoryPath, err := configuration.GetFirmwareRepositoryPath()
+	if err != nil {
+		return err
+	}
+
+	firmwareRepositorySSHPort, err := configuration.GetFirmwareRepositorySSHPort()
+	if err != nil {
+		return err
+	}
+
+	firmwareRepositorySSHPath, err := configuration.GetFirmwareRepositorySSHPath()
+	if err != nil {
+		return err
+	}
 
 	//TODO: change this to https
 	remoteURL := "http://" + firmwareBinaryRepositoryHostname + firmwareRepositoryPath
@@ -246,7 +264,7 @@ func uploadBinariesToRepository(binaryCollection []firmwareBinary, replaceIfExis
 		return err
 	}
 
-	if len(missingBinaries) == 0 {
+	if len(missingBinaries) == 0 && !replaceIfExists {
 		fmt.Println("All binaries already exist in the repository. Skipping upload.")
 		return nil
 	}
@@ -259,17 +277,18 @@ func uploadBinariesToRepository(binaryCollection []firmwareBinary, replaceIfExis
 
 	defer scpClient.Close()
 
-	sshRepositoryHostname := configuration.GetFirmwareRepositoryHostname() + ":" + configuration.GetFirmwareRepositorySSHPort()
+	sshRepositoryHostname := firmwareBinaryRepositoryHostname + ":" + firmwareRepositorySSHPort
 	fmt.Printf("Established connection to hostname %s.\n", sshRepositoryHostname)
 
-	fmt.Printf("Detected %d missing binaries.\n", len(missingBinaries))
-	if replaceIfExists {
+	if !replaceIfExists {
+		fmt.Printf("Detected %d missing binaries.\n", len(missingBinaries))
+	} else {
 		fmt.Println("The 'replace-if-exists' parameter is set to true. All binaries will be replaced.")
 	}
 
 	for _, firmwareBinary := range binaryCollection {
 		firmwareBinaryExists := !slices.Contains[string](missingBinaries, firmwareBinary.FileName)
-		remotePath := configuration.GetFirmwareRepositorySSHPath() + "/" + firmwareBinary.FileName
+		remotePath := firmwareRepositorySSHPath + "/" + firmwareBinary.FileName
 
 		if firmwareBinaryExists && !replaceIfExists {
 			continue
@@ -299,8 +318,13 @@ func uploadBinaryToRepository(binary firmwareBinary, scpClient *scp.Client, sshC
 		return fmt.Errorf("No local path specified for firmware binary %s.", binary.FileName)
 	}
 
+	firmwareRepositorySSHPath, err := configuration.GetFirmwareRepositorySSHPath()
+	if err != nil {
+		return err
+	}
+
 	firmwareBinaryFilename := binary.FileName
-	remotePath := configuration.GetFirmwareRepositorySSHPath() + "/" + firmwareBinaryFilename
+	remotePath := firmwareRepositorySSHPath + "/" + firmwareBinaryFilename
 
 	firmwareBinaryFile, err := os.Open(firmwareBinaryPath)
 	if err != nil {

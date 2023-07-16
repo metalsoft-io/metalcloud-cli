@@ -140,10 +140,10 @@ func DownloadFile(url, filepath string) error {
 	return nil
 }
 
-func HandleKnownHostsFile() (ssh.HostKeyCallback, error) {
+func HandleKnownHostsFile() (ssh.HostKeyCallback, string, error) {
 	homeDir, err := os.UserHomeDir()
 	if err != nil {
-		return nil, err
+		return nil, "", err
 	}
 
 	knownHostsFilePath := configuration.GetKnownHostsPath()
@@ -156,7 +156,7 @@ func HandleKnownHostsFile() (ssh.HostKeyCallback, error) {
 			hostsFile, err := os.Create(knownHostsFilePath)
 
 			if err != nil {
-				return nil, err
+				return nil, "", err
 			}
 
 			hostsFile.Close()
@@ -166,10 +166,10 @@ func HandleKnownHostsFile() (ssh.HostKeyCallback, error) {
 	hostKeyCallback, err := kh.New(knownHostsFilePath)
 
 	if err != nil {
-		return nil, fmt.Errorf("Received following error when parsing the known_hosts file: %s.", err)
+		return nil, "", fmt.Errorf("Received following error when parsing the known_hosts file: %s.", err)
 	}
 
-	return hostKeyCallback, nil
+	return hostKeyCallback, knownHostsFilePath, nil
 }
 
 func CreateSSHClientConfig(strictHostKeyChecking bool) (ssh.ClientConfig, error) {
@@ -179,8 +179,7 @@ func CreateSSHClientConfig(strictHostKeyChecking bool) (ssh.ClientConfig, error)
 		return ssh.ClientConfig{}, err
 	}
 
-	knownHostsFilePath := configuration.GetKnownHostsPath()
-	hostKeyCallback, err := HandleKnownHostsFile()
+	hostKeyCallback, knownHostsFilePath, err := HandleKnownHostsFile()
 
 	if err != nil {
 		return ssh.ClientConfig{}, err
@@ -200,31 +199,31 @@ func CreateSSHClientConfig(strictHostKeyChecking bool) (ssh.ClientConfig, error)
 				if len(keyError.Want) > 0 {
 					// If host is known then there is key mismatch and the connection is rejected.
 					fmt.Printf(`
-	@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
-	@    WARNING: REMOTE HOST IDENTIFICATION HAS CHANGED!     @
-	@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
-	IT IS POSSIBLE THAT SOMEONE IS DOING SOMETHING NASTY!
-	Someone could be eavesdropping on you right now (man-in-the-middle attack)!
-	It is also possible that a host key has just been changed.
-	The key sent by the remote host is
-	%s.
-	Please contact your system administrator.
-	Add correct host key in %s to get rid of this message.
-	Host key for %s has changed and you have requested strict checking.
-	Host key verification failed.
-	`,
+@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
+@    WARNING: REMOTE HOST IDENTIFICATION HAS CHANGED!     @
+@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
+IT IS POSSIBLE THAT SOMEONE IS DOING SOMETHING NASTY!
+Someone could be eavesdropping on you right now (man-in-the-middle attack)!
+It is also possible that a host key has just been changed.
+The key sent by the remote host is
+%s.
+Please contact your system administrator.
+Add correct host key in %s to get rid of this message.
+Host key for %s has changed and you have requested strict checking.
+Host key verification failed.
+`,
 						SerializeSSHKey(publicKey), knownHostsFilePath, hostname,
 					)
 					return keyError
 				} else {
 					// If keyErr.Want slice is empty then host is unknown.
 					fmt.Printf(`
-	The authenticity of host '%s' can't be established.
-	SSH key is %s.
-	This key is not known by any other names.
-	It will be added to known_hosts file %s.
-	Are you sure you want to continue connecting (yes/no)?
-	`,
+The authenticity of host '%s' can't be established.
+SSH key is %s.
+This key is not known by any other names.
+It will be added to known_hosts file %s.
+Are you sure you want to continue connecting (yes/no)?
+`,
 						hostname, SerializeSSHKey(publicKey), knownHostsFilePath,
 					)
 
@@ -243,7 +242,7 @@ func CreateSSHClientConfig(strictHostKeyChecking bool) (ssh.ClientConfig, error)
 							if input == "no" {
 								fmt.Println("Aborting connection.")
 							} else {
-								fmt.Println("Invalid response given. Aborting connection.")
+								fmt.Println("Invalid response given. Expecting 'yes' or 'no'. Aborting connection.")
 							}
 
 							return keyError
@@ -275,7 +274,17 @@ func CreateSSHConnection(strictHostKeyChecking bool) (scp.Client, *ssh.Client, e
 		return scp.Client{}, &ssh.Client{}, err
 	}
 
-	sshRepositoryHostname := configuration.GetFirmwareRepositoryHostname() + ":" + configuration.GetFirmwareRepositorySSHPort()
+	firmwareRepositoryHostname, err := configuration.GetFirmwareRepositoryHostname()
+	if err != nil {
+		return scp.Client{}, &ssh.Client{}, err
+	}
+
+	firmwareRepositorySSHPort, err := configuration.GetFirmwareRepositorySSHPort()
+	if err != nil {
+		return scp.Client{}, &ssh.Client{}, err
+	}
+
+	sshRepositoryHostname := firmwareRepositoryHostname + ":" + firmwareRepositorySSHPort
 
 	fmt.Printf("Establishing connection to hostname %s.\n", sshRepositoryHostname)
 

@@ -28,7 +28,7 @@ var FirmwareCatalogCmds = []command.Command{
 				"raw_config":               c.FlagSet.String("raw-config", command.NilDefaultStr, "The path to the config file."),
 				"download_binaries":        c.FlagSet.Bool("download-binaries", false, colors.Yellow("(Optional)")+"Download firmware binaries from the catalog to the local filesystem."),
 				"skip_upload_to_repo":      c.FlagSet.Bool("skip-upload-to-repo", false, colors.Yellow("(Optional)")+"Skip firmware binaries upload to the HTTP repository."),
-				"strict_host_key_checking": c.FlagSet.Bool("strict-host-key-checking", true, colors.Yellow("(Optional)")+"Skip the manual check when adding a host key to the known_hosts file in the firmware binary upload process."),
+				"strict_host_key_checking": c.FlagSet.Bool("strict-host-key-checking", false, colors.Yellow("(Optional)")+"Do a strict check when adding a host key to the known_hosts file in the firmware binary upload process."),
 				"replace_if_exists":        c.FlagSet.Bool("replace-if-exists", false, colors.Yellow("(Optional)")+"Replaces firmware binaries if the already exist in the HTTP repository."),
 				"debug":                    c.FlagSet.Bool("debug", false, colors.Green("(Flag)")+"If set, increases log level."),
 			}
@@ -101,14 +101,14 @@ func firmwareCatalogCreateCmd(c *command.Command, client metalcloud.MetalCloudCl
 
 	switch configFile.Vendor {
 	case catalogVendorDell:
-		catalog, binaryCollection, err = parseDellCatalog(configFile, client, []string{})
+		catalog, binaryCollection, err = parseDellCatalog(configFile, client, []string{}, uploadToRepo)
 
 		if err != nil {
 			return "", err
 		}
 
 	case catalogVendorLenovo:
-		catalog, binaryCollection, err = parseLenovoCatalog(configFile, client, "*")
+		catalog, binaryCollection, err = parseLenovoCatalog(configFile, client, "*", uploadToRepo)
 
 		if err != nil {
 			return "", err

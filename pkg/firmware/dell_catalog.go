@@ -158,7 +158,7 @@ func BypassReader(label string, input io.Reader) (io.Reader, error) {
 	return input, nil
 }
 
-func parseDellCatalog(configFile rawConfigFile, client metalcloud.MetalCloudClient, filterServerTypes []string) (firmwareCatalog, []firmwareBinary, error) {
+func parseDellCatalog(configFile rawConfigFile, client metalcloud.MetalCloudClient, filterServerTypes []string, uploadToRepo bool) (firmwareCatalog, []firmwareBinary, error) {
 	if configFile.DownloadCatalog {
 		err := downloadCatalog(configFile.CatalogUrl, configFile.CatalogPath)
 		if err != nil {
@@ -230,7 +230,10 @@ func parseDellCatalog(configFile rawConfigFile, client metalcloud.MetalCloudClie
 	}
 
 	firmwareBinaryCollection := []firmwareBinary{}
-	repositoryURL := configuration.GetFirmwareRepositoryURL()
+	repositoryURL, err := configuration.GetFirmwareRepositoryURL()
+	if uploadToRepo && err != nil {
+		return firmwareCatalog{}, nil, fmt.Errorf("Error getting firmware repository URL: %v", err)
+	}
 
 	for idx, component := range manifest.Components {
 		// We only check for components that are of type firmware

@@ -181,7 +181,7 @@ func findFirmwareFix(files []File, fileType string) *File {
 	return nil
 }
 
-func parseLenovoCatalog(configFile rawConfigFile, client metalcloud.MetalCloudClient, filter string) (firmwareCatalog, []firmwareBinary, error) {
+func parseLenovoCatalog(configFile rawConfigFile, client metalcloud.MetalCloudClient, filter string, uploadToRepo bool) (firmwareCatalog, []firmwareBinary, error) {
 	catalogConfiguration := map[string]string{}
 
 	vendorId := configFile.Vendor
