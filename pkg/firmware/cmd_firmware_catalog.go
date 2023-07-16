@@ -101,7 +101,7 @@ func firmwareCatalogCreateCmd(c *command.Command, client metalcloud.MetalCloudCl
 
 	switch configFile.Vendor {
 	case catalogVendorDell:
-		catalog, binaryCollection, err = parseDellCatalog(configFile, client, []string{}, uploadToRepo)
+		catalog, binaryCollection, err = parseDellCatalog(configFile, client, []string{}, uploadToRepo, downloadBinaries)
 
 		if err != nil {
 			return "", err
@@ -123,6 +123,17 @@ func firmwareCatalogCreateCmd(c *command.Command, client metalcloud.MetalCloudCl
 	}
 
 	if downloadBinaries	{
+		if !configFile.DownloadCatalog {
+			var parameterName string
+			if configFormat == configFormatJSON {
+				parameterName = "downloadCatalog"
+			} else if configFormat == configFormatYAML {
+				parameterName = "download_catalog"
+			}
+
+			return "", fmt.Errorf("the 'download-binaries' parameter can only be used when the '%s' parameter is set to true in the raw-config file.", parameterName)
+		}
+
 		err := downloadBinariesFromCatalog(binaryCollection)
 
 		if err != nil {

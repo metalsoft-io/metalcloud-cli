@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"io/ioutil"
 	"os"
 	"path/filepath"
 	"reflect"
@@ -52,14 +53,14 @@ type serverInfo struct {
 }
 
 type rawConfigFile struct {
-	Name            string       `json:"name" yaml:"name"`
-	Description     string       `json:"description" yaml:"description"`
-	Vendor          string       `json:"vendor" yaml:"vendor"`
-	CatalogUrl      string       `json:"catalogUrl" yaml:"catalog_url"`
-	DownloadCatalog bool         `json:"downloadCatalog" yaml:"download_catalog"`
-	CatalogPath     string       `json:"catalogPath" yaml:"catalog_path"`
-	ServersList     []serverInfo `json:"serversList" yaml:"servers_list"`
-	DownloadPath    string       `json:"downloadPath" yaml:"download_path"`
+	Name              string       `json:"name" yaml:"name"`
+	Description       string       `json:"description" yaml:"description"`
+	Vendor            string       `json:"vendor" yaml:"vendor"`
+	CatalogUrl        string       `json:"catalogUrl" yaml:"catalog_url"`
+	DownloadCatalog   bool         `json:"downloadCatalog" yaml:"download_catalog"`
+	ServersList       []serverInfo `json:"serversList" yaml:"servers_list"`
+	LocalCatalogPath  string       `json:"localCatalogPath" yaml:"local_catalog_path"`
+	LocalFirmwarePath string       `json:"localFirmwarePath" yaml:"local_firmware_path"`
 }
 
 type firmwareCatalog struct {
@@ -118,13 +119,13 @@ func parseConfigFile(configFormat string, rawConfigFileContents []byte, configFi
 	structValue := reflect.ValueOf(configFile).Elem()
 	fieldNum := structValue.NumField()
 
-	optionalFields := []string{"CatalogUrl", "ServersList", "DownloadPath"}
+	optionalFields := []string{"CatalogUrl", "ServersList", "localFirmwarePath"}
 
 	for i := 0; i < fieldNum; i++ {
 		field := structValue.Field(i)
 		fieldName := structValue.Type().Field(i).Name
 
-		isSet := field.IsValid() && !field.IsZero()
+		isSet := field.IsValid() && (!field.IsZero() || field.Kind() == reflect.Bool)
 
 		if !isSet && !slices.Contains[string](optionalFields, fieldName) {
 			return fmt.Errorf("the '%s' field must be set in the raw-config file", fieldName)
@@ -151,13 +152,13 @@ func parseConfigFile(configFormat string, rawConfigFileContents []byte, configFi
 		}
 	}
 
-	if downloadBinaries && (configFile.DownloadPath == "" || configFile.CatalogUrl == "") {
+	if downloadBinaries && (configFile.LocalFirmwarePath == "" || configFile.CatalogUrl == "") {
 		if configFormat == configFormatJSON {
-			return fmt.Errorf("the 'downloadPath' and 'catalogUrl' fields must be set in the raw-config file when downloading binaries")
+			return fmt.Errorf("the 'localFirmwarePath' and 'catalogUrl' fields must be set in the raw-config file when downloading binaries")
 		}
 
 		if configFormat == configFormatYAML {
-			return fmt.Errorf("the 'download_path' and 'catalog_url' fields must be set in the raw-config file when downloading binaries")
+			return fmt.Errorf("the 'local_firmware_path' and 'catalog_url' fields must be set in the raw-config file when downloading binaries")
 		}
 	}
 
@@ -214,7 +215,7 @@ func downloadBinariesFromCatalog(binaryCollection []firmwareBinary) error {
 		err := networking.DownloadFile(firmwareBinary.DownloadURL, firmwareBinary.LocalPath)
 
 		if err != nil {
-			return fmt.Errorf("error while downloading file: %s", err)
+			return fmt.Errorf("error while downloading file %s: %s", firmwareBinary.FileName, err)
 		}
 
 		fmt.Printf("Downloaded binary '%s' from URL '%s' to path '%s'.\n", filepath.Base(firmwareBinary.DownloadURL), firmwareBinary.DownloadURL, firmwareBinary.LocalPath)
@@ -225,10 +226,6 @@ func downloadBinariesFromCatalog(binaryCollection []firmwareBinary) error {
 }
 
 func uploadBinariesToRepository(binaryCollection []firmwareBinary, replaceIfExists, strictHostKeyChecking, downloadBinaries bool) error {
-	if !downloadBinaries {
-		return fmt.Errorf("Unsupported for the moment")
-	}
-
 	firmwareBinaryRepositoryHostname, err := configuration.GetFirmwareRepositoryHostname()
 	if err != nil {
 		return err
@@ -300,7 +297,7 @@ func uploadBinariesToRepository(binaryCollection []firmwareBinary, replaceIfExis
 			fmt.Printf("Uploading new firmware binary %s at path %s.\n", firmwareBinary.FileName, remotePath)
 		}
 
-		err := uploadBinaryToRepository(firmwareBinary, &scpClient, sshClient)
+		err := uploadBinaryToRepository(firmwareBinary, &scpClient, sshClient, downloadBinaries)
 
 		if err != nil {
 			return err
@@ -311,12 +308,15 @@ func uploadBinariesToRepository(binaryCollection []firmwareBinary, replaceIfExis
 	return nil
 }
 
-func uploadBinaryToRepository(binary firmwareBinary, scpClient *scp.Client, sshClient *ssh.Client) error {
-	firmwareBinaryPath := binary.LocalPath
-
-	if firmwareBinaryPath == "" {
-		return fmt.Errorf("No local path specified for firmware binary %s.", binary.FileName)
+func uploadBinaryToRepository(binary firmwareBinary, scpClient *scp.Client, sshClient *ssh.Client, downloadBinaries bool) error {
+	// Regenerate the session in the case it was previously closed, otherwise only the first file will be uploaded.
+	// TODO: need a check to see if the session is still open
+	scpSession, err := sshClient.NewSession()
+	if err != nil {
+		return err
 	}
+
+	scpClient.Session = scpSession
 
 	firmwareRepositorySSHPath, err := configuration.GetFirmwareRepositorySSHPath()
 	if err != nil {
@@ -326,27 +326,41 @@ func uploadBinaryToRepository(binary firmwareBinary, scpClient *scp.Client, sshC
 	firmwareBinaryFilename := binary.FileName
 	remotePath := firmwareRepositorySSHPath + "/" + firmwareBinaryFilename
 
-	firmwareBinaryFile, err := os.Open(firmwareBinaryPath)
-	if err != nil {
-		return fmt.Errorf("File not found at path %s.", firmwareBinaryPath)
+	firmwareBinaryPath := binary.LocalPath
+
+	var firmwareBinaryFile *os.File
+	if firmwareBinaryPath == "" {
+		if binary.DownloadURL != "" {
+			// We don't save the binaries on the local filesystem, so we need to download them from the catalog as temporary files and then upload them to the repository.
+			firmwareBinaryFile, err = ioutil.TempFile(os.TempDir(), firmwareBinaryFilename)
+			if err != nil {
+				return err
+			}
+			defer os.Remove(firmwareBinaryFile.Name())
+			defer firmwareBinaryFile.Close()
+
+			if !networking.CheckValidUrl(binary.DownloadURL) {
+				return fmt.Errorf("download URL '%s' is not valid.", binary.DownloadURL)
+			}
+
+			err = networking.DownloadFile(binary.DownloadURL, firmwareBinaryFile.Name())
+
+			if err != nil {
+				return err
+			}
+		}
+	} else {
+		firmwareBinaryFile, err = os.Open(firmwareBinaryPath)
+		if err != nil {
+			return fmt.Errorf("file not found at path %s. Make sure the local firmware path is set correctly in the raw-config file.", firmwareBinaryPath)
+		}
+		defer firmwareBinaryFile.Close()
 	}
-	defer firmwareBinaryFile.Close()
 
 	err = scpClient.CopyFile(context.Background(), firmwareBinaryFile, remotePath, "0777")
 
 	if err != nil {
-		// Regenerate the session if it was previously closed
-		scpSession, err := sshClient.NewSession()
-		if err != nil {
-			return err
-		}
-	
-		scpClient.Session = scpSession
-		err = scpClient.CopyFile(context.Background(), firmwareBinaryFile, remotePath, "0777")
-
-		if err != nil {
-			return fmt.Errorf("Error while copying file: %s", err)
-		}
+		return fmt.Errorf("Error while copying file: %s", err)
 	}
 
 	return nil

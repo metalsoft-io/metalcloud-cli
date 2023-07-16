@@ -110,7 +110,7 @@ func AddHostKey(knownHostsFilePath string, remoteAddress net.Addr, publicKey ssh
 func DownloadFile(url, filepath string) error {
 	out, err := os.Create(filepath)
 	if err != nil {
-		return fmt.Errorf("failed to create file %s: %s", filepath, err)
+		return err
 	}
 	defer out.Close()
 

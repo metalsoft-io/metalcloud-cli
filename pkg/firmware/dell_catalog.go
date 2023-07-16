@@ -158,15 +158,15 @@ func BypassReader(label string, input io.Reader) (io.Reader, error) {
 	return input, nil
 }
 
-func parseDellCatalog(configFile rawConfigFile, client metalcloud.MetalCloudClient, filterServerTypes []string, uploadToRepo bool) (firmwareCatalog, []firmwareBinary, error) {
+func parseDellCatalog(configFile rawConfigFile, client metalcloud.MetalCloudClient, filterServerTypes []string, uploadToRepo, downloadBinaries bool) (firmwareCatalog, []firmwareBinary, error) {
 	if configFile.DownloadCatalog {
-		err := downloadCatalog(configFile.CatalogUrl, configFile.CatalogPath)
+		err := downloadCatalog(configFile.CatalogUrl, configFile.LocalCatalogPath)
 		if err != nil {
 			return firmwareCatalog{}, nil, err
 		}
 	}
 
-	xmlFile, err := os.Open(configFile.CatalogPath)
+	xmlFile, err := os.Open(configFile.LocalCatalogPath)
 	if err != nil {
 		return firmwareCatalog{}, nil, err
 	}
@@ -284,13 +284,13 @@ func parseDellCatalog(configFile rawConfigFile, client metalcloud.MetalCloudClie
 		timestamp, err := time.Parse("January 02, 2006", component.ReleaseDate)
 
 		if err != nil {
-			return firmwareCatalog{}, nil, fmt.Errorf("Error parsing release date: %v", err)
+			return firmwareCatalog{}, nil, fmt.Errorf("error parsing release date: %v", err)
 		}
 
 		severity, err := getSeverity(component.UpdateSeverity.Value)
 
 		if err != nil {
-			return firmwareCatalog{}, nil, fmt.Errorf("Error parsing severity: %v", err)
+			return firmwareCatalog{}, nil, fmt.Errorf("error parsing severity: %v", err)
 		}
 
 		downloadURL := ""
@@ -303,11 +303,11 @@ func parseDellCatalog(configFile rawConfigFile, client metalcloud.MetalCloudClie
 		componentRepoUrl := repositoryURL + "/" + componentName
 
 		localPath := ""
-		if configFile.DownloadPath != "" {
-			localPath, err = filepath.Abs(filepath.Join(configFile.DownloadPath, componentName))
+		if configFile.LocalFirmwarePath != "" && (downloadBinaries || !configFile.DownloadCatalog) {
+			localPath, err = filepath.Abs(filepath.Join(configFile.LocalFirmwarePath, componentName))
 
 			if err != nil {
-				return firmwareCatalog{}, nil, fmt.Errorf("Error getting download binary absolute path: %v", err)
+				return firmwareCatalog{}, nil, fmt.Errorf("error getting download binary absolute path: %v", err)
 			}
 		}
 
