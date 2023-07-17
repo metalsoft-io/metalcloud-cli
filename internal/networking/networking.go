@@ -173,7 +173,7 @@ func HandleKnownHostsFile() (ssh.HostKeyCallback, string, error) {
 	return hostKeyCallback, knownHostsFilePath, nil
 }
 
-func CreateSSHClientConfig(strictHostKeyChecking bool) (ssh.ClientConfig, error) {
+func CreateSSHClientConfig(skipHostKeyChecking bool) (ssh.ClientConfig, error) {
 	userPrivateSSHKeyPath, err := configuration.GetUserPrivateSSHKeyPath()
 
 	if err != nil {
@@ -228,7 +228,7 @@ Are you sure you want to continue connecting (yes/no)?
 						hostname, SerializeSSHKey(publicKey), knownHostsFilePath,
 					)
 
-					if strictHostKeyChecking {
+					if !skipHostKeyChecking {
 						reader := bufio.NewReader(os.Stdin)
 						input, err := reader.ReadString('\n')
 
@@ -249,7 +249,7 @@ Are you sure you want to continue connecting (yes/no)?
 							return keyError
 						}
 					} else {
-						fmt.Printf("Skipped manual check because 'strict-host-key-checking' is set to false.")
+						fmt.Printf("Skipped manual check because 'skip-host-key-checking' is set to true.")
 					}
 
 					return AddHostKey(knownHostsFilePath, remoteAddress, publicKey)
@@ -268,8 +268,8 @@ Are you sure you want to continue connecting (yes/no)?
 	return clientConfig, nil
 }
 
-func CreateSSHConnection(strictHostKeyChecking bool) (scp.Client, *ssh.Client, error) {
-	clientConfig, err := CreateSSHClientConfig(strictHostKeyChecking)
+func CreateSSHConnection(skipHostKeyChecking bool) (scp.Client, *ssh.Client, error) {
+	clientConfig, err := CreateSSHClientConfig(skipHostKeyChecking)
 
 	if err != nil {
 		return scp.Client{}, &ssh.Client{}, err

@@ -362,17 +362,17 @@ var OsTemplatesCmds = []command.Command{
 				"repo":            c.FlagSet.String("repo", command.NilDefaultStr, colors.Yellow("(Optional)")+"Override the default github url used to download template files for given OS."),
 				// Add this parameter when ISO upload is allowed
 				// "skip-upload-to-repo":      c.FlagSet.Bool("skip-upload-to-repo", false, colors.Yellow("(Optional)")+"Skip ISO image upload to the HTTP repository."),
-				"strict-host-key-checking": c.FlagSet.Bool("strict-host-key-checking", true, colors.Yellow("(Optional)")+"Skip the manual check when adding a host key to the known_hosts file in the ISO image upload process."),
-				"replace-if-exists":        c.FlagSet.Bool("replace-if-exists", false, colors.Yellow("(Optional)")+"Replaces ISO image if one already exists in the HTTP repository."),
-				"debug":                    c.FlagSet.Bool("debug", false, colors.Green("(Flag)")+"If set, increases log level."),
-				"return-id":                c.FlagSet.Bool("return-id", false, colors.Green("(Flag)")+"If set, returns the ID of the generated template. Useful for automation."),
+				"skip-host-key-checking": c.FlagSet.Bool("skip-host-key-checking", true, colors.Yellow("(Optional)")+"Skip the manual check when adding a host key to the known_hosts file in the ISO image upload process."),
+				"replace-if-exists":      c.FlagSet.Bool("replace-if-exists", false, colors.Yellow("(Optional)")+"Replaces ISO image if one already exists in the HTTP repository."),
+				"debug":                  c.FlagSet.Bool("debug", false, colors.Green("(Flag)")+"If set, increases log level."),
+				"return-id":              c.FlagSet.Bool("return-id", false, colors.Green("(Flag)")+"If set, returns the ID of the generated template. Useful for automation."),
 			}
 		},
 		ExecuteFunc: templateRegisterCmd,
 		Endpoint:    configuration.ExtendedEndpoint,
 		Example: `
 		metalcloud-cli os-template register --name test-template --source-template Ubuntu/20.04/oob-uefi-boot --source-iso ubuntu-20.04.4-live-server-amd64.iso —-assets-update user-data:./replace_asset_1,vendor-data:./replace_asset_2
-		metalcloud-cli os-template register --name test-100 --source-template Ubuntu/20.04/oob-uefi-boot --source-iso ubuntu-20.04.4-live-server-amd64.iso --replace-if-exists --strict-host-key-checking=false
+		metalcloud-cli os-template register --name test-100 --source-template Ubuntu/20.04/oob-uefi-boot --source-iso ubuntu-20.04.4-live-server-amd64.iso --replace-if-exists --skip-host-key-checking=false
 		metalcloud-cli os-template register --name "SONiC Enterprise 4.0.2 - Spine" --source-template "SONiC/4.0.2/sonic-enterprise-premium-spine"
 		`,
 	},
@@ -1985,7 +1985,7 @@ Are you sure you want to continue connecting (yes/no)?
 								hostname, networking.SerializeSSHKey(publicKey), knownHostsFilePath,
 							)
 
-							if command.GetBoolParam(c.Arguments["strict-host-key-checking"]) {
+							if command.GetBoolParam(c.Arguments["skip-host-key-checking"]) {
 								reader := bufio.NewReader(os.Stdin)
 								input, err := reader.ReadString('\n')
 
@@ -2006,7 +2006,7 @@ Are you sure you want to continue connecting (yes/no)?
 									return keyError
 								}
 							} else {
-								fmt.Printf("Skipped manual check because 'strict-host-key-checking' is set to false.")
+								fmt.Printf("Skipped manual check because 'skip-host-key-checking' is set to false.")
 							}
 
 							return networking.AddHostKey(knownHostsFilePath, remoteAddress, publicKey)

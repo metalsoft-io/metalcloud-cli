@@ -23,14 +23,14 @@ var FirmwareCatalogCmds = []command.Command{
 		FlagSet:      flag.NewFlagSet("create firmware catalog", flag.ExitOnError),
 		InitFunc: func(c *command.Command) {
 			c.Arguments = map[string]interface{}{
-				"label":                    c.FlagSet.String("label", command.NilDefaultStr, colors.Red("(Required)")+" Firmware catalog's label"),
-				"config_format":            c.FlagSet.String("config-format", command.NilDefaultStr, "The format of the config file. Supported values are 'json' and 'yaml'."),
-				"raw_config":               c.FlagSet.String("raw-config", command.NilDefaultStr, "The path to the config file."),
-				"download_binaries":        c.FlagSet.Bool("download-binaries", false, colors.Yellow("(Optional)")+"Download firmware binaries from the catalog to the local filesystem."),
-				"skip_upload_to_repo":      c.FlagSet.Bool("skip-upload-to-repo", false, colors.Yellow("(Optional)")+"Skip firmware binaries upload to the HTTP repository."),
-				"strict_host_key_checking": c.FlagSet.Bool("strict-host-key-checking", false, colors.Yellow("(Optional)")+"Do a strict check when adding a host key to the known_hosts file in the firmware binary upload process."),
-				"replace_if_exists":        c.FlagSet.Bool("replace-if-exists", false, colors.Yellow("(Optional)")+"Replaces firmware binaries if the already exist in the HTTP repository."),
-				"debug":                    c.FlagSet.Bool("debug", false, colors.Green("(Flag)")+"If set, increases log level."),
+				"label":                  c.FlagSet.String("label", command.NilDefaultStr, colors.Red("(Required)")+" Firmware catalog's label"),
+				"config_format":          c.FlagSet.String("config-format", command.NilDefaultStr, "The format of the config file. Supported values are 'json' and 'yaml'."),
+				"raw_config":             c.FlagSet.String("raw-config", command.NilDefaultStr, "The path to the config file."),
+				"download_binaries":      c.FlagSet.Bool("download-binaries", false, colors.Yellow("(Optional)")+"Download firmware binaries from the catalog to the local filesystem."),
+				"skip_upload_to_repo":    c.FlagSet.Bool("skip-upload-to-repo", false, colors.Yellow("(Optional)")+"Skip firmware binaries upload to the HTTP repository."),
+				"skip_host_key_checking": c.FlagSet.Bool("skip-host-key-checking", false, colors.Yellow("(Optional)")+"Skip check when adding a host key to the known_hosts file in the firmware binary upload process."),
+				"replace_if_exists":      c.FlagSet.Bool("replace-if-exists", false, colors.Yellow("(Optional)")+"Replaces firmware binaries if the already exist in the HTTP repository."),
+				"debug":                  c.FlagSet.Bool("debug", false, colors.Green("(Flag)")+"If set, increases log level."),
 			}
 		},
 		ExecuteFunc: firmwareCatalogCreateCmd,
@@ -122,13 +122,13 @@ func firmwareCatalogCreateCmd(c *command.Command, client metalcloud.MetalCloudCl
 		return "", fmt.Errorf("invalid vendor '%s' found in the raw-config file. Supported vendors are %v", configFile.Vendor, validVendors)
 	}
 
-	if downloadBinaries	{
-		if !configFile.DownloadCatalog {
+	if downloadBinaries {
+		if configFile.CatalogUrl == "" {
 			var parameterName string
 			if configFormat == configFormatJSON {
-				parameterName = "downloadCatalog"
+				parameterName = "catalogUrl"
 			} else if configFormat == configFormatYAML {
-				parameterName = "download_catalog"
+				parameterName = "catalog_url"
 			}
 
 			return "", fmt.Errorf("the 'download-binaries' parameter can only be used when the '%s' parameter is set to true in the raw-config file.", parameterName)
@@ -140,19 +140,19 @@ func firmwareCatalogCreateCmd(c *command.Command, client metalcloud.MetalCloudCl
 			return "", err
 		}
 	}
-	
+
 	replaceIfExists := false
 	if command.GetBoolParam(c.Arguments["replace_if_exists"]) {
 		replaceIfExists = true
 	}
 
-	strictHostKeyChecking := false
-	if command.GetBoolParam(c.Arguments["strict_host_key_checking"]) {
-		strictHostKeyChecking = true
+	skipHostKeyChecking := false
+	if command.GetBoolParam(c.Arguments["skip_host_key_checking"]) {
+		skipHostKeyChecking = true
 	}
 
 	if uploadToRepo {
-		err := uploadBinariesToRepository(binaryCollection, replaceIfExists, strictHostKeyChecking, downloadBinaries)
+		err := uploadBinariesToRepository(binaryCollection, replaceIfExists, skipHostKeyChecking, downloadBinaries)
 
 		if err != nil {
 			return "", err

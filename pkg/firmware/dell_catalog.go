@@ -159,7 +159,7 @@ func BypassReader(label string, input io.Reader) (io.Reader, error) {
 }
 
 func parseDellCatalog(configFile rawConfigFile, client metalcloud.MetalCloudClient, filterServerTypes []string, uploadToRepo, downloadBinaries bool) (firmwareCatalog, []firmwareBinary, error) {
-	if configFile.DownloadCatalog {
+	if configFile.CatalogUrl != "" {
 		err := downloadCatalog(configFile.CatalogUrl, configFile.LocalCatalogPath)
 		if err != nil {
 			return firmwareCatalog{}, nil, err
@@ -219,7 +219,7 @@ func parseDellCatalog(configFile rawConfigFile, client metalcloud.MetalCloudClie
 
 	baseCatalogURL := ""
 
-	if configFile.DownloadCatalog {
+	if configFile.CatalogUrl != "" {
 		url, err := url.Parse(configFile.CatalogUrl)
 
 		if err != nil {
@@ -294,7 +294,7 @@ func parseDellCatalog(configFile rawConfigFile, client metalcloud.MetalCloudClie
 		}
 
 		downloadURL := ""
-		if configFile.DownloadCatalog {
+		if configFile.CatalogUrl != "" {
 			downloadURL = baseCatalogURL + "/" + component.Path
 		}
 
@@ -303,7 +303,7 @@ func parseDellCatalog(configFile rawConfigFile, client metalcloud.MetalCloudClie
 		componentRepoUrl := repositoryURL + "/" + componentName
 
 		localPath := ""
-		if configFile.LocalFirmwarePath != "" && (downloadBinaries || !configFile.DownloadCatalog) {
+		if configFile.LocalFirmwarePath != "" && (downloadBinaries || configFile.CatalogUrl == "") {
 			localPath, err = filepath.Abs(filepath.Join(configFile.LocalFirmwarePath, componentName))
 
 			if err != nil {

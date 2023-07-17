@@ -57,7 +57,6 @@ type rawConfigFile struct {
 	Description       string       `json:"description" yaml:"description"`
 	Vendor            string       `json:"vendor" yaml:"vendor"`
 	CatalogUrl        string       `json:"catalogUrl" yaml:"catalog_url"`
-	DownloadCatalog   bool         `json:"downloadCatalog" yaml:"download_catalog"`
 	ServersList       []serverInfo `json:"serversList" yaml:"servers_list"`
 	LocalCatalogPath  string       `json:"localCatalogPath" yaml:"local_catalog_path"`
 	LocalFirmwarePath string       `json:"localFirmwarePath" yaml:"local_firmware_path"`
@@ -132,16 +131,6 @@ func parseConfigFile(configFormat string, rawConfigFileContents []byte, configFi
 		}
 	}
 
-	if configFile.DownloadCatalog && configFile.CatalogUrl == "" {
-		if configFormat == configFormatJSON {
-			return fmt.Errorf("the 'catalogUrl' field must be set in the raw-config file when 'downloadCatalog' is set to true")
-		}
-
-		if configFormat == configFormatYAML {
-			return fmt.Errorf("the 'catalog_url' field must be set in the raw-config file when 'download_catalog' is set to true")
-		}
-	}
-
 	if configFile.Vendor == catalogVendorLenovo && configFile.ServersList == nil {
 		if configFormat == configFormatJSON {
 			return fmt.Errorf("the 'serversList' field must be set in the raw-config file when 'vendor' is set to '%s'", catalogVendorLenovo)
@@ -182,7 +171,7 @@ func checkStringSize(str string) error {
 }
 
 func getUpdateType(rawConfigFile rawConfigFile) string {
-	if rawConfigFile.DownloadCatalog {
+	if rawConfigFile.CatalogUrl != "" {
 		return catalogUpdateTypeOnline
 	}
 
@@ -225,7 +214,7 @@ func downloadBinariesFromCatalog(binaryCollection []firmwareBinary) error {
 	return nil
 }
 
-func uploadBinariesToRepository(binaryCollection []firmwareBinary, replaceIfExists, strictHostKeyChecking, downloadBinaries bool) error {
+func uploadBinariesToRepository(binaryCollection []firmwareBinary, replaceIfExists, skipHostKeyChecking, downloadBinaries bool) error {
 	firmwareRepositoryURL, err := configuration.GetFirmwareRepositoryURL()
 	if err != nil {
 		return err
@@ -265,7 +254,7 @@ func uploadBinariesToRepository(binaryCollection []firmwareBinary, replaceIfExis
 		return nil
 	}
 
-	scpClient, sshClient, err := networking.CreateSSHConnection(strictHostKeyChecking)
+	scpClient, sshClient, err := networking.CreateSSHConnection(skipHostKeyChecking)
 
 	if err != nil {
 		return fmt.Errorf("Couldn't establish a connection to the remote server: %s", err)
