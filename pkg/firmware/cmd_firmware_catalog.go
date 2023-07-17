@@ -23,14 +23,14 @@ var FirmwareCatalogCmds = []command.Command{
 		FlagSet:      flag.NewFlagSet("create firmware catalog", flag.ExitOnError),
 		InitFunc: func(c *command.Command) {
 			c.Arguments = map[string]interface{}{
-				"label":                  c.FlagSet.String("label", command.NilDefaultStr, colors.Red("(Required)")+" Firmware catalog's label"),
 				"config_format":          c.FlagSet.String("config-format", command.NilDefaultStr, "The format of the config file. Supported values are 'json' and 'yaml'."),
 				"raw_config":             c.FlagSet.String("raw-config", command.NilDefaultStr, "The path to the config file."),
-				"download_binaries":      c.FlagSet.Bool("download-binaries", false, colors.Yellow("(Optional)")+"Download firmware binaries from the catalog to the local filesystem."),
-				"skip_upload_to_repo":    c.FlagSet.Bool("skip-upload-to-repo", false, colors.Yellow("(Optional)")+"Skip firmware binaries upload to the HTTP repository."),
-				"skip_host_key_checking": c.FlagSet.Bool("skip-host-key-checking", false, colors.Yellow("(Optional)")+"Skip check when adding a host key to the known_hosts file in the firmware binary upload process."),
-				"replace_if_exists":      c.FlagSet.Bool("replace-if-exists", false, colors.Yellow("(Optional)")+"Replaces firmware binaries if the already exist in the HTTP repository."),
-				"debug":                  c.FlagSet.Bool("debug", false, colors.Green("(Flag)")+"If set, increases log level."),
+				"download_binaries":      c.FlagSet.Bool("download-binaries", false, colors.Yellow("(Optional)")+" Download firmware binaries from the catalog to the local filesystem."),
+				"skip_upload_to_repo":    c.FlagSet.Bool("skip-upload-to-repo", false, colors.Yellow("(Optional)")+" Skip firmware binaries upload to the HTTP repository."),
+				"skip_host_key_checking": c.FlagSet.Bool("skip-host-key-checking", false, colors.Yellow("(Optional)")+" Skip check when adding a host key to the known_hosts file in the firmware binary upload process."),
+				"replace_if_exists":      c.FlagSet.Bool("replace-if-exists", false, colors.Yellow("(Optional)")+" Replaces firmware binaries if the already exist in the HTTP repository."),
+				"filter_server_types":	  c.FlagSet.String("filter-server-types", command.NilDefaultStr, colors.Yellow("(Optional)")+" Comma separated list of server types to filter the firmware catalog by. Defaults to all supported server types. * can be used to match all server types from the catalog."),
+				"debug":                  c.FlagSet.Bool("debug", false, colors.Green("(Flag)")+" If set, increases log level."),
 			}
 		},
 		ExecuteFunc: firmwareCatalogCreateCmd,
@@ -39,13 +39,6 @@ var FirmwareCatalogCmds = []command.Command{
 }
 
 func firmwareCatalogCreateCmd(c *command.Command, client metalcloud.MetalCloudClient) (string, error) {
-	var label string
-	if labelValue, ok := command.GetStringParamOk(c.Arguments["label"]); !ok {
-		return "", fmt.Errorf("the 'label' parameter must be specified when creating a firmware catalog")
-	} else {
-		label = labelValue
-	}
-
 	var configFormat string
 	validFormats := []string{configFormatJSON, configFormatYAML}
 
@@ -71,14 +64,10 @@ func firmwareCatalogCreateCmd(c *command.Command, client metalcloud.MetalCloudCl
 		rawConfigFileContents = fileContents
 	}
 
-	fmt.Printf("Creating firmware catalog with label '%s' and config format '%s' and contents \n%s\n", label, configFormat, string(rawConfigFileContents))
-
 	downloadBinaries := false
 	if command.GetBoolParam(c.Arguments["download_binaries"]) {
 		downloadBinaries = true
 	}
-
-	fmt.Printf("Download binaries is set to: %v\n", downloadBinaries)
 
 	configFile := rawConfigFile{}
 	err := parseConfigFile(configFormat, rawConfigFileContents, &configFile, downloadBinaries)
@@ -87,28 +76,29 @@ func firmwareCatalogCreateCmd(c *command.Command, client metalcloud.MetalCloudCl
 		return "", err
 	}
 
-	fmt.Printf("Parsed config file: %+v\n", configFile)
-
 	uploadToRepo := true
 	if command.GetBoolParam(c.Arguments["skip_upload_to_repo"]) {
 		uploadToRepo = false
 	}
 
-	fmt.Printf("Uploading to repo is set to: %v\n", uploadToRepo)
+	filterServerTypes := ""
+	if filterValue, ok := command.GetStringParamOk(c.Arguments["filter_server_types"]); ok {
+		filterServerTypes = filterValue
+	}
 
 	var catalog firmwareCatalog
 	var binaryCollection []firmwareBinary
 
 	switch configFile.Vendor {
 	case catalogVendorDell:
-		catalog, binaryCollection, err = parseDellCatalog(configFile, client, []string{}, uploadToRepo, downloadBinaries)
+		catalog, binaryCollection, err = parseDellCatalog(client, configFile, filterServerTypes, uploadToRepo, downloadBinaries)
 
 		if err != nil {
 			return "", err
 		}
 
 	case catalogVendorLenovo:
-		catalog, binaryCollection, err = parseLenovoCatalog(configFile, client, "*", uploadToRepo)
+		catalog, binaryCollection, err = parseLenovoCatalog(configFile, client, filterServerTypes, uploadToRepo)
 
 		if err != nil {
 			return "", err
@@ -152,7 +142,7 @@ func firmwareCatalogCreateCmd(c *command.Command, client metalcloud.MetalCloudCl
 	}
 
 	if uploadToRepo {
-		err := uploadBinariesToRepository(binaryCollection, replaceIfExists, skipHostKeyChecking, downloadBinaries)
+		err := uploadBinariesToRepository(binaryCollection, replaceIfExists, skipHostKeyChecking)
 
 		if err != nil {
 			return "", err

@@ -9,6 +9,7 @@ import (
 	"os"
 	"path/filepath"
 	"reflect"
+	"strings"
 
 	"github.com/bramvdbogaerde/go-scp"
 	"github.com/metalsoft-io/metalcloud-cli/internal/configuration"
@@ -16,6 +17,8 @@ import (
 	"golang.org/x/crypto/ssh"
 	"golang.org/x/exp/slices"
 	"gopkg.in/yaml.v3"
+
+	metalcloud "github.com/metalsoft-io/metal-cloud-sdk-go/v2"
 )
 
 /**
@@ -45,6 +48,7 @@ const (
 	updateSeverityRecommended = "recommended"
 	updateSeverityCritical    = "critical"
 	updateSeverityOptional    = "optional"
+	serverTypesAll            = "*"
 )
 
 type serverInfo struct {
@@ -63,16 +67,17 @@ type rawConfigFile struct {
 }
 
 type firmwareCatalog struct {
-	Name                   string
-	Description            string
-	Vendor                 string
-	VendorID               string
-	VendorURL              string
-	VendorReleaseTimestamp string
-	UpdateType             string
-	ServerTypesSupported   []string
-	Configuration          map[string]string
-	CreatedTimestamp       string
+	Name                          string
+	Description                   string
+	Vendor                        string
+	VendorID                      string
+	VendorURL                     string
+	VendorReleaseTimestamp        string
+	UpdateType                    string
+	MetalSoftServerTypesSupported []string
+	ServerTypesSupported          []string
+	Configuration                 map[string]string
+	CreatedTimestamp              string
 }
 
 type firmwareBinary struct {
@@ -214,7 +219,7 @@ func downloadBinariesFromCatalog(binaryCollection []firmwareBinary) error {
 	return nil
 }
 
-func uploadBinariesToRepository(binaryCollection []firmwareBinary, replaceIfExists, skipHostKeyChecking, downloadBinaries bool) error {
+func uploadBinariesToRepository(binaryCollection []firmwareBinary, replaceIfExists, skipHostKeyChecking bool) error {
 	firmwareRepositoryURL, err := configuration.GetFirmwareRepositoryURL()
 	if err != nil {
 		return err
@@ -285,7 +290,7 @@ func uploadBinariesToRepository(binaryCollection []firmwareBinary, replaceIfExis
 			fmt.Printf("Uploading new firmware binary %s at path %s.\n", firmwareBinary.FileName, remotePath)
 		}
 
-		err := uploadBinaryToRepository(firmwareBinary, &scpClient, sshClient, downloadBinaries)
+		err := uploadBinaryToRepository(firmwareBinary, &scpClient, sshClient)
 
 		if err != nil {
 			return err
@@ -296,7 +301,7 @@ func uploadBinariesToRepository(binaryCollection []firmwareBinary, replaceIfExis
 	return nil
 }
 
-func uploadBinaryToRepository(binary firmwareBinary, scpClient *scp.Client, sshClient *ssh.Client, downloadBinaries bool) error {
+func uploadBinaryToRepository(binary firmwareBinary, scpClient *scp.Client, sshClient *ssh.Client) error {
 	// Regenerate the session in the case it was previously closed, otherwise only the first file will be uploaded.
 	// TODO: need a check to see if the session is still open
 	scpSession, err := sshClient.NewSession()
@@ -352,6 +357,52 @@ func uploadBinaryToRepository(binary firmwareBinary, scpClient *scp.Client, sshC
 	}
 
 	return nil
+}
+
+// Returns a map, the key being the actual server type and the value being the Metalsoft internal one.
+// Output example: map[PowerEdge R430:[M.32.64.2 M.40.32.1.v2] PowerEdge R730:[M.32.32.2]]
+func retrieveSupportedServerTypes(client metalcloud.MetalCloudClient, input string) (map[string][]string, error) {
+	supportedServerTypes := map[string][]string{}
+	metalsoftServerTypes := []string{}
+	serversTypeObject, err := client.ServerTypes(false)
+
+	if err != nil {
+		return nil, fmt.Errorf("Error getting server types: %v", err)
+	}
+
+	for _, serverTypeObject := range *serversTypeObject {
+		var serverTypes []string
+		err := json.Unmarshal([]byte(serverTypeObject.ServerTypeAllowedVendorSkuIdsJSON), &serverTypes)
+		if err != nil {
+			return nil, fmt.Errorf("Error unmarshalling server types: %v", err)
+		}
+
+		supportedServerTypes[serverTypes[0]] = append(supportedServerTypes[serverTypes[0]], serverTypeObject.ServerTypeName)
+		metalsoftServerTypes = append(metalsoftServerTypes, serverTypeObject.ServerTypeName)
+	}
+
+	if input == "" || input == serverTypesAll {
+		return supportedServerTypes, nil
+	}
+
+	filteredServerTypes := map[string][]string{}
+	serverTypesList := strings.Split(input, ",")
+
+	for _, serverType := range serverTypesList {
+		serverType = strings.TrimSpace(serverType)
+		if !slices.Contains[string](metalsoftServerTypes, serverType) {
+			return nil, fmt.Errorf("cannot filter server type '%s' because it is not supported by Metalsoft. Supported types are %+v", serverType, metalsoftServerTypes)
+		}
+		
+		for actualServerType, metalsoftServerType := range supportedServerTypes {
+			if slices.Contains[string](metalsoftServerType, serverType) {
+				filteredServerTypes[actualServerType] = append(filteredServerTypes[actualServerType], serverType)
+				break
+			}
+		}
+	}
+
+	return filteredServerTypes, nil
 }
 
 // TODO: this function should send the catalog to the gateway microservice

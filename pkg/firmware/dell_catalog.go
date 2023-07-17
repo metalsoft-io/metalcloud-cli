@@ -2,7 +2,6 @@ package firmware
 
 import (
 	"compress/gzip"
-	"encoding/json"
 	"encoding/xml"
 	"fmt"
 	"io"
@@ -15,6 +14,7 @@ import (
 	"time"
 
 	"golang.org/x/net/html/charset"
+	"golang.org/x/exp/slices"
 
 	"github.com/metalsoft-io/metalcloud-cli/internal/configuration"
 
@@ -22,7 +22,6 @@ import (
 )
 
 const (
-	STOP_AFTER            int    = 1
 	componentTypeFirmware string = "FRMW"
 )
 
@@ -158,27 +157,46 @@ func BypassReader(label string, input io.Reader) (io.Reader, error) {
 	return input, nil
 }
 
-func parseDellCatalog(configFile rawConfigFile, client metalcloud.MetalCloudClient, filterServerTypes []string, uploadToRepo, downloadBinaries bool) (firmwareCatalog, []firmwareBinary, error) {
+func parseDellCatalog(client metalcloud.MetalCloudClient, configFile rawConfigFile, serverTypesFilter string, uploadToRepo, downloadBinaries bool) (firmwareCatalog, []firmwareBinary, error) {
+	supportedServerTypes, err := retrieveSupportedServerTypes(client, serverTypesFilter)
+	if err != nil {
+		return firmwareCatalog{}, nil, err
+	}
+
+	catalog, manifest, err := processDellCatalog(configFile)
+	if err != nil {
+		return firmwareCatalog{}, nil, err
+	}
+	
+	firmwareBinaryCollection, err := processDellBinaries(configFile, manifest, &catalog, supportedServerTypes, uploadToRepo, downloadBinaries)
+	if err != nil {
+		return firmwareCatalog{}, nil, err
+	}
+
+	return catalog, firmwareBinaryCollection, nil
+}
+
+func processDellCatalog(configFile rawConfigFile) (firmwareCatalog, manifest, error) {
 	if configFile.CatalogUrl != "" {
 		err := downloadCatalog(configFile.CatalogUrl, configFile.LocalCatalogPath)
 		if err != nil {
-			return firmwareCatalog{}, nil, err
+			return firmwareCatalog{}, manifest{}, err
 		}
 	}
 
 	xmlFile, err := os.Open(configFile.LocalCatalogPath)
 	if err != nil {
-		return firmwareCatalog{}, nil, err
+		return firmwareCatalog{}, manifest{}, err
 	}
 	defer xmlFile.Close()
 
 	if err != nil {
-		return firmwareCatalog{}, nil, err
+		return firmwareCatalog{}, manifest{}, err
 	}
 
 	reader, err := charset.NewReader(xmlFile, "utf-16")
 	if err != nil {
-		return firmwareCatalog{}, nil, err
+		return firmwareCatalog{}, manifest{}, err
 	}
 
 	decoder := xml.NewDecoder(reader)
@@ -205,16 +223,33 @@ func parseDellCatalog(configFile rawConfigFile, client metalcloud.MetalCloudClie
 	checkStringSize(vendorId)
 
 	catalog := firmwareCatalog{
-		Name:                   configFile.Name,
-		Description:            configFile.Description,
-		Vendor:                 configFile.Vendor,
-		VendorID:               vendorId,
-		VendorURL:              configFile.CatalogUrl,
-		VendorReleaseTimestamp: manifest.DateTime,
-		UpdateType:             getUpdateType(configFile),
-		ServerTypesSupported:   []string{},
-		Configuration:          catalogConfiguration,
-		CreatedTimestamp:       time.Now().Format(time.RFC3339),
+		Name:                          configFile.Name,
+		Description:                   configFile.Description,
+		Vendor:                        configFile.Vendor,
+		VendorID:                      vendorId,
+		VendorURL:                     configFile.CatalogUrl,
+		VendorReleaseTimestamp:        manifest.DateTime,
+		UpdateType:                    getUpdateType(configFile),
+		MetalSoftServerTypesSupported: []string{},
+		ServerTypesSupported:          []string{},
+		Configuration:                 catalogConfiguration,
+		CreatedTimestamp:              time.Now().Format(time.RFC3339),
+	}
+
+	return catalog, manifest, nil
+}
+
+func processDellBinaries(configFile rawConfigFile, dellManifest manifest, catalog *firmwareCatalog, supportedServerTypes map[string][]string, uploadToRepo, downloadBinaries bool) ([]firmwareBinary, error) {
+	metalsoftServerTypes := []string{}
+	dellServerTypes := []string{}
+
+	for dellServerType, msServerTypes := range supportedServerTypes {
+		for _, msServerType := range msServerTypes {
+			if !slices.Contains[string](metalsoftServerTypes, msServerType) {
+				metalsoftServerTypes = append(metalsoftServerTypes, msServerType)
+			}
+		}
+		dellServerTypes = append(dellServerTypes, dellServerType)
 	}
 
 	baseCatalogURL := ""
@@ -223,7 +258,7 @@ func parseDellCatalog(configFile rawConfigFile, client metalcloud.MetalCloudClie
 		url, err := url.Parse(configFile.CatalogUrl)
 
 		if err != nil {
-			return firmwareCatalog{}, nil, fmt.Errorf("Unable to parse catalog URL: %v", err)
+			return nil, fmt.Errorf("Unable to parse catalog URL: %v", err)
 		}
 
 		baseCatalogURL = url.Scheme + "://" + url.Host
@@ -232,12 +267,40 @@ func parseDellCatalog(configFile rawConfigFile, client metalcloud.MetalCloudClie
 	firmwareBinaryCollection := []firmwareBinary{}
 	repositoryURL, err := configuration.GetFirmwareRepositoryURL()
 	if uploadToRepo && err != nil {
-		return firmwareCatalog{}, nil, fmt.Errorf("Error getting firmware repository URL: %v", err)
+		return nil, fmt.Errorf("Error getting firmware repository URL: %v", err)
 	}
 
-	for idx, component := range manifest.Components {
+	for _, component := range dellManifest.Components {
 		// We only check for components that are of type firmware
-		if component.ComponentType.Value != "FRMW" {
+		if component.ComponentType.Value != componentTypeFirmware {
+			continue
+		}
+
+		supportedSystems := []map[string]string{}
+		for _, brand := range component.SupportedSystems.Brands {
+			for _, model := range brand.Models {
+				systemInfo := map[string]string{
+					"brandName":   brand.Display,
+					"brandPrefix": brand.Prefix,
+					"id":          model.SystemID,
+					"idType":      model.SystemIDType,
+					"modelName":   model.Display,
+				}
+				supportedSystems = append(supportedSystems, systemInfo)
+			}
+		}
+
+		var systemName string
+		validBinary := false
+		for _, supportedSystem := range supportedSystems {
+			systemName = supportedSystem["brandName"] + " " + supportedSystem["modelName"]
+			if !validBinary && slices.Contains[string](dellServerTypes, systemName) {
+				validBinary = true
+				break
+			}
+		}
+
+		if !validBinary {
 			continue
 		}
 
@@ -255,20 +318,6 @@ func parseDellCatalog(configFile rawConfigFile, client metalcloud.MetalCloudClie
 			supportedDevices = append(supportedDevices, deviceInfo)
 		}
 
-		supportedSystems := []map[string]string{}
-		for _, brand := range component.SupportedSystems.Brands {
-			for _, model := range brand.Models {
-				systemInfo := map[string]string{
-					"brandName":   brand.Display,
-					"brandPrefix": brand.Prefix,
-					"id":          model.SystemID,
-					"idType":      model.SystemIDType,
-					"modelName":   model.Display,
-				}
-				supportedSystems = append(supportedSystems, systemInfo)
-			}
-		}
-
 		componentVendorConfiguration := map[string]string{
 			"path":          component.Path,
 			"size":          component.Size,
@@ -284,13 +333,13 @@ func parseDellCatalog(configFile rawConfigFile, client metalcloud.MetalCloudClie
 		timestamp, err := time.Parse("January 02, 2006", component.ReleaseDate)
 
 		if err != nil {
-			return firmwareCatalog{}, nil, fmt.Errorf("error parsing release date: %v", err)
+			return nil, fmt.Errorf("error parsing release date: %v", err)
 		}
 
 		severity, err := getSeverity(component.UpdateSeverity.Value)
 
 		if err != nil {
-			return firmwareCatalog{}, nil, fmt.Errorf("error parsing severity: %v", err)
+			return nil, fmt.Errorf("error parsing severity: %v", err)
 		}
 
 		downloadURL := ""
@@ -307,7 +356,7 @@ func parseDellCatalog(configFile rawConfigFile, client metalcloud.MetalCloudClie
 			localPath, err = filepath.Abs(filepath.Join(configFile.LocalFirmwarePath, componentName))
 
 			if err != nil {
-				return firmwareCatalog{}, nil, fmt.Errorf("error getting download binary absolute path: %v", err)
+				return nil, fmt.Errorf("error getting download binary absolute path: %v", err)
 			}
 		}
 
@@ -332,58 +381,16 @@ func parseDellCatalog(configFile rawConfigFile, client metalcloud.MetalCloudClie
 
 		firmwareBinaryCollection = append(firmwareBinaryCollection, firmwareBinary)
 
-		if idx > STOP_AFTER {
-			break
-		}
-	}
+		if !slices.Contains[string](catalog.ServerTypesSupported, systemName) {
+			catalog.ServerTypesSupported = append(catalog.ServerTypesSupported, systemName)
 
-	var serverTypesSupported []string
-	serverTypesUniqueMap := make(map[string]bool)
-	if len(filterServerTypes) == 0 {
-		for _, firmwareBinary := range firmwareBinaryCollection {
-			for _, supportedSystem := range firmwareBinary.SupportedSystems {
-				systemName := supportedSystem["brandName"] + " " + supportedSystem["modelName"]
-				serverTypesUniqueMap[systemName] = true
-			}
-		}
-
-		for serverType, _ := range serverTypesUniqueMap {
-			serverTypesSupported = append(serverTypesSupported, serverType)
-		}
-	} else {
-		serverTypeObjects, err := client.ServerTypes(false)
-
-		if err != nil {
-			return firmwareCatalog{}, nil, fmt.Errorf("Error getting server types: %v", err)
-		}
-
-		for _, serverTypeObject := range *serverTypeObjects {
-			for _, serverType := range filterServerTypes {
-				if serverTypeObject.ServerTypeLabel == serverType {
-					var serverTypes []string
-					_ = json.Unmarshal([]byte(serverTypeObject.ServerTypeAllowedVendorSkuIdsJSON), &serverTypes)
-					serverTypesSupported = append(serverTypesSupported, serverTypes...)
+			for _, supportedServerType := range supportedServerTypes[systemName] {
+				if !slices.Contains[string](catalog.MetalSoftServerTypesSupported, supportedServerType) {
+					catalog.MetalSoftServerTypesSupported = append(catalog.MetalSoftServerTypesSupported, supportedServerType)
 				}
 			}
 		}
-
-		filteredFirmwareBinaryCollection := []firmwareBinary{}
-		for _, serverType := range serverTypesSupported {
-			for _, firmwareBinary := range firmwareBinaryCollection {
-				for _, supportedSystem := range firmwareBinary.SupportedSystems {
-					systemName := supportedSystem["brandName"] + " " + supportedSystem["modelName"]
-					if strings.Contains(systemName, serverType) {
-						filteredFirmwareBinaryCollection = append(filteredFirmwareBinaryCollection, firmwareBinary)
-						break
-					}
-				}
-			}
-		}
-
-		firmwareBinaryCollection = filteredFirmwareBinaryCollection
 	}
 
-	catalog.ServerTypesSupported = serverTypesSupported
-
-	return catalog, firmwareBinaryCollection, nil
+	return firmwareBinaryCollection, nil
 }
