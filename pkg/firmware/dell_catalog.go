@@ -212,7 +212,7 @@ func parseDellCatalog(configFile rawConfigFile, client metalcloud.MetalCloudClie
 		VendorURL:              configFile.CatalogUrl,
 		VendorReleaseTimestamp: manifest.DateTime,
 		UpdateType:             getUpdateType(configFile),
-		ServerTypesSupported:   []string{}, //TODO: this needs to be updated after parsing the firmware binaries
+		ServerTypesSupported:   []string{},
 		Configuration:          catalogConfiguration,
 		CreatedTimestamp:       time.Now().Format(time.RFC3339),
 	}

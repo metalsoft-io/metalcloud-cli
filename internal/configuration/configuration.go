@@ -6,7 +6,6 @@ import (
 	"fmt"
 	"io"
 	"os"
-	"strings"
 	"sync"
 )
 
@@ -105,41 +104,11 @@ func GetUserEmail() string {
 }
 
 func GetFirmwareRepositoryURL() (string, error) {
-	hostname, err := GetFirmwareRepositoryHostname()
-	if err != nil {
-		return "", err
+	if userGivenFirmwareRepositoryHostname := os.Getenv("METALCLOUD_FIRMWARE_REPOSITORY_URL"); userGivenFirmwareRepositoryHostname == "" {
+		return "", fmt.Errorf("METALCLOUD_FIRMWARE_REPOSITORY_URL must be set when uploading a firmware binary.")
 	}
 
-	repositoryPath, err := GetFirmwareRepositoryPath()
-	if err != nil {
-		return "", err
-	}
-
-	return "https://" + hostname + repositoryPath, nil
-}
-
-func GetFirmwareRepositoryHostname() (string, error) {
-	if userGivenFirmwareRepositoryHostname := os.Getenv("METALCLOUD_FIRMWARE_REPOSITORY_HOSTNAME"); userGivenFirmwareRepositoryHostname == "" {
-		return "", fmt.Errorf("METALCLOUD_FIRMWARE_REPOSITORY_HOSTNAME must be set when uploading a firmware binary.")
-	}
-
-	return os.Getenv("METALCLOUD_FIRMWARE_REPOSITORY_HOSTNAME"), nil
-}
-
-func GetFirmwareRepositoryPath() (string, error) {
-	var firmwareRepositoryPath string
-
-	if userGivenFirmwarePath := os.Getenv("METALCLOUD_FIRMWARE_REPOSITORY_PATH"); userGivenFirmwarePath == "" {
-		return "", fmt.Errorf("METALCLOUD_FIRMWARE_REPOSITORY_PATH must be set when uploading a firmware binary.")
-	}
-
-	firmwareRepositoryPath = os.Getenv("METALCLOUD_FIRMWARE_REPOSITORY_PATH")
-
-	if !strings.HasPrefix(firmwareRepositoryPath, "/") {
-		firmwareRepositoryPath = "/" + firmwareRepositoryPath
-	}
-	
-	return firmwareRepositoryPath, nil
+	return os.Getenv("METALCLOUD_FIRMWARE_REPOSITORY_URL"), nil
 }
 
 func GetFirmwareRepositorySSHPath() (string, error) {

@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
+	"net/url"
 	"os"
 	"path/filepath"
 	"reflect"
@@ -19,14 +20,13 @@ import (
 
 /**
  * Firmware related environment variables (all required):
- 	METALCLOUD_FIRMWARE_REPOSITORY_HOSTNAME
-	METALCLOUD_FIRMWARE_REPOSITORY_PATH
-	METALCLOUD_FIRMWARE_REPOSITORY_SSH_PATH
-	METALCLOUD_FIRMWARE_REPOSITORY_SSH_PORT
+ 	METALCLOUD_FIRMWARE_REPOSITORY_URL		- the URL of the HTTP repository, for example: http://192.168.20.10/firmware
+	METALCLOUD_FIRMWARE_REPOSITORY_SSH_PATH - the path to the SSH repository, for example: /var/www/html/firmware
+	METALCLOUD_FIRMWARE_REPOSITORY_SSH_PORT	- the port of the SSH repository, for example: 22
 
  * SCP related environment variables:
-	METALCLOUD_USER_PRIVATE_OPENSSH_KEY_PATH (required)
-	METALCLOUD_KNOWN_HOSTS_FILE_PATH (optional, defaults to ~/.ssh/known_hosts)
+	METALCLOUD_USER_PRIVATE_OPENSSH_KEY_PATH (required) 						- the path to the private OpenSSH key used for authentication, for example: ~/.ssh/my-openssh-key
+	METALCLOUD_KNOWN_HOSTS_FILE_PATH (optional, defaults to ~/.ssh/known_hosts) - the path to the known_hosts file, for example: ~/.ssh/known_hosts
 */
 
 const (
@@ -226,15 +226,17 @@ func downloadBinariesFromCatalog(binaryCollection []firmwareBinary) error {
 }
 
 func uploadBinariesToRepository(binaryCollection []firmwareBinary, replaceIfExists, strictHostKeyChecking, downloadBinaries bool) error {
-	firmwareBinaryRepositoryHostname, err := configuration.GetFirmwareRepositoryHostname()
+	firmwareRepositoryURL, err := configuration.GetFirmwareRepositoryURL()
 	if err != nil {
 		return err
 	}
 
-	firmwareRepositoryPath, err := configuration.GetFirmwareRepositoryPath()
+	remoteURL, err := url.Parse(firmwareRepositoryURL)
 	if err != nil {
 		return err
 	}
+
+	firmwareBinaryRepositoryHostname := remoteURL.Hostname()
 
 	firmwareRepositorySSHPort, err := configuration.GetFirmwareRepositorySSHPort()
 	if err != nil {
@@ -246,16 +248,13 @@ func uploadBinariesToRepository(binaryCollection []firmwareBinary, replaceIfExis
 		return err
 	}
 
-	//TODO: change this to https
-	remoteURL := "http://" + firmwareBinaryRepositoryHostname + firmwareRepositoryPath
-
 	fmt.Println("Checking if binaries already exist in the repository.")
 	firmwareBinaryNames := make([]string, len(binaryCollection))
 	for _, firmwareBinary := range binaryCollection {
 		firmwareBinaryNames = append(firmwareBinaryNames, firmwareBinary.FileName)
 	}
 
-	missingBinaries, err := networking.GetMissingRemoteFiles(remoteURL, firmwareBinaryNames)
+	missingBinaries, err := networking.GetMissingRemoteFiles(remoteURL.String(), firmwareBinaryNames)
 
 	if err != nil {
 		return err

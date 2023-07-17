@@ -14,6 +14,7 @@ import (
 	"strings"
 
 	"net/http"
+	"net/url"
 
 	"github.com/bramvdbogaerde/go-scp"
 	"github.com/bramvdbogaerde/go-scp/auth"
@@ -274,10 +275,17 @@ func CreateSSHConnection(strictHostKeyChecking bool) (scp.Client, *ssh.Client, e
 		return scp.Client{}, &ssh.Client{}, err
 	}
 
-	firmwareRepositoryHostname, err := configuration.GetFirmwareRepositoryHostname()
+	firmwareRepositoryURL, err := configuration.GetFirmwareRepositoryURL()
 	if err != nil {
 		return scp.Client{}, &ssh.Client{}, err
 	}
+
+	URL, err := url.Parse(firmwareRepositoryURL)
+	if err != nil {
+		return scp.Client{}, &ssh.Client{}, err
+	}
+
+	firmwareRepositoryHostname := URL.Hostname()
 
 	firmwareRepositorySSHPort, err := configuration.GetFirmwareRepositorySSHPort()
 	if err != nil {
