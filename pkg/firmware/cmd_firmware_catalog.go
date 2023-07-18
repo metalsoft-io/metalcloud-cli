@@ -87,7 +87,7 @@ func firmwareCatalogCreateCmd(c *command.Command, client metalcloud.MetalCloudCl
 	}
 
 	var catalog firmwareCatalog
-	var binaryCollection []firmwareBinary
+	var binaryCollection []*firmwareBinary
 
 	switch configFile.Vendor {
 	case catalogVendorDell:
@@ -149,8 +149,15 @@ func firmwareCatalogCreateCmd(c *command.Command, client metalcloud.MetalCloudCl
 		}
 	}
 
-	sendCatalog(catalog)
-	// sendBinaries(binaryCollection)
+	err = sendCatalog(catalog)
+	if err != nil {
+		return "", err
+	}
+
+	err = sendBinaries(binaryCollection)
+	if err != nil {
+		return "", err
+	}
 
 	return "", nil
 }

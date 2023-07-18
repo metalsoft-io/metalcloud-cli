@@ -181,7 +181,7 @@ func findFirmwareFix(files []File, fileType string) *File {
 	return nil
 }
 
-func parseLenovoCatalog(configFile rawConfigFile, client metalcloud.MetalCloudClient, filter string, uploadToRepo bool) (firmwareCatalog, []firmwareBinary, error) {
+func parseLenovoCatalog(configFile rawConfigFile, client metalcloud.MetalCloudClient, filter string, uploadToRepo bool) (firmwareCatalog, []*firmwareBinary, error) {
 	catalogConfiguration := map[string]string{}
 
 	vendorId := configFile.Vendor
@@ -201,7 +201,7 @@ func parseLenovoCatalog(configFile rawConfigFile, client metalcloud.MetalCloudCl
 	}
 
 	fmt.Printf("Created catalog object %+v\n", catalog)
-	firmwareBinaryCollection := []firmwareBinary{}
+	firmwareBinaryCollection := []*firmwareBinary{}
 
 	var serverList []serverInfo
 	if len(configFile.ServersList) != 0 {
@@ -250,7 +250,7 @@ func parseLenovoCatalog(configFile rawConfigFile, client metalcloud.MetalCloudCl
 					RepoURL:                downloadURL,
 				}
 
-				firmwareBinaryCollection = append(firmwareBinaryCollection, firmwareBinary)
+				firmwareBinaryCollection = append(firmwareBinaryCollection, &firmwareBinary)
 			}
 		}
 

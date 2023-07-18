@@ -3,7 +3,9 @@ package networking
 import (
 	"bufio"
 	"bytes"
+	"crypto/md5"
 	"encoding/base64"
+	"encoding/hex"
 	"errors"
 	"fmt"
 	"io"
@@ -69,6 +71,7 @@ func GetMissingRemoteFiles(remoteURL string, fileNames []string) ([]string, erro
 	responseBody := string(body)
 
 	for _, fileName := range fileNames {
+		// TODO: how to check for MD5 hash? Add a file to the repo which holds the MD5 hashes?
 		if !strings.Contains(responseBody, fileName) {
 			missingFiles = append(missingFiles, fileName)
 		}
@@ -108,8 +111,24 @@ func AddHostKey(knownHostsFilePath string, remoteAddress net.Addr, publicKey ssh
 	return err
 }
 
-func DownloadFile(url, filepath string) error {
-	out, err := os.Create(filepath)
+func DownloadFile(url, path, hashmd5 string) error {
+	ok := fileExists(path)
+	if ok {
+		localMD5, err := fileHashMD5(path)
+
+		if err != nil {
+			return err
+		}
+
+		if localMD5 == hashmd5 {
+			fmt.Printf("File %s already exists and is the same file as the one from %s. Skipping download.\n", path, url)
+			return nil
+		} else {
+			fmt.Printf("File %s already exists but is not the same file as the one from %s. Downloading new file.\n", path, url)
+		}
+	}
+
+	out, err := os.Create(path)
 	if err != nil {
 		return err
 	}
@@ -130,6 +149,10 @@ func DownloadFile(url, filepath string) error {
 	defer resp.Body.Close()
 
 	if resp.StatusCode != http.StatusOK {
+		if resp.StatusCode == http.StatusNotFound {
+			return fmt.Errorf("%d", http.StatusNotFound)
+		}
+
 		return fmt.Errorf("received bad status: %s", resp.Status)
 	}
 
@@ -138,6 +161,7 @@ func DownloadFile(url, filepath string) error {
 		return err
 	}
 
+	fmt.Printf("Downloaded file '%s' from URL '%s' to path '%s'.\n", filepath.Base(url), url, path)
 	return nil
 }
 
@@ -316,4 +340,31 @@ func CreateSSHConnection(skipHostKeyChecking bool) (scp.Client, *ssh.Client, err
 	}
 
 	return scpClient, sshClient, nil
+}
+
+func fileExists(filePath string) bool {
+	info, err := os.Stat(filePath)
+	if os.IsNotExist(err) {
+		return false
+	}
+
+	return !info.IsDir()
+}
+
+func fileHashMD5(filePath string) (string, error) {
+	file, err := os.Open(filePath)
+	if err != nil {
+		return "", err
+	}
+
+	defer file.Close()
+
+	hash := md5.New()
+
+	if _, err := io.Copy(hash, file); err != nil {
+		return "", err
+	}
+
+	hashInBytes := hash.Sum(nil)[:16]
+	return hex.EncodeToString(hashInBytes), nil
 }

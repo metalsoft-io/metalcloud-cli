@@ -13,8 +13,8 @@ import (
 	"strings"
 	"time"
 
-	"golang.org/x/net/html/charset"
 	"golang.org/x/exp/slices"
+	"golang.org/x/net/html/charset"
 
 	"github.com/metalsoft-io/metalcloud-cli/internal/configuration"
 
@@ -157,7 +157,7 @@ func BypassReader(label string, input io.Reader) (io.Reader, error) {
 	return input, nil
 }
 
-func parseDellCatalog(client metalcloud.MetalCloudClient, configFile rawConfigFile, serverTypesFilter string, uploadToRepo, downloadBinaries bool) (firmwareCatalog, []firmwareBinary, error) {
+func parseDellCatalog(client metalcloud.MetalCloudClient, configFile rawConfigFile, serverTypesFilter string, uploadToRepo, downloadBinaries bool) (firmwareCatalog, []*firmwareBinary, error) {
 	supportedServerTypes, err := retrieveSupportedServerTypes(client, serverTypesFilter)
 	if err != nil {
 		return firmwareCatalog{}, nil, err
@@ -167,7 +167,7 @@ func parseDellCatalog(client metalcloud.MetalCloudClient, configFile rawConfigFi
 	if err != nil {
 		return firmwareCatalog{}, nil, err
 	}
-	
+
 	firmwareBinaryCollection, err := processDellBinaries(configFile, manifest, &catalog, supportedServerTypes, uploadToRepo, downloadBinaries)
 	if err != nil {
 		return firmwareCatalog{}, nil, err
@@ -239,7 +239,7 @@ func processDellCatalog(configFile rawConfigFile) (firmwareCatalog, manifest, er
 	return catalog, manifest, nil
 }
 
-func processDellBinaries(configFile rawConfigFile, dellManifest manifest, catalog *firmwareCatalog, supportedServerTypes map[string][]string, uploadToRepo, downloadBinaries bool) ([]firmwareBinary, error) {
+func processDellBinaries(configFile rawConfigFile, dellManifest manifest, catalog *firmwareCatalog, supportedServerTypes map[string][]string, uploadToRepo, downloadBinaries bool) ([]*firmwareBinary, error) {
 	metalsoftServerTypes := []string{}
 	dellServerTypes := []string{}
 
@@ -264,13 +264,13 @@ func processDellBinaries(configFile rawConfigFile, dellManifest manifest, catalo
 		baseCatalogURL = url.Scheme + "://" + url.Host
 	}
 
-	firmwareBinaryCollection := []firmwareBinary{}
+	firmwareBinaryCollection := []*firmwareBinary{}
 	repositoryURL, err := configuration.GetFirmwareRepositoryURL()
 	if uploadToRepo && err != nil {
 		return nil, fmt.Errorf("Error getting firmware repository URL: %v", err)
 	}
 
-	for _, component := range dellManifest.Components {
+	for idx, component := range dellManifest.Components {
 		// We only check for components that are of type firmware
 		if component.ComponentType.Value != componentTypeFirmware {
 			continue
@@ -321,7 +321,6 @@ func processDellBinaries(configFile rawConfigFile, dellManifest manifest, catalo
 		componentVendorConfiguration := map[string]string{
 			"path":          component.Path,
 			"size":          component.Size,
-			"hashmd5":       component.HashMD5,
 			"category":      component.Category.Display,
 			"datetime":      component.DateTime,
 			"packageId":     component.PackageID,
@@ -369,6 +368,7 @@ func processDellBinaries(configFile rawConfigFile, dellManifest manifest, catalo
 			PackageVersion:         component.VendorVersion,
 			RebootRequired:         rebootRequired,
 			UpdateSeverity:         severity,
+			HashMD5:                component.HashMD5,
 			SupportedDevices:       supportedDevices,
 			SupportedSystems:       supportedSystems,
 			VendorProperties:       componentVendorConfiguration,
@@ -379,7 +379,7 @@ func processDellBinaries(configFile rawConfigFile, dellManifest manifest, catalo
 			LocalPath:              localPath,
 		}
 
-		firmwareBinaryCollection = append(firmwareBinaryCollection, firmwareBinary)
+		firmwareBinaryCollection = append(firmwareBinaryCollection, &firmwareBinary)
 
 		if !slices.Contains[string](catalog.ServerTypesSupported, systemName) {
 			catalog.ServerTypesSupported = append(catalog.ServerTypesSupported, systemName)
@@ -389,6 +389,11 @@ func processDellBinaries(configFile rawConfigFile, dellManifest manifest, catalo
 					catalog.MetalSoftServerTypesSupported = append(catalog.MetalSoftServerTypesSupported, supportedServerType)
 				}
 			}
+		}
+
+		// TODO: remove me
+		if idx > 1000 {
+			break
 		}
 	}
 

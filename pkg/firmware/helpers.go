@@ -5,9 +5,9 @@ import (
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
+	"net/http"
 	"net/url"
 	"os"
-	"path/filepath"
 	"reflect"
 	"strings"
 
@@ -89,6 +89,7 @@ type firmwareBinary struct {
 	PackageVersion         string
 	RebootRequired         bool
 	UpdateSeverity         string
+	HashMD5                string
 	SupportedDevices       []map[string]string
 	SupportedSystems       []map[string]string
 	VendorProperties       map[string]string
@@ -97,6 +98,8 @@ type firmwareBinary struct {
 	DownloadURL            string
 	RepoURL                string
 	LocalPath              string
+	HasErrors              bool
+	ErrorMessage           string
 }
 
 func parseConfigFile(configFormat string, rawConfigFileContents []byte, configFile *rawConfigFile, downloadBinaries bool) error {
@@ -198,7 +201,7 @@ func getSeverity(input string) (string, error) {
 	}
 }
 
-func downloadBinariesFromCatalog(binaryCollection []firmwareBinary) error {
+func downloadBinariesFromCatalog(binaryCollection []*firmwareBinary) error {
 	fmt.Println("Downloading binaries.")
 
 	for _, firmwareBinary := range binaryCollection {
@@ -206,20 +209,18 @@ func downloadBinariesFromCatalog(binaryCollection []firmwareBinary) error {
 			return fmt.Errorf("download URL '%s' is not valid.", firmwareBinary.DownloadURL)
 		}
 
-		err := networking.DownloadFile(firmwareBinary.DownloadURL, firmwareBinary.LocalPath)
+		err := DownloadFirmwareBinary(firmwareBinary)
 
 		if err != nil {
-			return fmt.Errorf("error while downloading file %s: %s", firmwareBinary.FileName, err)
+			return err
 		}
-
-		fmt.Printf("Downloaded binary '%s' from URL '%s' to path '%s'.\n", filepath.Base(firmwareBinary.DownloadURL), firmwareBinary.DownloadURL, firmwareBinary.LocalPath)
 	}
 
 	fmt.Println("Finished downloading binaries.")
 	return nil
 }
 
-func uploadBinariesToRepository(binaryCollection []firmwareBinary, replaceIfExists, skipHostKeyChecking bool) error {
+func uploadBinariesToRepository(binaryCollection []*firmwareBinary, replaceIfExists, skipHostKeyChecking bool) error {
 	firmwareRepositoryURL, err := configuration.GetFirmwareRepositoryURL()
 	if err != nil {
 		return err
@@ -278,19 +279,13 @@ func uploadBinariesToRepository(binaryCollection []firmwareBinary, replaceIfExis
 
 	for _, firmwareBinary := range binaryCollection {
 		firmwareBinaryExists := !slices.Contains[string](missingBinaries, firmwareBinary.FileName)
-		remotePath := firmwareRepositorySSHPath + "/" + firmwareBinary.FileName
 
 		if firmwareBinaryExists && !replaceIfExists {
 			continue
 		}
 
-		if firmwareBinaryExists {
-			fmt.Printf("Replacing firmware binary %s at path %s.\n", firmwareBinary.FileName, remotePath)
-		} else {
-			fmt.Printf("Uploading new firmware binary %s at path %s.\n", firmwareBinary.FileName, remotePath)
-		}
-
-		err := uploadBinaryToRepository(firmwareBinary, &scpClient, sshClient)
+		remotePath := firmwareRepositorySSHPath + "/" + firmwareBinary.FileName
+		err := uploadBinaryToRepository(firmwareBinary, &scpClient, sshClient, firmwareBinaryExists, replaceIfExists, remotePath)
 
 		if err != nil {
 			return err
@@ -301,7 +296,7 @@ func uploadBinariesToRepository(binaryCollection []firmwareBinary, replaceIfExis
 	return nil
 }
 
-func uploadBinaryToRepository(binary firmwareBinary, scpClient *scp.Client, sshClient *ssh.Client) error {
+func uploadBinaryToRepository(binary *firmwareBinary, scpClient *scp.Client, sshClient *ssh.Client, firmwareBinaryExists, replaceIfExists bool, remotePath string) error {
 	// Regenerate the session in the case it was previously closed, otherwise only the first file will be uploaded.
 	// TODO: need a check to see if the session is still open
 	scpSession, err := sshClient.NewSession()
@@ -310,22 +305,13 @@ func uploadBinaryToRepository(binary firmwareBinary, scpClient *scp.Client, sshC
 	}
 
 	scpClient.Session = scpSession
-
-	firmwareRepositorySSHPath, err := configuration.GetFirmwareRepositorySSHPath()
-	if err != nil {
-		return err
-	}
-
-	firmwareBinaryFilename := binary.FileName
-	remotePath := firmwareRepositorySSHPath + "/" + firmwareBinaryFilename
-
 	firmwareBinaryPath := binary.LocalPath
 
 	var firmwareBinaryFile *os.File
 	if firmwareBinaryPath == "" {
-		if binary.DownloadURL != "" {
+		if binary.DownloadURL != "" && !binary.HasErrors && (!firmwareBinaryExists || replaceIfExists) {
 			// We don't save the binaries on the local filesystem, so we need to download them from the catalog as temporary files and then upload them to the repository.
-			firmwareBinaryFile, err = ioutil.TempFile(os.TempDir(), firmwareBinaryFilename)
+			firmwareBinaryFile, err = ioutil.TempFile(os.TempDir(), binary.FileName)
 			if err != nil {
 				return err
 			}
@@ -336,7 +322,9 @@ func uploadBinaryToRepository(binary firmwareBinary, scpClient *scp.Client, sshC
 				return fmt.Errorf("download URL '%s' is not valid.", binary.DownloadURL)
 			}
 
-			err = networking.DownloadFile(binary.DownloadURL, firmwareBinaryFile.Name())
+			binary.LocalPath = firmwareBinaryFile.Name()
+			err := DownloadFirmwareBinary(binary)
+			binary.LocalPath = ""
 
 			if err != nil {
 				return err
@@ -348,6 +336,18 @@ func uploadBinaryToRepository(binary firmwareBinary, scpClient *scp.Client, sshC
 			return fmt.Errorf("file not found at path %s. Make sure the local firmware path is set correctly in the raw-config file.", firmwareBinaryPath)
 		}
 		defer firmwareBinaryFile.Close()
+	}
+
+	if binary.HasErrors {
+		fmt.Printf("Skipping uploading binary %s because it has errors: %s\n", binary.FileName, binary.ErrorMessage)
+		binary.RepoURL = ""
+		return nil
+	}
+
+	if firmwareBinaryExists {
+		fmt.Printf("Replacing firmware binary %s at path %s.\n", binary.FileName, remotePath)
+	} else {
+		fmt.Printf("Uploading new firmware binary %s at path %s.\n", binary.FileName, remotePath)
 	}
 
 	err = scpClient.CopyFile(context.Background(), firmwareBinaryFile, remotePath, "0777")
@@ -393,7 +393,7 @@ func retrieveSupportedServerTypes(client metalcloud.MetalCloudClient, input stri
 		if !slices.Contains[string](metalsoftServerTypes, serverType) {
 			return nil, fmt.Errorf("cannot filter server type '%s' because it is not supported by Metalsoft. Supported types are %+v", serverType, metalsoftServerTypes)
 		}
-		
+
 		for actualServerType, metalsoftServerType := range supportedServerTypes {
 			if slices.Contains[string](metalsoftServerType, serverType) {
 				filteredServerTypes[actualServerType] = append(filteredServerTypes[actualServerType], serverType)
@@ -419,7 +419,7 @@ func sendCatalog(catalog firmwareCatalog) error {
 }
 
 // TODO: this function should send the binaries to the gateway microservice
-func sendBinaries(binaryCollection []firmwareBinary) error {
+func sendBinaries(binaryCollection []*firmwareBinary) error {
 	for _, firmwareBinary := range binaryCollection {
 		firmwareBinaryJson, err := json.MarshalIndent(firmwareBinary, "", " ")
 
@@ -427,7 +427,29 @@ func sendBinaries(binaryCollection []firmwareBinary) error {
 			return fmt.Errorf("Error while marshalling binary to JSON: %s", err)
 		}
 
-		fmt.Printf("Created firmware binary: %v\n", string(firmwareBinaryJson))
+		// fmt.Printf("Created firmware binary: %v\n", string(firmwareBinaryJson))
+		if firmwareBinary.HasErrors {
+			fmt.Printf("Binary with errors: %v\n", string(firmwareBinaryJson))
+		}
+	}
+
+	return nil
+}
+
+func DownloadFirmwareBinary(binary *firmwareBinary) error {
+	err := networking.DownloadFile(binary.DownloadURL, binary.LocalPath, binary.HashMD5)
+
+	if err != nil {
+		if err.Error() == fmt.Sprintf("%d", http.StatusNotFound) {
+			binary.LocalPath = ""
+			binary.HasErrors = true
+			binary.ErrorMessage = fmt.Sprintf("Binary not found at URL %s", binary.DownloadURL)
+
+			fmt.Printf("Skipping binary %s: %s\n", binary.FileName, binary.ErrorMessage)
+			return nil
+		}
+
+		return err
 	}
 
 	return nil
