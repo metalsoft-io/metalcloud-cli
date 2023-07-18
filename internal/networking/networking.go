@@ -111,7 +111,7 @@ func AddHostKey(knownHostsFilePath string, remoteAddress net.Addr, publicKey ssh
 	return err
 }
 
-func DownloadFile(url, path, hashmd5 string) error {
+func DownloadFile(url, path, hashMD5 string) error {
 	ok := fileExists(path)
 	if ok {
 		localMD5, err := fileHashMD5(path)
@@ -120,7 +120,7 @@ func DownloadFile(url, path, hashmd5 string) error {
 			return err
 		}
 
-		if localMD5 == hashmd5 {
+		if localMD5 == hashMD5 {
 			fmt.Printf("File %s already exists and is the same file as the one from %s. Skipping download.\n", path, url)
 			return nil
 		} else {
