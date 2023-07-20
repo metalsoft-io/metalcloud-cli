@@ -2469,6 +2469,21 @@ func (mr *MockMetalCloudClientMockRecorder) ServerDefaultCredentialsAdd(credenti
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ServerDefaultCredentialsAdd", reflect.TypeOf((*MockMetalCloudClient)(nil).ServerDefaultCredentialsAdd), credentials)
 }
 
+// ServerDefaultCredentials mocks base method
+func (m *MockMetalCloudClient) ServerDefaultCredentials(datacenter_name string, decryptPasswd bool) (*[]metalcloud.ServerDefaultCredentials, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "ServerDefaultCredentials", datacenter_name, decryptPasswd)
+	ret0, _ := ret[0].(*[]metalcloud.ServerDefaultCredentials)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// ServerDefaultCredentials indicates an expected call of ServerDefaultCredentials
+func (mr *MockMetalCloudClientMockRecorder) ServerDefaultCredentials(datacenter_name, decryptPasswd interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ServerDefaultCredentials", reflect.TypeOf((*MockMetalCloudClient)(nil).ServerDefaultCredentials), datacenter_name, decryptPasswd)
+}
+
 // ServerFirmwarePolicyGet mocks base method
 func (m *MockMetalCloudClient) ServerFirmwarePolicyGet(serverFirmwarePolicyID int) (*metalcloud.ServerFirmwareUpgradePolicy, error) {
 	m.ctrl.T.Helper()

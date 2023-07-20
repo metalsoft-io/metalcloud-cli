@@ -259,8 +259,8 @@ interfaces:
 		Description:  "Add default server BMC credentials for zero touch registration",
 		Subject:      "server",
 		AltSubject:   "srv",
-		Predicate:    "credentials-add",
-		AltPredicate: "credentials-add",
+		Predicate:    "ztp-credentials-add",
+		AltPredicate: "ztp-credentials-add",
 		FlagSet:      flag.NewFlagSet("server credentials", flag.ExitOnError),
 		InitFunc: func(c *command.Command) {
 			c.Arguments = map[string]interface{}{
@@ -279,8 +279,8 @@ interfaces:
 		Description:  "Add default server BMC credentials for zero touch registration (batch version)",
 		Subject:      "server",
 		AltSubject:   "srv",
-		Predicate:    "credentials-add-batch",
-		AltPredicate: "creds-add-batch",
+		Predicate:    "ztp-credentials-add-batch",
+		AltPredicate: "ztp-creds-add-batch",
 		FlagSet:      flag.NewFlagSet("server credentials", flag.ExitOnError),
 		InitFunc: func(c *command.Command) {
 			c.Arguments = map[string]interface{}{
@@ -308,6 +308,23 @@ password: notcalvin
 ---
 
 `,
+	},
+	{
+		Description:  "Lists default BMC server credentials for the ZTP process.",
+		Subject:      "server",
+		AltSubject:   "srv",
+		Predicate:    "ztp-credentials-list",
+		AltPredicate: "ztp-credentials-ls",
+		FlagSet:      flag.NewFlagSet("list servers", flag.ExitOnError),
+		InitFunc: func(c *command.Command) {
+			c.Arguments = map[string]interface{}{
+				"format":           c.FlagSet.String("format", command.NilDefaultStr, "The output format. Supported values are 'json','csv','yaml'. The default format is human readable."),
+				"datacenter":       c.FlagSet.String("datacenter", command.NilDefaultStr, "The datacenter to retrieve server ZTP credentials"),
+				"show_credentials": c.FlagSet.Bool("show-credentials", false, colors.Green("(Flag)")+" If set returns the servers' ZTP BMC credentials. (Slow for large queries)"),
+			}
+		},
+		ExecuteFunc: serversDefaultCredentialsListCmd,
+		Endpoint:    configuration.DeveloperEndpoint,
 	},
 
 	{
@@ -2183,4 +2200,80 @@ func getStringFromStringOrEmpty(str *string) string {
 		return ""
 	}
 	return *str
+}
+
+func serversDefaultCredentialsListCmd(c *command.Command, client metalcloud.MetalCloudClient) (string, error) {
+
+	datacenter, ok := command.GetStringParamOk(c.Arguments["datacenter"])
+	if !ok {
+		return "", fmt.Errorf("-datacenter is required")
+	}
+
+	list, err := client.ServerDefaultCredentials(datacenter, command.GetBoolParam(c.Arguments["show_credentials"]))
+	if err != nil {
+		return "", err
+	}
+
+	schema := []tableformatter.SchemaField{
+		{
+			FieldName: "Datacenter",
+			FieldType: tableformatter.TypeString,
+			FieldSize: 6,
+		},
+		{
+			FieldName: "Server SN",
+			FieldType: tableformatter.TypeString,
+			FieldSize: 6,
+		},
+		{
+			FieldName: "BMC MAC",
+			FieldType: tableformatter.TypeString,
+			FieldSize: 5,
+		},
+
+		{
+			FieldName: "BMC Username",
+			FieldType: tableformatter.TypeString,
+			FieldSize: 6,
+		},
+	}
+
+	if command.GetBoolParam(c.Arguments["show_credentials"]) {
+
+		schema = append(schema, tableformatter.SchemaField{
+			FieldName: "BMC password",
+			FieldType: tableformatter.TypeString,
+			FieldSize: 5,
+		})
+	}
+
+	data := [][]interface{}{}
+
+	for _, s := range *list {
+
+		row := []interface{}{
+			s.DatacenterName,
+			s.ServerSerialNumber,
+			s.ServerBMCMACAddress,
+			s.ServerDefaultCredentialsUsername,
+		}
+
+		if command.GetBoolParam(c.Arguments["show_credentials"]) {
+			row = append(row, []interface{}{
+				s.ServerDefaultCredentialsPassword,
+			}...)
+		}
+
+		data = append(data, row)
+
+	}
+
+	table := tableformatter.Table{
+		Data:   data,
+		Schema: schema,
+	}
+
+	title := fmt.Sprintf("Server credentials for the ZTP process for the %s datacenter:", datacenter)
+
+	return table.RenderTable(title, "", command.GetStringParam(c.Arguments["format"]))
 }
