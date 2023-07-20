@@ -284,8 +284,9 @@ interfaces:
 		FlagSet:      flag.NewFlagSet("server credentials", flag.ExitOnError),
 		InitFunc: func(c *command.Command) {
 			c.Arguments = map[string]interface{}{
-				"format":                c.FlagSet.String("format", "json", "The input format. Supported values are 'json','yaml'. The only supported format is yaml."),
-				"read_config_from_file": c.FlagSet.String("file", command.NilDefaultStr, colors.Red("(Required)")+" Read raw object from file"),
+				"format":                 c.FlagSet.String("format", "json", "The input format. Supported values are 'json','yaml'. The only supported format is yaml."),
+				"do-not-skip-duplicates": c.FlagSet.Bool("do-not-skip-duplicates", false, colors.Green("(Flag)")+" If set it will not skip the records found as duplicate and will instead throw an error"),
+				"read_config_from_file":  c.FlagSet.String("file", command.NilDefaultStr, colors.Red("(Required)")+" Read raw object from file"),
 			}
 		},
 		ExecuteFunc: serverDefaultCredentialsAddBatchCmd,
@@ -1850,7 +1851,48 @@ func serverDefaultCredentialsAddBatchCmd(c *command.Command, client metalcloud.M
 		return "", err
 	}
 
+	//check for duplicated mac or SNs as the server side
+	//handling throws a very ugly error
+	creds, err := getAllZTPServerRecords(client)
+	if err != nil {
+		return "", err
+	}
+
 	for _, record := range records {
+
+		skipRecord := false
+
+		for _, cred := range creds {
+			if cred.ServerSerialNumber == record.ServerSerialNumber {
+
+				errorString := fmt.Sprintf("Duplicate serial number %s found in entry with id #%d on datacenter %s", record.ServerSerialNumber, cred.ServerDefaultCredentialsID, cred.DatacenterName)
+
+				if command.GetBoolParam(c.Arguments["do-not-skip-duplicates"]) {
+					return "", fmt.Errorf(errorString)
+				}
+				fmt.Printf("Warning: %s. Ignoring entry\n", errorString)
+
+				skipRecord = true
+				break
+			}
+
+			if cred.ServerBMCMACAddress == record.ServerBMCMACAddress {
+				errorString := fmt.Sprintf("Duplicate mac address %s found in entry with id #%d\n on datacenter %s", record.ServerBMCMACAddress, cred.ServerDefaultCredentialsID, cred.DatacenterName)
+
+				if command.GetBoolParam(c.Arguments["do-not-skip-duplicates"]) {
+					return "", fmt.Errorf(errorString)
+				}
+				fmt.Printf("Warning: %s. Ignoring entry\n", errorString)
+				skipRecord = true
+				break
+
+			}
+		}
+
+		if skipRecord {
+			continue
+		}
+
 		err = client.ServerDefaultCredentialsAdd([]metalcloud.ServerDefaultCredentials{record})
 
 		if err != nil {
@@ -1888,7 +1930,24 @@ func serverDefaultCredentialsAddCmd(c *command.Command, client metalcloud.MetalC
 		return "", fmt.Errorf("-pass is required")
 	}
 
-	err := client.ServerDefaultCredentialsAdd([]metalcloud.ServerDefaultCredentials{
+	//check for duplicated mac or SNs as the server side
+	//handling throws a very ugly error
+	creds, err := client.ServerDefaultCredentials(datacenter, false)
+	if err != nil {
+		return "", err
+	}
+
+	for _, cred := range *creds {
+		if cred.ServerSerialNumber == serial_number {
+			return "", fmt.Errorf("Duplicate serial number %s found in entry with id #%d in datacenter %s\n", serial_number, cred.ServerDefaultCredentialsID, cred.DatacenterName)
+		}
+
+		if cred.ServerBMCMACAddress == bmc_mac_address {
+			return "", fmt.Errorf("Duplicate mac address %s found in entry with id #%d\n in datacenter %s\n", bmc_mac_address, cred.ServerDefaultCredentialsID, cred.DatacenterName)
+		}
+	}
+
+	err = client.ServerDefaultCredentialsAdd([]metalcloud.ServerDefaultCredentials{
 		{
 			DatacenterName:                   datacenter,
 			ServerSerialNumber:               serial_number,
@@ -2322,4 +2381,23 @@ func serverDefaultCredentialsRemoveCmd(c *command.Command, client metalcloud.Met
 	}
 
 	return "", err
+}
+
+func getAllZTPServerRecords(client metalcloud.MetalCloudClient) ([]metalcloud.ServerDefaultCredentials, error) {
+
+	dcs, err := client.Datacenters(true)
+	if err != nil {
+		return []metalcloud.ServerDefaultCredentials{}, err
+	}
+
+	list := []metalcloud.ServerDefaultCredentials{}
+	for _, dc := range *dcs {
+		l, err := client.ServerDefaultCredentials(dc.DatacenterName, false)
+		if err != nil {
+			return []metalcloud.ServerDefaultCredentials{}, err
+		}
+		list = append(list, *l...)
+	}
+
+	return list, nil
 }
