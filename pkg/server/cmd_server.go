@@ -1865,7 +1865,7 @@ func serverDefaultCredentialsAddBatchCmd(c *command.Command, client metalcloud.M
 		for _, cred := range creds {
 			if cred.ServerSerialNumber == record.ServerSerialNumber {
 
-				errorString := fmt.Sprintf("Duplicate serial number %s found in entry with id #%d on datacenter %s", record.ServerSerialNumber, cred.ServerDefaultCredentialsID, cred.DatacenterName)
+				errorString := fmt.Sprintf("Duplicate serial number %s found", record.ServerSerialNumber)
 
 				if command.GetBoolParam(c.Arguments["do-not-skip-duplicates"]) {
 					return "", fmt.Errorf(errorString)
@@ -1877,7 +1877,7 @@ func serverDefaultCredentialsAddBatchCmd(c *command.Command, client metalcloud.M
 			}
 
 			if cred.ServerBMCMACAddress == record.ServerBMCMACAddress {
-				errorString := fmt.Sprintf("Duplicate mac address %s found in entry with id #%d\n on datacenter %s", record.ServerBMCMACAddress, cred.ServerDefaultCredentialsID, cred.DatacenterName)
+				errorString := fmt.Sprintf("Duplicate mac address %s found", record.ServerBMCMACAddress)
 
 				if command.GetBoolParam(c.Arguments["do-not-skip-duplicates"]) {
 					return "", fmt.Errorf(errorString)
@@ -1893,11 +1893,13 @@ func serverDefaultCredentialsAddBatchCmd(c *command.Command, client metalcloud.M
 			continue
 		}
 
-		err = client.ServerDefaultCredentialsAdd([]metalcloud.ServerDefaultCredentials{record})
+		err := client.ServerDefaultCredentialsAdd([]metalcloud.ServerDefaultCredentials{record})
 
 		if err != nil {
 			return "", err
 		}
+
+		creds = append(creds, record)
 	}
 
 	return "", err
