@@ -270,7 +270,7 @@ func processDellBinaries(configFile rawConfigFile, dellManifest manifest, catalo
 		return nil, fmt.Errorf("Error getting firmware repository URL: %v", err)
 	}
 
-	for idx, component := range dellManifest.Components {
+	for _, component := range dellManifest.Components {
 		// We only check for components that are of type firmware
 		if component.ComponentType.Value != componentTypeFirmware {
 			continue
@@ -389,11 +389,6 @@ func processDellBinaries(configFile rawConfigFile, dellManifest manifest, catalo
 					catalog.MetalSoftServerTypesSupported = append(catalog.MetalSoftServerTypesSupported, supportedServerType)
 				}
 			}
-		}
-
-		// TODO: remove me
-		if idx > 1000 {
-			break
 		}
 	}
 

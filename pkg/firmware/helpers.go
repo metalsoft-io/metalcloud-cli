@@ -33,8 +33,6 @@ import (
 */
 
 const (
-	repositoryURL = "https://repo.metalsoft.com/firmware/"
-
 	configFormatJSON          = "json"
 	configFormatYAML          = "yaml"
 	catalogVendorDell         = "Dell"
