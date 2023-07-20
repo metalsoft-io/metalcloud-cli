@@ -256,6 +256,61 @@ interfaces:
 	},
 
 	{
+		Description:  "Add default server BMC credentials for zero touch registration",
+		Subject:      "server",
+		AltSubject:   "srv",
+		Predicate:    "credentials-add",
+		AltPredicate: "credentials-add",
+		FlagSet:      flag.NewFlagSet("server credentials", flag.ExitOnError),
+		InitFunc: func(c *command.Command) {
+			c.Arguments = map[string]interface{}{
+				"datacenter":       c.FlagSet.String("datacenter", command.NilDefaultStr, "The datacenter label to use"),
+				"serial_number":    c.FlagSet.String("sn", command.NilDefaultStr, "Server's serial number"),
+				"bmc_mac_address":  c.FlagSet.String("mac", command.NilDefaultStr, "Server's BMC MAC address"),
+				"bmc_mac_username": c.FlagSet.String("user", command.NilDefaultStr, "Server's BMC username"),
+				"bmc_mac_password": c.FlagSet.String("pass", command.NilDefaultStr, "Server's BMC password"),
+			}
+		},
+		ExecuteFunc: serverDefaultCredentialsAddCmd,
+		Endpoint:    configuration.DeveloperEndpoint,
+	},
+
+	{
+		Description:  "Add default server BMC credentials for zero touch registration (batch version)",
+		Subject:      "server",
+		AltSubject:   "srv",
+		Predicate:    "credentials-add-batch",
+		AltPredicate: "creds-add-batch",
+		FlagSet:      flag.NewFlagSet("server credentials", flag.ExitOnError),
+		InitFunc: func(c *command.Command) {
+			c.Arguments = map[string]interface{}{
+				"format":                c.FlagSet.String("format", "json", "The input format. Supported values are 'json','yaml'. The only supported format is yaml."),
+				"read_config_from_file": c.FlagSet.String("file", command.NilDefaultStr, colors.Red("(Required)")+" Read raw object from file"),
+			}
+		},
+		ExecuteFunc: serverDefaultCredentialsAddBatchCmd,
+		Endpoint:    configuration.DeveloperEndpoint,
+		Example: `
+This command supports one or more credentials in a yaml file format. The file format uses "---" separator between records. For example:
+
+
+datacenter: sonic-qts
+serialNumber: NNAACC2
+BMCMACAddress: aa:vv:cc:dd:ee
+username: root
+password: calvin
+---
+datacenter: sonic-qts
+serialNumber: NNAACC3
+BMCMACAddress: aa:vv:cc:dd:eb
+username: root
+password: notcalvin
+---
+
+`,
+	},
+
+	{
 		Description:  "Edit server.",
 		Subject:      "server",
 		AltSubject:   "srv",
@@ -1748,6 +1803,111 @@ func serverImportBatchCmd(c *command.Command, client metalcloud.MetalCloudClient
 	}
 
 	return "", err
+}
+
+func serverDefaultCredentialsAddBatchCmd(c *command.Command, client metalcloud.MetalCloudClient) (string, error) {
+
+	filePath, ok := command.GetStringParamOk(c.Arguments["read_config_from_file"])
+	if !ok {
+		return "", fmt.Errorf("-file is required")
+	}
+
+	records, err := getMultipleServerDefaultCredentialsFromYamlFile(filePath)
+	if err != nil {
+		return "", err
+	}
+
+	for _, record := range records {
+		err = client.ServerDefaultCredentialsAdd([]metalcloud.ServerDefaultCredentials{record})
+
+		if err != nil {
+			return "", err
+		}
+	}
+
+	return "", err
+}
+
+func serverDefaultCredentialsAddCmd(c *command.Command, client metalcloud.MetalCloudClient) (string, error) {
+
+	datacenter, ok := command.GetStringParamOk(c.Arguments["datacenter"])
+	if !ok {
+		return "", fmt.Errorf("-datacenter is required")
+	}
+
+	serial_number, ok := command.GetStringParamOk(c.Arguments["serial_number"])
+	if !ok {
+		return "", fmt.Errorf("-sn is required")
+	}
+
+	bmc_mac_address, ok := command.GetStringParamOk(c.Arguments["bmc_mac_address"])
+	if !ok {
+		return "", fmt.Errorf("-mac is required")
+	}
+
+	bmc_mac_username, ok := command.GetStringParamOk(c.Arguments["bmc_mac_username"])
+	if !ok {
+		return "", fmt.Errorf("-user is required")
+	}
+
+	bmc_mac_password, ok := command.GetStringParamOk(c.Arguments["bmc_mac_password"])
+	if !ok {
+		return "", fmt.Errorf("-pass is required")
+	}
+
+	err := client.ServerDefaultCredentialsAdd([]metalcloud.ServerDefaultCredentials{
+		{
+			DatacenterName:                   datacenter,
+			ServerSerialNumber:               serial_number,
+			ServerBMCMACAddress:              bmc_mac_address,
+			ServerDefaultCredentialsUsername: bmc_mac_username,
+			ServerDefaultCredentialsPassword: bmc_mac_password,
+		},
+	})
+
+	if err != nil {
+		return "", err
+	}
+
+	return "", err
+}
+
+func getMultipleServerDefaultCredentialsFromYamlFile(filePath string) ([]metalcloud.ServerDefaultCredentials, error) {
+
+	file, err := os.Open(filePath)
+	if err != nil {
+		if errors.Is(err, os.ErrNotExist) {
+			return []metalcloud.ServerDefaultCredentials{}, nil
+		} else {
+			return []metalcloud.ServerDefaultCredentials{}, err
+		}
+	}
+
+	decoder := yaml.NewDecoder(file)
+
+	records := []metalcloud.ServerDefaultCredentials{}
+
+	for true {
+
+		var record metalcloud.ServerDefaultCredentials
+
+		err = decoder.Decode(&record)
+		if err == nil {
+			records = append(records, record)
+		}
+
+		if err != nil {
+			if errors.Is(err, io.EOF) {
+				break
+			} else {
+				return nil, fmt.Errorf("Error while reading %s: %v", filePath, err)
+			}
+		}
+	}
+
+	file.Close()
+
+	return records, nil
 }
 
 func serverEditCmd(c *command.Command, client metalcloud.MetalCloudClient) (string, error) {

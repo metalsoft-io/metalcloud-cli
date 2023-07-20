@@ -181,6 +181,10 @@ export METALCLOUD_LOGGING_ENABLED=true
 ```
 ### Building the CLI
 
+To build manually:
+
+`go build ./cmd/...`
+
 The build process is automated by travis. Just push into the repository using the appropriate tag:
 
 Use `git tag` to get the last tag:
@@ -227,3 +231,9 @@ go get ifacemaker
 go generate
 ```
 If new objects are added in the SDK `helpers/fix_package.go` will need to be updated.
+
+
+If for some reason you get errors try running the following command manually:
+`mockgen -source=/Users/alex/code/metal-cloud-sdk-go/metal_cloud_client.go -destination=helpers/mock_client.go`
+
+You need mockgen installed.
