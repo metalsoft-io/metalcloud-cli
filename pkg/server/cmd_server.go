@@ -326,6 +326,22 @@ password: notcalvin
 		ExecuteFunc: serversDefaultCredentialsListCmd,
 		Endpoint:    configuration.DeveloperEndpoint,
 	},
+	{
+		Description:  "Remove default server BMC credentials for zero touch registration",
+		Subject:      "server",
+		AltSubject:   "srv",
+		Predicate:    "ztp-credentials-remove",
+		AltPredicate: "ztp-creds-rm",
+		FlagSet:      flag.NewFlagSet("server credentials", flag.ExitOnError),
+		InitFunc: func(c *command.Command) {
+			c.Arguments = map[string]interface{}{
+				"default_credentials_id": c.FlagSet.Int("id", command.NilDefaultInt, colors.Red("(Required)")+" The credentials ID, use ztp-credentials-list to retrieve the ID."),
+				"autoconfirm":            c.FlagSet.Bool("autoconfirm", false, colors.Green("(Flag)")+" If set it will assume action is confirmed"),
+			}
+		},
+		ExecuteFunc: serverDefaultCredentialsRemoveCmd,
+		Endpoint:    configuration.DeveloperEndpoint,
+	},
 
 	{
 		Description:  "Edit server.",
@@ -2216,8 +2232,8 @@ func serversDefaultCredentialsListCmd(c *command.Command, client metalcloud.Meta
 
 	schema := []tableformatter.SchemaField{
 		{
-			FieldName: "Datacenter",
-			FieldType: tableformatter.TypeString,
+			FieldName: "ID",
+			FieldType: tableformatter.TypeInt,
 			FieldSize: 6,
 		},
 		{
@@ -2252,7 +2268,7 @@ func serversDefaultCredentialsListCmd(c *command.Command, client metalcloud.Meta
 	for _, s := range *list {
 
 		row := []interface{}{
-			s.DatacenterName,
+			s.ServerDefaultCredentialsID,
 			s.ServerSerialNumber,
 			s.ServerBMCMACAddress,
 			s.ServerDefaultCredentialsUsername,
@@ -2276,4 +2292,34 @@ func serversDefaultCredentialsListCmd(c *command.Command, client metalcloud.Meta
 	title := fmt.Sprintf("Server credentials for the ZTP process for the %s datacenter:", datacenter)
 
 	return table.RenderTable(title, "", command.GetStringParam(c.Arguments["format"]))
+}
+
+func serverDefaultCredentialsRemoveCmd(c *command.Command, client metalcloud.MetalCloudClient) (string, error) {
+	credID, ok := command.GetIntParamOk(c.Arguments["default_credentials_id"])
+	if !ok {
+		return "", fmt.Errorf("-id is required")
+	}
+
+	confirm, err := command.ConfirmCommand(c, func() string {
+
+		confirmationMessage := fmt.Sprintf("Are you sure you want to remove ZTP credentials with ID %d.  Are you sure? Type \"yes\" to continue:",
+			credID,
+		)
+
+		if strings.HasSuffix(os.Args[0], ".test") {
+			confirmationMessage = ""
+		}
+
+		return confirmationMessage
+	})
+
+	if err != nil {
+		return "", err
+	}
+
+	if confirm {
+		err = client.ServerDefaultCredentialsRemove([]int{credID})
+	}
+
+	return "", err
 }

@@ -2484,6 +2484,20 @@ func (mr *MockMetalCloudClientMockRecorder) ServerDefaultCredentials(datacenter_
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ServerDefaultCredentials", reflect.TypeOf((*MockMetalCloudClient)(nil).ServerDefaultCredentials), datacenter_name, decryptPasswd)
 }
 
+// ServerDefaultCredentialsRemove mocks base method
+func (m *MockMetalCloudClient) ServerDefaultCredentialsRemove(default_credentials_id []int) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "ServerDefaultCredentialsRemove", default_credentials_id)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// ServerDefaultCredentialsRemove indicates an expected call of ServerDefaultCredentialsRemove
+func (mr *MockMetalCloudClientMockRecorder) ServerDefaultCredentialsRemove(default_credentials_id interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ServerDefaultCredentialsRemove", reflect.TypeOf((*MockMetalCloudClient)(nil).ServerDefaultCredentialsRemove), default_credentials_id)
+}
+
 // ServerFirmwarePolicyGet mocks base method
 func (m *MockMetalCloudClient) ServerFirmwarePolicyGet(serverFirmwarePolicyID int) (*metalcloud.ServerFirmwareUpgradePolicy, error) {
 	m.ctrl.T.Helper()
