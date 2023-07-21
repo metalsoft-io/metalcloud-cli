@@ -123,18 +123,18 @@ func generateLenovoCatalog(catalogFolder, machineType, serialNumber string) (*le
 		if err != nil {
 			return nil, err
 		}
-	
+
 		file, err := os.Create(path)
 		if err != nil {
 			return nil, err
 		}
 		defer file.Close()
-	
+
 		_, err = file.WriteString(response)
 		if err != nil {
 			return nil, err
 		}
-	
+
 		err = json.Unmarshal([]byte(response), &lenovoCatalog)
 		if err != nil {
 			return nil, err
@@ -310,6 +310,36 @@ func getSubmodelsAndSerialNumbers(client metalcloud.MetalCloudClient, supportedS
 	return serverInfoMap, nil
 }
 
+func checkValidServerList(configFile rawConfigFile, serverFilteredInfoMap map[string][]serverInfo, serverInfoMap map[string][]serverInfo) error {
+	for _, server := range configFile.ServersList {
+		validServer := false
+		for serverTypeName, servers := range serverInfoMap {
+			if validServer {
+				break
+			}
+
+			for _, serverInfo := range servers {
+				if serverInfo.MachineType == server.MachineType && serverInfo.SerialNumber == server.SerialNumber {
+					serverFilteredInfoMap[serverTypeName] = append(serverFilteredInfoMap[serverTypeName], serverInfo)
+					validServer = true
+					break
+				}
+			}
+		}
+
+		if !validServer {
+			validServers := []serverInfo{}
+			for _, servers := range serverInfoMap {
+				validServers = append(validServers, servers...)
+			}
+
+			return fmt.Errorf("server with machine type %s and serial number %s was not found. Valid servers parameters: %+v", server.MachineType, server.SerialNumber, validServers)
+		}
+	}
+
+	return nil
+}
+
 func processLenovoCatalog(client metalcloud.MetalCloudClient, configFile rawConfigFile, serverTypesFilter string) (firmwareCatalog, error) {
 	var serverInfoMap map[string][]serverInfo
 
@@ -327,30 +357,9 @@ func processLenovoCatalog(client metalcloud.MetalCloudClient, configFile rawConf
 	serverFilteredInfoMap := map[string][]serverInfo{}
 
 	if len(configFile.ServersList) != 0 {
-		for _, server := range configFile.ServersList {
-			validServer := false
-			for serverTypeName, servers := range serverInfoMap {
-				if validServer{
-					break
-				}
-
-				for _, serverInfo := range servers {
-					if serverInfo.MachineType == server.MachineType && serverInfo.SerialNumber == server.SerialNumber {
-						serverFilteredInfoMap[serverTypeName] = append(serverFilteredInfoMap[serverTypeName], serverInfo)
-						validServer = true
-						break
-					}
-				}
-			}
-
-			if !validServer {
-				validServers := []serverInfo{}
-				for _, servers := range serverInfoMap {
-					validServers = append(validServers, servers...)
-				}
-
-				return firmwareCatalog{}, fmt.Errorf("server with machine type %s and serial number %s was not found. Valid servers parameters: %+v", server.MachineType, server.SerialNumber, validServers)
-			}
+		err := checkValidServerList(configFile, serverFilteredInfoMap, serverInfoMap)
+		if err != nil {
+			return firmwareCatalog{}, err
 		}
 	} else {
 		serverFilteredInfoMap = serverInfoMap
