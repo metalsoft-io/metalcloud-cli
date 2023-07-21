@@ -124,7 +124,7 @@ func parseConfigFile(configFormat string, rawConfigFileContents []byte, configFi
 	structValue := reflect.ValueOf(configFile).Elem()
 	fieldNum := structValue.NumField()
 
-	optionalFields := []string{"CatalogUrl", "ServersList", "localFirmwarePath"}
+	optionalFields := []string{"CatalogUrl", "ServersList", "LocalFirmwarePath"}
 
 	for i := 0; i < fieldNum; i++ {
 		field := structValue.Field(i)
@@ -133,28 +133,50 @@ func parseConfigFile(configFormat string, rawConfigFileContents []byte, configFi
 		isSet := field.IsValid() && (!field.IsZero() || field.Kind() == reflect.Bool)
 
 		if !isSet && !slices.Contains[string](optionalFields, fieldName) {
-			return fmt.Errorf("the '%s' field must be set in the raw-config file", fieldName)
-		}
-	}
+			value, err := configFileParameterToValue(fieldName, configFormat)
+			if err != nil {
+				return err
+			}
 
-	if configFile.Vendor == catalogVendorLenovo && configFile.ServersList == nil {
-		if configFormat == configFormatJSON {
-			return fmt.Errorf("the 'serversList' field must be set in the raw-config file when 'vendor' is set to '%s'", catalogVendorLenovo)
-		}
-
-		if configFormat == configFormatYAML {
-			return fmt.Errorf("the 'servers_list' field must be set in the raw-config file when 'vendor' is set to '%s'", catalogVendorLenovo)
+			return fmt.Errorf("the '%s' field must be set in the raw-config file", value)
 		}
 	}
 
 	if downloadBinaries && (configFile.LocalFirmwarePath == "" || configFile.CatalogUrl == "") {
-		if configFormat == configFormatJSON {
-			return fmt.Errorf("the 'localFirmwarePath' and 'catalogUrl' fields must be set in the raw-config file when downloading binaries")
-		}
+		firmwarePathValue, catalogUrlValue := "localFirmwarePath", "catalogUrl"
 
 		if configFormat == configFormatYAML {
-			return fmt.Errorf("the 'local_firmware_path' and 'catalog_url' fields must be set in the raw-config file when downloading binaries")
+			firmwarePathValue, catalogUrlValue = "local_firmware_path", "catalog_url"
 		}
+
+		return fmt.Errorf("the '%s' and '%s' fields must be set in the raw-config file when downloading binaries", firmwarePathValue, catalogUrlValue)
+	}
+
+	if configFile.LocalFirmwarePath != "" && !folderExists(configFile.LocalFirmwarePath) {
+		value := "localFirmwarePath"
+
+		if configFormat == configFormatYAML {
+			value = "local_firmware_path"
+		}
+
+		return fmt.Errorf("the '%s' field must be a valid folder path", value)
+	}
+
+	if configFile.LocalCatalogPath != "" {
+		value := "localCatalogPath"
+
+		if configFormat == configFormatYAML {
+			value = "local_catalog_path"
+		}
+
+		if configFile.Vendor == catalogVendorDell && !fileExists(configFile.LocalCatalogPath) {
+			return fmt.Errorf("the '%s' field must be a valid file path", value)
+		}
+
+		if configFile.Vendor == catalogVendorLenovo && !folderExists(configFile.LocalCatalogPath) {
+			return fmt.Errorf("the '%s' field must be a valid folder path", value)
+		}
+
 	}
 
 	checkStringSize(configFile.Name)
@@ -162,6 +184,27 @@ func parseConfigFile(configFormat string, rawConfigFileContents []byte, configFi
 	checkStringSize(configFile.CatalogUrl)
 
 	return nil
+}
+
+func configFileParameterToValue(parameter, format string) (string, error) {
+	switch parameter {
+	case "Name":
+		return "name", nil
+	case "Description":
+		return "description", nil
+	case "Vendor":
+		return "vendor", nil
+	case "LocalCatalogPath":
+		if format == configFormatJSON {
+			return "localCatalogPath", nil
+		} else if format == configFormatYAML {
+			return "local_catalog_path", nil
+		}
+	default:
+		return "", fmt.Errorf("invalid parameter '%s'", parameter)
+	}
+
+	return "", nil
 }
 
 func checkStringSize(str string) error {
@@ -358,21 +401,22 @@ func uploadBinaryToRepository(binary *firmwareBinary, scpClient *scp.Client, ssh
 }
 
 // Returns a map, the key being the actual server type and the value being the Metalsoft internal one.
-// Output example: map[PowerEdge R430:[M.32.64.2 M.40.32.1.v2] PowerEdge R730:[M.32.32.2]]
-func retrieveSupportedServerTypes(client metalcloud.MetalCloudClient, input string) (map[string][]string, error) {
+// Output example: map[PowerEdge R430:[M.32.64.2 M.40.32.1.v2] PowerEdge R730:[M.32.32.2]] [M.32.64.2 M.40.32.1.v2 M.32.32.2]
+func retrieveSupportedServerTypes(client metalcloud.MetalCloudClient, input string) (map[string][]string, []string, error) {
 	supportedServerTypes := map[string][]string{}
 	metalsoftServerTypes := []string{}
+
 	serversTypeObject, err := client.ServerTypes(false)
 
 	if err != nil {
-		return nil, fmt.Errorf("Error getting server types: %v", err)
+		return nil, nil, fmt.Errorf("Error getting server types: %v", err)
 	}
 
 	for _, serverTypeObject := range *serversTypeObject {
 		var serverTypes []string
 		err := json.Unmarshal([]byte(serverTypeObject.ServerTypeAllowedVendorSkuIdsJSON), &serverTypes)
 		if err != nil {
-			return nil, fmt.Errorf("Error unmarshalling server types: %v", err)
+			return nil, nil, fmt.Errorf("Error unmarshalling server types: %v", err)
 		}
 
 		supportedServerTypes[serverTypes[0]] = append(supportedServerTypes[serverTypes[0]], serverTypeObject.ServerTypeName)
@@ -380,16 +424,17 @@ func retrieveSupportedServerTypes(client metalcloud.MetalCloudClient, input stri
 	}
 
 	if input == "" || input == serverTypesAll {
-		return supportedServerTypes, nil
+		return supportedServerTypes, metalsoftServerTypes, nil
 	}
 
 	filteredServerTypes := map[string][]string{}
 	serverTypesList := strings.Split(input, ",")
+	filteredMetalsoftServerTypes := []string{}
 
 	for _, serverType := range serverTypesList {
 		serverType = strings.TrimSpace(serverType)
 		if !slices.Contains[string](metalsoftServerTypes, serverType) {
-			return nil, fmt.Errorf("cannot filter server type '%s' because it is not supported by Metalsoft. Supported types are %+v", serverType, metalsoftServerTypes)
+			return nil, nil, fmt.Errorf("cannot filter server type '%s' because it is not supported by Metalsoft. Supported types are %+v", serverType, metalsoftServerTypes)
 		}
 
 		for actualServerType, metalsoftServerType := range supportedServerTypes {
@@ -398,9 +443,13 @@ func retrieveSupportedServerTypes(client metalcloud.MetalCloudClient, input stri
 				break
 			}
 		}
+
+		if !slices.Contains[string](filteredMetalsoftServerTypes, serverType) {
+			filteredMetalsoftServerTypes = append(filteredMetalsoftServerTypes, serverType)
+		}
 	}
 
-	return filteredServerTypes, nil
+	return filteredServerTypes, filteredMetalsoftServerTypes, nil
 }
 
 // TODO: this function should send the catalog to the gateway microservice
@@ -451,4 +500,22 @@ func DownloadFirmwareBinary(binary *firmwareBinary) error {
 	}
 
 	return nil
+}
+
+func folderExists(filePath string) bool {
+	info, err := os.Stat(filePath)
+	if os.IsNotExist(err) {
+		return false
+	}
+
+	return info.IsDir()
+}
+
+func fileExists(filePath string) bool {
+	info, err := os.Stat(filePath)
+	if os.IsNotExist(err) {
+		return false
+	}
+
+	return !info.IsDir()
 }

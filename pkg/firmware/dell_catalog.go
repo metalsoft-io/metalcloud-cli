@@ -158,7 +158,7 @@ func BypassReader(label string, input io.Reader) (io.Reader, error) {
 }
 
 func parseDellCatalog(client metalcloud.MetalCloudClient, configFile rawConfigFile, serverTypesFilter string, uploadToRepo, downloadBinaries bool) (firmwareCatalog, []*firmwareBinary, error) {
-	supportedServerTypes, err := retrieveSupportedServerTypes(client, serverTypesFilter)
+	supportedServerTypes, _, err := retrieveSupportedServerTypes(client, serverTypesFilter)
 	if err != nil {
 		return firmwareCatalog{}, nil, err
 	}
