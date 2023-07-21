@@ -414,7 +414,7 @@ password: notcalvin
 		InitFunc: func(c *command.Command) {
 			c.Arguments = map[string]interface{}{
 				"server_id":   c.FlagSet.Int("id", command.NilDefaultInt, colors.Red("(Required)")+" Server's id."),
-				"status":      c.FlagSet.String("status", command.NilDefaultStr, colors.Red("(Required)")+" New server status. One of: 'available','decommissioned','removed_from_rack'"),
+				"status":      c.FlagSet.String("status", command.NilDefaultStr, colors.Red("(Required)")+" New server status. One of: 'available','unavailable','decommissioned','removed_from_rack'"),
 				"autoconfirm": c.FlagSet.Bool("autoconfirm", false, colors.Green("(Flag)")+" If set it will assume action is confirmed"),
 			}
 		},
@@ -610,7 +610,19 @@ func serverStatusSetCmd(c *command.Command, client metalcloud.MetalCloudClient) 
 	}
 
 	if confirm {
-		err = client.ServerStatusUpdate(serverID, newStatus)
+
+		if newStatus == "decommissioned" {
+			err = client.ServerStatusUpdate(serverID, "unavailable")
+			if err != nil {
+				return "", err
+			}
+			err = client.ServerDecomission(serverID, true)
+			if err != nil {
+				return "", err
+			}
+		} else {
+			err = client.ServerStatusUpdate(serverID, newStatus)
+		}
 	}
 
 	return "", err

@@ -1,13 +1,13 @@
 datacenter: sonic-qts
 serialNumber: AAPC6
-#serverType: M.15.15.1
+serverType: generic
 serverTypeID: 9
 #label: "testserv"
 #infrastructure: "myinfra"
 #userEmail: "alex.bordei@metalsoft.io"
 interfaces:
    - mac: 00:B0:D0:63:C2:27
-     switch: sonic01
+     switch: leaf-139
      switchInterface: Ethernet7
 
 
