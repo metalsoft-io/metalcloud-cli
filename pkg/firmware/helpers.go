@@ -52,6 +52,7 @@ const (
 type serverInfo struct {
 	MachineType  string `json:"machineType" yaml:"machine_type"`
 	SerialNumber string `json:"serialNumber" yaml:"serial_number"`
+	VendorSkuId  string
 }
 
 type rawConfigFile struct {
@@ -61,6 +62,7 @@ type rawConfigFile struct {
 	CatalogUrl        string       `json:"catalogUrl" yaml:"catalog_url"`
 	ServersList       []serverInfo `json:"serversList" yaml:"servers_list"`
 	LocalCatalogPath  string       `json:"localCatalogPath" yaml:"local_catalog_path"`
+	OverwriteCatalogs bool         `json:"overwriteCatalogs" yaml:"overwrite_catalogs"`
 	LocalFirmwarePath string       `json:"localFirmwarePath" yaml:"local_firmware_path"`
 }
 
@@ -200,6 +202,12 @@ func configFileParameterToValue(parameter, format string) (string, error) {
 		} else if format == configFormatYAML {
 			return "local_catalog_path", nil
 		}
+	case "OverwriteCatalogs":
+		if format == configFormatJSON {
+			return "overwriteCatalogs", nil
+		} else if format == configFormatYAML {
+			return "overwrite_catalogs", nil
+		}
 	default:
 		return "", fmt.Errorf("invalid parameter '%s'", parameter)
 	}
@@ -220,6 +228,10 @@ func checkStringSize(str string) error {
 }
 
 func getUpdateType(rawConfigFile rawConfigFile) string {
+	if rawConfigFile.Vendor == catalogVendorLenovo {
+		return catalogUpdateTypeOnline
+	}
+
 	if rawConfigFile.CatalogUrl != "" {
 		return catalogUpdateTypeOnline
 	}

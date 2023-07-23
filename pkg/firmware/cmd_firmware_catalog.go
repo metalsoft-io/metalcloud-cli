@@ -98,7 +98,7 @@ func firmwareCatalogCreateCmd(c *command.Command, client metalcloud.MetalCloudCl
 		}
 
 	case catalogVendorLenovo:
-		catalog, binaryCollection, err = parseLenovoCatalog(configFile, client, filterServerTypes, uploadToRepo)
+		catalog, binaryCollection, err = parseLenovoCatalog(configFile, client, filterServerTypes, uploadToRepo, downloadBinaries)
 
 		if err != nil {
 			return "", err

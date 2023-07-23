@@ -13,6 +13,7 @@ import (
 
 	metalcloud "github.com/metalsoft-io/metal-cloud-sdk-go/v2"
 	"github.com/metalsoft-io/metalcloud-cli/internal/filtering"
+	"golang.org/x/exp/slices"
 )
 
 const (
@@ -42,8 +43,10 @@ type softwareUpdate struct {
 }
 
 type lenovoSoftwareUpdateFile struct {
-	Type string `json:"Type"`
-	URL  string `json:"URL"`
+	Type        string `json:"Type"`
+	Description string `json:"Description"`
+	URL         string `json:"URL"`
+	FileHash    string `json:"FileHash"`
 }
 
 type UpdateType map[string]map[string]string
@@ -93,7 +96,7 @@ func retrieveAvailableFirmwareUpdates(targetInfos map[string]string) (string, er
 }
 
 // Search the lenovo support site for the server firmware update information. A JSON response is returned and is saved in the local catalog path folder from the raw config file.
-func generateLenovoCatalog(catalogFolder, machineType, serialNumber string) (*lenovoCatalog, error) {
+func generateLenovoCatalog(catalogFolder, machineType, serialNumber string, overwriteCatalog bool) (*lenovoCatalog, error) {
 	if machineType == "" || serialNumber == "" {
 		return nil, fmt.Errorf("machine type and serial number must be specified when searching for a lenovo catalog")
 	}
@@ -108,7 +111,8 @@ func generateLenovoCatalog(catalogFolder, machineType, serialNumber string) (*le
 
 	lenovoCatalog := lenovoCatalog{}
 
-	if fileExists(path) {
+	if fileExists(path) && !overwriteCatalog {
+		fmt.Printf("Using existing catalog file: %s\n", path)
 		content, err := ioutil.ReadFile(path)
 		if err != nil {
 			return nil, err
@@ -119,6 +123,7 @@ func generateLenovoCatalog(catalogFolder, machineType, serialNumber string) (*le
 			return nil, err
 		}
 	} else {
+		fmt.Printf("Downloading catalog file to path: %s\n", path)
 		response, err := retrieveAvailableFirmwareUpdates(targetInfos)
 		if err != nil {
 			return nil, err
@@ -229,54 +234,16 @@ func findFirmwareFix(files []lenovoSoftwareUpdateFile, fileType string) *lenovoS
 	return nil
 }
 
-func parseLenovoCatalog(configFile rawConfigFile, client metalcloud.MetalCloudClient, serverTypesFilter string, uploadToRepo bool) (firmwareCatalog, []*firmwareBinary, error) {
-	_, err := processLenovoCatalog(client, configFile, serverTypesFilter)
+func parseLenovoCatalog(configFile rawConfigFile, client metalcloud.MetalCloudClient, serverTypesFilter string, uploadToRepo, downloadBinaries bool) (firmwareCatalog, []*firmwareBinary, error) {
+	catalog, serverInfoToCatalogMap, err := processLenovoCatalog(client, configFile, serverTypesFilter, downloadBinaries)
 	if err != nil {
 		return firmwareCatalog{}, nil, err
 	}
 
-	return firmwareCatalog{}, nil, fmt.Errorf("not implemented")
+	sendCatalog(catalog)
+	firmwareBinaryCollection, err := processLenovoBinaries(serverInfoToCatalogMap)
 
-	// 	firmwareBinaryCollection := []*firmwareBinary{}
-
-	// 	firmwareUpdates, _ := extractAvailableFirmwareUpdates(currentLenovoCatalog)
-
-	// 	for componentType, updateVersions := range firmwareUpdates {
-	// 		for version, downloadURL := range updateVersions {
-	// 			componentVendorConfiguration := map[string]string{}
-
-	// 			firmwareBinary := firmwareBinary{
-	// 				ExternalId:             downloadURL,
-	// 				Name:                   componentType,
-	// 				Description:            componentType,
-	// 				PackageId:              "",
-	// 				PackageVersion:         version,
-	// 				RebootRequired:         true,
-	// 				UpdateSeverity:         updateSeverityUnknown,
-	// 				SupportedDevices:       []map[string]string{},
-	// 				SupportedSystems:       []map[string]string{},
-	// 				VendorProperties:       componentVendorConfiguration,
-	// 				VendorReleaseTimestamp: time.Now().Format(time.RFC3339),
-	// 				CreatedTimestamp:       time.Now().Format(time.RFC3339),
-	// 				DownloadURL:            downloadURL,
-	// 				RepoURL:                downloadURL,
-	// 			}
-
-	// 			firmwareBinaryCollection = append(firmwareBinaryCollection, &firmwareBinary)
-	// 		}
-	// 	}
-
-	// 	for _, firmwareBinary := range firmwareBinaryCollection {
-	// 		prettyFirmwareBinary, err := json.MarshalIndent(firmwareBinary, "", "  ")
-	// 		if err != nil {
-	// 			return firmwareCatalog{}, nil, err
-	// 		}
-
-	// 		fmt.Println(string(prettyFirmwareBinary))
-	// 	}
-	// }
-
-	// return catalog, firmwareBinaryCollection, nil
+	return catalog, firmwareBinaryCollection, fmt.Errorf("STOP")
 }
 
 func getSubmodelsAndSerialNumbers(client metalcloud.MetalCloudClient, supportedServerTypeNames []string) (map[string][]serverInfo, error) {
@@ -303,6 +270,7 @@ func getSubmodelsAndSerialNumbers(client metalcloud.MetalCloudClient, supportedS
 			serverInfoMap[server.ServerTypeName] = append(serverInfoMap[server.ServerTypeName], serverInfo{
 				MachineType:  server.ServerSubmodel,
 				SerialNumber: server.ServerSerialNumber,
+				VendorSkuId:  server.ServerVendorSKUID,
 			})
 		}
 	}
@@ -340,18 +308,19 @@ func checkValidServerList(configFile rawConfigFile, serverFilteredInfoMap map[st
 	return nil
 }
 
-func processLenovoCatalog(client metalcloud.MetalCloudClient, configFile rawConfigFile, serverTypesFilter string) (firmwareCatalog, error) {
+func processLenovoCatalog(client metalcloud.MetalCloudClient, configFile rawConfigFile, serverTypesFilter string, downloadBinaries bool) (firmwareCatalog, map[serverInfo][]*lenovoCatalog, error) {
 	var serverInfoMap map[string][]serverInfo
+	serverInfoToCatalogMap := map[serverInfo][]*lenovoCatalog{}
 
 	_, supportedServerTypeNames, err := retrieveSupportedServerTypes(client, serverTypesFilter)
 	if err != nil {
-		return firmwareCatalog{}, err
+		return firmwareCatalog{}, serverInfoToCatalogMap, err
 	}
 
 	serverInfoMap, err = getSubmodelsAndSerialNumbers(client, supportedServerTypeNames)
 
 	if err != nil {
-		return firmwareCatalog{}, err
+		return firmwareCatalog{}, serverInfoToCatalogMap, err
 	}
 
 	serverFilteredInfoMap := map[string][]serverInfo{}
@@ -359,17 +328,35 @@ func processLenovoCatalog(client metalcloud.MetalCloudClient, configFile rawConf
 	if len(configFile.ServersList) != 0 {
 		err := checkValidServerList(configFile, serverFilteredInfoMap, serverInfoMap)
 		if err != nil {
-			return firmwareCatalog{}, err
+			return firmwareCatalog{}, serverInfoToCatalogMap, err
 		}
 	} else {
 		serverFilteredInfoMap = serverInfoMap
 	}
 
-	fmt.Printf("Server map: %+v\n", serverFilteredInfoMap)
+	if len(serverFilteredInfoMap) == 0 {
+		return firmwareCatalog{}, serverInfoToCatalogMap, fmt.Errorf("no servers were found")
+	}
+	
+	metalsoftSupportedServerTypes := []string{}
+	serverTypesSupported := []string{}
 
-	for _, servers := range serverInfoMap {
+	for metalsoftServerType, servers := range serverFilteredInfoMap {
+		if !slices.Contains[string](metalsoftSupportedServerTypes, metalsoftServerType) {
+			metalsoftSupportedServerTypes = append(metalsoftSupportedServerTypes, metalsoftServerType)
+		}
+
 		for _, server := range servers {
-			generateLenovoCatalog(configFile.LocalCatalogPath, server.MachineType, server.SerialNumber)
+			if !slices.Contains[string](serverTypesSupported, server.VendorSkuId) {
+				serverTypesSupported = append(serverTypesSupported, server.VendorSkuId)
+			}
+
+			generatedCatalog, err := generateLenovoCatalog(configFile.LocalCatalogPath, server.MachineType, server.SerialNumber, configFile.OverwriteCatalogs)
+			if err != nil {
+				return firmwareCatalog{}, serverInfoToCatalogMap, err
+			}
+
+			serverInfoToCatalogMap[server] = append(serverInfoToCatalogMap[server], generatedCatalog)
 		}
 	}
 
@@ -378,19 +365,78 @@ func processLenovoCatalog(client metalcloud.MetalCloudClient, configFile rawConf
 	checkStringSize(vendorId)
 
 	catalog := firmwareCatalog{
-		Name:                   configFile.Name,
-		Description:            configFile.Description,
-		Vendor:                 configFile.Vendor,
-		VendorID:               vendorId,
-		VendorURL:              configFile.CatalogUrl,
-		VendorReleaseTimestamp: time.Now().Format(time.RFC3339),
-		UpdateType:             getUpdateType(configFile),
-		ServerTypesSupported:   []string{},
-		Configuration:          catalogConfiguration,
-		CreatedTimestamp:       time.Now().Format(time.RFC3339),
+		Name:                          configFile.Name,
+		Description:                   configFile.Description,
+		Vendor:                        configFile.Vendor,
+		VendorID:                      vendorId,
+		VendorURL:                     configFile.CatalogUrl,
+		VendorReleaseTimestamp:        time.Now().Format(time.RFC3339),
+		UpdateType:                    getUpdateType(configFile),
+		MetalSoftServerTypesSupported: metalsoftSupportedServerTypes,
+		ServerTypesSupported:          serverTypesSupported,
+		Configuration:                 catalogConfiguration,
+		CreatedTimestamp:              time.Now().Format(time.RFC3339),
 	}
 
-	fmt.Printf("Created catalog object %+v\n", catalog)
+	return catalog, serverInfoToCatalogMap, nil
+}
 
-	return catalog, nil
+func processLenovoBinaries(serverInfoToCatalogMap map[serverInfo][]*lenovoCatalog) ([]*firmwareBinary, error) {
+	firmwareBinaryCollection := []*firmwareBinary{}
+
+	fmt.Printf("Map: %+v\n", serverInfoToCatalogMap)
+	for _, catalogs := range serverInfoToCatalogMap {
+		fmt.Printf("Processing %d catalogs\n", len(catalogs))
+		for _, catalog := range catalogs {
+			firmwareUpdates, _ := extractAvailableFirmwareUpdates(catalog)
+
+			for componentType, updateVersions := range firmwareUpdates {
+				counter := 0
+				for version, downloadURL := range updateVersions {
+					componentVendorConfiguration := map[string]string{}
+		
+					firmwareBinary := firmwareBinary{
+						ExternalId:             downloadURL,
+						Name:                   componentType,
+						Description:            componentType,
+						PackageId:              "",
+						PackageVersion:         version,
+						RebootRequired:         true,
+						UpdateSeverity:         updateSeverityUnknown,
+						SupportedDevices:       []map[string]string{},
+						SupportedSystems:       []map[string]string{},
+						VendorProperties:       componentVendorConfiguration,
+						VendorReleaseTimestamp: time.Now().Format(time.RFC3339),
+						CreatedTimestamp:       time.Now().Format(time.RFC3339),
+						DownloadURL:            downloadURL,
+						RepoURL:                downloadURL,
+					}
+
+					// Dell properties:
+					// ExternalId:             component.Path,
+					// Name:                   component.Name.Display,
+					// FileName:               componentName,
+					// Description:            component.Description.Display,
+					// PackageId:              component.PackageID,
+					// PackageVersion:         component.VendorVersion,
+					// RebootRequired:         rebootRequired,
+					// UpdateSeverity:         severity,
+					// HashMD5:                component.HashMD5,
+					// SupportedDevices:       supportedDevices,
+					// SupportedSystems:       supportedSystems,
+					// VendorProperties:       componentVendorConfiguration,
+					// VendorReleaseTimestamp: timestamp.Format(time.RFC3339),
+					// CreatedTimestamp:       time.Now().Format(time.RFC3339),
+					// DownloadURL:            downloadURL,
+					// RepoURL:                componentRepoUrl,
+					// LocalPath:              localPath,
+
+					firmwareBinaryCollection = append(firmwareBinaryCollection, &firmwareBinary)
+					counter ++
+				}
+			}
+		}
+	}
+
+	return firmwareBinaryCollection, nil
 }
