@@ -144,14 +144,31 @@ func parseConfigFile(configFormat string, rawConfigFileContents []byte, configFi
 		}
 	}
 
-	if downloadBinaries && (configFile.LocalFirmwarePath == "" || configFile.CatalogUrl == "") {
-		firmwarePathValue, catalogUrlValue := "localFirmwarePath", "catalogUrl"
+	if downloadBinaries {
+		switch configFile.Vendor {
+		case catalogVendorDell:
+			if configFile.LocalFirmwarePath == "" || configFile.CatalogUrl == "" {
+				firmwarePathValue, catalogUrlValue := "localFirmwarePath", "catalogUrl"
 
-		if configFormat == configFormatYAML {
-			firmwarePathValue, catalogUrlValue = "local_firmware_path", "catalog_url"
+				if configFormat == configFormatYAML {
+					firmwarePathValue, catalogUrlValue = "local_firmware_path", "catalog_url"
+				}
+
+				return fmt.Errorf("the '%s' and '%s' fields must be set in the raw-config file when downloading Dell binaries", firmwarePathValue, catalogUrlValue)
+			}
+		case catalogVendorLenovo:
+			if configFile.LocalFirmwarePath == "" {
+				firmwarePathValue := "localFirmwarePath"
+
+				if configFormat == configFormatYAML {
+					firmwarePathValue = "local_firmware_path"
+				}
+
+				return fmt.Errorf("the '%s' field must be set in the raw-config file when downloading Lenovo binaries", firmwarePathValue)
+			}
+		case catalogVendorHp:
+			return fmt.Errorf("TODO: HP firmware binaries are not supported yet")
 		}
-
-		return fmt.Errorf("the '%s' and '%s' fields must be set in the raw-config file when downloading binaries", firmwarePathValue, catalogUrlValue)
 	}
 
 	if configFile.LocalFirmwarePath != "" && !folderExists(configFile.LocalFirmwarePath) {
@@ -486,7 +503,7 @@ func sendBinaries(binaryCollection []*firmwareBinary) error {
 			return fmt.Errorf("Error while marshalling binary to JSON: %s", err)
 		}
 
-		// fmt.Printf("Created firmware binary: %v\n", string(firmwareBinaryJson))
+		fmt.Printf("Created firmware binary: %v\n", string(firmwareBinaryJson))
 		if firmwareBinary.HasErrors {
 			fmt.Printf("Binary with errors: %v\n", string(firmwareBinaryJson))
 		}

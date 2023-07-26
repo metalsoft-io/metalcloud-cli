@@ -124,6 +124,7 @@ func DownloadFile(url, path, hashMD5 string) error {
 			fmt.Printf("File %s already exists and is the same file as the one from %s. Skipping download.\n", path, url)
 			return nil
 		} else {
+			fmt.Printf("Local hash: %s, remote hash: %s.\n", localMD5, hashMD5)
 			fmt.Printf("File %s already exists but is not the same file as the one from %s. Downloading new file.\n", path, url)
 		}
 	}

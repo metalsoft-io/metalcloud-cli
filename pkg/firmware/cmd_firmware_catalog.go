@@ -113,17 +113,6 @@ func firmwareCatalogCreateCmd(c *command.Command, client metalcloud.MetalCloudCl
 	}
 
 	if downloadBinaries {
-		if configFile.CatalogUrl == "" {
-			var parameterName string
-			if configFormat == configFormatJSON {
-				parameterName = "catalogUrl"
-			} else if configFormat == configFormatYAML {
-				parameterName = "catalog_url"
-			}
-
-			return "", fmt.Errorf("the 'download-binaries' parameter can only be used when the '%s' parameter is set to true in the raw-config file.", parameterName)
-		}
-
 		err := downloadBinariesFromCatalog(binaryCollection)
 
 		if err != nil {
