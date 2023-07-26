@@ -120,7 +120,7 @@ type softwareComponent struct {
 	SupportedSystems supportedSystems `xml:"SupportedSystems"`
 }
 
-func downloadCatalog(catalogURL string, catalogFilePath string) error {
+func downloadDellCatalog(catalogURL string, catalogFilePath string) error {
 	req, err := http.NewRequest(http.MethodGet, catalogURL, nil)
 	if err != nil {
 		return err
@@ -179,7 +179,7 @@ func parseDellCatalog(client metalcloud.MetalCloudClient, configFile rawConfigFi
 
 func processDellCatalog(configFile rawConfigFile) (firmwareCatalog, manifest, error) {
 	if configFile.CatalogUrl != "" && configFile.OverwriteCatalogs {
-		err := downloadCatalog(configFile.CatalogUrl, configFile.LocalCatalogPath)
+		err := downloadDellCatalog(configFile.CatalogUrl, configFile.LocalCatalogPath)
 		if err != nil {
 			return firmwareCatalog{}, manifest{}, err
 		}

@@ -497,6 +497,7 @@ func sendCatalog(catalog firmwareCatalog) error {
 
 // TODO: this function should send the binaries to the gateway microservice
 func sendBinaries(binaryCollection []*firmwareBinary) error {
+	printOnce := false
 	for _, firmwareBinary := range binaryCollection {
 		firmwareBinaryJson, err := json.MarshalIndent(firmwareBinary, "", " ")
 
@@ -504,9 +505,9 @@ func sendBinaries(binaryCollection []*firmwareBinary) error {
 			return fmt.Errorf("Error while marshalling binary to JSON: %s", err)
 		}
 
-		// fmt.Printf("Created firmware binary: %v\n", string(firmwareBinaryJson))
-		if firmwareBinary.HasErrors {
-			fmt.Printf("Binary with errors: %v\n", string(firmwareBinaryJson))
+		if !printOnce {
+			fmt.Printf("Created firmware binary: %v\n", string(firmwareBinaryJson))
+			printOnce = true
 		}
 	}
 

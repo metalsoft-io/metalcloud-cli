@@ -118,7 +118,6 @@ func generateLenovoCatalog(catalogFolder, machineType, serialNumber string, over
 	lenovoCatalog := lenovoCatalog{}
 
 	if fileExists(path) && !overwriteCatalog {
-		fmt.Printf("Using existing catalog file: %s\n", path)
 		content, err := ioutil.ReadFile(path)
 		if err != nil {
 			return nil, err
@@ -129,7 +128,6 @@ func generateLenovoCatalog(catalogFolder, machineType, serialNumber string, over
 			return nil, err
 		}
 	} else {
-		fmt.Printf("Downloading catalog file to path: %s\n", path)
 		response, err := retrieveAvailableFirmwareUpdates(targetInfos)
 		if err != nil {
 			return nil, err
@@ -299,7 +297,7 @@ func checkValidServerList(configFile rawConfigFile, serverFilteredInfoMap map[st
 				validServers = append(validServers, servers...)
 			}
 
-			return fmt.Errorf("server with machine type %s and serial number %s was not found. Valid servers parameters: %+v", server.MachineType, server.SerialNumber, validServers)
+			return fmt.Errorf("server with machine type %s and serial number %s was not found. Existing servers: %+v", server.MachineType, server.SerialNumber, validServers)
 		}
 	}
 
@@ -391,7 +389,6 @@ func processLenovoBinaries(configFile rawConfigFile, serverInfoToCatalogMap map[
 		for _, lenovoCatalog := range lenovoCatalogs {
 			firmwareUpdates, firmwareUpdateRequired, softwareUpdateMap := extractAvailableFirmwareUpdates(lenovoCatalog)
 
-			counter := 0
 			for _, softwareUpdate := range softwareUpdateMap {
 				if softwareUpdate.UpdateKey == firmwareUpdateKeyOther {
 					continue
@@ -444,18 +441,7 @@ func processLenovoBinaries(configFile rawConfigFile, serverInfoToCatalogMap map[
 					LocalPath:              localPath,
 				}
 
-				if counter == 0 {
-					firmwareBinaryJson, err := json.MarshalIndent(firmwareBinary, "", " ")
-
-					if err != nil {
-						return firmwareBinaryCollection, fmt.Errorf("Error while marshalling binary to JSON: %s", err)
-					}
-
-					fmt.Printf("Created firmware binary: %v\n", string(firmwareBinaryJson))
-				}
-
 				firmwareBinaryCollection = append(firmwareBinaryCollection, &firmwareBinary)
-				counter++
 			}
 
 			firmwareUpdatesJson, err := json.Marshal(firmwareUpdates)
