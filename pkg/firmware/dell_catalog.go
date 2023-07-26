@@ -17,6 +17,7 @@ import (
 	"golang.org/x/net/html/charset"
 
 	"github.com/metalsoft-io/metalcloud-cli/internal/configuration"
+	"github.com/metalsoft-io/metalcloud-cli/internal/networking"
 
 	metalcloud "github.com/metalsoft-io/metal-cloud-sdk-go/v2"
 )
@@ -368,7 +369,8 @@ func processDellBinaries(configFile rawConfigFile, dellManifest manifest, catalo
 			PackageVersion:         component.VendorVersion,
 			RebootRequired:         rebootRequired,
 			UpdateSeverity:         severity,
-			HashMD5:                component.HashMD5,
+			Hash:                   component.HashMD5,
+			HashingAlgorithm:       networking.HashingAlgorithmMD5,
 			SupportedDevices:       supportedDevices,
 			SupportedSystems:       supportedSystems,
 			VendorProperties:       componentVendorConfiguration,

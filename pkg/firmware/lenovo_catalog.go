@@ -14,6 +14,7 @@ import (
 	metalcloud "github.com/metalsoft-io/metal-cloud-sdk-go/v2"
 	"github.com/metalsoft-io/metalcloud-cli/internal/configuration"
 	"github.com/metalsoft-io/metalcloud-cli/internal/filtering"
+	"github.com/metalsoft-io/metalcloud-cli/internal/networking"
 
 	"golang.org/x/exp/slices"
 )
@@ -407,9 +408,7 @@ func processLenovoBinaries(configFile rawConfigFile, serverInfoToCatalogMap map[
 					description = installXML.Description
 				}
 
-				componentVendorConfiguration := map[string]string{
-
-				}
+				componentVendorConfiguration := map[string]string{}
 
 				componentPathArr := strings.Split(firmwareFix.URL, "/")
 				componentName := componentPathArr[len(componentPathArr)-1]
@@ -418,7 +417,7 @@ func processLenovoBinaries(configFile rawConfigFile, serverInfoToCatalogMap map[
 				localPath := ""
 				if configFile.LocalFirmwarePath != "" && downloadBinaries {
 					localPath, err = filepath.Abs(filepath.Join(configFile.LocalFirmwarePath, componentName))
-		
+
 					if err != nil {
 						return nil, fmt.Errorf("error getting download binary absolute path: %v", err)
 					}
@@ -433,7 +432,8 @@ func processLenovoBinaries(configFile rawConfigFile, serverInfoToCatalogMap map[
 					PackageVersion:         softwareUpdate.Version,
 					RebootRequired:         true,
 					UpdateSeverity:         updateSeverityUnknown,
-					HashMD5:                firmwareFix.FileHash,
+					Hash:                   firmwareFix.FileHash,
+					HashingAlgorithm:       networking.HashingAlgorithmSHA1,
 					SupportedDevices:       []map[string]string{},
 					SupportedSystems:       []map[string]string{},
 					VendorProperties:       componentVendorConfiguration,
@@ -467,7 +467,7 @@ func processLenovoBinaries(configFile rawConfigFile, serverInfoToCatalogMap map[
 			if err != nil {
 				return firmwareBinaryCollection, fmt.Errorf("Error while marshalling binary to JSON: %s", err)
 			}
-	
+
 			catalog.Configuration["availableVersions"] = string(firmwareUpdatesJson)
 			catalog.Configuration["requiredFixes"] = string(firmwareUpdateRequiredJson)
 		}

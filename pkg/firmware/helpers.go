@@ -89,7 +89,8 @@ type firmwareBinary struct {
 	PackageVersion         string
 	RebootRequired         bool
 	UpdateSeverity         string
-	HashMD5                string
+	Hash                   string
+	HashingAlgorithm       string
 	SupportedDevices       []map[string]string
 	SupportedSystems       []map[string]string
 	VendorProperties       map[string]string
@@ -503,7 +504,7 @@ func sendBinaries(binaryCollection []*firmwareBinary) error {
 			return fmt.Errorf("Error while marshalling binary to JSON: %s", err)
 		}
 
-		fmt.Printf("Created firmware binary: %v\n", string(firmwareBinaryJson))
+		// fmt.Printf("Created firmware binary: %v\n", string(firmwareBinaryJson))
 		if firmwareBinary.HasErrors {
 			fmt.Printf("Binary with errors: %v\n", string(firmwareBinaryJson))
 		}
@@ -513,7 +514,7 @@ func sendBinaries(binaryCollection []*firmwareBinary) error {
 }
 
 func DownloadFirmwareBinary(binary *firmwareBinary) error {
-	err := networking.DownloadFile(binary.DownloadURL, binary.LocalPath, binary.HashMD5)
+	err := networking.DownloadFile(binary.DownloadURL, binary.LocalPath, binary.Hash, binary.HashingAlgorithm)
 
 	if err != nil {
 		if err.Error() == fmt.Sprintf("%d", http.StatusNotFound) {

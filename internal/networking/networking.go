@@ -4,10 +4,12 @@ import (
 	"bufio"
 	"bytes"
 	"crypto/md5"
+	"crypto/sha1"
 	"encoding/base64"
 	"encoding/hex"
 	"errors"
 	"fmt"
+	"hash"
 	"io"
 	"io/ioutil"
 	"net"
@@ -25,6 +27,11 @@ import (
 	"github.com/metalsoft-io/metalcloud-cli/internal/configuration"
 	"golang.org/x/crypto/ssh"
 	kh "golang.org/x/crypto/ssh/knownhosts"
+)
+
+const (
+	HashingAlgorithmMD5  = "md5"
+	HashingAlgorithmSHA1 = "sha1"
 )
 
 func CheckValidUrl(rawUrl string) bool {
@@ -111,20 +118,19 @@ func AddHostKey(knownHostsFilePath string, remoteAddress net.Addr, publicKey ssh
 	return err
 }
 
-func DownloadFile(url, path, hashMD5 string) error {
+func DownloadFile(url, path, hash, hashingAlgorithm string) error {
 	ok := fileExists(path)
 	if ok {
-		localMD5, err := fileHashMD5(path)
+		localMD5, err := fileHash(path, hashingAlgorithm)
 
 		if err != nil {
 			return err
 		}
 
-		if localMD5 == hashMD5 {
+		if localMD5 == hash {
 			fmt.Printf("File %s already exists and is the same file as the one from %s. Skipping download.\n", path, url)
 			return nil
 		} else {
-			fmt.Printf("Local hash: %s, remote hash: %s.\n", localMD5, hashMD5)
 			fmt.Printf("File %s already exists but is not the same file as the one from %s. Downloading new file.\n", path, url)
 		}
 	}
@@ -352,7 +358,7 @@ func fileExists(filePath string) bool {
 	return !info.IsDir()
 }
 
-func fileHashMD5(filePath string) (string, error) {
+func fileHash(filePath string, hashingAlgorithm string) (string, error) {
 	file, err := os.Open(filePath)
 	if err != nil {
 		return "", err
@@ -360,12 +366,21 @@ func fileHashMD5(filePath string) (string, error) {
 
 	defer file.Close()
 
-	hash := md5.New()
+	var fileHash hash.Hash
+	switch hashingAlgorithm {
+	case HashingAlgorithmMD5:
+		fileHash = md5.New()
+	case HashingAlgorithmSHA1:
+		fileHash = sha1.New()
+	default:
+		validHashingAlgorithms := []string{HashingAlgorithmMD5, HashingAlgorithmSHA1}
+		return "", fmt.Errorf("invalid hashing algorithm %s. Supported algorithms are %v", hashingAlgorithm, validHashingAlgorithms)
+	}
 
-	if _, err := io.Copy(hash, file); err != nil {
+	if _, err := io.Copy(fileHash, file); err != nil {
 		return "", err
 	}
 
-	hashInBytes := hash.Sum(nil)[:16]
+	hashInBytes := fileHash.Sum(nil)
 	return hex.EncodeToString(hashInBytes), nil
 }
