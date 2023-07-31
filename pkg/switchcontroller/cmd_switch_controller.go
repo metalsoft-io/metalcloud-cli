@@ -26,7 +26,6 @@ var SwitchControllerCmds = []command.Command{
 				"read_config_from_file": c.FlagSet.String("raw-config", command.NilDefaultStr, colors.Red("(Required)")+" Read  configuration from file in the format specified with --format."),
 				"read_config_from_pipe": c.FlagSet.Bool("pipe", false, colors.Green("(Flag)")+" If set, read  configuration from pipe instead of from a file. Either this flag or the --raw-config option must be used."),
 				"return_id":             c.FlagSet.Bool("return-id", false, "Will print the ID of the created object. Useful for automating tasks."),
-				"no_color":              c.FlagSet.Bool("no_color", false, " Disable coloring."),
 			}
 		},
 		ExecuteFunc: switchControllerCreateCmd,
@@ -76,8 +75,7 @@ var SwitchControllerCmds = []command.Command{
 			c.Arguments = map[string]interface{}{
 				"format":           c.FlagSet.String("format", command.NilDefaultStr, "The output format. Supported values are 'json','csv','yaml'. The default format is human readable."),
 				"datacenter_name":  c.FlagSet.String("datacenter", "", "The optional parameter acts as a filter that restricts the returned results to switch devices located in the specified datacenter."),
-				"show_credentials": c.FlagSet.Bool("show_credentials", false, colors.Green("(Flag)")+" If set returns the switch management credentials. (Slow for large queries)"),
-				"no_color":         c.FlagSet.Bool("no_color", false, " Disable coloring."),
+				"show_credentials": c.FlagSet.Bool("show-credentials", false, colors.Green("(Flag)")+" If set returns the switch management credentials. (Slow for large queries)"),
 			}
 		},
 		ExecuteFunc: switchControllersListCmd,
@@ -97,7 +95,6 @@ var SwitchControllerCmds = []command.Command{
 				"read_config_from_file": c.FlagSet.String("raw-config", command.NilDefaultStr, colors.Red("(Required)")+" Read configuration from file in the format specified with --format."),
 				"read_config_from_pipe": c.FlagSet.Bool("pipe", false, colors.Green("(Flag)")+" If set, read  configuration from pipe instead of from a file. Either this flag or the --raw-config option must be used."),
 				"return_id":             c.FlagSet.Bool("return-id", false, "Will print the ID of the created object. Useful for automating tasks."),
-				"no_color":              c.FlagSet.Bool("no_color", false, " Disable coloring."),
 			}
 		},
 		ExecuteFunc: switchControllerEditCmd,
@@ -113,10 +110,9 @@ var SwitchControllerCmds = []command.Command{
 		InitFunc: func(c *command.Command) {
 			c.Arguments = map[string]interface{}{
 				"network_controller_id_or_identifier_string": c.FlagSet.String("id", command.NilDefaultStr, colors.Red("(Required)")+" Switch id or identifier string. "),
-				"show_credentials":                           c.FlagSet.Bool("show_credentials", false, colors.Green("(Flag)")+" If set returns the switch credentials"),
+				"show_credentials":                           c.FlagSet.Bool("show-credentials", false, colors.Green("(Flag)")+" If set returns the switch credentials"),
 				"format":                                     c.FlagSet.String("format", "", "The output format. Supported values are 'json','csv','yaml'. The default format is human readable."),
 				"raw":                                        c.FlagSet.Bool("raw", false, colors.Green("(Flag)")+" When set the return will be a full dump of the object. This is useful when copying configurations. Only works with json and yaml formats."),
-				"no_color":                                   c.FlagSet.Bool("no_color", false, " Disable coloring."),
 			}
 		},
 		ExecuteFunc: switchControllerGetCmd,
@@ -134,7 +130,6 @@ var SwitchControllerCmds = []command.Command{
 				"format": c.FlagSet.String("format", command.NilDefaultStr, "The output format. Supported values are 'json','csv','yaml'. The default format is human readable."),
 				"network_controller_id_or_identifier_string": c.FlagSet.String("id", command.NilDefaultStr, colors.Red("(Required)")+" Switch id or identifier string. "),
 				"raw":      c.FlagSet.Bool("raw", false, colors.Green("(Flag)")+" When set the return will be a full dump of the object. This is useful when copying configurations. Only works with json and yaml formats."),
-				"no_color": c.FlagSet.Bool("no_color", false, " Disable coloring."),
 			}
 		},
 		ExecuteFunc: switchControllerSwitchesListCmd,
