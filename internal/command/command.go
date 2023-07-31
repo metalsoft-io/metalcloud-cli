@@ -476,14 +476,25 @@ func ExecuteCommand(args []string, commands []Command, clients map[string]metalc
 
 	colors.SetColoringEnabled(true)
 
+	noColorEnabled := false
+	commandHelp := false
+
 	for _, a := range args {
-		if a == "-h" || a == "-help" || a == "--help" {
-			return fmt.Errorf(GetCommandHelp(*cmd, true))
+		if a == "--no-color" || a == "-no-color" {
+			noColorEnabled = true
 		}
 
-		if a == "--no-color" || a == "-no-color" {
-			colors.SetColoringEnabled(false)
+		if a == "-h" || a == "-help" || a == "--help" {
+			commandHelp = true
 		}
+	}
+
+	if noColorEnabled {
+		colors.SetColoringEnabled(false)
+	}
+
+	if commandHelp {
+		return fmt.Errorf(GetCommandHelp(*cmd, true))
 	}
 
 	err := cmd.FlagSet.Parse(args[count+1:])
