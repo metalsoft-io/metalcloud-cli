@@ -88,6 +88,7 @@ func firmwareCatalogCreateCmd(c *command.Command, client metalcloud.MetalCloudCl
 
 	var catalog firmwareCatalog
 	var binaryCollection []*firmwareBinary
+	downloadUser, downloadPassword := "", ""
 
 	switch configFile.Vendor {
 	case catalogVendorDell:
@@ -107,6 +108,12 @@ func firmwareCatalogCreateCmd(c *command.Command, client metalcloud.MetalCloudCl
 	case catalogVendorHp:
 		catalog, binaryCollection, err = parseHpCatalog(configFile, client, filterServerTypes, uploadToRepo, downloadBinaries)
 
+		hpSupportToken := os.Getenv("HP_SUPPORT_TOKEN")
+		if hpSupportToken != "" {
+			downloadUser = hpSupportToken
+			downloadPassword = "null"
+		}
+
 		if err != nil {
 			return "", err
 		}
@@ -117,7 +124,7 @@ func firmwareCatalogCreateCmd(c *command.Command, client metalcloud.MetalCloudCl
 	}
 
 	if downloadBinaries {
-		err := downloadBinariesFromCatalog(binaryCollection)
+		err := downloadBinariesFromCatalog(binaryCollection, downloadUser, downloadPassword)
 
 		if err != nil {
 			return "", err
@@ -135,7 +142,7 @@ func firmwareCatalogCreateCmd(c *command.Command, client metalcloud.MetalCloudCl
 	}
 
 	if uploadToRepo {
-		err := uploadBinariesToRepository(binaryCollection, replaceIfExists, skipHostKeyChecking)
+		err := uploadBinariesToRepository(binaryCollection, replaceIfExists, skipHostKeyChecking, downloadUser, downloadPassword)
 
 		if err != nil {
 			return "", err

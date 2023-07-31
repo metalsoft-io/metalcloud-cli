@@ -272,7 +272,7 @@ func getSeverity(input string) (string, error) {
 	}
 }
 
-func downloadBinariesFromCatalog(binaryCollection []*firmwareBinary) error {
+func downloadBinariesFromCatalog(binaryCollection []*firmwareBinary, user, password string) error {
 	fmt.Println("Downloading binaries.")
 
 	for _, firmwareBinary := range binaryCollection {
@@ -280,7 +280,7 @@ func downloadBinariesFromCatalog(binaryCollection []*firmwareBinary) error {
 			return fmt.Errorf("download URL '%s' is not valid.", firmwareBinary.DownloadURL)
 		}
 
-		err := DownloadFirmwareBinary(firmwareBinary)
+		err := DownloadFirmwareBinary(firmwareBinary, user, password)
 
 		if err != nil {
 			return err
@@ -291,7 +291,7 @@ func downloadBinariesFromCatalog(binaryCollection []*firmwareBinary) error {
 	return nil
 }
 
-func uploadBinariesToRepository(binaryCollection []*firmwareBinary, replaceIfExists, skipHostKeyChecking bool) error {
+func uploadBinariesToRepository(binaryCollection []*firmwareBinary, replaceIfExists, skipHostKeyChecking bool, downloadUser, downloadPassword string) error {
 	firmwareRepositoryURL, err := configuration.GetFirmwareRepositoryURL()
 	if err != nil {
 		return err
@@ -356,7 +356,7 @@ func uploadBinariesToRepository(binaryCollection []*firmwareBinary, replaceIfExi
 		}
 
 		remotePath := firmwareRepositorySSHPath + "/" + firmwareBinary.FileName
-		err := uploadBinaryToRepository(firmwareBinary, &scpClient, sshClient, firmwareBinaryExists, replaceIfExists, remotePath)
+		err := uploadBinaryToRepository(firmwareBinary, &scpClient, sshClient, firmwareBinaryExists, replaceIfExists, remotePath, downloadUser, downloadPassword)
 
 		if err != nil {
 			return err
@@ -367,7 +367,7 @@ func uploadBinariesToRepository(binaryCollection []*firmwareBinary, replaceIfExi
 	return nil
 }
 
-func uploadBinaryToRepository(binary *firmwareBinary, scpClient *scp.Client, sshClient *ssh.Client, firmwareBinaryExists, replaceIfExists bool, remotePath string) error {
+func uploadBinaryToRepository(binary *firmwareBinary, scpClient *scp.Client, sshClient *ssh.Client, firmwareBinaryExists, replaceIfExists bool, remotePath string, downloadUser, downloadPassword string) error {
 	// Regenerate the session in the case it was previously closed, otherwise only the first file will be uploaded.
 	// TODO: need a check to see if the session is still open
 	scpSession, err := sshClient.NewSession()
@@ -394,7 +394,7 @@ func uploadBinaryToRepository(binary *firmwareBinary, scpClient *scp.Client, ssh
 			}
 
 			binary.LocalPath = firmwareBinaryFile.Name()
-			err := DownloadFirmwareBinary(binary)
+			err := DownloadFirmwareBinary(binary, downloadUser, downloadPassword)
 			binary.LocalPath = ""
 
 			if err != nil {
@@ -514,8 +514,8 @@ func sendBinaries(binaryCollection []*firmwareBinary) error {
 	return nil
 }
 
-func DownloadFirmwareBinary(binary *firmwareBinary) error {
-	err := networking.DownloadFile(binary.DownloadURL, binary.LocalPath, binary.Hash, binary.HashingAlgorithm)
+func DownloadFirmwareBinary(binary *firmwareBinary, user, password string) error {
+	err := networking.DownloadFile(binary.DownloadURL, binary.LocalPath, binary.Hash, binary.HashingAlgorithm, user, password)
 
 	if err != nil {
 		if err.Error() == fmt.Sprintf("%d", http.StatusNotFound) {

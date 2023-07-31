@@ -118,7 +118,7 @@ func AddHostKey(knownHostsFilePath string, remoteAddress net.Addr, publicKey ssh
 	return err
 }
 
-func DownloadFile(url, path, hash, hashingAlgorithm string) error {
+func DownloadFile(url, path, hash, hashingAlgorithm, user, password string) error {
 	ok := fileExists(path)
 	if ok && hash != "" {
 		localMD5, err := fileHash(path, hashingAlgorithm)
@@ -147,6 +147,11 @@ func DownloadFile(url, path, hash, hashingAlgorithm string) error {
 	}
 
 	req.Header.Set("User-Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/114.0.0.0 Safari/537.36")
+
+	if user != "" && password != "" {
+		encodedData := base64.StdEncoding.EncodeToString([]byte(user + ":" + password))
+		req.Header.Set("Authorization", "Basic "+encodedData)
+	}
 
 	client := http.DefaultClient
 	resp, err := client.Do(req)

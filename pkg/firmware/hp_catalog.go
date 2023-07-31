@@ -93,7 +93,7 @@ func parseBinaryInventory(configFile rawConfigFile, uploadToRepo bool, downloadB
 			value.DeviceClass != "" && value.DeviceClass != "null" &&
 			value.Target != "" && value.Target != "null" {
 
-			downloadURL, err := getDownloadURL(configFile.CatalogUrl, key, hpSupportToken)
+			downloadURL, err := getDownloadURL(configFile.CatalogUrl, key)
 			if err != nil {
 				//ignore invalid urls
 				continue
@@ -175,14 +175,10 @@ func downloadHpCatalog(catalogURL string, catalogFilePath string, hpSupportToken
 	return nil
 }
 
-func getDownloadURL(catalogURL string, key string, token string) (string, error) {
+func getDownloadURL(catalogURL string, key string) (string, error) {
 	u, err := url.Parse(catalogURL)
 	if err != nil {
 		return "", err
-	}
-
-	if token != "" {
-		u.User = url.User(token + ":null")
 	}
 
 	u.Path = path.Join(path.Dir(path.Dir(u.Path)), key)
