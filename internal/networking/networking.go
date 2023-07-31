@@ -120,7 +120,7 @@ func AddHostKey(knownHostsFilePath string, remoteAddress net.Addr, publicKey ssh
 
 func DownloadFile(url, path, hash, hashingAlgorithm string) error {
 	ok := fileExists(path)
-	if ok {
+	if ok && hash != "" {
 		localMD5, err := fileHash(path, hashingAlgorithm)
 
 		if err != nil {

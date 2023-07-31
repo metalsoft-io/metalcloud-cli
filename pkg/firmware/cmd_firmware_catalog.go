@@ -29,7 +29,7 @@ var FirmwareCatalogCmds = []command.Command{
 				"skip_upload_to_repo":    c.FlagSet.Bool("skip-upload-to-repo", false, colors.Yellow("(Optional)")+" Skip firmware binaries upload to the HTTP repository."),
 				"skip_host_key_checking": c.FlagSet.Bool("skip-host-key-checking", false, colors.Yellow("(Optional)")+" Skip check when adding a host key to the known_hosts file in the firmware binary upload process."),
 				"replace_if_exists":      c.FlagSet.Bool("replace-if-exists", false, colors.Yellow("(Optional)")+" Replaces firmware binaries if the already exist in the HTTP repository."),
-				"filter_server_types":	  c.FlagSet.String("filter-server-types", command.NilDefaultStr, colors.Yellow("(Optional)")+" Comma separated list of server types to filter the firmware catalog by. Defaults to all supported server types."),
+				"filter_server_types":    c.FlagSet.String("filter-server-types", command.NilDefaultStr, colors.Yellow("(Optional)")+" Comma separated list of server types to filter the firmware catalog by. Defaults to all supported server types."),
 				"debug":                  c.FlagSet.Bool("debug", false, colors.Green("(Flag)")+" If set, increases log level."),
 			}
 		},
@@ -105,7 +105,11 @@ func firmwareCatalogCreateCmd(c *command.Command, client metalcloud.MetalCloudCl
 		}
 
 	case catalogVendorHp:
-		return "", fmt.Errorf("vendor '%s' is not yet supported", catalogVendorHp)
+		catalog, binaryCollection, err = parseHpCatalog(configFile, client, filterServerTypes, uploadToRepo, downloadBinaries)
+
+		if err != nil {
+			return "", err
+		}
 
 	default:
 		validVendors := []string{catalogVendorDell, catalogVendorLenovo, catalogVendorHp}
