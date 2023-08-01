@@ -69,12 +69,12 @@ func TestSwitchControllerCreate(t *testing.T) {
 		AnyTimes()
 
 	list := map[int]metalcloud.SwitchDeviceController{
-			10: {
-				NetworkEquipmentControllerID:               10,
-				NetworkEquipmentControllerIdentifierString: "test",
-			},
-		}
-	
+		10: {
+			NetworkEquipmentControllerID:               10,
+			NetworkEquipmentControllerIdentifierString: "test",
+		},
+	}
+
 	client.EXPECT().
 		SwitchDeviceControllers(sw.DatacenterName).
 		Return(&list, nil).
@@ -253,6 +253,34 @@ func TestSwitchControllerGet(t *testing.T) {
 	}
 
 	command.TestGetCommand(switchControllerGetCmd, cases, client, expectedFirstRow, t)
+}
+
+func TestSwitchControllerDelete(t *testing.T) {
+	RegisterTestingT(t)
+	ctrl := gomock.NewController(t)
+
+	client := mock_metalcloud.NewMockMetalCloudClient(ctrl)
+
+	swCtrl := metalcloud.SwitchDeviceController{
+		NetworkEquipmentControllerID: 100,
+	}
+	client.EXPECT().
+		SwitchDeviceControllerGet(100, false).
+		Return(&swCtrl, nil).
+		AnyTimes()
+
+	client.EXPECT().
+		SwitchDeviceControllerDelete(100).
+		Return(nil).
+		AnyTimes()
+
+	cmd := command.MakeCommand(map[string]interface{}{
+		"network_controller_id_or_identifier_string": 100,
+		"autoconfirm":                            true,
+	})
+
+	_, err := switchControllerDeleteCmd(&cmd, client)
+	Expect(err).To(BeNil())
 }
 
 func TestSwitchObjectYamlUnmarshal(t *testing.T) {

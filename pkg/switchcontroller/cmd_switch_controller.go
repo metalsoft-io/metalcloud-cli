@@ -4,6 +4,7 @@ import (
 	"flag"
 	"fmt"
 	"strings"
+	"os"
 
 	metalcloud "github.com/metalsoft-io/metal-cloud-sdk-go/v2"
 	"github.com/metalsoft-io/metalcloud-cli/internal/colors"
@@ -74,7 +75,7 @@ var SwitchControllerCmds = []command.Command{
 		InitFunc: func(c *command.Command) {
 			c.Arguments = map[string]interface{}{
 				"format":           c.FlagSet.String("format", command.NilDefaultStr, "The output format. Supported values are 'json','csv','yaml'. The default format is human readable."),
-				"datacenter_name":  c.FlagSet.String("datacenter", "", "The optional parameter acts as a filter that restricts the returned results to switch devices located in the specified datacenter."),
+				"datacenter_name":  c.FlagSet.String("datacenter", command.NilDefaultStr, "The optional parameter acts as a filter that restricts the returned results to switch devices located in the specified datacenter."),
 				"show_credentials": c.FlagSet.Bool("show-credentials", false, colors.Green("(Flag)")+" If set returns the switch management credentials. (Slow for large queries)"),
 			}
 		},
@@ -90,7 +91,7 @@ var SwitchControllerCmds = []command.Command{
 		FlagSet:      flag.NewFlagSet("Edit switch controller configuration", flag.ExitOnError),
 		InitFunc: func(c *command.Command) {
 			c.Arguments = map[string]interface{}{
-				"network_controller_id_or_identifier_string": c.FlagSet.String("id", command.NilDefaultStr, colors.Red("(Required)")+" Switch id or identifier string. "),
+				"network_controller_id_or_identifier_string": c.FlagSet.String("id", command.NilDefaultStr, colors.Red("(Required)")+" Switch controller id or identifier string. "),
 				"format":                c.FlagSet.String("format", "json", "The input format. Supported values are 'json','yaml'. The default format is json."),
 				"read_config_from_file": c.FlagSet.String("raw-config", command.NilDefaultStr, colors.Red("(Required)")+" Read configuration from file in the format specified with --format."),
 				"read_config_from_pipe": c.FlagSet.Bool("pipe", false, colors.Green("(Flag)")+" If set, read  configuration from pipe instead of from a file. Either this flag or the --raw-config option must be used."),
@@ -109,13 +110,29 @@ var SwitchControllerCmds = []command.Command{
 		FlagSet:      flag.NewFlagSet("get a switch controller configuration", flag.ExitOnError),
 		InitFunc: func(c *command.Command) {
 			c.Arguments = map[string]interface{}{
-				"network_controller_id_or_identifier_string": c.FlagSet.String("id", command.NilDefaultStr, colors.Red("(Required)")+" Switch id or identifier string. "),
-				"show_credentials":                           c.FlagSet.Bool("show-credentials", false, colors.Green("(Flag)")+" If set returns the switch credentials"),
-				"format":                                     c.FlagSet.String("format", "", "The output format. Supported values are 'json','csv','yaml'. The default format is human readable."),
+				"network_controller_id_or_identifier_string": c.FlagSet.String("id", command.NilDefaultStr, colors.Red("(Required)")+" Switch controller id or identifier string. "),
+				"show_credentials":                           c.FlagSet.Bool("show-credentials", false, colors.Green("(Flag)")+" If set returns the switch controller credentials"),
+				"format":                                     c.FlagSet.String("format", command.NilDefaultStr, "The output format. Supported values are 'json','csv','yaml'. The default format is human readable."),
 				"raw":                                        c.FlagSet.Bool("raw", false, colors.Green("(Flag)")+" When set the return will be a full dump of the object. This is useful when copying configurations. Only works with json and yaml formats."),
 			}
 		},
 		ExecuteFunc: switchControllerGetCmd,
+		Endpoint:    configuration.DeveloperEndpoint,
+	},
+	{
+		Description:  "Delete a switch controller.",
+		Subject:      "switch-controller",
+		AltSubject:   "sw-ctrl",
+		Predicate:    "delete",
+		AltPredicate: "rm",
+		FlagSet:      flag.NewFlagSet("delete switch", flag.ExitOnError),
+		InitFunc: func(c *command.Command) {
+			c.Arguments = map[string]interface{}{
+				"network_controller_id_or_identifier_string": c.FlagSet.String("id", command.NilDefaultStr, colors.Red("(Required)")+" Switch controller id or identifier string. "),
+				"autoconfirm": c.FlagSet.Bool("autoconfirm", false, colors.Green("(Flag)")+" If set it will assume action is confirmed"),
+			}
+		},
+		ExecuteFunc: switchControllerDeleteCmd,
 		Endpoint:    configuration.DeveloperEndpoint,
 	},
 	{
@@ -128,8 +145,8 @@ var SwitchControllerCmds = []command.Command{
 		InitFunc: func(c *command.Command) {
 			c.Arguments = map[string]interface{}{
 				"format": c.FlagSet.String("format", command.NilDefaultStr, "The output format. Supported values are 'json','csv','yaml'. The default format is human readable."),
-				"network_controller_id_or_identifier_string": c.FlagSet.String("id", command.NilDefaultStr, colors.Red("(Required)")+" Switch id or identifier string. "),
-				"raw":      c.FlagSet.Bool("raw", false, colors.Green("(Flag)")+" When set the return will be a full dump of the object. This is useful when copying configurations. Only works with json and yaml formats."),
+				"network_controller_id_or_identifier_string": c.FlagSet.String("id", command.NilDefaultStr, colors.Red("(Required)")+" Switch controller id or identifier string. "),
+				"raw": c.FlagSet.Bool("raw", false, colors.Green("(Flag)")+" When set the return will be a full dump of the object. This is useful when copying configurations. Only works with json and yaml formats."),
 			}
 		},
 		ExecuteFunc: switchControllerSwitchesListCmd,
@@ -138,7 +155,7 @@ var SwitchControllerCmds = []command.Command{
 }
 
 func switchControllerCreateCmd(c *command.Command, client metalcloud.MetalCloudClient) (string, error) {
-	var obj metalcloud.SwitchDevice
+	var obj metalcloud.SwitchDeviceController
 
 	err := command.GetRawObjectFromCommand(c, &obj)
 	if err != nil {
@@ -149,24 +166,13 @@ func switchControllerCreateCmd(c *command.Command, client metalcloud.MetalCloudC
 		return "", fmt.Errorf("datacenter name is required.")
 	}
 
-	_, err = client.SwitchDeviceControllerCreate(obj)
+	swCtrl, err := client.SwitchDeviceControllerCreate(obj)
 	if err != nil {
 		return "", err
 	}
 
 	if command.GetBoolParam(c.Arguments["return_id"]) {
-		// The SwitchDeviceControllerCreate function returns an array of switches belonging to the controller.
-		// To get the controller ID we'll go through the list of controller and find the one with the same management address.
-		list, err := client.SwitchDeviceControllers(obj.DatacenterName)
-		if err != nil {
-			return "", err
-		}
-
-		for _, switchController := range *list {
-			if switchController.NetworkEquipmentControllerManagementAddress == obj.NetworkEquipmentManagementAddress {
-				return fmt.Sprintf("%d", switchController.NetworkEquipmentControllerID), nil
-			}
-		}
+		return fmt.Sprintf("%d", swCtrl.NetworkEquipmentControllerID), nil
 	}
 
 	return "", err
@@ -427,6 +433,41 @@ func getSwitchControllerFromCommandLineWithPrivateParam(private_paramName string
 	}
 
 	return switchController, nil
+}
+
+func switchControllerDeleteCmd(c *command.Command, client metalcloud.MetalCloudClient) (string, error) {
+	retSWCtrl, err := getSwitchControllerFromCommandLine("id", c, client)
+	if err != nil {
+		return "", err
+	}
+	confirm := false
+
+	if command.GetBoolParam(c.Arguments["autoconfirm"]) {
+		confirm = true
+	} else {
+		confirmationMessage := fmt.Sprintf("Deleting switch controller %s (%d).  Are you sure? Type \"yes\" to continue:",
+		retSWCtrl.NetworkEquipmentControllerIdentifierString,
+		retSWCtrl.NetworkEquipmentControllerID)
+
+		//this is simply so that we don't output a text on the command line under go test
+		if strings.HasSuffix(os.Args[0], ".test") {
+			confirmationMessage = ""
+		}
+
+		confirm, err = command.RequestConfirmation(confirmationMessage)
+		if err != nil {
+			return "", err
+		}
+
+	}
+
+	if !confirm {
+		return "", fmt.Errorf("Operation not confirmed. Aborting")
+	}
+
+	err = client.SwitchDeviceControllerDelete(retSWCtrl.NetworkEquipmentControllerID)
+
+	return "", err
 }
 
 func switchControllerSwitchesListCmd(c *command.Command, client metalcloud.MetalCloudClient) (string, error) {

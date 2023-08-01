@@ -2035,7 +2035,7 @@ func serverEditCmd(c *command.Command, client metalcloud.MetalCloudClient) (stri
 	readFromPipe := command.GetBoolParam(c.Arguments["read_config_from_pipe"])
 
 	if (readFromFile || readFromPipe) && (setStatus || setIPMIHostname || setIPMIUsername || setIPMIPassword) {
-		return "", fmt.Errorf("Cannot use --config or --pipe with --status or --ipmi-host or --ipmi-user or --ipmi-pass")
+		return "", fmt.Errorf("Cannot use --raw-config or --pipe with --status or --ipmi-host or --ipmi-user or --ipmi-pass")
 	}
 
 	newServer := *server
