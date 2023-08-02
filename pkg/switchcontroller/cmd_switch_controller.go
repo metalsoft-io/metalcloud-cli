@@ -32,38 +32,22 @@ var SwitchControllerCmds = []command.Command{
 		ExecuteFunc: switchControllerCreateCmd,
 		Endpoint:    configuration.DeveloperEndpoint,
 		Example: `
-	metalcloud-cli switch create --format yaml --raw-config switch-controller.yaml --return-id
+metalcloud-cli switch create --format yaml --raw-config switch-controller.yaml --return-id
 
-	#Example configuration:
-	identifierString: Cisco ACI 5.1
-	description: Cisco ACI 5.1 controller
-	datacenterName: ro-bucharest
-	provisionerType: sdn
-	provisionerPosition: leaf
-	driver: cisco_aci51
-	managementAddress: 172.16.10.2
-	managementProtocol: ssh
-	managementPort: 22
-	managementUsername: admin
-	managementPassword: mmmmm
-	managementMACAddress: 00:00:00:00:00:00
-	primaryWANIPv6SubnetPool: fd1f:8bbb:56b3:2000:0000:0000:1000:0000
-	primaryWANIPv6SubnetPrefixSize: 53
-	primarySANSubnetPool: 100.64.0.1
-	primarySANSubnetPrefixSize: 21
-	primaryWANIPv4SubnetPool: 172.24.4.0
-	primaryWANIPv4SubnetPrefixSize: 22
-	quarantineSubnetStart: 172.16.0.0
-	quarantineSubnetEnd: 172.16.0.255
-	quarantineSubnetPrefixSize: 24
-	quarantineSubnetGateway: 172.16.0.1
-	requiresOSInstall: false
-	isBorderDevice: false
-	isStorageSwitch: false
-	networkTypesAllowed:
-	- wan
-	- quarantine
-			`,
+switch-controller.yaml:
+
+identifierString: Cisco ACI 5.1
+description: Cisco ACI 5.1 controller
+datacenterName: test-aci
+provisionerType: sdn
+provisionerPosition: leaf
+driver: cisco_aci51
+managementAddress: 10.255.239.150
+managementProtocol: API
+managementPort: 22
+managementUsername: admin
+managementPassword: hello123
+`,
 	},
 	{
 		Description:  "Lists registered switch controllers.",
@@ -100,6 +84,24 @@ var SwitchControllerCmds = []command.Command{
 		},
 		ExecuteFunc: switchControllerEditCmd,
 		Endpoint:    configuration.DeveloperEndpoint,
+		Example: `
+metalcloud-cli switch-controller update --id 18 --raw-config update_sw_ctrl.yaml --format yaml
+
+update_sw_ctrl.yaml:
+
+options:
+ vrf_shared_name: test1234
+fabricConfiguration:
+ network_equipment_primary_wan_ipv4_subnet_pool: 192.168.0.0
+ network_equipment_primary_wan_ipv4_subnet_prefix_size: 22
+ network_equipment_primary_wan_ipv6_subnet_prefix_size: 53
+ network_equipment_primary_san_subnet_pool: 192.168.0.0
+ network_equipment_primary_san_subnet_prefix_size: 21
+ network_equipment_primary_wan_ipv6_subnet_pool: fd1f:8bbb:56b3:800:0:0:0:0  
+ network_equipment_description: test
+ network_equipment_country: UK
+ network_equipment_city: Reading
+ `,
 	},
 	{
 		Description:  "Get configuration for a controller.",
@@ -120,12 +122,27 @@ var SwitchControllerCmds = []command.Command{
 		Endpoint:    configuration.DeveloperEndpoint,
 	},
 	{
+		Description:  "Creates multiple network equipment controller records, based on the fabric configuration of the switch controller.",
+		Subject:      "switch-controller",
+		AltSubject:   "sw-ctrl",
+		Predicate:    "sync",
+		AltPredicate: "sync",
+		FlagSet:      flag.NewFlagSet("sync switch controller", flag.ExitOnError),
+		InitFunc: func(c *command.Command) {
+			c.Arguments = map[string]interface{}{
+				"network_controller_id_or_identifier_string": c.FlagSet.String("id", command.NilDefaultStr, colors.Red("(Required)")+" Switch controller id or identifier string. "),
+			}
+		},
+		ExecuteFunc: switchControllerSyncCmd,
+		Endpoint:    configuration.DeveloperEndpoint,
+	},
+	{
 		Description:  "Delete a switch controller.",
 		Subject:      "switch-controller",
 		AltSubject:   "sw-ctrl",
 		Predicate:    "delete",
 		AltPredicate: "rm",
-		FlagSet:      flag.NewFlagSet("delete switch", flag.ExitOnError),
+		FlagSet:      flag.NewFlagSet("delete switch controller", flag.ExitOnError),
 		InitFunc: func(c *command.Command) {
 			c.Arguments = map[string]interface{}{
 				"network_controller_id_or_identifier_string": c.FlagSet.String("id", command.NilDefaultStr, colors.Red("(Required)")+" Switch controller id or identifier string. "),
@@ -292,11 +309,13 @@ func switchControllerEditCmd(c *command.Command, client metalcloud.MetalCloudCli
 		return "", err
 	}
 
-	networkEquipmentControllerOptions := map[string]interface{}{
+	networkEquipmentControllerData := map[string]interface{}{
+		"datacenter_name": retSwCtrl.DatacenterName,
 		"network_equipment_controller_options": obj.NetworkEquipmentControllerOptions,
+		"network_equipment_controller_fabric_configuration": obj.NetworkEquipmentControllerFabricConfiguration,
 	}
 
-	updatedSwCtrl, err := client.SwitchDeviceControllerUpdate(retSwCtrl.NetworkEquipmentControllerID, networkEquipmentControllerOptions)
+	updatedSwCtrl, err := client.SwitchDeviceControllerUpdate(retSwCtrl.NetworkEquipmentControllerID, networkEquipmentControllerData)
 	if err != nil {
 		return "", err
 	}
@@ -433,6 +452,16 @@ func getSwitchControllerFromCommandLineWithPrivateParam(private_paramName string
 	}
 
 	return switchController, nil
+}
+
+func switchControllerSyncCmd(c *command.Command, client metalcloud.MetalCloudClient) (string, error) {
+	retSWCtrl, err := getSwitchControllerFromCommandLine("id", c, client)
+	if err != nil {
+		return "", err
+	}
+
+	_, err = client.SwitchDeviceControllerSync(retSWCtrl.NetworkEquipmentControllerID)
+	return "", err
 }
 
 func switchControllerDeleteCmd(c *command.Command, client metalcloud.MetalCloudClient) (string, error) {

@@ -52,32 +52,21 @@ func TestSwitchControllerCreate(t *testing.T) {
 
 	client := mock_metalcloud.NewMockMetalCloudClient(ctrl)
 
-	var sw metalcloud.SwitchDevice
+	var swCtrl metalcloud.SwitchDeviceController
 
-	err := json.Unmarshal([]byte(_SwitchDeviceFixture), &sw)
+	err := json.Unmarshal([]byte(_SwitchDeviceControllerFixture), &swCtrl)
 	if err != nil {
 		t.Error(err)
 	}
 
-	result := map[int]metalcloud.SwitchDevice{
-		sw.NetworkEquipmentID: sw,
+	result := metalcloud.SwitchDeviceController{
+		NetworkEquipmentControllerID:               10,
+		NetworkEquipmentControllerIdentifierString: "test",
 	}
 
 	client.EXPECT().
 		SwitchDeviceControllerCreate(gomock.Any()).
 		Return(&result, nil).
-		AnyTimes()
-
-	list := map[int]metalcloud.SwitchDeviceController{
-		10: {
-			NetworkEquipmentControllerID:               10,
-			NetworkEquipmentControllerIdentifierString: "test",
-		},
-	}
-
-	client.EXPECT().
-		SwitchDeviceControllers(sw.DatacenterName).
-		Return(&list, nil).
 		AnyTimes()
 
 	f, err := os.CreateTemp(os.TempDir(), "testconf-*.json")
@@ -86,7 +75,7 @@ func TestSwitchControllerCreate(t *testing.T) {
 	}
 
 	//create an input json file
-	f.WriteString(_SwitchDeviceFixture)
+	f.WriteString(_SwitchDeviceControllerFixture)
 	f.Close()
 	defer syscall.Unlink(f.Name())
 
@@ -96,7 +85,7 @@ func TestSwitchControllerCreate(t *testing.T) {
 	}
 
 	//create an input yaml file
-	s, err := yaml.Marshal(sw)
+	s, err := yaml.Marshal(swCtrl)
 	Expect(err).To(BeNil())
 
 	f2.WriteString(string(s))
@@ -264,6 +253,7 @@ func TestSwitchControllerDelete(t *testing.T) {
 	swCtrl := metalcloud.SwitchDeviceController{
 		NetworkEquipmentControllerID: 100,
 	}
+
 	client.EXPECT().
 		SwitchDeviceControllerGet(100, false).
 		Return(&swCtrl, nil).
@@ -276,10 +266,49 @@ func TestSwitchControllerDelete(t *testing.T) {
 
 	cmd := command.MakeCommand(map[string]interface{}{
 		"network_controller_id_or_identifier_string": 100,
-		"autoconfirm":                            true,
+		"autoconfirm": true,
 	})
 
 	_, err := switchControllerDeleteCmd(&cmd, client)
+	Expect(err).To(BeNil())
+}
+
+func TestSwitchControllerSync(t *testing.T) {
+	RegisterTestingT(t)
+	ctrl := gomock.NewController(t)
+
+	client := mock_metalcloud.NewMockMetalCloudClient(ctrl)
+
+	swCtrl := metalcloud.SwitchDeviceController{
+		NetworkEquipmentControllerID: 100,
+	}
+
+	var sw metalcloud.SwitchDevice
+
+	err := json.Unmarshal([]byte(_SwitchDeviceFixture), &sw)
+	if err != nil {
+		t.Error(err)
+	}
+
+	result := map[int]metalcloud.SwitchDevice{
+		sw.NetworkEquipmentID: sw,
+	}
+
+	client.EXPECT().
+		SwitchDeviceControllerGet(100, false).
+		Return(&swCtrl, nil).
+		AnyTimes()
+
+	client.EXPECT().
+		SwitchDeviceControllerSync(100).
+		Return(&result, nil).
+		AnyTimes()
+
+	cmd := command.MakeCommand(map[string]interface{}{
+		"network_controller_id_or_identifier_string": 100,
+	})
+
+	_, err = switchControllerSyncCmd(&cmd, client)
 	Expect(err).To(BeNil())
 }
 

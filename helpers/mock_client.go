@@ -3134,18 +3134,18 @@ func (mr *MockMetalCloudClientMockRecorder) SubnetPools() *gomock.Call {
 }
 
 // SwitchDeviceControllerCreate mocks base method.
-func (m *MockMetalCloudClient) SwitchDeviceControllerCreate(switchDevice metalcloud.SwitchDevice) (*map[int]metalcloud.SwitchDevice, error) {
+func (m *MockMetalCloudClient) SwitchDeviceControllerCreate(switchDeviceController metalcloud.SwitchDeviceController) (*metalcloud.SwitchDeviceController, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "SwitchDeviceControllerCreate", switchDevice)
-	ret0, _ := ret[0].(*map[int]metalcloud.SwitchDevice)
+	ret := m.ctrl.Call(m, "SwitchDeviceControllerCreate", switchDeviceController)
+	ret0, _ := ret[0].(*metalcloud.SwitchDeviceController)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
 // SwitchDeviceControllerCreate indicates an expected call of SwitchDeviceControllerCreate.
-func (mr *MockMetalCloudClientMockRecorder) SwitchDeviceControllerCreate(switchDevice interface{}) *gomock.Call {
+func (mr *MockMetalCloudClientMockRecorder) SwitchDeviceControllerCreate(switchDeviceController interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SwitchDeviceControllerCreate", reflect.TypeOf((*MockMetalCloudClient)(nil).SwitchDeviceControllerCreate), switchDevice)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SwitchDeviceControllerCreate", reflect.TypeOf((*MockMetalCloudClient)(nil).SwitchDeviceControllerCreate), switchDeviceController)
 }
 
 // SwitchDeviceControllerDelete mocks base method.
@@ -3205,6 +3205,21 @@ func (m *MockMetalCloudClient) SwitchDeviceControllerSwitches(networkEquipmentId
 func (mr *MockMetalCloudClientMockRecorder) SwitchDeviceControllerSwitches(networkEquipmentIdentifierString interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SwitchDeviceControllerSwitches", reflect.TypeOf((*MockMetalCloudClient)(nil).SwitchDeviceControllerSwitches), networkEquipmentIdentifierString)
+}
+
+// SwitchDeviceControllerSync mocks base method.
+func (m *MockMetalCloudClient) SwitchDeviceControllerSync(networkEquipmentControllerID int) (*map[int]metalcloud.SwitchDevice, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "SwitchDeviceControllerSync", networkEquipmentControllerID)
+	ret0, _ := ret[0].(*map[int]metalcloud.SwitchDevice)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// SwitchDeviceControllerSync indicates an expected call of SwitchDeviceControllerSync.
+func (mr *MockMetalCloudClientMockRecorder) SwitchDeviceControllerSync(networkEquipmentControllerID interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SwitchDeviceControllerSync", reflect.TypeOf((*MockMetalCloudClient)(nil).SwitchDeviceControllerSync), networkEquipmentControllerID)
 }
 
 // SwitchDeviceControllerUpdate mocks base method.
