@@ -16,6 +16,8 @@ github.com/metalsoft-io/metal-cloud-sdk-go/v2 v2.9.6 h1:9dDj9GPYZcXLJQuD92cpkqTN
 github.com/metalsoft-io/metal-cloud-sdk-go/v2 v2.9.6/go.mod h1:aIlz3yqSoyMSpxUIxSn5Ihpd1XEjwf5jMnfI4iLRVOU=
 github.com/metalsoft-io/metal-cloud-sdk-go/v2 v2.9.8 h1:mao66T1HOSDh4f2GyZfZoi2PVYYQljk3InLKwXj+F1Y=
 github.com/metalsoft-io/metal-cloud-sdk-go/v2 v2.9.8/go.mod h1:aIlz3yqSoyMSpxUIxSn5Ihpd1XEjwf5jMnfI4iLRVOU=
+github.com/metalsoft-io/metal-cloud-sdk-go/v2 v2.10.2 h1:hxrEukwVHZkot/hqAf5PxfjIk3+7LvMtwZ09xETEZYM=
+github.com/metalsoft-io/metal-cloud-sdk-go/v2 v2.10.2/go.mod h1:aIlz3yqSoyMSpxUIxSn5Ihpd1XEjwf5jMnfI4iLRVOU=
 github.com/niemeyer/pretty v0.0.0-20200227124842-a10e7caefd8e h1:fD57ERR4JtEqsWbfPhv4DMiApHyliiK5xCTNVSPiaAs=
 github.com/sirupsen/logrus v1.4.1 h1:GL2rEmy6nsikmW0r8opw9JIRScdMF5hA8cOYLH7In1k=
 github.com/stretchr/objx v0.1.1 h1:2vfRuCMp5sSVIDSqO8oNnWJq7mPa6KVP3iPIwFBuy8A=
