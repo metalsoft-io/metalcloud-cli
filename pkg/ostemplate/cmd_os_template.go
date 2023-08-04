@@ -371,10 +371,10 @@ var OsTemplatesCmds = []command.Command{
 		ExecuteFunc: templateRegisterCmd,
 		Endpoint:    configuration.ExtendedEndpoint,
 		Example: `
-		metalcloud-cli os-template register --name test-template --source-template Ubuntu/20.04/oob-uefi-boot --source-iso ubuntu-20.04.4-live-server-amd64.iso —-assets-update user-data:./replace_asset_1,vendor-data:./replace_asset_2
-		metalcloud-cli os-template register --name test-100 --source-template Ubuntu/20.04/oob-uefi-boot --source-iso ubuntu-20.04.4-live-server-amd64.iso --replace-if-exists --skip-host-key-checking=false
-		metalcloud-cli os-template register --name "SONiC Enterprise 4.0.2 - Spine" --source-template "SONiC/4.0.2/sonic-enterprise-premium-spine"
-		`,
+metalcloud-cli os-template register --name test-template --source-template Ubuntu/20.04/oob-uefi-boot --source-iso ubuntu-20.04.4-live-server-amd64.iso —-assets-update user-data:./replace_asset_1,vendor-data:./replace_asset_2
+metalcloud-cli os-template register --name test-100 --source-template Ubuntu/20.04/oob-uefi-boot --source-iso ubuntu-20.04.4-live-server-amd64.iso --replace-if-exists --skip-host-key-checking=false
+metalcloud-cli os-template register --name "SONiC Enterprise 4.0.2 - Spine" --source-template "SONiC/4.0.2/sonic-enterprise-premium-spine"
+`,
 	},
 	{
 		Description:  "Create a diff file.",

@@ -8,9 +8,9 @@ require (
 	github.com/go-git/go-billy/v5 v5.3.1
 	github.com/go-git/go-git/v5 v5.4.2
 	github.com/golang/mock v1.6.0
-	github.com/jwalton/gchalk v1.2.1
+	github.com/jwalton/gchalk v1.3.0
 	github.com/kdomanski/iso9660 v0.3.1
-	github.com/metalsoft-io/metal-cloud-sdk-go/v2 v2.9.8
+	github.com/metalsoft-io/metal-cloud-sdk-go/v2 v2.10.2
 	github.com/metalsoft-io/tableformatter v1.0.9
 	github.com/onsi/gomega v1.16.0
 	github.com/savaki/jq v0.0.0-20161209013833-0e6baecebbf8
@@ -30,20 +30,17 @@ require (
 	github.com/emirpasic/gods v1.12.0 // indirect
 	github.com/go-git/gcfg v1.5.0 // indirect
 	github.com/golang/protobuf v1.5.2 // indirect
-	github.com/hashicorp/errwrap v1.0.0 // indirect
-	github.com/hashicorp/go-multierror v1.1.1 // indirect
 	github.com/iancoleman/strcase v0.1.2 // indirect
 	github.com/imdario/mergo v0.3.12 // indirect
 	github.com/jbenet/go-context v0.0.0-20150711004518-d14ea06fba99 // indirect
 	github.com/jinzhu/copier v0.3.5 // indirect
-	github.com/jlaffaye/ftp v0.2.0 // indirect
 	github.com/jwalton/go-supportscolor v1.1.0 // indirect
 	github.com/kevinburke/ssh_config v0.0.0-20201106050909-4977a11b4351 // indirect
 	github.com/mitchellh/go-homedir v1.1.0 // indirect
 	github.com/xanzy/ssh-agent v0.3.0 // indirect
 	github.com/ybbus/jsonrpc v2.1.2+incompatible // indirect
-	golang.org/x/exp v0.0.0-20230626212559-97b1e661b5df // indirect
-	golang.org/x/net v0.7.0 // indirect
+	golang.org/x/exp v0.0.0-20230626212559-97b1e661b5df
+	golang.org/x/net v0.7.0
 	golang.org/x/oauth2 v0.0.0-20220909003341-f21342109be1 // indirect
 	golang.org/x/sys v0.5.0 // indirect
 	golang.org/x/term v0.5.0 // indirect
@@ -52,5 +49,3 @@ require (
 	google.golang.org/protobuf v1.28.1 // indirect
 	gopkg.in/warnings.v0 v0.1.2 // indirect
 )
-
-replace github.com/metalsoft-io/metal-cloud-sdk-go/v2 => C:\Users\Alex\go\src\github.com\metalsoft-io\metal-cloud-sdk-go

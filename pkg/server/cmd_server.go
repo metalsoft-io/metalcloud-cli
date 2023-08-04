@@ -42,7 +42,7 @@ var ServersCmds = []command.Command{
 		Example: `
 metalcloud-cli server list --filter "available used" # to show all available and used servers. One of: [available|unavailable|used|cleaning|registering]
 metalcloud-cli server list --show-credentials # to retrieve a list of credentials. Note: this will take a longer time.
-		`,
+`,
 	},
 
 	{
@@ -256,6 +256,95 @@ interfaces:
 	},
 
 	{
+		Description:  "Add default server BMC credentials for zero touch registration",
+		Subject:      "server",
+		AltSubject:   "srv",
+		Predicate:    "ztp-credentials-add",
+		AltPredicate: "ztp-credentials-add",
+		FlagSet:      flag.NewFlagSet("server credentials", flag.ExitOnError),
+		InitFunc: func(c *command.Command) {
+			c.Arguments = map[string]interface{}{
+				"datacenter":       c.FlagSet.String("datacenter", command.NilDefaultStr, "The datacenter label to use"),
+				"serial_number":    c.FlagSet.String("sn", command.NilDefaultStr, "Server's serial number"),
+				"bmc_mac_address":  c.FlagSet.String("mac", command.NilDefaultStr, "Server's BMC MAC address"),
+				"bmc_mac_username": c.FlagSet.String("user", command.NilDefaultStr, "Server's BMC username"),
+				"bmc_mac_password": c.FlagSet.String("pass", command.NilDefaultStr, "Server's BMC password"),
+			}
+		},
+		ExecuteFunc: serverDefaultCredentialsAddCmd,
+		Endpoint:    configuration.DeveloperEndpoint,
+	},
+
+	{
+		Description:  "Add default server BMC credentials for zero touch registration (batch version)",
+		Subject:      "server",
+		AltSubject:   "srv",
+		Predicate:    "ztp-credentials-add-batch",
+		AltPredicate: "ztp-creds-add-batch",
+		FlagSet:      flag.NewFlagSet("server credentials", flag.ExitOnError),
+		InitFunc: func(c *command.Command) {
+			c.Arguments = map[string]interface{}{
+				"format":                 c.FlagSet.String("format", "json", "The input format. Supported values are 'json','yaml'. The only supported format is yaml."),
+				"do-not-skip-duplicates": c.FlagSet.Bool("do-not-skip-duplicates", false, colors.Green("(Flag)")+" If set it will not skip the records found as duplicate and will instead throw an error"),
+				"read_config_from_file":  c.FlagSet.String("file", command.NilDefaultStr, colors.Red("(Required)")+" Read raw object from file"),
+			}
+		},
+		ExecuteFunc: serverDefaultCredentialsAddBatchCmd,
+		Endpoint:    configuration.DeveloperEndpoint,
+		Example: `
+This command supports one or more credentials in a yaml file format. The file format uses "---" separator between records. For example:
+
+
+datacenter: sonic-qts
+serialNumber: NNAACC2
+BMCMACAddress: aa:vv:cc:dd:ee
+username: root
+password: calvin
+---
+datacenter: sonic-qts
+serialNumber: NNAACC3
+BMCMACAddress: aa:vv:cc:dd:eb
+username: root
+password: notcalvin
+---
+
+`,
+	},
+	{
+		Description:  "Lists default BMC server credentials for the ZTP process.",
+		Subject:      "server",
+		AltSubject:   "srv",
+		Predicate:    "ztp-credentials-list",
+		AltPredicate: "ztp-credentials-ls",
+		FlagSet:      flag.NewFlagSet("list servers", flag.ExitOnError),
+		InitFunc: func(c *command.Command) {
+			c.Arguments = map[string]interface{}{
+				"format":           c.FlagSet.String("format", command.NilDefaultStr, "The output format. Supported values are 'json','csv','yaml'. The default format is human readable."),
+				"datacenter":       c.FlagSet.String("datacenter", command.NilDefaultStr, "The datacenter to retrieve server ZTP credentials"),
+				"show_credentials": c.FlagSet.Bool("show-credentials", false, colors.Green("(Flag)")+" If set returns the servers' ZTP BMC credentials. (Slow for large queries)"),
+			}
+		},
+		ExecuteFunc: serversDefaultCredentialsListCmd,
+		Endpoint:    configuration.DeveloperEndpoint,
+	},
+	{
+		Description:  "Remove default server BMC credentials for zero touch registration",
+		Subject:      "server",
+		AltSubject:   "srv",
+		Predicate:    "ztp-credentials-remove",
+		AltPredicate: "ztp-creds-rm",
+		FlagSet:      flag.NewFlagSet("server credentials", flag.ExitOnError),
+		InitFunc: func(c *command.Command) {
+			c.Arguments = map[string]interface{}{
+				"default_credentials_id": c.FlagSet.Int("id", command.NilDefaultInt, colors.Red("(Required)")+" The credentials ID, use ztp-credentials-list to retrieve the ID."),
+				"autoconfirm":            c.FlagSet.Bool("autoconfirm", false, colors.Green("(Flag)")+" If set it will assume action is confirmed"),
+			}
+		},
+		ExecuteFunc: serverDefaultCredentialsRemoveCmd,
+		Endpoint:    configuration.DeveloperEndpoint,
+	},
+
+	{
 		Description:  "Edit server.",
 		Subject:      "server",
 		AltSubject:   "srv",
@@ -325,7 +414,7 @@ interfaces:
 		InitFunc: func(c *command.Command) {
 			c.Arguments = map[string]interface{}{
 				"server_id":   c.FlagSet.Int("id", command.NilDefaultInt, colors.Red("(Required)")+" Server's id."),
-				"status":      c.FlagSet.String("status", command.NilDefaultStr, colors.Red("(Required)")+" New server status. One of: 'available','decommissioned','removed_from_rack'"),
+				"status":      c.FlagSet.String("status", command.NilDefaultStr, colors.Red("(Required)")+" New server status. One of: 'available','unavailable','decommissioned','removed_from_rack'"),
 				"autoconfirm": c.FlagSet.Bool("autoconfirm", false, colors.Green("(Flag)")+" If set it will assume action is confirmed"),
 			}
 		},
@@ -521,7 +610,19 @@ func serverStatusSetCmd(c *command.Command, client metalcloud.MetalCloudClient) 
 	}
 
 	if confirm {
-		err = client.ServerStatusUpdate(serverID, newStatus)
+
+		if newStatus == "decommissioned" {
+			err = client.ServerStatusUpdate(serverID, "unavailable")
+			if err != nil {
+				return "", err
+			}
+			err = client.ServerDecomission(serverID, true)
+			if err != nil {
+				return "", err
+			}
+		} else {
+			err = client.ServerStatusUpdate(serverID, newStatus)
+		}
 	}
 
 	return "", err
@@ -1750,6 +1851,171 @@ func serverImportBatchCmd(c *command.Command, client metalcloud.MetalCloudClient
 	return "", err
 }
 
+func serverDefaultCredentialsAddBatchCmd(c *command.Command, client metalcloud.MetalCloudClient) (string, error) {
+
+	filePath, ok := command.GetStringParamOk(c.Arguments["read_config_from_file"])
+	if !ok {
+		return "", fmt.Errorf("-file is required")
+	}
+
+	records, err := getMultipleServerDefaultCredentialsFromYamlFile(filePath)
+	if err != nil {
+		return "", err
+	}
+
+	//check for duplicated mac or SNs as the server side
+	//handling throws a very ugly error
+	creds, err := getAllZTPServerRecords(client)
+	if err != nil {
+		return "", err
+	}
+
+	for _, record := range records {
+
+		skipRecord := false
+
+		for _, cred := range creds {
+			if cred.ServerSerialNumber == record.ServerSerialNumber {
+
+				errorString := fmt.Sprintf("Duplicate serial number %s found", record.ServerSerialNumber)
+
+				if command.GetBoolParam(c.Arguments["do-not-skip-duplicates"]) {
+					return "", fmt.Errorf(errorString)
+				}
+				fmt.Printf("Warning: %s. Ignoring entry\n", errorString)
+
+				skipRecord = true
+				break
+			}
+
+			if cred.ServerBMCMACAddress == record.ServerBMCMACAddress {
+				errorString := fmt.Sprintf("Duplicate mac address %s found", record.ServerBMCMACAddress)
+
+				if command.GetBoolParam(c.Arguments["do-not-skip-duplicates"]) {
+					return "", fmt.Errorf(errorString)
+				}
+				fmt.Printf("Warning: %s. Ignoring entry\n", errorString)
+				skipRecord = true
+				break
+
+			}
+		}
+
+		if skipRecord {
+			continue
+		}
+
+		err := client.ServerDefaultCredentialsAdd([]metalcloud.ServerDefaultCredentials{record})
+
+		if err != nil {
+			return "", err
+		}
+
+		creds = append(creds, record)
+	}
+
+	return "", err
+}
+
+func serverDefaultCredentialsAddCmd(c *command.Command, client metalcloud.MetalCloudClient) (string, error) {
+
+	datacenter, ok := command.GetStringParamOk(c.Arguments["datacenter"])
+	if !ok {
+		return "", fmt.Errorf("-datacenter is required")
+	}
+
+	serial_number, ok := command.GetStringParamOk(c.Arguments["serial_number"])
+	if !ok {
+		return "", fmt.Errorf("-sn is required")
+	}
+
+	bmc_mac_address, ok := command.GetStringParamOk(c.Arguments["bmc_mac_address"])
+	if !ok {
+		return "", fmt.Errorf("-mac is required")
+	}
+
+	bmc_mac_username, ok := command.GetStringParamOk(c.Arguments["bmc_mac_username"])
+	if !ok {
+		return "", fmt.Errorf("-user is required")
+	}
+
+	bmc_mac_password, ok := command.GetStringParamOk(c.Arguments["bmc_mac_password"])
+	if !ok {
+		return "", fmt.Errorf("-pass is required")
+	}
+
+	//check for duplicated mac or SNs as the server side
+	//handling throws a very ugly error
+	creds, err := client.ServerDefaultCredentials(datacenter, false)
+	if err != nil {
+		return "", err
+	}
+
+	for _, cred := range *creds {
+		if cred.ServerSerialNumber == serial_number {
+			return "", fmt.Errorf("Duplicate serial number %s found in entry with id #%d in datacenter %s\n", serial_number, cred.ServerDefaultCredentialsID, cred.DatacenterName)
+		}
+
+		if cred.ServerBMCMACAddress == bmc_mac_address {
+			return "", fmt.Errorf("Duplicate mac address %s found in entry with id #%d\n in datacenter %s\n", bmc_mac_address, cred.ServerDefaultCredentialsID, cred.DatacenterName)
+		}
+	}
+
+	err = client.ServerDefaultCredentialsAdd([]metalcloud.ServerDefaultCredentials{
+		{
+			DatacenterName:                   datacenter,
+			ServerSerialNumber:               serial_number,
+			ServerBMCMACAddress:              bmc_mac_address,
+			ServerDefaultCredentialsUsername: bmc_mac_username,
+			ServerDefaultCredentialsPassword: bmc_mac_password,
+		},
+	})
+
+	if err != nil {
+		return "", err
+	}
+
+	return "", err
+}
+
+func getMultipleServerDefaultCredentialsFromYamlFile(filePath string) ([]metalcloud.ServerDefaultCredentials, error) {
+
+	file, err := os.Open(filePath)
+	if err != nil {
+		if errors.Is(err, os.ErrNotExist) {
+			return []metalcloud.ServerDefaultCredentials{}, nil
+		} else {
+			return []metalcloud.ServerDefaultCredentials{}, err
+		}
+	}
+
+	decoder := yaml.NewDecoder(file)
+
+	records := []metalcloud.ServerDefaultCredentials{}
+
+	for true {
+
+		var record metalcloud.ServerDefaultCredentials
+
+		err = decoder.Decode(&record)
+		if err == nil {
+			records = append(records, record)
+		}
+
+		if err != nil {
+			if errors.Is(err, io.EOF) {
+				break
+			} else {
+				return nil, fmt.Errorf("Error while reading %s: %v", filePath, err)
+			}
+		}
+	}
+
+	file.Close()
+
+	return records, nil
+}
+
 func serverEditCmd(c *command.Command, client metalcloud.MetalCloudClient) (string, error) {
 
 	server, err := getServerFromCommand("id", c, client, false)
@@ -1769,7 +2035,7 @@ func serverEditCmd(c *command.Command, client metalcloud.MetalCloudClient) (stri
 	readFromPipe := command.GetBoolParam(c.Arguments["read_config_from_pipe"])
 
 	if (readFromFile || readFromPipe) && (setStatus || setIPMIHostname || setIPMIUsername || setIPMIPassword) {
-		return "", fmt.Errorf("Cannot use --config or --pipe with --status or --ipmi-host or --ipmi-user or --ipmi-pass")
+		return "", fmt.Errorf("Cannot use --raw-config or --pipe with --status or --ipmi-host or --ipmi-user or --ipmi-pass")
 	}
 
 	newServer := *server
@@ -2023,4 +2289,129 @@ func getStringFromStringOrEmpty(str *string) string {
 		return ""
 	}
 	return *str
+}
+
+func serversDefaultCredentialsListCmd(c *command.Command, client metalcloud.MetalCloudClient) (string, error) {
+
+	datacenter, ok := command.GetStringParamOk(c.Arguments["datacenter"])
+	if !ok {
+		return "", fmt.Errorf("-datacenter is required")
+	}
+
+	list, err := client.ServerDefaultCredentials(datacenter, command.GetBoolParam(c.Arguments["show_credentials"]))
+	if err != nil {
+		return "", err
+	}
+
+	schema := []tableformatter.SchemaField{
+		{
+			FieldName: "ID",
+			FieldType: tableformatter.TypeInt,
+			FieldSize: 6,
+		},
+		{
+			FieldName: "Server SN",
+			FieldType: tableformatter.TypeString,
+			FieldSize: 6,
+		},
+		{
+			FieldName: "BMC MAC",
+			FieldType: tableformatter.TypeString,
+			FieldSize: 5,
+		},
+
+		{
+			FieldName: "BMC Username",
+			FieldType: tableformatter.TypeString,
+			FieldSize: 6,
+		},
+	}
+
+	if command.GetBoolParam(c.Arguments["show_credentials"]) {
+
+		schema = append(schema, tableformatter.SchemaField{
+			FieldName: "BMC password",
+			FieldType: tableformatter.TypeString,
+			FieldSize: 5,
+		})
+	}
+
+	data := [][]interface{}{}
+
+	for _, s := range *list {
+
+		row := []interface{}{
+			s.ServerDefaultCredentialsID,
+			s.ServerSerialNumber,
+			s.ServerBMCMACAddress,
+			s.ServerDefaultCredentialsUsername,
+		}
+
+		if command.GetBoolParam(c.Arguments["show_credentials"]) {
+			row = append(row, []interface{}{
+				s.ServerDefaultCredentialsPassword,
+			}...)
+		}
+
+		data = append(data, row)
+
+	}
+
+	table := tableformatter.Table{
+		Data:   data,
+		Schema: schema,
+	}
+
+	title := fmt.Sprintf("Server credentials for the ZTP process for the %s datacenter:", datacenter)
+
+	return table.RenderTable(title, "", command.GetStringParam(c.Arguments["format"]))
+}
+
+func serverDefaultCredentialsRemoveCmd(c *command.Command, client metalcloud.MetalCloudClient) (string, error) {
+	credID, ok := command.GetIntParamOk(c.Arguments["default_credentials_id"])
+	if !ok {
+		return "", fmt.Errorf("-id is required")
+	}
+
+	confirm, err := command.ConfirmCommand(c, func() string {
+
+		confirmationMessage := fmt.Sprintf("Are you sure you want to remove ZTP credentials with ID %d.  Are you sure? Type \"yes\" to continue:",
+			credID,
+		)
+
+		if strings.HasSuffix(os.Args[0], ".test") {
+			confirmationMessage = ""
+		}
+
+		return confirmationMessage
+	})
+
+	if err != nil {
+		return "", err
+	}
+
+	if confirm {
+		err = client.ServerDefaultCredentialsRemove([]int{credID})
+	}
+
+	return "", err
+}
+
+func getAllZTPServerRecords(client metalcloud.MetalCloudClient) ([]metalcloud.ServerDefaultCredentials, error) {
+
+	dcs, err := client.Datacenters(true)
+	if err != nil {
+		return []metalcloud.ServerDefaultCredentials{}, err
+	}
+
+	list := []metalcloud.ServerDefaultCredentials{}
+	for _, dc := range *dcs {
+		l, err := client.ServerDefaultCredentials(dc.DatacenterName, false)
+		if err != nil {
+			return []metalcloud.ServerDefaultCredentials{}, err
+		}
+		list = append(list, *l...)
+	}
+
+	return list, nil
 }
