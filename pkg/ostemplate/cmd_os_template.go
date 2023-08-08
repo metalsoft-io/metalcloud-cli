@@ -7,7 +7,7 @@ import (
 	"errors"
 	"flag"
 	"fmt"
-	"io/ioutil"
+	"io"
 	"net"
 	"os"
 	"path/filepath"
@@ -1598,7 +1598,7 @@ func checkOOBTemplateIntegrity(c *command.Command, repoTemplate RepoTemplate) er
 				return fmt.Errorf("Could not apply patch asset as the bootloader config file with name '%s' was not found in the given ISO image.", asset.name)
 			}
 
-			bootloaderData, err := ioutil.ReadAll(bootloaderFile.Reader())
+			bootloaderData, err := io.ReadAll(bootloaderFile.Reader())
 
 			if err != nil {
 				return err

@@ -158,7 +158,7 @@ func BypassReader(label string, input io.Reader) (io.Reader, error) {
 	return input, nil
 }
 
-func parseDellCatalog(client metalcloud.MetalCloudClient, configFile rawConfigFile, serverTypesFilter string, uploadToRepo, downloadBinaries bool) (firmwareCatalog, []*firmwareBinary, error) {
+func parseDellCatalog(client metalcloud.MetalCloudClient, configFile rawConfigFile, serverTypesFilter string, uploadToRepo, downloadBinaries bool, repoConfig repoConfiguration) (firmwareCatalog, []*firmwareBinary, error) {
 	supportedServerTypes, _, err := retrieveSupportedServerTypes(client, serverTypesFilter)
 	if err != nil {
 		return firmwareCatalog{}, nil, err
@@ -169,7 +169,7 @@ func parseDellCatalog(client metalcloud.MetalCloudClient, configFile rawConfigFi
 		return firmwareCatalog{}, nil, err
 	}
 
-	firmwareBinaryCollection, err := processDellBinaries(configFile, manifest, &catalog, supportedServerTypes, uploadToRepo, downloadBinaries)
+	firmwareBinaryCollection, err := processDellBinaries(configFile, manifest, &catalog, supportedServerTypes, uploadToRepo, downloadBinaries, repoConfig)
 	if err != nil {
 		return firmwareCatalog{}, nil, err
 	}
@@ -240,7 +240,7 @@ func processDellCatalog(configFile rawConfigFile) (firmwareCatalog, manifest, er
 	return catalog, manifest, nil
 }
 
-func processDellBinaries(configFile rawConfigFile, dellManifest manifest, catalog *firmwareCatalog, supportedServerTypes map[string][]string, uploadToRepo, downloadBinaries bool) ([]*firmwareBinary, error) {
+func processDellBinaries(configFile rawConfigFile, dellManifest manifest, catalog *firmwareCatalog, supportedServerTypes map[string][]string, uploadToRepo, downloadBinaries bool, repoConfig repoConfiguration) ([]*firmwareBinary, error) {
 	metalsoftServerTypes := []string{}
 	dellServerTypes := []string{}
 
@@ -266,9 +266,13 @@ func processDellBinaries(configFile rawConfigFile, dellManifest manifest, catalo
 	}
 
 	firmwareBinaryCollection := []*firmwareBinary{}
-	repositoryURL, err := configuration.GetFirmwareRepositoryURL()
-	if uploadToRepo && err != nil {
-		return nil, fmt.Errorf("Error getting firmware repository URL: %v", err)
+	repositoryURL := repoConfig.HttpUrl
+	if repositoryURL == "" {
+		var err error
+		repositoryURL, err = configuration.GetFirmwareRepositoryURL()
+		if uploadToRepo && err != nil {
+			return nil, fmt.Errorf("Error getting firmware repository URL: %v", err)
+		}
 	}
 
 	for _, component := range dellManifest.Components {

@@ -5,7 +5,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
-	"io/ioutil"
 	"net/http"
 	"net/url"
 	"os"
@@ -28,14 +27,13 @@ type hpCatalongTemplate struct {
 	Version              string `json:"version"`
 }
 
-func parseHpCatalog(configFile rawConfigFile, client metalcloud.MetalCloudClient, filter string, uploadToRepo bool, downloadBinaries bool) (firmwareCatalog, []*firmwareBinary, error) {
-
+func parseHpCatalog(configFile rawConfigFile, client metalcloud.MetalCloudClient, filter string, uploadToRepo, downloadBinaries bool, repoConfig repoConfiguration) (firmwareCatalog, []*firmwareBinary, error) {
 	catalog, err := generateHpCatalog(configFile)
 	if err != nil {
 		return firmwareCatalog{}, nil, err
 	}
 
-	binaries, err := parseBinaryInventory(configFile, uploadToRepo, downloadBinaries)
+	binaries, err := parseHpBinaryInventory(configFile, uploadToRepo, downloadBinaries, repoConfig)
 	if err != nil {
 		return firmwareCatalog{}, nil, err
 	}
@@ -60,8 +58,7 @@ func generateHpCatalog(configFile rawConfigFile) (firmwareCatalog, error) {
 	return catalog, nil
 }
 
-func parseBinaryInventory(configFile rawConfigFile, uploadToRepo bool, downloadBinaries bool) ([]*firmwareBinary, error) {
-
+func parseHpBinaryInventory(configFile rawConfigFile, uploadToRepo, downloadBinaries bool, repoConfig repoConfiguration) ([]*firmwareBinary, error) {
 	hpSupportToken := os.Getenv("HP_SUPPORT_TOKEN")
 
 	if configFile.CatalogUrl != "" {
@@ -71,10 +68,15 @@ func parseBinaryInventory(configFile rawConfigFile, uploadToRepo bool, downloadB
 		}
 	}
 
-	repositoryURL, err := configuration.GetFirmwareRepositoryURL()
-	if uploadToRepo && err != nil {
-		return nil, fmt.Errorf("Error getting firmware repository URL: %v", err)
+	repositoryURL := repoConfig.HttpUrl
+	if repositoryURL == "" {
+		var err error
+		repositoryURL, err = configuration.GetFirmwareRepositoryURL()
+		if uploadToRepo && err != nil {
+			return nil, fmt.Errorf("Error getting firmware repository URL: %v", err)
+		}
 	}
+
 	jsonFile, err := os.Open(configFile.LocalCatalogPath)
 	if err != nil {
 		return []*firmwareBinary{}, err
@@ -82,7 +84,7 @@ func parseBinaryInventory(configFile rawConfigFile, uploadToRepo bool, downloadB
 
 	defer jsonFile.Close()
 
-	byteValue, _ := ioutil.ReadAll(jsonFile)
+	byteValue, _ := io.ReadAll(jsonFile)
 
 	var packages map[string]hpCatalongTemplate
 	json.Unmarshal(byteValue, &packages)

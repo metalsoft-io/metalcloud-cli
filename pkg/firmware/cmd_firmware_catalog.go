@@ -23,14 +23,19 @@ var FirmwareCatalogCmds = []command.Command{
 		FlagSet:      flag.NewFlagSet("create firmware catalog", flag.ExitOnError),
 		InitFunc: func(c *command.Command) {
 			c.Arguments = map[string]interface{}{
-				"config_format":          c.FlagSet.String("config-format", command.NilDefaultStr, "The format of the config file. Supported values are 'json' and 'yaml'."),
-				"raw_config":             c.FlagSet.String("raw-config", command.NilDefaultStr, "The path to the config file."),
-				"download_binaries":      c.FlagSet.Bool("download-binaries", false, colors.Yellow("(Optional)")+" Download firmware binaries from the catalog to the local filesystem."),
-				"skip_upload_to_repo":    c.FlagSet.Bool("skip-upload-to-repo", false, colors.Yellow("(Optional)")+" Skip firmware binaries upload to the HTTP repository."),
-				"skip_host_key_checking": c.FlagSet.Bool("skip-host-key-checking", false, colors.Yellow("(Optional)")+" Skip check when adding a host key to the known_hosts file in the firmware binary upload process."),
-				"replace_if_exists":      c.FlagSet.Bool("replace-if-exists", false, colors.Yellow("(Optional)")+" Replaces firmware binaries if the already exist in the HTTP repository."),
-				"filter_server_types":    c.FlagSet.String("filter-server-types", command.NilDefaultStr, colors.Yellow("(Optional)")+" Comma separated list of server types to filter the firmware catalog by. Defaults to all supported server types."),
-				"debug":                  c.FlagSet.Bool("debug", false, colors.Green("(Flag)")+" If set, increases log level."),
+				"config_format":             c.FlagSet.String("config-format", command.NilDefaultStr, "The format of the config file. Supported values are 'json' and 'yaml'."),
+				"raw_config":                c.FlagSet.String("raw-config", command.NilDefaultStr, "The path to the config file."),
+				"download_binaries":         c.FlagSet.Bool("download-binaries", false, colors.Yellow("(Optional)")+" Download firmware binaries from the catalog to the local filesystem."),
+				"skip_upload_to_repo":       c.FlagSet.Bool("skip-upload-to-repo", false, colors.Yellow("(Optional)")+" Skip firmware binaries upload to the HTTP repository."),
+				"skip_host_key_checking":    c.FlagSet.Bool("skip-host-key-checking", false, colors.Yellow("(Optional)")+" Skip check when adding a host key to the known_hosts file in the firmware binary upload process."),
+				"replace_if_exists":         c.FlagSet.Bool("replace-if-exists", false, colors.Yellow("(Optional)")+" Replaces firmware binaries if the already exist in the HTTP repository."),
+				"filter_server_types":       c.FlagSet.String("filter-server-types", command.NilDefaultStr, colors.Yellow("(Optional)")+" Comma separated list of server types to filter the firmware catalog by. Defaults to all supported server types."),
+				"repo_http_url":             c.FlagSet.String("repo-http-url", command.NilDefaultStr, colors.Yellow("(Optional)")+" The HTTP URL of the firmware repository. Replaces the value of the METALCLOUD_FIRMWARE_REPOSITORY_URL environment variable."),
+				"repo_ssh_path":             c.FlagSet.String("repo-ssh-path", command.NilDefaultStr, colors.Yellow("(Optional)")+" The SSH path of the firmware repository. Replaces the value of the METALCLOUD_FIRMWARE_REPOSITORY_SSH_PATH environment variable."),
+				"repo_ssh_port":             c.FlagSet.String("repo-ssh-port", command.NilDefaultStr, colors.Yellow("(Optional)")+" The SSH port of the firmware repository. Replaces the value of the METALCLOUD_FIRMWARE_REPOSITORY_SSH_PORT environment variable."),
+				"repo_ssh_user":             c.FlagSet.String("repo-ssh-user", command.NilDefaultStr, colors.Yellow("(Optional)")+" The SSH user of the firmware repository. Replaces the value of the METALCLOUD_FIRMWARE_REPOSITORY_SSH_USER environment variable."),
+				"user_private_ssh_key_path": c.FlagSet.String("user-private-ssh-key-path", command.NilDefaultStr, colors.Yellow("(Optional)")+" The path to the private SSH key of the user. Replaces the value of the METALCLOUD_USER_PRIVATE_OPENSSH_KEY_PATH environment variable."),
+				"debug":                     c.FlagSet.Bool("debug", false, colors.Green("(Flag)")+" If set, increases log level."),
 			}
 		},
 		ExecuteFunc: firmwareCatalogCreateCmd,
@@ -86,27 +91,29 @@ func firmwareCatalogCreateCmd(c *command.Command, client metalcloud.MetalCloudCl
 		filterServerTypes = filterValue
 	}
 
+	repoConfig := getRepoConfiguration(c)
+
 	var catalog firmwareCatalog
 	var binaryCollection []*firmwareBinary
 	downloadUser, downloadPassword := "", ""
 
 	switch configFile.Vendor {
 	case catalogVendorDell:
-		catalog, binaryCollection, err = parseDellCatalog(client, configFile, filterServerTypes, uploadToRepo, downloadBinaries)
+		catalog, binaryCollection, err = parseDellCatalog(client, configFile, filterServerTypes, uploadToRepo, downloadBinaries, repoConfig)
 
 		if err != nil {
 			return "", err
 		}
 
 	case catalogVendorLenovo:
-		catalog, binaryCollection, err = parseLenovoCatalog(configFile, client, filterServerTypes, uploadToRepo, downloadBinaries)
+		catalog, binaryCollection, err = parseLenovoCatalog(configFile, client, filterServerTypes, uploadToRepo, downloadBinaries, repoConfig)
 
 		if err != nil {
 			return "", err
 		}
 
 	case catalogVendorHp:
-		catalog, binaryCollection, err = parseHpCatalog(configFile, client, filterServerTypes, uploadToRepo, downloadBinaries)
+		catalog, binaryCollection, err = parseHpCatalog(configFile, client, filterServerTypes, uploadToRepo, downloadBinaries, repoConfig)
 
 		hpSupportToken := os.Getenv("HP_SUPPORT_TOKEN")
 		if hpSupportToken != "" {
@@ -142,7 +149,7 @@ func firmwareCatalogCreateCmd(c *command.Command, client metalcloud.MetalCloudCl
 	}
 
 	if uploadToRepo {
-		err := uploadBinariesToRepository(binaryCollection, replaceIfExists, skipHostKeyChecking, downloadUser, downloadPassword)
+		err := uploadBinariesToRepository(binaryCollection, replaceIfExists, skipHostKeyChecking, downloadUser, downloadPassword, repoConfig)
 
 		if err != nil {
 			return "", err
@@ -154,10 +161,10 @@ func firmwareCatalogCreateCmd(c *command.Command, client metalcloud.MetalCloudCl
 		return "", err
 	}
 
-	err = sendBinaries(binaryCollection)
-	if err != nil {
-		return "", err
-	}
+	// err = sendBinaries(binaryCollection)
+	// if err != nil {
+	// 	return "", err
+	// }
 
 	return "", nil
 }

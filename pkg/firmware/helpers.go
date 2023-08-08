@@ -4,7 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"io/ioutil"
+	"io"
 	"net/http"
 	"net/url"
 	"os"
@@ -12,6 +12,7 @@ import (
 	"strings"
 
 	"github.com/bramvdbogaerde/go-scp"
+	"github.com/metalsoft-io/metalcloud-cli/internal/command"
 	"github.com/metalsoft-io/metalcloud-cli/internal/configuration"
 	"github.com/metalsoft-io/metalcloud-cli/internal/networking"
 	"golang.org/x/crypto/ssh"
@@ -26,6 +27,7 @@ import (
  	METALCLOUD_FIRMWARE_REPOSITORY_URL		- the URL of the HTTP repository, for example: http://192.168.20.10/firmware
 	METALCLOUD_FIRMWARE_REPOSITORY_SSH_PATH - the path to the SSH repository, for example: /var/www/html/firmware
 	METALCLOUD_FIRMWARE_REPOSITORY_SSH_PORT	- the port of the SSH repository, for example: 22
+	METALCLOUD_FIRMWARE_REPOSITORY_SSH_USER	- the user of the SSH repository, for example: root
 
  * SCP related environment variables:
 	METALCLOUD_USER_PRIVATE_OPENSSH_KEY_PATH (required) 						- the path to the private OpenSSH key used for authentication, for example: ~/.ssh/my-openssh-key
@@ -33,6 +35,11 @@ import (
 */
 
 const (
+	jwtToken = "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzUxMiJ9.eyJleHAiOjE2OTYxNDMyMjcsImlzcyI6MTY5MDg3MjgyNywic3ViIjp7ImxvZ2luIjp7InVzZXJfaWRfYnNpIjo2NSwiaXNfbG9nZ2VkX2luIjp0cnVlLCJpc19zZWN1cmUiOmZhbHNlLCJ1c2VyX2xvZ2luX3Nlc3Npb25faWQiOm51bGwsImFlc19rZXkiOm51bGx9LCJzYW5kYm94Ijp7ImFwcF92ZXJzaW9uIjoiMi43LjIifX19.-RzJPM55xtDsbCwf_evYRkO9iQajmjjCrWaEp9G38FVJ2iNT7FeEJfNPW1GbIYudFD88yH9hdI8CVA97ZJMdsg"
+
+	catalogUrlPath = "/ms-api/firmware/catalog"
+	binaryUrlPath  = "/ms-api/firmware/binary"
+
 	configFormatJSON          = "json"
 	configFormatYAML          = "yaml"
 	catalogVendorDell         = "Dell"
@@ -64,6 +71,14 @@ type rawConfigFile struct {
 	LocalCatalogPath  string       `json:"localCatalogPath" yaml:"local_catalog_path"`
 	OverwriteCatalogs bool         `json:"overwriteCatalogs" yaml:"overwrite_catalogs"`
 	LocalFirmwarePath string       `json:"localFirmwarePath" yaml:"local_firmware_path"`
+}
+
+type repoConfiguration struct {
+	HttpUrl    string
+	SshPath    string
+	SshPort    string
+	SshUser    string
+	SshKeyPath string
 }
 
 type firmwareCatalog struct {
@@ -147,7 +162,7 @@ func parseConfigFile(configFormat string, rawConfigFileContents []byte, configFi
 
 	if downloadBinaries {
 		switch configFile.Vendor {
-		case catalogVendorDell:
+		case catalogVendorDell, catalogVendorHp:
 			if configFile.LocalFirmwarePath == "" || configFile.CatalogUrl == "" {
 				firmwarePathValue, catalogUrlValue := "localFirmwarePath", "catalogUrl"
 
@@ -155,7 +170,7 @@ func parseConfigFile(configFormat string, rawConfigFileContents []byte, configFi
 					firmwarePathValue, catalogUrlValue = "local_firmware_path", "catalog_url"
 				}
 
-				return fmt.Errorf("the '%s' and '%s' fields must be set in the raw-config file when downloading Dell binaries", firmwarePathValue, catalogUrlValue)
+				return fmt.Errorf("the '%s' and '%s' fields must be set in the raw-config file when downloading %s binaries", firmwarePathValue, catalogUrlValue, configFile.Vendor)
 			}
 		case catalogVendorLenovo:
 			if configFile.LocalFirmwarePath == "" {
@@ -165,10 +180,11 @@ func parseConfigFile(configFormat string, rawConfigFileContents []byte, configFi
 					firmwarePathValue = "local_firmware_path"
 				}
 
-				return fmt.Errorf("the '%s' field must be set in the raw-config file when downloading Lenovo binaries", firmwarePathValue)
+				return fmt.Errorf("the '%s' field must be set in the raw-config file when downloading %s binaries", firmwarePathValue, configFile.Vendor)
 			}
-		case catalogVendorHp:
-			return fmt.Errorf("TODO: HP firmware binaries are not supported yet")
+		default:
+			supportedVendors := []string{catalogVendorDell, catalogVendorHp, catalogVendorLenovo}
+			return fmt.Errorf("the 'vendor' field must be one of %v", supportedVendors)
 		}
 	}
 
@@ -233,6 +249,18 @@ func configFileParameterToValue(parameter, format string) (string, error) {
 	return "", nil
 }
 
+func getRepoConfiguration(c *command.Command) repoConfiguration {
+	repoConfig := repoConfiguration{
+		HttpUrl:    command.GetStringParam(c.Arguments["repo_http_url"]),
+		SshPath:    command.GetStringParam(c.Arguments["repo_ssh_path"]),
+		SshPort:    command.GetStringParam(c.Arguments["repo_ssh_port"]),
+		SshUser:    command.GetStringParam(c.Arguments["repo_ssh_user"]),
+		SshKeyPath: command.GetStringParam(c.Arguments["user_private_ssh_key_path"]),
+	}
+
+	return repoConfig
+}
+
 func checkStringSize(str string) error {
 	if len(str) < stringMinimumSize {
 		return fmt.Errorf("the '%s' field must be at least %d characters", str, stringMinimumSize)
@@ -291,10 +319,14 @@ func downloadBinariesFromCatalog(binaryCollection []*firmwareBinary, user, passw
 	return nil
 }
 
-func uploadBinariesToRepository(binaryCollection []*firmwareBinary, replaceIfExists, skipHostKeyChecking bool, downloadUser, downloadPassword string) error {
-	firmwareRepositoryURL, err := configuration.GetFirmwareRepositoryURL()
-	if err != nil {
-		return err
+func uploadBinariesToRepository(binaryCollection []*firmwareBinary, replaceIfExists, skipHostKeyChecking bool, downloadUser, downloadPassword string, repoConfig repoConfiguration) error {
+	firmwareRepositoryURL := repoConfig.HttpUrl
+	if firmwareRepositoryURL == "" {
+		var err error
+		firmwareRepositoryURL, err = configuration.GetFirmwareRepositoryURL()
+		if err != nil {
+			return err
+		}
 	}
 
 	remoteURL, err := url.Parse(firmwareRepositoryURL)
@@ -304,14 +336,17 @@ func uploadBinariesToRepository(binaryCollection []*firmwareBinary, replaceIfExi
 
 	firmwareBinaryRepositoryHostname := remoteURL.Hostname()
 
-	firmwareRepositorySSHPort, err := configuration.GetFirmwareRepositorySSHPort()
-	if err != nil {
-		return err
+	firmwareRepositorySSHPort := repoConfig.SshPort
+	if firmwareRepositorySSHPort == "" {
+		firmwareRepositorySSHPort = configuration.GetFirmwareRepositorySSHPort()
 	}
 
-	firmwareRepositorySSHPath, err := configuration.GetFirmwareRepositorySSHPath()
-	if err != nil {
-		return err
+	firmwareRepositorySSHPath := repoConfig.SshPath
+	if firmwareRepositorySSHPath == "" {
+		firmwareRepositorySSHPath, err = configuration.GetFirmwareRepositorySSHPath()
+		if err != nil {
+			return err
+		}
 	}
 
 	fmt.Println("Checking if binaries already exist in the repository.")
@@ -331,7 +366,17 @@ func uploadBinariesToRepository(binaryCollection []*firmwareBinary, replaceIfExi
 		return nil
 	}
 
-	scpClient, sshClient, err := networking.CreateSSHConnection(skipHostKeyChecking)
+	sshUser := repoConfig.SshUser
+	if sshUser == "" {
+		sshUser = configuration.GetFirmwareRepositorySSHUser()
+	}
+
+	userPrivateSSHKeyPath, err := configuration.GetUserPrivateSSHKeyPath()
+	if err != nil {
+		return err
+	}
+
+	scpClient, sshClient, err := networking.CreateSSHConnection(skipHostKeyChecking, firmwareRepositoryURL, firmwareRepositorySSHPort, sshUser, userPrivateSSHKeyPath)
 
 	if err != nil {
 		return fmt.Errorf("Couldn't establish a connection to the remote server: %s", err)
@@ -382,7 +427,7 @@ func uploadBinaryToRepository(binary *firmwareBinary, scpClient *scp.Client, ssh
 	if firmwareBinaryPath == "" {
 		if binary.DownloadURL != "" && !binary.HasErrors && (!firmwareBinaryExists || replaceIfExists) {
 			// We don't save the binaries on the local filesystem, so we need to download them from the catalog as temporary files and then upload them to the repository.
-			firmwareBinaryFile, err = ioutil.TempFile(os.TempDir(), binary.FileName)
+			firmwareBinaryFile, err = os.CreateTemp(os.TempDir(), binary.FileName)
 			if err != nil {
 				return err
 			}
@@ -482,38 +527,6 @@ func retrieveSupportedServerTypes(client metalcloud.MetalCloudClient, input stri
 	return filteredServerTypes, filteredMetalsoftServerTypes, nil
 }
 
-// TODO: this function should send the catalog to the gateway microservice
-func sendCatalog(catalog firmwareCatalog) error {
-	catalogJSON, err := json.MarshalIndent(catalog, "", " ")
-
-	if err != nil {
-		return fmt.Errorf("Error while marshalling catalog to JSON: %s", err)
-	}
-
-	fmt.Printf("Created catalog: %+v\n", string(catalogJSON))
-
-	return nil
-}
-
-// TODO: this function should send the binaries to the gateway microservice
-func sendBinaries(binaryCollection []*firmwareBinary) error {
-	printOnce := false
-	for _, firmwareBinary := range binaryCollection {
-		firmwareBinaryJson, err := json.MarshalIndent(firmwareBinary, "", " ")
-
-		if err != nil {
-			return fmt.Errorf("Error while marshalling binary to JSON: %s", err)
-		}
-
-		if !printOnce {
-			fmt.Printf("Created firmware binary: %v\n", string(firmwareBinaryJson))
-			printOnce = true
-		}
-	}
-
-	return nil
-}
-
 func DownloadFirmwareBinary(binary *firmwareBinary, user, password string) error {
 	err := networking.DownloadFile(binary.DownloadURL, binary.LocalPath, binary.Hash, binary.HashingAlgorithm, user, password)
 
@@ -549,4 +562,68 @@ func fileExists(filePath string) bool {
 	}
 
 	return !info.IsDir()
+}
+
+// TODO: this function should send the catalog to the gateway microservice
+func sendCatalog(catalog firmwareCatalog) error {
+	catalogJSON, err := json.MarshalIndent(catalog, "", " ")
+
+	if err != nil {
+		return fmt.Errorf("Error while marshalling catalog to JSON: %s", err)
+	}
+
+	fmt.Printf("Created catalog: %+v\n", string(catalogJSON))
+
+	endpoint, err := configuration.GetEndpoint()
+	if err != nil {
+		return err
+	}
+
+	output, err := sendMsRequest(endpoint + catalogUrlPath)
+	if err != nil {
+		return err
+	}
+
+	fmt.Println(output)
+	return nil
+}
+
+// TODO: this function should send the binaries to the gateway microservice
+func sendBinaries(binaryCollection []*firmwareBinary) error {
+	printOnce := false
+	for _, firmwareBinary := range binaryCollection {
+		firmwareBinaryJson, err := json.MarshalIndent(firmwareBinary, "", " ")
+
+		if err != nil {
+			return fmt.Errorf("Error while marshalling binary to JSON: %s", err)
+		}
+
+		if !printOnce {
+			fmt.Printf("Created firmware binary: %v\n", string(firmwareBinaryJson))
+			printOnce = true
+		}
+	}
+
+	return nil
+}
+
+func sendMsRequest(url string) (string, error) {
+	var bearer = "Bearer " + jwtToken
+	req, err := http.NewRequest("GET", url, nil)
+	req.Header.Add("Authorization", bearer)
+
+	// Send req using http Client
+	client := &http.Client{}
+	resp, err := client.Do(req)
+	if err != nil {
+		return "", err
+	}
+	defer resp.Body.Close()
+
+	body, err := io.ReadAll(resp.Body)
+	if err != nil {
+		return "", err
+	}
+
+	return string([]byte(body)), err
 }

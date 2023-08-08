@@ -11,7 +11,6 @@ import (
 	"fmt"
 	"hash"
 	"io"
-	"io/ioutil"
 	"net"
 	"os"
 	"path/filepath"
@@ -52,7 +51,7 @@ func CheckRemoteFileExists(remoteURL, fileName string) (bool, error) {
 		return false, err
 	}
 
-	body, err := ioutil.ReadAll(resp.Body)
+	body, err := io.ReadAll(resp.Body)
 	if err != nil {
 		return false, err
 	}
@@ -70,7 +69,7 @@ func GetMissingRemoteFiles(remoteURL string, fileNames []string) ([]string, erro
 		return missingFiles, err
 	}
 
-	body, err := ioutil.ReadAll(resp.Body)
+	body, err := io.ReadAll(resp.Body)
 	if err != nil {
 		return missingFiles, err
 	}
@@ -178,28 +177,11 @@ func DownloadFile(url, path, hash, hashingAlgorithm, user, password string) erro
 }
 
 func HandleKnownHostsFile() (ssh.HostKeyCallback, string, error) {
-	homeDir, err := os.UserHomeDir()
+	knownHostsFilePath, err := configuration.GetKnownHostsPath()
 	if err != nil {
 		return nil, "", err
 	}
-
-	knownHostsFilePath := configuration.GetKnownHostsPath()
-
-	if knownHostsFilePath == "" {
-		knownHostsFilePath = filepath.Join(homeDir, ".ssh", "known_hosts")
-
-		// Create the known hosts file if it does not exist.
-		if _, err := os.Stat(knownHostsFilePath); errors.Is(err, os.ErrNotExist) {
-			hostsFile, err := os.Create(knownHostsFilePath)
-
-			if err != nil {
-				return nil, "", err
-			}
-
-			hostsFile.Close()
-		}
-	}
-
+	
 	hostKeyCallback, err := kh.New(knownHostsFilePath)
 
 	if err != nil {
@@ -209,13 +191,7 @@ func HandleKnownHostsFile() (ssh.HostKeyCallback, string, error) {
 	return hostKeyCallback, knownHostsFilePath, nil
 }
 
-func CreateSSHClientConfig(skipHostKeyChecking bool) (ssh.ClientConfig, error) {
-	userPrivateSSHKeyPath, err := configuration.GetUserPrivateSSHKeyPath()
-
-	if err != nil {
-		return ssh.ClientConfig{}, err
-	}
-
+func CreateSSHClientConfig(skipHostKeyChecking bool, sshUser, userPrivateSSHKeyPath string) (ssh.ClientConfig, error) {
 	hostKeyCallback, knownHostsFilePath, err := HandleKnownHostsFile()
 
 	if err != nil {
@@ -224,7 +200,7 @@ func CreateSSHClientConfig(skipHostKeyChecking bool) (ssh.ClientConfig, error) {
 
 	// Use SSH key authentication from the auth package.
 	clientConfig, err := auth.PrivateKey(
-		"root",
+		sshUser,
 		userPrivateSSHKeyPath,
 		ssh.HostKeyCallback(func(hostname string, remoteAddress net.Addr, publicKey ssh.PublicKey) error {
 			var keyError *kh.KeyError
@@ -304,14 +280,9 @@ Are you sure you want to continue connecting (yes/no)?
 	return clientConfig, nil
 }
 
-func CreateSSHConnection(skipHostKeyChecking bool) (scp.Client, *ssh.Client, error) {
-	clientConfig, err := CreateSSHClientConfig(skipHostKeyChecking)
+func CreateSSHConnection(skipHostKeyChecking bool, firmwareRepositoryURL, firmwareRepositorySSHPort, sshUser, userPrivateSSHKeyPath string) (scp.Client, *ssh.Client, error) {
+	clientConfig, err := CreateSSHClientConfig(skipHostKeyChecking, sshUser, userPrivateSSHKeyPath)
 
-	if err != nil {
-		return scp.Client{}, &ssh.Client{}, err
-	}
-
-	firmwareRepositoryURL, err := configuration.GetFirmwareRepositoryURL()
 	if err != nil {
 		return scp.Client{}, &ssh.Client{}, err
 	}
@@ -322,12 +293,6 @@ func CreateSSHConnection(skipHostKeyChecking bool) (scp.Client, *ssh.Client, err
 	}
 
 	firmwareRepositoryHostname := URL.Hostname()
-
-	firmwareRepositorySSHPort, err := configuration.GetFirmwareRepositorySSHPort()
-	if err != nil {
-		return scp.Client{}, &ssh.Client{}, err
-	}
-
 	sshRepositoryHostname := firmwareRepositoryHostname + ":" + firmwareRepositorySSHPort
 
 	fmt.Printf("Establishing connection to hostname %s.\n", sshRepositoryHostname)

@@ -3,9 +3,11 @@ package configuration
 import (
 	"bufio"
 	"bytes"
+	"errors"
 	"fmt"
 	"io"
 	"os"
+	"path/filepath"
 	"sync"
 )
 
@@ -14,6 +16,11 @@ var (
 	Date    string
 	Commit  string
 	BuiltBy string
+)
+
+const (
+	defaultSSHPort = "22"
+	defaultSSHUser = "root"
 )
 
 func IsAdmin() bool {
@@ -105,7 +112,7 @@ func GetUserEmail() string {
 
 func GetFirmwareRepositoryURL() (string, error) {
 	if userGivenFirmwareRepositoryHostname := os.Getenv("METALCLOUD_FIRMWARE_REPOSITORY_URL"); userGivenFirmwareRepositoryHostname == "" {
-		return "", fmt.Errorf("METALCLOUD_FIRMWARE_REPOSITORY_URL must be set when uploading a firmware binary.")
+		return "", fmt.Errorf("METALCLOUD_FIRMWARE_REPOSITORY_URL must be set when uploading firmware binaries.")
 	}
 
 	return os.Getenv("METALCLOUD_FIRMWARE_REPOSITORY_URL"), nil
@@ -113,34 +120,88 @@ func GetFirmwareRepositoryURL() (string, error) {
 
 func GetFirmwareRepositorySSHPath() (string, error) {
 	if userGivenRemoteDirectoryPath := os.Getenv("METALCLOUD_FIRMWARE_REPOSITORY_SSH_PATH"); userGivenRemoteDirectoryPath == "" {
-		return "", fmt.Errorf("METALCLOUD_FIRMWARE_REPOSITORY_SSH_PATH must be set when uploading a firmware binary.")
+		return "", fmt.Errorf("METALCLOUD_FIRMWARE_REPOSITORY_SSH_PATH must be set when uploading firmware binaries.")
 	}
 
 	return os.Getenv("METALCLOUD_FIRMWARE_REPOSITORY_SSH_PATH"), nil
 }
 
-func GetFirmwareRepositorySSHPort() (string, error) {
+func GetFirmwareRepositorySSHPort() string {
 	if userGivenSSHPort := os.Getenv("METALCLOUD_FIRMWARE_REPOSITORY_SSH_PORT"); userGivenSSHPort == "" {
-		return "", fmt.Errorf("METALCLOUD_FIRMWARE_REPOSITORY_SSH_PORT must be set when uploading a firmware binary.")
+		// If no port is given, use the default SSH port.
+		return defaultSSHPort
 	}
 
-	return os.Getenv("METALCLOUD_FIRMWARE_REPOSITORY_SSH_PORT"), nil
+	return os.Getenv("METALCLOUD_FIRMWARE_REPOSITORY_SSH_PORT")
+}
+
+func GetFirmwareRepositorySSHUser() string {
+	if userGivenSSHPort := os.Getenv("METALCLOUD_FIRMWARE_REPOSITORY_SSH_USER"); userGivenSSHPort == "" {
+		// If no user is given, use the default SSH user.
+		return defaultSSHUser
+	}
+
+	return os.Getenv("METALCLOUD_FIRMWARE_REPOSITORY_SSH_USER")
 }
 
 func GetUserPrivateSSHKeyPath() (string, error) {
 	if userPrivateSSHKeyPath := os.Getenv("METALCLOUD_USER_PRIVATE_OPENSSH_KEY_PATH"); userPrivateSSHKeyPath == "" {
-		return "", fmt.Errorf("METALCLOUD_USER_PRIVATE_OPENSSH_KEY_PATH must be set when creating a firmware binary. The key is needed when uploading to the firmware binary repository.")
+		homeDir, err := os.UserHomeDir()
+		if err != nil {
+			return "", err
+		}
+
+		defaultPrivateSSHKeyPath := filepath.Join(homeDir, ".ssh", "id_rsa")
+		if _, err := os.Stat(defaultPrivateSSHKeyPath); errors.Is(err, os.ErrNotExist) {
+			return "", fmt.Errorf("METALCLOUD_USER_PRIVATE_OPENSSH_KEY_PATH must be set when uploading firmware binaries to the repository. Tried default private key path %s but file does not exist.", defaultPrivateSSHKeyPath)
+		}
+
+		return defaultPrivateSSHKeyPath, nil
 	}
 
 	return os.Getenv("METALCLOUD_USER_PRIVATE_OPENSSH_KEY_PATH"), nil
 }
 
-func GetKnownHostsPath() string {
+func GetKnownHostsPath() (string, error) {
 	var knownHostsFilePath string
 
 	if userGivenHostsFilePath := os.Getenv("METALCLOUD_KNOWN_HOSTS_FILE_PATH"); userGivenHostsFilePath != "" {
 		knownHostsFilePath = os.Getenv("METALCLOUD_KNOWN_HOSTS_FILE_PATH")
+	} else {
+		homeDir, err := os.UserHomeDir()
+		if err != nil {
+			return "", err
+		}
+
+		knownHostsFilePath = filepath.Join(homeDir, ".ssh", "known_hosts")
+
+		// Create the known hosts file if it does not exist.
+		if _, err := os.Stat(knownHostsFilePath); errors.Is(err, os.ErrNotExist) {
+			hostsFile, err := os.Create(knownHostsFilePath)
+
+			if err != nil {
+				return "", err
+			}
+
+			hostsFile.Close()
+		}
 	}
 
-	return knownHostsFilePath
+	return knownHostsFilePath, nil
+}
+
+func GetAPIKey() (string, error) {
+	if apiKey := os.Getenv("METALCLOUD_API_KEY"); apiKey == "" {
+		return "", fmt.Errorf("METALCLOUD_API_KEY must be set")
+	}
+
+	return os.Getenv("METALCLOUD_API_KEY"), nil
+}
+
+func GetEndpoint() (string, error) {
+	if v := os.Getenv("METALCLOUD_ENDPOINT"); v == "" {
+		return "", fmt.Errorf("METALCLOUD_ENDPOINT must be set")
+	}
+
+	return os.Getenv("METALCLOUD_ENDPOINT"), nil
 }

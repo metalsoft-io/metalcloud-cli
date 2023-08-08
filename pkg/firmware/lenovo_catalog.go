@@ -4,7 +4,7 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
-	"io/ioutil"
+	"io"
 	"net/http"
 	"os"
 	"path/filepath"
@@ -93,7 +93,7 @@ func retrieveAvailableFirmwareUpdates(targetInfos map[string]string) (string, er
 	}
 	defer resp.Body.Close()
 
-	responseBody, err := ioutil.ReadAll(resp.Body)
+	responseBody, err := io.ReadAll(resp.Body)
 	if err != nil {
 		return "", err
 	}
@@ -118,7 +118,7 @@ func generateLenovoCatalog(catalogFolder, machineType, serialNumber string, over
 	lenovoCatalog := lenovoCatalog{}
 
 	if fileExists(path) && !overwriteCatalog {
-		content, err := ioutil.ReadFile(path)
+		content, err := os.ReadFile(path)
 		if err != nil {
 			return nil, err
 		}
@@ -231,13 +231,13 @@ func searchByFileType(files []lenovoSoftwareUpdateFile, fileType string) *lenovo
 	return nil
 }
 
-func parseLenovoCatalog(configFile rawConfigFile, client metalcloud.MetalCloudClient, serverTypesFilter string, uploadToRepo, downloadBinaries bool) (firmwareCatalog, []*firmwareBinary, error) {
+func parseLenovoCatalog(configFile rawConfigFile, client metalcloud.MetalCloudClient, serverTypesFilter string, uploadToRepo, downloadBinaries bool, repoConfig repoConfiguration) (firmwareCatalog, []*firmwareBinary, error) {
 	catalog, serverInfoToCatalogMap, err := processLenovoCatalog(client, configFile, serverTypesFilter, downloadBinaries)
 	if err != nil {
 		return firmwareCatalog{}, nil, err
 	}
 
-	firmwareBinaryCollection, err := processLenovoBinaries(configFile, serverInfoToCatalogMap, &catalog, uploadToRepo, downloadBinaries)
+	firmwareBinaryCollection, err := processLenovoBinaries(configFile, serverInfoToCatalogMap, &catalog, uploadToRepo, downloadBinaries, repoConfig)
 
 	return catalog, firmwareBinaryCollection, nil
 }
@@ -377,12 +377,16 @@ func processLenovoCatalog(client metalcloud.MetalCloudClient, configFile rawConf
 	return catalog, serverInfoToCatalogMap, nil
 }
 
-func processLenovoBinaries(configFile rawConfigFile, serverInfoToCatalogMap map[serverInfo][]*lenovoCatalog, catalog *firmwareCatalog, uploadToRepo, downloadBinaries bool) ([]*firmwareBinary, error) {
+func processLenovoBinaries(configFile rawConfigFile, serverInfoToCatalogMap map[serverInfo][]*lenovoCatalog, catalog *firmwareCatalog, uploadToRepo, downloadBinaries bool, repoConfig repoConfiguration) ([]*firmwareBinary, error) {
 	firmwareBinaryCollection := []*firmwareBinary{}
 
-	repositoryURL, err := configuration.GetFirmwareRepositoryURL()
-	if uploadToRepo && err != nil {
-		return nil, fmt.Errorf("Error getting firmware repository URL: %v", err)
+	repositoryURL := repoConfig.HttpUrl
+	if repositoryURL == "" {
+		var err error
+		repositoryURL, err = configuration.GetFirmwareRepositoryURL()
+		if uploadToRepo && err != nil {
+			return nil, fmt.Errorf("Error getting firmware repository URL: %v", err)
+		}
 	}
 
 	for _, lenovoCatalogs := range serverInfoToCatalogMap {
@@ -413,6 +417,7 @@ func processLenovoBinaries(configFile rawConfigFile, serverInfoToCatalogMap map[
 
 				localPath := ""
 				if configFile.LocalFirmwarePath != "" && downloadBinaries {
+					var err error
 					localPath, err = filepath.Abs(filepath.Join(configFile.LocalFirmwarePath, componentName))
 
 					if err != nil {
