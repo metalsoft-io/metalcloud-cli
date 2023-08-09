@@ -4,7 +4,6 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"io"
 	"net/http"
 	"net/url"
 	"os"
@@ -36,9 +35,6 @@ import (
 
 const (
 	jwtToken = "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzUxMiJ9.eyJleHAiOjE2OTYxNDMyMjcsImlzcyI6MTY5MDg3MjgyNywic3ViIjp7ImxvZ2luIjp7InVzZXJfaWRfYnNpIjo2NSwiaXNfbG9nZ2VkX2luIjp0cnVlLCJpc19zZWN1cmUiOmZhbHNlLCJ1c2VyX2xvZ2luX3Nlc3Npb25faWQiOm51bGwsImFlc19rZXkiOm51bGx9LCJzYW5kYm94Ijp7ImFwcF92ZXJzaW9uIjoiMi43LjIifX19.-RzJPM55xtDsbCwf_evYRkO9iQajmjjCrWaEp9G38FVJ2iNT7FeEJfNPW1GbIYudFD88yH9hdI8CVA97ZJMdsg"
-
-	catalogUrlPath = "/ms-api/firmware/catalog"
-	binaryUrlPath  = "/ms-api/firmware/binary"
 
 	configFormatJSON          = "json"
 	configFormatYAML          = "yaml"
@@ -579,7 +575,7 @@ func sendCatalog(catalog firmwareCatalog) error {
 		return err
 	}
 
-	output, err := sendMsRequest(endpoint + catalogUrlPath)
+	output, err := networking.SendMsRequest(networking.RequestTypeGet, endpoint + networking.CatalogUrlPath, jwtToken, nil)
 	if err != nil {
 		return err
 	}
@@ -605,25 +601,4 @@ func sendBinaries(binaryCollection []*firmwareBinary) error {
 	}
 
 	return nil
-}
-
-func sendMsRequest(url string) (string, error) {
-	var bearer = "Bearer " + jwtToken
-	req, err := http.NewRequest("GET", url, nil)
-	req.Header.Add("Authorization", bearer)
-
-	// Send req using http Client
-	client := &http.Client{}
-	resp, err := client.Do(req)
-	if err != nil {
-		return "", err
-	}
-	defer resp.Body.Close()
-
-	body, err := io.ReadAll(resp.Body)
-	if err != nil {
-		return "", err
-	}
-
-	return string([]byte(body)), err
 }
