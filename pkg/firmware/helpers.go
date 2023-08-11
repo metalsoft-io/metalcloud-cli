@@ -644,6 +644,11 @@ func sendBinaries(binaryCollection []*firmwareBinary, catalogId int) error {
 	binariesMap := []map[string]any{}
 	counter := 0
 	for _, firmwareBinary := range binaryCollection {
+		// Skip binaries that have errors. Most likely they were not found in the catalog.
+		if firmwareBinary.HasErrors {
+			continue
+		}
+
 		binaryMap := map[string]any{
 			"server_firmware_binary_catalog_id":                    catalogId,
 			"server_firmware_binary_external_id":                   firmwareBinary.ExternalId,
