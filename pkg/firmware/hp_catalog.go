@@ -52,7 +52,7 @@ func generateHpCatalog(configFile rawConfigFile) (firmwareCatalog, error) {
 		UpdateType:                    getUpdateType(configFile),
 		MetalSoftServerTypesSupported: []string{},
 		ServerTypesSupported:          []string{},
-		Configuration:                 map[string]string{},
+		Configuration:                 map[string]any{},
 		CreatedTimestamp:              time.Now().Format(time.RFC3339),
 	}
 	return catalog, nil

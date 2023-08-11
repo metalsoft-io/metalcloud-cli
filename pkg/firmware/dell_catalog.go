@@ -210,7 +210,7 @@ func processDellCatalog(configFile rawConfigFile) (firmwareCatalog, manifest, er
 		log.Fatal(err)
 	}
 
-	catalogConfiguration := map[string]string{
+	catalogConfiguration := map[string]any{
 		"baseLocation":                manifest.BaseLocation,
 		"baseLocationAccessProtocols": manifest.BaseLocationAccessProtocols,
 		"dateTime":                    manifest.DateTime,

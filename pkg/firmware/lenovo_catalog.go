@@ -356,7 +356,7 @@ func processLenovoCatalog(client metalcloud.MetalCloudClient, configFile rawConf
 		}
 	}
 
-	catalogConfiguration := map[string]string{}
+	catalogConfiguration := map[string]any{}
 	vendorId := configFile.Vendor
 	checkStringSize(vendorId)
 
@@ -449,18 +449,8 @@ func processLenovoBinaries(configFile rawConfigFile, serverInfoToCatalogMap map[
 				firmwareBinaryCollection = append(firmwareBinaryCollection, &firmwareBinary)
 			}
 
-			firmwareUpdatesJson, err := json.Marshal(firmwareUpdates)
-			if err != nil {
-				return firmwareBinaryCollection, fmt.Errorf("Error while marshalling binary to JSON: %s", err)
-			}
-
-			firmwareUpdateRequiredJson, err := json.Marshal(firmwareUpdateRequired)
-			if err != nil {
-				return firmwareBinaryCollection, fmt.Errorf("Error while marshalling binary to JSON: %s", err)
-			}
-
-			catalog.Configuration["availableVersions"] = string(firmwareUpdatesJson)
-			catalog.Configuration["requiredFixes"] = string(firmwareUpdateRequiredJson)
+			catalog.Configuration["availableVersions"] = firmwareUpdates
+			catalog.Configuration["requiredFixes"] = firmwareUpdateRequired
 		}
 	}
 

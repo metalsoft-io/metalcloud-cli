@@ -38,9 +38,9 @@ const (
 
 	configFormatJSON          = "json"
 	configFormatYAML          = "yaml"
-	catalogVendorDell         = "Dell"
-	catalogVendorLenovo       = "Lenovo"
-	catalogVendorHp           = "Hp"
+	catalogVendorDell         = "dell"
+	catalogVendorLenovo       = "lenovo"
+	catalogVendorHp           = "hp"
 	catalogUpdateTypeOffline  = "offline"
 	catalogUpdateTypeOnline   = "online"
 	stringMinimumSize         = 1
@@ -87,7 +87,7 @@ type firmwareCatalog struct {
 	UpdateType                    string
 	MetalSoftServerTypesSupported []string
 	ServerTypesSupported          []string
-	Configuration                 map[string]string
+	Configuration                 map[string]any
 	CreatedTimestamp              string
 }
 
@@ -560,7 +560,6 @@ func fileExists(filePath string) bool {
 	return !info.IsDir()
 }
 
-// TODO: this function should send the catalog to the gateway microservice
 func sendCatalog(catalog firmwareCatalog) error {
 	catalogJSON, err := json.MarshalIndent(catalog, "", " ")
 
@@ -575,12 +574,18 @@ func sendCatalog(catalog firmwareCatalog) error {
 		return err
 	}
 
-	output, err := networking.SendMsRequest(networking.RequestTypeGet, endpoint + networking.CatalogUrlPath, jwtToken, nil)
+	catalogObject, err := createCatalogObject(catalog)
 	if err != nil {
 		return err
 	}
 
-	fmt.Println(output)
+	fmt.Printf("Sending catalog object %s\n", catalogObject)
+	output, err := networking.SendMsRequest(networking.RequestTypePost, endpoint+networking.CatalogUrlPath, jwtToken, catalogObject)
+	if err != nil {
+		return err
+	}
+
+	fmt.Printf("Received response: %s\n", output)
 	return nil
 }
 
@@ -601,4 +606,27 @@ func sendBinaries(binaryCollection []*firmwareBinary) error {
 	}
 
 	return nil
+}
+
+func createCatalogObject(catalog firmwareCatalog) ([]byte, error) {
+	catalogMap := map[string]any {
+		"server_firmware_catalog_name": catalog.Name,
+		"server_firmware_catalog_description": catalog.Description,
+		"server_firmware_catalog_vendor": catalog.Vendor,
+		"server_firmware_catalog_update_type": catalog.UpdateType,
+		"server_firmware_catalog_vendor_id": catalog.VendorID,
+		"server_firmware_catalog_vendor_url": catalog.VendorURL,
+		"server_firmware_catalog_vendor_release_timestamp": catalog.VendorReleaseTimestamp,
+		"server_firmware_catalog_metalsoft_server_types_supported_json": catalog.MetalSoftServerTypesSupported,
+		"server_firmware_catalog_vendor_server_types_supported_json": catalog.ServerTypesSupported,
+		"server_firmware_catalog_vendor_configuration_json": catalog.Configuration,
+	}
+
+	catalogObject, err := json.Marshal(catalogMap)
+
+	if err != nil {
+		return nil, err
+	}
+
+	return catalogObject, nil
 }
