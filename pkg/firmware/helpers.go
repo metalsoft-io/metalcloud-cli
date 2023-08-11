@@ -50,6 +50,9 @@ const (
 	updateSeverityCritical    = "critical"
 	updateSeverityOptional    = "optional"
 	serverTypesAll            = "*"
+
+	// TODO: change this after testing
+	batchSize = 3
 )
 
 type serverInfo struct {
@@ -112,6 +115,18 @@ type firmwareBinary struct {
 	LocalPath              string
 	HasErrors              bool
 	ErrorMessage           string
+}
+
+type catalogMsObject struct {
+	ServerFirmwareCatalogId                     int    `json:"server_firmware_catalog_id"`
+	ServerFirmwareCatalogName                   string `json:"server_firmware_catalog_name"`
+	ServerFirmwareCatalogDescription            string `json:"server_firmware_catalog_description"`
+	ServerFirmwareCatalogVendor                 string `json:"server_firmware_catalog_vendor"`
+	ServerFirmwareCatalogVendorId               string `json:"server_firmware_catalog_vendor_id"`
+	ServerFirmwareCatalogVendorUrl              string `json:"server_firmware_catalog_vendor_url"`
+	ServerFirmwareCatalogVendorReleaseTimestamp string `json:"server_firmware_catalog_vendor_release_timestamp"`
+	ServerFirmwareCatalogUpdateType             string `json:"server_firmware_catalog_update_type"`
+	ServerFirmwareCatalogCreatedTimestamp       string `json:"server_firmware_catalog_created_timestamp"`
 }
 
 func parseConfigFile(configFormat string, rawConfigFileContents []byte, configFile *rawConfigFile, downloadBinaries bool) error {
@@ -560,66 +575,55 @@ func fileExists(filePath string) bool {
 	return !info.IsDir()
 }
 
-func sendCatalog(catalog firmwareCatalog) error {
+func sendCatalog(catalog firmwareCatalog) (catalogMsObject, error) {
+	catalogMsObject := catalogMsObject{}
 	catalogJSON, err := json.MarshalIndent(catalog, "", " ")
 
 	if err != nil {
-		return fmt.Errorf("Error while marshalling catalog to JSON: %s", err)
+		return catalogMsObject, fmt.Errorf("Error while marshalling catalog to JSON: %s", err)
 	}
 
 	fmt.Printf("Created catalog: %+v\n", string(catalogJSON))
 
 	endpoint, err := configuration.GetEndpoint()
 	if err != nil {
-		return err
+		return catalogMsObject, err
 	}
 
 	catalogObject, err := createCatalogObject(catalog)
 	if err != nil {
-		return err
+		return catalogMsObject, err
 	}
 
-	fmt.Printf("Sending catalog object %s\n", catalogObject)
+	fmt.Printf("Sending catalog object %s\n\n", catalogObject)
 	output, err := networking.SendMsRequest(networking.RequestTypePost, endpoint+networking.CatalogUrlPath, jwtToken, catalogObject)
 	if err != nil {
-		return err
+		return catalogMsObject, err
 	}
 
-	fmt.Printf("Received response: %s\n", output)
-	return nil
-}
+	fmt.Printf("Received response: %s\n\n", output)
 
-// TODO: this function should send the binaries to the gateway microservice
-func sendBinaries(binaryCollection []*firmwareBinary) error {
-	printOnce := false
-	for _, firmwareBinary := range binaryCollection {
-		firmwareBinaryJson, err := json.MarshalIndent(firmwareBinary, "", " ")
+	err = json.Unmarshal([]byte(output), &catalogMsObject)
 
-		if err != nil {
-			return fmt.Errorf("Error while marshalling binary to JSON: %s", err)
-		}
-
-		if !printOnce {
-			fmt.Printf("Created firmware binary: %v\n", string(firmwareBinaryJson))
-			printOnce = true
-		}
+	if err != nil {
+		return catalogMsObject, fmt.Errorf("error parsing json response %s: %s", output, err.Error())
 	}
 
-	return nil
+	return catalogMsObject, nil
 }
 
 func createCatalogObject(catalog firmwareCatalog) ([]byte, error) {
-	catalogMap := map[string]any {
-		"server_firmware_catalog_name": catalog.Name,
-		"server_firmware_catalog_description": catalog.Description,
-		"server_firmware_catalog_vendor": catalog.Vendor,
-		"server_firmware_catalog_update_type": catalog.UpdateType,
-		"server_firmware_catalog_vendor_id": catalog.VendorID,
-		"server_firmware_catalog_vendor_url": catalog.VendorURL,
-		"server_firmware_catalog_vendor_release_timestamp": catalog.VendorReleaseTimestamp,
+	catalogMap := map[string]any{
+		"server_firmware_catalog_name":                                  catalog.Name,
+		"server_firmware_catalog_description":                           catalog.Description,
+		"server_firmware_catalog_vendor":                                catalog.Vendor,
+		"server_firmware_catalog_update_type":                           catalog.UpdateType,
+		"server_firmware_catalog_vendor_id":                             catalog.VendorID,
+		"server_firmware_catalog_vendor_url":                            catalog.VendorURL,
+		"server_firmware_catalog_vendor_release_timestamp":              catalog.VendorReleaseTimestamp,
 		"server_firmware_catalog_metalsoft_server_types_supported_json": catalog.MetalSoftServerTypesSupported,
-		"server_firmware_catalog_vendor_server_types_supported_json": catalog.ServerTypesSupported,
-		"server_firmware_catalog_vendor_configuration_json": catalog.Configuration,
+		"server_firmware_catalog_vendor_server_types_supported_json":    catalog.ServerTypesSupported,
+		"server_firmware_catalog_vendor_configuration_json":             catalog.Configuration,
 	}
 
 	catalogObject, err := json.Marshal(catalogMap)
@@ -629,4 +633,74 @@ func createCatalogObject(catalog firmwareCatalog) ([]byte, error) {
 	}
 
 	return catalogObject, nil
+}
+
+func sendBinaries(binaryCollection []*firmwareBinary, catalogId int) error {
+	endpoint, err := configuration.GetEndpoint()
+	if err != nil {
+		return err
+	}
+	
+	binariesMap := []map[string]any{}
+	counter := 0
+	for _, firmwareBinary := range binaryCollection {
+		binaryMap := map[string]any{
+			"server_firmware_binary_catalog_id":                    catalogId,
+			"server_firmware_binary_external_id":                   firmwareBinary.ExternalId,
+			"server_firmware_binary_vendor_info_url":               firmwareBinary.VendorProperties["importantInfo"],
+			"server_firmware_binary_vendor_download_url":           firmwareBinary.DownloadURL,
+			"server_firmware_binary_cache_download_url":            firmwareBinary.RepoURL,
+			"server_firmware_binary_name":                          firmwareBinary.Name,
+			"server_firmware_binary_description":                   firmwareBinary.Description,
+			"server_firmware_binary_package_id":                    firmwareBinary.PackageId,
+			"server_firmware_binary_package_version":               firmwareBinary.PackageVersion,
+			"server_firmware_binary_reboot_required":               firmwareBinary.RebootRequired,
+			"server_firmware_binary_update_severity":               firmwareBinary.UpdateSeverity,
+			"server_firmware_binary_vendor_supported_devices_json": firmwareBinary.SupportedDevices,
+			"server_firmware_binary_vendor_supported_systems_json": firmwareBinary.SupportedSystems,
+			"server_firmware_binary_vendor_release_timestamp":      firmwareBinary.VendorReleaseTimestamp,
+			"server_firmware_binary_vendor_json":                   firmwareBinary.VendorProperties,
+		}
+
+		binariesMap = append(binariesMap, binaryMap)
+		counter ++
+		if counter == batchSize {
+			binariesObject, err := json.Marshal(binariesMap)
+			if err != nil {
+				return err
+			}
+
+			err = sendBinariesBatch(endpoint, binariesObject)
+			if err != nil {
+				return err
+			}
+
+			binariesMap = []map[string]any{}
+			counter = 0
+		}
+	}
+
+	binariesObject, err := json.Marshal(binariesMap)
+	if err != nil {
+		return err
+	}
+
+	err = sendBinariesBatch(endpoint, binariesObject)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func sendBinariesBatch(endpoint string, binariesObject []byte) error {
+	fmt.Printf("Sending binaries object %s\n\n", binariesObject)
+
+	output, err := networking.SendMsRequest(networking.RequestTypePost, endpoint+networking.BinaryUrlPath, jwtToken, binariesObject)
+	if err != nil {
+		return err
+	}
+
+	fmt.Printf("Received response: %s\n\n", output)
+	return nil
 }

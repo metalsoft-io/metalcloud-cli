@@ -12,7 +12,7 @@ const (
 	RequestTypePost = "POST"
 
 	CatalogUrlPath = "/ms-api/firmware/catalog"
-	BinaryUrlPath  = "/ms-api/firmware/binary"
+	BinaryUrlPath  = "/ms-api/firmware/binary/import"
 )
 
 func SendMsRequest(requestType, url, apiKey string, jsonData []byte) (string, error) {
