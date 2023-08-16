@@ -422,11 +422,11 @@ func uploadBinariesToRepository(binaryCollection []*firmwareBinary, replaceIfExi
 
 func uploadBinaryToRepository(binary *firmwareBinary, scpClient *scp.Client, sshClient *ssh.Client, firmwareBinaryExists, replaceIfExists bool, remotePath string, downloadUser, downloadPassword string) error {
 	// Regenerate the session in the case it was previously closed, otherwise only the first file will be uploaded.
-	// TODO: need a check to see if the session is still open
 	scpSession, err := sshClient.NewSession()
 	if err != nil {
 		return err
 	}
+	defer scpSession.Close()
 
 	scpClient.Session = scpSession
 	firmwareBinaryPath := binary.LocalPath
