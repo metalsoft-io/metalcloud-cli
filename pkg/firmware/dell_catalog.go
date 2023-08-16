@@ -220,8 +220,11 @@ func processDellCatalog(configFile rawConfigFile) (firmwareCatalog, manifest, er
 		"predecessorID":               manifest.PredecessorID,
 	}
 
-	vendorId := configFile.Vendor //TODO: What is this???
-	checkStringSize(vendorId)
+	vendorId := configFile.Vendor
+	err = checkStringSize(vendorId, 1, 255)
+	if err != nil {
+		return firmwareCatalog{}, manifest, err
+	}
 
 	catalog := firmwareCatalog{
 		Name:                          configFile.Name,

@@ -358,7 +358,10 @@ func processLenovoCatalog(client metalcloud.MetalCloudClient, configFile rawConf
 
 	catalogConfiguration := map[string]any{}
 	vendorId := configFile.Vendor
-	checkStringSize(vendorId)
+	err = checkStringSize(vendorId, 1, 255)
+	if err != nil {
+		return firmwareCatalog{}, serverInfoToCatalogMap, err
+	}
 
 	catalog := firmwareCatalog{
 		Name:                          configFile.Name,

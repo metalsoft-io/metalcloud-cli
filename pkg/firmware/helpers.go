@@ -41,14 +41,13 @@ const (
 	catalogVendorHp           = "hp"
 	catalogUpdateTypeOffline  = "offline"
 	catalogUpdateTypeOnline   = "online"
-	stringMinimumSize         = 1
-	stringMaximumSize         = 255
 	updateSeverityUnknown     = "unknown"
 	updateSeverityRecommended = "recommended"
 	updateSeverityCritical    = "critical"
 	updateSeverityOptional    = "optional"
 	serverTypesAll            = "*"
 
+	stringMaximumSize = 255
 	batchSize = 10
 )
 
@@ -223,9 +222,20 @@ func parseConfigFile(configFormat string, rawConfigFileContents []byte, configFi
 
 	}
 
-	checkStringSize(configFile.Name)
-	checkStringSize(configFile.Description)
-	checkStringSize(configFile.CatalogUrl)
+	err := checkStringSize(configFile.Name, 1, 255)
+	if err != nil {
+		return err
+	}
+
+	err = checkStringSize(configFile.Description, 1, 255)
+	if err != nil {
+		return err
+	}
+
+	err = checkStringSize(configFile.CatalogUrl, 1, 255)
+	if err != nil {
+		return err
+	}
 
 	return nil
 }
@@ -269,13 +279,13 @@ func getRepoConfiguration(c *command.Command) repoConfiguration {
 	return repoConfig
 }
 
-func checkStringSize(str string) error {
-	if len(str) < stringMinimumSize {
-		return fmt.Errorf("the '%s' field must be at least %d characters", str, stringMinimumSize)
+func checkStringSize(str string, minimumSize, maximumSize int) error {
+	if len(str) < minimumSize {
+		return fmt.Errorf("the '%s' field must be at least %d characters", str, minimumSize)
 	}
 
-	if len(str) > stringMaximumSize {
-		return fmt.Errorf("the '%s' field must be less than %d characters", str, stringMaximumSize)
+	if len(str) > maximumSize {
+		return fmt.Errorf("the '%s' field must be less than %d characters", str, maximumSize)
 	}
 
 	return nil
@@ -630,6 +640,10 @@ func createCatalogObject(catalog firmwareCatalog) ([]byte, error) {
 		return nil, err
 	}
 
+	catalog.Name = trimToMaximumSize(catalog.Name)
+	catalog.VendorID = trimToMaximumSize(catalog.VendorID)
+	catalog.VendorURL = trimToMaximumSize(catalog.VendorURL)
+
 	catalogMap := map[string]any{
 		"server_firmware_catalog_name":                                  catalog.Name,
 		"server_firmware_catalog_description":                           catalog.Description,
@@ -686,6 +700,13 @@ func sendBinaries(binaryCollection []*firmwareBinary, catalogId int) error {
 		if err != nil {
 			return err
 		}
+
+		firmwareBinary.ExternalId = trimToMaximumSize(firmwareBinary.ExternalId)
+		firmwareBinary.VendorProperties["importantInfo"] = trimToMaximumSize(firmwareBinary.VendorProperties["importantInfo"])
+		firmwareBinary.DownloadURL = trimToMaximumSize(firmwareBinary.DownloadURL)
+		firmwareBinary.RepoURL = trimToMaximumSize(firmwareBinary.RepoURL)
+		firmwareBinary.Name = trimToMaximumSize(firmwareBinary.Name)
+		firmwareBinary.PackageVersion = trimToMaximumSize(firmwareBinary.PackageVersion)
 
 		binaryMap := map[string]any{
 			"server_firmware_binary_catalog_id":                    catalogId,
@@ -759,4 +780,12 @@ func sendBinariesBatch(endpoint string, binariesObject []byte) error {
 
 	fmt.Printf("Received response: %s\n\n", output)
 	return nil
+}
+
+func trimToMaximumSize(str string) string {
+	if len(str) > stringMaximumSize {
+		return str[:stringMaximumSize]
+	}
+
+	return str
 }
