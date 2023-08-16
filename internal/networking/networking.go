@@ -181,7 +181,7 @@ func HandleKnownHostsFile() (ssh.HostKeyCallback, string, error) {
 	if err != nil {
 		return nil, "", err
 	}
-	
+
 	hostKeyCallback, err := kh.New(knownHostsFilePath)
 
 	if err != nil {

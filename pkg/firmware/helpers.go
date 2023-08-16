@@ -34,8 +34,6 @@ import (
 */
 
 const (
-	jwtToken = "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzUxMiJ9.eyJleHAiOjE2OTYxNDMyMjcsImlzcyI6MTY5MDg3MjgyNywic3ViIjp7ImxvZ2luIjp7InVzZXJfaWRfYnNpIjo2NSwiaXNfbG9nZ2VkX2luIjp0cnVlLCJpc19zZWN1cmUiOmZhbHNlLCJ1c2VyX2xvZ2luX3Nlc3Npb25faWQiOm51bGwsImFlc19rZXkiOm51bGx9LCJzYW5kYm94Ijp7ImFwcF92ZXJzaW9uIjoiMi43LjIifX19.-RzJPM55xtDsbCwf_evYRkO9iQajmjjCrWaEp9G38FVJ2iNT7FeEJfNPW1GbIYudFD88yH9hdI8CVA97ZJMdsg"
-
 	configFormatJSON          = "json"
 	configFormatYAML          = "yaml"
 	catalogVendorDell         = "dell"
@@ -51,8 +49,7 @@ const (
 	updateSeverityOptional    = "optional"
 	serverTypesAll            = "*"
 
-	// TODO: change this after testing
-	batchSize = 3
+	batchSize = 10
 )
 
 type serverInfo struct {
@@ -595,8 +592,13 @@ func sendCatalog(catalog firmwareCatalog) (catalogMsObject, error) {
 		return catalogMsObject, err
 	}
 
+	apiKey, err := configuration.GetAPIKey()
+	if err != nil {
+		return catalogMsObject, err
+	}
+
 	fmt.Printf("Sending catalog object %s\n\n", catalogObject)
-	output, err := networking.SendMsRequest(networking.RequestTypePost, endpoint+networking.CatalogUrlPath, jwtToken, catalogObject)
+	output, err := networking.SendMsRequest(networking.RequestTypePost, endpoint+networking.CatalogUrlPath, apiKey, catalogObject)
 	if err != nil {
 		return catalogMsObject, err
 	}
@@ -613,6 +615,21 @@ func sendCatalog(catalog firmwareCatalog) (catalogMsObject, error) {
 }
 
 func createCatalogObject(catalog firmwareCatalog) ([]byte, error) {
+	metalsoftServerTypesSupported, err := json.Marshal(catalog.MetalSoftServerTypesSupported)
+	if err != nil {
+		return nil, err
+	}
+
+	serverTypesSupported, err := json.Marshal(catalog.ServerTypesSupported)
+	if err != nil {
+		return nil, err
+	}
+
+	configuration, err := json.Marshal(catalog.Configuration)
+	if err != nil {
+		return nil, err
+	}
+
 	catalogMap := map[string]any{
 		"server_firmware_catalog_name":                                  catalog.Name,
 		"server_firmware_catalog_description":                           catalog.Description,
@@ -621,9 +638,15 @@ func createCatalogObject(catalog firmwareCatalog) ([]byte, error) {
 		"server_firmware_catalog_vendor_id":                             catalog.VendorID,
 		"server_firmware_catalog_vendor_url":                            catalog.VendorURL,
 		"server_firmware_catalog_vendor_release_timestamp":              catalog.VendorReleaseTimestamp,
-		"server_firmware_catalog_metalsoft_server_types_supported_json": catalog.MetalSoftServerTypesSupported,
-		"server_firmware_catalog_vendor_server_types_supported_json":    catalog.ServerTypesSupported,
-		"server_firmware_catalog_vendor_configuration_json":             catalog.Configuration,
+		"server_firmware_catalog_metalsoft_server_types_supported_json": string(metalsoftServerTypesSupported),
+		"server_firmware_catalog_vendor_server_types_supported_json":    string(serverTypesSupported),
+		"server_firmware_catalog_vendor_configuration_json":             string(configuration),
+	}
+
+	for key, value := range catalogMap {
+		if value == "" {
+			delete(catalogMap, key)
+		}
 	}
 
 	catalogObject, err := json.Marshal(catalogMap)
@@ -640,13 +663,28 @@ func sendBinaries(binaryCollection []*firmwareBinary, catalogId int) error {
 	if err != nil {
 		return err
 	}
-	
+
 	binariesMap := []map[string]any{}
 	counter := 0
 	for _, firmwareBinary := range binaryCollection {
 		// Skip binaries that have errors. Most likely they were not found in the catalog.
 		if firmwareBinary.HasErrors {
 			continue
+		}
+
+		supportedDevices, err := json.Marshal(firmwareBinary.SupportedDevices)
+		if err != nil {
+			return err
+		}
+	
+		supportedSystems, err := json.Marshal(firmwareBinary.SupportedSystems)
+		if err != nil {
+			return err
+		}
+
+		vendorProperties, err := json.Marshal(firmwareBinary.VendorProperties)
+		if err != nil {
+			return err
 		}
 
 		binaryMap := map[string]any{
@@ -661,14 +699,20 @@ func sendBinaries(binaryCollection []*firmwareBinary, catalogId int) error {
 			"server_firmware_binary_package_version":               firmwareBinary.PackageVersion,
 			"server_firmware_binary_reboot_required":               firmwareBinary.RebootRequired,
 			"server_firmware_binary_update_severity":               firmwareBinary.UpdateSeverity,
-			"server_firmware_binary_vendor_supported_devices_json": firmwareBinary.SupportedDevices,
-			"server_firmware_binary_vendor_supported_systems_json": firmwareBinary.SupportedSystems,
+			"server_firmware_binary_vendor_supported_devices_json": string(supportedDevices),
+			"server_firmware_binary_vendor_supported_systems_json": string(supportedSystems),
 			"server_firmware_binary_vendor_release_timestamp":      firmwareBinary.VendorReleaseTimestamp,
-			"server_firmware_binary_vendor_json":                   firmwareBinary.VendorProperties,
+			"server_firmware_binary_vendor_json":                   string(vendorProperties),
+		}
+
+		for key, value := range binaryMap {
+			if value == "" {
+				delete(binaryMap, key)
+			}
 		}
 
 		binariesMap = append(binariesMap, binaryMap)
-		counter ++
+		counter++
 		if counter == batchSize {
 			binariesObject, err := json.Marshal(binariesMap)
 			if err != nil {
@@ -685,14 +729,16 @@ func sendBinaries(binaryCollection []*firmwareBinary, catalogId int) error {
 		}
 	}
 
-	binariesObject, err := json.Marshal(binariesMap)
-	if err != nil {
-		return err
-	}
+	if counter != 0 {
+		binariesObject, err := json.Marshal(binariesMap)
+		if err != nil {
+			return err
+		}
 
-	err = sendBinariesBatch(endpoint, binariesObject)
-	if err != nil {
-		return err
+		err = sendBinariesBatch(endpoint, binariesObject)
+		if err != nil {
+			return err
+		}
 	}
 
 	return nil
@@ -701,7 +747,12 @@ func sendBinaries(binaryCollection []*firmwareBinary, catalogId int) error {
 func sendBinariesBatch(endpoint string, binariesObject []byte) error {
 	fmt.Printf("Sending binaries object %s\n\n", binariesObject)
 
-	output, err := networking.SendMsRequest(networking.RequestTypePost, endpoint+networking.BinaryUrlPath, jwtToken, binariesObject)
+	apiKey, err := configuration.GetAPIKey()
+	if err != nil {
+		return err
+	}
+
+	output, err := networking.SendMsRequest(networking.RequestTypePost, endpoint+networking.BinaryUrlPath, apiKey, binariesObject)
 	if err != nil {
 		return err
 	}
