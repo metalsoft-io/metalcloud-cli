@@ -47,8 +47,7 @@ const (
 	updateSeverityOptional    = "optional"
 	serverTypesAll            = "*"
 
-	stringMaximumSize = 255
-	batchSize = 10
+	batchSize         = 10
 )
 
 type serverInfo struct {
@@ -227,7 +226,7 @@ func parseConfigFile(configFormat string, rawConfigFileContents []byte, configFi
 		return err
 	}
 
-	err = checkStringSize(configFile.Description, 1, 255)
+	err = checkStringSize(configFile.Description, 1, 4096)
 	if err != nil {
 		return err
 	}
@@ -640,9 +639,10 @@ func createCatalogObject(catalog firmwareCatalog) ([]byte, error) {
 		return nil, err
 	}
 
-	catalog.Name = trimToMaximumSize(catalog.Name)
-	catalog.VendorID = trimToMaximumSize(catalog.VendorID)
-	catalog.VendorURL = trimToMaximumSize(catalog.VendorURL)
+	catalog.Name = trimToSize(catalog.Name, 255)
+	catalog.Description = trimToSize(catalog.Description, 4096)
+	catalog.VendorID = trimToSize(catalog.VendorID, 255)
+	catalog.VendorURL = trimToSize(catalog.VendorURL, 255)
 
 	catalogMap := map[string]any{
 		"server_firmware_catalog_name":                                  catalog.Name,
@@ -690,7 +690,7 @@ func sendBinaries(binaryCollection []*firmwareBinary, catalogId int) error {
 		if err != nil {
 			return err
 		}
-	
+
 		supportedSystems, err := json.Marshal(firmwareBinary.SupportedSystems)
 		if err != nil {
 			return err
@@ -701,12 +701,13 @@ func sendBinaries(binaryCollection []*firmwareBinary, catalogId int) error {
 			return err
 		}
 
-		firmwareBinary.ExternalId = trimToMaximumSize(firmwareBinary.ExternalId)
-		firmwareBinary.VendorProperties["importantInfo"] = trimToMaximumSize(firmwareBinary.VendorProperties["importantInfo"])
-		firmwareBinary.DownloadURL = trimToMaximumSize(firmwareBinary.DownloadURL)
-		firmwareBinary.RepoURL = trimToMaximumSize(firmwareBinary.RepoURL)
-		firmwareBinary.Name = trimToMaximumSize(firmwareBinary.Name)
-		firmwareBinary.PackageVersion = trimToMaximumSize(firmwareBinary.PackageVersion)
+		firmwareBinary.ExternalId = trimToSize(firmwareBinary.ExternalId, 255)
+		firmwareBinary.VendorProperties["importantInfo"] = trimToSize(firmwareBinary.VendorProperties["importantInfo"], 255)
+		firmwareBinary.DownloadURL = trimToSize(firmwareBinary.DownloadURL, 255)
+		firmwareBinary.RepoURL = trimToSize(firmwareBinary.RepoURL, 255)
+		firmwareBinary.Name = trimToSize(firmwareBinary.Name, 255)
+		firmwareBinary.Description = trimToSize(firmwareBinary.Description, 4096)
+		firmwareBinary.PackageVersion = trimToSize(firmwareBinary.PackageVersion, 255)
 
 		binaryMap := map[string]any{
 			"server_firmware_binary_catalog_id":                    catalogId,
@@ -782,9 +783,9 @@ func sendBinariesBatch(endpoint string, binariesObject []byte) error {
 	return nil
 }
 
-func trimToMaximumSize(str string) string {
-	if len(str) > stringMaximumSize {
-		return str[:stringMaximumSize]
+func trimToSize(str string, size int) string {
+	if len(str) > size {
+		return str[:size]
 	}
 
 	return str
