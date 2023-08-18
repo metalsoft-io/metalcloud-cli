@@ -82,7 +82,6 @@ name: test-hp
 description: test
 vendor: hp
 catalog_url: https://downloads.linux.hpe.com/SDR/repo/fwpp-gen11/current/fwrepodata/fwrepo.json
-download_catalog: true
 local_catalog_path: ./fwrepo.json
 local_firmware_path: ./hp_downloads
 		`,
