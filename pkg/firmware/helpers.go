@@ -279,6 +279,10 @@ func getRepoConfiguration(c *command.Command) repoConfiguration {
 }
 
 func checkStringSize(str string, minimumSize, maximumSize int) error {
+	if str == "" {
+		return nil
+	}
+
 	if len(str) < minimumSize {
 		return fmt.Errorf("the '%s' field must be at least %d characters", str, minimumSize)
 	}
@@ -583,13 +587,6 @@ func fileExists(filePath string) bool {
 
 func sendCatalog(catalog firmwareCatalog) (catalogMsObject, error) {
 	catalogMsObject := catalogMsObject{}
-	catalogJSON, err := json.MarshalIndent(catalog, "", " ")
-
-	if err != nil {
-		return catalogMsObject, fmt.Errorf("Error while marshalling catalog to JSON: %s", err)
-	}
-
-	fmt.Printf("Created catalog: %+v\n", string(catalogJSON))
 
 	endpoint, err := configuration.GetEndpoint()
 	if err != nil {
@@ -606,13 +603,10 @@ func sendCatalog(catalog firmwareCatalog) (catalogMsObject, error) {
 		return catalogMsObject, err
 	}
 
-	fmt.Printf("Sending catalog object %s\n\n", catalogObject)
 	output, err := networking.SendMsRequest(networking.RequestTypePost, endpoint+networking.CatalogUrlPath, apiKey, catalogObject)
 	if err != nil {
 		return catalogMsObject, err
 	}
-
-	fmt.Printf("Received response: %s\n\n", output)
 
 	err = json.Unmarshal([]byte(output), &catalogMsObject)
 
@@ -620,6 +614,7 @@ func sendCatalog(catalog firmwareCatalog) (catalogMsObject, error) {
 		return catalogMsObject, fmt.Errorf("error parsing json response %s: %s", output, err.Error())
 	}
 
+	fmt.Printf("Created catalog with ID %d.\n", catalogMsObject.ServerFirmwareCatalogId)
 	return catalogMsObject, nil
 }
 
@@ -680,6 +675,7 @@ func sendBinaries(binaryCollection []*firmwareBinary, catalogId int) error {
 
 	binariesMap := []map[string]any{}
 	counter := 0
+	binariesCounter := 0
 	for _, firmwareBinary := range binaryCollection {
 		// Skip binaries that have errors. Most likely they were not found in the catalog.
 		if firmwareBinary.HasErrors {
@@ -735,6 +731,7 @@ func sendBinaries(binaryCollection []*firmwareBinary, catalogId int) error {
 
 		binariesMap = append(binariesMap, binaryMap)
 		counter++
+		binariesCounter++
 		if counter == batchSize {
 			binariesObject, err := json.Marshal(binariesMap)
 			if err != nil {
@@ -763,23 +760,21 @@ func sendBinaries(binaryCollection []*firmwareBinary, catalogId int) error {
 		}
 	}
 
+	fmt.Printf("Created %d binaries for catalog with ID %d.\n", binariesCounter, catalogId)
 	return nil
 }
 
 func sendBinariesBatch(endpoint string, binariesObject []byte) error {
-	fmt.Printf("Sending binaries object %s\n\n", binariesObject)
-
 	apiKey, err := configuration.GetAPIKey()
 	if err != nil {
 		return err
 	}
 
-	output, err := networking.SendMsRequest(networking.RequestTypePost, endpoint+networking.BinaryUrlPath, apiKey, binariesObject)
+	_, err = networking.SendMsRequest(networking.RequestTypePost, endpoint+networking.BinaryUrlPath, apiKey, binariesObject)
 	if err != nil {
 		return err
 	}
 
-	fmt.Printf("Received response: %s\n\n", output)
 	return nil
 }
 

@@ -40,6 +40,52 @@ var FirmwareCatalogCmds = []command.Command{
 		},
 		ExecuteFunc: firmwareCatalogCreateCmd,
 		Endpoint:    configuration.DeveloperEndpoint,
+		Example: `
+Dell example:
+metalcloud-cli firmware-catalog create --config-format yaml --raw-config .\example_dell.yaml --download-binaries --filter-server-types "M.32.32.2, M.32.64.2, M.40.32.1.v2" --repo-http-url http://176.223.226.61/repo/firmware/ --repo-ssh-path /home/repo/firmware --repo-ssh-port 22 --repo-ssh-user root --user-private-ssh-key-path ~/.ssh/id_rsa
+
+example_dell.yaml:
+
+name: test-dell
+description: test
+vendor: dell
+catalog_url: https://downloads.dell.com/FOLDER04655306M/1/ESXi_Catalog.xml.gz
+local_catalog_path: ./ESXi_Catalog.xml
+local_firmware_path: ./downloads
+
+Lenovo example:
+metalcloud-cli firmware-catalog create --config-format json --raw-config .\example_lenovo.json
+
+example_lenovo.json:
+
+{
+	"name": "test-lenovo",
+	"description": "lenovo test",
+	"vendor": "lenovo",
+	"localCatalogPath": "./lenovo_catalogs",
+	"overwriteCatalogs": false,
+	"localFirmwarePath": "./lenovo_downloads",
+	"serversList": [
+		{
+			"machineType": "7Y51",
+			"serialNumber": "J10227CF"
+		}
+	]
+}
+
+HP example:
+metalcloud-cli firmware-catalog create --config-format yaml --raw-config .\example_hp_gen_11.yaml
+
+example_hp_gen_11.yaml:
+
+name: test-hp
+description: test
+vendor: hp
+catalog_url: https://downloads.linux.hpe.com/SDR/repo/fwpp-gen11/current/fwrepodata/fwrepo.json
+download_catalog: true
+local_catalog_path: ./fwrepo.json
+local_firmware_path: ./hp_downloads
+		`,
 	},
 }
 
