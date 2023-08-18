@@ -17,13 +17,16 @@ require (
 	github.com/sergi/go-diff v1.1.0
 	golang.org/x/crypto v0.1.0
 	gopkg.in/yaml.v2 v2.4.0
-	gopkg.in/yaml.v3 v3.0.0-20210107192922-496545a6307b
+	gopkg.in/yaml.v3 v3.0.1
 )
+
+require github.com/asaskevich/govalidator v0.0.0-20210307081110-f21760c49a8d // indirect
 
 require (
 	github.com/Microsoft/go-winio v0.4.16 // indirect
 	github.com/ProtonMail/go-crypto v0.0.0-20210428141323-04723f9f07d7 // indirect
 	github.com/acomagu/bufpipe v1.0.3 // indirect
+	github.com/davidmytton/url-verifier v1.0.0
 	github.com/emirpasic/gods v1.12.0 // indirect
 	github.com/go-git/gcfg v1.5.0 // indirect
 	github.com/golang/protobuf v1.5.2 // indirect
@@ -36,7 +39,8 @@ require (
 	github.com/mitchellh/go-homedir v1.1.0 // indirect
 	github.com/xanzy/ssh-agent v0.3.0 // indirect
 	github.com/ybbus/jsonrpc v2.1.2+incompatible // indirect
-	golang.org/x/net v0.7.0 // indirect
+	golang.org/x/exp v0.0.0-20230626212559-97b1e661b5df
+	golang.org/x/net v0.7.0
 	golang.org/x/oauth2 v0.0.0-20220909003341-f21342109be1 // indirect
 	golang.org/x/sys v0.5.0 // indirect
 	golang.org/x/term v0.5.0 // indirect
