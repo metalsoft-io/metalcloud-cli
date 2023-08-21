@@ -47,7 +47,7 @@ const (
 	updateSeverityOptional    = "optional"
 	serverTypesAll            = "*"
 
-	batchSize         = 10
+	batchSize = 10
 )
 
 type serverInfo struct {
@@ -102,7 +102,7 @@ type firmwareBinary struct {
 	HashingAlgorithm       string
 	SupportedDevices       []map[string]string
 	SupportedSystems       []map[string]string
-	VendorProperties       map[string]string
+	VendorProperties       map[string]any
 	VendorReleaseTimestamp string
 	CreatedTimestamp       string
 	DownloadURL            string
@@ -329,7 +329,7 @@ func downloadBinariesFromCatalog(binaryCollection []*firmwareBinary, user, passw
 			return fmt.Errorf("download URL '%s' is not valid.", firmwareBinary.DownloadURL)
 		}
 
-		err := DownloadFirmwareBinary(firmwareBinary, user, password)
+		err := DownloadFirmwareBinary(firmwareBinary, user, password, false)
 
 		if err != nil {
 			return err
@@ -389,7 +389,10 @@ func uploadBinariesToRepository(binaryCollection []*firmwareBinary, replaceIfExi
 
 	sshUser := repoConfig.SshUser
 	if sshUser == "" {
-		sshUser = configuration.GetFirmwareRepositorySSHUser()
+		sshUser, err = configuration.GetFirmwareRepositorySSHUser()
+		if err != nil {
+			return err
+		}
 	}
 
 	userPrivateSSHKeyPath, err := configuration.GetUserPrivateSSHKeyPath()
@@ -460,7 +463,7 @@ func uploadBinaryToRepository(binary *firmwareBinary, scpClient *scp.Client, ssh
 			}
 
 			binary.LocalPath = firmwareBinaryFile.Name()
-			err := DownloadFirmwareBinary(binary, downloadUser, downloadPassword)
+			err := DownloadFirmwareBinary(binary, downloadUser, downloadPassword, true)
 			binary.LocalPath = ""
 
 			if err != nil {
@@ -548,8 +551,8 @@ func retrieveSupportedServerTypes(client metalcloud.MetalCloudClient, input stri
 	return filteredServerTypes, filteredMetalsoftServerTypes, nil
 }
 
-func DownloadFirmwareBinary(binary *firmwareBinary, user, password string) error {
-	err := networking.DownloadFile(binary.DownloadURL, binary.LocalPath, binary.Hash, binary.HashingAlgorithm, user, password)
+func DownloadFirmwareBinary(binary *firmwareBinary, user, password string, isTemporaryFile bool) error {
+	err := networking.DownloadFile(binary.DownloadURL, binary.LocalPath, binary.Hash, binary.HashingAlgorithm, user, password, isTemporaryFile)
 
 	if err != nil {
 		if err.Error() == fmt.Sprintf("%d", http.StatusNotFound) {
@@ -698,7 +701,11 @@ func sendBinaries(binaryCollection []*firmwareBinary, catalogId int) error {
 		}
 
 		firmwareBinary.ExternalId = trimToSize(firmwareBinary.ExternalId, 255)
-		firmwareBinary.VendorProperties["importantInfo"] = trimToSize(firmwareBinary.VendorProperties["importantInfo"], 255)
+
+		if reflect.TypeOf(firmwareBinary.VendorProperties["importantInfo"]) != nil && reflect.TypeOf(firmwareBinary.VendorProperties["importantInfo"]).Kind() == reflect.String {
+			firmwareBinary.VendorProperties["importantInfo"] = trimToSize(firmwareBinary.VendorProperties["importantInfo"].(string), 255)
+		}
+
 		firmwareBinary.DownloadURL = trimToSize(firmwareBinary.DownloadURL, 255)
 		firmwareBinary.RepoURL = trimToSize(firmwareBinary.RepoURL, 255)
 		firmwareBinary.Name = trimToSize(firmwareBinary.Name, 255)

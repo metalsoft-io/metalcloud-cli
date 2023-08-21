@@ -122,7 +122,7 @@ func parseHpBinaryInventory(configFile rawConfigFile, uploadToRepo, downloadBina
 				HashingAlgorithm: "",
 				SupportedDevices: []map[string]string{},
 				SupportedSystems: []map[string]string{},
-				VendorProperties: map[string]string{
+				VendorProperties: map[string]any{
 					"DeviceClass":            value.DeviceClass,
 					"Target":                 value.Target,
 					"MinimumVersionRequired": value.MinimumActiveVersion,

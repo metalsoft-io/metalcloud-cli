@@ -55,9 +55,6 @@ type lenovoSoftwareUpdateFile struct {
 	FileHash    string `json:"FileHash"`
 }
 
-type UpdateType map[string]map[string]string
-type UpdateRequiredType map[string]map[string][]string
-
 func retrieveAvailableFirmwareUpdates(targetInfos map[string]string) (string, error) {
 	searchParams := map[string]interface{}{
 		"Category":            "",
@@ -153,21 +150,8 @@ func generateLenovoCatalog(catalogFolder, machineType, serialNumber string, over
 	return &lenovoCatalog, nil
 }
 
-func extractAvailableFirmwareUpdates(lenovoCatalog *lenovoCatalog) (UpdateType, UpdateRequiredType, map[string]*softwareUpdate) {
+func extractAvailableFirmwareUpdates(lenovoCatalog *lenovoCatalog) map[string]*softwareUpdate {
 	firmwareUpdates := lenovoCatalog.Data
-
-	firmwareUpdate := map[string]map[string]string{
-		firmwareUpdateKeyUefi:  make(map[string]string),
-		firmwareUpdateKeyBmc:   make(map[string]string),
-		firmwareUpdateKeyLxpm:  make(map[string]string),
-		firmwareUpdateKeyOther: make(map[string]string),
-	}
-	firmwareUpdateRequired := map[string]map[string][]string{
-		firmwareUpdateKeyUefi:  make(map[string][]string),
-		firmwareUpdateKeyBmc:   make(map[string][]string),
-		firmwareUpdateKeyLxpm:  make(map[string][]string),
-		firmwareUpdateKeyOther: make(map[string][]string),
-	}
 
 	softwareUpdateMap := make(map[string]*softwareUpdate)
 
@@ -194,17 +178,10 @@ func extractAvailableFirmwareUpdates(lenovoCatalog *lenovoCatalog) (UpdateType, 
 			firmwareUpdateKey = firmwareUpdateKeyLxpm
 		}
 
-		if firmwareUpdateKey != firmwareUpdateKeyOther {
-			firmwareUpdate[firmwareUpdateKey][softwareUpdateVersion] = firmwareFix.URL
-			if len(softwareUpdate.RequisitesFixIDs) > 0 {
-				firmwareUpdateRequired[firmwareUpdateKey][softwareUpdateVersion] = resolveRequisites(softwareUpdate.RequisitesFixIDs, softwareUpdateMap)
-			}
-		}
-
 		softwareUpdate.UpdateKey = firmwareUpdateKey
 	}
 
-	return firmwareUpdate, firmwareUpdateRequired, softwareUpdateMap
+	return softwareUpdateMap
 }
 
 func resolveRequisites(requisites []string, softwareUpdateMap map[string]*softwareUpdate) []string {
@@ -214,7 +191,9 @@ func resolveRequisites(requisites []string, softwareUpdateMap map[string]*softwa
 		if softwareUpdate, ok := softwareUpdateMap[requisite]; ok {
 			firmwareFix := searchByFileType(softwareUpdate.Files, softwareUpdateTypeFix)
 			if firmwareFix != nil {
-				result = append(result, firmwareFix.URL)
+				componentPathArr := strings.Split(firmwareFix.URL, "/")
+				componentName := componentPathArr[len(componentPathArr)-1]
+				result = append(result, componentName)
 			}
 		}
 	}
@@ -238,6 +217,9 @@ func parseLenovoCatalog(configFile rawConfigFile, client metalcloud.MetalCloudCl
 	}
 
 	firmwareBinaryCollection, err := processLenovoBinaries(configFile, serverInfoToCatalogMap, &catalog, uploadToRepo, downloadBinaries, repoConfig)
+	if err != nil {
+		return firmwareCatalog{}, nil, err
+	}
 
 	return catalog, firmwareBinaryCollection, nil
 }
@@ -392,9 +374,9 @@ func processLenovoBinaries(configFile rawConfigFile, serverInfoToCatalogMap map[
 		}
 	}
 
-	for _, lenovoCatalogs := range serverInfoToCatalogMap {
+	for info, lenovoCatalogs := range serverInfoToCatalogMap {
 		for _, lenovoCatalog := range lenovoCatalogs {
-			firmwareUpdates, firmwareUpdateRequired, softwareUpdateMap := extractAvailableFirmwareUpdates(lenovoCatalog)
+			softwareUpdateMap := extractAvailableFirmwareUpdates(lenovoCatalog)
 
 			for _, softwareUpdate := range softwareUpdateMap {
 				if softwareUpdate.UpdateKey == firmwareUpdateKeyOther {
@@ -412,7 +394,9 @@ func processLenovoBinaries(configFile rawConfigFile, serverInfoToCatalogMap map[
 					description = installXML.Description
 				}
 
-				componentVendorConfiguration := map[string]string{}
+				componentVendorConfiguration := map[string]any{
+					"requires":     resolveRequisites(softwareUpdate.RequisitesFixIDs, softwareUpdateMap),
+				}
 
 				componentPathArr := strings.Split(firmwareFix.URL, "/")
 				componentName := componentPathArr[len(componentPathArr)-1]
@@ -428,6 +412,19 @@ func processLenovoBinaries(configFile rawConfigFile, serverInfoToCatalogMap map[
 					}
 				}
 
+				supportedDevices := []map[string]string{}
+
+				supportedDevices = append(supportedDevices, map[string]string{
+					"type":         softwareUpdate.UpdateKey,
+				})
+
+				supportedSystems := []map[string]string{}
+
+				supportedSystems = append(supportedSystems, map[string]string{
+					"machineType":  info.MachineType,
+					"serialNumber": info.SerialNumber,
+				})
+
 				firmwareBinary := firmwareBinary{
 					ExternalId:             softwareUpdate.FixID,
 					Name:                   softwareUpdate.FixID,
@@ -439,8 +436,8 @@ func processLenovoBinaries(configFile rawConfigFile, serverInfoToCatalogMap map[
 					UpdateSeverity:         updateSeverityUnknown,
 					Hash:                   firmwareFix.FileHash,
 					HashingAlgorithm:       networking.HashingAlgorithmSHA1,
-					SupportedDevices:       []map[string]string{},
-					SupportedSystems:       []map[string]string{},
+					SupportedDevices:       supportedDevices,
+					SupportedSystems:       supportedSystems,
 					VendorProperties:       componentVendorConfiguration,
 					VendorReleaseTimestamp: time.Now().Format(time.RFC3339),
 					CreatedTimestamp:       time.Now().Format(time.RFC3339),
@@ -451,9 +448,6 @@ func processLenovoBinaries(configFile rawConfigFile, serverInfoToCatalogMap map[
 
 				firmwareBinaryCollection = append(firmwareBinaryCollection, &firmwareBinary)
 			}
-
-			catalog.Configuration["availableVersions"] = firmwareUpdates
-			catalog.Configuration["requiredFixes"] = firmwareUpdateRequired
 		}
 	}
 

@@ -20,7 +20,6 @@ var (
 
 const (
 	defaultSSHPort = "22"
-	defaultSSHUser = "root"
 )
 
 func IsAdmin() bool {
@@ -135,13 +134,12 @@ func GetFirmwareRepositorySSHPort() string {
 	return os.Getenv("METALCLOUD_FIRMWARE_REPOSITORY_SSH_PORT")
 }
 
-func GetFirmwareRepositorySSHUser() string {
+func GetFirmwareRepositorySSHUser() (string, error) {
 	if userGivenSSHPort := os.Getenv("METALCLOUD_FIRMWARE_REPOSITORY_SSH_USER"); userGivenSSHPort == "" {
-		// If no user is given, use the default SSH user.
-		return defaultSSHUser
+		return "", fmt.Errorf("METALCLOUD_FIRMWARE_REPOSITORY_SSH_USER must be set when uploading firmware binaries.")
 	}
 
-	return os.Getenv("METALCLOUD_FIRMWARE_REPOSITORY_SSH_USER")
+	return os.Getenv("METALCLOUD_FIRMWARE_REPOSITORY_SSH_USER"), nil
 }
 
 func GetUserPrivateSSHKeyPath() (string, error) {

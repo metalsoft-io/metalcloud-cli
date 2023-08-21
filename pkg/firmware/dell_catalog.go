@@ -326,7 +326,7 @@ func processDellBinaries(configFile rawConfigFile, dellManifest manifest, catalo
 			supportedDevices = append(supportedDevices, deviceInfo)
 		}
 
-		componentVendorConfiguration := map[string]string{
+		componentVendorConfiguration := map[string]any{
 			"path":          component.Path,
 			"size":          component.Size,
 			"category":      component.Category.Display,
