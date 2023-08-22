@@ -465,7 +465,7 @@ func ExecuteCommand(args []string, commands []Command, clients map[string]metalc
 	cmd.InitFunc(cmd)
 
 	if flag := cmd.FlagSet.Lookup("no-color"); flag == nil {
-		cmd.Arguments["no_color"] = cmd.FlagSet.Bool("no-color", false, "Disable coloring.")
+		cmd.Arguments["no_color"] = cmd.FlagSet.Bool("no-color", false, colors.Green("(Flag)")+" Disable coloring.")
 	}
 
 	//disable default usage

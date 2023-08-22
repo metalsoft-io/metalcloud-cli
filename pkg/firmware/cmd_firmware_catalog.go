@@ -23,8 +23,8 @@ var FirmwareCatalogCmds = []command.Command{
 		FlagSet:      flag.NewFlagSet("create firmware catalog", flag.ExitOnError),
 		InitFunc: func(c *command.Command) {
 			c.Arguments = map[string]interface{}{
-				"config_format":             c.FlagSet.String("config-format", command.NilDefaultStr, "The format of the config file. Supported values are 'json' and 'yaml'."),
-				"raw_config":                c.FlagSet.String("raw-config", command.NilDefaultStr, "The path to the config file."),
+				"config_format":             c.FlagSet.String("config-format", command.NilDefaultStr, colors.Red("(Required)")+" The format of the config file. Supported values are 'json' and 'yaml'."),
+				"raw_config":                c.FlagSet.String("raw-config", command.NilDefaultStr, colors.Red("(Required)")+" The path to the config file."),
 				"download_binaries":         c.FlagSet.Bool("download-binaries", false, colors.Yellow("(Optional)")+" Download firmware binaries from the catalog to the local filesystem."),
 				"skip_upload_to_repo":       c.FlagSet.Bool("skip-upload-to-repo", false, colors.Yellow("(Optional)")+" Skip firmware binaries upload to the HTTP repository."),
 				"skip_host_key_checking":    c.FlagSet.Bool("skip-host-key-checking", false, colors.Yellow("(Optional)")+" Skip check when adding a host key to the known_hosts file in the firmware binary upload process."),
@@ -49,12 +49,12 @@ example_dell.yaml:
 name: test-dell
 description: test
 vendor: dell
-catalog_url: https://downloads.dell.com/FOLDER04655306M/1/ESXi_Catalog.xml.gz
-local_catalog_path: ./ESXi_Catalog.xml
-local_firmware_path: ./downloads
+catalogUrl: https://downloads.dell.com/FOLDER04655306M/1/ESXi_Catalog.xml.gz
+localCatalogPath: ./ESXi_Catalog.xml
+localFirmwarePath: ./downloads
 
 Lenovo example:
-metalcloud-cli firmware-catalog create --config-format json --raw-config .\example_lenovo.json
+metalcloud-cli firmware-catalog create --config-format json --raw-config .\example_lenovo.json --filter-server-types "M.8.8.2.v5"
 
 example_lenovo.json:
 
@@ -73,6 +73,9 @@ example_lenovo.json:
 	]
 }
 
+For Lenovo servers, we can filter by server type like for the other vendors, but we can also specify a list of servers to filter by machine type and serial number.
+The list of servers specified in the config serversList parameter takes precedence over the filter-server-types parameter, which will be ignored.
+
 HP example:
 metalcloud-cli firmware-catalog create --config-format yaml --raw-config .\example_hp_gen_11.yaml
 
@@ -81,10 +84,9 @@ example_hp_gen_11.yaml:
 name: test-hp
 description: test
 vendor: hp
-catalog_url: https://downloads.linux.hpe.com/SDR/repo/fwpp-gen11/current/fwrepodata/fwrepo.json
-local_catalog_path: ./fwrepo.json
-local_firmware_path: ./hp_downloads
-		`,
+catalogUrl: https://downloads.linux.hpe.com/SDR/repo/fwpp-gen11/current/fwrepodata/fwrepo.json
+localCatalogPath: ./fwrepo.json
+localFirmwarePath: ./hp_downloads`,
 	},
 }
 

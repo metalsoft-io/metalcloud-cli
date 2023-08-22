@@ -51,8 +51,8 @@ const (
 )
 
 type serverInfo struct {
-	MachineType  string `json:"machineType" yaml:"machine_type"`
-	SerialNumber string `json:"serialNumber" yaml:"serial_number"`
+	MachineType  string `json:"machineType" yaml:"machineType"`
+	SerialNumber string `json:"serialNumber" yaml:"serialNumber"`
 	VendorSkuId  string
 }
 
@@ -60,11 +60,11 @@ type rawConfigFile struct {
 	Name              string       `json:"name" yaml:"name"`
 	Description       string       `json:"description" yaml:"description"`
 	Vendor            string       `json:"vendor" yaml:"vendor"`
-	CatalogUrl        string       `json:"catalogUrl" yaml:"catalog_url"`
-	ServersList       []serverInfo `json:"serversList" yaml:"servers_list"`
-	LocalCatalogPath  string       `json:"localCatalogPath" yaml:"local_catalog_path"`
-	OverwriteCatalogs bool         `json:"overwriteCatalogs" yaml:"overwrite_catalogs"`
-	LocalFirmwarePath string       `json:"localFirmwarePath" yaml:"local_firmware_path"`
+	CatalogUrl        string       `json:"catalogUrl" yaml:"catalogUrl"`
+	ServersList       []serverInfo `json:"serversList" yaml:"serversList"`
+	LocalCatalogPath  string       `json:"localCatalogPath" yaml:"localCatalogPath"`
+	OverwriteCatalogs bool         `json:"overwriteCatalogs" yaml:"overwriteCatalogs"`
+	LocalFirmwarePath string       `json:"localFirmwarePath" yaml:"localFirmwarePath"`
 }
 
 type repoConfiguration struct {
@@ -157,7 +157,7 @@ func parseConfigFile(configFormat string, rawConfigFileContents []byte, configFi
 		isSet := field.IsValid() && (!field.IsZero() || field.Kind() == reflect.Bool)
 
 		if !isSet && !slices.Contains[string](optionalFields, fieldName) {
-			value, err := configFileParameterToValue(fieldName, configFormat)
+			value, err := configFileParameterToValue(fieldName)
 			if err != nil {
 				return err
 			}
@@ -172,19 +172,11 @@ func parseConfigFile(configFormat string, rawConfigFileContents []byte, configFi
 			if configFile.LocalFirmwarePath == "" || configFile.CatalogUrl == "" {
 				firmwarePathValue, catalogUrlValue := "localFirmwarePath", "catalogUrl"
 
-				if configFormat == configFormatYAML {
-					firmwarePathValue, catalogUrlValue = "local_firmware_path", "catalog_url"
-				}
-
 				return fmt.Errorf("the '%s' and '%s' fields must be set in the raw-config file when downloading %s binaries", firmwarePathValue, catalogUrlValue, configFile.Vendor)
 			}
 		case catalogVendorLenovo:
 			if configFile.LocalFirmwarePath == "" {
 				firmwarePathValue := "localFirmwarePath"
-
-				if configFormat == configFormatYAML {
-					firmwarePathValue = "local_firmware_path"
-				}
 
 				return fmt.Errorf("the '%s' field must be set in the raw-config file when downloading %s binaries", firmwarePathValue, configFile.Vendor)
 			}
@@ -197,19 +189,11 @@ func parseConfigFile(configFormat string, rawConfigFileContents []byte, configFi
 	if configFile.LocalFirmwarePath != "" && !folderExists(configFile.LocalFirmwarePath) {
 		value := "localFirmwarePath"
 
-		if configFormat == configFormatYAML {
-			value = "local_firmware_path"
-		}
-
 		return fmt.Errorf("the '%s' field must be a valid folder path", value)
 	}
 
 	if configFile.LocalCatalogPath != "" {
 		value := "localCatalogPath"
-
-		if configFormat == configFormatYAML {
-			value = "local_catalog_path"
-		}
 
 		if configFile.Vendor == catalogVendorDell && !fileExists(configFile.LocalCatalogPath) {
 			return fmt.Errorf("the '%s' field must be a valid file path", value)
@@ -239,7 +223,7 @@ func parseConfigFile(configFormat string, rawConfigFileContents []byte, configFi
 	return nil
 }
 
-func configFileParameterToValue(parameter, format string) (string, error) {
+func configFileParameterToValue(parameter string) (string, error) {
 	switch parameter {
 	case "Name":
 		return "name", nil
@@ -248,22 +232,12 @@ func configFileParameterToValue(parameter, format string) (string, error) {
 	case "Vendor":
 		return "vendor", nil
 	case "LocalCatalogPath":
-		if format == configFormatJSON {
-			return "localCatalogPath", nil
-		} else if format == configFormatYAML {
-			return "local_catalog_path", nil
-		}
+		return "localCatalogPath", nil
 	case "OverwriteCatalogs":
-		if format == configFormatJSON {
-			return "overwriteCatalogs", nil
-		} else if format == configFormatYAML {
-			return "overwrite_catalogs", nil
-		}
+		return "overwriteCatalogs", nil
 	default:
 		return "", fmt.Errorf("invalid parameter '%s'", parameter)
 	}
-
-	return "", nil
 }
 
 func getRepoConfiguration(c *command.Command) repoConfiguration {
