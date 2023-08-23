@@ -32,7 +32,7 @@ var SwitchControllerCmds = []command.Command{
 		ExecuteFunc: switchControllerCreateCmd,
 		Endpoint:    configuration.DeveloperEndpoint,
 		Example: `
-metalcloud-cli switch create --format yaml --raw-config switch-controller.yaml --return-id
+metalcloud-cli switch-controller create --format yaml --raw-config switch-controller.yaml --return-id
 
 switch-controller.yaml:
 
