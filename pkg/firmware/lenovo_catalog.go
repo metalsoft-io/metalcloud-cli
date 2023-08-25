@@ -115,7 +115,13 @@ func generateLenovoCatalog(catalogFolder, machineType, serialNumber string, over
 
 	lenovoCatalog := lenovoCatalog{}
 
+	absoluteFilePath, err := filepath.Abs(path)
+	if err != nil {
+		return nil, err
+	}
+
 	if fileExists(path) && !overwriteCatalog {
+		fmt.Printf("Using existing Lenovo catalog %s\n", absoluteFilePath)
 		content, err := os.ReadFile(path)
 		if err != nil {
 			return nil, err
@@ -126,6 +132,7 @@ func generateLenovoCatalog(catalogFolder, machineType, serialNumber string, over
 			return nil, err
 		}
 	} else {
+		fmt.Printf("Generating Lenovo catalog at path %s\n", absoluteFilePath)
 		response, err := retrieveAvailableFirmwareUpdates(targetInfos)
 		if err != nil {
 			return nil, err
