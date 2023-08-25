@@ -12,12 +12,13 @@ const (
 	RequestTypeGet  = "GET"
 	RequestTypePost = "POST"
 
-	CatalogUrlPath = "/ms-api/firmware/catalog"
-	BinaryUrlPath  = "/ms-api/firmware/binary/import"
+	HealthCheckUrlPath = "/ms-api/firmware/health"
+	CatalogUrlPath     = "/ms-api/firmware/catalog"
+	BinaryUrlPath      = "/ms-api/firmware/binary/import"
 )
 
 type msErrorResponse struct {
-	Status     int    `json:"status"`
+	Status     any    `json:"status"`
 	StatusCode int    `json:"statusCode"`
 	Message    any    `json:"message"`
 	Error      string `json:"error"`
@@ -43,7 +44,7 @@ func SendMsRequest(requestType, url, apiKey string, jsonData []byte) (string, er
 		return body, fmt.Errorf("error parsing json response %s: %s", body, err.Error())
 	}
 
-	if msError.StatusCode != 0 || msError.Status != 0 {
+	if msError.Message != nil && (msError.StatusCode != 0 || msError.Status != nil) {
 		return body, fmt.Errorf("received error message: %s", msError.Message)
 	}
 

@@ -112,6 +112,10 @@ type firmwareBinary struct {
 	ErrorMessage           string
 }
 
+type healthCheckObject struct {
+	Status string `json:"status"`
+}
+
 type catalogMsObject struct {
 	ServerFirmwareCatalogId                     int    `json:"server_firmware_catalog_id"`
 	ServerFirmwareCatalogName                   string `json:"server_firmware_catalog_name"`
@@ -560,6 +564,36 @@ func fileExists(filePath string) bool {
 	}
 
 	return !info.IsDir()
+}
+
+func sendHealthCheck() error {
+	endpoint, err := configuration.GetEndpoint()
+	if err != nil {
+		return err
+	}
+
+	apiKey, err := configuration.GetAPIKey()
+	if err != nil {
+		return err
+	}
+
+	output, err := networking.SendMsRequest(networking.RequestTypeGet, endpoint+networking.HealthCheckUrlPath, apiKey, nil)
+	if err != nil {
+		return err
+	}
+
+	healthCheckResponse := healthCheckObject{}
+	err = json.Unmarshal([]byte(output), &healthCheckResponse)
+
+	if err != nil {
+		return fmt.Errorf("error parsing json response %s: %s", output, err.Error())
+	}
+
+	if healthCheckResponse.Status != "ok" {
+		return fmt.Errorf("health check failed: %s", healthCheckResponse.Status)
+	}
+
+	return nil
 }
 
 func sendCatalog(catalog firmwareCatalog) (catalogMsObject, error) {

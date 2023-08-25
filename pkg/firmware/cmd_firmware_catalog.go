@@ -140,6 +140,11 @@ func firmwareCatalogCreateCmd(c *command.Command, client metalcloud.MetalCloudCl
 
 	repoConfig := getRepoConfiguration(c)
 
+	err = sendHealthCheck()
+	if err != nil {
+		return "", err
+	}
+
 	var catalog firmwareCatalog
 	var binaryCollection []*firmwareBinary
 	downloadUser, downloadPassword := "", ""
