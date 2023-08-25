@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"net/url"
 	"os"
 	"path/filepath"
 	"strings"
@@ -395,12 +396,15 @@ func processLenovoBinaries(configFile rawConfigFile, serverInfoToCatalogMap map[
 				}
 
 				componentVendorConfiguration := map[string]any{
-					"requires":     resolveRequisites(softwareUpdate.RequisitesFixIDs, softwareUpdateMap),
+					"requires": resolveRequisites(softwareUpdate.RequisitesFixIDs, softwareUpdateMap),
 				}
 
 				componentPathArr := strings.Split(firmwareFix.URL, "/")
 				componentName := componentPathArr[len(componentPathArr)-1]
-				componentRepoUrl := repositoryURL + "/" + componentName
+				componentRepoUrl, err := url.JoinPath(repositoryURL, componentName)
+				if err != nil {
+					return nil, err
+				}
 
 				localPath := ""
 				if configFile.LocalFirmwarePath != "" && downloadBinaries {
@@ -415,7 +419,7 @@ func processLenovoBinaries(configFile rawConfigFile, serverInfoToCatalogMap map[
 				supportedDevices := []map[string]string{}
 
 				supportedDevices = append(supportedDevices, map[string]string{
-					"type":         softwareUpdate.UpdateKey,
+					"type": softwareUpdate.UpdateKey,
 				})
 
 				supportedSystems := []map[string]string{}

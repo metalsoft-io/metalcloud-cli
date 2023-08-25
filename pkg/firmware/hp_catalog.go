@@ -17,7 +17,7 @@ import (
 	"github.com/metalsoft-io/metalcloud-cli/internal/configuration"
 )
 
-type hpCatalongTemplate struct {
+type hpCatalogTemplate struct {
 	Date                 string `json:"date"`
 	Description          string `json:"description"`
 	DeviceClass          string `json:"deviceclass"`
@@ -46,7 +46,7 @@ func generateHpCatalog(configFile rawConfigFile) (firmwareCatalog, error) {
 		Name:                          configFile.Name,
 		Description:                   configFile.Description,
 		Vendor:                        configFile.Vendor,
-		VendorID:                      configFile.Vendor, // TODO: check if this is correct
+		VendorID:                      configFile.Vendor,
 		VendorURL:                     configFile.CatalogUrl,
 		VendorReleaseTimestamp:        time.Now().Format(time.RFC3339),
 		UpdateType:                    getUpdateType(configFile),
@@ -86,7 +86,7 @@ func parseHpBinaryInventory(configFile rawConfigFile, uploadToRepo, downloadBina
 
 	byteValue, _ := io.ReadAll(jsonFile)
 
-	var packages map[string]hpCatalongTemplate
+	var packages map[string]hpCatalogTemplate
 	json.Unmarshal(byteValue, &packages)
 
 	binaries := []*firmwareBinary{}
@@ -100,7 +100,12 @@ func parseHpBinaryInventory(configFile rawConfigFile, uploadToRepo, downloadBina
 				//ignore invalid urls
 				continue
 			}
-			componentRepoUrl := path.Join(repositoryURL, key)
+			
+			componentRepoUrl, err := url.JoinPath(repositoryURL, key)
+			if err != nil {
+				return nil, err
+			}
+
 			localPath := ""
 			if configFile.LocalFirmwarePath != "" && downloadBinaries {
 				localPath, err = filepath.Abs(filepath.Join(configFile.LocalFirmwarePath, key))

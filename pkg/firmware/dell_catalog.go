@@ -356,7 +356,10 @@ func processDellBinaries(configFile rawConfigFile, dellManifest manifest, catalo
 
 		componentPathArr := strings.Split(component.Path, "/")
 		componentName := componentPathArr[len(componentPathArr)-1]
-		componentRepoUrl := repositoryURL + "/" + componentName
+		componentRepoUrl, err := url.JoinPath(repositoryURL, componentName)
+		if err != nil {
+			return nil, err
+		}
 
 		localPath := ""
 		if configFile.LocalFirmwarePath != "" && (downloadBinaries || configFile.CatalogUrl == "") {
