@@ -100,7 +100,7 @@ func parseHpBinaryInventory(configFile rawConfigFile, uploadToRepo, downloadBina
 				//ignore invalid urls
 				continue
 			}
-			
+
 			componentRepoUrl, err := url.JoinPath(repositoryURL, key)
 			if err != nil {
 				return nil, err
@@ -114,6 +114,15 @@ func parseHpBinaryInventory(configFile rawConfigFile, uploadToRepo, downloadBina
 					return nil, fmt.Errorf("error getting download binary absolute path: %v", err)
 				}
 			}
+
+			supportedDevices := []map[string]string{}
+
+			supportedDevices = append(supportedDevices, map[string]string{
+				"DeviceClass":            value.DeviceClass,
+				"Target":                 value.Target,
+				"MinimumVersionRequired": value.MinimumActiveVersion,
+			})
+
 			binaries = append(binaries, &firmwareBinary{
 				ExternalId:       key,
 				FileName:         key,
@@ -125,13 +134,9 @@ func parseHpBinaryInventory(configFile rawConfigFile, uploadToRepo, downloadBina
 				UpdateSeverity:   updateSeverityUnknown,
 				Hash:             "",
 				HashingAlgorithm: "",
-				SupportedDevices: []map[string]string{},
+				SupportedDevices: supportedDevices,
 				SupportedSystems: []map[string]string{},
-				VendorProperties: map[string]any{
-					"DeviceClass":            value.DeviceClass,
-					"Target":                 value.Target,
-					"MinimumVersionRequired": value.MinimumActiveVersion,
-				},
+				VendorProperties: map[string]any{},
 				VendorReleaseTimestamp: time.Now().Format(time.RFC3339),
 				CreatedTimestamp:       time.Now().Format(time.RFC3339),
 				DownloadURL:            downloadURL,
