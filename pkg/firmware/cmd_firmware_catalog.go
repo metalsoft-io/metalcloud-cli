@@ -167,7 +167,7 @@ func firmwareCatalogCreateCmd(c *command.Command, client metalcloud.MetalCloudCl
 	case catalogVendorHp:
 		catalog, binaryCollection, err = parseHpCatalog(configFile, client, filterServerTypes, uploadToRepo, downloadBinaries, repoConfig)
 
-		hpSupportToken := os.Getenv("HP_SUPPORT_TOKEN")
+		hpSupportToken := os.Getenv("METALCLOUD_HP_SUPPORT_TOKEN")
 		if hpSupportToken != "" {
 			downloadUser = hpSupportToken
 			downloadPassword = "null"

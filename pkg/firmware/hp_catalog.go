@@ -59,7 +59,7 @@ func generateHpCatalog(configFile rawConfigFile) (firmwareCatalog, error) {
 }
 
 func parseHpBinaryInventory(configFile rawConfigFile, uploadToRepo, downloadBinaries bool, repoConfig repoConfiguration) ([]*firmwareBinary, error) {
-	hpSupportToken := os.Getenv("HP_SUPPORT_TOKEN")
+	hpSupportToken := os.Getenv("METALCLOUD_HP_SUPPORT_TOKEN")
 
 	if configFile.CatalogUrl != "" {
 		err := downloadHpCatalog(configFile.CatalogUrl, configFile.LocalCatalogPath, hpSupportToken)
@@ -124,19 +124,19 @@ func parseHpBinaryInventory(configFile rawConfigFile, uploadToRepo, downloadBina
 			})
 
 			binaries = append(binaries, &firmwareBinary{
-				ExternalId:       key,
-				FileName:         key,
-				Name:             key,
-				Description:      value.Description,
-				PackageId:        key,
-				PackageVersion:   value.Version,
-				RebootRequired:   value.RebootRequired == "yes",
-				UpdateSeverity:   updateSeverityUnknown,
-				Hash:             "",
-				HashingAlgorithm: "",
-				SupportedDevices: supportedDevices,
-				SupportedSystems: []map[string]string{},
-				VendorProperties: map[string]any{},
+				ExternalId:             key,
+				FileName:               key,
+				Name:                   key,
+				Description:            value.Description,
+				PackageId:              key,
+				PackageVersion:         value.Version,
+				RebootRequired:         value.RebootRequired == "yes",
+				UpdateSeverity:         updateSeverityUnknown,
+				Hash:                   "",
+				HashingAlgorithm:       "",
+				SupportedDevices:       supportedDevices,
+				SupportedSystems:       []map[string]string{},
+				VendorProperties:       map[string]any{},
 				VendorReleaseTimestamp: time.Now().Format(time.RFC3339),
 				CreatedTimestamp:       time.Now().Format(time.RFC3339),
 				DownloadURL:            downloadURL,
