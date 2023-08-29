@@ -2336,7 +2336,11 @@ func templateValidateCmd(c *command.Command, client metalcloud.MetalCloudClient)
 			return "", fmt.Errorf("Template file not found at path %s.", sourceTemplate)
 		}
 
-		getLocalTemplateAssets(filepath.Dir(sourceTemplate), &repoTemplate)
+		err = getLocalTemplateAssets(filepath.Dir(sourceTemplate), &repoTemplate)
+		if err != nil {
+			return "", err
+		}
+
 		_, err = populateTemplateValues(&repoTemplate)
 
 		if err != nil {
@@ -2437,7 +2441,6 @@ func getLocalTemplateAssets(dirName string, repoTemplate *RepoTemplate) error {
 	}
 
 	repoAssets := []TemplateAsset{}
-
 	for _, file := range files {
 		if file.IsDir() || file.Name() == readMeFileName {
 			continue
