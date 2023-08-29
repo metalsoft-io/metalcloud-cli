@@ -10,6 +10,7 @@ import (
 	"io"
 	"net"
 	"os"
+	"path"
 	"path/filepath"
 	"strings"
 
@@ -2446,7 +2447,7 @@ func getLocalTemplateAssets(dirName string, repoTemplate *RepoTemplate) error {
 			continue
 		}
 
-		fileBytes, err := os.ReadFile(file.Name())
+		fileBytes, err := os.ReadFile(path.Join(dirName, file.Name()))
 
 		if err != nil {
 			return err
