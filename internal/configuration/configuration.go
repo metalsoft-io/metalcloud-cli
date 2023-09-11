@@ -15,7 +15,6 @@ var (
 	Version string
 	Date    string
 	Commit  string
-	BuiltBy string
 )
 
 const (
