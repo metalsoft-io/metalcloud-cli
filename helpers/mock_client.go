@@ -3267,6 +3267,49 @@ func (mr *MockMetalCloudClientMockRecorder) SwitchDeviceCreate(switchDevice, bOv
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SwitchDeviceCreate", reflect.TypeOf((*MockMetalCloudClient)(nil).SwitchDeviceCreate), switchDevice, bOverwriteWithHostnameFromFetchedSwitch)
 }
 
+// SwitchDeviceDefaults mocks base method.
+func (m *MockMetalCloudClient) SwitchDeviceDefaults(datacenter string) (*[]metalcloud.SwitchDeviceDefaults, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "SwitchDeviceDefaults", datacenter)
+	ret0, _ := ret[0].(*[]metalcloud.SwitchDeviceDefaults)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// SwitchDeviceDefaults indicates an expected call of SwitchDeviceDefaults.
+func (mr *MockMetalCloudClientMockRecorder) SwitchDeviceDefaults(datacenter interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SwitchDeviceDefaults", reflect.TypeOf((*MockMetalCloudClient)(nil).SwitchDeviceDefaults), datacenter)
+}
+
+// SwitchDeviceDefaultsCreate mocks base method.
+func (m *MockMetalCloudClient) SwitchDeviceDefaultsCreate(switchDeviceDefaultsArray []metalcloud.SwitchDeviceDefaults) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "SwitchDeviceDefaultsCreate", switchDeviceDefaultsArray)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// SwitchDeviceDefaultsCreate indicates an expected call of SwitchDeviceDefaultsCreate.
+func (mr *MockMetalCloudClientMockRecorder) SwitchDeviceDefaultsCreate(switchDeviceDefaultsArray interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SwitchDeviceDefaultsCreate", reflect.TypeOf((*MockMetalCloudClient)(nil).SwitchDeviceDefaultsCreate), switchDeviceDefaultsArray)
+}
+
+// SwitchDeviceDefaultsDelete mocks base method.
+func (m *MockMetalCloudClient) SwitchDeviceDefaultsDelete(switchDeviceDefaultsIDs []int) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "SwitchDeviceDefaultsDelete", switchDeviceDefaultsIDs)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// SwitchDeviceDefaultsDelete indicates an expected call of SwitchDeviceDefaultsDelete.
+func (mr *MockMetalCloudClientMockRecorder) SwitchDeviceDefaultsDelete(switchDeviceDefaultsIDs interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SwitchDeviceDefaultsDelete", reflect.TypeOf((*MockMetalCloudClient)(nil).SwitchDeviceDefaultsDelete), switchDeviceDefaultsIDs)
+}
+
 // SwitchDeviceDelete mocks base method.
 func (m *MockMetalCloudClient) SwitchDeviceDelete(networkEquipmentID int) error {
 	m.ctrl.T.Helper()
