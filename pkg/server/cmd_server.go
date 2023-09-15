@@ -1979,8 +1979,9 @@ func serverDefaultCredentialsAddCmd(c *command.Command, client metalcloud.MetalC
 }
 
 func getMultipleServerDefaultCredentialsFromYamlFile(filePath string) ([]metalcloud.ServerDefaultCredentials, error) {
-
 	file, err := os.Open(filePath)
+	defer file.Close()
+
 	if err != nil {
 		if errors.Is(err, os.ErrNotExist) {
 			return []metalcloud.ServerDefaultCredentials{}, nil
@@ -2010,8 +2011,6 @@ func getMultipleServerDefaultCredentialsFromYamlFile(filePath string) ([]metalcl
 			}
 		}
 	}
-
-	file.Close()
 
 	return records, nil
 }
