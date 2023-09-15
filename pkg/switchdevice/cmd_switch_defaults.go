@@ -52,7 +52,7 @@ var SwitchDefaultsCmds = []command.Command{
 		ExecuteFunc: switchDefaultsCreateCmd,
 		Endpoint:    configuration.DeveloperEndpoint,
 		Example: `
-This command supports one or more credentials in a yaml file format. The file format uses "---" separator between records. For example:
+This command supports one or more switch defaults records in a yaml file format. The file format uses "---" separator between records. Here are 3 examples. The first one contains only the required properties.
 
 datacenterName: test
 serialNumber: ASDVDSF43GFD3221
