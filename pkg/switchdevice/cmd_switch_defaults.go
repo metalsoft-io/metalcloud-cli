@@ -227,10 +227,16 @@ func switchDefaultsCreateCmd(c *command.Command, client metalcloud.MetalCloudCli
 
 	filePath, ok := command.GetStringParamOk(c.Arguments["read_config_from_file"])
 	if !ok {
-		return "", fmt.Errorf("-file is required")
+		return "", fmt.Errorf("-raw-config is required")
 	}
 
-	defaults, err := getMultipleSwitchDefaultsFromYamlFile(filePath)
+	_, err := os.Open(filePath)
+
+	if err != nil {
+		return "", fmt.Errorf("error reading file %s: %s", filePath, err.Error())
+	}
+
+	defaults, err = getMultipleSwitchDefaultsFromYamlFile(filePath)
 	if err != nil {
 		return "", err
 	}
