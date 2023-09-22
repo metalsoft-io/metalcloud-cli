@@ -199,8 +199,10 @@ func parseConfigFile(configFormat string, rawConfigFileContents []byte, configFi
 	if configFile.LocalCatalogPath != "" {
 		value := "localCatalogPath"
 
-		if configFile.Vendor == catalogVendorDell && !fileExists(configFile.LocalCatalogPath) {
-			return fmt.Errorf("the '%s' field must be a valid file path", value)
+		if configFile.Vendor == catalogVendorDell {
+			if configFile.CatalogUrl == "" && !fileExists(configFile.LocalCatalogPath) {
+				return fmt.Errorf("the '%s' field must be a valid catalog file path when no catalog URL is passed in the config file", value)
+			}
 		}
 
 		if configFile.Vendor == catalogVendorLenovo && !folderExists(configFile.LocalCatalogPath) {

@@ -178,7 +178,7 @@ func parseDellCatalog(client metalcloud.MetalCloudClient, configFile rawConfigFi
 }
 
 func processDellCatalog(configFile rawConfigFile) (firmwareCatalog, manifest, error) {
-	if configFile.CatalogUrl != "" && configFile.OverwriteCatalogs {
+	if configFile.CatalogUrl != "" {
 		err := downloadDellCatalog(configFile.CatalogUrl, configFile.LocalCatalogPath)
 		if err != nil {
 			return firmwareCatalog{}, manifest{}, err
