@@ -46,7 +46,6 @@ var SwitchDefaultsCmds = []command.Command{
 		InitFunc: func(c *command.Command) {
 			c.Arguments = map[string]interface{}{
 				"read_config_from_file": c.FlagSet.String("raw-config", command.NilDefaultStr, colors.Red("(Required)")+" Read configuration from file in the format specified with --format."),
-				"read_config_from_pipe": c.FlagSet.Bool("pipe", false, colors.Green("(Flag)")+" If set, read configuration from pipe instead of from a file. Either this flag or the --raw-config option must be used."),
 			}
 		},
 		ExecuteFunc: switchDefaultsCreateCmd,
@@ -147,12 +146,12 @@ func switchDefaultsListCmd(c *command.Command, client metalcloud.MetalCloudClien
 		},
 		{
 			FieldName: "Serial Number",
-			FieldType: tableformatter.TypeString,
+			FieldType: tableformatter.TypeInterface,
 			FieldSize: 6,
 		},
 		{
 			FieldName: "Management MAC",
-			FieldType: tableformatter.TypeString,
+			FieldType: tableformatter.TypeInterface,
 			FieldSize: 6,
 		},
 		{
@@ -243,15 +242,11 @@ func switchDefaultsCreateCmd(c *command.Command, client metalcloud.MetalCloudCli
 
 	for idx, obj := range defaults {
 		if obj.DatacenterName == "" {
-			return "", fmt.Errorf("datacenter name is required for switch defaults #%d.", idx)
+			return "", fmt.Errorf("datacenter name is required for switch defaults #%d.", idx + 1)
 		}
 
-		if obj.NetworkEquipmentSerialNumber == "" {
-			return "", fmt.Errorf("serial number is required for switch defaults #%d.", idx)
-		}
-
-		if obj.NetworkEquipmentManagementMacAddress == "" {
-			return "", fmt.Errorf("management MAC address is required for switch defaults #%d.", idx)
+		if obj.NetworkEquipmentSerialNumber == new(string) && obj.NetworkEquipmentManagementMacAddress == new(string) {
+			return "", fmt.Errorf("at least one of serial number or management MAC address must be provided for switch defaults #%d.", idx + 1)
 		}
 	}
 
