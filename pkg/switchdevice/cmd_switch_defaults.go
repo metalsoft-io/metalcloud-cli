@@ -146,12 +146,12 @@ func switchDefaultsListCmd(c *command.Command, client metalcloud.MetalCloudClien
 		},
 		{
 			FieldName: "Serial Number",
-			FieldType: tableformatter.TypeInterface,
+			FieldType: tableformatter.TypeString,
 			FieldSize: 6,
 		},
 		{
 			FieldName: "Management MAC",
-			FieldType: tableformatter.TypeInterface,
+			FieldType: tableformatter.TypeString,
 			FieldSize: 6,
 		},
 		{
@@ -194,10 +194,20 @@ func switchDefaultsListCmd(c *command.Command, client metalcloud.MetalCloudClien
 	data := [][]interface{}{}
 
 	for _, obj := range *list {
+		serialNumber := obj.NetworkEquipmentSerialNumber
+		if serialNumber == nil {
+			serialNumber = new(string)
+		}
+
+		macAddress := obj.NetworkEquipmentManagementMacAddress
+		if macAddress == nil {
+			macAddress = new(string)
+		}
+
 		data = append(data, []interface{}{
 			obj.NetworkEquipmentDefaultsID,
-			obj.NetworkEquipmentSerialNumber,
-			obj.NetworkEquipmentManagementMacAddress,
+			*serialNumber,
+			*macAddress,
 			obj.NetworkEquipmentPosition,
 			obj.NetworkEquipmentIdentifierString,
 			obj.NetworkEquipmentAsn,
