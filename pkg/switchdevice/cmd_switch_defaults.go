@@ -45,7 +45,7 @@ var SwitchDefaultsCmds = []command.Command{
 		FlagSet:      flag.NewFlagSet("Create switch defaults", flag.ExitOnError),
 		InitFunc: func(c *command.Command) {
 			c.Arguments = map[string]interface{}{
-				"read_config_from_file": c.FlagSet.String("raw-config", command.NilDefaultStr, colors.Red("(Required)")+" Read configuration from file in the format specified with --format."),
+				"read_config_from_file": c.FlagSet.String("raw-config", command.NilDefaultStr, colors.Red("(Required)")+" Read configuration from a yaml file."),
 			}
 		},
 		ExecuteFunc: switchDefaultsCreateCmd,
