@@ -25,11 +25,14 @@ func TestSwitchDefaultsList(t *testing.T) {
 
 	client := mock_metalcloud.NewMockMetalCloudClient(ctrl)
 
+	serialNumber := "ABCDEF"
+	managementMacAddress := "00:00:00:00:00:00"
+	
 	list := []metalcloud.SwitchDeviceDefaults{
 		{
 			NetworkEquipmentDefaultsID:           100,
-			NetworkEquipmentSerialNumber:         "ABCDEF",
-			NetworkEquipmentManagementMacAddress: "00:00:00:00:00:00",
+			NetworkEquipmentSerialNumber:         &serialNumber,
+			NetworkEquipmentManagementMacAddress: &managementMacAddress,
 		},
 	}
 
