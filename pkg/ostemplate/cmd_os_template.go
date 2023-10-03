@@ -4,15 +4,14 @@ import (
 	"bufio"
 	"bytes"
 	"context"
-	"encoding/base64"
 	"errors"
 	"flag"
 	"fmt"
-	"io/ioutil"
+	"io"
 	"net"
 	"os"
+	"path"
 	"path/filepath"
-	"regexp"
 	"strings"
 
 	metalcloud "github.com/metalsoft-io/metal-cloud-sdk-go/v2"
@@ -36,11 +35,10 @@ import (
 
 	kh "golang.org/x/crypto/ssh/knownhosts"
 
-	netHTTP "net/http"
-
 	"github.com/metalsoft-io/metalcloud-cli/internal/colors"
 	"github.com/metalsoft-io/metalcloud-cli/internal/command"
 	"github.com/metalsoft-io/metalcloud-cli/internal/configuration"
+	"github.com/metalsoft-io/metalcloud-cli/internal/networking"
 	"github.com/metalsoft-io/metalcloud-cli/internal/stringutils"
 
 	"github.com/metalsoft-io/metalcloud-cli/pkg/osasset"
@@ -365,19 +363,19 @@ var OsTemplatesCmds = []command.Command{
 				"repo":            c.FlagSet.String("repo", command.NilDefaultStr, colors.Yellow("(Optional)")+"Override the default github url used to download template files for given OS."),
 				// Add this parameter when ISO upload is allowed
 				// "skip-upload-to-repo":      c.FlagSet.Bool("skip-upload-to-repo", false, colors.Yellow("(Optional)")+"Skip ISO image upload to the HTTP repository."),
-				"strict-host-key-checking": c.FlagSet.Bool("strict-host-key-checking", true, colors.Yellow("(Optional)")+"Skip the manual check when adding a host key to the known_hosts file in the ISO image upload process."),
-				"replace-if-exists":        c.FlagSet.Bool("replace-if-exists", false, colors.Yellow("(Optional)")+"Replaces ISO image if one already exists in the HTTP repository."),
-				"debug":                    c.FlagSet.Bool("debug", false, colors.Green("(Flag)")+"If set, increases log level."),
-				"return-id":                c.FlagSet.Bool("return-id", false, colors.Green("(Flag)")+"If set, returns the ID of the generated template. Useful for automation."),
+				"skip-host-key-checking": c.FlagSet.Bool("skip-host-key-checking", true, colors.Yellow("(Optional)")+"Skip the manual check when adding a host key to the known_hosts file in the ISO image upload process."),
+				"replace-if-exists":      c.FlagSet.Bool("replace-if-exists", false, colors.Yellow("(Optional)")+"Replaces ISO image if one already exists in the HTTP repository."),
+				"debug":                  c.FlagSet.Bool("debug", false, colors.Green("(Flag)")+"If set, increases log level."),
+				"return-id":              c.FlagSet.Bool("return-id", false, colors.Green("(Flag)")+"If set, returns the ID of the generated template. Useful for automation."),
 			}
 		},
 		ExecuteFunc: templateRegisterCmd,
 		Endpoint:    configuration.ExtendedEndpoint,
 		Example: `
-		metalcloud-cli os-template register --name test-template --source-template Ubuntu/20.04/oob-uefi-boot --source-iso ubuntu-20.04.4-live-server-amd64.iso —-assets-update user-data:./replace_asset_1,vendor-data:./replace_asset_2
-		metalcloud-cli os-template register --name test-100 --source-template Ubuntu/20.04/oob-uefi-boot --source-iso ubuntu-20.04.4-live-server-amd64.iso --replace-if-exists --strict-host-key-checking=false
-		metalcloud-cli os-template register --name "SONiC Enterprise 4.0.2 - Spine" --source-template "SONiC/4.0.2/sonic-enterprise-premium-spine"
-		`,
+metalcloud-cli os-template register --name test-template --source-template Ubuntu/20.04/oob-uefi-boot --source-iso ubuntu-20.04.4-live-server-amd64.iso —-assets-update user-data:./replace_asset_1,vendor-data:./replace_asset_2
+metalcloud-cli os-template register --name test-100 --source-template Ubuntu/20.04/oob-uefi-boot --source-iso ubuntu-20.04.4-live-server-amd64.iso --replace-if-exists --skip-host-key-checking=false
+metalcloud-cli os-template register --name "SONiC Enterprise 4.0.2 - Spine" --source-template "SONiC/4.0.2/sonic-enterprise-premium-spine"
+`,
 	},
 	{
 		Description:  "Create a diff file.",
@@ -1335,9 +1333,9 @@ func retrieveRepositoryAssets(c *command.Command, repoMap map[string]RepoTemplat
 	getRepositoryTemplateAssets(tree, repoMap, repoAssetsPerTemplate)
 	repoHasErrors := false
 
-	for templatePreffix, repoTemplate := range repoMap {
+	for templatePrefix, repoTemplate := range repoMap {
 		repoTemplate.Assets = make(map[string]TemplateAsset)
-		for _, asset := range repoAssetsPerTemplate[templatePreffix] {
+		for _, asset := range repoAssetsPerTemplate[templatePrefix] {
 			repoTemplate.Assets[asset.name] = asset
 		}
 
@@ -1347,7 +1345,7 @@ func retrieveRepositoryAssets(c *command.Command, repoMap map[string]RepoTemplat
 			return err
 		}
 
-		repoMap[templatePreffix] = repoTemplate
+		repoMap[templatePrefix] = repoTemplate
 	}
 
 	if repoHasErrors {
@@ -1558,7 +1556,7 @@ func checkOOBTemplateIntegrity(c *command.Command, repoTemplate RepoTemplate) er
 		return fmt.Errorf("The 'source-iso' parameter must be specified with the 'name' and 'source-template' ones for OOB templates.")
 	}
 
-	if !regexCheckIfUrl(imagePath) {
+	if !networking.CheckValidUrl(imagePath) {
 		file, err := os.Open(imagePath)
 
 		if err != nil {
@@ -1601,7 +1599,7 @@ func checkOOBTemplateIntegrity(c *command.Command, repoTemplate RepoTemplate) er
 				return fmt.Errorf("Could not apply patch asset as the bootloader config file with name '%s' was not found in the given ISO image.", asset.name)
 			}
 
-			bootloaderData, err := ioutil.ReadAll(bootloaderFile.Reader())
+			bootloaderData, err := io.ReadAll(bootloaderFile.Reader())
 
 			if err != nil {
 				return err
@@ -1857,21 +1855,6 @@ func createIsoImageAsset(c *command.Command, repoTemplate RepoTemplate, assets *
 	return nil
 }
 
-func regexCheckIfUrl(result string) bool {
-	m, err := regexp.MatchString(`(?m)(http:|https:).*`, result)
-	if err != nil {
-		//fmt.Println("your regex is faulty")
-		// you should log it or throw an error
-		//return err.Error()
-		return false
-	}
-	if m {
-		return true
-	} else {
-		return false
-	}
-}
-
 func handleIsoImageUpload(c *command.Command, imageRepositoryHostname string, isoPath string, imagePath string) (string, error) {
 	remoteDirectoryPath := defaultImageRepositorySSHPath
 
@@ -1894,8 +1877,8 @@ func handleIsoImageUpload(c *command.Command, imageRepositoryHostname string, is
 	}
 
 	originalImagePath, _ := command.GetStringParamOk(c.Arguments["source-iso"])
-	if !regexCheckIfUrl(originalImagePath) {
 
+	if !networking.CheckValidUrl(imagePath) {
 		originalImageFilenameArr := strings.Split(originalImagePath, "/")
 		originalImageFilename := originalImageFilenameArr[len(originalImageFilenameArr)-1]
 		imageFilename := strings.ReplaceAll(originalImageFilename, " ", "_")
@@ -1908,7 +1891,7 @@ func handleIsoImageUpload(c *command.Command, imageRepositoryHostname string, is
 		if !command.GetBoolParam(c.Arguments["skip-upload-to-repo"]) {
 			sshRepositoryHostname := imageRepositoryHostname + ":" + remoteSSHPort
 
-			imageExists, err := checkRemoteFileExists(remoteURL, imageFilename)
+			imageExists, err := networking.CheckRemoteFileExists(remoteURL, imageFilename)
 
 			if err != nil {
 				return "", err
@@ -1988,7 +1971,7 @@ Add correct host key in %s to get rid of this message.
 Host key for %s has changed and you have requested strict checking.
 Host key verification failed.
 `,
-								serializeSSHKey(publicKey), knownHostsFilePath, hostname,
+								networking.SerializeSSHKey(publicKey), knownHostsFilePath, hostname,
 							)
 							return keyError
 						} else {
@@ -2000,10 +1983,10 @@ This key is not known by any other names.
 It will be added to known_hosts file %s.
 Are you sure you want to continue connecting (yes/no)?
 `,
-								hostname, serializeSSHKey(publicKey), knownHostsFilePath,
+								hostname, networking.SerializeSSHKey(publicKey), knownHostsFilePath,
 							)
 
-							if command.GetBoolParam(c.Arguments["strict-host-key-checking"]) {
+							if command.GetBoolParam(c.Arguments["skip-host-key-checking"]) {
 								reader := bufio.NewReader(os.Stdin)
 								input, err := reader.ReadString('\n')
 
@@ -2024,10 +2007,10 @@ Are you sure you want to continue connecting (yes/no)?
 									return keyError
 								}
 							} else {
-								fmt.Printf("Skipped manual check because 'strict-host-key-checking' is set to false.")
+								fmt.Printf("Skipped manual check because 'skip-host-key-checking' is set to false.")
 							}
 
-							return addHostKey(knownHostsFilePath, remoteAddress, publicKey)
+							return networking.AddHostKey(knownHostsFilePath, remoteAddress, publicKey)
 						}
 					}
 
@@ -2071,8 +2054,8 @@ Are you sure you want to continue connecting (yes/no)?
 		} else {
 			fmt.Printf("Skipped uploading image to repository at path %s.", remotePath)
 		}
-
 	}
+
 	return "", nil
 }
 
@@ -2300,9 +2283,9 @@ func templateValidateRepoCmd(c *command.Command, client metalcloud.MetalCloudCli
 		return "", err
 	}
 
-	for templatePreffix, repoTemplate := range repoMap {
+	for templatePrefix, repoTemplate := range repoMap {
 		if len(repoTemplate.Errors) != 0 {
-			fmt.Printf("Detected the following errors regarding repository structure for template %s:\n", templatePreffix)
+			fmt.Printf("Detected the following errors regarding repository structure for template %s:\n", templatePrefix)
 		}
 
 		for _, errorMessage := range repoTemplate.Errors {
@@ -2354,7 +2337,11 @@ func templateValidateCmd(c *command.Command, client metalcloud.MetalCloudClient)
 			return "", fmt.Errorf("Template file not found at path %s.", sourceTemplate)
 		}
 
-		getLocalTemplateAssets(filepath.Dir(sourceTemplate), &repoTemplate)
+		err = getLocalTemplateAssets(filepath.Dir(sourceTemplate), &repoTemplate)
+		if err != nil {
+			return "", err
+		}
+
 		_, err = populateTemplateValues(&repoTemplate)
 
 		if err != nil {
@@ -2405,60 +2392,13 @@ func sliceDifference(slice1 []string, slice2 []string) []string {
 	return diff
 }
 
-// Add host key if host is not found in known_hosts.
-// The return object is the error, if nil then connection proceeds, else connection stops.
-func addHostKey(knownHostsFilePath string, remoteAddress net.Addr, publicKey ssh.PublicKey) error {
-	knownHostsFile, err := os.OpenFile(knownHostsFilePath, os.O_APPEND|os.O_WRONLY, 0644)
-	if err != nil {
-		return fmt.Errorf("Hosts file not found at path %s.", knownHostsFilePath)
-	}
-	defer knownHostsFile.Close()
-
-	fileBytes, err := os.ReadFile(knownHostsFilePath)
-
-	// We add an empty line if the file doesn't end in one and if it's not empty to begin with.
-	if len(fileBytes) > 0 && string(fileBytes[len(fileBytes)-1]) != "\r" && string(fileBytes[len(fileBytes)-1]) != "\n" {
-		_, err = knownHostsFile.WriteString("\n")
-
-		if err != nil {
-			return err
-		}
-	}
-
-	knownHosts := kh.Normalize(remoteAddress.String())
-	_, err = knownHostsFile.WriteString(kh.Line([]string{knownHosts}, publicKey))
-
-	fmt.Printf("Added key %s to known_hosts file %s.", serializeSSHKey(publicKey), knownHostsFilePath)
-	return err
-}
-
-func serializeSSHKey(key ssh.PublicKey) string {
-	return key.Type() + " " + base64.StdEncoding.EncodeToString(key.Marshal())
-}
-
-func checkRemoteFileExists(remoteURL string, fileName string) (bool, error) {
-	resp, err := netHTTP.Get(remoteURL)
-
-	if err != nil {
-		return false, err
-	}
-
-	body, err := ioutil.ReadAll(resp.Body)
-	if err != nil {
-		return false, err
-	}
-
-	responseBody := string(body)
-	return strings.Contains(responseBody, fileName), nil
-}
-
 func getRepositoryTemplateAssets(tree *object.Tree, repoMap map[string]RepoTemplate, repoAssetsPerTemplate map[string][]TemplateAsset) {
 	files := tree.Files()
 	files.ForEach(func(file *object.File) error {
 		if file.Mode.IsRegular() {
 			if strings.Count(file.Name, "/") == 3 {
 				parts := strings.Split(file.Name, "/")
-				templatePreffix := strings.Join(parts[:3], "/")
+				templatePrefix := strings.Join(parts[:3], "/")
 
 				fileContents, err := file.Contents()
 
@@ -2467,9 +2407,9 @@ func getRepositoryTemplateAssets(tree *object.Tree, repoMap map[string]RepoTempl
 				}
 
 				if parts[3] == templateFileName {
-					if _, ok := repoMap[templatePreffix]; !ok {
-						repoMap[templatePreffix] = RepoTemplate{
-							SourcePath:           templatePreffix,
+					if _, ok := repoMap[templatePrefix]; !ok {
+						repoMap[templatePrefix] = RepoTemplate{
+							SourcePath:           templatePrefix,
 							TemplateFileContents: fileContents,
 						}
 					}
@@ -2479,7 +2419,7 @@ func getRepositoryTemplateAssets(tree *object.Tree, repoMap map[string]RepoTempl
 						contents: fileContents,
 					}
 
-					repoAssetsPerTemplate[templatePreffix] = append(repoAssetsPerTemplate[templatePreffix], asset)
+					repoAssetsPerTemplate[templatePrefix] = append(repoAssetsPerTemplate[templatePrefix], asset)
 				}
 			}
 		}
@@ -2502,13 +2442,12 @@ func getLocalTemplateAssets(dirName string, repoTemplate *RepoTemplate) error {
 	}
 
 	repoAssets := []TemplateAsset{}
-
 	for _, file := range files {
 		if file.IsDir() || file.Name() == readMeFileName {
 			continue
 		}
 
-		fileBytes, err := os.ReadFile(file.Name())
+		fileBytes, err := os.ReadFile(path.Join(dirName, file.Name()))
 
 		if err != nil {
 			return err

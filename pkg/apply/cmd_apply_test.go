@@ -2,7 +2,7 @@ package apply
 
 import (
 	"fmt"
-	"io/ioutil"
+	"os"
 	"syscall"
 	"testing"
 
@@ -184,7 +184,7 @@ func TestApply(t *testing.T) {
 	}
 
 	for _, c := range applyTestCases {
-		f, err := ioutil.TempFile("./", "testapply-*.yaml")
+		f, err := os.CreateTemp("./", "testapply-*.yaml")
 		if err != nil {
 			t.Error(err)
 		}
@@ -306,7 +306,7 @@ func TestDelete(t *testing.T) {
 	}
 
 	for _, c := range applyTestCases {
-		f, err := ioutil.TempFile("./", "testdelete-*.yaml")
+		f, err := os.CreateTemp("./", "testdelete-*.yaml")
 		if err != nil {
 			t.Error(err)
 		}
@@ -337,7 +337,7 @@ func TestReadObjectsFromCommand(t *testing.T) {
 	client := mock_metalcloud.NewMockMetalCloudClient(ctrl)
 
 	for _, c := range readFromFileTestCases {
-		f, err := ioutil.TempFile("./", "testread-*.yaml")
+		f, err := os.CreateTemp("./", "testread-*.yaml")
 		if err != nil {
 			t.Error(err)
 		}

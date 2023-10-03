@@ -45,7 +45,7 @@ var DatacenterCmds = []command.Command{
 			c.Arguments = map[string]interface{}{
 				"datacenter_name":         c.FlagSet.String("id", command.NilDefaultStr, colors.Red("(Required)")+" Label of the datacenter. Also used as an ID."),
 				"datacenter_display_name": c.FlagSet.String("title", command.NilDefaultStr, colors.Red("(Required)")+" Human readable name of the datacenter. Usually includes the location such as UK,Reading"),
-				"read_config_from_file":   c.FlagSet.String("config", command.NilDefaultStr, colors.Red("(Required)")+" Read datacenter configuration from file"),
+				"read_config_from_file":   c.FlagSet.String("raw-config", command.NilDefaultStr, colors.Red("(Required)")+" Read datacenter configuration from file"),
 				"datacenter_name_parent":  c.FlagSet.String("parent", command.NilDefaultStr, "If the datacenter is subordonated to another datacenter such as to a near-edge site."),
 				"create_hidden":           c.FlagSet.Bool("hidden", false, colors.Green("(Flag)")+" If set, the datacenter will be hidden after creation instead."),
 				"is_master":               c.FlagSet.Bool("master", false, colors.Green("(Flag)")+" If set, the datacenter will be the master dc."),
@@ -89,7 +89,7 @@ var DatacenterCmds = []command.Command{
 		InitFunc: func(c *command.Command) {
 			c.Arguments = map[string]interface{}{
 				"datacenter_name":       c.FlagSet.String("id", command.NilDefaultStr, colors.Red("(Required)")+" Label of the datacenter. Also used as an ID."),
-				"read_config_from_file": c.FlagSet.String("config", command.NilDefaultStr, colors.Red("(Required)")+" Read datacenter configuration from file"),
+				"read_config_from_file": c.FlagSet.String("raw-config", command.NilDefaultStr, colors.Red("(Required)")+" Read datacenter configuration from file"),
 				"read_config_from_pipe": c.FlagSet.Bool("pipe", false, colors.Green("(Flag)")+" If set, read datacenter configuration from pipe instead of from a file. Either this flag or the -config option must be used."),
 				"format":                c.FlagSet.String("format", "json", "The input format. Supported values are 'json','yaml'. The default format is json."),
 			}
@@ -258,7 +258,7 @@ func datacenterCreateCmd(c *command.Command, client metalcloud.MetalCloudClient)
 
 			content, err = configuration.ReadInputFromFile(configFilePath)
 		} else {
-			return "", fmt.Errorf("-config <path_to_json_file> or -pipe is required")
+			return "", fmt.Errorf("-raw-config <path_to_json_file> or -pipe is required")
 		}
 	}
 
@@ -530,7 +530,7 @@ func datacenterUpdateCmd(c *command.Command, client metalcloud.MetalCloudClient)
 
 			content, err = configuration.ReadInputFromFile(configFilePath)
 		} else {
-			return "", fmt.Errorf("-config <path_to_json_file> or -pipe is required")
+			return "", fmt.Errorf("-raw-config <path_to_json_file> or -pipe is required")
 		}
 	}
 

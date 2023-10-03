@@ -219,10 +219,9 @@ func GetRawObjectFromCommand(c *Command, obj interface{}) error {
 	} else {
 
 		if configFilePath, ok := GetStringParamOk(c.Arguments["read_config_from_file"]); ok {
-
 			content, err = configuration.ReadInputFromFile(configFilePath)
 		} else {
-			return fmt.Errorf("-config <path_to_json_file> or -pipe is required")
+			return fmt.Errorf("-raw-config <path_to_json_file> or -pipe is required")
 		}
 	}
 
@@ -235,17 +234,16 @@ func GetRawObjectFromCommand(c *Command, obj interface{}) error {
 	}
 
 	format := GetStringParam(c.Arguments["format"])
-
 	switch format {
 	case "json":
 		err := json.Unmarshal(content, obj)
 		if err != nil {
-			return err
+			return fmt.Errorf("error unmarshalling json: %v. Make sure the raw config file is in the correct format", err)
 		}
 	case "yaml":
 		err := yaml.Unmarshal(content, obj)
 		if err != nil {
-			return err
+			return fmt.Errorf("error unmarshalling yaml: %v. Make sure the raw config file is in the correct format", err)
 		}
 	default:
 		return fmt.Errorf("input format \"%s\" not supported", format)
@@ -390,7 +388,6 @@ func RequestInputSilent(s string) ([]byte, error) {
 }
 
 func RequestInput(s string) ([]byte, error) {
-
 	fmt.Fprintf(configuration.GetStdout(), s)
 	reader := bufio.NewReader(configuration.GetStdin())
 	content, err := reader.ReadBytes('\n')
@@ -467,8 +464,8 @@ func ExecuteCommand(args []string, commands []Command, clients map[string]metalc
 
 	cmd.InitFunc(cmd)
 
-	if flag := cmd.FlagSet.Lookup("no_color"); flag == nil {
-		cmd.Arguments["no_color"] = cmd.FlagSet.Bool("no_color", false, "Disable coloring.")
+	if flag := cmd.FlagSet.Lookup("no-color"); flag == nil {
+		cmd.Arguments["no_color"] = cmd.FlagSet.Bool("no-color", false, colors.Green("(Flag)")+" Disable coloring.")
 	}
 
 	//disable default usage
@@ -476,14 +473,25 @@ func ExecuteCommand(args []string, commands []Command, clients map[string]metalc
 
 	colors.SetColoringEnabled(true)
 
+	noColorEnabled := false
+	commandHelp := false
+
 	for _, a := range args {
-		if a == "-h" || a == "-help" || a == "--help" {
-			return fmt.Errorf(GetCommandHelp(*cmd, true))
+		if a == "--no-color" || a == "-no-color" {
+			noColorEnabled = true
 		}
 
-		if a == "--no_color" || a == "-no_color" {
-			colors.SetColoringEnabled(false)
+		if a == "-h" || a == "-help" || a == "--help" {
+			commandHelp = true
 		}
+	}
+
+	if noColorEnabled {
+		colors.SetColoringEnabled(false)
+	}
+
+	if commandHelp {
+		return fmt.Errorf(GetCommandHelp(*cmd, true))
 	}
 
 	err := cmd.FlagSet.Parse(args[count+1:])

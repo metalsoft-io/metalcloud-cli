@@ -14,6 +14,10 @@ builds:
     # GOOS list to build for.
       # For more info refer to: https://golang.org/doc/install/source#environment
       # Defaults are darwin and linux.
+  ldflags:
+    - -X "github.com/metalsoft-io/metalcloud-cli/internal/configuration.Version={{ .Tag }}"
+    - -X "github.com/metalsoft-io/metalcloud-cli/internal/configuration.Commit={{ .ShortCommit }}"
+    - -X "github.com/metalsoft-io/metalcloud-cli/internal/configuration.Date={{ .Date }}"
   goos:
     - linux
     - darwin

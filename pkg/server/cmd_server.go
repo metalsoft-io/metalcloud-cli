@@ -42,7 +42,7 @@ var ServersCmds = []command.Command{
 		Example: `
 metalcloud-cli server list --filter "available used" # to show all available and used servers. One of: [available|unavailable|used|cleaning|registering]
 metalcloud-cli server list --show-credentials # to retrieve a list of credentials. Note: this will take a longer time.
-		`,
+`,
 	},
 
 	{
@@ -1979,8 +1979,9 @@ func serverDefaultCredentialsAddCmd(c *command.Command, client metalcloud.MetalC
 }
 
 func getMultipleServerDefaultCredentialsFromYamlFile(filePath string) ([]metalcloud.ServerDefaultCredentials, error) {
-
 	file, err := os.Open(filePath)
+	defer file.Close()
+
 	if err != nil {
 		if errors.Is(err, os.ErrNotExist) {
 			return []metalcloud.ServerDefaultCredentials{}, nil
@@ -2011,8 +2012,6 @@ func getMultipleServerDefaultCredentialsFromYamlFile(filePath string) ([]metalcl
 		}
 	}
 
-	file.Close()
-
 	return records, nil
 }
 
@@ -2035,7 +2034,7 @@ func serverEditCmd(c *command.Command, client metalcloud.MetalCloudClient) (stri
 	readFromPipe := command.GetBoolParam(c.Arguments["read_config_from_pipe"])
 
 	if (readFromFile || readFromPipe) && (setStatus || setIPMIHostname || setIPMIUsername || setIPMIPassword) {
-		return "", fmt.Errorf("Cannot use --config or --pipe with --status or --ipmi-host or --ipmi-user or --ipmi-pass")
+		return "", fmt.Errorf("Cannot use --raw-config or --pipe with --status or --ipmi-host or --ipmi-user or --ipmi-pass")
 	}
 
 	newServer := *server
