@@ -1,6 +1,6 @@
 module github.com/metalsoft-io/metalcloud-cli
 
-go 1.18
+go 1.21
 
 require (
 	github.com/atomicgo/cursor v0.0.1
