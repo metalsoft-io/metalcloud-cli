@@ -95,11 +95,14 @@ func SerializeSSHKey(key ssh.PublicKey) string {
 func AddHostKey(knownHostsFilePath string, remoteAddress net.Addr, publicKey ssh.PublicKey) error {
 	knownHostsFile, err := os.OpenFile(knownHostsFilePath, os.O_APPEND|os.O_WRONLY, 0644)
 	if err != nil {
-		return fmt.Errorf("hosts file not found at path %s.", knownHostsFilePath)
+		return fmt.Errorf("hosts file not found at path %s", knownHostsFilePath)
 	}
 	defer knownHostsFile.Close()
 
 	fileBytes, err := os.ReadFile(knownHostsFilePath)
+	if err != nil {
+		return err
+	}
 
 	// We add an empty line if the file doesn't end in one and if it's not empty to begin with.
 	if len(fileBytes) > 0 && string(fileBytes[len(fileBytes)-1]) != "\r" && string(fileBytes[len(fileBytes)-1]) != "\n" {
