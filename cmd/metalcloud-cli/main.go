@@ -8,10 +8,9 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/metalsoft-io/metalcloud-cli/internal/configuration"
 	"github.com/metalsoft-io/metalcloud-cli/internal/command"
+	"github.com/metalsoft-io/metalcloud-cli/internal/configuration"
 	"github.com/metalsoft-io/tableformatter"
-
 )
 
 func main() {

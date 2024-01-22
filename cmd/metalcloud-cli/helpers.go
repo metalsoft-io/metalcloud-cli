@@ -7,10 +7,11 @@ import (
 	"strings"
 
 	metalcloud "github.com/metalsoft-io/metal-cloud-sdk-go/v2"
-	"github.com/metalsoft-io/metalcloud-cli/internal/configuration"
 	"github.com/metalsoft-io/metalcloud-cli/internal/command"
+	"github.com/metalsoft-io/metalcloud-cli/internal/configuration"
 
 	"github.com/metalsoft-io/metalcloud-cli/pkg/apply"
+	"github.com/metalsoft-io/metalcloud-cli/pkg/custom_isos"
 	"github.com/metalsoft-io/metalcloud-cli/pkg/datacenter"
 	"github.com/metalsoft-io/metalcloud-cli/pkg/drive"
 	"github.com/metalsoft-io/metalcloud-cli/pkg/firewall"
@@ -123,6 +124,7 @@ func validateAPIKey(apiKey string) error {
 func getCommands(clients map[string]metalcloud.MetalCloudClient) []command.Command {
 	commands := [][]command.Command{
 		apply.ApplyCmds,
+		custom_isos.CustomISOCmds,
 		datacenter.DatacenterCmds,
 		drive.DriveArrayCmds,
 		drive.DriveSnapshotCmds,

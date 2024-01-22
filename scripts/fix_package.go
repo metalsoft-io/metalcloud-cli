@@ -53,6 +53,7 @@ var types = [...]string{
 	"SubnetPool",
 	"SubnetPoolUtilization",
 	"ServerCreateUnmanaged",
+	"CustomISO",
 }
 
 const packageName = "metalcloud"
