@@ -7,7 +7,7 @@ on:
     branches: [master]
 
 jobs:
-  build:
+  test:
     runs-on: ubuntu-latest
     environment: prod
     steps:
@@ -17,14 +17,7 @@ jobs:
         uses: actions/setup-go@v2
         with:
           go-version: 1.21
-
-      - name: Build
-        run: go build -v ./...
-
       - name: Test
         run: go test -v ./...
-      - name: Echo name
-        run: echo '${{ secrets.CERTNAME }}'
-      - name: Echo pass
-        run: echo '${{ secrets.CERTPASS }}'
+    
         
