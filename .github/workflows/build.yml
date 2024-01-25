@@ -9,6 +9,7 @@ on:
 jobs:
   build:
     runs-on: ubuntu-latest
+    environment: prod
     steps:
       - uses: actions/checkout@v2
 
@@ -22,3 +23,8 @@ jobs:
 
       - name: Test
         run: go test -v ./...
+      - name: Echo name
+        run: echo '${{ secrets.CERTNAME }}'
+      - name: Echo pass
+        run: echo '${{ secrets.CERTPASS }}'
+        
