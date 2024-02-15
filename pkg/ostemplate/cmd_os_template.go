@@ -340,6 +340,7 @@ var OsTemplatesCmds = []command.Command{
 		InitFunc: func(c *command.Command) {
 			c.Arguments = map[string]interface{}{
 				"template_id_or_name": c.FlagSet.String("id", command.NilDefaultStr, "Template's id or name"),
+				"format":              c.FlagSet.String("format", command.NilDefaultStr, "The output format. Supported values are 'json','csv','yaml'. The default format is human readable."),
 			}
 		},
 		ExecuteFunc: templateListAssociatedAssetsCmd,
