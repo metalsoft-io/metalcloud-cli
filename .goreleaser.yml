@@ -21,9 +21,8 @@ builds:
   goos:
     - linux
     - darwin
-#   - windows
-  main: ./cmd/metalcloud-cli
-  command: 'build cmd/.'
+    - windows
+  main: ./cmd/metalcloud-cli/main.go
 
 archives:
 - id: archive
