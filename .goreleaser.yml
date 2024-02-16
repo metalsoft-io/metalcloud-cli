@@ -22,8 +22,8 @@ builds:
     - linux
     - darwin
     - windows
-  main: ./cmd/metalcloud-cli/main.go
-
+  main: ./cmd/metalcloud-cli
+  
 archives:
 - id: archive
   name_template: >-
