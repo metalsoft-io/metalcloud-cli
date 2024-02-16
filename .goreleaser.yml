@@ -23,6 +23,7 @@ builds:
     - darwin
 #   - windows
   main: ./cmd/metalcloud-cli
+  command: 'build cmd/.'
 
 archives:
 - id: archive
