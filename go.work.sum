@@ -14,7 +14,9 @@ github.com/metalsoft-io/metal-cloud-sdk-go/v2 v2.9.6 h1:9dDj9GPYZcXLJQuD92cpkqTN
 github.com/metalsoft-io/metal-cloud-sdk-go/v2 v2.9.6/go.mod h1:aIlz3yqSoyMSpxUIxSn5Ihpd1XEjwf5jMnfI4iLRVOU=
 github.com/metalsoft-io/metal-cloud-sdk-go/v2 v2.10.2 h1:hxrEukwVHZkot/hqAf5PxfjIk3+7LvMtwZ09xETEZYM=
 github.com/metalsoft-io/metal-cloud-sdk-go/v2 v2.10.2/go.mod h1:aIlz3yqSoyMSpxUIxSn5Ihpd1XEjwf5jMnfI4iLRVOU=
-github.com/metalsoft-io/metal-cloud-sdk-go/v2 v2.10.6 h1:d+YBVmsAlxf2C8tdvJ6MG8X1sPnlqSetbgXBAh53CFA=
-github.com/metalsoft-io/metal-cloud-sdk-go/v2 v2.10.6/go.mod h1:aIlz3yqSoyMSpxUIxSn5Ihpd1XEjwf5jMnfI4iLRVOU=
+github.com/metalsoft-io/metal-cloud-sdk-go/v2 v2.12.0 h1:0zu1scc4lJj/WAH6pdUfmx7Ieyl8dETQe1G1TfqedWg=
+github.com/metalsoft-io/metal-cloud-sdk-go/v2 v2.12.0/go.mod h1:4sa1GQG0XISUUkvChL2iliWa0t3KGKAfB9dsbW2zyh4=
+github.com/metalsoft-io/metal-cloud-sdk-go/v2 v2.12.3 h1:zqGgC43n3bnMx48RPaCNLxu/MeeJenmhM0eZBuIcQh4=
+github.com/metalsoft-io/metal-cloud-sdk-go/v2 v2.12.3/go.mod h1:4sa1GQG0XISUUkvChL2iliWa0t3KGKAfB9dsbW2zyh4=
 golang.org/x/mod v0.11.0/go.mod h1:iBbtSCu2XBx23ZKBPSOrRkjjQPZFPuis4dIYUhu/chs=
 golang.org/x/tools v0.2.0/go.mod h1:y4OqIKeOV/fWJetJ8bXPU1sEVniLMIyDAZWeHdV+NTA=

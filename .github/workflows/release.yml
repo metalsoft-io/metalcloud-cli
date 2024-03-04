@@ -5,6 +5,9 @@ on:
       - "v*"
 jobs:
   build-linux-and-darwin:
+    strategy:
+      matrix:
+        GOOS: [linux, darwin]
     runs-on: ubuntu-latest
     environment: prod
     steps:
@@ -16,49 +19,131 @@ jobs:
         uses: actions/setup-go@v2
         with:
           go-version: 1.21
-      - name: Run GoReleaser
-        uses: goreleaser/goreleaser-action@v4.2.0
+       #we get the release id from the git so we can identify the files in the cache (we use the cache to merge windows and linux/darwin builds)
+      - shell: bash 
+        run: |
+              echo "sha_short=$(git rev-parse --short HEAD)" >> $GITHUB_ENV
+      #save the cache
+      - id: cache
+        uses: actions/cache@v3
+        with:
+          path: dist/${{ matrix.GOOS }}
+          key: ${{ matrix.GOOS }}-${{ env.sha_short }}
+      #build the darwin and linux here notice the split option (requires pro license of goreleaser)
+      -
+        name: Build
+        uses: goreleaser/goreleaser-action@v5
         with:
           version: latest
-          args: release --clean
+          distribution: goreleaser-pro
+          args: release --clean --split
         env:
           GPG_FINGERPRINT: ${{ steps.import_gpg.outputs.fingerprint }}
           # GitHub sets this automatically
-          GITHUB_TOKEN: ${{ secrets.GH_TOKEN_ALEX_HOMEBREW_METALSOFT }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GORELEASER_KEY: ${{ secrets.GORELEASER_KEY }}
+          GOOS: ${{ matrix.GOOS }}
+    
   build-windows:
     runs-on: windows-latest
     environment: prod
     steps:
-      - name: Checkout
-        uses: actions/checkout@v3
-      - name: Unshallow
+      -
+        name: Checkout
+        uses: actions/checkout@v2.3.4
+      -
+        name: Unshallow
         run: git fetch --prune --unshallow
-      - name: Set up Go
+      -
+        name: Set up Go
         uses: actions/setup-go@v2
         with:
           go-version: 1.21
-      - name: Build
-        run: go build .\cmd\metalcloud-cli\
-      #- name: Sign
-      #  uses: "InertiaSystems/code-sign-action@v1.1.0"
-      #  with:
-      #    certificate: "${{ secrets.CSR_CERTIFICATE }}"
-      #    password: "${{secrets.CERTPASS}}"
-      #    certificatesha1: "${{secrets.CERTHASH}}"
-      #    certificatename: "${{ secrets.CERTNAME }}"
-      #    timestampUrl: "http://timestamp.sectigo.com"
-      #    folder: "."
-      #    recursive: false
-      - name: Create Archive
-        uses: TheDoctor0/zip-release@0.6.1
+      - shell: bash
+        run: |
+            echo "sha_short=$(git rev-parse --short HEAD)" >> $GITHUB_ENV
+      - id: cache
+        uses: actions/cache@v3
         with:
-          type: "zip"
-          path: "*.exe"
-          filename: "metalcloud-cli_${{github.ref_name}}_windows_amd64.zip"
-          exclusions: "*.git* /*node_modules/* .editorconfig"
-      - name: Upload Release
-        uses: ncipollo/release-action@v1
+          path: dist/windows
+          key: windows-${{ env.sha_short }}
+          enableCrossOsArchive: true
+      -
+        name: Build
+        uses: goreleaser/goreleaser-action@v5
         with:
-          artifacts: "metalcloud-cli_${{github.ref_name}}_windows_amd64.zip"
-          token: ${{ secrets.GITHUB_TOKEN }}
-          allowUpdates: true
+          version: latest
+          distribution: goreleaser-pro
+          args: release --clean --split
+        env:
+          GPG_FINGERPRINT: ${{ steps.import_gpg.outputs.fingerprint }}
+          # GitHub sets this automatically
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GORELEASER_KEY: ${{ secrets.GORELEASER_KEY }}
+          GOOS: windows
+      -
+        name: Sign the windows exe
+        uses: "InertiaSystems/code-sign-action@v1.1.0"
+        with:
+          certificate: '${{ secrets.CSR_CERTIFICATE }}'
+          password: '${{secrets.CERTPASS}}'
+          certificatesha1: '${{secrets.CERTHASH}}'
+          certificatename: '${{ secrets.CERTNAME }}'
+          timestampUrl: 'http://timestamp.sectigo.com'
+          folder: '.'
+          recursive: falseus
+
+  release:
+      runs-on: ubuntu-latest
+      environment: prod
+      needs: 
+        - build-linux-and-darwin
+        - build-windows
+      steps:
+        -
+          name: Checkout
+          uses: actions/checkout@v2.3.4
+        -
+          name: Unshallow
+          run: git fetch --prune --unshallow
+        - uses: actions/setup-go@v3
+          with:
+            go-version: 1.21
+            cache: true
+        # copy the cashes from prepare
+        - shell: bash
+          run: |
+            echo "sha_short=$(git rev-parse --short HEAD)" >> $GITHUB_ENV
+        - uses: actions/cache@v3
+          with:
+            path: dist/linux
+            key: linux-${{ env.sha_short }}
+        - uses: actions/cache@v3
+          with:
+            path: dist/darwin
+            key: darwin-${{ env.sha_short }}
+        - uses: actions/cache@v3
+          with:
+            path: dist/windows
+            key: windows-${{ env.sha_short }}
+            enableCrossOsArchive: true
+        -
+          name: Import GPG key
+          id: import_gpg
+          uses: crazy-max/ghaction-import-gpg@v5.0.0
+          with: 
+            gpg_private_key: ${{ secrets.GPG_PRIVATE_KEY }}
+            passphrase: ${{ secrets.PASSPHRASE }}
+        -
+          name: Create SHA256 checksums, sign them and release
+          uses: goreleaser/goreleaser-action@v5
+          with:
+            version: latest
+            distribution: goreleaser-pro
+            args: continue --merge
+          env:
+            GPG_FINGERPRINT: ${{ steps.import_gpg.outputs.fingerprint }}
+            # GitHub sets this automatically
+            GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+            GORELEASER_KEY: ${{ secrets.GORELEASER_KEY }}
+            GH_TOKEN_ALEX_HOMEBREW_METALSOFT: ${{ secrets.GH_TOKEN_ALEX_HOMEBREW_METALSOFT }}

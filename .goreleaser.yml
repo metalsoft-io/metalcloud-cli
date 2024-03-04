@@ -21,13 +21,14 @@ builds:
   goos:
     - linux
     - darwin
-#   - windows
+    - windows
   main: ./cmd/metalcloud-cli
-
+  
 archives:
 - id: archive
   name_template: >-
     {{ .ProjectName }}_
+    {{- .Version }}_
     {{- title .Os }}_
     {{- if eq .Arch "amd64" }}x86_64
     {{- else if eq .Arch "386" }}i386
@@ -62,10 +63,10 @@ brews:
     # same kind. We will probably unify this in the next major version like it is done with scoop.
 
     # Github repository to push the tap to.
-    tap:
+    repository:
       owner: metalsoft-io
       name: homebrew-repo
-      #branch: main
+      token: "{{ .Env.GH_TOKEN_ALEX_HOMEBREW_METALSOFT }}"
     
     commit_author:
       name: goreleaserbot

@@ -3,10 +3,10 @@ package datacenter
 import (
 	"encoding/json"
 	"os"
-	"syscall"
-	"testing"
 	"path/filepath"
 	"runtime"
+	"syscall"
+	"testing"
 
 	gomock "github.com/golang/mock/gomock"
 	metalcloud "github.com/metalsoft-io/metal-cloud-sdk-go/v2"
@@ -137,7 +137,7 @@ func TestDatacenterYamlUnmarshal(t *testing.T) {
 	var dcConf metalcloud.DatacenterConfig
 
 	_, b, _, _ := runtime.Caller(0)
-    basePath := filepath.Join(filepath.Dir(b), "..", "..")
+	basePath := filepath.Join(filepath.Dir(b), "..", "..")
 
 	content, err := configuration.ReadInputFromFile(filepath.Join(basePath, "examples", "datacenter.yaml"))
 	Expect(err).To(BeNil())
