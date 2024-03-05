@@ -70,6 +70,7 @@ jobs:
           enableCrossOsArchive: true
       -
         name: Build
+        id: builder
         uses: goreleaser/goreleaser-action@v5
         with:
           version: latest
@@ -85,13 +86,10 @@ jobs:
         name: Setup certificate
         run: |
           echo "${{ secrets.SM_CLIENT_CERT_FILE_B64 }}" | base64 --decode > /d/Certificate_pkcs12.p12
-          cat /d/Certificate_pkcs12.p12
         shell: bash
       -
         name: Set signing variables
-        id: variables
         run: |
-          echo "::set-output name=version::${GITHUB_REF#refs/tags/v}"
           echo "SM_HOST=${{ secrets.SM_HOST }}" >> "$GITHUB_ENV"
           echo "SM_API_KEY=${{ secrets.SM_API_KEY }}" >> "$GITHUB_ENV"
           echo "SM_CLIENT_CERT_FILE=D:\\Certificate_pkcs12.p12" >> "$GITHUB_ENV"
@@ -113,6 +111,7 @@ jobs:
       -
         name: Signing using Signtool
         run: |
+          echo "${{ steps.builder.outputs.artifacts }}"
           for /F %A in ('dir metalcloud-cli.exe /s /b') do signtool.exe sign /sha1 ${{ secrets.SM_CODE_SIGNING_CERT_SHA1_HASH }} /tr http://timestamp.digicert.com /td SHA256 /fd SHA256 "%A"
           for /F %A in ('dir metalcloud-cli.exe /s /b') do signtool.exe verify /v /pa "%A"
 
