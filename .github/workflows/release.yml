@@ -111,8 +111,8 @@ jobs:
         name: Signing using Signtool
         shell: cmd
         run: |
-          for /f "tokens=1,2 delims=,:{} " %A in (dist/windows/artifacts.json) do @if "%~A"=="path" @if %~xB==.exe signtool.exe sign /sha1 ${{ secrets.SM_CODE_SIGNING_CERT_SHA1_HASH }} /tr http://timestamp.digicert.com /td SHA256 /fd SHA256 "%~B"
-          for /f "tokens=1,2 delims=,:{} " %A in (dist/windows/artifacts.json) do @if "%~A"=="path" @if %~xB==.exe signtool.exe verify /v /pa "%~B"
+          for /f "tokens=1,2 delims=,:{} " %%A in (dist/windows/artifacts.json) do @if "%%~A"=="path" @if %%~xB==.exe signtool.exe sign /sha1 ${{ secrets.SM_CODE_SIGNING_CERT_SHA1_HASH }} /tr http://timestamp.digicert.com /td SHA256 /fd SHA256 "%%~B"
+          for /f "tokens=1,2 delims=,:{} " %%A in (dist/windows/artifacts.json) do @if "%%~A"=="path" @if %%~xB==.exe signtool.exe verify /v /pa "%%~B"
 
   release:
       runs-on: ubuntu-latest
