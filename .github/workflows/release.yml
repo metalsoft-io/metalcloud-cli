@@ -110,14 +110,15 @@ jobs:
       -
         name: Signing using Signtool
         run: |
-          ls dist
-          ls dist/windows
-          ls dist/windows/metalcloud-cli_windows_amd64_v1
+          dir dist
+          dir dist/windows
+          dir dist/windows/metalcloud-cli_windows_amd64_v1
           cat dist/windows/artifacts.json
           cat dist/artifacts.json
           echo "${{ steps.goreleaser.outputs.artifacts }}"
           for /F %A in ('dir metalcloud-cli.exe /s /b') do signtool.exe sign /sha1 ${{ secrets.SM_CODE_SIGNING_CERT_SHA1_HASH }} /tr http://timestamp.digicert.com /td SHA256 /fd SHA256 "%A"
           for /F %A in ('dir metalcloud-cli.exe /s /b') do signtool.exe verify /v /pa "%A"
+        shell: cmd
 
   release:
       runs-on: ubuntu-latest
