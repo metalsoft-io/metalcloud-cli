@@ -110,6 +110,9 @@ jobs:
       -
         name: Signing using Signtool
         run: |
+          ls dist
+          ls dist/windows
+          ls dist/windows/metalcloud-cli_windows_amd64_v1
           cat dist/windows/artifacts.json
           cat dist/artifacts.json
           echo "${{ steps.goreleaser.outputs.artifacts }}"
