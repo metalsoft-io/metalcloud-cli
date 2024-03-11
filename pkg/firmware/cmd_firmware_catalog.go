@@ -217,7 +217,7 @@ func firmwareCatalogCreateCmd(c *command.Command, client metalcloud.MetalCloudCl
 		return "", fmt.Errorf("received invalid firmware catalog ID. Catalog might already exist or was not created.")
 	}
 
-	err = sendBinaries(binaryCollection, catalogObject.ServerFirmwareCatalogId)
+	err = sendBinaries(binaryCollection, catalogObject.ServerFirmwareCatalogId, uploadToRepo)
 	if err != nil {
 		return "", err
 	}

@@ -680,7 +680,7 @@ func createCatalogObject(catalog firmwareCatalog) ([]byte, error) {
 	return catalogObject, nil
 }
 
-func sendBinaries(binaryCollection []*firmwareBinary, catalogId int) error {
+func sendBinaries(binaryCollection []*firmwareBinary, catalogId int, uploadToRepo bool) error {
 	endpoint, err := configuration.GetEndpoint()
 	if err != nil {
 		return err
@@ -714,6 +714,10 @@ func sendBinaries(binaryCollection []*firmwareBinary, catalogId int) error {
 
 		if reflect.TypeOf(firmwareBinary.VendorProperties["importantInfo"]) != nil && reflect.TypeOf(firmwareBinary.VendorProperties["importantInfo"]).Kind() == reflect.String {
 			firmwareBinary.VendorProperties["importantInfo"] = trimToSize(firmwareBinary.VendorProperties["importantInfo"].(string), 255)
+		}
+
+		if !uploadToRepo {
+			firmwareBinary.RepoURL = ""
 		}
 
 		firmwareBinary.DownloadURL = trimToSize(firmwareBinary.DownloadURL, 255)
