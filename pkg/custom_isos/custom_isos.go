@@ -111,7 +111,7 @@ func getCustomISOFromCommand(c *command.Command) (*metalcloud.CustomISO, error) 
 		return nil, fmt.Errorf("-url is required")
 	}
 
-	displayName, ok := command.GetStringParamOk(c.Arguments["display-name"])
+	displayName, ok := command.GetStringParamOk(c.Arguments["display_name"])
 	if !ok {
 		displayName = ""
 	}
