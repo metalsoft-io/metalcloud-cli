@@ -182,6 +182,11 @@ func firmwareCatalogCreateCmd(c *command.Command, client metalcloud.MetalCloudCl
 		return "", fmt.Errorf("invalid vendor '%s' found in the raw-config file. Supported vendors are %v", configFile.Vendor, validVendors)
 	}
 
+	// If we detect no binaries, we don't need to download or upload anything. We'll prompt the user that no binaries were found.
+	if len(binaryCollection) == 0 {
+		return "", fmt.Errorf("no binaries were found for the server types provided. Please check if the catalog contains binaries for them and if the vendor SKU IDs are set correctly on the Metalsoft server types.")
+	}
+
 	if downloadBinaries {
 		err := downloadBinariesFromCatalog(binaryCollection, downloadUser, downloadPassword)
 
@@ -214,7 +219,7 @@ func firmwareCatalogCreateCmd(c *command.Command, client metalcloud.MetalCloudCl
 	}
 
 	if catalogObject.ServerFirmwareCatalogId == 0 {
-		return "", fmt.Errorf("received invalid firmware catalog ID. Catalog might already exist or was not created.")
+		return "", fmt.Errorf("received invalid firmware catalog ID. Catalog might already exist or was not created")
 	}
 
 	err = sendBinaries(binaryCollection, catalogObject.ServerFirmwareCatalogId, uploadToRepo)

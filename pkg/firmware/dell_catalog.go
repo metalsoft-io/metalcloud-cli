@@ -262,7 +262,7 @@ func processDellBinaries(configFile rawConfigFile, dellManifest manifest, catalo
 		url, err := url.Parse(configFile.CatalogUrl)
 
 		if err != nil {
-			return nil, fmt.Errorf("Unable to parse catalog URL: %v", err)
+			return nil, fmt.Errorf("unable to parse catalog URL: %v", err)
 		}
 
 		baseCatalogURL = url.Scheme + "://" + url.Host
@@ -274,7 +274,7 @@ func processDellBinaries(configFile rawConfigFile, dellManifest manifest, catalo
 		var err error
 		repositoryURL, err = configuration.GetFirmwareRepositoryURL()
 		if uploadToRepo && err != nil {
-			return nil, fmt.Errorf("Error getting firmware repository URL: %v", err)
+			return nil, fmt.Errorf("error getting firmware repository URL: %v", err)
 		}
 	}
 

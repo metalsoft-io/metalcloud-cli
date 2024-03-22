@@ -498,7 +498,12 @@ func retrieveSupportedServerTypes(client metalcloud.MetalCloudClient, input stri
 			return nil, nil, fmt.Errorf("Error unmarshalling server types: %v", err)
 		}
 
-		supportedServerTypes[serverTypes[0]] = append(supportedServerTypes[serverTypes[0]], serverTypeObject.ServerTypeName)
+		for _, serverType := range serverTypes {
+			if !slices.Contains[string](supportedServerTypes[serverType], serverTypeObject.ServerTypeName) {
+				supportedServerTypes[serverType] = append(supportedServerTypes[serverType], serverTypeObject.ServerTypeName)
+			}
+		}
+
 		metalsoftServerTypes = append(metalsoftServerTypes, serverTypeObject.ServerTypeName)
 	}
 
@@ -516,10 +521,11 @@ func retrieveSupportedServerTypes(client metalcloud.MetalCloudClient, input stri
 			return nil, nil, fmt.Errorf("cannot filter server type '%s' because it is not supported by Metalsoft. Supported types are %+v", serverType, metalsoftServerTypes)
 		}
 
-		for actualServerType, metalsoftServerType := range supportedServerTypes {
-			if slices.Contains[string](metalsoftServerType, serverType) {
-				filteredServerTypes[actualServerType] = append(filteredServerTypes[actualServerType], serverType)
-				break
+		for actualServerType, metalsoftServerTypes := range supportedServerTypes {
+			if slices.Contains[string](metalsoftServerTypes, serverType) {
+				if !slices.Contains[string](filteredServerTypes[actualServerType], serverType) {
+					filteredServerTypes[actualServerType] = append(filteredServerTypes[actualServerType], serverType)
+				}
 			}
 		}
 
