@@ -238,6 +238,7 @@ func TestNetworkProfileGetCmd(t *testing.T) {
 				SubnetPools: []metalcloud.NetworkProfileSubnetPool{{
 					SubnetPoolID:   &sbnPoolId,
 					SubnetPoolType: "ipv4",
+					SubnetPoolProvidesDefaultRoute: false,
 				}},
 				ExternalConnectionIDs: []int{
 					10,
@@ -247,6 +248,7 @@ func TestNetworkProfileGetCmd(t *testing.T) {
 				SubnetPools: []metalcloud.NetworkProfileSubnetPool{{
 					SubnetPoolID:   nil, //this is important as it crashed previously
 					SubnetPoolType: "ipv4",
+					SubnetPoolProvidesDefaultRoute: false,
 				}},
 				ExternalConnectionIDs: []int{
 					10,

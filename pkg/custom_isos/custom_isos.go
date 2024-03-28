@@ -91,7 +91,7 @@ var CustomISOCmds = []command.Command{
 		InitFunc: func(c *command.Command) {
 			c.Arguments = map[string]interface{}{
 				"custom_iso_id_or_label": c.FlagSet.String("id", command.NilDefaultStr, colors.Red("(Required)")+" The custom iso's id or label"),
-				"server_id":              c.FlagSet.String("server-id", command.NilDefaultStr, colors.Red("(Required)")+" The server id"),
+				"server_id":              c.FlagSet.Int("server-id", command.NilDefaultInt, colors.Red("(Required)")+" The server id"),
 				"autoconfirm":            c.FlagSet.Bool("autoconfirm", false, colors.Green("(Flag)")+" If set it will assume action is confirmed"),
 				"return_id":              c.FlagSet.Bool("return-id", false, "(Optional) Will print the ID of the created Object. Useful for automating tasks."),
 			}
@@ -111,7 +111,7 @@ func getCustomISOFromCommand(c *command.Command) (*metalcloud.CustomISO, error) 
 		return nil, fmt.Errorf("-url is required")
 	}
 
-	displayName, ok := command.GetStringParamOk(c.Arguments["display-name"])
+	displayName, ok := command.GetStringParamOk(c.Arguments["display_name"])
 	if !ok {
 		displayName = ""
 	}

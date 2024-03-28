@@ -498,7 +498,12 @@ func retrieveSupportedServerTypes(client metalcloud.MetalCloudClient, input stri
 			return nil, nil, fmt.Errorf("Error unmarshalling server types: %v", err)
 		}
 
-		supportedServerTypes[serverTypes[0]] = append(supportedServerTypes[serverTypes[0]], serverTypeObject.ServerTypeName)
+		for _, serverType := range serverTypes {
+			if !slices.Contains[string](supportedServerTypes[serverType], serverTypeObject.ServerTypeName) {
+				supportedServerTypes[serverType] = append(supportedServerTypes[serverType], serverTypeObject.ServerTypeName)
+			}
+		}
+
 		metalsoftServerTypes = append(metalsoftServerTypes, serverTypeObject.ServerTypeName)
 	}
 
@@ -516,10 +521,11 @@ func retrieveSupportedServerTypes(client metalcloud.MetalCloudClient, input stri
 			return nil, nil, fmt.Errorf("cannot filter server type '%s' because it is not supported by Metalsoft. Supported types are %+v", serverType, metalsoftServerTypes)
 		}
 
-		for actualServerType, metalsoftServerType := range supportedServerTypes {
-			if slices.Contains[string](metalsoftServerType, serverType) {
-				filteredServerTypes[actualServerType] = append(filteredServerTypes[actualServerType], serverType)
-				break
+		for actualServerType, metalsoftServerTypes := range supportedServerTypes {
+			if slices.Contains[string](metalsoftServerTypes, serverType) {
+				if !slices.Contains[string](filteredServerTypes[actualServerType], serverType) {
+					filteredServerTypes[actualServerType] = append(filteredServerTypes[actualServerType], serverType)
+				}
 			}
 		}
 
@@ -680,7 +686,7 @@ func createCatalogObject(catalog firmwareCatalog) ([]byte, error) {
 	return catalogObject, nil
 }
 
-func sendBinaries(binaryCollection []*firmwareBinary, catalogId int) error {
+func sendBinaries(binaryCollection []*firmwareBinary, catalogId int, uploadToRepo bool) error {
 	endpoint, err := configuration.GetEndpoint()
 	if err != nil {
 		return err
@@ -714,6 +720,10 @@ func sendBinaries(binaryCollection []*firmwareBinary, catalogId int) error {
 
 		if reflect.TypeOf(firmwareBinary.VendorProperties["importantInfo"]) != nil && reflect.TypeOf(firmwareBinary.VendorProperties["importantInfo"]).Kind() == reflect.String {
 			firmwareBinary.VendorProperties["importantInfo"] = trimToSize(firmwareBinary.VendorProperties["importantInfo"].(string), 255)
+		}
+
+		if !uploadToRepo {
+			firmwareBinary.RepoURL = ""
 		}
 
 		firmwareBinary.DownloadURL = trimToSize(firmwareBinary.DownloadURL, 255)

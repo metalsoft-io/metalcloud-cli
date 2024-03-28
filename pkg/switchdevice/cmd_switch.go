@@ -69,8 +69,12 @@ managementAddress: 172.16.2.23
 managementPort: 22
 managementProtocol: ssh
 managementMACAddress: "00:00:00:00:00:00"
+primaryWANIPv4SubnetPool: 172.16.240.0
 primaryWANIPv4SubnetPrefixSize: 22
 primaryWANIPv6SubnetPoolID: 4
+primaryWANIPv6SubnetPool: fddf:d958:fb10:0000:0000:0000:0000:0000
+primarySANSubnetPool: 100.64.0.1
+primaryWANIPv6SubnetPrefixSize: 48
 primarySANSubnetPrefixSize: 21
 quarantineSubnetStart: 172.16.240.64
 quarantineSubnetEnd: 172.16.240.127

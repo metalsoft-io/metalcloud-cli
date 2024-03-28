@@ -99,10 +99,12 @@ vlans:
   subnetPools: 
   - subnetPoolID: 13
 	subnetPoolType: ipv4
+	SubnetPoolProvidesDefaultRoute: false
 - vlanID: 3205
   portMode: trunk
   provisionSubnetGateways: false
   extConnectionIDs: []
+  subnetPools: []
 
 #create the actual profile from the file: 
 metalcloud-cli network-profile create -datacenter us02-chi-qts01-dc -format yaml -raw-config ./network-profile.yaml

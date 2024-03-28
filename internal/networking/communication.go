@@ -41,7 +41,7 @@ func SendMsRequest(requestType, url, apiKey string, jsonData []byte) (string, er
 	err = json.Unmarshal([]byte(body), &msError)
 
 	if err != nil {
-		return body, fmt.Errorf("error parsing json response %s: %s", body, err.Error())
+		return body, fmt.Errorf("error parsing metalsoft json response %s: %s", body, err.Error())
 	}
 
 	if msError.Message != nil && (msError.StatusCode != 0 || msError.Status != nil) {
