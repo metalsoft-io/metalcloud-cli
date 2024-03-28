@@ -4,9 +4,11 @@ import (
 	"fmt"
 	"os"
 	"regexp"
+	"strconv"
 	"strings"
+	"time"
 
-	metalcloud "github.com/metalsoft-io/metal-cloud-sdk-go/v2"
+	metalcloud "github.com/metalsoft-io/metal-cloud-sdk-go/v3"
 	"github.com/metalsoft-io/metalcloud-cli/internal/command"
 	"github.com/metalsoft-io/metalcloud-cli/internal/configuration"
 
@@ -63,33 +65,68 @@ func initClients() (map[string]metalcloud.MetalCloudClient, error) {
 	return clients, nil
 }
 
+func getUserIdFromAPIKey(apiKey string) (int, error) {
+	components := strings.Split(apiKey, ":")
+	if len(components) != 2 {
+		return 0, fmt.Errorf("The API key is not in the correct format")
+	}
+	return strconv.Atoi(components[0])
+}
+
 func initClient(endpointSuffix string) (metalcloud.MetalCloudClient, error) {
+
+	if v := os.Getenv("METALCLOUD_API_KEY"); v == "" {
+		return nil, fmt.Errorf("METALCLOUD_API_KEY must be set")
+	}
+
 	if v := os.Getenv("METALCLOUD_USER_EMAIL"); v == "" {
 		return nil, fmt.Errorf("METALCLOUD_USER_EMAIL must be set")
 	}
 
-	if v := os.Getenv("METALCLOUD_API_KEY"); v == "" {
-		return nil, fmt.Errorf("METALCLOUD_API_KEY must be set")
+	apiKey := os.Getenv("METALCLOUD_API_KEY")
+	err := validateAPIKey(apiKey)
+	if err != nil {
+		return nil, err
+	}
+
+	userId, err := getUserIdFromAPIKey(apiKey)
+	if err != nil {
+		return nil, err
 	}
 
 	if v := os.Getenv("METALCLOUD_ENDPOINT"); v == "" {
 		return nil, fmt.Errorf("METALCLOUD_ENDPOINT must be set")
 	}
 
-	apiKey := os.Getenv("METALCLOUD_API_KEY")
-	user := os.Getenv("METALCLOUD_USER_EMAIL")
-
 	endpointHost := strings.TrimRight(os.Getenv("METALCLOUD_ENDPOINT"), "/")
 	endpoint := fmt.Sprintf("%s%s", endpointHost, endpointSuffix)
 
-	loggingEnabled := isLoggingEnabled()
-
-	err := validateAPIKey(apiKey)
-	if err != nil {
-		return nil, err
+	insecureSkipVerify := false
+	if strings.ToLower(os.Getenv("METALCLOUD_INSECURE_SKIP_VERIFY")) == "true" {
+		insecureSkipVerify = true
 	}
 
-	return metalcloud.GetMetalcloudClient(user, apiKey, endpoint, loggingEnabled, "", "", "")
+	timeout := 5 * time.Minute
+	if os.Getenv("METALCLOUD_TIMEOUT_SECONDS") != "" {
+		timeout_seconds, err := strconv.Atoi(os.Getenv("METALCLOUD_TIMEOUT_SECONDS"))
+		if err != nil {
+			return nil, fmt.Errorf("cannot parse timeout, use seconds")
+		}
+		timeout = time.Second * time.Duration(timeout_seconds)
+	}
+
+	options := metalcloud.ClientOptions{
+		ApiKey:               apiKey,
+		Endpoint:             endpoint,
+		LoggingEnabled:       isLoggingEnabled(),
+		InsecureSkipVerify:   insecureSkipVerify,
+		User:                 os.Getenv("METALCLOUD_USER_EMAIL"),
+		UserID:               userId,
+		AuthenticationMethod: metalcloud.AuthMethodBearer,
+		Timeout:              timeout,
+	}
+
+	return metalcloud.GetMetalcloudClientWithOptions(options)
 }
 
 func getHelp(clients map[string]metalcloud.MetalCloudClient, showArguments bool) string {

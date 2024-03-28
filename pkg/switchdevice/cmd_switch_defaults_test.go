@@ -11,7 +11,7 @@ import (
 	"gopkg.in/yaml.v2"
 
 	gomock "github.com/golang/mock/gomock"
-	metalcloud "github.com/metalsoft-io/metal-cloud-sdk-go/v2"
+	metalcloud "github.com/metalsoft-io/metal-cloud-sdk-go/v3"
 	mock_metalcloud "github.com/metalsoft-io/metalcloud-cli/helpers"
 	. "github.com/onsi/gomega"
 
@@ -27,7 +27,7 @@ func TestSwitchDefaultsList(t *testing.T) {
 
 	serialNumber := "ABCDEF"
 	managementMacAddress := "00:00:00:00:00:00"
-	
+
 	list := []metalcloud.SwitchDeviceDefaults{
 		{
 			NetworkEquipmentDefaultsID:           100,
@@ -46,7 +46,7 @@ func TestSwitchDefaultsList(t *testing.T) {
 	cmd := command.Command{
 		Arguments: map[string]interface{}{
 			"datacenter_name": &datacenter,
-			"format": &format,
+			"format":          &format,
 		},
 	}
 

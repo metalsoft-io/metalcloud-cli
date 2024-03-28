@@ -8,7 +8,7 @@ import (
 	"runtime"
 	"strings"
 
-	metalcloud "github.com/metalsoft-io/metal-cloud-sdk-go/v2"
+	metalcloud "github.com/metalsoft-io/metal-cloud-sdk-go/v3"
 	"github.com/metalsoft-io/metalcloud-cli/internal/colors"
 	"github.com/metalsoft-io/metalcloud-cli/internal/command"
 	"github.com/metalsoft-io/metalcloud-cli/internal/configuration"
@@ -514,7 +514,6 @@ func disassociateAssetCmd(c *command.Command, client metalcloud.MetalCloudClient
 
 	return "", client.OSTemplateRemoveOSAsset(template.VolumeTemplateID, asset.OSAssetID)
 }
-
 
 func assetEditCmd(c *command.Command, client metalcloud.MetalCloudClient) (string, error) {
 	asset, err := command.GetOSAssetFromCommand("id", "asset_id_or_name", c, client)

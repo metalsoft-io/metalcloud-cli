@@ -6,11 +6,11 @@ import (
 	"os"
 	"strings"
 
-	metalcloud "github.com/metalsoft-io/metal-cloud-sdk-go/v2"
-	"github.com/metalsoft-io/tableformatter"
+	metalcloud "github.com/metalsoft-io/metal-cloud-sdk-go/v3"
+	"github.com/metalsoft-io/metalcloud-cli/internal/colors"
 	"github.com/metalsoft-io/metalcloud-cli/internal/command"
 	"github.com/metalsoft-io/metalcloud-cli/internal/configuration"
-	"github.com/metalsoft-io/metalcloud-cli/internal/colors"
+	"github.com/metalsoft-io/tableformatter"
 )
 
 var SwitchPairCmds = []command.Command{
