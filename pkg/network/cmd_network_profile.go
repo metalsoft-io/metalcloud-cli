@@ -99,6 +99,7 @@ vlans:
   subnetPools: 
   - subnetPoolID: 13
 	subnetPoolType: ipv4
+	SubnetPoolProvidesDefaultRoute: false
 - vlanID: 3205
   portMode: trunk
   provisionSubnetGateways: false
