@@ -61,6 +61,7 @@ var CustomISOCmds = []command.Command{
 				"display_name":           c.FlagSet.String("display-name", command.NilDefaultStr, "The custom iso's display name"),
 				"username":               c.FlagSet.String("username", command.NilDefaultStr, "Username to authenticate to the http repository"),
 				"password":               c.FlagSet.String("password", command.NilDefaultStr, "Password to authenticate to the http repository"),
+				"custom_iso_type":        c.FlagSet.String("custom-iso-type", command.NilDefaultStr, "The custom iso's type"),
 				"return_id":              c.FlagSet.Bool("return-id", false, "(Optional) Will print the ID of the created Object. Useful for automating tasks."),
 			}
 		},
@@ -126,12 +127,18 @@ func getCustomISOFromCommand(c *command.Command, config CustomISOCommandConfig) 
 	username, _ = command.GetStringParamOk(c.Arguments["username"])        // Optional, ignore ok
 	password, _ = command.GetStringParamOk(c.Arguments["password"])        // Optional, ignore ok
 
+	customIsoType, ok := command.GetStringParamOk(c.Arguments["custom_iso_type"])
+	if !ok {
+		customIsoType = ""
+	}
+
 	return &metalcloud.CustomISO{
 		CustomISOName:           label,
 		CustomISOAccessURL:      url,
 		CustomISODisplayName:    displayName,
 		CustomISOAccessUsername: username,
 		CustomISOAccessPassword: password,
+		CustomISOType:           customIsoType,
 	}, nil
 }
 
