@@ -103,6 +103,7 @@ var CustomISOCmds = []command.Command{
 
 type CustomISOCommandConfig struct {
 	RequireLabel bool
+	RequireUrl   bool
 }
 
 func getCustomISOFromCommand(c *command.Command, config CustomISOCommandConfig) (*metalcloud.CustomISO, error) {
@@ -118,9 +119,13 @@ func getCustomISOFromCommand(c *command.Command, config CustomISOCommandConfig) 
 		label, _ = command.GetStringParamOk(c.Arguments["label"]) // Not required, ignore ok
 	}
 
-	url, ok = command.GetStringParamOk(c.Arguments["url"])
-	if !ok {
-		return nil, fmt.Errorf("-url is required")
+	if config.RequireUrl {
+		url, ok = command.GetStringParamOk(c.Arguments["url"])
+		if !ok {
+			return nil, fmt.Errorf("-url is required")
+		}
+	} else {
+		url, _ = command.GetStringParamOk(c.Arguments["url"]) // Not required, ignore ok
 	}
 
 	displayName, _ = command.GetStringParamOk(c.Arguments["display_name"]) // Optional, ignore ok
@@ -177,7 +182,7 @@ func customISOUpdateCmd(c *command.Command, client metalcloud.MetalCloudClient) 
 		}
 	}
 
-	config := CustomISOCommandConfig{RequireLabel: false}
+	config := CustomISOCommandConfig{RequireLabel: false, RequireUrl: false}
 	customISO, err := getCustomISOFromCommand(c, config)
 	if err != nil {
 		return "", err
