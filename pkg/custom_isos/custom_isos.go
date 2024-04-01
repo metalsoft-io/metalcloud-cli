@@ -310,8 +310,7 @@ func customISOBootIntoServerCmd(c *command.Command, client metalcloud.MetalCloud
 }
 
 func customISOListCmd(c *command.Command, client metalcloud.MetalCloudClient) (string, error) {
-
-	user_id, ok := command.GetIntParamOk(c.Arguments["user-id"])
+	user_id, ok := command.GetIntParamOk(c.Arguments["user_id"])
 	if !ok {
 		user_id = client.GetUserID()
 	}
