@@ -9,7 +9,7 @@ import (
 	"testing"
 
 	gomock "github.com/golang/mock/gomock"
-	metalcloud "github.com/metalsoft-io/metal-cloud-sdk-go/v2"
+	metalcloud "github.com/metalsoft-io/metal-cloud-sdk-go/v3"
 	mock_metalcloud "github.com/metalsoft-io/metalcloud-cli/helpers"
 	"github.com/metalsoft-io/metalcloud-cli/internal/command"
 	. "github.com/onsi/gomega"
@@ -238,6 +238,7 @@ func TestNetworkProfileGetCmd(t *testing.T) {
 				SubnetPools: []metalcloud.NetworkProfileSubnetPool{{
 					SubnetPoolID:   &sbnPoolId,
 					SubnetPoolType: "ipv4",
+					SubnetPoolProvidesDefaultRoute: false,
 				}},
 				ExternalConnectionIDs: []int{
 					10,
@@ -247,6 +248,7 @@ func TestNetworkProfileGetCmd(t *testing.T) {
 				SubnetPools: []metalcloud.NetworkProfileSubnetPool{{
 					SubnetPoolID:   nil, //this is important as it crashed previously
 					SubnetPoolType: "ipv4",
+					SubnetPoolProvidesDefaultRoute: false,
 				}},
 				ExternalConnectionIDs: []int{
 					10,

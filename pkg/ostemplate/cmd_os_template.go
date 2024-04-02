@@ -14,7 +14,7 @@ import (
 	"path/filepath"
 	"strings"
 
-	metalcloud "github.com/metalsoft-io/metal-cloud-sdk-go/v2"
+	metalcloud "github.com/metalsoft-io/metal-cloud-sdk-go/v3"
 	"github.com/metalsoft-io/tableformatter"
 	"gopkg.in/yaml.v3"
 

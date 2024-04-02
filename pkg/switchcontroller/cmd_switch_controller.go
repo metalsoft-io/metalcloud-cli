@@ -3,10 +3,10 @@ package switchcontroller
 import (
 	"flag"
 	"fmt"
-	"strings"
 	"os"
+	"strings"
 
-	metalcloud "github.com/metalsoft-io/metal-cloud-sdk-go/v2"
+	metalcloud "github.com/metalsoft-io/metal-cloud-sdk-go/v3"
 	"github.com/metalsoft-io/metalcloud-cli/internal/colors"
 	"github.com/metalsoft-io/metalcloud-cli/internal/command"
 	"github.com/metalsoft-io/metalcloud-cli/internal/configuration"
@@ -310,8 +310,8 @@ func switchControllerEditCmd(c *command.Command, client metalcloud.MetalCloudCli
 	}
 
 	networkEquipmentControllerData := map[string]interface{}{
-		"datacenter_name": retSwCtrl.DatacenterName,
-		"network_equipment_controller_options": obj.NetworkEquipmentControllerOptions,
+		"datacenter_name":                                   retSwCtrl.DatacenterName,
+		"network_equipment_controller_options":              obj.NetworkEquipmentControllerOptions,
 		"network_equipment_controller_fabric_configuration": obj.NetworkEquipmentControllerFabricConfiguration,
 	}
 
@@ -475,8 +475,8 @@ func switchControllerDeleteCmd(c *command.Command, client metalcloud.MetalCloudC
 		confirm = true
 	} else {
 		confirmationMessage := fmt.Sprintf("Deleting switch controller %s (%d).  Are you sure? Type \"yes\" to continue:",
-		retSWCtrl.NetworkEquipmentControllerIdentifierString,
-		retSWCtrl.NetworkEquipmentControllerID)
+			retSWCtrl.NetworkEquipmentControllerIdentifierString,
+			retSWCtrl.NetworkEquipmentControllerID)
 
 		//this is simply so that we don't output a text on the command line under go test
 		if strings.HasSuffix(os.Args[0], ".test") {

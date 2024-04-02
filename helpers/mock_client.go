@@ -6,7 +6,7 @@ package mock_metalcloud
 
 import (
 	gomock "github.com/golang/mock/gomock"
-	metalcloud "github.com/metalsoft-io/metal-cloud-sdk-go/v2"
+	metalcloud "github.com/metalsoft-io/metal-cloud-sdk-go/v3"
 	reflect "reflect"
 )
 
@@ -3327,6 +3327,21 @@ func (mr *MockMetalCloudClientMockRecorder) StoragePoolGet(serverID, decryptPass
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "StoragePoolGet", reflect.TypeOf((*MockMetalCloudClient)(nil).StoragePoolGet), serverID, decryptPasswd)
 }
 
+// SubnetPoolCreate mocks base method
+func (m *MockMetalCloudClient) SubnetPoolCreate(subnetPool metalcloud.SubnetPool) (*metalcloud.SubnetPool, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "SubnetPoolCreate", subnetPool)
+	ret0, _ := ret[0].(*metalcloud.SubnetPool)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// SubnetPoolCreate indicates an expected call of SubnetPoolCreate
+func (mr *MockMetalCloudClientMockRecorder) SubnetPoolCreate(subnetPool interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SubnetPoolCreate", reflect.TypeOf((*MockMetalCloudClient)(nil).SubnetPoolCreate), subnetPool)
+}
+
 // SubnetGet mocks base method
 func (m *MockMetalCloudClient) SubnetGet(subnetID int) (*metalcloud.Subnet, error) {
 	m.ctrl.T.Helper()
@@ -3340,20 +3355,6 @@ func (m *MockMetalCloudClient) SubnetGet(subnetID int) (*metalcloud.Subnet, erro
 func (mr *MockMetalCloudClientMockRecorder) SubnetGet(subnetID interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SubnetGet", reflect.TypeOf((*MockMetalCloudClient)(nil).SubnetGet), subnetID)
-}
-
-// SubnetDelete mocks base method
-func (m *MockMetalCloudClient) SubnetDelete(subnetID int) error {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "SubnetDelete", subnetID)
-	ret0, _ := ret[0].(error)
-	return ret0
-}
-
-// SubnetDelete indicates an expected call of SubnetDelete
-func (mr *MockMetalCloudClientMockRecorder) SubnetDelete(subnetID interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SubnetDelete", reflect.TypeOf((*MockMetalCloudClient)(nil).SubnetDelete), subnetID)
 }
 
 // SubnetCreate mocks base method
@@ -3371,19 +3372,18 @@ func (mr *MockMetalCloudClientMockRecorder) SubnetCreate(subnet interface{}) *go
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SubnetCreate", reflect.TypeOf((*MockMetalCloudClient)(nil).SubnetCreate), subnet)
 }
 
-// SubnetPoolCreate mocks base method
-func (m *MockMetalCloudClient) SubnetPoolCreate(subnetPool metalcloud.SubnetPool) (*metalcloud.SubnetPool, error) {
+// SubnetDelete mocks base method
+func (m *MockMetalCloudClient) SubnetDelete(subnetID int) error {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "SubnetPoolCreate", subnetPool)
-	ret0, _ := ret[0].(*metalcloud.SubnetPool)
-	ret1, _ := ret[1].(error)
-	return ret0, ret1
+	ret := m.ctrl.Call(m, "SubnetDelete", subnetID)
+	ret0, _ := ret[0].(error)
+	return ret0
 }
 
-// SubnetPoolCreate indicates an expected call of SubnetPoolCreate
-func (mr *MockMetalCloudClientMockRecorder) SubnetPoolCreate(subnetPool interface{}) *gomock.Call {
+// SubnetDelete indicates an expected call of SubnetDelete
+func (mr *MockMetalCloudClientMockRecorder) SubnetDelete(subnetID interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SubnetPoolCreate", reflect.TypeOf((*MockMetalCloudClient)(nil).SubnetPoolCreate), subnetPool)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SubnetDelete", reflect.TypeOf((*MockMetalCloudClient)(nil).SubnetDelete), subnetID)
 }
 
 // SubnetPoolGet mocks base method
@@ -3458,6 +3458,21 @@ func (m *MockMetalCloudClient) SubnetPoolSearch(filter string) (*[]metalcloud.Su
 func (mr *MockMetalCloudClientMockRecorder) SubnetPoolSearch(filter interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SubnetPoolSearch", reflect.TypeOf((*MockMetalCloudClient)(nil).SubnetPoolSearch), filter)
+}
+
+// SubnetPoolCreateOrUpdate mocks base method
+func (m *MockMetalCloudClient) SubnetPoolCreateOrUpdate(subnetPool metalcloud.SubnetPool) (*metalcloud.SubnetPool, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "SubnetPoolCreateOrUpdate", subnetPool)
+	ret0, _ := ret[0].(*metalcloud.SubnetPool)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// SubnetPoolCreateOrUpdate indicates an expected call of SubnetPoolCreateOrUpdate
+func (mr *MockMetalCloudClientMockRecorder) SubnetPoolCreateOrUpdate(subnetPool interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SubnetPoolCreateOrUpdate", reflect.TypeOf((*MockMetalCloudClient)(nil).SubnetPoolCreateOrUpdate), subnetPool)
 }
 
 // SwitchDeviceGet mocks base method

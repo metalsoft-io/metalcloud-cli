@@ -11,7 +11,7 @@ import (
 	"gopkg.in/yaml.v2"
 
 	gomock "github.com/golang/mock/gomock"
-	metalcloud "github.com/metalsoft-io/metal-cloud-sdk-go/v2"
+	metalcloud "github.com/metalsoft-io/metal-cloud-sdk-go/v3"
 	mock_metalcloud "github.com/metalsoft-io/metalcloud-cli/helpers"
 	. "github.com/onsi/gomega"
 

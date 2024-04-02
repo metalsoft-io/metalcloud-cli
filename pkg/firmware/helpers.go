@@ -18,7 +18,7 @@ import (
 	"golang.org/x/exp/slices"
 	"gopkg.in/yaml.v3"
 
-	metalcloud "github.com/metalsoft-io/metal-cloud-sdk-go/v2"
+	metalcloud "github.com/metalsoft-io/metal-cloud-sdk-go/v3"
 )
 
 /**

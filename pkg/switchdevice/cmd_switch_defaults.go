@@ -11,7 +11,7 @@ import (
 
 	"gopkg.in/yaml.v2"
 
-	metalcloud "github.com/metalsoft-io/metal-cloud-sdk-go/v2"
+	metalcloud "github.com/metalsoft-io/metal-cloud-sdk-go/v3"
 	"github.com/metalsoft-io/metalcloud-cli/internal/colors"
 	"github.com/metalsoft-io/metalcloud-cli/internal/command"
 	"github.com/metalsoft-io/metalcloud-cli/internal/configuration"
@@ -252,11 +252,11 @@ func switchDefaultsCreateCmd(c *command.Command, client metalcloud.MetalCloudCli
 
 	for idx, obj := range defaults {
 		if obj.DatacenterName == "" {
-			return "", fmt.Errorf("datacenter name is required for switch defaults #%d.", idx + 1)
+			return "", fmt.Errorf("datacenter name is required for switch defaults #%d.", idx+1)
 		}
 
 		if obj.NetworkEquipmentSerialNumber == new(string) && obj.NetworkEquipmentManagementMacAddress == new(string) {
-			return "", fmt.Errorf("at least one of serial number or management MAC address must be provided for switch defaults #%d.", idx + 1)
+			return "", fmt.Errorf("at least one of serial number or management MAC address must be provided for switch defaults #%d.", idx+1)
 		}
 	}
 
