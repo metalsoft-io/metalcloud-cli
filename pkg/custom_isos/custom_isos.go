@@ -9,6 +9,7 @@ import (
 	metalcloud "github.com/metalsoft-io/metal-cloud-sdk-go/v2"
 	"github.com/metalsoft-io/metalcloud-cli/internal/colors"
 	"github.com/metalsoft-io/metalcloud-cli/internal/command"
+	"github.com/metalsoft-io/metalcloud-cli/internal/configuration"
 	"github.com/metalsoft-io/tableformatter"
 )
 
@@ -25,7 +26,8 @@ var CustomISOCmds = []command.Command{
 				"user_id": c.FlagSet.Int("user-id", command.NilDefaultInt, "The user ID for which to list the custom iso. Defaults to the current user."),
 			}
 		},
-		ExecuteFunc: customISOListCmd,
+		ExecuteFunc:   customISOListCmd,
+		AdminEndpoint: configuration.DeveloperEndpoint,
 	},
 	{
 		Description:  "Creates a custom iso.",
@@ -44,7 +46,8 @@ var CustomISOCmds = []command.Command{
 				"return_id":    c.FlagSet.Bool("return-id", false, "(Optional) Will print the ID of the created object. Useful for automating tasks."),
 			}
 		},
-		ExecuteFunc: customISOCreateCmd,
+		ExecuteFunc:   customISOCreateCmd,
+		AdminEndpoint: configuration.DeveloperEndpoint,
 	},
 	{
 		Description:  "Update a custom iso.",
@@ -65,7 +68,8 @@ var CustomISOCmds = []command.Command{
 				"return_id":              c.FlagSet.Bool("return-id", false, "(Optional) Will print the ID of the created Object. Useful for automating tasks."),
 			}
 		},
-		ExecuteFunc: customISOUpdateCmd,
+		ExecuteFunc:   customISOUpdateCmd,
+		AdminEndpoint: configuration.DeveloperEndpoint,
 	},
 	{
 		Description:  "Delete a custom iso.",
@@ -80,7 +84,8 @@ var CustomISOCmds = []command.Command{
 				"autoconfirm":            c.FlagSet.Bool("autoconfirm", false, colors.Green("(Flag)")+" If set it will assume action is confirmed"),
 			}
 		},
-		ExecuteFunc: customISODeleteCmd,
+		ExecuteFunc:   customISODeleteCmd,
+		AdminEndpoint: configuration.DeveloperEndpoint,
 	},
 	{
 		Description:  "Boot a custom iso on a server.",
@@ -97,7 +102,8 @@ var CustomISOCmds = []command.Command{
 				"return_id":              c.FlagSet.Bool("return-id", false, "(Optional) Will print the ID of the created Object. Useful for automating tasks."),
 			}
 		},
-		ExecuteFunc: customISOBootIntoServerCmd,
+		ExecuteFunc:   customISOBootIntoServerCmd,
+		AdminEndpoint: configuration.DeveloperEndpoint,
 	},
 }
 
