@@ -17,14 +17,42 @@ import (
 	"github.com/metalsoft-io/metalcloud-cli/internal/configuration"
 )
 
+func all(slice StringOrSlice, condition func(any) bool) bool {
+	for _, v := range slice {
+		if !condition(v) {
+			return false
+		}
+	}
+	return true
+}
+
 type hpCatalogTemplate struct {
-	Date                 string `json:"date"`
-	Description          string `json:"description"`
-	DeviceClass          string `json:"deviceclass"`
-	MinimumActiveVersion string `json:"minimum_active_version"`
-	RebootRequired       string `json:"reboot_required"`
-	Target               string `json:"target"`
-	Version              string `json:"version"`
+	Date                 string        `json:"date"`
+	Description          string        `json:"description"`
+	DeviceClass          string        `json:"deviceclass"`
+	MinimumActiveVersion string        `json:"minimum_active_version"`
+	RebootRequired       string        `json:"reboot_required"`
+	Target               StringOrSlice `json:"target"`
+	Version              string        `json:"version"`
+}
+
+type StringOrSlice []string
+
+func (sos *StringOrSlice) UnmarshalJSON(data []byte) error {
+
+	var slice []string
+	if err := json.Unmarshal(data, &slice); err == nil {
+		*sos = slice
+		return nil
+	}
+
+	var single string
+	if err := json.Unmarshal(data, &single); err == nil {
+		*sos = []string{single}
+		return nil
+	}
+
+	return fmt.Errorf("target can be either a string or an array of strings, but was neither")
 }
 
 func parseHpCatalog(configFile rawConfigFile, client metalcloud.MetalCloudClient, filter string, uploadToRepo, downloadBinaries bool, repoConfig repoConfiguration) (firmwareCatalog, []*firmwareBinary, error) {
@@ -93,7 +121,8 @@ func parseHpBinaryInventory(configFile rawConfigFile, uploadToRepo, downloadBina
 	for key, value := range packages {
 		if strings.HasSuffix(key, "fwpkg") &&
 			value.DeviceClass != "" && value.DeviceClass != "null" &&
-			value.Target != "" && value.Target != "null" {
+			value.Target != nil && len(value.Target) > 0 &&
+			all(value.Target, func(v any) bool { return v != "" && v != "null" }) {
 
 			downloadURL, err := getDownloadURL(configFile.CatalogUrl, key)
 			if err != nil {
@@ -117,11 +146,13 @@ func parseHpBinaryInventory(configFile rawConfigFile, uploadToRepo, downloadBina
 
 			supportedDevices := []map[string]string{}
 
-			supportedDevices = append(supportedDevices, map[string]string{
-				"DeviceClass":            value.DeviceClass,
-				"Target":                 value.Target,
-				"MinimumVersionRequired": value.MinimumActiveVersion,
-			})
+			for _, target := range value.Target {
+				supportedDevices = append(supportedDevices, map[string]string{
+					"DeviceClass":            value.DeviceClass,
+					"Target":                 target,
+					"MinimumVersionRequired": value.MinimumActiveVersion,
+				})
+			}
 
 			binaries = append(binaries, &firmwareBinary{
 				ExternalId:             key,
