@@ -16,7 +16,7 @@ import (
 
 var SubnetPoolCmds = []command.Command{
 	{
-		Description:  "Lists subnets",
+		Description:  "Lists subnet pools",
 		Subject:      "subnet-pool",
 		AltSubject:   "subnet",
 		Predicate:    "list",

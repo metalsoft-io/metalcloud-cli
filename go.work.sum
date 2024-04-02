@@ -23,8 +23,7 @@ github.com/metalsoft-io/metal-cloud-sdk-go/v2 v2.12.0 h1:0zu1scc4lJj/WAH6pdUfmx7
 github.com/metalsoft-io/metal-cloud-sdk-go/v2 v2.12.0/go.mod h1:4sa1GQG0XISUUkvChL2iliWa0t3KGKAfB9dsbW2zyh4=
 github.com/metalsoft-io/metal-cloud-sdk-go/v2 v2.12.3 h1:zqGgC43n3bnMx48RPaCNLxu/MeeJenmhM0eZBuIcQh4=
 github.com/metalsoft-io/metal-cloud-sdk-go/v2 v2.12.3/go.mod h1:4sa1GQG0XISUUkvChL2iliWa0t3KGKAfB9dsbW2zyh4=
-github.com/metalsoft-io/metal-cloud-sdk-go/v3 v3.0.1 h1:sz7NgToIzpifnhJyh1EDSOyAJw337tKpX5VyORHxufw=
-github.com/metalsoft-io/metal-cloud-sdk-go/v3 v3.0.1/go.mod h1:dqfX7h4uUXKZb8zAJOL5HCL56eQ4xpBEp29ibqhkXLI=
+github.com/mmcloughlin/avo v0.5.0/go.mod h1:ChHFdoV7ql95Wi7vuq2YT1bwCJqiWdZrQ1im3VujLYM=
 github.com/pkg/diff v0.0.0-20210226163009-20ebb0f2a09e/go.mod h1:pJLUxLENpZxwdsKMEsNbx1VGcRFpLqf3715MtcvvzbA=
 github.com/rogpeppe/go-internal v1.9.0/go.mod h1:WtVeX8xhTBvf0smdhujwtBcq4Qrzq/fJaraNFVN+nFs=
 github.com/sirupsen/logrus v1.9.0/go.mod h1:naHLuLoDiP4jHNo9R0sCBMtWGeIprob74mVsIT4qYEQ=

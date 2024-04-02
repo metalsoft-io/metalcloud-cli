@@ -28,7 +28,9 @@ func TestSubnetPoolList(t *testing.T) {
 		},
 	}
 
-	stats := metalcloud.SubnetPoolUtilization{}
+	stats := metalcloud.SubnetPoolUtilization{
+		IPAddressesUsableFreePercentOptimistic: "40",
+	}
 	client.EXPECT().
 		SubnetPoolSearch("").
 		Return(&list, nil).

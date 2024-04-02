@@ -181,6 +181,9 @@ export METALCLOUD_LOGGING_ENABLED=true
 ```
 ### Building the CLI
 
+To run the unit tests:
+`go test ./...`
+
 To build manually:
 
 `go build ./cmd/...`
