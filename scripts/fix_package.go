@@ -51,6 +51,7 @@ var types = [...]string{
 	"SharedDriveOperation",
 	"SwitchDevice",
 	"SubnetPool",
+	"SubnetOOB",
 	"SubnetPoolUtilization",
 	"ServerCreateUnmanaged",
 	"CustomISO",

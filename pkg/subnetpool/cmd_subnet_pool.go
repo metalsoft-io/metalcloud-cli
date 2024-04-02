@@ -4,6 +4,7 @@ import (
 	"flag"
 	"fmt"
 	"os"
+	"strconv"
 	"strings"
 
 	metalcloud "github.com/metalsoft-io/metal-cloud-sdk-go/v3"
@@ -104,6 +105,11 @@ func subnetPoolListCmd(c *command.Command, client metalcloud.MetalCloudClient) (
 			FieldSize: 6,
 		},
 		{
+			FieldName: "LABEL",
+			FieldType: tableformatter.TypeString,
+			FieldSize: 6,
+		},
+		{
 			FieldName: "DATACENTER",
 			FieldType: tableformatter.TypeString,
 			FieldSize: 6,
@@ -161,28 +167,34 @@ func subnetPoolListCmd(c *command.Command, client metalcloud.MetalCloudClient) (
 			return "", err
 		}
 
-		utilizationStr := fmt.Sprintf("%s (%s", utilization.IPAddressesUsableCountFree, utilization.IPAddressesUsableFreePercentOptimistic)
+		IPAddressesUsableFreePercentOptimistic, err := strconv.ParseFloat(strings.Trim(utilization.IPAddressesUsableFreePercentOptimistic, "%"), 32)
+		if err != nil {
+			return "", err
+		}
+
+		utilizationStr := fmt.Sprintf("%d%% used (%s addresses available)", 100-int(IPAddressesUsableFreePercentOptimistic), utilization.IPAddressesUsableCountFree)
 
 		networkEquipmentIdentifier := ""
 		if s.NetworkEquipmentID != 0 {
 			sw, err := client.SwitchDeviceGet(s.NetworkEquipmentID, false)
-			if err != nil {
-				return "", err
+			if err == nil {
+				//sometimes the switch could be deleted without the associated subnets to be present
+				//so we do it this way and silently fail to retrieve the switch here
+				networkEquipmentIdentifier = sw.NetworkEquipmentIdentifierString
 			}
-
-			networkEquipmentIdentifier = sw.NetworkEquipmentIdentifierString
 		}
 
 		data = append(data, []interface{}{
 
 			s.SubnetPoolID,
+			s.SubnetPoolLabel,
 			s.DatacenterName,
 			s.SubnetPoolDestination,
 			prefixStr,
 			networkEquipmentIdentifier,
 			userEmail,
 			s.SubnetPoolIsOnlyForManualAllocation,
-			utilizationStr + "%%)",
+			utilizationStr,
 		})
 
 	}

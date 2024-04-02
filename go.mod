@@ -49,3 +49,5 @@ require (
 	google.golang.org/protobuf v1.28.1 // indirect
 	gopkg.in/warnings.v0 v0.1.2 // indirect
 )
+
+replace github.com/metalsoft-io/metal-cloud-sdk-go/v3 => /Users/alex/code/metal-cloud-sdk-go
