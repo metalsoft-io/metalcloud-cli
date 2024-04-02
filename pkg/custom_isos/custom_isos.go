@@ -174,8 +174,8 @@ func customISOCreateCmd(c *command.Command, client metalcloud.MetalCloudClient) 
 }
 
 func customISOUpdateCmd(c *command.Command, client metalcloud.MetalCloudClient) (string, error) {
-
-	custom_iso_id, label, isLabel := command.IdOrLabel(c.Arguments["custom_iso_id_or_label"])
+	custom_iso_id, label, isIdInt := command.IdOrLabel(c.Arguments["custom_iso_id_or_label"])
+	isLabel := !isIdInt
 	if isLabel {
 		ciList, err := client.CustomISOs(client.GetUserID())
 		if err != nil {
@@ -203,8 +203,9 @@ func customISOUpdateCmd(c *command.Command, client metalcloud.MetalCloudClient) 
 }
 
 func customISODeleteCmd(c *command.Command, client metalcloud.MetalCloudClient) (string, error) {
+	custom_iso_id, label, isIntId := command.IdOrLabel(c.Arguments["custom_iso_id_or_label"])
+	isLabel := !isIntId
 
-	custom_iso_id, label, isLabel := command.IdOrLabel(c.Arguments["custom_iso_id_or_label"])
 	if isLabel {
 		ciList, err := client.CustomISOs(client.GetUserID())
 		if err != nil {
@@ -250,8 +251,8 @@ func customISODeleteCmd(c *command.Command, client metalcloud.MetalCloudClient) 
 }
 
 func customISOBootIntoServerCmd(c *command.Command, client metalcloud.MetalCloudClient) (string, error) {
-
-	customIsoId, label, isLabel := command.IdOrLabel(c.Arguments["custom_iso_id_or_label"])
+	customIsoId, label, isIdInt := command.IdOrLabel(c.Arguments["custom_iso_id_or_label"])
+	isLabel := !isIdInt
 	if isLabel {
 		ciList, err := client.CustomISOs(client.GetUserID())
 		if err != nil {
