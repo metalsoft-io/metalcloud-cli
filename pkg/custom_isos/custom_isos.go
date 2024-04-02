@@ -9,6 +9,7 @@ import (
 	metalcloud "github.com/metalsoft-io/metal-cloud-sdk-go/v2"
 	"github.com/metalsoft-io/metalcloud-cli/internal/colors"
 	"github.com/metalsoft-io/metalcloud-cli/internal/command"
+	"github.com/metalsoft-io/metalcloud-cli/internal/configuration"
 	"github.com/metalsoft-io/tableformatter"
 )
 
@@ -25,7 +26,8 @@ var CustomISOCmds = []command.Command{
 				"user_id": c.FlagSet.Int("user-id", command.NilDefaultInt, "The user ID for which to list the custom iso. Defaults to the current user."),
 			}
 		},
-		ExecuteFunc: customISOListCmd,
+		ExecuteFunc:   customISOListCmd,
+		AdminEndpoint: configuration.DeveloperEndpoint,
 	},
 	{
 		Description:  "Creates a custom iso.",
@@ -44,7 +46,8 @@ var CustomISOCmds = []command.Command{
 				"return_id":    c.FlagSet.Bool("return-id", false, "(Optional) Will print the ID of the created object. Useful for automating tasks."),
 			}
 		},
-		ExecuteFunc: customISOCreateCmd,
+		ExecuteFunc:   customISOCreateCmd,
+		AdminEndpoint: configuration.DeveloperEndpoint,
 	},
 	{
 		Description:  "Update a custom iso.",
@@ -56,15 +59,17 @@ var CustomISOCmds = []command.Command{
 		InitFunc: func(c *command.Command) {
 			c.Arguments = map[string]interface{}{
 				"custom_iso_id_or_label": c.FlagSet.String("id", command.NilDefaultStr, colors.Red("(Required)")+" The custom iso's id or label"),
-				"label":                  c.FlagSet.String("label", command.NilDefaultStr, colors.Red("(Required)")+" The custom iso's label"),
 				"url":                    c.FlagSet.String("url", command.NilDefaultStr, colors.Red("(Required)")+" The custom iso's location (http/https URL)"),
+				"label":                  c.FlagSet.String("label", command.NilDefaultStr, "The custom iso's label"),
 				"display_name":           c.FlagSet.String("display-name", command.NilDefaultStr, "The custom iso's display name"),
 				"username":               c.FlagSet.String("username", command.NilDefaultStr, "Username to authenticate to the http repository"),
 				"password":               c.FlagSet.String("password", command.NilDefaultStr, "Password to authenticate to the http repository"),
+				"custom_iso_type":        c.FlagSet.String("custom-iso-type", command.NilDefaultStr, "The custom iso's type"),
 				"return_id":              c.FlagSet.Bool("return-id", false, "(Optional) Will print the ID of the created Object. Useful for automating tasks."),
 			}
 		},
-		ExecuteFunc: customISOUpdateCmd,
+		ExecuteFunc:   customISOUpdateCmd,
+		AdminEndpoint: configuration.DeveloperEndpoint,
 	},
 	{
 		Description:  "Delete a custom iso.",
@@ -79,7 +84,8 @@ var CustomISOCmds = []command.Command{
 				"autoconfirm":            c.FlagSet.Bool("autoconfirm", false, colors.Green("(Flag)")+" If set it will assume action is confirmed"),
 			}
 		},
-		ExecuteFunc: customISODeleteCmd,
+		ExecuteFunc:   customISODeleteCmd,
+		AdminEndpoint: configuration.DeveloperEndpoint,
 	},
 	{
 		Description:  "Boot a custom iso on a server.",
@@ -96,50 +102,61 @@ var CustomISOCmds = []command.Command{
 				"return_id":              c.FlagSet.Bool("return-id", false, "(Optional) Will print the ID of the created Object. Useful for automating tasks."),
 			}
 		},
-		ExecuteFunc: customISOBootIntoServerCmd,
+		ExecuteFunc:   customISOBootIntoServerCmd,
+		AdminEndpoint: configuration.DeveloperEndpoint,
 	},
 }
 
-func getCustomISOFromCommand(c *command.Command) (*metalcloud.CustomISO, error) {
-	label, ok := command.GetStringParamOk(c.Arguments["label"])
-	if !ok {
-		return nil, fmt.Errorf("-label is required")
+type CustomISOCommandConfig struct {
+	RequireLabel bool
+	RequireUrl   bool
+}
+
+func getCustomISOFromCommand(c *command.Command, config CustomISOCommandConfig) (*metalcloud.CustomISO, error) {
+	var label, url, displayName, username, password string
+	var ok bool
+
+	if config.RequireLabel {
+		label, ok = command.GetStringParamOk(c.Arguments["label"])
+		if !ok {
+			return nil, fmt.Errorf("-label is required")
+		}
+	} else {
+		label, _ = command.GetStringParamOk(c.Arguments["label"]) // Not required, ignore ok
 	}
 
-	url, ok := command.GetStringParamOk(c.Arguments["url"])
-	if !ok {
-		return nil, fmt.Errorf("-url is required")
+	if config.RequireUrl {
+		url, ok = command.GetStringParamOk(c.Arguments["url"])
+		if !ok {
+			return nil, fmt.Errorf("-url is required")
+		}
+	} else {
+		url, _ = command.GetStringParamOk(c.Arguments["url"]) // Not required, ignore ok
 	}
 
-	displayName, ok := command.GetStringParamOk(c.Arguments["display_name"])
-	if !ok {
-		displayName = ""
-	}
+	displayName, _ = command.GetStringParamOk(c.Arguments["display_name"]) // Optional, ignore ok
+	username, _ = command.GetStringParamOk(c.Arguments["username"])        // Optional, ignore ok
+	password, _ = command.GetStringParamOk(c.Arguments["password"])        // Optional, ignore ok
 
-	username, ok := command.GetStringParamOk(c.Arguments["username"])
+	customIsoType, ok := command.GetStringParamOk(c.Arguments["custom_iso_type"])
 	if !ok {
-		username = ""
-	}
-
-	password, ok := command.GetStringParamOk(c.Arguments["password"])
-	if !ok {
-		password = ""
+		customIsoType = ""
 	}
 
 	return &metalcloud.CustomISO{
-
 		CustomISOName:           label,
 		CustomISOAccessURL:      url,
 		CustomISODisplayName:    displayName,
 		CustomISOAccessUsername: username,
 		CustomISOAccessPassword: password,
+		CustomISOType:           customIsoType,
 	}, nil
-
 }
 
 func customISOCreateCmd(c *command.Command, client metalcloud.MetalCloudClient) (string, error) {
 
-	customISO, err := getCustomISOFromCommand(c)
+	config := CustomISOCommandConfig{RequireLabel: true}
+	customISO, err := getCustomISOFromCommand(c, config)
 	if err != nil {
 		return "", err
 	}
@@ -157,8 +174,8 @@ func customISOCreateCmd(c *command.Command, client metalcloud.MetalCloudClient) 
 }
 
 func customISOUpdateCmd(c *command.Command, client metalcloud.MetalCloudClient) (string, error) {
-
-	custom_iso_id, label, isLabel := command.IdOrLabel(c.Arguments["custom_iso_id_or_label"])
+	custom_iso_id, label, isIdInt := command.IdOrLabel(c.Arguments["custom_iso_id_or_label"])
+	isLabel := !isIdInt
 	if isLabel {
 		ciList, err := client.CustomISOs(client.GetUserID())
 		if err != nil {
@@ -171,7 +188,8 @@ func customISOUpdateCmd(c *command.Command, client metalcloud.MetalCloudClient) 
 		}
 	}
 
-	customISO, err := getCustomISOFromCommand(c)
+	config := CustomISOCommandConfig{RequireLabel: false, RequireUrl: false}
+	customISO, err := getCustomISOFromCommand(c, config)
 	if err != nil {
 		return "", err
 	}
@@ -185,8 +203,9 @@ func customISOUpdateCmd(c *command.Command, client metalcloud.MetalCloudClient) 
 }
 
 func customISODeleteCmd(c *command.Command, client metalcloud.MetalCloudClient) (string, error) {
+	custom_iso_id, label, isIntId := command.IdOrLabel(c.Arguments["custom_iso_id_or_label"])
+	isLabel := !isIntId
 
-	custom_iso_id, label, isLabel := command.IdOrLabel(c.Arguments["custom_iso_id_or_label"])
 	if isLabel {
 		ciList, err := client.CustomISOs(client.GetUserID())
 		if err != nil {
@@ -232,8 +251,8 @@ func customISODeleteCmd(c *command.Command, client metalcloud.MetalCloudClient) 
 }
 
 func customISOBootIntoServerCmd(c *command.Command, client metalcloud.MetalCloudClient) (string, error) {
-
-	customIsoId, label, isLabel := command.IdOrLabel(c.Arguments["custom_iso_id_or_label"])
+	customIsoId, label, isIdInt := command.IdOrLabel(c.Arguments["custom_iso_id_or_label"])
+	isLabel := !isIdInt
 	if isLabel {
 		ciList, err := client.CustomISOs(client.GetUserID())
 		if err != nil {
@@ -298,8 +317,7 @@ func customISOBootIntoServerCmd(c *command.Command, client metalcloud.MetalCloud
 }
 
 func customISOListCmd(c *command.Command, client metalcloud.MetalCloudClient) (string, error) {
-
-	user_id, ok := command.GetIntParamOk(c.Arguments["user-id"])
+	user_id, ok := command.GetIntParamOk(c.Arguments["user_id"])
 	if !ok {
 		user_id = client.GetUserID()
 	}
