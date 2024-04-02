@@ -82,16 +82,37 @@ jobs:
           GORELEASER_KEY: ${{ secrets.GORELEASER_KEY }}
           GOOS: windows
       -
-        name: Sign the windows exe
-        uses: "InertiaSystems/code-sign-action@v1.1.0"
-        with:
-          certificate: '${{ secrets.CSR_CERTIFICATE }}'
-          password: '${{secrets.CERTPASS}}'
-          certificatesha1: '${{secrets.CERTHASH}}'
-          certificatename: '${{ secrets.CERTNAME }}'
-          timestampUrl: 'http://timestamp.sectigo.com'
-          folder: '.'
-          recursive: falseus
+        name: Setup certificate
+        shell: bash
+        run: |
+          echo "${{ secrets.SM_CLIENT_CERT_FILE_B64 }}" | base64 --decode > /d/Certificate_pkcs12.p12
+      -
+        name: Set signing variables
+        shell: bash
+        run: |
+          echo "SM_HOST=${{ secrets.SM_HOST }}" >> "$GITHUB_ENV"
+          echo "SM_API_KEY=${{ secrets.SM_API_KEY }}" >> "$GITHUB_ENV"
+          echo "SM_CLIENT_CERT_FILE=D:\\Certificate_pkcs12.p12" >> "$GITHUB_ENV"
+          echo "SM_CLIENT_CERT_PASSWORD=${{ secrets.SM_CLIENT_CERT_PASSWORD }}" >> "$GITHUB_ENV"
+          echo "C:\Program Files (x86)\Windows Kits\10\App Certification Kit" >> $GITHUB_PATH
+          echo "C:\Program Files (x86)\Microsoft SDKs\Windows\v10.0A\bin\NETFX 4.8 Tools" >> $GITHUB_PATH
+          echo "C:\Program Files\DigiCert\DigiCert One Signing Manager Tools" >> $GITHUB_PATH
+      -
+        name: Setup SSM KSP on windows latest
+        shell: cmd
+        run: |
+          curl -X GET  https://one.digicert.com/signingmanager/api-ui/v1/releases/smtools-windows-x64.msi/download -H "x-api-key:%SM_API_KEY%" -o smtools-windows-x64.msi
+          msiexec /i smtools-windows-x64.msi /quiet /qn
+          smksp_registrar.exe list
+          smctl.exe keypair ls
+          C:\Windows\System32\certutil.exe -csp "DigiCert Signing Manager KSP" -key -user
+          smksp_cert_sync.exe
+      -
+        name: Signing using Signtool
+        shell: cmd
+        run: |
+          for /f "tokens=1,2 delims=,:{} " %%A in (dist/windows/artifacts.json) do @if "%%~A"=="path" @if %%~xB==.exe signtool.exe sign /sha1 ${{ secrets.SM_CODE_SIGNING_CERT_SHA1_HASH }} /tr http://timestamp.digicert.com /td SHA256 /fd SHA256 "%%~B"
+          for /f "tokens=1,2 delims=,:{} " %%A in (dist/windows/artifacts.json) do @if "%%~A"=="path" @if %%~xB==.exe signtool.exe verify /v /pa "%%~B"
 
   release:
       runs-on: ubuntu-latest
