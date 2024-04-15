@@ -10,6 +10,7 @@ import (
 	"github.com/metalsoft-io/metalcloud-cli/internal/colors"
 	"github.com/metalsoft-io/metalcloud-cli/internal/command"
 	"github.com/metalsoft-io/metalcloud-cli/internal/configuration"
+	"github.com/metalsoft-io/metalcloud-cli/internal/objects"
 	"github.com/metalsoft-io/tableformatter"
 )
 
@@ -240,7 +241,7 @@ func subnetOOBGetCmd(c *command.Command, client metalcloud.MetalCloudClient) (st
 	format := command.GetStringParam(c.Arguments["format"])
 
 	if command.GetBoolParam(c.Arguments["raw"]) {
-		ret, err := tableformatter.RenderRawObject(*s, format, "SubnetOOB")
+		ret, err := objects.RenderRawObject(*s, format, "SubnetOOB")
 		if err != nil {
 			return "", err
 		}

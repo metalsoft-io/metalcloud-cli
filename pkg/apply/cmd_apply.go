@@ -3,16 +3,16 @@ package apply
 import (
 	"flag"
 	"fmt"
-	"regexp"
+	"log"
+	"reflect"
 	"strings"
 
 	metalcloud "github.com/metalsoft-io/metal-cloud-sdk-go/v3"
 	"github.com/metalsoft-io/metalcloud-cli/internal/command"
 	"github.com/metalsoft-io/metalcloud-cli/internal/configuration"
+	"github.com/metalsoft-io/metalcloud-cli/internal/objects"
 	"gopkg.in/yaml.v3"
 )
-
-const yamlSeparator = "\n---"
 
 var ApplyCmds = []command.Command{
 	{
@@ -46,10 +46,26 @@ var ApplyCmds = []command.Command{
 		ExecuteFunc: deleteCmd,
 		Endpoint:    configuration.DeveloperEndpoint,
 	},
+
+	{
+		Description:  "Generate a stub of an object",
+		Subject:      "generate",
+		AltSubject:   "generate",
+		Predicate:    command.NilDefaultStr,
+		AltPredicate: command.NilDefaultStr,
+		FlagSet:      flag.NewFlagSet("apply", flag.ExitOnError),
+		InitFunc: func(c *command.Command) {
+			c.Arguments = map[string]interface{}{
+				"object": c.FlagSet.String("object", command.NilDefaultStr, "Object to use, if none it will list compatible objects"),
+			}
+		},
+		ExecuteFunc: generateCmd,
+		Endpoint:    configuration.DeveloperEndpoint,
+	},
 }
 
 func applyCmd(c *command.Command, client metalcloud.MetalCloudClient) (string, error) {
-	objects, err := readObjectsFromCommand(c, client)
+	objects, err := objects.ReadObjectsFromCommand(c, client)
 
 	if err != nil {
 		return "", err
@@ -66,7 +82,7 @@ func applyCmd(c *command.Command, client metalcloud.MetalCloudClient) (string, e
 }
 
 func deleteCmd(c *command.Command, client metalcloud.MetalCloudClient) (string, error) {
-	objects, err := readObjectsFromCommand(c, client)
+	objects, err := objects.ReadObjectsFromCommand(c, client)
 
 	if err != nil {
 		return "", err
@@ -85,62 +101,38 @@ func deleteCmd(c *command.Command, client metalcloud.MetalCloudClient) (string, 
 	return "", nil
 }
 
-func readObjectsFromCommand(c *command.Command, client metalcloud.MetalCloudClient) ([]metalcloud.Applier, error) {
-	var err error
-	content := []byte{}
-	var results []metalcloud.Applier
+func generateCmd(c *command.Command, client metalcloud.MetalCloudClient) (string, error) {
 
-	if filePath, ok := command.GetStringParamOk(c.Arguments["read_config_from_file"]); ok {
-		content, err = configuration.ReadInputFromFile(filePath)
+	types := metalcloud.GetTypesThatSupportApplierInterface()
+	typesArr := []string{}
+	for k := range types {
+		typesArr = append(typesArr, k)
+	}
+
+	if object, ok := command.GetStringParamOk(c.Arguments["object"]); ok {
+		t, ok2 := types[object]
+		if !ok2 {
+			return "", fmt.Errorf("%s was not supported by the apply method. Only the following types are supported: %s", object, strings.Join(typesArr, ","))
+		}
+		log.Printf("Type is %v", t)
+		//obj := metalcloud.SubnetOOB{}
+		v := reflect.New(t)
+		objects.InitializeStruct(t, v.Elem())
+
+		c := v.Interface().(*metalcloud.SubnetOOB)
+		//obj := reflect.Zero(t)
+		log.Printf("object is %+v", c)
+		b, err := yaml.Marshal(c)
+		if err != nil {
+			return "", err
+		}
+
+		log.Printf(string(b))
+		//return string(b), err
+		return string(b), nil
+
 	} else {
-		return nil, fmt.Errorf("file name is required")
+
+		return fmt.Sprintf("Types supported by the apply/delete/generate commands:%s", strings.Join(typesArr, ",")), nil
 	}
-
-	if err != nil {
-		return nil, err
-	}
-
-	if len(content) == 0 {
-		return nil, fmt.Errorf("Content cannot be empty")
-	}
-
-	objects := strings.Split(string(content), yamlSeparator)
-
-	getKind := func(object []byte) (string, error) {
-		re := regexp.MustCompile(`kind\s*:\s*(.+)`)
-		matches := re.FindAllSubmatch(object, -1)
-
-		if len(matches) > 0 {
-			return string(matches[0][1]), nil
-		}
-
-		return "", fmt.Errorf("property kind is missing")
-	}
-
-	for _, object := range objects {
-		if len(strings.Trim(object, " \n\r")) == 0 {
-			continue
-		}
-		bytes := []byte(object)
-		kind, err := getKind(bytes)
-
-		if err != nil {
-			return nil, err
-		}
-		kind = strings.Trim(kind, " \n\r")
-
-		newType, err := metalcloud.GetObjectByKind(kind)
-		if err != nil {
-			return nil, err
-		}
-
-		if err = yaml.Unmarshal(bytes, newType.Interface()); err != nil {
-			return nil, err
-		}
-		newObject := newType.Elem().Interface()
-
-		results = append(results, newObject.(metalcloud.Applier))
-	}
-
-	return results, nil
 }

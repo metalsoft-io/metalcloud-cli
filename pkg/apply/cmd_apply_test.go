@@ -11,6 +11,7 @@ import (
 	mock_metalcloud "github.com/metalsoft-io/metalcloud-cli/helpers"
 
 	"github.com/metalsoft-io/metalcloud-cli/internal/command"
+	"github.com/metalsoft-io/metalcloud-cli/internal/objects"
 
 	. "github.com/onsi/gomega"
 )
@@ -63,7 +64,7 @@ func TestApply(t *testing.T) {
 		AnyTimes()
 
 	client.EXPECT().
-		DatacenterGet(gomock.Any()).
+		DatacenterWithConfigGet(gomock.Any()).
 		Return(&_datacenter1, nil).
 		AnyTimes()
 	client.EXPECT().
@@ -350,7 +351,7 @@ func TestReadObjectsFromCommand(t *testing.T) {
 			"read_config_from_file": f.Name(),
 		})
 
-		objects, err := readObjectsFromCommand(&cmd, client)
+		objects, err := objects.ReadObjectsFromCommand(&cmd, client)
 
 		Expect(err).To(BeNil())
 
@@ -358,6 +359,34 @@ func TestReadObjectsFromCommand(t *testing.T) {
 			Expect(object).To(Equal(objects[index]))
 		}
 	}
+}
+
+func TestGenerateCommand(t *testing.T) {
+	RegisterTestingT(t)
+	ctrl := gomock.NewController(t)
+
+	client := mock_metalcloud.NewMockMetalCloudClient(ctrl)
+
+	cmd := command.MakeCommand(map[string]interface{}{
+		"object": nil,
+	})
+
+	str, err := generateCmd(&cmd, client)
+
+	Expect(err).To(BeNil())
+	Expect(str).To(ContainSubstring("Secret"))
+	Expect(str).To(ContainSubstring("SubnetOOB"))
+
+	object := "SubnetOOB"
+	cmd = command.MakeCommand(map[string]interface{}{
+		"object": object,
+	})
+
+	str, err = generateCmd(&cmd, client)
+
+	Expect(err).To(BeNil())
+	Expect(str).To(Equal("Secret"))
+
 }
 
 type ApplyTestCase struct {
@@ -373,7 +402,7 @@ var readFromFileTestCases = []ApplyTestCase{
 		},
 	},
 	{
-		content: fmt.Sprintf("%s\n%s\n%s", _instanceArrayFixtureYaml1, yamlSeparator, _driveArrayFixtureYaml1),
+		content: fmt.Sprintf("%s\n%s\n%s", _instanceArrayFixtureYaml1, objects.YamlSeparator, _driveArrayFixtureYaml1),
 		objects: []metalcloud.Applier{
 			_instanceArray1,
 			_driveArray1,
@@ -472,7 +501,94 @@ var applyTestCases = []string{
 	_subnetPoolFixtureYaml2,
 }
 
-const _datacenterFixtureYaml1 = "kind: Datacenter\napiVersion: 1.0\nuserid: 1\nname: dctest\nconfig:\n    BSIMachinesSubnetIPv4CIDR: 10.255.226.0/24\n    BSIVRRPListenIPv4: 172.16.10.6\n    BSIMachineListenIPv4List:\n        - 172.16.10.6\n    BSIExternallyVisibleIPv4: 89.36.24.2\n    repoURLRoot: https://repointegrationpublic.bigstepcloud.com\n    repoURLRootQuarantineNetwork: https://repointegrationpublic.bigstepcloud.com\n    SANRoutedSubnet: 100.64.0.0/21\n    NTPServers:\n        - 84.40.58.44\n        - 84.40.58.45\n    DNSServers:\n        - 84.40.63.27\n    TFTPServerWANVRRPListenIPv4: 172.16.10.6\n    dataLakeEnabled: false\n    serverRegisterUsingGeneratedIPMICredentialsEnabled: false\n    datacenterNetworkIsLayer2Only: false\n    enableTenantAccessToIPMI: false\n    proxyURL: \"\"\n    proxyUsername: \"\"\n    proxyPassword: \"\"\n    enableProxyURL: false"
+const _datacenterFixtureYaml1 = `
+datacenter:
+  id: 2
+  name: us-chi-qts01-dc
+  displayname: US Chi QTS01 DC
+  ismaster: false
+  ismaintenance: false
+  type: metal_cloud
+  createdtimestamp: "2021-07-02T14:30:42Z"
+  updatedtimestamp: "2024-02-15T17:46:20Z"
+  ishidden: false
+  tags:
+  - Chicago
+  - Custom
+datacenterconfig:
+  BSIMachinesSubnetIPv4CIDR: 172.18.38.0/29
+  BSIVRRPListenIPv4: 172.18.38.6
+  BSIMachineListenIPv4List:
+  - 172.18.38.6
+  BSIExternallyVisibleIPv4: 176.223.248.11
+  repoURLRoot: http://repo.metalsoft.io
+  repoURLRootQuarantineNetwork: http://repo.metalsoft.io
+  SANRoutedSubnet: 100.98.0.0/16
+  NTPServers:
+  - 45.55.58.103
+  DNSServers:
+  - 1.1.1.1
+  - 172.18.38.6
+  KMS: 84.40.58.70:1688
+  TFTPServerWANVRRPListenIPv4: 172.18.38.6
+  dataLakeEnabled: false
+  latitude: 41.8426146
+  longitude: -87.6695014
+  address: 2800 S Ashland Ave, Chicago, IL 60608, United States
+  serverRegisterUsingGeneratedIPMICredentialsEnabled: true
+  serverRegisterUsingProvidedIPMICredentialsEnabled: true
+  switchProvisioner:
+    ASNRanges: []
+    LAGRanges:
+    - 75-90
+    LANVLANRange: 200-299
+    MLAGRanges:
+    - 30-74
+    SANVLANRange: 300-399
+    SANVNIPrefix: 2
+    VRFL3VNIPrefix: 9
+    VRFVLANRanges: []
+    WANVLANRange: 2000-2100
+    WANVNIPrefix: 1
+    allocateDefaultLANVLAN: false
+    allocateDefaultSANVLAN: true
+    allocateDefaultWANVLAN: true
+    disableQuarantineNetwork: false
+    leafSwitchesHaveMLAGPairs: true
+    preventCleanupForVLANs: []
+    preventCleanupForVLANsFromExternalConnectionUplinks: []
+    preventCleanupForVRFs: []
+    preventUsageOfVLANs:
+    - 3202
+    - 4000
+    preventUsageOfVRFs: []
+    quarantineVLANID: 5
+    storageHasSeparateFabric: false
+    type: EVPNVXLANL2Provisioner
+    zeroTouchRegistrationEnabled: false
+  enableTenantAccessToIPMI: true
+  allowVLANOverrides: true
+  allowNetworkProfiles: true
+  enableServerRegistrationStartedByInBandDHCP: true
+  extraInternalIPsPerSubnet: 2
+  extraInternalIPsPerSANSubnet: 0
+  serverRAIDConfigurationEnabled: false
+  webProxy: null
+  isKubernetesDeployment: false
+  allowInstanceArrayFirmwarePolicies: true
+  provisionUsingTheQuarantineNetwork: false
+  enableDHCPRelaySecurityForQuarantineNetwork: true
+  enableDHCPRelaySecurityForClientNetworks: true
+  enableDHCPBMCMACAddressWhitelist: true
+  dhcpBMCMACAddressWhitelist: []
+  defaultServerCleanupPolicyID: 0
+  defaultWANNetworkProfileID: 1
+  defaultDeploymentMechanism: virtual_media
+  defaultCleanupAndRegistrationMechanism: bmc
+  NFSServer: 172.18.38.6
+  Option82ToIPMapping: {}`
+
+// const _datacenterFixtureYaml1 = "kind: DatacenterWithConfig\napiVersion: 1.0\nuserid: 1\nname: dctest\nconfig:\n    BSIMachinesSubnetIPv4CIDR: 10.255.226.0/24\n    BSIVRRPListenIPv4: 172.16.10.6\n    BSIMachineListenIPv4List:\n        - 172.16.10.6\n    BSIExternallyVisibleIPv4: 89.36.24.2\n    repoURLRoot: https://repointegrationpublic.bigstepcloud.com\n    repoURLRootQuarantineNetwork: https://repointegrationpublic.bigstepcloud.com\n    SANRoutedSubnet: 100.64.0.0/21\n    NTPServers:\n        - 84.40.58.44\n        - 84.40.58.45\n    DNSServers:\n        - 84.40.63.27\n    TFTPServerWANVRRPListenIPv4: 172.16.10.6\n    dataLakeEnabled: false\n    serverRegisterUsingGeneratedIPMICredentialsEnabled: false\n    datacenterNetworkIsLayer2Only: false\n    enableTenantAccessToIPMI: false\n    proxyURL: \"\"\n    proxyUsername: \"\"\n    proxyPassword: \"\"\n    enableProxyURL: false"
 const _instanceArrayFixtureYaml1 = "kind: InstanceArray\napiVersion: 1.0\ninstanceID: 100\ninfrastructureID: 2\nlabel: ia-test\noperation:\n  id: 100\n  label: ia-test\n  changeID: 200"
 const _driveArrayFixtureYaml1 = "kind: DriveArray\napiVersion: 1.0\ninfrastructureID: 25524\nlabel: drive-array-45928\ncount: 2\nvolumeTemplateID: 78\nserviceStatus: active\nstorageType: iscsi_ssd\noperation:\n  \n  label: drive-array-45928\n  count: 2\n  volumeTemplateID: 78\n  storageType: iscsi_ssd\n  changeID: 215701\n  id: 45928\n  sizeMBytes: 40960\n  instanceArrayID: 35516\n  expandWithInstanceArray: true"
 const _sharedDriveFixtureYaml1 = "kind: SharedDrive\napiVersion: 1.0\nid: 100\ninfrastructureID: 1\nlabel: shared-drive-test\nstorageType: iscsi_ssd\nhasGFS: false\nsizeMBytes: 2048\nsubdomain: csivolumename.test-kube-csi.7.bigstep.io\nattachedInstaceArrays:\n  - 37824\noperation:\n  infrastructureID: 1\n  label: shared-drive-test\n  attachedInstanceArrays:\n  - 37824\n  storageType: iscsi_ssd\n  hasGFS: false\n  sizeMBytes: 2048\n  subdomain: csivolumename.test-kube-csi.7.bigstep.io\n  changeID: 16508\n  id: 100\n"
@@ -558,10 +674,12 @@ var _network1 = metalcloud.Network{
 		NetworkChangeID:  3,
 	},
 }
-var _datacenter1 = metalcloud.Datacenter{
-	DatacenterName: "dctest",
-	UserID:         1,
-	DatacenterConfig: &metalcloud.DatacenterConfig{
+var _datacenter1 = metalcloud.DatacenterWithConfig{
+	Datacenter: metalcloud.Datacenter{
+		DatacenterName: "dctest",
+		UserID:         1,
+	},
+	DatacenterConfig: metalcloud.DatacenterConfig{
 		SANRoutedSubnet:                       "100.64.0.0/21",
 		BSIVRRPListenIPv4:                     "172.16.10.6",
 		BSIMachineListenIPv4List:              []string{"172.16.10.6"},

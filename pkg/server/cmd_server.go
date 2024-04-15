@@ -14,6 +14,7 @@ import (
 	"github.com/metalsoft-io/metalcloud-cli/internal/command"
 	"github.com/metalsoft-io/metalcloud-cli/internal/configuration"
 	"github.com/metalsoft-io/metalcloud-cli/internal/filtering"
+	"github.com/metalsoft-io/metalcloud-cli/internal/objects"
 	"github.com/metalsoft-io/metalcloud-cli/internal/stringutils"
 	"github.com/metalsoft-io/tableformatter"
 	"gopkg.in/yaml.v2"
@@ -1403,7 +1404,7 @@ func serverGetCmd(c *command.Command, client metalcloud.MetalCloudClient) (strin
 	format := command.GetStringParam(c.Arguments["format"])
 
 	if command.GetBoolParam(c.Arguments["raw"]) {
-		ret, err := tableformatter.RenderRawObject(*server, format, "Server")
+		ret, err := objects.RenderRawObject(*server, format, "Server")
 		if err != nil {
 			return "", err
 		}
@@ -2246,7 +2247,7 @@ func serverInterfacesListCmd(c *command.Command, client metalcloud.MetalCloudCli
 
 	if command.GetBoolParam(c.Arguments["raw"]) {
 		for _, s := range *list {
-			ret, err := tableformatter.RenderRawObject(s, format, "Server interfaces")
+			ret, err := objects.RenderRawObject(s, format, "ServerInterface")
 			if err != nil {
 				return "", err
 			}

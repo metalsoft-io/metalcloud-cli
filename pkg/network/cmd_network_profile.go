@@ -14,6 +14,7 @@ import (
 	"github.com/metalsoft-io/metalcloud-cli/internal/colors"
 	"github.com/metalsoft-io/metalcloud-cli/internal/command"
 	"github.com/metalsoft-io/metalcloud-cli/internal/configuration"
+	"github.com/metalsoft-io/metalcloud-cli/internal/objects"
 	"github.com/metalsoft-io/tableformatter"
 )
 
@@ -440,7 +441,7 @@ func networkProfileGetCmd(c *command.Command, client metalcloud.MetalCloudClient
 	format := command.GetStringParam(c.Arguments["format"])
 
 	if command.GetBoolParam(c.Arguments["raw"]) {
-		ret, err := tableformatter.RenderRawObject(*retNP, format, "Server interfaces")
+		ret, err := objects.RenderRawObject(*retNP, format, "ServerInterface")
 		if err != nil {
 			return "", err
 		}

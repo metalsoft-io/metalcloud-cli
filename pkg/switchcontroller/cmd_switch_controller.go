@@ -10,6 +10,7 @@ import (
 	"github.com/metalsoft-io/metalcloud-cli/internal/colors"
 	"github.com/metalsoft-io/metalcloud-cli/internal/command"
 	"github.com/metalsoft-io/metalcloud-cli/internal/configuration"
+	"github.com/metalsoft-io/metalcloud-cli/internal/objects"
 	"github.com/metalsoft-io/tableformatter"
 )
 
@@ -405,7 +406,7 @@ func switchControllerGetCmd(c *command.Command, client metalcloud.MetalCloudClie
 	format := command.GetStringParam(c.Arguments["format"])
 
 	if command.GetBoolParam(c.Arguments["raw"]) {
-		ret, err := tableformatter.RenderRawObject(*switchController, format, "NetworkEquipmentController")
+		ret, err := objects.RenderRawObject(*switchController, format, "NetworkEquipmentController")
 		if err != nil {
 			return "", err
 		}

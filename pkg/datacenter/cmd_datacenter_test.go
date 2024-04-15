@@ -242,8 +242,8 @@ func TestDatacenterGet(t *testing.T) {
 	client := mock_metalcloud.NewMockMetalCloudClient(ctrl)
 
 	client.EXPECT().
-		DatacenterGet(_dcFixture1.DatacenterName).
-		Return(&_dcFixture1, nil).
+		DatacenterWithConfigGet(_dcFixture1.DatacenterName).
+		Return(&_dcFixture1WithConfig, nil).
 		AnyTimes()
 
 	var dcConf metalcloud.DatacenterConfig
@@ -288,48 +288,24 @@ func TestDatacenterGet(t *testing.T) {
 	})
 	ret, err = datacenterGetCmd(&cmd, client)
 	Expect(err).To(BeNil())
-	Expect(ret).To(ContainSubstring("https:/asasd/asdasd"))
-
-	//verify return url
-	cmd = command.MakeCommand(map[string]interface{}{
-		"datacenter_name":   _dcFixture1.DatacenterName,
-		"return_config_url": true,
-	})
-	ret, err = datacenterGetCmd(&cmd, client)
-	Expect(err).To(BeNil())
-	Expect(ret).To(Equal("https:/asasd/asdasd"))
-
-	//verify config
-	cmd = command.MakeCommand(map[string]interface{}{
-		"datacenter_name":        _dcFixture1.DatacenterName,
-		"show_datacenter_config": true,
-	})
-	ret, err = datacenterGetCmd(&cmd, client)
-	Expect(err).To(BeNil())
-	Expect(ret).To(ContainSubstring("Datacenter name"))
+	Expect(ret).To(ContainSubstring("nfs://test-nfs/"))
 
 	//verify json format
 
 	cmd = command.MakeCommand(map[string]interface{}{
-		"datacenter_name":        _dcFixture1.DatacenterName,
-		"show_datacenter_config": true,
-		"show_secret_config_url": true,
-		"format":                 "json",
+		"datacenter_name": _dcFixture1.DatacenterName,
+		"format":          "json",
 	})
 	ret, err = datacenterGetCmd(&cmd, client)
 	Expect(err).To(BeNil())
-
-	var m []interface{}
+	t.Logf("json: %s", string(ret))
+	var m metalcloud.DatacenterWithConfig
 	err = json.Unmarshal([]byte(ret), &m)
 	Expect(err).To(BeNil())
 
-	r := m[0].(map[string]interface{})
-	Expect(r["LABEL"].(string)).To(Equal(_dcFixture1.DatacenterName))
-	Expect(r["TITLE"].(string)).To(Equal(_dcFixture2.DatacenterDisplayName))
-
 }
 
-var _dcFixture1 metalcloud.Datacenter = metalcloud.Datacenter{
+var _dcFixture1 = metalcloud.Datacenter{
 	DatacenterName:          "test",
 	DatacenterDisplayName:   "datacenterDisplayName",
 	UserID:                  1,
@@ -340,7 +316,23 @@ var _dcFixture1 metalcloud.Datacenter = metalcloud.Datacenter{
 	DatacenterNameParent:    "test",
 }
 
-var _dcFixture2 metalcloud.Datacenter = metalcloud.Datacenter{
+var _dcFixture1WithConfig = metalcloud.DatacenterWithConfig{
+	Datacenter: metalcloud.Datacenter{
+		DatacenterName:          "test",
+		DatacenterDisplayName:   "datacenterDisplayName",
+		UserID:                  1,
+		DatacenterIsMaster:      false,
+		DatacenterIsMaintenance: false,
+		DatacenterHidden:        true,
+		DatacenterTags:          []string{"t1", "t2"},
+		DatacenterNameParent:    "test",
+	},
+	DatacenterConfig: metalcloud.DatacenterConfig{
+		NFSServer: "nfs://test-nfs/",
+	},
+}
+
+var _dcFixture2 = metalcloud.Datacenter{
 	DatacenterName:          "test",
 	DatacenterDisplayName:   "datacenterDisplayName",
 	UserID:                  1,

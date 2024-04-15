@@ -10,6 +10,7 @@ import (
 	"github.com/metalsoft-io/metalcloud-cli/internal/colors"
 	"github.com/metalsoft-io/metalcloud-cli/internal/command"
 	"github.com/metalsoft-io/metalcloud-cli/internal/configuration"
+	"github.com/metalsoft-io/metalcloud-cli/internal/objects"
 	"github.com/metalsoft-io/metalcloud-cli/internal/stringutils"
 	"github.com/metalsoft-io/tableformatter"
 )
@@ -45,7 +46,6 @@ var SwitchCmds = []command.Command{
 				"overwrite_hostname_from_switch": c.FlagSet.Bool("retrieve-hostname-from-switch", false, colors.Green("(Flag)")+" Retrieve the hostname from the equipment instead of configuration file."),
 				"format":                         c.FlagSet.String("format", "json", "The input format. Supported values are 'json','yaml'. The default format is json."),
 				"read_config_from_file":          c.FlagSet.String("raw-config", command.NilDefaultStr, colors.Red("(Required)")+" Read configuration from file in the format specified with --format."),
-				"read_config_from_pipe":          c.FlagSet.Bool("pipe", false, colors.Green("(Flag)")+" If set, read configuration from pipe instead of from a file. Either this flag or the --raw-config option must be used."),
 				"return_id":                      c.FlagSet.Bool("return-id", false, "Will print the ID of the created object. Useful for automating tasks."),
 			}
 		},
@@ -236,8 +236,7 @@ volumeTemplateID: 0
 			c.Arguments = map[string]interface{}{
 				"network_device_id_or_identifier_string": c.FlagSet.String("id", command.NilDefaultStr, colors.Red("(Required)")+" Switch id or identifier string. "),
 				"show_credentials":                       c.FlagSet.Bool("show-credentials", false, colors.Green("(Flag)")+" If set returns the switch credentials"),
-				"format":                                 c.FlagSet.String("format", "", "The output format. Supported values are 'json','csv','yaml'. The default format is human readable."),
-				"raw":                                    c.FlagSet.Bool("raw", false, colors.Green("(Flag)")+" When set the return will be a full dump of the object. This is useful when copying configurations. Only works with json and yaml formats."),
+				"format":                                 c.FlagSet.String("format", "yaml", "The output format. Supported values are 'json','csv','yaml'. The default format is yaml."),
 			}
 		},
 		ExecuteFunc: switchGetCmd,
@@ -385,24 +384,18 @@ func switchListCmd(c *command.Command, client metalcloud.MetalCloudClient) (stri
 
 func switchCreateCmd(c *command.Command, client metalcloud.MetalCloudClient) (string, error) {
 
-	var obj metalcloud.SwitchDevice
-
-	err := command.GetRawObjectFromCommand(c, &obj)
+	obj, err := objects.ReadSingleObjectFromCommand(c, client)
 	if err != nil {
 		return "", err
 	}
 
-	if obj.DatacenterName == "" {
-		return "", fmt.Errorf("Datacenter name is required.")
-	}
-
-	ret, err := client.SwitchDeviceCreate(obj, command.GetBoolParam(c.Arguments["overwrite_hostname_from_switch"]))
+	err = (*obj).CreateOrUpdate(client)
 	if err != nil {
 		return "", err
 	}
-
+	sw := (*obj).(*metalcloud.SwitchDevice)
 	if command.GetBoolParam(c.Arguments["return_id"]) {
-		return fmt.Sprintf("%d", ret.NetworkEquipmentID), nil
+		return fmt.Sprintf("%d", sw.NetworkEquipmentID), nil
 	}
 
 	return "", err
@@ -440,101 +433,15 @@ func switchEditCmd(c *command.Command, client metalcloud.MetalCloudClient) (stri
 
 func switchGetCmd(c *command.Command, client metalcloud.MetalCloudClient) (string, error) {
 
-	retSW, err := getSwitchFromCommandLine("id", c, client)
+	sw, err := getSwitchFromCommandLine("id", c, client)
 	if err != nil {
 		return "", err
 	}
 
-	schema := []tableformatter.SchemaField{
-		{
-			FieldName: "ID",
-			FieldType: tableformatter.TypeInt,
-			FieldSize: 6,
-		},
-		{
-			FieldName: "HOSTNAME",
-			FieldType: tableformatter.TypeString,
-			FieldSize: 6,
-		},
-		{
-			FieldName: "DATACENTER",
-			FieldType: tableformatter.TypeString,
-			FieldSize: 5,
-		},
-		{
-			FieldName: "DRIVER",
-			FieldType: tableformatter.TypeString,
-			FieldSize: 6,
-		},
-		{
-			FieldName: "PROVISIONER",
-			FieldType: tableformatter.TypeString,
-			FieldSize: 6,
-		},
-		{
-			FieldName: "MGMT IP",
-			FieldType: tableformatter.TypeString,
-			FieldSize: 5,
-		},
-	}
-
-	credentialsUser := ""
-	credentialsPass := ""
-
-	showCredentials := command.GetBoolParam(c.Arguments["show_credentials"])
-
-	if showCredentials {
-		credentialsUser = fmt.Sprintf("%s", retSW.NetworkEquipmentManagementUsername)
-		credentialsPass = fmt.Sprintf("%s", retSW.NetworkEquipmentManagementPassword)
-
-		schema = append(schema, tableformatter.SchemaField{
-			FieldName: "MGMT_USER",
-			FieldType: tableformatter.TypeString,
-			FieldSize: 5,
-		})
-
-		schema = append(schema, tableformatter.SchemaField{
-			FieldName: "MGMT_PASS",
-			FieldType: tableformatter.TypeString,
-			FieldSize: 5,
-		})
-
-	}
-
-	data := [][]interface{}{{
-		retSW.NetworkEquipmentID,
-		retSW.NetworkEquipmentIdentifierString,
-		retSW.DatacenterName,
-		retSW.NetworkEquipmentDriver,
-		retSW.NetworkEquipmentProvisionerType,
-		retSW.NetworkEquipmentManagementAddress,
-		credentialsUser,
-		credentialsPass,
-	}}
-
-	var sb strings.Builder
-
 	format := command.GetStringParam(c.Arguments["format"])
 
-	if command.GetBoolParam(c.Arguments["raw"]) {
-		ret, err := tableformatter.RenderRawObject(*retSW, format, "NetworkEquipment")
-		if err != nil {
-			return "", err
-		}
-		sb.WriteString(ret)
-	} else {
-		table := tableformatter.Table{
-			Data:   data,
-			Schema: schema,
-		}
-		ret, err := table.RenderTransposedTable("switch device", "", format)
-		if err != nil {
-			return "", err
-		}
-		sb.WriteString(ret)
-	}
+	return objects.RenderRawObject(sw, format, "SwitchDevice")
 
-	return sb.String(), nil
 }
 
 func switchDeleteCmd(c *command.Command, client metalcloud.MetalCloudClient) (string, error) {
@@ -669,7 +576,7 @@ func switchInterfacesListCmd(c *command.Command, client metalcloud.MetalCloudCli
 	format := command.GetStringParam(c.Arguments["format"])
 
 	if command.GetBoolParam(c.Arguments["raw"]) {
-		ret, err := tableformatter.RenderRawObject(*list, format, "Server interfaces")
+		ret, err := objects.RenderRawObject(*list, format, "ServerInterface")
 		if err != nil {
 			return "", err
 		}

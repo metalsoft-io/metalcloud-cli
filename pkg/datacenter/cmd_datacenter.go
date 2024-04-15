@@ -10,8 +10,8 @@ import (
 	"github.com/metalsoft-io/metalcloud-cli/internal/colors"
 	"github.com/metalsoft-io/metalcloud-cli/internal/command"
 	"github.com/metalsoft-io/metalcloud-cli/internal/configuration"
+	"github.com/metalsoft-io/metalcloud-cli/internal/objects"
 	"github.com/metalsoft-io/tableformatter"
-	jq "github.com/savaki/jq"
 	"gopkg.in/yaml.v3"
 )
 
@@ -69,14 +69,29 @@ var DatacenterCmds = []command.Command{
 		FlagSet:      flag.NewFlagSet("Get datacenter details.", flag.ExitOnError),
 		InitFunc: func(c *command.Command) {
 			c.Arguments = map[string]interface{}{
-				"datacenter_name":        c.FlagSet.String("id", command.NilDefaultStr, colors.Red("(Required)")+" Label of the datacenter. Also used as an ID."),
-				"show_secret_config_url": c.FlagSet.Bool("show-config-url", false, colors.Green("(Flag)")+" If set returns the secret config url for datacenter agents."),
-				"return_config_url":      c.FlagSet.Bool("return-config-url", false, colors.Green("(Flag)")+" If set prints the config url of the datacenter. Ignores all other flags. Useful in automation."),
-				"format":                 c.FlagSet.String("format", "", "The output format. Supported values are 'json','csv','yaml'. The default format is human readable."),
-				"json_path":              c.FlagSet.String("jsonpath", command.NilDefaultStr, "Filter the JSON config."),
+				"datacenter_name": c.FlagSet.String("id", command.NilDefaultStr, colors.Red("(Required)")+" Label of the datacenter. Also used as an ID."),
+				//	"show_secret_config_url": c.FlagSet.Bool("show-config-url", false, colors.Green("(Flag)")+" If set returns the secret config url for datacenter agents."),
+				"return_config_url": c.FlagSet.Bool("return-config-url", false, colors.Green("(Flag)")+" If set prints the config url of the datacenter. Ignores all other flags. Useful in automation."),
+				"format":            c.FlagSet.String("format", "yaml", "The output format. Supported values are 'json','csv','yaml'. The default format is human readable."),
+				"json_path":         c.FlagSet.String("jsonpath", command.NilDefaultStr, "Filter the JSON config."),
 			}
 		},
 		ExecuteFunc: datacenterGetCmd,
+		Endpoint:    configuration.DeveloperEndpoint,
+	},
+	{
+		Description:  "Get site controller config url",
+		Subject:      "datacenter",
+		AltSubject:   "dc",
+		Predicate:    "get",
+		AltPredicate: "show",
+		FlagSet:      flag.NewFlagSet("Get site controller config url.", flag.ExitOnError),
+		InitFunc: func(c *command.Command) {
+			c.Arguments = map[string]interface{}{
+				"datacenter_name": c.FlagSet.String("id", command.NilDefaultStr, colors.Red("(Required)")+" Label of the datacenter. Also used as an ID."),
+			}
+		},
+		ExecuteFunc: datacenterGetConfigUrlCmd,
 		Endpoint:    configuration.DeveloperEndpoint,
 	},
 	{
@@ -307,206 +322,31 @@ func datacenterGetCmd(c *command.Command, client metalcloud.MetalCloudClient) (s
 		return "", fmt.Errorf("-id required")
 	}
 
-	retDC, err := client.DatacenterGet(datacenterName)
+	retDC, err := client.DatacenterWithConfigGet(datacenterName)
 	if err != nil {
 		return "", err
-	}
-
-	schema := []tableformatter.SchemaField{
-		{
-			FieldName: "LABEL",
-			FieldType: tableformatter.TypeString,
-			FieldSize: 15,
-		},
-		{
-			FieldName: "TITLE",
-			FieldType: tableformatter.TypeString,
-			FieldSize: 20,
-		},
-		{
-			FieldName: "OWNER",
-			FieldType: tableformatter.TypeString,
-			FieldSize: 10,
-		},
-		{
-			FieldName: "PARENT",
-			FieldType: tableformatter.TypeString,
-			FieldSize: 10,
-		},
-		{
-			FieldName: "FLAGS",
-			FieldType: tableformatter.TypeString,
-			FieldSize: 20,
-		},
-	}
-
-	flags := []string{}
-
-	if retDC.DatacenterIsMaster {
-		flags = append(flags, "MASTER")
-	}
-
-	if retDC.DatacenterIsMaintenance {
-		flags = append(flags, "MAINTENANCE")
-	}
-
-	if retDC.DatacenterHidden {
-		flags = append(flags, "HIDDEN")
-	}
-
-	flags = append(flags, retDC.DatacenterTags...)
-
-	userStr := ""
-	if retDC.UserID != 0 {
-		user, err := client.UserGet(retDC.UserID)
-		if err != nil {
-			return "", err
-		}
-		userStr = fmt.Sprintf("%s #%d", user.UserEmail, retDC.UserID)
-	}
-
-	showSecretURL := command.GetBoolParam(c.Arguments["show_secret_config_url"])
-	secretConfigURL := ""
-
-	if showSecretURL || command.GetBoolParam(c.Arguments["return_config_url"]) {
-		schema = append(schema, tableformatter.SchemaField{
-			FieldName: "CONFIG_URL",
-			FieldType: tableformatter.TypeString,
-			FieldSize: 15,
-		})
-		secretConfigURL, err = client.DatacenterAgentsConfigJSONDownloadURL(datacenterName, true)
-		if err != nil {
-			return "", err
-		}
-	}
-
-	format := command.GetStringParam(c.Arguments["format"])
-
-	configStr := ""
-	config := metalcloud.DatacenterConfig{}
-
-	schema = append(schema, tableformatter.SchemaField{
-		FieldName: "CONFIG",
-		FieldType: tableformatter.TypeInterface,
-		FieldSize: 15,
-	})
-
-	configRet, err := client.DatacenterConfigGet(datacenterName)
-	if err != nil {
-		return "", err
-	}
-
-	config = *configRet
-
-	configBytes, err := yaml.Marshal(*configRet)
-	if err != nil {
-		return "", err
-	}
-
-	configStr = string(configBytes)
-
-	data := [][]interface{}{
-		{
-			retDC.DatacenterName,
-			retDC.DatacenterDisplayName,
-			userStr,
-			retDC.DatacenterNameParent,
-			strings.Join(flags, " "),
-			secretConfigURL,
-			config,
-		},
 	}
 
 	var sb strings.Builder
 
-	switch format {
-	case "json", "JSON":
-		configBytes, err := json.MarshalIndent(config, "", "\t")
-		if err != nil {
-			return "", err
-		}
+	format := command.GetStringParam(c.Arguments["format"])
 
-		if jsonPath, ok := command.GetStringParamOk(c.Arguments["json_path"]); ok {
-			op, err := jq.Parse(jsonPath)
-
-			if err != nil {
-				return "", err
-			}
-			result, _ := op.Apply(configBytes)
-			data[0][5] = string(result)
-		} else {
-			data[0][5] = string(configBytes)
-		}
-
-		table := tableformatter.Table{
-			Data:   data,
-			Schema: schema,
-		}
-		ret, err := table.RenderTableAsJSON()
-		if err != nil {
-			return "", err
-		}
-		sb.WriteString(ret)
-	case "csv", "CSV":
-		table := tableformatter.Table{
-			Data:   data,
-			Schema: schema,
-		}
-		ret, err := table.RenderTableAsCSV()
-		if err != nil {
-			return "", err
-		}
-		sb.WriteString(ret)
-
-	case "yaml", "YAML":
-		configBytes, err := yaml.Marshal(config)
-		if err != nil {
-			return "", err
-		}
-
-		data[0][5] = string(configBytes)
-
-		table := tableformatter.Table{
-			Data:   data,
-			Schema: schema,
-		}
-		ret, err := table.RenderTableAsYAML()
-		if err != nil {
-			return "", err
-		}
-		sb.WriteString(ret)
-
-	default:
-
-		if command.GetBoolParam(c.Arguments["return_config_url"]) {
-			return secretConfigURL, nil
-		}
-
-		sb.WriteString("DATACENTER OVERVIEW\n")
-		sb.WriteString("-------------------\n")
-
-		sb.WriteString(fmt.Sprintf("Datacenter name (label): %s\n", retDC.DatacenterName))
-		sb.WriteString(fmt.Sprintf("Datacenter display name (title): %s\n", retDC.DatacenterDisplayName))
-		sb.WriteString(fmt.Sprintf("User: %s\n", userStr))
-		sb.WriteString(fmt.Sprintf("Flags: %s\n", strings.Join(flags, " ")))
-		sb.WriteString(fmt.Sprintf("Parent: %s\n", retDC.DatacenterNameParent))
-		sb.WriteString(fmt.Sprintf("Type: %s\n", retDC.DatacenterType))
-		sb.WriteString(fmt.Sprintf("Created: %s\n", retDC.DatacenterCreatedTimestamp))
-		sb.WriteString(fmt.Sprintf("Updated: %s\n", retDC.DatacenterUpdatedTimestamp))
-
-		sb.WriteString("\n")
-		sb.WriteString("Configuration\n")
-		sb.WriteString("---------------\n")
-		sb.WriteString(configStr)
-
-		if showSecretURL {
-			sb.WriteString("---------------\n")
-			sb.WriteString(fmt.Sprintf("Datacenter Agents Secret Config URL: %s\n", secretConfigURL))
-		}
-
+	ret, err := objects.RenderRawObject(*retDC, format, "DatacenterWithConfig")
+	if err != nil {
+		return "", err
 	}
+	sb.WriteString(ret)
 
 	return sb.String(), nil
+}
+
+func datacenterGetConfigUrlCmd(c *command.Command, client metalcloud.MetalCloudClient) (string, error) {
+	datacenterName, ok := command.GetStringParamOk(c.Arguments["datacenter_name"])
+	if !ok {
+		return "", fmt.Errorf("-id required")
+	}
+
+	return client.DatacenterAgentsConfigJSONDownloadURL(datacenterName, true)
 }
 
 func datacenterUpdateCmd(c *command.Command, client metalcloud.MetalCloudClient) (string, error) {

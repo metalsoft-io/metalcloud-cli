@@ -11,6 +11,7 @@ import (
 	"github.com/metalsoft-io/metalcloud-cli/internal/colors"
 	"github.com/metalsoft-io/metalcloud-cli/internal/command"
 	"github.com/metalsoft-io/metalcloud-cli/internal/configuration"
+	"github.com/metalsoft-io/metalcloud-cli/internal/objects"
 	"github.com/metalsoft-io/tableformatter"
 )
 
@@ -313,7 +314,7 @@ func subnetPoolGetCmd(c *command.Command, client metalcloud.MetalCloudClient) (s
 	format := command.GetStringParam(c.Arguments["format"])
 
 	if command.GetBoolParam(c.Arguments["raw"]) {
-		ret, err := tableformatter.RenderRawObject(*s, format, "SubnetPool")
+		ret, err := objects.RenderRawObject(*s, format, "SubnetPool")
 		if err != nil {
 			return "", err
 		}
