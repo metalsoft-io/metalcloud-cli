@@ -24,16 +24,10 @@ var InstanceArrayCmds = []command.Command{
 		FlagSet:      flag.NewFlagSet("instance-array", flag.ExitOnError),
 		InitFunc: func(c *command.Command) {
 			c.Arguments = map[string]interface{}{
-				"infrastructure_id_or_label":    c.FlagSet.String("infra", command.NilDefaultStr, colors.Red("(Required)")+" Infrastructure's id or label. Note that the 'label' this be ambiguous in certain situations."),
-				"instance_array_instance_count": c.FlagSet.Int("instance-count", 1, " Instance count of this instance array"),
-				"instance_array_label":          c.FlagSet.String("label", command.NilDefaultStr, "InstanceArray's label"),
-				"server_type":                   c.FlagSet.String("server-type", command.NilDefaultStr, "InstanceArray's server type."),
-				//	"instance_array_ram_gbytes":           c.FlagSet.Int("ram", command.NilDefaultInt, "InstanceArray's minimum RAM (GB)"),
-				//	"instance_array_processor_count":      c.FlagSet.Int("proc", command.NilDefaultInt, "InstanceArray's minimum processor count"),
-				//	"instance_array_processor_core_mhz":   c.FlagSet.Int("proc-freq", command.NilDefaultInt, "InstanceArray's minimum processor frequency (Mhz)"),
-				//	"instance_array_processor_core_count": c.FlagSet.Int("proc-core-count", command.NilDefaultInt, "InstanceArray's minimum processor core count"),
-				//	"instance_array_disk_count":           c.FlagSet.Int("disks", command.NilDefaultInt, "InstanceArray's number of local drives"),
-				//	"instance_array_disk_size_mbytes":     c.FlagSet.Int("disk-size", command.NilDefaultInt, "InstanceArray's local disks' size in MB"),
+				"infrastructure_id_or_label":          c.FlagSet.String("infra", command.NilDefaultStr, colors.Red("(Required)")+" Infrastructure's id or label. Note that the 'label' this be ambiguous in certain situations."),
+				"instance_array_instance_count":       c.FlagSet.Int("instance-count", 1, " Instance count of this instance array"),
+				"instance_array_label":                c.FlagSet.String("label", command.NilDefaultStr, "InstanceArray's label"),
+				"server_type":                         c.FlagSet.String("server-type", command.NilDefaultStr, "InstanceArray's server type."),
 				"instance_array_boot_method":          c.FlagSet.String("boot", command.NilDefaultStr, "InstanceArray's boot type:'pxe_iscsi','local_drives'"),
 				"instance_array_firewall_not_managed": c.FlagSet.Bool("firewall-management-disabled", false, colors.Green("(Flag)")+" If set InstanceArray's firewall management on or off"),
 				"volume_template_id_or_label":         c.FlagSet.String("local-install-template", command.NilDefaultStr, "InstanceArray's volume template when booting from for local drives"),
@@ -98,8 +92,8 @@ var InstanceArrayCmds = []command.Command{
 		Description:  "Edits an instance array.",
 		Subject:      "instance-array",
 		AltSubject:   "ia",
-		Predicate:    "edit",
-		AltPredicate: "update",
+		Predicate:    "update",
+		AltPredicate: "edit",
 		FlagSet:      flag.NewFlagSet("instance_array", flag.ExitOnError),
 		InitFunc: func(c *command.Command) {
 			c.Arguments = map[string]interface{}{

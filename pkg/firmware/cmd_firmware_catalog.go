@@ -24,7 +24,7 @@ var FirmwareCatalogCmds = []command.Command{
 		InitFunc: func(c *command.Command) {
 			c.Arguments = map[string]interface{}{
 				"config_format":             c.FlagSet.String("config-format", command.NilDefaultStr, colors.Red("(Required)")+" The format of the config file. Supported values are 'json' and 'yaml'."),
-				"raw_config":                c.FlagSet.String("raw-config", command.NilDefaultStr, colors.Red("(Required)")+" The path to the config file."),
+				"raw_config":                c.FlagSet.String("f", command.NilDefaultStr, colors.Red("(Required)")+" The path to the config file."),
 				"download_binaries":         c.FlagSet.Bool("download-binaries", false, colors.Yellow("(Optional)")+" Download firmware binaries from the catalog to the local filesystem."),
 				"skip_upload_to_repo":       c.FlagSet.Bool("skip-upload-to-repo", false, colors.Yellow("(Optional)")+" Skip firmware binaries upload to the HTTP repository."),
 				"skip_host_key_checking":    c.FlagSet.Bool("skip-host-key-checking", false, colors.Yellow("(Optional)")+" Skip check when adding a host key to the known_hosts file in the firmware binary upload process."),

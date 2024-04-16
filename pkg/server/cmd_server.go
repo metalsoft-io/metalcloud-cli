@@ -75,7 +75,7 @@ metalcloud-cli server list --show-credentials # to retrieve a list of credential
 		InitFunc: func(c *command.Command) {
 			c.Arguments = map[string]interface{}{
 				"format":                c.FlagSet.String("format", "json", "The input format. Supported values are 'json','yaml'. The default format is json."),
-				"read_config_from_file": c.FlagSet.String("raw-config", command.NilDefaultStr, colors.Red("(Required)")+" Read raw object from file"),
+				"read_config_from_file": c.FlagSet.String("f", command.NilDefaultStr, colors.Red("(Required)")+" Read raw object from file"),
 				"read_config_from_pipe": c.FlagSet.Bool("pipe", false, colors.Green("(Flag)")+" If set, read raw object from pipe instead of from a file. Either this flag or the --raw-config option must be used."),
 				"return_id":             c.FlagSet.Bool("return-id", false, "Will print the ID of the created object. Useful for automating tasks."),
 			}
@@ -349,8 +349,8 @@ password: notcalvin
 		Description:  "Edit server.",
 		Subject:      "server",
 		AltSubject:   "srv",
-		Predicate:    "edit",
-		AltPredicate: "update",
+		Predicate:    "update",
+		AltPredicate: "edit",
 		FlagSet:      flag.NewFlagSet("edit server", flag.ExitOnError),
 		InitFunc: func(c *command.Command) {
 			c.Arguments = map[string]interface{}{
@@ -362,7 +362,7 @@ password: notcalvin
 				"server_type":           c.FlagSet.String("server-type", command.NilDefaultStr, "The new server type (id or label) of the server. This command cannot be used in conjunction with config or pipe commands."),
 				"server_class":          c.FlagSet.String("server-class", command.NilDefaultStr, "The new class of the server. This command cannot be used in conjunction with config or pipe commands."),
 				"format":                c.FlagSet.String("format", "json", "The input format used when config or pipe commands are used. Supported values are 'json','yaml'. The default format is json."),
-				"read_config_from_file": c.FlagSet.String("raw-config", command.NilDefaultStr, colors.Red("(Required)")+" Read raw object from file"),
+				"read_config_from_file": c.FlagSet.String("f", command.NilDefaultStr, colors.Red("(Required)")+" Read raw object from file"),
 				"read_config_from_pipe": c.FlagSet.Bool("pipe", false, colors.Green("(Flag)")+" If set, read raw object from pipe instead of from a file. Either this flag or the --raw-config option must be used."),
 			}
 		},

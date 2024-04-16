@@ -39,9 +39,9 @@ var DriveArrayCmds = []command.Command{
 		Description:  "Edit a drive array.",
 		Subject:      "drive-array",
 		AltSubject:   "da",
-		Predicate:    "edit",
-		AltPredicate: "alter",
-		FlagSet:      flag.NewFlagSet("edit_drive_array", flag.ExitOnError),
+		Predicate:    "update",
+		AltPredicate: "edit",
+		FlagSet:      flag.NewFlagSet("update_drive_array", flag.ExitOnError),
 		InitFunc: func(c *command.Command) {
 			c.Arguments = map[string]interface{}{
 				"drive_array_id_or_label":                c.FlagSet.String("id", command.NilDefaultStr, colors.Red("(Required)")+" Drive Array's ID or label. Note that using the label can be ambiguous and is slower."),

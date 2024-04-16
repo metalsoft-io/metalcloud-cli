@@ -36,7 +36,7 @@ func ReadObjectsFromCommand(c *command.Command, client metalcloud.MetalCloudClie
 	if filePath, ok := command.GetStringParamOk(c.Arguments["read_config_from_file"]); ok {
 		content, err = configuration.ReadInputFromFile(filePath)
 	} else {
-		return nil, fmt.Errorf("file name is required")
+		return nil, fmt.Errorf("-f <input_file_name> is required")
 	}
 
 	if err != nil {

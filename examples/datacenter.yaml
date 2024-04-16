@@ -1,61 +1,85 @@
-#DC Agents primary IP
-BSIVRRPListenIPv4: 172.16.10.6
-#DC Agents secondary IP list (comma separated)
-BSIMachineListenIPv4List: 
-    - 172.16.10.6
-#DC Agents IPs subnet, in CIDR format (x.x.x.x/x)
-BSIMachinesSubnetIPv4CIDR: 172.16.10.6/24
-#This is the ip from which the controller will
-#see the incoming connections from this datacenter's DC agents
-BSIExternallyVisibleIPv4:  83.246.0.140
-#HTTP(S) root URL for the general purpose HTTP repository 
-#(package manager resources, deploy setup files, etc.). It does not end in a slash.
-repoURLRoot: https://repointegrationpublic.bigstepcloud.com
-#Repo URL root for the quarantine network. Usually the same as repoURLRoot
-repoURLRootQuarantineNetwork: https://repointegrationpublic.bigstepcloud.com
-
-#this is the TFTP DC Agent's ip. This is usually the same as BSIVRRPListenIPv4
-TFTPServerWANVRRPListenIPv4: 172.16.10.6
-
-#the IP range of the storage arrays in your network
-SANRoutedSubnet: 100.96.0.0/16
-
-NTPServers:
-    - 84.40.58.44
-    - 84.40.58.45
-DNSServers:
-    - 84.40.63.27
-
-#This setting controls the tenant isolation mechanism
-
-switchProvisioner:    
-    #must be one of LANProvisioner, VPLSProvisioner, VLANProvisioner
-    type: VPLSProvisioner    
-    #The ACL number for SAN ports
-    ACLSAN: 3999
-    #The ACL number for WAN ports
-    ACLWAN: 3399
-    #The ACL range for ACL rules on the SAN ports. Per switch
-    SANACLRange: 3700-3998
-    #the VLAN Range for LAN networks, per ToR switch. Make sure these don't overlap.
-    ToRLANVLANRange: 400-699
-    #the VLAN Range for SAN networks, per ToR switch. Kake sure these don't overlap.
-    ToRSANVLANRange: 700-999
-    #the VLAN Range for WAN networks, per ToR switch. Make sure these don't overlap.
-    ToRWANVLANRange: 100-300
-    #The VLAN to use for quarantine network
+kind: DatacenterWithConfig
+apiVersion: 1.0
+datacenter:
+  id: 332
+  name: test-us03-chi-qts01-dc-3
+  displayname: US03 DC
+  ismaster: false
+  ismaintenance: false
+  type: metal_cloud
+  createdtimestamp: "2023-03-06T11:12:20Z"
+  updatedtimestamp: "2024-04-12T12:09:25Z"
+  ishidden: false
+  tags:
+  - ""
+datacenterconfig:
+  BSIMachinesSubnetIPv4CIDR: 172.18.38.16/29
+  BSIVRRPListenIPv4: 172.18.38.22
+  BSIMachineListenIPv4List:
+  - 172.18.38.22
+  BSIExternallyVisibleIPv4: 176.223.248.11
+  repoURLRoot: http://repointegrationpublic.bigstepcloud.com
+  repoURLRootQuarantineNetwork: http://repointegrationpublic.bigstepcloud.com
+  SANRoutedSubnet: 100.96.0.0/16
+  NTPServers:
+  - 45.55.58.103
+  DNSServers:
+  - 1.1.1.1
+  - 8.8.8.8
+  KMS: 84.40.58.70:1688
+  TFTPServerWANVRRPListenIPv4: 172.18.38.22
+  dataLakeEnabled: false
+  latitude: 45
+  longitude: 51.509865
+  serverRegisterUsingGeneratedIPMICredentialsEnabled: false
+  serverRegisterUsingProvidedIPMICredentialsEnabled: true
+  switchProvisioner:
+    ASNRanges: []
+    LAGRanges:
+    - 11-19
+    LANVLANRange: 200-299
+    MLAGRanges:
+    - 20-25
+    SANVLANRange: 300-399
+    SANVNIPrefix: 2
+    VRFL3VNIPrefix: 9
+    VRFVLANRanges: []
+    WANVLANRange: 100-199
+    WANVNIPrefix: 1
+    allocateDefaultLANVLAN: false
+    allocateDefaultSANVLAN: true
+    allocateDefaultWANVLAN: true
+    disableQuarantineNetwork: false
+    leafSwitchesHaveMLAGPairs: false
+    preventCleanupForVLANs: []
+    preventCleanupForVLANsFromExternalConnectionUplinks: []
+    preventCleanupForVRFs: []
+    preventUsageOfVLANs:
+    - 3204
+    preventUsageOfVRFs: []
     quarantineVLANID: 5
-    #VLAN Range for WAN ports 'North' switches.
-    NorthWANVLANRange: 1001-2000
-
-serverRegisterUsingGeneratedIPMICredentialsEnabled: true
-datacenterNetworkIsLayer2Only: true
-
-#switchProvisioner:    
-#    type: VLANProvisioner
-#    #The VLAN to use for quarantine network
-#    quarantineVLANID: 5
-#    #VLAN range for WAN networks
-#    WANVLANRange: 100-199
-#    #VLAN range for LAN networks
-#    LANVLANRange: 200-299
+    storageHasSeparateFabric: false
+    type: EVPNVXLANL2Provisioner
+    zeroTouchRegistrationEnabled: false
+  enableTenantAccessToIPMI: true
+  allowVLANOverrides: true
+  allowNetworkProfiles: true
+  enableServerRegistrationStartedByInBandDHCP: false
+  extraInternalIPsPerSubnet: 0
+  extraInternalIPsPerSANSubnet: 0
+  serverRAIDConfigurationEnabled: true
+  webProxy: null
+  isKubernetesDeployment: false
+  allowInstanceArrayFirmwarePolicies: true
+  provisionUsingTheQuarantineNetwork: true
+  enableDHCPRelaySecurityForQuarantineNetwork: false
+  enableDHCPRelaySecurityForClientNetworks: false
+  enableDHCPBMCMACAddressWhitelist: false
+  dhcpBMCMACAddressWhitelist: []
+  defaultServerCleanupPolicyID: 3
+  defaultWANNetworkProfileID: 864
+  defaultDeploymentMechanism: virtual_media
+  defaultCleanupAndRegistrationMechanism: bmc
+  NFSServer: 172.18.38.22
+  Option82ToIPMapping:
+    Eth1/1: 172.18.32.1

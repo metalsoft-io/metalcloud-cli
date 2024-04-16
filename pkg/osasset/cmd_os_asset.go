@@ -126,8 +126,8 @@ var OsAssetsCmds = []command.Command{
 		Description:  "Edit asset.",
 		Subject:      "asset",
 		AltSubject:   "asset",
-		Predicate:    "edit",
-		AltPredicate: "update",
+		Predicate:    "update",
+		AltPredicate: "edit",
 		FlagSet:      flag.NewFlagSet("edit asset", flag.ExitOnError),
 		InitFunc: func(c *command.Command) {
 			c.Arguments = map[string]interface{}{

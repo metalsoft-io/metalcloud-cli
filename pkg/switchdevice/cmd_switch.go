@@ -45,7 +45,7 @@ var SwitchCmds = []command.Command{
 			c.Arguments = map[string]interface{}{
 				"overwrite_hostname_from_switch": c.FlagSet.Bool("retrieve-hostname-from-switch", false, colors.Green("(Flag)")+" Retrieve the hostname from the equipment instead of configuration file."),
 				"format":                         c.FlagSet.String("format", "json", "The input format. Supported values are 'json','yaml'. The default format is json."),
-				"read_config_from_file":          c.FlagSet.String("raw-config", command.NilDefaultStr, colors.Red("(Required)")+" Read configuration from file in the format specified with --format."),
+				"read_config_from_file":          c.FlagSet.String("f", command.NilDefaultStr, colors.Red("(Required)")+" Read configuration from file in the format specified with --format."),
 				"return_id":                      c.FlagSet.Bool("return-id", false, "Will print the ID of the created object. Useful for automating tasks."),
 			}
 		},
@@ -209,15 +209,15 @@ volumeTemplateID: 0
 		Description:  "Edit switch device.",
 		Subject:      "switch",
 		AltSubject:   "sw",
-		Predicate:    "edit",
-		AltPredicate: "update",
+		Predicate:    "update",
+		AltPredicate: "edit",
 		FlagSet:      flag.NewFlagSet("Edit switch device", flag.ExitOnError),
 		InitFunc: func(c *command.Command) {
 			c.Arguments = map[string]interface{}{
 				"network_device_id_or_identifier_string": c.FlagSet.String("id", command.NilDefaultStr, colors.Red("(Required)")+" Switch id or identifier string. "),
 				"overwrite_hostname_from_switch":         c.FlagSet.Bool("retrieve-hostname-from-switch", false, colors.Green("(Flag)")+" Retrieve the hostname from the equipment instead of configuration file."),
 				"format":                                 c.FlagSet.String("format", "json", "The input format. Supported values are 'json','yaml'. The default format is json."),
-				"read_config_from_file":                  c.FlagSet.String("raw-config", command.NilDefaultStr, colors.Red("(Required)")+" Read  configuration from file in the format specified with --format."),
+				"read_config_from_file":                  c.FlagSet.String("f", command.NilDefaultStr, colors.Red("(Required)")+" Read  configuration from file in the format specified with --format."),
 				"read_config_from_pipe":                  c.FlagSet.Bool("pipe", false, colors.Green("(Flag)")+" If set, read  configuration from pipe instead of from a file. Either this flag or the --raw-config option must be used."),
 				"return_id":                              c.FlagSet.Bool("return-id", false, "Will print the ID of the created object. Useful for automating tasks."),
 			}
@@ -388,14 +388,17 @@ func switchCreateCmd(c *command.Command, client metalcloud.MetalCloudClient) (st
 	if err != nil {
 		return "", err
 	}
+	sw := (*obj).(metalcloud.SwitchDevice)
 
-	err = (*obj).CreateOrUpdate(client)
+	overwrite_hostname_from_switch := command.GetBoolParam(c.Arguments["overwrite_hostname_from_switch"])
+
+	createdSw, err := client.SwitchDeviceCreate(sw, overwrite_hostname_from_switch)
 	if err != nil {
 		return "", err
 	}
-	sw := (*obj).(*metalcloud.SwitchDevice)
+
 	if command.GetBoolParam(c.Arguments["return_id"]) {
-		return fmt.Sprintf("%d", sw.NetworkEquipmentID), nil
+		return fmt.Sprintf("%d", createdSw.NetworkEquipmentID), nil
 	}
 
 	return "", err
