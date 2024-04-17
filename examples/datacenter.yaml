@@ -1,85 +1,101 @@
 kind: DatacenterWithConfig
 apiVersion: 1.0
 datacenter:
-  id: 332
-  name: test-us03-chi-qts01-dc-3
-  displayname: US03 DC
-  ismaster: false
-  ismaintenance: false
+  id: 1
+  name: test-dc-100
+  displayName: test-dc-100
+  isMaster: false
+  isMaintenance: true
   type: metal_cloud
-  createdtimestamp: "2023-03-06T11:12:20Z"
-  updatedtimestamp: "2024-04-12T12:09:25Z"
-  ishidden: false
+  createdTimestamp: "2024-04-17T16:19:51Z"
+  updatedTimestamp: "2024-04-17T16:19:51Z"
+  isHidden: false
   tags:
-  - ""
-datacenterconfig:
-  BSIMachinesSubnetIPv4CIDR: 172.18.38.16/29
-  BSIVRRPListenIPv4: 172.18.38.22
+  - 5o6W758WZN
+  - SrvMdF2H4F
+  - gui_n431zmxxd3
+  - gui_zsc3brt593
+  - gui_8ipptyni0w
+  - gui_9oj3wtofns
+  - gui_97hdjhl5ua
+  - gui_v8er9lscgw
+  - gui_ounedm7yxv
+datacenterConfig:
+  BSIMachinesSubnetIPv4CIDR: 172.31.255.254/30
+  BSIVRRPListenIPv4: 172.31.255.254
   BSIMachineListenIPv4List:
-  - 172.18.38.22
-  BSIExternallyVisibleIPv4: 176.223.248.11
+  - 172.31.255.254
+  BSIExternallyVisibleIPv4: 10.255.131.5
   repoURLRoot: http://repointegrationpublic.bigstepcloud.com
   repoURLRootQuarantineNetwork: http://repointegrationpublic.bigstepcloud.com
   SANRoutedSubnet: 100.96.0.0/16
   NTPServers:
   - 45.55.58.103
   DNSServers:
-  - 1.1.1.1
-  - 8.8.8.8
+  - 10.255.231.44
+  - 10.255.231.45
   KMS: 84.40.58.70:1688
-  TFTPServerWANVRRPListenIPv4: 172.18.38.22
+  TFTPServerWANVRRPListenIPv4: 172.31.255.254
   dataLakeEnabled: false
-  latitude: 45
-  longitude: 51.509865
-  serverRegisterUsingGeneratedIPMICredentialsEnabled: false
-  serverRegisterUsingProvidedIPMICredentialsEnabled: true
+  latitude: 51.497938
+  longitude: -0.1840123
+  address: dsfdsf
+  serverRegisterUsingGeneratedIPMICredentialsEnabled: true
+  serverRegisterUsingProvidedIPMICredentialsEnabled: false
   switchProvisioner:
     ASNRanges: []
     LAGRanges:
-    - 11-19
-    LANVLANRange: 200-299
+    - 1960-2000
+    LANVLANRange: 234-299
     MLAGRanges:
-    - 20-25
+    - 30-90
     SANVLANRange: 300-399
     SANVNIPrefix: 2
     VRFL3VNIPrefix: 9
     VRFVLANRanges: []
     WANVLANRange: 100-199
     WANVNIPrefix: 1
-    allocateDefaultLANVLAN: false
+    allocateDefaultLANVLAN: true
     allocateDefaultSANVLAN: true
     allocateDefaultWANVLAN: true
     disableQuarantineNetwork: false
     leafSwitchesHaveMLAGPairs: false
-    preventCleanupForVLANs: []
-    preventCleanupForVLANsFromExternalConnectionUplinks: []
+    preventCleanupForVLANs:
+    - 4094
+    - 1
+    preventCleanupForVLANsFromExternalConnectionUplinks:
+    - 4094
+    - 1
     preventCleanupForVRFs: []
     preventUsageOfVLANs:
-    - 3204
+    - 4000
+    - 1
     preventUsageOfVRFs: []
     quarantineVLANID: 5
-    storageHasSeparateFabric: false
+    storageHasSeparateFabric: true
     type: EVPNVXLANL2Provisioner
     zeroTouchRegistrationEnabled: false
   enableTenantAccessToIPMI: true
   allowVLANOverrides: true
   allowNetworkProfiles: true
-  enableServerRegistrationStartedByInBandDHCP: false
-  extraInternalIPsPerSubnet: 0
-  extraInternalIPsPerSANSubnet: 0
+  enableServerRegistrationStartedByInBandDHCP: true
+  extraInternalIPsPerSubnet: 2
+  extraInternalIPsPerSANSubnet: 1
   serverRAIDConfigurationEnabled: true
   webProxy: null
-  isKubernetesDeployment: false
+  isKubernetesDeployment: true
   allowInstanceArrayFirmwarePolicies: true
   provisionUsingTheQuarantineNetwork: true
   enableDHCPRelaySecurityForQuarantineNetwork: false
   enableDHCPRelaySecurityForClientNetworks: false
-  enableDHCPBMCMACAddressWhitelist: false
+  enableDHCPBMCMACAddressWhitelist: true
   dhcpBMCMACAddressWhitelist: []
-  defaultServerCleanupPolicyID: 3
-  defaultWANNetworkProfileID: 864
+  defaultServerCleanupPolicyID: 0
+  defaultWANNetworkProfileID: 0
   defaultDeploymentMechanism: virtual_media
   defaultCleanupAndRegistrationMechanism: bmc
-  NFSServer: 172.18.38.22
+  NFSServer: 10.255.131.5
   Option82ToIPMapping:
-    Eth1/1: 172.18.32.1
+    Eth1/1: 10.255.129.1
+    asdasda: 10.20.30.40
+    vlan1-ethernet1/1/24: 10.255.148.25

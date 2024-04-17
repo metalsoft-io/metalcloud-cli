@@ -23,7 +23,7 @@ var SharedDriveCmds = []command.Command{
 		InitFunc: func(c *command.Command) {
 			c.Arguments = map[string]interface{}{
 				"infrastructure_id_or_label": c.FlagSet.String("infra", command.NilDefaultStr, colors.Red("(Required)")+" Infrastructure's id or label. Note that the 'label' this be ambiguous in certain situations."),
-				"format":                     c.FlagSet.String("format", "", "The output format. Supported values are 'json','csv','yaml'. The default format is human readable."),
+				"format":                     c.FlagSet.String("format", command.NilDefaultStr, "The output format. Supported values are 'json','csv','yaml'. The default format is human readable."),
 			}
 		},
 		ExecuteFunc: sharedDriveListCmd,

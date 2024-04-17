@@ -22,7 +22,7 @@ var NetworkCmds = []command.Command{
 		InitFunc: func(c *command.Command) {
 			c.Arguments = map[string]interface{}{
 				"instance_array_id_or_label": c.FlagSet.String("ia", command.NilDefaultStr, colors.Red("(Required)")+" InstanceArray's id or label. Note that the label can be ambigous."),
-				"format":                     c.FlagSet.String("format", "", "The output format. Supported values are 'json','csv','yaml'. The default format is human readable."),
+				"format":                     c.FlagSet.String("format", command.NilDefaultStr, "The output format. Supported values are 'json','csv','yaml'. The default format is human readable."),
 			}
 		},
 		ExecuteFunc: networkListCmd,

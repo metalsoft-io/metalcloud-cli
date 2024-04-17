@@ -29,7 +29,7 @@ var NetworkProfileCmds = []command.Command{
 		InitFunc: func(c *command.Command) {
 			c.Arguments = map[string]interface{}{
 				"datacenter": c.FlagSet.String("datacenter", command.NilDefaultStr, colors.Red("(Required)")+" Network profile datacenter"),
-				"format":     c.FlagSet.String("format", "", "The output format. Supported values are 'json','csv','yaml'. The default format is human readable."),
+				"format":     c.FlagSet.String("format", command.NilDefaultStr, "The output format. Supported values are 'json','csv','yaml'. The default format is human readable."),
 			}
 		},
 		ExecuteFunc: networkProfileListCmd,
@@ -45,7 +45,7 @@ var NetworkProfileCmds = []command.Command{
 		InitFunc: func(c *command.Command) {
 			c.Arguments = map[string]interface{}{
 				"network_profile_id": c.FlagSet.Int("id", command.NilDefaultInt, colors.Red("(Required)")+" Network profile's id."),
-				"format":             c.FlagSet.String("format", "", "The output format. Supported values are 'json','csv','yaml'. The default format is human readable."),
+				"format":             c.FlagSet.String("format", command.NilDefaultStr, "The output format. Supported values are 'json','csv','yaml'. The default format is human readable."),
 			}
 		},
 		ExecuteFunc: networkProfileVlansListCmd,
@@ -61,7 +61,7 @@ var NetworkProfileCmds = []command.Command{
 		InitFunc: func(c *command.Command) {
 			c.Arguments = map[string]interface{}{
 				"network_profile_id": c.FlagSet.Int("id", command.NilDefaultInt, colors.Red("(Required)")+" Network profile's id."),
-				"format":             c.FlagSet.String("format", command.NilDefaultStr, "The output format. Supported values are 'json','csv','yaml'. The default format is human readable."),
+				"format":             c.FlagSet.String("format", "yaml", "The output format. Supported values are 'json','csv','yaml'. The default format is human readable."),
 				"raw":                c.FlagSet.Bool("raw", false, colors.Green("(Flag)")+" If set returns the raw object serialized using specified format"),
 			}
 		},
@@ -78,7 +78,7 @@ var NetworkProfileCmds = []command.Command{
 		InitFunc: func(c *command.Command) {
 			c.Arguments = map[string]interface{}{
 				"datacenter":            c.FlagSet.String("datacenter", command.NilDefaultStr, colors.Red("(Required)")+" Label of the datacenter. Also used as an ID."),
-				"format":                c.FlagSet.String("format", "json", "The input format. Supported values are 'json','yaml'. The default format is json."),
+				"format":                c.FlagSet.String("format", "yaml", "The input format. Supported values are 'json','yaml'. The default format is json."),
 				"read_config_from_file": c.FlagSet.String("f", command.NilDefaultStr, colors.Red("(Required)")+" Read  configuration from file in the format specified with --format."),
 				"read_config_from_pipe": c.FlagSet.Bool("pipe", false, colors.Green("(Flag)")+" If set, read  configuration from pipe instead of from a file. Either this flag or the --raw-config option must be used."),
 				"return_id":             c.FlagSet.Bool("return-id", false, "Will print the ID of the created object. Useful for automating tasks."),

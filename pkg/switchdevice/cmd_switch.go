@@ -44,7 +44,7 @@ var SwitchCmds = []command.Command{
 		InitFunc: func(c *command.Command) {
 			c.Arguments = map[string]interface{}{
 				"overwrite_hostname_from_switch": c.FlagSet.Bool("retrieve-hostname-from-switch", false, colors.Green("(Flag)")+" Retrieve the hostname from the equipment instead of configuration file."),
-				"format":                         c.FlagSet.String("format", "json", "The input format. Supported values are 'json','yaml'. The default format is json."),
+				"format":                         c.FlagSet.String("format", "yaml", "The input format. Supported values are 'json','yaml'. The default format is json."),
 				"read_config_from_file":          c.FlagSet.String("f", command.NilDefaultStr, colors.Red("(Required)")+" Read configuration from file in the format specified with --format."),
 				"return_id":                      c.FlagSet.Bool("return-id", false, "Will print the ID of the created object. Useful for automating tasks."),
 			}
@@ -216,7 +216,7 @@ volumeTemplateID: 0
 			c.Arguments = map[string]interface{}{
 				"network_device_id_or_identifier_string": c.FlagSet.String("id", command.NilDefaultStr, colors.Red("(Required)")+" Switch id or identifier string. "),
 				"overwrite_hostname_from_switch":         c.FlagSet.Bool("retrieve-hostname-from-switch", false, colors.Green("(Flag)")+" Retrieve the hostname from the equipment instead of configuration file."),
-				"format":                                 c.FlagSet.String("format", "json", "The input format. Supported values are 'json','yaml'. The default format is json."),
+				"format":                                 c.FlagSet.String("format", "yaml", "The input format. Supported values are 'json','yaml'. The default format is json."),
 				"read_config_from_file":                  c.FlagSet.String("f", command.NilDefaultStr, colors.Red("(Required)")+" Read  configuration from file in the format specified with --format."),
 				"read_config_from_pipe":                  c.FlagSet.Bool("pipe", false, colors.Green("(Flag)")+" If set, read  configuration from pipe instead of from a file. Either this flag or the --raw-config option must be used."),
 				"return_id":                              c.FlagSet.Bool("return-id", false, "Will print the ID of the created object. Useful for automating tasks."),
@@ -278,7 +278,6 @@ volumeTemplateID: 0
 }
 
 func switchListCmd(c *command.Command, client metalcloud.MetalCloudClient) (string, error) {
-
 	datacenterName := command.GetStringParam(c.Arguments["datacenter_name"])
 	switchType := command.GetStringParam(c.Arguments["switch_type"])
 
@@ -353,9 +352,8 @@ func switchListCmd(c *command.Command, client metalcloud.MetalCloudClient) (stri
 				return "", err
 			}
 
-			credentialsUser = fmt.Sprintf("%s", sw.NetworkEquipmentManagementUsername)
-			credentialsPass = fmt.Sprintf("%s", sw.NetworkEquipmentManagementPassword)
-
+			credentialsUser = sw.NetworkEquipmentManagementUsername
+			credentialsPass = sw.NetworkEquipmentManagementPassword
 		}
 		data = append(data, []interface{}{
 			s.NetworkEquipmentID,
@@ -383,7 +381,6 @@ func switchListCmd(c *command.Command, client metalcloud.MetalCloudClient) (stri
 }
 
 func switchCreateCmd(c *command.Command, client metalcloud.MetalCloudClient) (string, error) {
-
 	obj, err := objects.ReadSingleObjectFromCommand(c, client)
 	if err != nil {
 		return "", err
@@ -405,7 +402,6 @@ func switchCreateCmd(c *command.Command, client metalcloud.MetalCloudClient) (st
 }
 
 func switchEditCmd(c *command.Command, client metalcloud.MetalCloudClient) (string, error) {
-
 	var obj metalcloud.SwitchDevice
 
 	err := command.GetRawObjectFromCommand(c, &obj)
@@ -419,7 +415,7 @@ func switchEditCmd(c *command.Command, client metalcloud.MetalCloudClient) (stri
 	}
 
 	if obj.DatacenterName == "" {
-		return "", fmt.Errorf("Datacenter name is required.")
+		return "", fmt.Errorf("datacenter name is required")
 	}
 
 	ret, err := client.SwitchDeviceUpdate(retSW.NetworkEquipmentID, obj, command.GetBoolParam(c.Arguments["overwrite_hostname_from_switch"]))
@@ -435,7 +431,6 @@ func switchEditCmd(c *command.Command, client metalcloud.MetalCloudClient) (stri
 }
 
 func switchGetCmd(c *command.Command, client metalcloud.MetalCloudClient) (string, error) {
-
 	sw, err := getSwitchFromCommandLine("id", c, client)
 	if err != nil {
 		return "", err
@@ -443,12 +438,15 @@ func switchGetCmd(c *command.Command, client metalcloud.MetalCloudClient) (strin
 
 	format := command.GetStringParam(c.Arguments["format"])
 
-	return objects.RenderRawObject(sw, format, "SwitchDevice")
+	ret, err := objects.RenderRawObject(sw, format, "SwitchDevice")
+	if err != nil {
+		return "", err
+	}
 
+	return ret, nil
 }
 
 func switchDeleteCmd(c *command.Command, client metalcloud.MetalCloudClient) (string, error) {
-
 	retSW, err := getSwitchFromCommandLine("id", c, client)
 	if err != nil {
 		return "", err
@@ -476,7 +474,7 @@ func switchDeleteCmd(c *command.Command, client metalcloud.MetalCloudClient) (st
 	}
 
 	if !confirm {
-		return "", fmt.Errorf("Operation not confirmed. Aborting")
+		return "", fmt.Errorf("operation not confirmed. Aborting")
 	}
 
 	err = client.SwitchDeviceDelete(retSW.NetworkEquipmentID)
@@ -485,7 +483,6 @@ func switchDeleteCmd(c *command.Command, client metalcloud.MetalCloudClient) (st
 }
 
 func switchInterfacesListCmd(c *command.Command, client metalcloud.MetalCloudClient) (string, error) {
-
 	sw, err := getSwitchFromCommandLine("id", c, client)
 	if err != nil {
 		return "", err
@@ -604,7 +601,6 @@ func getSwitchFromCommandLine(paramName string, c *command.Command, client metal
 }
 
 func getSwitchFromCommandLineWithPrivateParam(private_paramName string, public_paramName string, c *command.Command, client metalcloud.MetalCloudClient) (*metalcloud.SwitchDevice, error) {
-
 	m, err := command.GetParam(c, private_paramName, public_paramName)
 	if err != nil {
 		return nil, err

@@ -56,7 +56,7 @@ metalcloud-cli server list --show-credentials # to retrieve a list of credential
 		InitFunc: func(c *command.Command) {
 			c.Arguments = map[string]interface{}{
 				"server_id_or_uuid": c.FlagSet.String("id", command.NilDefaultStr, "Server's ID or UUID"),
-				"format":            c.FlagSet.String("format", command.NilDefaultStr, "The output format. Supported values are 'json','csv','yaml'. The default format is human readable."),
+				"format":            c.FlagSet.String("format", "yaml", "The output format. Supported values are 'json','csv','yaml'. The default format is human readable."),
 				"show_credentials":  c.FlagSet.Bool("show-credentials", false, colors.Green("(Flag)")+" If set returns the servers' IPMI credentials"),
 				"raw":               c.FlagSet.Bool("raw", false, colors.Green("(Flag)")+" If set returns the servers' raw object serialized using specified format"),
 			}
@@ -74,7 +74,7 @@ metalcloud-cli server list --show-credentials # to retrieve a list of credential
 		FlagSet:      flag.NewFlagSet("create server", flag.ExitOnError),
 		InitFunc: func(c *command.Command) {
 			c.Arguments = map[string]interface{}{
-				"format":                c.FlagSet.String("format", "json", "The input format. Supported values are 'json','yaml'. The default format is json."),
+				"format":                c.FlagSet.String("format", "yaml", "The input format. Supported values are 'json','yaml'. The default format is json."),
 				"read_config_from_file": c.FlagSet.String("f", command.NilDefaultStr, colors.Red("(Required)")+" Read raw object from file"),
 				"read_config_from_pipe": c.FlagSet.Bool("pipe", false, colors.Green("(Flag)")+" If set, read raw object from pipe instead of from a file. Either this flag or the --raw-config option must be used."),
 				"return_id":             c.FlagSet.Bool("return-id", false, "Will print the ID of the created object. Useful for automating tasks."),
@@ -114,7 +114,7 @@ metalcloud-cli server list --show-credentials # to retrieve a list of credential
 		FlagSet:      flag.NewFlagSet("import server", flag.ExitOnError),
 		InitFunc: func(c *command.Command) {
 			c.Arguments = map[string]interface{}{
-				"format":                c.FlagSet.String("format", "json", "The input format. Supported values are 'json','yaml'. The default format is json."),
+				"format":                c.FlagSet.String("format", "yaml", "The input format. Supported values are 'json','yaml'. The default format is json."),
 				"read_config_from_file": c.FlagSet.String("file", command.NilDefaultStr, colors.Red("(Required)")+" Read raw object from file"),
 				"read_config_from_pipe": c.FlagSet.Bool("pipe", false, colors.Green("(Flag)")+" If set, read raw object from pipe instead of from a file. Either this flag or the --file option must be used."),
 				"add_to_infra":          c.FlagSet.String("add-to-infra", command.NilDefaultStr, colors.Green("(Optional)")+" The infrastructure to use to add this server to. If set to 'auto' will use the settings in the file instead."),
@@ -200,7 +200,7 @@ $ metalcloud-cli server import -format yaml -file ./input.yaml
 		FlagSet:      flag.NewFlagSet("import server", flag.ExitOnError),
 		InitFunc: func(c *command.Command) {
 			c.Arguments = map[string]interface{}{
-				"format":                c.FlagSet.String("format", "json", "The input format. Supported values are 'json','yaml'. The only supported format is yaml."),
+				"format":                c.FlagSet.String("format", "yaml", "The input format. Supported values are 'json','yaml'. The only supported format is yaml."),
 				"read_config_from_file": c.FlagSet.String("file", command.NilDefaultStr, colors.Red("(Required)")+" Read raw object from file"),
 				"add_to_infra":          c.FlagSet.String("add-to-infra", command.NilDefaultStr, colors.Green("(Optional)")+" The infrastructure to use to add this server to. If set to 'auto' will use the settings in the file instead."),
 				"return_id":             c.FlagSet.Bool("return-id", false, "(Optional) Will print the ID of the created object. Useful for automating tasks."),
@@ -285,7 +285,7 @@ interfaces:
 		FlagSet:      flag.NewFlagSet("server credentials", flag.ExitOnError),
 		InitFunc: func(c *command.Command) {
 			c.Arguments = map[string]interface{}{
-				"format":                 c.FlagSet.String("format", "json", "The input format. Supported values are 'json','yaml'. The only supported format is yaml."),
+				"format":                 c.FlagSet.String("format", "yaml", "The input format. Supported values are 'json','yaml'. The only supported format is yaml."),
 				"do-not-skip-duplicates": c.FlagSet.Bool("do-not-skip-duplicates", false, colors.Green("(Flag)")+" If set it will not skip the records found as duplicate and will instead throw an error"),
 				"read_config_from_file":  c.FlagSet.String("file", command.NilDefaultStr, colors.Red("(Required)")+" Read raw object from file"),
 			}
@@ -361,7 +361,7 @@ password: notcalvin
 				"ipmi_password":         c.FlagSet.String("ipmi-pass", command.NilDefaultStr, "The new IPMI password of the server. This command cannot be used in conjunction with config or pipe commands."),
 				"server_type":           c.FlagSet.String("server-type", command.NilDefaultStr, "The new server type (id or label) of the server. This command cannot be used in conjunction with config or pipe commands."),
 				"server_class":          c.FlagSet.String("server-class", command.NilDefaultStr, "The new class of the server. This command cannot be used in conjunction with config or pipe commands."),
-				"format":                c.FlagSet.String("format", "json", "The input format used when config or pipe commands are used. Supported values are 'json','yaml'. The default format is json."),
+				"format":                c.FlagSet.String("format", "yaml", "The input format used when config or pipe commands are used. Supported values are 'json','yaml'. The default format is json."),
 				"read_config_from_file": c.FlagSet.String("f", command.NilDefaultStr, colors.Red("(Required)")+" Read raw object from file"),
 				"read_config_from_pipe": c.FlagSet.Bool("pipe", false, colors.Green("(Flag)")+" If set, read raw object from pipe instead of from a file. Either this flag or the --raw-config option must be used."),
 			}

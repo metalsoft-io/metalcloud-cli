@@ -48,7 +48,7 @@ var JobsCmds = []command.Command{
 		InitFunc: func(c *command.Command) {
 			c.Arguments = map[string]interface{}{
 				"job_id": c.FlagSet.String("id", command.NilDefaultStr, "JOB ID"),
-				"format": c.FlagSet.String("format", command.NilDefaultStr, "The output format. Supported values are 'json','csv','yaml'. The default format is human readable."),
+				"format": c.FlagSet.String("format", "yaml", "The output format. Supported values are 'json','csv','yaml'. The default format is human readable."),
 				"watch":  c.FlagSet.String("watch", command.NilDefaultStr, "If set to a human readable interval such as '4s', '1m' will print the job status until interrupted."),
 			}
 		},

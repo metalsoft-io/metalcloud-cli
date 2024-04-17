@@ -887,6 +887,7 @@ func GetInfrastructureFromCommand(paramName string, c *Command, client metalclou
 
 	id, label, isID := IdOrLabel(m)
 
+	fmt.Printf("isID: %t", isID)
 	if isID {
 		return client.InfrastructureGet(id)
 	}

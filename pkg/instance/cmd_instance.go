@@ -43,7 +43,7 @@ var InstanceCmds = []command.Command{
 				"instance_id":           c.FlagSet.Int("id", command.NilDefaultInt, colors.Red("(Required)")+" Instances's id . Note that the 'label' this be ambiguous in certain situations."),
 				"show_credentials":      c.FlagSet.Bool("show-credentials", false, colors.Green("(Flag)")+" If set returns the instance's credentials"),
 				"show_custom_variables": c.FlagSet.Bool("show-custom-variables", false, colors.Green("(Flag)")+" If set returns the instance's custom variables"),
-				"format":                c.FlagSet.String("format", "", "The output format. Supported values are 'json','csv','yaml'. The default format is human readable."),
+				"format":                c.FlagSet.String("format", "yaml", "The output format. Supported values are 'json','csv','yaml'. The default format is human readable."),
 			}
 		},
 		ExecuteFunc: instanceGetCmd,

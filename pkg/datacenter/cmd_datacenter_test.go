@@ -2,10 +2,8 @@ package datacenter
 
 import (
 	"encoding/json"
-	"os"
 	"path/filepath"
 	"runtime"
-	"syscall"
 	"testing"
 
 	gomock "github.com/golang/mock/gomock"
@@ -54,15 +52,20 @@ func TestDatacenterCreate(t *testing.T) {
 
 	client := mock_metalcloud.NewMockMetalCloudClient(ctrl)
 
-	var dcConf metalcloud.DatacenterConfig
-	err := json.Unmarshal([]byte(_dcConfigFixture1), &dcConf)
-	if err != nil {
-		t.Error(err)
-	}
+	var dcConf metalcloud.DatacenterWithConfig
+	_, b, _, _ := runtime.Caller(0)
+	basePath := filepath.Join(filepath.Dir(b), "..", "..")
+	fileName := filepath.Join(basePath, "examples", "datacenter.yaml")
+	content, err := configuration.ReadInputFromFile(filepath.Join(basePath, "examples", "datacenter.yaml"))
+	Expect(err).To(BeNil())
+	Expect(content).NotTo(BeNil())
+
+	err = yaml.Unmarshal(content, &dcConf)
+	Expect(err).To(BeNil())
 
 	client.EXPECT().
-		DatacenterCreate(_dcFixture1, dcConf).
-		Return(&_dcFixture1, nil).
+		DatacenterCreateFromDatacenterWithConfig(dcConf).
+		Return(&dcConf, nil).
 		AnyTimes()
 
 	client.EXPECT().
@@ -70,75 +73,41 @@ func TestDatacenterCreate(t *testing.T) {
 		Return(&_userFixture1, nil).
 		AnyTimes()
 
-	f, err := os.CreateTemp(os.TempDir(), "testconf-*.json")
-	if err != nil {
-		t.Error(err)
-	}
-
-	f.WriteString(_dcConfigFixture1)
-	f.Close()
-	defer syscall.Unlink(f.Name())
-
 	cases := []command.CommandTestCase{
 		{
 			Name: "dc-create-good1",
 			Cmd: command.MakeCommand(map[string]interface{}{
 				"datacenter_name":         _dcFixture1.DatacenterName,
 				"datacenter_display_name": _dcFixture1.DatacenterDisplayName,
-				"read_config_from_file":   f.Name(),
-				"create_hidden":           true,
-				"user_id":                 _userFixture1.UserEmail,
-				"format":                  "json",
-				"tags":                    "t1,t2",
-				"datacenter_name_parent":  "test",
+				"read_config_from_file":   fileName,
 			}),
 			Good: true,
 			Id:   0,
 		},
 		{
-			Name: "missing label",
+			Name: "missing all",
 			Cmd:  command.MakeCommand(map[string]interface{}{}),
-			Good: false,
-		},
-		{
-			Name: "missing title",
-			Cmd: command.MakeCommand(map[string]interface{}{
-				"datacenter_name": _dcFixture1.DatacenterName,
-			}),
 			Good: false,
 		},
 		{
 			Name: "missing read_config_from_file",
 			Cmd: command.MakeCommand(map[string]interface{}{
 				"datacenter_name":         _dcFixture1.DatacenterName,
-				"datacenter_display_name": _dcFixture1.DatacenterDisplayName,
-			}),
-			Good: false,
-		},
-		{
-			Name: "both read_config_from_file and pipe",
-			Cmd: command.MakeCommand(map[string]interface{}{
-				"datacenter_name":         _dcFixture1.DatacenterName,
-				"datacenter_display_name": _dcFixture1.DatacenterDisplayName,
-				"read_config_from_file":   f.Name(),
-				"read_config_from_pipe":   true,
 			}),
 			Good: false,
 		},
 	}
 
 	command.TestCreateCommand(datacenterCreateCmd, cases, client, t)
-
 }
 
 func TestDatacenterYamlUnmarshal(t *testing.T) {
 	RegisterTestingT(t)
 
-	var dcConf metalcloud.DatacenterConfig
+	var dcConf metalcloud.DatacenterWithConfig
 
 	_, b, _, _ := runtime.Caller(0)
 	basePath := filepath.Join(filepath.Dir(b), "..", "..")
-
 	content, err := configuration.ReadInputFromFile(filepath.Join(basePath, "examples", "datacenter.yaml"))
 	Expect(err).To(BeNil())
 	Expect(content).NotTo(BeNil())
@@ -155,15 +124,20 @@ func TestDatacenterUpdate(t *testing.T) {
 
 	client := mock_metalcloud.NewMockMetalCloudClient(ctrl)
 
-	var dcConf metalcloud.DatacenterConfig
-	err := json.Unmarshal([]byte(_dcConfigFixture1), &dcConf)
-	if err != nil {
-		t.Error(err)
-	}
+	var dcConf metalcloud.DatacenterWithConfig
+	_, b, _, _ := runtime.Caller(0)
+	basePath := filepath.Join(filepath.Dir(b), "..", "..")
+	fileName := filepath.Join(basePath, "examples", "datacenter.yaml")
+	content, err := configuration.ReadInputFromFile(fileName)
+	Expect(err).To(BeNil())
+	Expect(content).NotTo(BeNil())
+
+	err = yaml.Unmarshal(content, &dcConf)
+	Expect(err).To(BeNil())
 
 	client.EXPECT().
-		DatacenterConfigUpdate("test", dcConf).
-		Return(nil).
+		DatacenterUpdateFromDatacenterWithConfig(dcConf).
+		Return(&dcConf, nil).
 		AnyTimes()
 
 	client.EXPECT().
@@ -171,28 +145,19 @@ func TestDatacenterUpdate(t *testing.T) {
 		Return(&_userFixture1, nil).
 		AnyTimes()
 
-	f, err := os.CreateTemp(os.TempDir(), "testconf-*.json")
-	if err != nil {
-		t.Error(err)
-	}
-
-	f.WriteString(_dcConfigFixture1)
-	f.Close()
-	defer syscall.Unlink(f.Name())
-
 	cases := []command.CommandTestCase{
 		{
 			Name: "dc-create-good1",
 			Cmd: command.MakeCommand(map[string]interface{}{
-				"datacenter_name":       _dcFixture1.DatacenterName,
-				"read_config_from_file": f.Name(),
+				"datacenter_name":       dcConf.Datacenter.DatacenterName,
+				"read_config_from_file": fileName,
 				"format":                "json",
 			}),
 			Good: true,
-			Id:   0,
+			Id:   1,
 		},
 		{
-			Name: "missing label",
+			Name: "missing all",
 			Cmd:  command.MakeCommand(map[string]interface{}{}),
 			Good: false,
 		},
@@ -200,17 +165,6 @@ func TestDatacenterUpdate(t *testing.T) {
 			Name: "missing read_config_from_file",
 			Cmd: command.MakeCommand(map[string]interface{}{
 				"datacenter_name":         _dcFixture1.DatacenterName,
-				"datacenter_display_name": _dcFixture1.DatacenterDisplayName,
-			}),
-			Good: false,
-		},
-		{
-			Name: "both read_config_from_file and pipe",
-			Cmd: command.MakeCommand(map[string]interface{}{
-				"datacenter_name":         _dcFixture1.DatacenterName,
-				"datacenter_display_name": _dcFixture1.DatacenterDisplayName,
-				"read_config_from_file":   f.Name(),
-				"read_config_from_pipe":   true,
 			}),
 			Good: false,
 		},
@@ -218,10 +172,8 @@ func TestDatacenterUpdate(t *testing.T) {
 
 	for _, c := range cases {
 		t.Run(c.Name, func(t *testing.T) {
-
 			_, err := datacenterUpdateCmd(&c.Cmd, client)
 			if c.Good {
-
 				if err != nil {
 					t.Errorf("error thrown: %v", err)
 				}
@@ -246,14 +198,19 @@ func TestDatacenterGet(t *testing.T) {
 		Return(&_dcFixture1WithConfig, nil).
 		AnyTimes()
 
-	var dcConf metalcloud.DatacenterConfig
-	err := json.Unmarshal([]byte(_dcConfigFixture1), &dcConf)
-	if err != nil {
-		t.Error(err)
-	}
+	var dcConf metalcloud.DatacenterWithConfig
+
+	_, b, _, _ := runtime.Caller(0)
+	basePath := filepath.Join(filepath.Dir(b), "..", "..")
+	content, err := configuration.ReadInputFromFile(filepath.Join(basePath, "examples", "datacenter.yaml"))
+	Expect(err).To(BeNil())
+	Expect(content).NotTo(BeNil())
+
+	err = yaml.Unmarshal(content, &dcConf)
+	Expect(err).To(BeNil())
 
 	client.EXPECT().
-		DatacenterConfigGet(_dcFixture1.DatacenterName).
+		DatacenterWithConfigGet(dcConf.Datacenter.DatacenterName).
 		Return(&dcConf, nil).
 		AnyTimes()
 
@@ -270,28 +227,27 @@ func TestDatacenterGet(t *testing.T) {
 	//should throw error for missing label
 	cmd := command.MakeCommand(map[string]interface{}{})
 
-	ret, err := datacenterGetCmd(&cmd, client)
+	_, err = datacenterGetCmd(&cmd, client)
 	Expect(err).NotTo(BeNil())
 
 	cmd = command.MakeCommand(map[string]interface{}{
 		"datacenter_name": _dcFixture1.DatacenterName,
 	})
 
-	ret, err = datacenterGetCmd(&cmd, client)
+	ret, err := datacenterGetCmd(&cmd, client)
 	Expect(err).To(BeNil())
 	Expect(ret).To(ContainSubstring(_dcFixture1.DatacenterName))
 
 	//verify config url present in output
 	cmd = command.MakeCommand(map[string]interface{}{
-		"datacenter_name":        _dcFixture1.DatacenterName,
-		"show_secret_config_url": true,
+		"datacenter_name":   _dcFixture1.DatacenterName,
+		"return_config_url": true,
 	})
 	ret, err = datacenterGetCmd(&cmd, client)
 	Expect(err).To(BeNil())
 	Expect(ret).To(ContainSubstring("nfs://test-nfs/"))
 
 	//verify json format
-
 	cmd = command.MakeCommand(map[string]interface{}{
 		"datacenter_name": _dcFixture1.DatacenterName,
 		"format":          "json",
@@ -347,5 +303,3 @@ var _userFixture1 = metalcloud.User{
 	UserID:    1,
 	UserEmail: "test@test.com",
 }
-
-const _dcConfigFixture1 = "{\"SANRoutedSubnet\":\"100.96.0.0/24\",\"BSIVRRPListenIPv4\":\"172.31.240.126\",\"BSIMachineListenIPv4List\":[\"172.31.240.124\",\"172.31.240.125\"],\"BSIMachinesSubnetIPv4CIDR\":\"172.31.240.96/27\",\"BSIExternallyVisibleIPv4\":\"10.255.231.54\",\"repoURLRoot\":\"https://repointegration.bigstepcloud.com\",\"repoURLRootQuarantineNetwork\":\"http://10.255.239.35\",\"DNSServers\":[\"10.255.231.44\",\"10.255.231.45\"],\"NTPServers\":[\"10.255.231.28\",\"10.255.231.29\"],\"KMS\":\"10.255.235.41:1688\",\"TFTPServerWANVRRPListenIPv4\":\"172.31.240.126\",\"dataLakeEnabled\":true,\"monitoringGraphitePlainTextSocketHost\":\"172.31.240.148:2003\",\"monitoringGraphiteRenderURLHost\":\"172.31.240.157:80\",\"latitude\":0,\"longitude\":0,\"address\":\"\",\"VLANProvisioner\":{\"LANVLANRange\":\"200-299\",\"WANVLANRange\":\"100-199\",\"quarantineVLANID\":5},\"VPLSProvisioner\":{\"ACLSAN\":3999,\"ACLWAN\":3399,\"SANACLRange\":\"3700-3998\",\"ToRLANVLANRange\":\"400-699\",\"ToRSANVLANRange\":\"700-999\",\"ToRWANVLANRange\":\"100-399\",\"quarantineVLANID\":5,\"NorthWANVLANRange\":\"1001-2000\"},\"childDatacentersConfigDefault\":[]}"

@@ -11,6 +11,7 @@ import (
 	"github.com/metalsoft-io/metalcloud-cli/internal/colors"
 	"github.com/metalsoft-io/metalcloud-cli/internal/command"
 	"github.com/metalsoft-io/metalcloud-cli/internal/configuration"
+	"github.com/metalsoft-io/metalcloud-cli/internal/objects"
 	"github.com/metalsoft-io/tableformatter"
 )
 
@@ -41,7 +42,7 @@ var InfrastructureCmds = []command.Command{
 		FlagSet:      flag.NewFlagSet("list infrastructure", flag.ExitOnError),
 		InitFunc: func(c *command.Command) {
 			c.Arguments = map[string]interface{}{
-				"format":       c.FlagSet.String("format", "", "The output format. Supported values are 'json','csv','yaml'. The default format is human readable."),
+				"format":       c.FlagSet.String("format", command.NilDefaultStr, "The output format. Supported values are 'json','csv','yaml'. The default format is human readable."),
 				"filter":       c.FlagSet.String("filter", "*", "filter to use when searching for servers. Check the documentation for examples. Defaults to '*'"),
 				"show_ordered": c.FlagSet.Bool("show-ordered", false, colors.Green("(Flag)")+" If set will also return ordered (created but not deployed) infrastructures. Default is false."),
 				"show_deleted": c.FlagSet.Bool("show-deleted", false, colors.Green("(Flag)")+" If set will also return deleted infrastructures. Default is false."),
@@ -61,7 +62,7 @@ var InfrastructureCmds = []command.Command{
 		FlagSet:      flag.NewFlagSet("list infrastructure", flag.ExitOnError),
 		InitFunc: func(c *command.Command) {
 			c.Arguments = map[string]interface{}{
-				"format":       c.FlagSet.String("format", "", "The output format. Supported values are 'json','csv','yaml'. The default format is human readable."),
+				"format":       c.FlagSet.String("format", command.NilDefaultStr, "The output format. Supported values are 'json','csv','yaml'. The default format is human readable."),
 				"show_deleted": c.FlagSet.Bool("show-deleted", false, colors.Green("(Flag)")+" If set will also return deleted infrastructures. Default is false."),
 			}
 		},
@@ -111,7 +112,7 @@ var InfrastructureCmds = []command.Command{
 		Endpoint:      configuration.UserEndpoint,
 		AdminEndpoint: configuration.DeveloperEndpoint,
 	},
-	{ //User version
+	{
 		Description:  "Get infrastructure details.",
 		Subject:      "infrastructure",
 		AltSubject:   "infra",
@@ -121,7 +122,7 @@ var InfrastructureCmds = []command.Command{
 		InitFunc: func(c *command.Command) {
 			c.Arguments = map[string]interface{}{
 				"infrastructure_id_or_label": c.FlagSet.String("id", command.NilDefaultStr, colors.Red("(Required)")+" Infrastructure's id or label. Note that using the 'label' might be ambiguous in certain situations."),
-				"format":                     c.FlagSet.String("format", "", "The output format. Supported values are 'json','csv','yaml'. The default format is human readable."),
+				"format":                     c.FlagSet.String("format", "yaml", "The output format. Supported values are 'json','csv','yaml'. The default format is human readable."),
 			}
 		},
 		ExecuteFunc:   infrastructureGetCmd,
@@ -165,7 +166,6 @@ var InfrastructureCmds = []command.Command{
 }
 
 func infrastructureCreateCmd(c *command.Command, client metalcloud.MetalCloudClient) (string, error) {
-
 	infrastructureLabel := c.Arguments["infrastructure_label"]
 
 	if infrastructureLabel == nil || *infrastructureLabel.(*string) == "" {
@@ -494,7 +494,6 @@ func infrastructureDeployCmd(c *command.Command, client metalcloud.MetalCloudCli
 }
 
 func infrastructureRevertCmd(c *command.Command, client metalcloud.MetalCloudClient) (string, error) {
-
 	return infrastructureConfirmAndDo("Revert", c, client,
 		func(infraID int, c *command.Command, client metalcloud.MetalCloudClient) (string, error) {
 			return "", client.InfrastructureOperationCancel(infraID)
@@ -502,173 +501,19 @@ func infrastructureRevertCmd(c *command.Command, client metalcloud.MetalCloudCli
 }
 
 func infrastructureGetCmd(c *command.Command, client metalcloud.MetalCloudClient) (string, error) {
-
 	retInfra, err := command.GetInfrastructureFromCommand("id", c, client)
 	if err != nil {
 		return "", err
 	}
 
-	schema := []tableformatter.SchemaField{
+	format := command.GetStringParam(c.Arguments["format"])
 
-		{
-			FieldName: "ID",
-			FieldType: tableformatter.TypeInt,
-			FieldSize: 6,
-		},
-		{
-			FieldName: "OBJECT_TYPE",
-			FieldType: tableformatter.TypeString,
-			FieldSize: 15,
-		},
-		{
-			FieldName: "LABEL",
-			FieldType: tableformatter.TypeString,
-			FieldSize: 10,
-		},
-		{
-			FieldName: "DETAILS",
-			FieldType: tableformatter.TypeString,
-			FieldSize: 50,
-		},
-		{
-			FieldName: "STATUS",
-			FieldType: tableformatter.TypeString,
-			FieldSize: 5,
-		},
-	}
-
-	data := [][]interface{}{}
-
-	iaList, err := client.InstanceArrays(retInfra.InfrastructureID)
+	ret, err := objects.RenderRawObject(*retInfra, format, "Infrastructure")
 	if err != nil {
 		return "", err
 	}
 
-	for _, ia := range *iaList {
-		status := colors.Green(ia.InstanceArrayServiceStatus)
-		if ia.InstanceArrayServiceStatus != "ordered" && ia.InstanceArrayOperation.InstanceArrayDeployType == "edit" && ia.InstanceArrayOperation.InstanceArrayDeployStatus == "not_started" {
-			status = colors.Blue("edited")
-		}
-
-		volumeTemplateName := ""
-		if ia.InstanceArrayOperation.VolumeTemplateID != 0 {
-			vt, err := client.VolumeTemplateGet(ia.InstanceArrayOperation.VolumeTemplateID)
-			if err != nil {
-				return "", err
-			}
-			volumeTemplateName = fmt.Sprintf("%s [#%d] ", vt.VolumeTemplateDisplayName, vt.VolumeTemplateID)
-		}
-
-		fwMgmtDisabled := ""
-		if !ia.InstanceArrayFirewallManaged {
-			fwMgmtDisabled = " fw mgmt disabled"
-		}
-		details := fmt.Sprintf("%d instances (%d RAM, %d cores, %d disks %s %s%s)",
-			ia.InstanceArrayOperation.InstanceArrayInstanceCount,
-			ia.InstanceArrayOperation.InstanceArrayRAMGbytes,
-			ia.InstanceArrayOperation.InstanceArrayProcessorCount*ia.InstanceArrayProcessorCoreCount,
-			ia.InstanceArrayOperation.InstanceArrayDiskCount,
-			ia.InstanceArrayOperation.InstanceArrayBootMethod,
-			volumeTemplateName,
-			fwMgmtDisabled,
-		)
-
-		data = append(data, []interface{}{
-			ia.InstanceArrayID,
-			colors.Green("InstanceArray"),
-			ia.InstanceArrayOperation.InstanceArrayLabel,
-			details,
-			status,
-		})
-
-	}
-
-	daList, err := client.DriveArrays(retInfra.InfrastructureID)
-	if err != nil {
-		return "", err
-	}
-
-	for _, da := range *daList {
-		status := colors.Green(da.DriveArrayServiceStatus)
-		if da.DriveArrayServiceStatus != "ordered" && da.DriveArrayOperation.DriveArrayDeployType == "edit" && da.DriveArrayOperation.DriveArrayDeployStatus == "not_started" {
-			status = colors.Blue("edited")
-		}
-
-		volumeTemplateName := ""
-		if da.DriveArrayOperation.VolumeTemplateID != 0 {
-			vt, err := client.VolumeTemplateGet(da.DriveArrayOperation.VolumeTemplateID)
-			if err != nil {
-				return "", err
-			}
-			volumeTemplateName = fmt.Sprintf("%s [#%d]", vt.VolumeTemplateDisplayName, vt.VolumeTemplateID)
-		}
-
-		attachedToInstanceArrayStr := ""
-		for _, ia := range *iaList {
-			if ia.InstanceArrayID == da.DriveArrayOperation.InstanceArrayID {
-				attachedToInstanceArrayStr = fmt.Sprintf("%s [#%d]", ia.InstanceArrayLabel, ia.InstanceArrayID)
-				break
-			}
-		}
-
-		details := fmt.Sprintf("%d drives - %.1f GB %s %s attached to: %s, storage pool: #%d",
-			da.DriveArrayOperation.DriveArrayCount,
-			float64(da.DriveArrayOperation.DriveSizeMBytesDefault/1024),
-			da.DriveArrayOperation.DriveArrayStorageType,
-			volumeTemplateName,
-			attachedToInstanceArrayStr,
-			da.StoragePoolID,
-		)
-
-		data = append(data, []interface{}{
-			da.DriveArrayID,
-			colors.Blue("DriveArray"),
-			da.DriveArrayOperation.DriveArrayLabel,
-			details,
-			status,
-		})
-	}
-
-	sdaList, err := client.SharedDrives(retInfra.InfrastructureID)
-	if err != nil {
-		return "", err
-	}
-
-	for _, sda := range *sdaList {
-		status := colors.Green(sda.SharedDriveServiceStatus)
-		if sda.SharedDriveServiceStatus != "ordered" && sda.SharedDriveOperation.SharedDriveDeployType == "edit" && sda.SharedDriveOperation.SharedDriveDeployStatus == "not_started" {
-			status = colors.Blue("edited")
-		}
-
-		details := fmt.Sprintf("%d GB size, type: %s, i/o limit policy: %s, WWW: %s, storage pool: #%d",
-			int(sda.SharedDriveSizeMbytes/1024),
-			sda.SharedDriveStorageType,
-			sda.SharedDriveIOLimitPolicy,
-			sda.SharedDriveWWN,
-			sda.StoragePoolID,
-		)
-
-		data = append(data, []interface{}{
-			sda.SharedDriveID,
-			colors.Magenta("SharedDrive"),
-			sda.SharedDriveLabel,
-			details,
-			status,
-		})
-
-	}
-
-	topLine := fmt.Sprintf("Infrastructure %s (%d) - datacenter %s owner %s",
-		retInfra.InfrastructureLabel,
-		retInfra.InfrastructureID,
-		retInfra.DatacenterName,
-		retInfra.UserEmailOwner)
-
-	table := tableformatter.Table{
-		Data:   data,
-		Schema: schema,
-	}
-	return table.RenderTable("Infrastructures", topLine, command.GetStringParam(c.Arguments["format"]))
+	return ret, nil
 }
 
 func listWorkflowStagesCmd(c *command.Command, client metalcloud.MetalCloudClient) (string, error) {

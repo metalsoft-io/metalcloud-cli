@@ -19,7 +19,6 @@ var ShellCompletionCmds = []command.Command{
 		FlagSet:      flag.NewFlagSet("shell get", flag.ExitOnError),
 		InitFunc: func(c *command.Command) {
 			c.Arguments = map[string]interface{}{
-				// "format": c.FlagSet.String("format", command.NilDefaultStr, "The output format. Supported values are 'json','csv','yaml'. The default format is human readable."),
 			}
 		},
 		ExecuteFunc: shellCompletionCmd,
@@ -28,9 +27,6 @@ var ShellCompletionCmds = []command.Command{
 }
 
 func shellCompletionCmd(c *command.Command, client metalcloud.MetalCloudClient) (string, error) {
-	// if version == "" {
-	// 	return fmt.Sprintf("manual build\n"), nil
-	// }
 	script := `#/usr/bin/env bash
 ### This output should be redirected to /etc/bash_completion.d/metalcoud-cli
 ### or ~/.zshrc . Once done, reload the shell

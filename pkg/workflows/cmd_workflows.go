@@ -41,7 +41,7 @@ var WorkflowCmds = []command.Command{
 		InitFunc: func(c *command.Command) {
 			c.Arguments = map[string]interface{}{
 				"workflow_id_or_label": c.FlagSet.String("id", command.NilDefaultStr, "Workflow's id or label."),
-				"format":               c.FlagSet.String("format", command.NilDefaultStr, "The output format. Supported values are 'json','csv','yaml'. The default format is human readable."),
+				"format":               c.FlagSet.String("format", "yaml", "The output format. Supported values are 'json','csv','yaml'. The default format is human readable."),
 			}
 		},
 		ExecuteFunc:   workflowGetCmd,

@@ -58,7 +58,7 @@ var UserCmds = []command.Command{
 		FlagSet:      flag.NewFlagSet("list users", flag.ExitOnError),
 		InitFunc: func(c *command.Command) {
 			c.Arguments = map[string]interface{}{
-				"format": c.FlagSet.String("format", "", "The output format. Supported values are 'json','csv','yaml'. The default format is human readable."),
+				"format": c.FlagSet.String("format", command.NilDefaultStr, "The output format. Supported values are 'json','csv','yaml'. The default format is human readable."),
 				"filter": c.FlagSet.String("filter", "*", "Properties to use when filtering, for example '+user_is_billable:0 +user_language=en'. Defaults to '*'. Valid filter properties are: "+strings.Join(userFilterProperties, ", ")+"."),
 			}
 		},
