@@ -1527,7 +1527,6 @@ func createTemplateAssetsTable(repoTemplate RepoTemplate) tableformatter.Table {
 
 func handleTemplateBuild(c *command.Command, client metalcloud.MetalCloudClient, repoTemplate RepoTemplate) (string, error) {
 	if templateName, ok := command.GetStringParamOk(c.Arguments["name"]); ok {
-		fmt.Println("🚀 ~ file: cmd_os_template.go ~ line 1530 ~ iftemplateName,ok:=command.GetStringParamOk ~ templateName : ", templateName)
 		// ISO images are required only for the OOB templates and the patch files are only applied to the bootloader file retrieved from the ISO image.
 		err := checkOOBTemplateIntegrity(c, repoTemplate)
 
