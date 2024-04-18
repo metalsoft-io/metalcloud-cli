@@ -26,9 +26,9 @@ var InfrastructureCmds = []command.Command{
 		FlagSet:      flag.NewFlagSet("create infrastructure", flag.ExitOnError),
 		InitFunc: func(c *command.Command) {
 			c.Arguments = map[string]interface{}{
-				"infrastructure_label": c.FlagSet.String("label", "", colors.Red("(Required)")+" Infrastructure's label"),
-				"datacenter":           c.FlagSet.String("datacenter", command.NilDefaultStr, colors.Red("(Required)")+" Infrastructure datacenter"),
-				"return_id":            c.FlagSet.Bool("return-id", false, colors.Green("(Flag)")+" If set will print the ID of the created infrastructure. Useful for automating tasks."),
+				"read_config_from_file": c.FlagSet.String("f", command.NilDefaultStr, colors.Red("(Required)")+" Read configuration from file in the format specified with --format."),
+				"format":                c.FlagSet.String("format", "json", "The input format. Supported values are 'json','yaml'. The default format is json."),
+				"return_id":             c.FlagSet.Bool("return-id", false, colors.Green("(Flag)")+" If set will print the ID of the created infrastructure. Useful for automating tasks."),
 			}
 		},
 		ExecuteFunc: infrastructureCreateCmd,
@@ -166,24 +166,13 @@ var InfrastructureCmds = []command.Command{
 }
 
 func infrastructureCreateCmd(c *command.Command, client metalcloud.MetalCloudClient) (string, error) {
-	infrastructureLabel := c.Arguments["infrastructure_label"]
-
-	if infrastructureLabel == nil || *infrastructureLabel.(*string) == "" {
-		return "", fmt.Errorf("-label is required")
+	obj, err := objects.ReadSingleObjectFromCommand(c, client)
+	if err != nil {
+		return "", err
 	}
 
-	datacenter := c.Arguments["datacenter"]
-
-	if datacenter == nil || *datacenter.(*string) == "" {
-		return "", fmt.Errorf("-datacenter is required")
-	}
-
-	ia := metalcloud.Infrastructure{
-		InfrastructureLabel: *infrastructureLabel.(*string),
-		DatacenterName:      *datacenter.(*string),
-	}
-
-	retInfra, err := client.InfrastructureCreate(ia)
+	infrastructure := (*obj).(metalcloud.Infrastructure)
+	retInfra, err := client.InfrastructureCreate(infrastructure)
 	if err != nil {
 		return "", err
 	}
@@ -389,20 +378,17 @@ func infrastructureListUserCmd(c *command.Command, client metalcloud.MetalCloudC
 		schema[0].FieldName,
 		schema[1].FieldName).Sort(data)
 
-	topLine := fmt.Sprintf("Infrastructures")
-
 	table := tableformatter.Table{
 		Data:   data,
 		Schema: schema,
 	}
-	return table.RenderTable("Infrastructures", topLine, command.GetStringParam(c.Arguments["format"]))
+	return table.RenderTable("Infrastructures", "Infrastructures", command.GetStringParam(c.Arguments["format"]))
 }
 
 type infrastructureConfirmAndDoFunc func(infraID int, c *command.Command, client metalcloud.MetalCloudClient) (string, error)
 
 // infrastructureConfirmAndDo asks for confirmation and executes the given function
 func infrastructureConfirmAndDo(operation string, c *command.Command, client metalcloud.MetalCloudClient, f infrastructureConfirmAndDoFunc) (string, error) {
-
 	val, err := command.GetParam(c, "infrastructure_id_or_label", "infra")
 	if err != nil {
 		return "", err
@@ -424,7 +410,6 @@ func infrastructureConfirmAndDo(operation string, c *command.Command, client met
 	if command.GetBoolParam(c.Arguments["autoconfirm"]) {
 		confirm = true
 	} else {
-
 		retInfra, err := client.InfrastructureGet(infraID)
 		if err != nil {
 			return "", err
@@ -444,7 +429,7 @@ func infrastructureConfirmAndDo(operation string, c *command.Command, client met
 	}
 
 	if !confirm {
-		return "", fmt.Errorf("Operation not confirmed. Aborting")
+		return "", fmt.Errorf("operation not confirmed. Aborting")
 	}
 
 	return f(infraID, c, client)
@@ -458,7 +443,6 @@ func infrastructureDeleteCmd(c *command.Command, client metalcloud.MetalCloudCli
 }
 
 func infrastructureDeployCmd(c *command.Command, client metalcloud.MetalCloudClient) (string, error) {
-
 	return infrastructureConfirmAndDo("Deploy", c, client,
 		func(infraID int, c *command.Command, client metalcloud.MetalCloudClient) (string, error) {
 
@@ -517,7 +501,6 @@ func infrastructureGetCmd(c *command.Command, client metalcloud.MetalCloudClient
 }
 
 func listWorkflowStagesCmd(c *command.Command, client metalcloud.MetalCloudClient) (string, error) {
-
 	t := *c.Arguments["type"].(*string)
 	if t == command.NilDefaultStr {
 		t = "post_deploy"

@@ -1,0 +1,23 @@
+kind: DriveArray
+apiVersion: 1.0
+id: 37148
+label: drive-array-1337
+storageType: iscsi_ssd
+sizeMBytesDefault: 40960
+instanceArrayID: 55407
+infrastructureID: 71282
+serviceStatus: ordered
+count: 1
+expandWithInstanceArray: true
+operation:
+  id: 37148
+  label: drive-array-1337
+  storageType: iscsi_ssd
+  sizeMBytes: 40960
+  instanceArrayID: 55407
+  infrastructureID: 71282
+  count: 1
+  expandWithInstanceArray: true
+  deployType: create
+  deployStatus: not_started
+  changeID: 103590

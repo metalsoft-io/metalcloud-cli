@@ -57,7 +57,7 @@ var DatacenterCmds = []command.Command{
 		FlagSet:      flag.NewFlagSet("Get datacenter details.", flag.ExitOnError),
 		InitFunc: func(c *command.Command) {
 			c.Arguments = map[string]interface{}{
-				"datacenter_name": c.FlagSet.String("id", command.NilDefaultStr, colors.Red("(Required)")+" Label of the datacenter. Also used as an ID."),
+				"datacenter_name":   c.FlagSet.String("id", command.NilDefaultStr, colors.Red("(Required)")+" Label of the datacenter. Also used as an ID."),
 				"return_config_url": c.FlagSet.Bool("return-config-url", false, colors.Green("(Flag)")+" If set adds the config url of the datacenter config object."),
 				"format":            c.FlagSet.String("format", "yaml", "The output format. Supported values are 'json','csv','yaml'. The default format is human readable."),
 			}
@@ -234,18 +234,11 @@ func datacenterGetCmd(c *command.Command, client metalcloud.MetalCloudClient) (s
 }
 
 func datacenterUpdateCmd(c *command.Command, client metalcloud.MetalCloudClient) (string, error) {
-	datacenterName, ok := command.GetStringParamOk(c.Arguments["datacenter_name"])
-	if !ok {
-		return "", fmt.Errorf("id is required")
-	}
-
 	obj, err := objects.ReadSingleObjectFromCommand(c, client)
 	if err != nil {
 		return "", err
 	}
 	d := (*obj).(metalcloud.DatacenterWithConfig)
-
-	d.DatacenterName = datacenterName
 
 	_, err = client.DatacenterUpdateFromDatacenterWithConfig(d)
 	if err != nil {

@@ -887,7 +887,6 @@ func GetInfrastructureFromCommand(paramName string, c *Command, client metalclou
 
 	id, label, isID := IdOrLabel(m)
 
-	fmt.Printf("isID: %t", isID)
 	if isID {
 		return client.InfrastructureGet(id)
 	}
@@ -905,6 +904,21 @@ func GetInstanceArrayFromCommand(paramName string, c *Command, client metalcloud
 		return client.InstanceArrayGet(id)
 	}
 	return client.InstanceArrayGetByLabel(label)
+}
+
+func GetDriveArrayFromCommand(paramName string, c *Command, client metalcloud.MetalCloudClient) (*metalcloud.DriveArray, error) {
+	m, err := GetParam(c, "drive_array_id_or_label", "id")
+	if err != nil {
+		return nil, err
+	}
+
+	id, label, isID := IdOrLabel(m)
+
+	if isID {
+		return client.DriveArrayGet(id)
+	}
+
+	return client.DriveArrayGetByLabel(label)
 }
 
 func GetOSTemplateFromCommand(paramName string, c *Command, client metalcloud.MetalCloudClient, decryptPasswd bool) (*metalcloud.OSTemplate, error) {

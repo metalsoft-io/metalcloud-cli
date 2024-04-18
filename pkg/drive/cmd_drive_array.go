@@ -9,6 +9,7 @@ import (
 	metalcloud "github.com/metalsoft-io/metal-cloud-sdk-go/v3"
 	"github.com/metalsoft-io/metalcloud-cli/internal/colors"
 	"github.com/metalsoft-io/metalcloud-cli/internal/command"
+	"github.com/metalsoft-io/metalcloud-cli/internal/objects"
 	"github.com/metalsoft-io/tableformatter"
 )
 
@@ -22,15 +23,9 @@ var DriveArrayCmds = []command.Command{
 		FlagSet:      flag.NewFlagSet("drive-array", flag.ExitOnError),
 		InitFunc: func(c *command.Command) {
 			c.Arguments = map[string]interface{}{
-				"infrastructure_id_or_label":                c.FlagSet.String("infra", command.NilDefaultStr, colors.Red("(Required)")+" Infrastructure's id or label. Note that the 'label' this be ambiguous in certain situations."),
-				"instance_array_id_or_label":                c.FlagSet.String("ia", command.NilDefaultStr, colors.Red("(Required)")+" The id of the instance array it is attached to. It can be zero for unattached Drive Arrays"),
-				"drive_array_label":                         c.FlagSet.String("label", command.NilDefaultStr, colors.Red("(Required)")+" The label of the drive array"),
-				"drive_array_storage_type":                  c.FlagSet.String("type", command.NilDefaultStr, "Possible values: iscsi_ssd, iscsi_hdd"),
-				"drive_size_mbytes_default":                 c.FlagSet.Int("size", command.NilDefaultInt, "(Optional, default = 40960) Drive arrays's size in MBytes"),
-				"drive_array_count":                         c.FlagSet.Int("count", command.NilDefaultInt, "DriveArrays's drive count. Use this only for unconnected DriveArrays."),
-				"drive_array_no_expand_with_instance_array": c.FlagSet.Bool("no-expand-with-ia", false, colors.Green("(Flag)")+" If set, auto-expand when the connected instance array expands is disabled"),
-				"volume_template_id_or_label":               c.FlagSet.String("template", command.NilDefaultStr, "DriveArrays's volume template to clone when creating Drives"),
-				"return_id":                                 c.FlagSet.Bool("return-id", false, "(Optional) Will print the ID of the created Drive Array. Useful for automating tasks."),
+				"read_config_from_file": c.FlagSet.String("f", command.NilDefaultStr, colors.Red("(Required)")+" Read configuration from file in the format specified with --format."),
+				"format":                c.FlagSet.String("format", "json", "The input format. Supported values are 'json','yaml'. The default format is json."),
+				"return_id":             c.FlagSet.Bool("return-id", false, "(Optional) Will print the ID of the created Drive Array. Useful for automating tasks."),
 			}
 		},
 		ExecuteFunc: driveArrayCreateCmd,
@@ -44,17 +39,11 @@ var DriveArrayCmds = []command.Command{
 		FlagSet:      flag.NewFlagSet("update_drive_array", flag.ExitOnError),
 		InitFunc: func(c *command.Command) {
 			c.Arguments = map[string]interface{}{
-				"drive_array_id_or_label":                c.FlagSet.String("id", command.NilDefaultStr, colors.Red("(Required)")+" Drive Array's ID or label. Note that using the label can be ambiguous and is slower."),
-				"instance_array_id_or_label":             c.FlagSet.String("ia", command.NilDefaultStr, colors.Red("(Required)")+" The id of the instance array it is attached to. It can be zero for unattached Drive Arrays"),
-				"drive_array_label":                      c.FlagSet.String("label", command.NilDefaultStr, colors.Red("(Required)")+" The label of the drive array"),
-				"drive_array_storage_type":               c.FlagSet.String("type", command.NilDefaultStr, "Possible values: iscsi_ssd, iscsi_hdd"),
-				"drive_size_mbytes_default":              c.FlagSet.Int("size", command.NilDefaultInt, "(Optional, default = 40960) Drive arrays's size in MBytes"),
-				"drive_array_count":                      c.FlagSet.Int("count", command.NilDefaultInt, "DriveArrays's drive count. Use this only for unconnected DriveArrays."),
-				"drive_array_expand_with_instance_array": c.FlagSet.Bool("expand-with-ia", true, "Auto-expand when the connected instance array expands"),
-				"volume_template_id_or_label":            c.FlagSet.String("template", command.NilDefaultStr, "DriveArrays's volume template to clone when creating Drives"),
+				"read_config_from_file": c.FlagSet.String("f", command.NilDefaultStr, colors.Red("(Required)")+" Read configuration from file in the format specified with --format."),
+				"format":                c.FlagSet.String("format", "json", "The input format. Supported values are 'json','yaml'. The default format is json."),
 			}
 		},
-		ExecuteFunc: driveArrayEditCmd,
+		ExecuteFunc: driveArrayUpdateCmd,
 	},
 	{
 		Description:  "Lists all drive arrays of an infrastructure.",
@@ -96,127 +85,63 @@ var DriveArrayCmds = []command.Command{
 		InitFunc: func(c *command.Command) {
 			c.Arguments = map[string]interface{}{
 				"drive_array_id_or_label": c.FlagSet.String("id", command.NilDefaultStr, colors.Red("(Required)")+" Drive Array's ID or label. Note that using the label can be ambiguous and is slower."),
-				"show_iscsi_credentials":  c.FlagSet.Bool("show-iscsi-credentials", false, colors.Green("(Flag)")+" If set returns the drives' iscsi credentials"),
 				"format":                  c.FlagSet.String("format", "yaml", "The output format. Supported values are 'json','csv','yaml'. The default format is human readable."),
 			}
 		},
 		ExecuteFunc: driveArrayGetCmd,
 	},
+	{
+		Description:  "Lists a drive array's drives.",
+		Subject:      "drive-array",
+		AltSubject:   "da",
+		Predicate:    "list-drives",
+		AltPredicate: "show-drives",
+		FlagSet:      flag.NewFlagSet("show drive_array drives", flag.ExitOnError),
+		InitFunc: func(c *command.Command) {
+			c.Arguments = map[string]interface{}{
+				"drive_array_id_or_label": c.FlagSet.String("id", command.NilDefaultStr, colors.Red("(Required)")+" Drive Array's ID or label. Note that using the label can be ambiguous and is slower."),
+				"format":                  c.FlagSet.String("format", "yaml", "The output format. Supported values are 'json','csv','yaml'. The default format is human readable."),
+			}
+		},
+		ExecuteFunc: driveArrayDrivesGetCmd,
+	},
 }
 
 func driveArrayCreateCmd(c *command.Command, client metalcloud.MetalCloudClient) (string, error) {
-
-	da := argsToDriveArray(c.Arguments)
-
-	infra, err := command.GetInfrastructureFromCommand("infra", c, client)
+	obj, err := objects.ReadSingleObjectFromCommand(c, client)
 	if err != nil {
 		return "", err
 	}
+	da := (*obj).(metalcloud.DriveArray)
 
-	if v, ok := command.GetStringParamOk(c.Arguments["instance_array_id_or_label"]); ok {
-
-		iaID, err := command.GetIDOrDo(v, func(label string) (int, error) {
-			ia, err := client.InstanceArrayGetByLabel(label)
-			if err != nil {
-				return 0, err
-			}
-			return ia.InstanceArrayID, nil
-		})
-
-		if err != nil {
-			return "", err
-		}
-		da.InstanceArrayID = iaID
-	}
-
-	if v, ok := command.GetStringParamOk(c.Arguments["volume_template_id_or_label"]); ok {
-		vtID, err := command.GetIDOrDo(v, func(label string) (int, error) {
-			vt, err := client.VolumeTemplateGetByLabel(label)
-			if err != nil {
-				return 0, err
-			}
-			return vt.VolumeTemplateID, nil
-		},
-		)
-		if err != nil {
-			return "", err
-		}
-		da.VolumeTemplateID = vtID
-	}
-
-	if da.DriveArrayLabel == "" {
-		return "", fmt.Errorf("-label is required")
-	}
-
-	retDA, err := client.DriveArrayCreate(infra.InfrastructureID, *da)
+	createdDA, err := client.DriveArrayCreate(da.InfrastructureID, da)
 	if err != nil {
 		return "", err
 	}
 
 	if command.GetBoolParam(c.Arguments["return_id"]) {
-		return fmt.Sprintf("%d", retDA.DriveArrayID), nil
+		return fmt.Sprintf("%d", createdDA.DriveArrayID), nil
 	}
 
 	return "", err
 }
 
-func driveArrayEditCmd(c *command.Command, client metalcloud.MetalCloudClient) (string, error) {
-
-	retDA, err := getDriveArrayFromCommand(c, client)
+func driveArrayUpdateCmd(c *command.Command, client metalcloud.MetalCloudClient) (string, error) {
+	obj, err := objects.ReadSingleObjectFromCommand(c, client)
 	if err != nil {
 		return "", err
 	}
+	da := (*obj).(metalcloud.DriveArray)
 
-	dao := retDA.DriveArrayOperation
-
-	if v, ok := command.GetStringParamOk(c.Arguments["instance_array_id_or_label"]); ok {
-		iaID, err := command.GetIDOrDo(v,
-			func(label string) (int, error) {
-				ia, err := client.InstanceArrayGetByLabel(label)
-				if err != nil {
-					return 0, err
-				}
-				return ia.InstanceArrayID, nil
-			},
-		)
-		if err != nil {
-			return "", err
-		}
-
-		dao.InstanceArrayID = iaID
+	_, err = client.DriveArrayEdit(da.DriveArrayID, *da.DriveArrayOperation)
+	if err != nil {
+		return "", err
 	}
-
-	if v, ok := command.GetStringParamOk(c.Arguments["volume_template_id_or_label"]); ok {
-		vtID, err := command.GetIDOrDo(v,
-			func(label string) (int, error) {
-				vt, err := client.VolumeTemplateGetByLabel(label)
-				if err != nil {
-					return 0, err
-				}
-				return vt.VolumeTemplateID, nil
-			},
-		)
-		if err != nil {
-			return "", err
-		}
-
-		dao.VolumeTemplateID = vtID
-	}
-
-	command.UpdateIfIntParamSet(c.Arguments["drive_array_id"], &dao.DriveArrayID)
-	command.UpdateIfStringParamSet(c.Arguments["drive_array_label"], &dao.DriveArrayLabel)
-	command.UpdateIfStringParamSet(c.Arguments["drive_array_storage_type"], &dao.DriveArrayStorageType)
-	command.UpdateIfIntParamSet(c.Arguments["drive_array_count"], &dao.DriveArrayCount)
-	command.UpdateIfIntParamSet(c.Arguments["drive_size_mbytes_default"], &dao.DriveSizeMBytesDefault)
-	command.UpdateIfBoolParamSet(c.Arguments["drive_array_expand_with_instance_array"], &dao.DriveArrayExpandWithInstanceArray)
-
-	_, err = client.DriveArrayEdit(retDA.DriveArrayID, *dao)
 
 	return "", err
 }
 
 func driveArrayListCmd(c *command.Command, client metalcloud.MetalCloudClient) (string, error) {
-
 	infraIDStr, err := command.GetParam(c, "infrastructure_id_or_label", "infra")
 	if err != nil {
 		return "", err
@@ -346,8 +271,7 @@ func driveArrayListCmd(c *command.Command, client metalcloud.MetalCloudClient) (
 }
 
 func driveArrayDeleteCmd(c *command.Command, client metalcloud.MetalCloudClient) (string, error) {
-
-	retDA, err := getDriveArrayFromCommand(c, client)
+	retDA, err := command.GetDriveArrayFromCommand("id", c, client)
 	if err != nil {
 		return "", err
 	}
@@ -396,158 +320,40 @@ func driveArrayDeleteCmd(c *command.Command, client metalcloud.MetalCloudClient)
 		return "", client.DriveArrayDelete(retDA.DriveArrayID)
 	}
 
-	return "", fmt.Errorf("Operation not confirmed. Aborting")
+	return "", fmt.Errorf("operation not confirmed. Aborting")
 }
 
 func driveArrayGetCmd(c *command.Command, client metalcloud.MetalCloudClient) (string, error) {
-
-	retDA, err := getDriveArrayFromCommand(c, client)
+	driveArray, err := command.GetDriveArrayFromCommand("id", c, client)
 	if err != nil {
 		return "", err
 	}
 
-	schema := []tableformatter.SchemaField{
-		{
-			FieldName: "ID",
-			FieldType: tableformatter.TypeInt,
-			FieldSize: 6,
-		},
-		{
-			FieldName: "LABEL",
-			FieldType: tableformatter.TypeString,
-			FieldSize: 30,
-		},
-		{
-			FieldName: "STATUS",
-			FieldType: tableformatter.TypeString,
-			FieldSize: 10,
-		},
-		{
-			FieldName: "SIZE (MB)",
-			FieldType: tableformatter.TypeInt,
-			FieldSize: 10,
-		},
-		{
-			FieldName: "TYPE",
-			FieldType: tableformatter.TypeString,
-			FieldSize: 10,
-		},
-		{
-			FieldName: "ATTACHED TO",
-			FieldType: tableformatter.TypeString,
-			FieldSize: 30,
-		},
-		{
-			FieldName: "TEMPLATE",
-			FieldType: tableformatter.TypeString,
-			FieldSize: 25,
-		},
-		{
-			FieldName: "DETAILS",
-			FieldType: tableformatter.TypeString,
-			FieldSize: 25,
-		},
-	}
-
-	drives, err := client.DriveArrayDrives(retDA.DriveArrayID)
+	format := command.GetStringParam(c.Arguments["format"])
+	ret, err := objects.RenderRawObject(*driveArray, format, "DriveArray")
 	if err != nil {
 		return "", err
 	}
 
-	data := [][]interface{}{}
-	for _, d := range *drives {
-
-		template := ""
-		if d.TemplateIDOrigin != 0 {
-			vt, err := client.VolumeTemplateGet(d.TemplateIDOrigin)
-			if err != nil {
-				return "", err
-			}
-			template = fmt.Sprintf("%s(#%d)", vt.VolumeTemplateDisplayName, vt.VolumeTemplateID)
-
-		}
-
-		details := ""
-
-		if d.DriveOperatingSystem != nil {
-			details = fmt.Sprintf("%s ", d.DriveOperatingSystem.OperatingSystemType)
-		}
-
-		if d.DriveFileSystem != nil {
-			details = fmt.Sprintf("%s %s", details, d.DriveFileSystem.DriveFilesystemType)
-		}
-
-		dataRow := []interface{}{
-			d.DriveID,
-			d.DriveLabel,
-			d.DriveServiceStatus,
-			d.DriveSizeMBytes,
-			d.DriveStorageType,
-			fmt.Sprintf("instance-%d", d.InstanceID),
-			template,
-			details,
-		}
-
-		if command.GetBoolParam(c.Arguments["show_iscsi_credentials"]) {
-
-			credentials := fmt.Sprintf("Target: %s Port:%d IQN:%s LUN ID:%d",
-				d.DriveCredentials.ISCSI.StorageIPAddress,
-				d.DriveCredentials.ISCSI.StoragePort,
-				d.DriveCredentials.ISCSI.TargetIQN,
-				d.DriveCredentials.ISCSI.LunID)
-
-			dataRow = append(dataRow, credentials)
-		}
-
-		data = append(data, dataRow)
-
-	}
-
-	if command.GetBoolParam(c.Arguments["show_iscsi_credentials"]) {
-		schema = append(schema, tableformatter.SchemaField{
-			FieldName: "CREDENTIALS",
-			FieldType: tableformatter.TypeString,
-			FieldSize: 5,
-		})
-	}
-
-	subtitle := fmt.Sprintf("Drive Array #%d", retDA.DriveArrayID)
-	if retDA.InstanceArrayID != 0 {
-		subtitle = fmt.Sprintf("%s attached to instance array %d", subtitle, retDA.InstanceArrayID)
-	}
-	subtitle = fmt.Sprintf("%s has the following drives:", subtitle)
-
-	tableformatter.TableSorter(schema).OrderBy(schema[0].FieldName).Sort(data)
-	table := tableformatter.Table{
-		Data:   data,
-		Schema: schema,
-	}
-	return table.RenderTable("Drives", subtitle, command.GetStringParam(c.Arguments["format"]))
+	return ret, nil
 }
 
-func argsToDriveArray(m map[string]interface{}) *metalcloud.DriveArray {
-	return &metalcloud.DriveArray{
-		DriveArrayID:                      command.GetIntParam(m["drive_array_id"]),
-		DriveArrayLabel:                   command.GetStringParam(m["drive_array_label"]),
-		DriveArrayStorageType:             command.GetStringParam(m["drive_array_storage_type"]),
-		DriveArrayCount:                   command.GetIntParam(m["drive_array_count"]),
-		DriveSizeMBytesDefault:            command.GetIntParam(m["drive_size_mbytes_default"]),
-		DriveArrayExpandWithInstanceArray: command.GetBoolParam(m["drive_array_no_expand_with_instance_array"]),
-	}
-}
-
-func getDriveArrayFromCommand(c *command.Command, client metalcloud.MetalCloudClient) (*metalcloud.DriveArray, error) {
-
-	m, err := command.GetParam(c, "drive_array_id_or_label", "id")
+func driveArrayDrivesGetCmd(c *command.Command, client metalcloud.MetalCloudClient) (string, error) {
+	driveArray, err := command.GetDriveArrayFromCommand("id", c, client)
 	if err != nil {
-		return nil, err
+		return "", err
 	}
 
-	id, label, isID := command.IdOrLabel(m)
-
-	if isID {
-		return client.DriveArrayGet(id)
+	drives, err := client.DriveArrayDrives(driveArray.DriveArrayID)
+	if err != nil {
+		return "", err
 	}
 
-	return client.DriveArrayGetByLabel(label)
+	format := command.GetStringParam(c.Arguments["format"])
+	ret, err := objects.RenderRawObject(*drives, format, "DriveArrayDrives")
+	if err != nil {
+		return "", err
+	}
+
+	return ret, nil
 }

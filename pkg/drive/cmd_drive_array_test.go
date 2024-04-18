@@ -286,7 +286,7 @@ func TestDriveArrayEdit(t *testing.T) {
 		Return(&da, nil).
 		Times(1)
 
-	ret, err := driveArrayEditCmd(&cmd, client)
+	ret, err := driveArrayUpdateCmd(&cmd, client)
 
 	Expect(ret).To(Equal(""))
 	Expect(err).To(BeNil())
@@ -301,7 +301,7 @@ func TestDriveArrayEdit(t *testing.T) {
 	//test all error scenarios
 	for _, a := range errorArguments {
 
-		_, err := driveArrayEditCmd(&command.Command{Arguments: a}, client)
+		_, err := driveArrayUpdateCmd(&command.Command{Arguments: a}, client)
 
 		Expect(err).NotTo(BeNil())
 	}
@@ -315,7 +315,7 @@ func TestDriveArrayEdit(t *testing.T) {
 		Return(&da, fmt.Errorf("testerr")).
 		Times(1)
 
-	_, err = driveArrayEditCmd(&cmd, client)
+	_, err = driveArrayUpdateCmd(&cmd, client)
 	Expect(err).NotTo(BeNil())
 
 	//check catches error at edit
@@ -333,7 +333,7 @@ func TestDriveArrayEdit(t *testing.T) {
 		Return(nil, fmt.Errorf("testerr")).
 		Times(1)
 
-	_, err = driveArrayEditCmd(&cmd, client)
+	_, err = driveArrayUpdateCmd(&cmd, client)
 	Expect(err).NotTo(BeNil())
 }
 
@@ -615,7 +615,7 @@ func TestGetDriveArrayFromCommand(t *testing.T) {
 		},
 	}
 
-	ret, err := getDriveArrayFromCommand(&cmd, client)
+	ret, err := command.GetDriveArrayFromCommand("id", &cmd, client)
 
 	Expect(err).To(BeNil())
 	Expect(ret.DriveArrayID).To(Equal(da.DriveArrayID))
@@ -627,7 +627,7 @@ func TestGetDriveArrayFromCommand(t *testing.T) {
 		},
 	}
 
-	ret, err = getDriveArrayFromCommand(&cmd, client)
+	ret, err = command.GetDriveArrayFromCommand("id", &cmd, client)
 
 	Expect(err).To(BeNil())
 	Expect(ret.DriveArrayID).To(Equal(da.DriveArrayOperation.DriveArrayID))

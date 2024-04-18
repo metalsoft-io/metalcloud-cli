@@ -1,0 +1,28 @@
+kind: Infrastructure
+apiVersion: 1.0
+id: 71046
+label: test-cli
+datacenter: dc03-qa
+subdomain: test-cli.11.eveng-qa03.metalcloud.io
+ownerID: 31
+ownerEmail: my.name@metalsoft.io
+touchUnixTime: "1713353972.7588"
+serviceStatus: active
+createdTimestamp: "2024-04-17T08:10:32Z"
+updatedTimestamp: "2024-04-17T11:39:32Z"
+changeID: 169922
+deployID: 21696
+operation:
+  id: 71046
+  label: test-cli
+  datacenter: dc03-qa
+  deployStatus: finished
+  deployType: edit
+  subdomain: test-cli.11.eveng-qa03.metalcloud.io
+  ownerID: 31
+  updatedTimestamp: "2024-04-17T08:10:32Z"
+  changeID: 169922
+  deployID: 21696
+  customVariables: []
+infrastructureexperimentalpriority: disallow
+customVariables: []

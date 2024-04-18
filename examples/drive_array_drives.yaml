@@ -1,0 +1,26 @@
+kind: DriveArrayDrives
+apiVersion: 1.0
+drive-39716:
+  driveid: 39716
+  drivelabel: drive-39716
+  drivesubdomain: drive-39716.drive-array-37144.vanilla.test-cli.31.eveng-qa03.metalcloud.io
+  drivearrayid: 37144
+  instanceid: 37409
+  drivesizembytes: 40960
+  drivestoragetype: iscsi_ssd
+  infrastructureid: 71282
+  templateidorigin: 0
+  drivecredentials:
+    iscsi: {}
+  driveservicestatus: ordered
+  drivecreatedtimestamp: "2024-04-18T11:17:03Z"
+  driveupdatedtimestamp: "2024-04-18T11:35:33Z"
+  driveoperatingsystem:
+    type: none
+    version: none
+    architecture: none
+  drivefilesystem:
+    drivefilesystemtype: none
+    drivefilesystemblocksizebytes: 4096
+    drivefilesystemmountpath: ""
+  drivewwn: ""
