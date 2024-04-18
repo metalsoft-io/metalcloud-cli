@@ -1,14 +1,11 @@
 package network
 
 import (
-	"encoding/json"
 	"flag"
 	"fmt"
 	"os"
 	"strconv"
 	"strings"
-
-	"gopkg.in/yaml.v3"
 
 	metalcloud "github.com/metalsoft-io/metal-cloud-sdk-go/v3"
 	"github.com/metalsoft-io/metalcloud-cli/internal/colors"
@@ -62,7 +59,6 @@ var NetworkProfileCmds = []command.Command{
 			c.Arguments = map[string]interface{}{
 				"network_profile_id": c.FlagSet.Int("id", command.NilDefaultInt, colors.Red("(Required)")+" Network profile's id."),
 				"format":             c.FlagSet.String("format", "yaml", "The output format. Supported values are 'json','csv','yaml'. The default format is human readable."),
-				"raw":                c.FlagSet.Bool("raw", false, colors.Green("(Flag)")+" If set returns the raw object serialized using specified format"),
 			}
 		},
 		ExecuteFunc: networkProfileGetCmd,
@@ -77,10 +73,8 @@ var NetworkProfileCmds = []command.Command{
 		FlagSet:      flag.NewFlagSet("Create network profile", flag.ExitOnError),
 		InitFunc: func(c *command.Command) {
 			c.Arguments = map[string]interface{}{
-				"datacenter":            c.FlagSet.String("datacenter", command.NilDefaultStr, colors.Red("(Required)")+" Label of the datacenter. Also used as an ID."),
-				"format":                c.FlagSet.String("format", "yaml", "The input format. Supported values are 'json','yaml'. The default format is json."),
-				"read_config_from_file": c.FlagSet.String("f", command.NilDefaultStr, colors.Red("(Required)")+" Read  configuration from file in the format specified with --format."),
-				"read_config_from_pipe": c.FlagSet.Bool("pipe", false, colors.Green("(Flag)")+" If set, read  configuration from pipe instead of from a file. Either this flag or the --raw-config option must be used."),
+				"read_config_from_file": c.FlagSet.String("f", command.NilDefaultStr, colors.Red("(Required)")+" Read configuration from file in the format specified with --format."),
+				"format":                c.FlagSet.String("format", "json", "The input format. Supported values are 'json','yaml'. The default format is json."),
 				"return_id":             c.FlagSet.Bool("return-id", false, "Will print the ID of the created object. Useful for automating tasks."),
 			}
 		},
@@ -88,27 +82,45 @@ var NetworkProfileCmds = []command.Command{
 		Endpoint:    configuration.DeveloperEndpoint,
 		Example: `
 #create file network-profile.yaml:
-label: internet01
-dc: us02-chi-qts01-dc
+kind: NetworkProfile
+apiVersion: 1.0
+label: my-network-profile
+dc: my-datacenter
 networkType: wan
 vlans:
-- vlanID: null
-  portMode: native
-  provisionSubnetGateways: false
-  extConnectionIDs:
-   - 10
-  subnetPools: 
-  - subnetPoolID: 13
-	subnetPoolType: ipv4
-	SubnetPoolProvidesDefaultRoute: false
-- vlanID: 3205
+- vlanID: 3510
   portMode: trunk
   provisionSubnetGateways: false
+  provisionVXLAN: false
+  extConnectionIDs: []
+  subnetPools: []
+- vlanID: 3511
+  portMode: trunk
+  provisionSubnetGateways: false
+  provisionVXLAN: false
+  extConnectionIDs: []
+  subnetPools: []
+- vlanID: 3512
+  portMode: trunk
+  provisionSubnetGateways: false
+  provisionVXLAN: false
+  extConnectionIDs: []
+  subnetPools: []
+- vlanID: 3513
+  portMode: trunk
+  provisionSubnetGateways: false
+  provisionVXLAN: false
+  extConnectionIDs: []
+  subnetPools: []
+- vlanID: 3642
+  portMode: native
+  provisionSubnetGateways: false
+  provisionVXLAN: false
   extConnectionIDs: []
   subnetPools: []
 
 #create the actual profile from the file: 
-metalcloud-cli network-profile create -datacenter us02-chi-qts01-dc -format yaml -raw-config ./network-profile.yaml
+metalcloud-cli network-profile create -f ./network-profile.yaml
 
 More details available https://docs.metalsoft.io/en/latest/guides/adding_a_network_profile.html
 `,
@@ -332,7 +344,6 @@ func networkProfileVlansListCmd(c *command.Command, client metalcloud.MetalCloud
 }
 
 func networkProfileGetCmd(c *command.Command, client metalcloud.MetalCloudClient) (string, error) {
-
 	id, ok := command.GetIntParamOk(c.Arguments["network_profile_id"])
 	if !ok {
 		return "", fmt.Errorf("-id required")
@@ -343,186 +354,32 @@ func networkProfileGetCmd(c *command.Command, client metalcloud.MetalCloudClient
 		return "", err
 	}
 
-	schema := []tableformatter.SchemaField{
-		{
-			FieldName: "ID",
-			FieldType: tableformatter.TypeString,
-			FieldSize: 6,
-		},
-		{
-			FieldName: "LABEL",
-			FieldType: tableformatter.TypeString,
-			FieldSize: 6,
-		},
-		{
-			FieldName: "DATACENTER",
-			FieldType: tableformatter.TypeString,
-			FieldSize: 6,
-		},
-		{
-			FieldName: "DETAILS",
-			FieldType: tableformatter.TypeString,
-			FieldSize: 6,
-		},
-	}
-
-	networkProfileVlans := retNP.NetworkProfileVLANs
-
-	vlanListDescriptions := []string{}
-
-	for _, vlan := range networkProfileVlans {
-
-		externalConnectionIDs := vlan.ExternalConnectionIDs
-		ecDescriptions := []string{}
-		for _, ecId := range externalConnectionIDs {
-
-			retEC, err := client.ExternalConnectionGet(ecId)
-			if err != nil {
-				return "", err
-			}
-
-			ecDescriptions = append(ecDescriptions, fmt.Sprintf("%s (#%d)", colors.Blue(retEC.ExternalConnectionLabel), ecId))
-		}
-
-		subnetPoolsDescriptions := []string{}
-		subnetPools := vlan.SubnetPools
-
-		for _, subnet := range subnetPools {
-			if subnet.SubnetPoolID == nil { //if nil means that the subnet is automatically allocated
-				subnetPoolsDescriptions = append(subnetPoolsDescriptions, colors.Blue(fmt.Sprintf("auto %s", subnet.SubnetPoolType)))
-				continue
-			}
-			retSubnet, err := client.SubnetPoolGet(*subnet.SubnetPoolID)
-			if err != nil {
-				return "", err
-			}
-
-			subnetPoolsDescriptions = append(subnetPoolsDescriptions, fmt.Sprintf("%s/%s (#%d)", colors.Blue(retSubnet.SubnetPoolPrefixHumanReadable), colors.Blue(retSubnet.SubnetPoolPrefixSize), retSubnet.SubnetPoolID))
-		}
-
-		vlanid := "auto"
-		if vlan.VlanID != nil {
-			vlanid = strconv.Itoa(*vlan.VlanID)
-		}
-
-		gatewayIsProvisioned := ""
-		if !vlan.ProvisionSubnetGateways {
-			gatewayIsProvisioned = "no GW"
-		}
-
-		vlanDetails := fmt.Sprintf("VLAN ID: %s (%s) %s",
-			colors.Yellow(vlanid),
-			vlan.PortMode,
-			colors.Red(gatewayIsProvisioned),
-		)
-
-		if len(ecDescriptions) > 0 {
-			vlanDetails = fmt.Sprintf("%s EC:[%s]", vlanDetails, strings.Join(ecDescriptions, ","))
-		}
-
-		if len(subnetPoolsDescriptions) > 0 {
-			vlanDetails = fmt.Sprintf("%s Subnets:[%s]", vlanDetails, strings.Join(subnetPoolsDescriptions, ","))
-		}
-
-		vlanListDescriptions = append(vlanListDescriptions, vlanDetails)
-	}
-
-	data := [][]interface{}{
-		{
-			"#" + strconv.Itoa(retNP.NetworkProfileID),
-			colors.Blue(retNP.NetworkProfileLabel),
-			retNP.DatacenterName,
-			strings.Join(vlanListDescriptions, "\n"),
-		},
-	}
-
-	var sb strings.Builder
-
 	format := command.GetStringParam(c.Arguments["format"])
-
-	if command.GetBoolParam(c.Arguments["raw"]) {
-		ret, err := objects.RenderRawObject(*retNP, format, "ServerInterface")
-		if err != nil {
-			return "", err
-		}
-		sb.WriteString(ret)
-	} else {
-
-		table := tableformatter.Table{
-			Data:   data,
-			Schema: schema,
-		}
-
-		ret, err := table.RenderTable("", "", format)
-		if err != nil {
-			return "", err
-		}
-		sb.WriteString(ret)
+	ret, err := objects.RenderRawObject(*retNP, format, "NetworkProfile")
+	if err != nil {
+		return "", err
 	}
 
-	return sb.String(), nil
+	return ret, nil
 }
 
 func networkProfileCreateCmd(c *command.Command, client metalcloud.MetalCloudClient) (string, error) {
-	datacenter, ok := command.GetStringParamOk(c.Arguments["datacenter"])
-	if !ok {
-		return "", fmt.Errorf("-datacenter is required")
+	obj, err := objects.ReadSingleObjectFromCommand(c, client)
+	if err != nil {
+		return "", err
 	}
+	np := (*obj).(metalcloud.NetworkProfile)
 
-	readContentfromPipe := command.GetBoolParam((c.Arguments["read_config_from_pipe"]))
-
-	var err error
-	content := []byte{}
-
-	if readContentfromPipe {
-		content, err = configuration.ReadInputFromPipe()
-	} else {
-
-		if configFilePath, ok := command.GetStringParamOk(c.Arguments["read_config_from_file"]); ok {
-
-			content, err = configuration.ReadInputFromFile(configFilePath)
-		} else {
-			return "", fmt.Errorf("-raw-config <path_to_json_file> or -pipe is required")
-		}
-	}
-
+	createdNP, err := client.NetworkProfileCreate(np.DatacenterName, np)
 	if err != nil {
 		return "", err
 	}
 
-	if len(content) == 0 {
-		return "", fmt.Errorf("Content cannot be empty")
-	}
-
-	format := command.GetStringParam(c.Arguments["format"])
-
-	var npConf metalcloud.NetworkProfile
-	switch format {
-	case "json":
-		err := json.Unmarshal(content, &npConf)
-		if err != nil {
-			return "", err
-		}
-	case "yaml":
-		err := yaml.Unmarshal(content, &npConf)
-		if err != nil {
-			return "", err
-		}
-	default:
-		return "", fmt.Errorf("input format \"%s\" not supported", format)
-	}
-
-	ret, err := client.NetworkProfileCreate(datacenter, npConf)
-	if err != nil {
-		return "", err
-	}
-
-	if c.Arguments["return_id"] != nil && *c.Arguments["return_id"].(*bool) {
-		return fmt.Sprintf("%d", ret.NetworkProfileID), nil
+	if command.GetBoolParam(c.Arguments["return_id"]) {
+		return fmt.Sprintf("%d", createdNP.NetworkProfileID), nil
 	}
 
 	return "", err
-
 }
 
 func networkProfileDeleteCmd(c *command.Command, client metalcloud.MetalCloudClient) (string, error) {

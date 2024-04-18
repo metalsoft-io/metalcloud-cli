@@ -1,0 +1,37 @@
+kind: NetworkProfile
+apiVersion: 1.0
+id: 22710
+label: test-np1
+dc: dc03-qa
+networkType: wan
+vlans:
+- vlanID: 3510
+  portMode: trunk
+  provisionSubnetGateways: false
+  provisionVXLAN: false
+  extConnectionIDs: []
+  subnetPools: []
+- vlanID: 3511
+  portMode: trunk
+  provisionSubnetGateways: false
+  provisionVXLAN: false
+  extConnectionIDs: []
+  subnetPools: []
+- vlanID: 3512
+  portMode: trunk
+  provisionSubnetGateways: false
+  provisionVXLAN: false
+  extConnectionIDs: []
+  subnetPools: []
+- vlanID: 3513
+  portMode: trunk
+  provisionSubnetGateways: false
+  provisionVXLAN: false
+  extConnectionIDs: []
+  subnetPools: []
+- vlanID: 3642
+  portMode: native
+  provisionSubnetGateways: false
+  provisionVXLAN: false
+  extConnectionIDs: []
+  subnetPools: []

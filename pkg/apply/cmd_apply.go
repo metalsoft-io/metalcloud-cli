@@ -102,7 +102,6 @@ func deleteCmd(c *command.Command, client metalcloud.MetalCloudClient) (string, 
 }
 
 func generateCmd(c *command.Command, client metalcloud.MetalCloudClient) (string, error) {
-
 	types := metalcloud.GetTypesThatSupportApplierInterface()
 	typesArr := []string{}
 	for k := range types {
