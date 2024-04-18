@@ -290,6 +290,11 @@ func TestDelete(t *testing.T) {
 		SubnetPoolDelete(gomock.Any()).
 		Return(nil).
 		AnyTimes()
+	client.EXPECT().
+		DatacenterDelete(gomock.Any()).
+		Return(nil).
+		AnyTimes()
+
 	cases := []command.CommandTestCase{
 		{
 			Name: "missing file name",
@@ -332,9 +337,6 @@ func TestDelete(t *testing.T) {
 
 func TestReadObjectsFromCommand(t *testing.T) {
 	RegisterTestingT(t)
-	ctrl := gomock.NewController(t)
-
-	client := mock_metalcloud.NewMockMetalCloudClient(ctrl)
 
 	for _, c := range readFromFileTestCases {
 		f, err := os.CreateTemp("./", "testread-*.yaml")
@@ -350,7 +352,7 @@ func TestReadObjectsFromCommand(t *testing.T) {
 			"read_config_from_file": f.Name(),
 		})
 
-		objects, err := readObjectsFromCommand(&cmd, client)
+		objects, err := readObjectsFromCommand(&cmd)
 
 		Expect(err).To(BeNil())
 
