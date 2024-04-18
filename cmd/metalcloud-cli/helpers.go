@@ -130,7 +130,7 @@ func initClient(endpointSuffix string) (metalcloud.MetalCloudClient, error) {
 	return metalcloud.GetMetalcloudClientWithOptions(options)
 }
 
-func getHelp(clients map[string]metalcloud.MetalCloudClient, showArguments bool) string {
+func getHelp(clients map[string]metalcloud.MetalCloudClient) string {
 	var sb strings.Builder
 	cmds := getCommands(clients)
 	for _, c := range cmds {

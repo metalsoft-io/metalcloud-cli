@@ -301,7 +301,7 @@ func TestGetHelp(t *testing.T) {
 	}
 	cmds := getCommands(clients)
 
-	s := getHelp(clients, true)
+	s := getHelp(clients)
 	for _, c := range cmds {
 		Expect(s).To(ContainSubstring(c.Description))
 	}
