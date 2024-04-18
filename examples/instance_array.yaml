@@ -1,0 +1,235 @@
+kind: InstanceArray
+apiVersion: 1.0
+instanceID: 55419
+label: instance-array-55419
+subdomain: instance-array-55419.vanilla.test-cli.31.eveng-qa03.metalcloud.io
+bootMethod: pxe_iscsi
+instanceCount: 1
+ramGBytes: 1
+processorCount: 1
+processorCoreMhz: 1000
+processorCoreCount: 1
+diskCount: 0
+infrastructureID: 71282
+serviceStatus: ordered
+interfaces:
+- label: if0
+  subdomain: if0.instance-array-55419.vanilla.test-cli.31.eveng-qa03.metalcloud.io
+  id: 232563
+  instanceArrayID: 55419
+  networkID: 143472
+  serviceStatus: ordered
+  createdTimestamp: "2024-04-18T13:06:46Z"
+  updatedTimestamp: "2024-04-18T13:06:47Z"
+  operation:
+    label: if0
+    subdomain: if0.instance-array-55419.vanilla.test-cli.31.eveng-qa03.metalcloud.io
+    id: 232563
+    instanceArrayID: 55419
+    networkID: 143472
+    updatedTimestamp: "2024-04-18T13:06:47Z"
+    changeID: 506891
+  instance_array_interface_change_id: 506891
+- label: if1
+  subdomain: if1.instance-array-55419.vanilla.test-cli.31.eveng-qa03.metalcloud.io
+  id: 232564
+  instanceArrayID: 55419
+  index: 1
+  serviceStatus: ordered
+  createdTimestamp: "2024-04-18T13:06:46Z"
+  updatedTimestamp: "2024-04-18T13:06:46Z"
+  operation:
+    label: if1
+    subdomain: if1.instance-array-55419.vanilla.test-cli.31.eveng-qa03.metalcloud.io
+    id: 232564
+    instanceArrayID: 55419
+    index: 1
+    updatedTimestamp: "2024-04-18T13:06:46Z"
+    changeID: 506888
+  instance_array_interface_change_id: 506888
+- label: if2
+  subdomain: if2.instance-array-55419.vanilla.test-cli.31.eveng-qa03.metalcloud.io
+  id: 232565
+  instanceArrayID: 55419
+  index: 2
+  serviceStatus: ordered
+  createdTimestamp: "2024-04-18T13:06:46Z"
+  updatedTimestamp: "2024-04-18T13:06:46Z"
+  operation:
+    label: if2
+    subdomain: if2.instance-array-55419.vanilla.test-cli.31.eveng-qa03.metalcloud.io
+    id: 232565
+    instanceArrayID: 55419
+    index: 2
+    updatedTimestamp: "2024-04-18T13:06:46Z"
+    changeID: 506889
+  instance_array_interface_change_id: 506889
+- label: if3
+  subdomain: if3.instance-array-55419.vanilla.test-cli.31.eveng-qa03.metalcloud.io
+  id: 232566
+  instanceArrayID: 55419
+  index: 3
+  serviceStatus: ordered
+  createdTimestamp: "2024-04-18T13:06:46Z"
+  updatedTimestamp: "2024-04-18T13:06:46Z"
+  operation:
+    label: if3
+    subdomain: if3.instance-array-55419.vanilla.test-cli.31.eveng-qa03.metalcloud.io
+    id: 232566
+    instanceArrayID: 55419
+    index: 3
+    updatedTimestamp: "2024-04-18T13:06:46Z"
+    changeID: 506890
+  instance_array_interface_change_id: 506890
+clusterID: 134218
+clusterRoleGroup: none
+firewallManaged: true
+firewallRules:
+- description: Allow SSH traffic.
+  portRangeStart: 22
+  portRangeEnd: 22
+  protocol: tcp
+  IPAddressType: ipv4
+  enabled: false
+- description: Allow RDP traffic.
+  portRangeStart: 3389
+  portRangeEnd: 3389
+  protocol: tcp
+  IPAddressType: ipv4
+  enabled: false
+- description: Allow RDP traffic.
+  portRangeStart: 3389
+  portRangeEnd: 3389
+  protocol: udp
+  IPAddressType: ipv4
+  enabled: false
+- description: Allow private IPv4.
+  destinationIPAddressRangeStart: 10.0.0.0
+  destinationIPAddressRangeEnd: 10.255.255.255
+  protocol: all
+  IPAddressType: ipv4
+  enabled: false
+- description: Allow private IPv4.
+  destinationIPAddressRangeStart: 172.16.0.0
+  destinationIPAddressRangeEnd: 172.31.255.255
+  protocol: all
+  IPAddressType: ipv4
+  enabled: true
+- description: Allow private IPv4.
+  destinationIPAddressRangeStart: 192.168.0.0
+  destinationIPAddressRangeEnd: 192.168.255.255
+  protocol: all
+  IPAddressType: ipv4
+  enabled: true
+- description: Allow IPv4 ICMP traffic.
+  protocol: icmp
+  IPAddressType: ipv4
+  enabled: true
+- description: Allow IPv6 ICMP traffic.
+  protocol: icmp
+  IPAddressType: ipv6
+  enabled: true
+- description: Allow SNMP traffic.
+  portRangeStart: 161
+  portRangeEnd: 161
+  protocol: udp
+  IPAddressType: ipv4
+  enabled: false
+operation:
+  id: 55419
+  label: instance-array-55419
+  subdomain: instance-array-55419.vanilla.test-cli.31.eveng-qa03.metalcloud.io
+  bootMethod: pxe_iscsi
+  instanceCount: 1
+  ramGBytes: 1
+  processorCount: 1
+  processorCoreMhz: 1000
+  processorCoreCount: 1
+  diskCount: 0
+  interfaces:
+  - label: if0
+    subdomain: if0.instance-array-55419.vanilla.test-cli.31.eveng-qa03.metalcloud.io
+    id: 232563
+    instanceArrayID: 55419
+    networkID: 143472
+    updatedTimestamp: "2024-04-18T13:06:47Z"
+    changeID: 506891
+  - label: if1
+    subdomain: if1.instance-array-55419.vanilla.test-cli.31.eveng-qa03.metalcloud.io
+    id: 232564
+    instanceArrayID: 55419
+    index: 1
+    updatedTimestamp: "2024-04-18T13:06:46Z"
+    changeID: 506888
+  - label: if2
+    subdomain: if2.instance-array-55419.vanilla.test-cli.31.eveng-qa03.metalcloud.io
+    id: 232565
+    instanceArrayID: 55419
+    index: 2
+    updatedTimestamp: "2024-04-18T13:06:46Z"
+    changeID: 506889
+  - label: if3
+    subdomain: if3.instance-array-55419.vanilla.test-cli.31.eveng-qa03.metalcloud.io
+    id: 232566
+    instanceArrayID: 55419
+    index: 3
+    updatedTimestamp: "2024-04-18T13:06:46Z"
+    changeID: 506890
+  firewallManaged: true
+  firewallRules:
+  - description: Allow SSH traffic.
+    portRangeStart: 22
+    portRangeEnd: 22
+    protocol: tcp
+    IPAddressType: ipv4
+    enabled: false
+  - description: Allow RDP traffic.
+    portRangeStart: 3389
+    portRangeEnd: 3389
+    protocol: tcp
+    IPAddressType: ipv4
+    enabled: false
+  - description: Allow RDP traffic.
+    portRangeStart: 3389
+    portRangeEnd: 3389
+    protocol: udp
+    IPAddressType: ipv4
+    enabled: false
+  - description: Allow private IPv4.
+    destinationIPAddressRangeStart: 10.0.0.0
+    destinationIPAddressRangeEnd: 10.255.255.255
+    protocol: all
+    IPAddressType: ipv4
+    enabled: false
+  - description: Allow private IPv4.
+    destinationIPAddressRangeStart: 172.16.0.0
+    destinationIPAddressRangeEnd: 172.31.255.255
+    protocol: all
+    IPAddressType: ipv4
+    enabled: true
+  - description: Allow private IPv4.
+    destinationIPAddressRangeStart: 192.168.0.0
+    destinationIPAddressRangeEnd: 192.168.255.255
+    protocol: all
+    IPAddressType: ipv4
+    enabled: true
+  - description: Allow IPv4 ICMP traffic.
+    protocol: icmp
+    IPAddressType: ipv4
+    enabled: true
+  - description: Allow IPv6 ICMP traffic.
+    protocol: icmp
+    IPAddressType: ipv6
+    enabled: true
+  - description: Allow SNMP traffic.
+    portRangeStart: 161
+    portRangeEnd: 161
+    protocol: udp
+    IPAddressType: ipv4
+    enabled: false
+  deployType: create
+  deployStatus: not_started
+  changeID: 150465
+  customVariables: []
+  firmwarePolicies: []
+customVariables: []

@@ -11,6 +11,7 @@ import (
 	"github.com/metalsoft-io/metalcloud-cli/internal/colors"
 	"github.com/metalsoft-io/metalcloud-cli/internal/command"
 	"github.com/metalsoft-io/metalcloud-cli/internal/configuration"
+	"github.com/metalsoft-io/metalcloud-cli/internal/objects"
 	"github.com/metalsoft-io/tableformatter"
 )
 
@@ -24,17 +25,12 @@ var InstanceArrayCmds = []command.Command{
 		FlagSet:      flag.NewFlagSet("instance-array", flag.ExitOnError),
 		InitFunc: func(c *command.Command) {
 			c.Arguments = map[string]interface{}{
-				"infrastructure_id_or_label":          c.FlagSet.String("infra", command.NilDefaultStr, colors.Red("(Required)")+" Infrastructure's id or label. Note that the 'label' this be ambiguous in certain situations."),
-				"instance_array_instance_count":       c.FlagSet.Int("instance-count", 1, " Instance count of this instance array"),
-				"instance_array_label":                c.FlagSet.String("label", command.NilDefaultStr, "InstanceArray's label"),
-				"server_type":                         c.FlagSet.String("server-type", command.NilDefaultStr, "InstanceArray's server type."),
-				"instance_array_boot_method":          c.FlagSet.String("boot", command.NilDefaultStr, "InstanceArray's boot type:'pxe_iscsi','local_drives'"),
-				"instance_array_firewall_not_managed": c.FlagSet.Bool("firewall-management-disabled", false, colors.Green("(Flag)")+" If set InstanceArray's firewall management on or off"),
-				"volume_template_id_or_label":         c.FlagSet.String("local-install-template", command.NilDefaultStr, "InstanceArray's volume template when booting from for local drives"),
-				"da_volume_template":                  c.FlagSet.String("drive-array-template", command.NilDefaultStr, "The attached DriveArray's  volume template when booting from iscsi drives"),
-				"da_volume_disk_size":                 c.FlagSet.Int("drive-array-disk-size", command.NilDefaultInt, "The attached DriveArray's  volume size (in MB) when booting from iscsi drives, If ommited the default size of the volume template will be used."),
-				"custom_variables":                    c.FlagSet.String("custom-variables", command.NilDefaultStr, "Comma separated list of custom variables such as 'var1=value,var2=value'. If special characters need to be set use urlencode and pass the encoded string"),
-				"return_id":                           c.FlagSet.Bool("return-id", false, colors.Green("(Flag)")+" If set will print the ID of the created Instance Array. Useful for automating tasks."),
+				"read_config_from_file": c.FlagSet.String("f", command.NilDefaultStr, colors.Red("(Required)")+" Read configuration from file in the format specified with --format."),
+				"format":                c.FlagSet.String("format", "json", "The input format. Supported values are 'json','yaml'. The default format is json."),
+				"server_type":           c.FlagSet.String("server-type", command.NilDefaultStr, "InstanceArray's server type."),
+				"da_volume_template":    c.FlagSet.String("drive-array-template", command.NilDefaultStr, "The attached DriveArray's  volume template when booting from iscsi drives"),
+				"da_volume_disk_size":   c.FlagSet.Int("drive-array-disk-size", command.NilDefaultInt, "The attached DriveArray's  volume size (in MB) when booting from iscsi drives, If ommited the default size of the volume template will be used."),
+				"return_id":             c.FlagSet.Bool("return-id", false, colors.Green("(Flag)")+" If set will print the ID of the created Instance Array. Useful for automating tasks."),
 			}
 		},
 		ExecuteFunc: instanceArrayCreateCmd,
@@ -97,24 +93,15 @@ var InstanceArrayCmds = []command.Command{
 		FlagSet:      flag.NewFlagSet("instance_array", flag.ExitOnError),
 		InitFunc: func(c *command.Command) {
 			c.Arguments = map[string]interface{}{
-				"instance_array_id_or_label":          c.FlagSet.String("id", command.NilDefaultStr, colors.Red("(Required)")+" InstanceArray's id or label. Note that the label can be ambigous."),
-				"instance_array_instance_count":       c.FlagSet.Int("instance-count", command.NilDefaultInt, "Instance count of this instance array"),
-				"instance_array_label":                c.FlagSet.String("label", command.NilDefaultStr, colors.Red("(Required)")+" InstanceArray's label"),
-				"instance_array_ram_gbytes":           c.FlagSet.Int("ram", command.NilDefaultInt, "InstanceArray's minimum RAM (GB)"),
-				"instance_array_processor_count":      c.FlagSet.Int("proc", command.NilDefaultInt, "InstanceArray's minimum processor count"),
-				"instance_array_processor_core_mhz":   c.FlagSet.Int("proc-freq", command.NilDefaultInt, "InstanceArray's minimum processor frequency (Mhz)"),
-				"instance_array_processor_core_count": c.FlagSet.Int("proc-core-count", command.NilDefaultInt, "InstanceArray's minimum processor core count"),
-				"instance_array_disk_count":           c.FlagSet.Int("disks", command.NilDefaultInt, "InstanceArray's number of local drives"),
-				"instance_array_disk_size_mbytes":     c.FlagSet.Int("disk-size", command.NilDefaultInt, "InstanceArray's local disks' size in MB"),
-				"instance_array_boot_method":          c.FlagSet.String("boot", command.NilDefaultStr, "InstanceArray's boot type:'pxe_iscsi','local_drives'"),
-				"instance_array_firewall_not_managed": c.FlagSet.Bool("firewall-management-disabled", false, colors.Green("(Flag)")+" If set InstanceArray's firewall management is off"),
-				"volume_template_id_or_label":         c.FlagSet.String("local-install-template", command.NilDefaultStr, "InstanceArray's volume template when booting from for local drives"),
-				"bSwapExistingInstancesHardware":      c.FlagSet.Bool("swap-existing-hardware", false, colors.Green("(Flag)")+" If set all the hardware of the Instance objects is swapped to match the new InstanceArray specifications"),
-				"custom_variables":                    c.FlagSet.String("custom-variables", command.NilDefaultStr, "Comma separated list of custom variables such as 'var1=value,var2=value'. If special characters need to be set use urlencode and pass the encoded string"),
-				"no_bKeepDetachingDrives":             c.FlagSet.Bool("do-not-keep-detaching-drives", false, colors.Green("(Flag)")+" If set and the number of Instance objects is reduced, then the detaching Drive objects will be deleted. If it's set to true, the detaching Drive objects will not be deleted."),
+				"read_config_from_file":            c.FlagSet.String("f", command.NilDefaultStr, colors.Red("(Required)")+" Read configuration from file in the format specified with --format."),
+				"format":                           c.FlagSet.String("format", "json", "The input format. Supported values are 'json','yaml'. The default format is json."),
+				"volume_template_id_or_label":      c.FlagSet.String("local-install-template", command.NilDefaultStr, "InstanceArray's volume template when booting from for local drives"),
+				"custom_variables":                 c.FlagSet.String("custom-variables", command.NilDefaultStr, "Comma separated list of custom variables such as 'var1=value,var2=value'. If special characters need to be set use urlencode and pass the encoded string"),
+				"swap_existing_instances_hardware": c.FlagSet.Bool("swap-existing-hardware", false, colors.Green("(Flag)")+" If set all the hardware of the Instance objects is swapped to match the new InstanceArray specifications"),
+				"do_not_keep_detaching_drives":     c.FlagSet.Bool("do-not-keep-detaching-drives", false, colors.Green("(Flag)")+" If set and the number of Instance objects is reduced, then the detaching Drive objects will be deleted. If it's set to true, the detaching Drive objects will not be deleted."),
 			}
 		},
-		ExecuteFunc: instanceArrayEditCmd,
+		ExecuteFunc: instanceArrayUpdateCmd,
 		Endpoint:    configuration.UserEndpoint,
 	},
 	{
@@ -127,10 +114,6 @@ var InstanceArrayCmds = []command.Command{
 		InitFunc: func(c *command.Command) {
 			c.Arguments = map[string]interface{}{
 				"instance_array_id_or_label": c.FlagSet.String("id", command.NilDefaultStr, colors.Red("(Required)")+" Instance array's id or label. Note that using the 'label' might be ambiguous in certain situations."),
-				"show_credentials":           c.FlagSet.Bool("show-credentials", false, colors.Green("(Flag)")+" If set returns the instances' credentials"),
-				"show_power_status":          c.FlagSet.Bool("show-power-status", false, colors.Green("(Flag)")+" If set returns the instances' power status"),
-				"show_iscsi_credentials":     c.FlagSet.Bool("show-iscsi-credentials", false, colors.Green("(Flag)")+" If set returns the instances' iscsi credentials"),
-				"show_custom_variables":      c.FlagSet.Bool("show-custom-variables", false, colors.Green("(Flag)")+" If set returns the instances' custom variables"),
 				"format":                     c.FlagSet.String("format", "yaml", "The output format. Supported values are 'json','csv','yaml'. The default format is human readable."),
 			}
 		},
@@ -140,22 +123,13 @@ var InstanceArrayCmds = []command.Command{
 }
 
 func instanceArrayCreateCmd(c *command.Command, client metalcloud.MetalCloudClient) (string, error) {
-
-	infra, err := command.GetInfrastructureFromCommand("infra", c, client)
+	obj, err := objects.ReadSingleObjectFromCommand(c, client)
 	if err != nil {
 		return "", err
 	}
+	ia := (*obj).(metalcloud.InstanceArray)
 
-	ia, err := argsToInstanceArray(c.Arguments, c, client)
-	if err != nil {
-		return "", err
-	}
-
-	if ia.InstanceArrayLabel == "" {
-		return "", fmt.Errorf("-label is required")
-	}
-
-	retIA, err := client.InstanceArrayCreate(infra.InfrastructureID, *ia)
+	createdIA, err := client.InstanceArrayCreate(ia.InfrastructureID, ia)
 	if err != nil {
 		return "", err
 	}
@@ -170,16 +144,16 @@ func instanceArrayCreateCmd(c *command.Command, client metalcloud.MetalCloudClie
 		stMatches := metalcloud.ServerTypeMatches{
 			ServerTypes: map[int]metalcloud.ServerTypeMatch{
 				serverType.ServerTypeID: {
-					ServerCount: retIA.InstanceArrayInstanceCount,
+					ServerCount: createdIA.InstanceArrayInstanceCount,
 				},
 			},
 		}
-		retIA.InstanceArrayProcessorCoreCount = serverType.ServerProcessorCoreCount
-		retIA.InstanceArrayProcessorCount = serverType.ServerProcessorCount
-		retIA.InstanceArrayRAMGbytes = serverType.ServerRAMGbytes
+		createdIA.InstanceArrayProcessorCoreCount = serverType.ServerProcessorCoreCount
+		createdIA.InstanceArrayProcessorCount = serverType.ServerProcessorCount
+		createdIA.InstanceArrayRAMGbytes = serverType.ServerRAMGbytes
 
 		bFalse := false
-		_, err = client.InstanceArrayEdit(retIA.InstanceArrayID, *retIA.InstanceArrayOperation, &bFalse, &bFalse, &stMatches, nil)
+		_, err = client.InstanceArrayEdit(createdIA.InstanceArrayID, *createdIA.InstanceArrayOperation, &bFalse, &bFalse, &stMatches, nil)
 		if err != nil {
 			return "", err
 		}
@@ -199,58 +173,58 @@ func instanceArrayCreateCmd(c *command.Command, client metalcloud.MetalCloudClie
 		da := metalcloud.DriveArray{
 			VolumeTemplateID:                  volumeTemplate.VolumeTemplateID,
 			DriveSizeMBytesDefault:            driveSize,
-			InstanceArrayID:                   retIA.InstanceArrayID,
+			InstanceArrayID:                   createdIA.InstanceArrayID,
 			DriveArrayExpandWithInstanceArray: true,
 		}
-		_, err = client.DriveArrayCreate(retIA.InfrastructureID, da)
+		_, err = client.DriveArrayCreate(createdIA.InfrastructureID, da)
 		if err != nil {
 			return "", err
 		}
 	}
 
-	if c.Arguments["return_id"] != nil && *c.Arguments["return_id"].(*bool) {
-		return fmt.Sprintf("%d", retIA.InstanceArrayID), nil
+	if command.GetBoolParam(c.Arguments["return_id"]) {
+		return fmt.Sprintf("%d", createdIA.InstanceArrayID), nil
 	}
 
 	return "", err
 }
 
-func instanceArrayEditCmd(c *command.Command, client metalcloud.MetalCloudClient) (string, error) {
+func instanceArrayUpdateCmd(c *command.Command, client metalcloud.MetalCloudClient) (string, error) {
+	retIA, err := objects.ReadSingleObjectFromCommand(c, client)
+	if err != nil {
+		return "", err
+	}
+	ia := (*retIA).(metalcloud.InstanceArray)
 
-	retIA, err := command.GetInstanceArrayFromCommand("id", c, client)
+	err = argsToInstanceArrayOperation(c.Arguments, ia.InstanceArrayOperation, c, client)
 	if err != nil {
 		return "", err
 	}
 
-	err = argsToInstanceArrayOperation(c.Arguments, retIA.InstanceArrayOperation, c, client)
-	if err != nil {
-		return "", err
+	var bSwapExistingInstancesHardware *bool
+	if c.Arguments["swap_existing_instances_hardware"] != nil {
+		bSwapExistingInstancesHardware = c.Arguments["swap_existing_instances_hardware"].(*bool)
 	}
 
 	var bKeepDetachingDrives *bool
-	if v := c.Arguments["not_bKeepDetachingDrives"]; v != nil {
+	if v := c.Arguments["do_not_keep_detaching_drives"]; v != nil {
 		bVal := !*v.(*bool)
 		bKeepDetachingDrives = &bVal
 	}
 
-	var bSwapExistingInstancesHardware *bool
-	if c.Arguments["bSwapExistingInstancesHardware"] != nil {
-		bSwapExistingInstancesHardware = c.Arguments["bSwapExistingInstancesHardware"].(*bool)
-	}
-
 	_, err = client.InstanceArrayEdit(
-		retIA.InstanceArrayID,
-		*retIA.InstanceArrayOperation,
+		ia.InstanceArrayID,
+		*ia.InstanceArrayOperation,
 		bSwapExistingInstancesHardware,
 		bKeepDetachingDrives,
 		nil,
-		nil)
+		nil,
+	)
 
 	return "", err
 }
 
 func instanceArrayListCmd(c *command.Command, client metalcloud.MetalCloudClient) (string, error) {
-
 	infra, err := command.GetInfrastructureFromCommand("infra", c, client)
 	if err != nil {
 		return "", err
@@ -310,7 +284,6 @@ func instanceArrayListCmd(c *command.Command, client metalcloud.MetalCloudClient
 }
 
 func instanceArrayDeleteCmd(c *command.Command, client metalcloud.MetalCloudClient) (string, error) {
-
 	retIA, err := command.GetInstanceArrayFromCommand("id", c, client)
 	if err != nil {
 		return "", err
@@ -352,7 +325,6 @@ func instanceArrayDeleteCmd(c *command.Command, client metalcloud.MetalCloudClie
 }
 
 func instanceArrayGetNetworkAttachments(c *command.Command, client metalcloud.MetalCloudClient) (string, error) {
-
 	retIA, err := command.GetInstanceArrayFromCommand("id", c, client)
 	if err != nil {
 		return "", err
@@ -426,108 +398,21 @@ func instanceArrayGetNetworkAttachments(c *command.Command, client metalcloud.Me
 }
 
 func instanceArrayGetCmd(c *command.Command, client metalcloud.MetalCloudClient) (string, error) {
-
-	retIA, err := command.GetInstanceArrayFromCommand("id", c, client)
+	instanceArray, err := command.GetInstanceArrayFromCommand("id", c, client)
 	if err != nil {
 		return "", err
 	}
 
-	infra, err := client.InfrastructureGet(retIA.InfrastructureID)
+	format := command.GetStringParam(c.Arguments["format"])
+	ret, err := objects.RenderRawObject(*instanceArray, format, "InstanceArray")
 	if err != nil {
 		return "", err
 	}
 
-	schema := []tableformatter.SchemaField{
-		{
-			FieldName: "ID",
-			FieldType: tableformatter.TypeString,
-			FieldSize: 6,
-		},
-		{
-			FieldName: "STATUS",
-			FieldType: tableformatter.TypeString,
-			FieldSize: 6,
-		},
-		{
-			FieldName: "LABEL",
-			FieldType: tableformatter.TypeString,
-			FieldSize: 6,
-		},
-		{
-			FieldName: "INFRASTRUCTURE",
-			FieldType: tableformatter.TypeString,
-			FieldSize: 6,
-		},
-		{
-			FieldName: "DETAILS",
-			FieldType: tableformatter.TypeString,
-			FieldSize: 6,
-		},
-	}
-
-	if command.GetBoolParam(c.Arguments["show_custom_variables"]) {
-		schema = append(schema, tableformatter.SchemaField{
-			FieldName: "CUSTOM_VARS",
-			FieldType: tableformatter.TypeString,
-			FieldSize: 6,
-		})
-	}
-
-	status := colors.Green(retIA.InstanceArrayServiceStatus)
-	if retIA.InstanceArrayServiceStatus != "ordered" && retIA.InstanceArrayOperation.InstanceArrayDeployType == "edit" && retIA.InstanceArrayOperation.InstanceArrayDeployStatus == "not_started" {
-		status = colors.Blue("edited")
-	}
-
-	volumeTemplateName := ""
-	if retIA.InstanceArrayOperation.VolumeTemplateID != 0 {
-		vt, err := client.VolumeTemplateGet(retIA.InstanceArrayOperation.VolumeTemplateID)
-		if err != nil {
-			return "", err
-		}
-		volumeTemplateName = fmt.Sprintf("%s [#%d] ", vt.VolumeTemplateDisplayName, vt.VolumeTemplateID)
-	}
-
-	fwMgmtDisabled := ""
-	if !retIA.InstanceArrayFirewallManaged {
-		fwMgmtDisabled = " fw mgmt disabled"
-	}
-
-	details := fmt.Sprintf("%d instances (%d RAM, %d cores, %d disks %s %s%s)",
-		retIA.InstanceArrayOperation.InstanceArrayInstanceCount,
-		retIA.InstanceArrayOperation.InstanceArrayRAMGbytes,
-		retIA.InstanceArrayOperation.InstanceArrayProcessorCount*retIA.InstanceArrayProcessorCoreCount,
-		retIA.InstanceArrayOperation.InstanceArrayDiskCount,
-		retIA.InstanceArrayOperation.InstanceArrayBootMethod,
-		volumeTemplateName,
-		fwMgmtDisabled,
-	)
-
-	custom_vars := ""
-	if command.GetBoolParam(c.Arguments["show_custom_variables"]) {
-		custom_vars = command.GetKeyValueStringFromMap(retIA.InstanceArrayCustomVariables)
-	}
-
-	data := [][]interface{}{
-		{
-			"#" + strconv.Itoa(retIA.InstanceArrayID),
-			status,
-			retIA.InstanceArrayLabel,
-			infra.InfrastructureLabel + " #" + strconv.Itoa(retIA.InfrastructureID),
-			details,
-			custom_vars,
-		},
-	}
-
-	table := tableformatter.Table{
-		Data:   data,
-		Schema: schema,
-	}
-
-	return table.RenderTable("", "", command.GetStringParam(c.Arguments["format"]))
+	return ret, nil
 }
 
 func instanceArrayInstancesListCmd(c *command.Command, client metalcloud.MetalCloudClient) (string, error) {
-
 	retIA, err := command.GetInstanceArrayFromCommand("id", c, client)
 	if err != nil {
 		return "", err
@@ -788,46 +673,6 @@ func argsToInstanceArray(m map[string]interface{}, c *command.Command, client me
 }
 
 func argsToInstanceArrayOperation(m map[string]interface{}, iao *metalcloud.InstanceArrayOperation, c *command.Command, client metalcloud.MetalCloudClient) error {
-	if v, ok := command.GetIntParamOk(m["instance_array_instance_count"]); ok {
-		iao.InstanceArrayInstanceCount = v
-	}
-
-	if v, ok := command.GetStringParamOk(m["instance_array_label"]); ok {
-		iao.InstanceArrayLabel = v
-	}
-
-	if v, ok := command.GetIntParamOk(m["instance_array_ram_gbytes"]); ok {
-		iao.InstanceArrayRAMGbytes = v
-	}
-
-	if v, ok := command.GetIntParamOk(m["instance_array_processor_count"]); ok {
-		iao.InstanceArrayProcessorCount = v
-	}
-
-	if v, ok := command.GetIntParamOk(m["instance_array_processor_core_mhz"]); ok {
-		iao.InstanceArrayProcessorCoreMHZ = v
-	}
-
-	if v, ok := command.GetIntParamOk(m["instance_array_processor_core_count"]); ok {
-		iao.InstanceArrayProcessorCoreCount = v
-	}
-
-	if v, ok := command.GetIntParamOk(m["instance_array_disk_count"]); ok {
-		iao.InstanceArrayDiskCount = v
-	}
-
-	if v, ok := command.GetIntParamOk(m["instance_array_disk_size_mbytes"]); ok {
-		iao.InstanceArrayDiskSizeMBytes = v
-	}
-
-	if v, ok := command.GetStringParamOk(m["instance_array_boot_method"]); ok {
-		iao.InstanceArrayBootMethod = v
-	}
-
-	if v, ok := command.GetBoolParamOk(m["instance_array_firewall_not_managed"]); ok {
-		iao.InstanceArrayFirewallManaged = !v
-	}
-
 	if v, ok := command.GetStringParamOk(c.Arguments["volume_template_id_or_label"]); ok {
 		vtID, err := command.GetIDOrDo(v, func(label string) (int, error) {
 			vt, err := client.VolumeTemplateGetByLabel(label)
@@ -853,28 +698,4 @@ func argsToInstanceArrayOperation(m map[string]interface{}, iao *metalcloud.Inst
 		iao.InstanceArrayCustomVariables = m
 	}
 	return nil
-}
-
-func copyInstanceArrayToOperation(ia metalcloud.InstanceArray, iao *metalcloud.InstanceArrayOperation) {
-
-	iao.InstanceArrayID = ia.InstanceArrayID
-	iao.InstanceArrayLabel = ia.InstanceArrayLabel
-	iao.InstanceArrayBootMethod = ia.InstanceArrayBootMethod
-	iao.InstanceArrayInstanceCount = ia.InstanceArrayInstanceCount
-	iao.InstanceArrayRAMGbytes = ia.InstanceArrayRAMGbytes
-	iao.InstanceArrayProcessorCount = ia.InstanceArrayProcessorCount
-	iao.InstanceArrayProcessorCoreMHZ = ia.InstanceArrayProcessorCoreMHZ
-	iao.InstanceArrayDiskCount = ia.InstanceArrayDiskCount
-	iao.InstanceArrayDiskSizeMBytes = ia.InstanceArrayDiskSizeMBytes
-	iao.InstanceArrayDiskTypes = ia.InstanceArrayDiskTypes
-	iao.ClusterID = ia.ClusterID
-	iao.InstanceArrayFirewallManaged = ia.InstanceArrayFirewallManaged
-	iao.InstanceArrayFirewallRules = ia.InstanceArrayFirewallRules
-	iao.VolumeTemplateID = ia.VolumeTemplateID
-}
-
-func copyInstanceArrayInterfaceToOperation(i metalcloud.InstanceArrayInterface, io *metalcloud.InstanceArrayInterfaceOperation) {
-	io.InstanceArrayInterfaceLAGGIndexes = i.InstanceArrayInterfaceLAGGIndexes
-	io.InstanceArrayInterfaceIndex = i.InstanceArrayInterfaceIndex
-	io.NetworkID = i.NetworkID
 }

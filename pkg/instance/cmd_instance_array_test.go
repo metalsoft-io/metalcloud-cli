@@ -122,7 +122,7 @@ func TestInstanceArrayEdit(t *testing.T) {
 		Return(&ia, nil).
 		AnyTimes()
 
-	ret, err := instanceArrayEditCmd(&cmd, client)
+	ret, err := instanceArrayUpdateCmd(&cmd, client)
 
 	Expect(ret).To(Equal(""))
 	Expect(err).To(BeNil())
