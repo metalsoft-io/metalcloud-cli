@@ -37,7 +37,7 @@ var ApplyCmds = []command.Command{
 		AltSubject:   "delete",
 		Predicate:    command.NilDefaultStr,
 		AltPredicate: command.NilDefaultStr,
-		FlagSet:      flag.NewFlagSet("apply", flag.ExitOnError),
+		FlagSet:      flag.NewFlagSet("delete", flag.ExitOnError),
 		InitFunc: func(c *command.Command) {
 			c.Arguments = map[string]interface{}{
 				"read_config_from_file": c.FlagSet.String("f", command.NilDefaultStr, "The file "),
@@ -49,7 +49,7 @@ var ApplyCmds = []command.Command{
 }
 
 func applyCmd(c *command.Command, client metalcloud.MetalCloudClient) (string, error) {
-	objects, err := readObjectsFromCommand(c, client)
+	objects, err := readObjectsFromCommand(c)
 
 	if err != nil {
 		return "", err
@@ -66,26 +66,23 @@ func applyCmd(c *command.Command, client metalcloud.MetalCloudClient) (string, e
 }
 
 func deleteCmd(c *command.Command, client metalcloud.MetalCloudClient) (string, error) {
-	objects, err := readObjectsFromCommand(c, client)
-
+	objects, err := readObjectsFromCommand(c)
 	if err != nil {
 		return "", err
 	}
 
 	for _, object := range objects {
-		if err != nil {
-			return "", err
-		}
 		err := object.Delete(client)
 
 		if err != nil {
 			return "", err
 		}
 	}
+
 	return "", nil
 }
 
-func readObjectsFromCommand(c *command.Command, client metalcloud.MetalCloudClient) ([]metalcloud.Applier, error) {
+func readObjectsFromCommand(c *command.Command) ([]metalcloud.Applier, error) {
 	var err error
 	content := []byte{}
 	var results []metalcloud.Applier
