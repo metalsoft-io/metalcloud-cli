@@ -59,8 +59,7 @@ var CustomISOCmds = []command.Command{
 		InitFunc: func(c *command.Command) {
 			c.Arguments = map[string]interface{}{
 				"custom_iso_id_or_label": c.FlagSet.String("id", command.NilDefaultStr, colors.Red("(Required)")+" The custom iso's id or label"),
-				"url":                    c.FlagSet.String("url", command.NilDefaultStr, colors.Red("(Required)")+" The custom iso's location (http/https URL)"),
-				"label":                  c.FlagSet.String("label", command.NilDefaultStr, "The custom iso's label"),
+				"url":                    c.FlagSet.String("url", command.NilDefaultStr, "The custom iso's location (http/https URL)"),
 				"display_name":           c.FlagSet.String("display-name", command.NilDefaultStr, "The custom iso's display name"),
 				"username":               c.FlagSet.String("username", command.NilDefaultStr, "Username to authenticate to the http repository"),
 				"password":               c.FlagSet.String("password", command.NilDefaultStr, "Password to authenticate to the http repository"),
@@ -189,6 +188,8 @@ func customISOUpdateCmd(c *command.Command, client metalcloud.MetalCloudClient) 
 	}
 
 	config := CustomISOCommandConfig{RequireLabel: false, RequireUrl: false}
+
+	delete(c.Arguments, "label")
 	customISO, err := getCustomISOFromCommand(c, config)
 	if err != nil {
 		return "", err
