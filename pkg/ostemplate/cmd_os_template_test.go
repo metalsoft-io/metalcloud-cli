@@ -250,7 +250,7 @@ func TestOSTemplateCreateCmd(t *testing.T) {
 	command.TestCreateCommand(templateCreateCmd, cases, client, t)
 }
 
-func TestOSTemplateEditCmd(t *testing.T) {
+func TestOStemplateUpdateCmd(t *testing.T) {
 	RegisterTestingT(t)
 	ctrl := gomock.NewController(t)
 
@@ -413,7 +413,7 @@ func TestOSTemplateEditCmd(t *testing.T) {
 		},
 	}
 
-	command.TestCreateCommand(templateEditCmd, cases, client, t)
+	command.TestCreateCommand(templateUpdateCmd, cases, client, t)
 }
 
 func TestOSTemplateMakePrivateCmd(t *testing.T) {

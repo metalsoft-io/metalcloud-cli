@@ -1,0 +1,27 @@
+kind: OSTemplate
+apiVersion: 1.0
+id: 34865
+label: test-template12
+name: Test Template12
+sizeMBytes: 2048
+localDisk: true
+isOsTemplate: true
+volumetemplateisforswitch: false
+isImageBuildRequired: true
+provisionViaOOB: true
+bootMethods: local_drives
+volumetemplateosbootstrapfunctionname: ""
+bootType: uefi_only
+description: This is a test template. It is used for testing purposes only.
+createdTimestamp: "2024-04-19T13:39:57Z"
+updatedTimestamp: "2024-04-19T13:39:57Z"
+userID: 313
+os:
+  type: Ubuntu
+  version: "22.04"
+  architecture: x86_64
+deprecationStatus: not_deprecated
+OSAssetIDBootloaderLocalInstall: 0
+OSAssetIDBootloaderOSBoot: 0
+volumetemplateversion: 0.0.0
+volumetemplateosreadymethod: wait_for_power_off
