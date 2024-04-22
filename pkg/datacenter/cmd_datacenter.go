@@ -58,11 +58,25 @@ var DatacenterCmds = []command.Command{
 		InitFunc: func(c *command.Command) {
 			c.Arguments = map[string]interface{}{
 				"datacenter_name":   c.FlagSet.String("id", command.NilDefaultStr, colors.Red("(Required)")+" Label of the datacenter. Also used as an ID."),
-				"return_config_url": c.FlagSet.Bool("return-config-url", false, colors.Green("(Flag)")+" If set adds the config url of the datacenter config object."),
 				"format":            c.FlagSet.String("format", "yaml", "The output format. Supported values are 'json','csv','yaml'. The default format is human readable."),
 			}
 		},
 		ExecuteFunc: datacenterGetCmd,
+		Endpoint:    configuration.DeveloperEndpoint,
+	},
+	{
+		Description:  "Get datacenter config URL",
+		Subject:      "datacenter",
+		AltSubject:   "dc",
+		Predicate:    "get-config-url",
+		AltPredicate: "show-config-url",
+		FlagSet:      flag.NewFlagSet("Get datacenter config URL.", flag.ExitOnError),
+		InitFunc: func(c *command.Command) {
+			c.Arguments = map[string]interface{}{
+				"datacenter_name":   c.FlagSet.String("id", command.NilDefaultStr, colors.Red("(Required)")+" Label of the datacenter. Also used as an ID."),
+			}
+		},
+		ExecuteFunc: datacenterGetConfigURLCmd,
 		Endpoint:    configuration.DeveloperEndpoint,
 	},
 	{
@@ -196,7 +210,7 @@ func datacenterCreateCmd(c *command.Command, client metalcloud.MetalCloudClient)
 	}
 
 	if command.GetBoolParam(c.Arguments["return_id"]) {
-		return fmt.Sprintf("%d", createdDC.DatacenterID), nil
+		return fmt.Sprintf("%d", createdDC.Metadata.DatacenterID), nil
 	}
 
 	return "", err
@@ -213,17 +227,6 @@ func datacenterGetCmd(c *command.Command, client metalcloud.MetalCloudClient) (s
 		return "", err
 	}
 
-	showConfigURL := command.GetBoolParam(c.Arguments["return_config_url"])
-
-	if showConfigURL {
-		secretConfigURL, err := client.DatacenterAgentsConfigJSONDownloadURL(datacenterName, true)
-		if err != nil {
-			return "", err
-		}
-
-		retDC.DatacenterAgentsConfigUrl = secretConfigURL
-	}
-
 	format := command.GetStringParam(c.Arguments["format"])
 	ret, err := objects.RenderRawObject(*retDC, format, "DatacenterWithConfig")
 	if err != nil {
@@ -231,6 +234,20 @@ func datacenterGetCmd(c *command.Command, client metalcloud.MetalCloudClient) (s
 	}
 
 	return ret, nil
+}
+
+func datacenterGetConfigURLCmd(c *command.Command, client metalcloud.MetalCloudClient) (string, error) {
+	datacenterName, ok := command.GetStringParamOk(c.Arguments["datacenter_name"])
+	if !ok {
+		return "", fmt.Errorf("-id required")
+	}
+
+	secretConfigURL, err := client.DatacenterAgentsConfigJSONDownloadURL(datacenterName, true)
+	if err != nil {
+		return "", err
+	}
+
+	return secretConfigURL, nil
 }
 
 func datacenterUpdateCmd(c *command.Command, client metalcloud.MetalCloudClient) (string, error) {

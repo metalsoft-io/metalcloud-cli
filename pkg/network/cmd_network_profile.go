@@ -231,12 +231,12 @@ func networkProfileListCmd(c *command.Command, client metalcloud.MetalCloudClien
 		vlans := ""
 
 		for _, vlan := range np.NetworkProfileVLANs {
-			if vlan.VlanID != nil {
+			if vlan.VLANID != nil {
 				if vlans == "" {
-					vlans = strconv.Itoa(*vlan.VlanID)
+					vlans = strconv.Itoa(*vlan.VLANID)
 
 				} else {
-					vlans = vlans + "," + strconv.Itoa(*vlan.VlanID)
+					vlans = vlans + "," + strconv.Itoa(*vlan.VLANID)
 				}
 			}
 		}
@@ -318,8 +318,8 @@ func networkProfileVlansListCmd(c *command.Command, client metalcloud.MetalCloud
 		}
 
 		vlanid := "auto"
-		if vlan.VlanID != nil {
-			vlanid = strconv.Itoa(*vlan.VlanID)
+		if vlan.VLANID != nil {
+			vlanid = strconv.Itoa(*vlan.VLANID)
 		}
 
 		dataConfiguration = append(dataConfiguration, []interface{}{

@@ -1,14 +1,14 @@
 kind: DatacenterWithConfig
 apiVersion: 1.0
-datacenter:
-  id: 1
-  name: test-dc-100
-  displayName: test-dc-100
+metadata:
+  id: 23012
+  name: test-dc-101
+  displayName: test-dc-101
   isMaster: false
   isMaintenance: true
   type: metal_cloud
   createdTimestamp: "2024-04-17T16:19:51Z"
-  updatedTimestamp: "2024-04-17T16:19:51Z"
+  updatedTimestamp: "2024-04-17T17:15:15Z"
   isHidden: false
   tags:
   - 5o6W758WZN
@@ -20,7 +20,7 @@ datacenter:
   - gui_97hdjhl5ua
   - gui_v8er9lscgw
   - gui_ounedm7yxv
-datacenterConfig:
+config:
   BSIMachinesSubnetIPv4CIDR: 172.31.255.254/30
   BSIVRRPListenIPv4: 172.31.255.254
   BSIMachineListenIPv4List:
