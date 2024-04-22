@@ -24,30 +24,32 @@ var SwitchControllerCmds = []command.Command{
 		FlagSet:      flag.NewFlagSet("Create switch device", flag.ExitOnError),
 		InitFunc: func(c *command.Command) {
 			c.Arguments = map[string]interface{}{
-				"format":                c.FlagSet.String("format", "yaml", "The input format. Supported values are 'json','yaml'. The default format is json."),
 				"read_config_from_file": c.FlagSet.String("f", command.NilDefaultStr, colors.Red("(Required)")+" Read  configuration from file in the format specified with --format."),
-				"read_config_from_pipe": c.FlagSet.Bool("pipe", false, colors.Green("(Flag)")+" If set, read  configuration from pipe instead of from a file. Either this flag or the --raw-config option must be used."),
+				"format":                c.FlagSet.String("format", "yaml", "The input format. Supported values are 'json','yaml'. The default format is json."),
 				"return_id":             c.FlagSet.Bool("return-id", false, "Will print the ID of the created object. Useful for automating tasks."),
 			}
 		},
 		ExecuteFunc: switchControllerCreateCmd,
 		Endpoint:    configuration.DeveloperEndpoint,
 		Example: `
-metalcloud-cli switch-controller create --format yaml --raw-config switch-controller.yaml --return-id
+metalcloud-cli switch-controller create -f switch-controller.yaml --return-id
 
 switch-controller.yaml:
 
-identifierString: Cisco ACI 5.1
-description: Cisco ACI 5.1 controller
-datacenterName: test-aci
+kind: SwitchDeviceController
+apiVersion: 1.0
+datacenterName: dummy-ui-test-sdn
 provisionerType: sdn
-provisionerPosition: leaf
 driver: cisco_aci51
-managementAddress: 10.255.239.150
-managementProtocol: API
-managementPort: 22
 managementUsername: admin
-managementPassword: hello123
+managementPassword: admin
+managementAddress: 10.189.248.117
+managementPort: 22
+managementProtocol: API
+id: 3709
+identifierString: Cisco APIC
+options: []
+fabricConfiguration: []
 `,
 	},
 	{
@@ -76,17 +78,14 @@ managementPassword: hello123
 		FlagSet:      flag.NewFlagSet("Update switch controller configuration", flag.ExitOnError),
 		InitFunc: func(c *command.Command) {
 			c.Arguments = map[string]interface{}{
-				"network_controller_id_or_identifier_string": c.FlagSet.String("id", command.NilDefaultStr, colors.Red("(Required)")+" Switch controller id or identifier string. "),
-				"format":                c.FlagSet.String("format", "yaml", "The input format. Supported values are 'json','yaml'. The default format is json."),
-				"read_config_from_file": c.FlagSet.String("f", command.NilDefaultStr, colors.Red("(Required)")+" Read configuration from file in the format specified with --format."),
-				"read_config_from_pipe": c.FlagSet.Bool("pipe", false, colors.Green("(Flag)")+" If set, read  configuration from pipe instead of from a file. Either this flag or the --raw-config option must be used."),
-				"return_id":             c.FlagSet.Bool("return-id", false, "Will print the ID of the created object. Useful for automating tasks."),
+				"read_config_from_file":                      c.FlagSet.String("f", command.NilDefaultStr, colors.Red("(Required)")+" Read configuration from file in the format specified with --format."),
+				"format":                                     c.FlagSet.String("format", "yaml", "The input format. Supported values are 'json','yaml'. The default format is json."),
 			}
 		},
 		ExecuteFunc: switchControllerUpdateCmd,
 		Endpoint:    configuration.DeveloperEndpoint,
 		Example: `
-metalcloud-cli switch-controller update --id 18 --raw-config update_sw_ctrl.yaml --format yaml
+metalcloud-cli switch-controller update -f update_sw_ctrl.yaml
 
 update_sw_ctrl.yaml:
 
@@ -114,9 +113,8 @@ fabricConfiguration:
 		InitFunc: func(c *command.Command) {
 			c.Arguments = map[string]interface{}{
 				"network_controller_id_or_identifier_string": c.FlagSet.String("id", command.NilDefaultStr, colors.Red("(Required)")+" Switch controller id or identifier string. "),
-				"show_credentials":                           c.FlagSet.Bool("show-credentials", false, colors.Green("(Flag)")+" If set returns the switch controller credentials"),
-				"format":                                     c.FlagSet.String("format", "yaml", "The output format. Supported values are 'json','csv','yaml'. The default format is human readable."),
-				"raw":                                        c.FlagSet.Bool("raw", false, colors.Green("(Flag)")+" When set the return will be a full dump of the object. This is useful when copying configurations. Only works with json and yaml formats."),
+				"format":           c.FlagSet.String("format", "yaml", "The output format. Supported values are 'json','csv','yaml'. The default format is human readable."),
+				"show_credentials": c.FlagSet.Bool("show-credentials", false, colors.Green("(Flag)")+" If set returns the switch controller credentials"),
 			}
 		},
 		ExecuteFunc: switchControllerGetCmd,
@@ -173,24 +171,19 @@ fabricConfiguration:
 }
 
 func switchControllerCreateCmd(c *command.Command, client metalcloud.MetalCloudClient) (string, error) {
-	var obj metalcloud.SwitchDeviceController
-
-	err := command.GetRawObjectFromCommand(c, &obj)
+	obj, err := objects.ReadSingleObjectFromCommand(c, client)
 	if err != nil {
 		return "", err
 	}
+	sdc := (*obj).(metalcloud.SwitchDeviceController)
 
-	if obj.DatacenterName == "" {
-		return "", fmt.Errorf("datacenter name is required.")
-	}
-
-	swCtrl, err := client.SwitchDeviceControllerCreate(obj)
+	createdSDC, err := client.SwitchDeviceControllerCreate(sdc)
 	if err != nil {
 		return "", err
 	}
 
 	if command.GetBoolParam(c.Arguments["return_id"]) {
-		return fmt.Sprintf("%d", swCtrl.NetworkEquipmentControllerID), nil
+		return fmt.Sprintf("%d", createdSDC.NetworkEquipmentControllerID), nil
 	}
 
 	return "", err
@@ -305,7 +298,7 @@ func switchControllerUpdateCmd(c *command.Command, client metalcloud.MetalCloudC
 		return "", err
 	}
 
-	retSwCtrl, err := getSwitchControllerFromCommandLine("id", c, client)
+	retSwCtrl, err := client.SwitchDeviceControllerGet(obj.NetworkEquipmentControllerID, false)
 	if err != nil {
 		return "", err
 	}
@@ -316,13 +309,9 @@ func switchControllerUpdateCmd(c *command.Command, client metalcloud.MetalCloudC
 		"network_equipment_controller_fabric_configuration": obj.NetworkEquipmentControllerFabricConfiguration,
 	}
 
-	updatedSwCtrl, err := client.SwitchDeviceControllerUpdate(retSwCtrl.NetworkEquipmentControllerID, networkEquipmentControllerData)
+	_, err = client.SwitchDeviceControllerUpdate(retSwCtrl.NetworkEquipmentControllerID, networkEquipmentControllerData)
 	if err != nil {
 		return "", err
-	}
-
-	if command.GetBoolParam(c.Arguments["return_id"]) {
-		return fmt.Sprintf("%d", updatedSwCtrl.NetworkEquipmentControllerID), nil
 	}
 
 	return "", err
@@ -334,96 +323,13 @@ func switchControllerGetCmd(c *command.Command, client metalcloud.MetalCloudClie
 		return "", err
 	}
 
-	schema := []tableformatter.SchemaField{
-		{
-			FieldName: "ID",
-			FieldType: tableformatter.TypeInt,
-			FieldSize: 6,
-		},
-		{
-			FieldName: "HOSTNAME",
-			FieldType: tableformatter.TypeString,
-			FieldSize: 6,
-		},
-		{
-			FieldName: "DATACENTER",
-			FieldType: tableformatter.TypeString,
-			FieldSize: 5,
-		},
-		{
-			FieldName: "DRIVER",
-			FieldType: tableformatter.TypeString,
-			FieldSize: 6,
-		},
-		{
-			FieldName: "PROVISIONER",
-			FieldType: tableformatter.TypeString,
-			FieldSize: 6,
-		},
-		{
-			FieldName: "MGMT IP",
-			FieldType: tableformatter.TypeString,
-			FieldSize: 5,
-		},
-	}
-
-	credentialsUser := ""
-	credentialsPass := ""
-
-	showCredentials := command.GetBoolParam(c.Arguments["show_credentials"])
-
-	if showCredentials {
-		credentialsUser = fmt.Sprintf("%s", switchController.NetworkEquipmentControllerManagementUsername)
-		credentialsPass = fmt.Sprintf("%s", switchController.NetworkEquipmentControllerManagementPassword)
-
-		schema = append(schema, tableformatter.SchemaField{
-			FieldName: "MGMT_USER",
-			FieldType: tableformatter.TypeString,
-			FieldSize: 5,
-		})
-
-		schema = append(schema, tableformatter.SchemaField{
-			FieldName: "MGMT_PASS",
-			FieldType: tableformatter.TypeString,
-			FieldSize: 5,
-		})
-
-	}
-
-	data := [][]interface{}{{
-		switchController.NetworkEquipmentControllerID,
-		switchController.NetworkEquipmentControllerIdentifierString,
-		switchController.DatacenterName,
-		switchController.NetworkEquipmentControllerDriver,
-		switchController.NetworkEquipmentControllerProvisionerType,
-		switchController.NetworkEquipmentControllerManagementAddress,
-		credentialsUser,
-		credentialsPass,
-	}}
-
-	var sb strings.Builder
-
 	format := command.GetStringParam(c.Arguments["format"])
-
-	if command.GetBoolParam(c.Arguments["raw"]) {
-		ret, err := objects.RenderRawObject(*switchController, format, "NetworkEquipmentController")
-		if err != nil {
-			return "", err
-		}
-		sb.WriteString(ret)
-	} else {
-		table := tableformatter.Table{
-			Data:   data,
-			Schema: schema,
-		}
-		ret, err := table.RenderTransposedTable("properties", "", format)
-		if err != nil {
-			return "", err
-		}
-		sb.WriteString(ret)
+	ret, err := objects.RenderRawObject(*switchController, format, "SwitchDeviceController")
+	if err != nil {
+		return "", err
 	}
 
-	return sb.String(), nil
+	return ret, nil
 }
 
 func getSwitchControllerFromCommandLine(paramName string, c *command.Command, client metalcloud.MetalCloudClient) (*metalcloud.SwitchDeviceController, error) {

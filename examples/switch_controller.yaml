@@ -1,11 +1,12 @@
-identifierString: Cisco ACI 5.1
-description: Cisco ACI 5.1 controller
-datacenterName: test-aci
+kind: SwitchDeviceController
+apiVersion: 1.0
+datacenterName: dummy-ui-test-sdn
 provisionerType: sdn
-provisionerPosition: leaf
 driver: cisco_aci51
-managementAddress: 10.255.239.150
-managementProtocol: API
-managementPort: 22
 managementUsername: admin
-managementPassword: hello123
+managementPassword: admin
+managementAddress: 10.189.248.117
+managementPort: 22
+managementProtocol: API
+id: 3709
+identifierString: Cisco APIC

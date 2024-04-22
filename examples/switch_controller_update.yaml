@@ -1,0 +1,15 @@
+kind: SwitchDeviceController
+apiVersion: 1.0
+id: 3709
+options:
+ vrf_shared_name: test1234
+fabricConfiguration:
+ network_equipment_primary_wan_ipv4_subnet_pool: 192.168.0.0
+ network_equipment_primary_wan_ipv4_subnet_prefix_size: 22
+ network_equipment_primary_wan_ipv6_subnet_prefix_size: 53
+ network_equipment_primary_san_subnet_pool: 192.168.0.0
+ network_equipment_primary_san_subnet_prefix_size: 21
+ network_equipment_primary_wan_ipv6_subnet_pool: fd1f:8bbb:56b3:800:0:0:0:0  
+ network_equipment_description: test12
+ network_equipment_country: UK
+ network_equipment_city: Reading
