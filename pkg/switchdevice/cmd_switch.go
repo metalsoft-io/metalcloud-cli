@@ -222,7 +222,7 @@ volumeTemplateID: 0
 				"return_id":                              c.FlagSet.Bool("return-id", false, "Will print the ID of the created object. Useful for automating tasks."),
 			}
 		},
-		ExecuteFunc: switchEditCmd,
+		ExecuteFunc: switchUpdateCmd,
 		Endpoint:    configuration.DeveloperEndpoint,
 	},
 	{
@@ -401,7 +401,7 @@ func switchCreateCmd(c *command.Command, client metalcloud.MetalCloudClient) (st
 	return "", err
 }
 
-func switchEditCmd(c *command.Command, client metalcloud.MetalCloudClient) (string, error) {
+func switchUpdateCmd(c *command.Command, client metalcloud.MetalCloudClient) (string, error) {
 	var obj metalcloud.SwitchDevice
 
 	err := command.GetRawObjectFromCommand(c, &obj)

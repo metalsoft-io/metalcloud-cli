@@ -83,7 +83,7 @@ managementPassword: hello123
 				"return_id":             c.FlagSet.Bool("return-id", false, "Will print the ID of the created object. Useful for automating tasks."),
 			}
 		},
-		ExecuteFunc: switchControllerEditCmd,
+		ExecuteFunc: switchControllerUpdateCmd,
 		Endpoint:    configuration.DeveloperEndpoint,
 		Example: `
 metalcloud-cli switch-controller update --id 18 --raw-config update_sw_ctrl.yaml --format yaml
@@ -297,7 +297,7 @@ func switchControllersListCmd(c *command.Command, client metalcloud.MetalCloudCl
 	return table.RenderTable("Switch Controllers", "", command.GetStringParam(c.Arguments["format"]))
 }
 
-func switchControllerEditCmd(c *command.Command, client metalcloud.MetalCloudClient) (string, error) {
+func switchControllerUpdateCmd(c *command.Command, client metalcloud.MetalCloudClient) (string, error) {
 	var obj metalcloud.SwitchDeviceController
 
 	err := command.GetRawObjectFromCommand(c, &obj)

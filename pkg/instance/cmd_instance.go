@@ -79,7 +79,7 @@ var InstanceCmds = []command.Command{
 				"custom_variables": c.FlagSet.String("custom-variables", command.NilDefaultStr, "Comma separated list of custom variables such as 'var1=value,var2=value'. If special characters need to be set use urlencode and pass the encoded string"),
 			}
 		},
-		ExecuteFunc: instanceEditCmd,
+		ExecuteFunc: instanceUpdateCmd,
 		Endpoint:    configuration.DeveloperEndpoint,
 	},
 }
@@ -154,7 +154,7 @@ func instancePowerControlCmd(c *command.Command, client metalcloud.MetalCloudCli
 	return "", err
 }
 
-func instanceEditCmd(c *command.Command, client metalcloud.MetalCloudClient) (string, error) {
+func instanceUpdateCmd(c *command.Command, client metalcloud.MetalCloudClient) (string, error) {
 
 	instanceID, ok := command.GetIntParamOk(c.Arguments["instance_id"])
 	if !ok {

@@ -144,7 +144,7 @@ var OsAssetsCmds = []command.Command{
 				"return_id":              c.FlagSet.Bool("return-id", false, colors.Green("(Flag)")+" If set will print the ID of the created infrastructure. Useful for automating tasks."),
 			}
 		},
-		ExecuteFunc: assetEditCmd,
+		ExecuteFunc: assetUpdateCmd,
 		Endpoint:    configuration.ExtendedEndpoint,
 	},
 	{
@@ -515,7 +515,7 @@ func disassociateAssetCmd(c *command.Command, client metalcloud.MetalCloudClient
 	return "", client.OSTemplateRemoveOSAsset(template.VolumeTemplateID, asset.OSAssetID)
 }
 
-func assetEditCmd(c *command.Command, client metalcloud.MetalCloudClient) (string, error) {
+func assetUpdateCmd(c *command.Command, client metalcloud.MetalCloudClient) (string, error) {
 	asset, err := command.GetOSAssetFromCommand("id", "asset_id_or_name", c, client)
 	if err != nil {
 		return "", err

@@ -366,7 +366,7 @@ password: notcalvin
 				"read_config_from_pipe": c.FlagSet.Bool("pipe", false, colors.Green("(Flag)")+" If set, read raw object from pipe instead of from a file. Either this flag or the --raw-config option must be used."),
 			}
 		},
-		ExecuteFunc: serverEditCmd,
+		ExecuteFunc: serverUpdateCmd,
 		Endpoint:    configuration.DeveloperEndpoint,
 	},
 	{
@@ -2016,7 +2016,7 @@ func getMultipleServerDefaultCredentialsFromYamlFile(filePath string) ([]metalcl
 	return records, nil
 }
 
-func serverEditCmd(c *command.Command, client metalcloud.MetalCloudClient) (string, error) {
+func serverUpdateCmd(c *command.Command, client metalcloud.MetalCloudClient) (string, error) {
 
 	server, err := getServerFromCommand("id", c, client, false)
 	if err != nil {

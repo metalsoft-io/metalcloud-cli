@@ -14,7 +14,7 @@ import (
 	. "github.com/onsi/gomega"
 )
 
-func TestSecretsListCmd(t *testing.T) {
+func TestsecretListCmd(t *testing.T) {
 	RegisterTestingT(t)
 	ctrl := gomock.NewController(t)
 
@@ -43,7 +43,7 @@ func TestSecretsListCmd(t *testing.T) {
 		},
 	}
 
-	ret, err := secretsListCmd(&cmd, client)
+	ret, err := secretListCmd(&cmd, client)
 	Expect(err).To(BeNil())
 
 	var m []interface{}
@@ -64,7 +64,7 @@ func TestSecretsListCmd(t *testing.T) {
 		},
 	}
 
-	ret, err = secretsListCmd(&cmd, client)
+	ret, err = secretListCmd(&cmd, client)
 	Expect(err).To(BeNil())
 	Expect(ret).NotTo(BeEmpty())
 
@@ -78,7 +78,7 @@ func TestSecretsListCmd(t *testing.T) {
 		},
 	}
 
-	ret, err = secretsListCmd(&cmd, client)
+	ret, err = secretListCmd(&cmd, client)
 	Expect(err).To(BeNil())
 	Expect(ret).NotTo(BeEmpty())
 

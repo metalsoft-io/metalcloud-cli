@@ -26,7 +26,7 @@ var InstanceArrayCmds = []command.Command{
 		InitFunc: func(c *command.Command) {
 			c.Arguments = map[string]interface{}{
 				"read_config_from_file": c.FlagSet.String("f", command.NilDefaultStr, colors.Red("(Required)")+" Read configuration from file in the format specified with --format."),
-				"format":                c.FlagSet.String("format", "json", "The input format. Supported values are 'json','yaml'. The default format is json."),
+				"format":                c.FlagSet.String("format", "yaml", "The input format. Supported values are 'json','yaml'. The default format is json."),
 				"server_type":           c.FlagSet.String("server-type", command.NilDefaultStr, "InstanceArray's server type."),
 				"da_volume_template":    c.FlagSet.String("drive-array-template", command.NilDefaultStr, "The attached DriveArray's  volume template when booting from iscsi drives"),
 				"da_volume_disk_size":   c.FlagSet.Int("drive-array-disk-size", command.NilDefaultInt, "The attached DriveArray's  volume size (in MB) when booting from iscsi drives, If ommited the default size of the volume template will be used."),
@@ -94,7 +94,7 @@ var InstanceArrayCmds = []command.Command{
 		InitFunc: func(c *command.Command) {
 			c.Arguments = map[string]interface{}{
 				"read_config_from_file":            c.FlagSet.String("f", command.NilDefaultStr, colors.Red("(Required)")+" Read configuration from file in the format specified with --format."),
-				"format":                           c.FlagSet.String("format", "json", "The input format. Supported values are 'json','yaml'. The default format is json."),
+				"format":                           c.FlagSet.String("format", "yaml", "The input format. Supported values are 'json','yaml'. The default format is json."),
 				"volume_template_id_or_label":      c.FlagSet.String("local-install-template", command.NilDefaultStr, "InstanceArray's volume template when booting from for local drives"),
 				"custom_variables":                 c.FlagSet.String("custom-variables", command.NilDefaultStr, "Comma separated list of custom variables such as 'var1=value,var2=value'. If special characters need to be set use urlencode and pass the encoded string"),
 				"swap_existing_instances_hardware": c.FlagSet.Bool("swap-existing-hardware", false, colors.Green("(Flag)")+" If set all the hardware of the Instance objects is swapped to match the new InstanceArray specifications"),

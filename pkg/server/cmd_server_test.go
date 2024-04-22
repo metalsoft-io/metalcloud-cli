@@ -281,7 +281,7 @@ func TestGetMultipleServerCreateUnmanagedInternalFromYamlFile(t *testing.T) {
 }
 
 /*
-func TestServerEditCmd(t *testing.T) {
+func TestServerUpdateCmd(t *testing.T) {
 
 		RegisterTestingT(t)
 		ctrl := gomock.NewController(t)
@@ -359,7 +359,7 @@ func TestServerEditCmd(t *testing.T) {
 
 		for _, c := range cases {
 			t.Run(c.Name, func(t *testing.T) {
-				_, err := serverEditCmd(&c.Cmd, client)
+				_, err := serverUpdateCmd(&c.Cmd, client)
 				if c.Good && err != nil {
 					t.Error(err)
 				}

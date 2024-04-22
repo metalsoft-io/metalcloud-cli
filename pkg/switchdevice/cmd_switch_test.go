@@ -106,7 +106,7 @@ func TestSwitchCreate(t *testing.T) {
 
 }
 
-func TestSwitchEditCmd(t *testing.T) {
+func TestSwitchUpdateCmd(t *testing.T) {
 
 	RegisterTestingT(t)
 	ctrl := gomock.NewController(t)
@@ -182,7 +182,7 @@ func TestSwitchEditCmd(t *testing.T) {
 
 	for _, c := range cases {
 		t.Run(c.Name, func(t *testing.T) {
-			_, err := switchEditCmd(&c.Cmd, client)
+			_, err := switchUpdateCmd(&c.Cmd, client)
 			if c.Good && err != nil {
 				t.Error(err)
 			}

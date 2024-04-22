@@ -380,7 +380,7 @@ func TestEditAssetCmd(t *testing.T) {
 
 	for _, c := range cases {
 		t.Run(c.Name, func(t *testing.T) {
-			_, err := assetEditCmd(&c.Cmd, client)
+			_, err := assetUpdateCmd(&c.Cmd, client)
 			if c.Good && err != nil {
 				//t.Error(err)
 			}
