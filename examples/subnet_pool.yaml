@@ -1,0 +1,18 @@
+kind: SubnetPool
+apiVersion: 1.0
+id: 2023
+datacenter: dummy-dc-cmd2
+user: 31
+prefix: 5f64:8f90:8d50:7d7f:0000:0000:0000:0000
+prefixHex: 5f648f908d507d7f0000000000000000
+netmask: ffff:ffff:ffff:ffff:0000:0000:0000:0000
+netmaskHex: ffffffffffffffff0000000000000000
+size: 64
+type: ipv6
+routable: false
+destination: WAN
+currentUtilizationJSON: '{"prefix_count_free": {"64": 1}, "prefix_count_allocated":
+  [], "ip_addresses_usable_count_free": "18446744073709551616", "ip_addresses_usable_count_allocated":
+  0, "ip_addresses_usable_free_percent_optimistic": "100"}'
+currentUtilizationLastUpdated: "2024-04-22T16:33:12Z"
+manualAllocationOnly: false

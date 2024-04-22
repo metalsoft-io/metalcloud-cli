@@ -44,7 +44,6 @@ var SubnetPoolCmds = []command.Command{
 			c.Arguments = map[string]interface{}{
 				"subnet_pool_id": c.FlagSet.Int("id", command.NilDefaultInt, colors.Red("(Required)")+" Subnetpool's id"),
 				"format":         c.FlagSet.String("format", "yaml", "The output format. Supported values are 'json','csv','yaml'. The default format is human readable."),
-				"raw":            c.FlagSet.Bool("raw", false, colors.Green("(Flag)")+" When set the return will be a full dump of the object. This is useful when copying configurations. Only works with json and yaml formats."),
 			}
 		},
 		ExecuteFunc: subnetPoolGetCmd,
@@ -59,9 +58,8 @@ var SubnetPoolCmds = []command.Command{
 		FlagSet:      flag.NewFlagSet("Create subnet pool", flag.ExitOnError),
 		InitFunc: func(c *command.Command) {
 			c.Arguments = map[string]interface{}{
-				"format":                c.FlagSet.String("format", "yaml", "The input format. Supported values are 'json','yaml'. The default format is json."),
 				"read_config_from_file": c.FlagSet.String("f", command.NilDefaultStr, colors.Red("(Required)")+" Read configuration from file"),
-				"read_config_from_pipe": c.FlagSet.Bool("pipe", false, colors.Green("(Flag)")+" If set, read configuration from pipe instead of from a file. Either this flag or the -raw-config option must be used."),
+				"format":                c.FlagSet.String("format", "yaml", "The input format. Supported values are 'json','yaml'. The default format is json."),
 				"return_id":             c.FlagSet.Bool("return-id", false, "Will print the ID of the created Useful for automating tasks."),
 			}
 		},
@@ -213,137 +211,34 @@ func subnetPoolListCmd(c *command.Command, client metalcloud.MetalCloudClient) (
 }
 
 func subnetPoolGetCmd(c *command.Command, client metalcloud.MetalCloudClient) (string, error) {
-
 	id, ok := command.GetIntParamOk(c.Arguments["subnet_pool_id"])
 	if !ok {
 		return "", fmt.Errorf("-id is required")
 	}
 
-	s, err := client.SubnetPoolGet(id)
+	subnetPool, err := client.SubnetPoolGet(id)
 	if err != nil {
 		return "", err
 	}
-
-	schema := []tableformatter.SchemaField{
-		{
-			FieldName: "ID",
-			FieldType: tableformatter.TypeInt,
-			FieldSize: 6,
-		},
-		{
-			FieldName: "DATACENTER",
-			FieldType: tableformatter.TypeString,
-			FieldSize: 6,
-		},
-		{
-			FieldName: "DEST.",
-			FieldType: tableformatter.TypeString,
-			FieldSize: 3,
-		},
-
-		{
-			FieldName: "PREFIX",
-			FieldType: tableformatter.TypeString,
-			FieldSize: 10,
-		},
-		{
-			FieldName: "NETWORK_EQUIPMENT",
-			FieldType: tableformatter.TypeString,
-			FieldSize: 5,
-		},
-		{
-			FieldName: "USER",
-			FieldType: tableformatter.TypeString,
-			FieldSize: 5,
-		},
-		{
-			FieldName: "MANUAL_ONLY",
-			FieldType: tableformatter.TypeBool,
-			FieldSize: 3,
-		},
-		{
-			FieldName: "AVAILABLE_IPS",
-			FieldType: tableformatter.TypeString,
-			FieldSize: 3,
-		},
-	}
-
-	prefixStr := fmt.Sprintf("%s/%d", s.SubnetPoolPrefixHumanReadable, s.SubnetPoolPrefixSize)
-
-	userEmail := ""
-	if s.UserID != 0 {
-		u, err := client.UserGet(s.UserID)
-		if err != nil {
-			return "", err
-		}
-		userEmail = u.UserEmail
-	}
-
-	utilization, err := client.SubnetPoolPrefixSizesStats(s.SubnetPoolID)
-
-	if err != nil {
-		return "", err
-	}
-
-	utilizationStr := fmt.Sprintf("%s (%s", utilization.IPAddressesUsableCountFree, utilization.IPAddressesUsableFreePercentOptimistic)
-
-	networkEquipmentIdentifier := ""
-	if s.NetworkEquipmentID != 0 {
-		sw, err := client.SwitchDeviceGet(s.NetworkEquipmentID, false)
-		if err != nil {
-			return "", err
-		}
-
-		networkEquipmentIdentifier = sw.NetworkEquipmentIdentifierString
-	}
-
-	data := [][]interface{}{{
-
-		s.SubnetPoolID,
-		s.DatacenterName,
-		s.SubnetPoolDestination,
-		prefixStr,
-		networkEquipmentIdentifier,
-		userEmail,
-		s.SubnetPoolIsOnlyForManualAllocation,
-		utilizationStr + "%)",
-	}}
-
-	var sb strings.Builder
 
 	format := command.GetStringParam(c.Arguments["format"])
-
-	if command.GetBoolParam(c.Arguments["raw"]) {
-		ret, err := objects.RenderRawObject(*s, format, "SubnetPool")
-		if err != nil {
-			return "", err
-		}
-		sb.WriteString(ret)
-	} else {
-		table := tableformatter.Table{
-			Data:   data,
-			Schema: schema,
-		}
-		ret, err := table.RenderTransposedTable("subnet pool", "", format)
-		if err != nil {
-			return "", err
-		}
-		sb.WriteString(ret)
+	ret, err := objects.RenderRawObject(*subnetPool, format, "SubnetPool")
+	if err != nil {
+		return "", err
 	}
 
-	return sb.String(), nil
+	return ret, nil
 }
 
 func subnetPoolCreateCmd(c *command.Command, client metalcloud.MetalCloudClient) (string, error) {
-
-	var sn metalcloud.SubnetPool
-
-	err := command.GetRawObjectFromCommand(c, &sn)
+	obj, err := objects.ReadSingleObjectFromCommand(c, client)
 	if err != nil {
 		return "", err
 	}
+	sp := (*obj).(metalcloud.SubnetPool)
 
-	ret, err := client.SubnetPoolCreate(sn)
+	sp.SubnetPoolDestination = strings.ToLower(sp.SubnetPoolDestination)
+	ret, err := client.SubnetPoolCreate(sp)
 	if err != nil {
 		return "", err
 	}
