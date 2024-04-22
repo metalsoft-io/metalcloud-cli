@@ -1395,7 +1395,7 @@ func createTemplateAssets(c *command.Command, client metalcloud.MetalCloudClient
 		AltSubject:   "asset",
 		Predicate:    "create",
 		AltPredicate: "new",
-		ExecuteFunc:  osasset.AssetCreateCmd,
+		ExecuteFunc:  osasset.AssetCreateInternal,
 		Endpoint:     configuration.DeveloperEndpoint,
 	}
 
@@ -1415,9 +1415,9 @@ func createTemplateAssets(c *command.Command, client metalcloud.MetalCloudClient
 
 	for _, asset := range assets {
 		if asset.Contents != "" {
-			_, err = osasset.AssetCreateWithContentCmd(&asset.Command, client, []byte(asset.Contents))
+			_, err = osasset.AssetCreateWithContentInternal(&asset.Command, client, []byte(asset.Contents))
 		} else {
-			_, err = osasset.AssetCreateCmd(&asset.Command, client)
+			_, err = osasset.AssetCreateInternal(&asset.Command, client)
 		}
 
 		if err != nil {

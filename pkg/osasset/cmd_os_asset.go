@@ -12,6 +12,7 @@ import (
 	"github.com/metalsoft-io/metalcloud-cli/internal/colors"
 	"github.com/metalsoft-io/metalcloud-cli/internal/command"
 	"github.com/metalsoft-io/metalcloud-cli/internal/configuration"
+	"github.com/metalsoft-io/metalcloud-cli/internal/objects"
 	"github.com/metalsoft-io/tableformatter"
 )
 
@@ -41,32 +42,43 @@ var OsAssetsCmds = []command.Command{
 		FlagSet:      flag.NewFlagSet("create asset", flag.ExitOnError),
 		InitFunc: func(c *command.Command) {
 			c.Arguments = map[string]interface{}{
-				"filename":               c.FlagSet.String("filename", command.NilDefaultStr, "Asset's filename"),
-				"usage":                  c.FlagSet.String("usage", command.NilDefaultStr, "Asset's usage. Possible values: \"bootloader\""),
-				"mime":                   c.FlagSet.String("mime", command.NilDefaultStr, "Asset's mime type. Possible values: \"text/plain\",\"application/octet-stream\""),
-				"template_type":          c.FlagSet.String("template-type", command.NilDefaultStr, "Asset's template type. Possible values: \"none\",\"simple\",\"advanced\""),
-				"url":                    c.FlagSet.String("url", command.NilDefaultStr, "Asset's source url. If present it will not read content anymore"),
-				"read_content_from_pipe": c.FlagSet.Bool("pipe", false, "Read assets's content read from pipe instead of terminal input"),
-				"template_id_or_name":    c.FlagSet.String("template-id", command.NilDefaultStr, "Template's id or name to associate. "),
-				"path":                   c.FlagSet.String("path", command.NilDefaultStr, "Path to associate asset to."),
-				"variables_json":         c.FlagSet.String("variables-json", command.NilDefaultStr, "JSON encoded variables object"),
-				"delete_if_exists":       c.FlagSet.Bool("delete-if-exists", false, "Automatically delete the existing asset associated with the current template."),
-				"return_id":              c.FlagSet.Bool("return-id", false, colors.Green("(Flag)")+" If set will print the ID of the created infrastructure. Useful for automating tasks."),
+				"read_config_from_file": c.FlagSet.String("f", command.NilDefaultStr, colors.Red("(Required)")+" Read configuration from file in the format specified with --format."),
+				"format":                c.FlagSet.String("format", "yaml", "The input format. Supported values are 'json','yaml'. The default format is json."),
+				"template_id_or_name":   c.FlagSet.String("template-id", command.NilDefaultStr, "Template's id or name to associate. "),
+				"path":                  c.FlagSet.String("path", command.NilDefaultStr, "Path to associate asset to."),
+				"delete_if_exists":      c.FlagSet.Bool("delete-if-exists", false, "Automatically delete the existing asset associated with the current template."),
+				"return_id":             c.FlagSet.Bool("return-id", false, colors.Green("(Flag)")+" If set will print the ID of the created infrastructure. Useful for automating tasks."),
 			}
 		},
 		ExecuteFunc: AssetCreateCmd,
 		Endpoint:    configuration.DeveloperEndpoint,
 	},
 	{
-		Description:  "Get asset contents",
+		Description:  "Get asset content",
 		Subject:      "asset",
 		AltSubject:   "asset",
-		Predicate:    "get-contents",
-		AltPredicate: "contents",
+		Predicate:    "get-content",
+		AltPredicate: "content",
 		FlagSet:      flag.NewFlagSet("get asset content", flag.ExitOnError),
 		InitFunc: func(c *command.Command) {
 			c.Arguments = map[string]interface{}{
 				"asset_id_or_name": c.FlagSet.String("id", command.NilDefaultStr, "Asset's id or name"),
+			}
+		},
+		ExecuteFunc: assetGetContentCmd,
+		Endpoint:    configuration.ExtendedEndpoint,
+	},
+	{
+		Description:  "Get asset",
+		Subject:      "asset",
+		AltSubject:   "asset",
+		Predicate:    "get",
+		AltPredicate: "show",
+		FlagSet:      flag.NewFlagSet("get asset", flag.ExitOnError),
+		InitFunc: func(c *command.Command) {
+			c.Arguments = map[string]interface{}{
+				"asset_id_or_name": c.FlagSet.String("id", command.NilDefaultStr, "Asset's id or name"),
+				"format":           c.FlagSet.String("format", "yaml", "The output format. Supported values are 'json','csv','yaml'. The default format is human readable."),
 			}
 		},
 		ExecuteFunc: assetGetCmd,
@@ -123,25 +135,18 @@ var OsAssetsCmds = []command.Command{
 		Endpoint:    configuration.ExtendedEndpoint,
 	},
 	{
-		Description:  "Edit asset.",
+		Description:  "Update asset.",
 		Subject:      "asset",
 		AltSubject:   "asset",
 		Predicate:    "update",
 		AltPredicate: "edit",
-		FlagSet:      flag.NewFlagSet("edit asset", flag.ExitOnError),
+		FlagSet:      flag.NewFlagSet("update asset", flag.ExitOnError),
 		InitFunc: func(c *command.Command) {
 			c.Arguments = map[string]interface{}{
-				"asset_id_or_name":       c.FlagSet.String("id", command.NilDefaultStr, "Asset's id or filename"),
-				"filename":               c.FlagSet.String("filename", command.NilDefaultStr, "Asset's filename"),
-				"usage":                  c.FlagSet.String("usage", command.NilDefaultStr, "Asset's usage. Possible values: \"bootloader\""),
-				"mime":                   c.FlagSet.String("mime", command.NilDefaultStr, "Required. Asset's mime type. Possible values: \"text/plain\",\"application/octet-stream\""),
-				"template_type":          c.FlagSet.String("template-type", command.NilDefaultStr, "Asset's template type. Possible values: \"none\",\"simple\",\"advanced\""),
-				"url":                    c.FlagSet.String("url", command.NilDefaultStr, "Asset's source url. If present it will not read content anymore"),
-				"read_content_from_pipe": c.FlagSet.Bool("pipe", false, "Read assets's content read from pipe instead of terminal input"),
-				"template_id_or_name":    c.FlagSet.String("template-id", command.NilDefaultStr, "Template's id or name to associate. "),
-				"path":                   c.FlagSet.String("path", command.NilDefaultStr, "Path to associate asset to."),
-				"variables_json":         c.FlagSet.String("variables-json", command.NilDefaultStr, "JSON encoded variables object"),
-				"return_id":              c.FlagSet.Bool("return-id", false, colors.Green("(Flag)")+" If set will print the ID of the created infrastructure. Useful for automating tasks."),
+				"read_config_from_file": c.FlagSet.String("f", command.NilDefaultStr, colors.Red("(Required)")+" Read configuration from file in the format specified with --format."),
+				"format":                c.FlagSet.String("format", "yaml", "The input format. Supported values are 'json','yaml'. The default format is json."),
+				"template_id_or_name":   c.FlagSet.String("template-id", command.NilDefaultStr, "Template's id or name to associate. "),
+				"path":                  c.FlagSet.String("path", command.NilDefaultStr, "Path to associate asset to."),
 			}
 		},
 		ExecuteFunc: assetUpdateCmd,
@@ -256,11 +261,11 @@ func assetsListCmd(c *command.Command, client metalcloud.MetalCloudClient) (stri
 	return table.RenderTable("Assets", "", command.GetStringParam(c.Arguments["format"]))
 }
 
-func AssetCreateCmd(c *command.Command, client metalcloud.MetalCloudClient) (string, error) {
+func AssetCreateInternal(c *command.Command, client metalcloud.MetalCloudClient) (string, error) {
 	return assetCreate(c, client, []byte{})
 }
 
-func AssetCreateWithContentCmd(c *command.Command, client metalcloud.MetalCloudClient, assetContent []byte) (string, error) {
+func AssetCreateWithContentInternal(c *command.Command, client metalcloud.MetalCloudClient, assetContent []byte) (string, error) {
 	return assetCreate(c, client, assetContent)
 }
 
@@ -360,14 +365,14 @@ func associateAssetFromCommand(assetID int, assetFileName string, c *command.Com
 	return nil
 }
 
-func assetGetCmd(c *command.Command, client metalcloud.MetalCloudClient) (string, error) {
+func assetGetContentCmd(c *command.Command, client metalcloud.MetalCloudClient) (string, error) {
 	retS, err := command.GetOSAssetFromCommand("id", "asset_id_or_name", c, client)
 	if err != nil {
 		return "", err
 	}
 
 	if retS.OSAssetSourceURL != "" {
-		return "", fmt.Errorf("No stored content. This command can only be used for assets that have content stored in the database. This asset is being pulled from '%s'.", retS.OSAssetSourceURL)
+		return "", fmt.Errorf("no stored content. This command can only be used for assets that have content stored in the database. This asset is being pulled from '%s'", retS.OSAssetSourceURL)
 	}
 
 	content, err := client.OSAssetGetStoredContent(retS.OSAssetID)
@@ -385,8 +390,48 @@ func assetGetCmd(c *command.Command, client metalcloud.MetalCloudClient) (string
 	return "", err
 }
 
-func assetDeleteCmd(c *command.Command, client metalcloud.MetalCloudClient) (string, error) {
+func AssetCreateCmd(c *command.Command, client metalcloud.MetalCloudClient) (string, error) {
+	obj, err := objects.ReadSingleObjectFromCommand(c, client)
+	if err != nil {
+		return "", err
+	}
 
+	asset := (*obj).(metalcloud.OSAsset)
+	ret, err := client.OSAssetCreate(asset)
+
+	if err != nil {
+		return "", err
+	}
+
+	err = associateAssetFromCommand(ret.OSAssetID, ret.OSAssetFileName, c, client)
+
+	if err != nil {
+		return "", err
+	}
+
+	if command.GetBoolParam(c.Arguments["return_id"]) {
+		return fmt.Sprintf("%d", ret.OSAssetID), nil
+	}
+
+	return "", err
+}
+
+func assetGetCmd(c *command.Command, client metalcloud.MetalCloudClient) (string, error) {
+	asset, err := command.GetOSAssetFromCommand("id", "asset_id_or_name", c, client)
+	if err != nil {
+		return "", err
+	}
+
+	format := command.GetStringParam(c.Arguments["format"])
+	ret, err := objects.RenderRawObject(*asset, format, "OSAsset")
+	if err != nil {
+		return "", err
+	}
+
+	return ret, nil
+}
+
+func assetDeleteCmd(c *command.Command, client metalcloud.MetalCloudClient) (string, error) {
 	retS, err := command.GetOSAssetFromCommand("id", "asset_id_or_name", c, client)
 	if err != nil {
 		return "", err
@@ -516,24 +561,13 @@ func disassociateAssetCmd(c *command.Command, client metalcloud.MetalCloudClient
 }
 
 func assetUpdateCmd(c *command.Command, client metalcloud.MetalCloudClient) (string, error) {
-	asset, err := command.GetOSAssetFromCommand("id", "asset_id_or_name", c, client)
+	obj, err := objects.ReadSingleObjectFromCommand(c, client)
 	if err != nil {
 		return "", err
 	}
 
-	if err != nil {
-		return "", err
-	}
-
-	newObj := metalcloud.OSAsset{}
-
-	updatedObj, err := updateAssetFromCommand(newObj, c, client, true, []byte{})
-
-	if err != nil {
-		return "", err
-	}
-
-	ret, err := client.OSAssetUpdate(asset.OSAssetID, *updatedObj)
+	asset := (*obj).(metalcloud.OSAsset)
+	ret, err := client.OSAssetUpdate(asset.OSAssetID, asset)
 
 	if err != nil {
 		return "", err
@@ -545,10 +579,6 @@ func assetUpdateCmd(c *command.Command, client metalcloud.MetalCloudClient) (str
 		return "", err
 	}
 
-	if command.GetBoolParam(c.Arguments["return_id"]) {
-		return fmt.Sprintf("%d", ret.OSAssetID), nil
-	}
-
 	return "", err
 }
 
@@ -558,8 +588,7 @@ func assetMakePublicCmd(c *command.Command, client metalcloud.MetalCloudClient) 
 		return "", err
 	}
 
-	asset, err = client.OSAssetMakePublic(asset.OSAssetID)
-
+	_, err = client.OSAssetMakePublic(asset.OSAssetID)
 	if err != nil {
 		return "", err
 	}

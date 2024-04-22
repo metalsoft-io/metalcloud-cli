@@ -173,7 +173,7 @@ func TestCreateAssetCmd(t *testing.T) {
 		},
 	}
 
-	command.TestCreateCommand(AssetCreateCmd, cases, client, t)
+	command.TestCreateCommand(AssetCreateInternal, cases, client, t)
 }
 
 func TestDeleteAssetCmd(t *testing.T) {
