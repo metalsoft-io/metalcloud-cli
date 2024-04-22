@@ -1,75 +1,79 @@
-UUID: 35353736-3739-5A43-3335-312312312312
+kind: Server
+apiVersion: 1.0
+id: 1143
+UUID: 5bc7c964-d320-4268-a895-e72116bb6307
 status: available
-serialNumber: CZ3510S7SC
-vendor: HP
-datacenter: ro-bucharest
-networkTotalCapacityMbps: 4000
+serialNumber: dummy-eth0-4
+vendor: BSI
+datacenter: us03-chi-qts01-dc
+networkTotalCapacityMbps: 41
 bootType: classic
 powerStatus: "off"
-processorName: 6.58.9
-processorCoreCount: 4
-processorCoreMhz: 3300
-processorCount: 1
-processorThreads: 2
+processorCoreCount: 1825
+processorCoreMhz: 4535
+processorCount: 4771
 processorCPUMark: 0
-ramGbytes: 32
-disks:
-- id: 53
-  model: ST1000NM0011
-  type: HDD
-  vendor: ATA
-  status: installed
-  serial_number: Z1N3LNHV
-  sizeGB: 932
-- id: 54
-  model: VK0240GDJXU
-  type: SSD
-  vendor: ATA
-  status: installed
-  serial_number: PHWL5491004E240NGN
-  sizeGB: 224
-- id: 55
-  model: MB1000GCEEK
-  type: HDD
-  vendor: ATA
-  status: installed
-  serial_number: WCAW36847314
-  sizeGB: 932
-- id: 56
-  model: WDC WD1003FBYX-0
-  type: HDD
-  vendor: ATA
-  status: installed
-  serial_number: WD-WCAW33543390
-  sizeGB: 932
-diskCount: 4
-diskSizeMbytes: 954368
-diskType: HDD
-productName: ProLiant DL320e Gen8
+ramGbytes: 3651
+diskCount: 43
+diskSizeMbytes: 55296
+diskType: SSD
+rackName: null
+rackPositionLowerUnit: null
+rackPositionUpperUnit: null
+rackID: null
+chassisRackID: null
+inventoryId: null
+productName: Unmanaged Server
 serverClass: bigdata
-#serverTypeID: 
+serverTypeID: 906
 interfaces:
-- macAddress: 34:64:a9:95:92:64
-- macAddress: 34:64:a9:95:92:65
-- macAddress: 0c:c4:7a:20:5e:c8
-- macAddress: 0c:c4:7a:20:5e:c9
-IPMIChannel: 2
-IPMIHostname: 10.255.227.5
-IPMIUsername: bsiVXCb
-vendorSKU: 675597-B21
-BIOSInfoJson: '{"server_bios_vendor":"HP","server_bios_version":"J05"}'
-CustomJSON: '{"previous_ipmi_username":"bsiL67f","previous_ipmi_password_encrypted":"rqi|aes-cbc|GkCtAwU1Hcw6\/k4H3niUHdJmgERoKMbUWfY\/Ey80kZFNRTBCnG8t+m72ZjKohdkomiNrFQ1fcf\/jEsNpO0liVQ=="}'
-NICDetails:
- "34:64:a9:95:92:64": 
-  switchPortID: GigabitEthernet2/0/13
-  switchHostname: QUARANTINE
- "34:64:a9:95:92:65": 
-  switchPortID: GigabitEthernet2/0/14
-  switchHostname: QUARANTINE
- "0c:c4:7a:20:5e:c8": 
-  switchPortID: GigabitEthernet2/0/15
-  switchHostname: QUARANTINE
- "0c:c4:7a:20:5e:c9":
-  switchPortID: GigabitEthernet2/0/16
-  switchHostname: QUARANTINE
-
+- macAddress: "01:02:03:04:02:01"
+- macAddress: "01:02:03:04:02:02"
+supportsOOBProvisioning: false
+tags: []
+IPMIChannel: 0
+IPMIHostname: unmanaged-1143
+IPMIUsername: unmanaged
+IPMIPasswordEncrypted: 'BSI\JSONRPC\Server\Security\Authorization\DeveloperAuthorization:
+  Not leaking database encrypted values for extra security.'
+IPMICredentialsNeedUpdate: false
+BIOSInfoJson: ""
+CustomJSON: null
+infoJSON: '{"server_ipmi_host_backup": null, "server_ipmi_username_backup": null,
+  "server_ipmi_password_encrypted_backup": null}'
+serverDetailsXML: ""
+instanceCustomJSON: null
+supportsSOL: true
+ILOResetTimestamp: 0000-00-00T00:00:00Z
+BootLastUpdateTimestamp: ""
+PowerStatusUpdateTimestamp: "2024-04-22T14:16:32Z"
+subnetOOBID: 0
+subnetDHCPStatus: allow_requests
+BMCMACAddress: ""
+SNMPCommunityPaswordDCencrypted: ""
+MGMTNMPCommunityPasswordDCEncrypted: ""
+MGMTSNMPVersion: 2
+MGMTSNMPPort: 161
+secureBootIsEnabled: false
+subnetOOBIndex: 0
+subnetIPMIVersion: "2"
+createdTimestamp: "2023-11-23T14:39:02Z"
+lastCleanupStart: "2024-04-22T09:28:28Z"
+vendorInfoJSON: '{"management":"Dummy","version":"none"}'
+chipsetName: ""
+requiresReregiter: false
+GPUCount: 1
+GPUModel: ""
+GPUVendor: ""
+allocationTimestamp: ""
+DHCPRelaySecurityIsEnabled: true
+requiresManualCleaning: false
+cleanupInProgress: false
+serverSupportsVirtualMedia: true
+serverIsInDiagnostics: false
+diskWipe: false
+metricsMetadataJSON: null
+agentID: 0
+DHCPPacketSniffingIsEnabled: true
+BDKDebug: false
+keysJSON: ""

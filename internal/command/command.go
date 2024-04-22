@@ -1088,3 +1088,33 @@ func GetOperatingSystemFromCommand(c *Command) (*metalcloud.OperatingSystem, err
 
 	return &operatingSystem, nil
 }
+
+func GetServerFromCommand(paramName string, c *Command, client metalcloud.MetalCloudClient, decryptPassword bool) (*metalcloud.Server, error) {
+	m, err := GetParam(c, "server_id_or_uuid", paramName)
+	if err != nil {
+		return nil, err
+	}
+
+	id, uuid, isID := IdOrLabel(m)
+
+	if isID {
+		return client.ServerGet(id, decryptPassword)
+	}
+
+	return client.ServerGetByUUID(uuid, decryptPassword)
+}
+
+func GetServerTypeFromCommand(paramName string, c *Command, client metalcloud.MetalCloudClient) (*metalcloud.ServerType, error) {
+	m, err := GetParam(c, "server_type", paramName)
+	if err != nil {
+		return nil, err
+	}
+
+	id, label, isID := IdOrLabel(m)
+
+	if isID {
+		return client.ServerTypeGet(id)
+	}
+
+	return client.ServerTypeGetByLabel(label)
+}
