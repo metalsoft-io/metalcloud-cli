@@ -9,6 +9,7 @@ import (
 	metalcloud "github.com/metalsoft-io/metal-cloud-sdk-go/v3"
 	"github.com/metalsoft-io/metalcloud-cli/internal/colors"
 	"github.com/metalsoft-io/metalcloud-cli/internal/command"
+	"github.com/metalsoft-io/metalcloud-cli/internal/configuration"
 	"github.com/metalsoft-io/metalcloud-cli/internal/objects"
 	"github.com/metalsoft-io/tableformatter"
 )
@@ -28,7 +29,8 @@ var DriveArrayCmds = []command.Command{
 				"return_id":             c.FlagSet.Bool("return-id", false, "(Optional) Will print the ID of the created Drive Array. Useful for automating tasks."),
 			}
 		},
-		ExecuteFunc: driveArrayCreateCmd,
+		ExecuteFunc:   driveArrayCreateCmd,
+		AdminEndpoint: configuration.DeveloperEndpoint,
 	},
 	{
 		Description:  "Edit a drive array.",
@@ -43,7 +45,8 @@ var DriveArrayCmds = []command.Command{
 				"format":                c.FlagSet.String("format", "yaml", "The input format. Supported values are 'json','yaml'. The default format is json."),
 			}
 		},
-		ExecuteFunc: driveArrayUpdateCmd,
+		ExecuteFunc:   driveArrayUpdateCmd,
+		AdminEndpoint: configuration.DeveloperEndpoint,
 	},
 	{
 		Description:  "Lists all drive arrays of an infrastructure.",
@@ -58,7 +61,8 @@ var DriveArrayCmds = []command.Command{
 				"format":                     c.FlagSet.String("format", command.NilDefaultStr, "The output format. Supported values are 'json','csv','yaml'. The default format is human readable."),
 			}
 		},
-		ExecuteFunc: driveArrayListCmd,
+		ExecuteFunc:   driveArrayListCmd,
+		AdminEndpoint: configuration.DeveloperEndpoint,
 	},
 	{
 		Description:  "Delete a drive array.",
@@ -73,7 +77,8 @@ var DriveArrayCmds = []command.Command{
 				"autoconfirm":             c.FlagSet.Bool("autoconfirm", false, colors.Green("(Flag)")+" If set it will assume action is confirmed"),
 			}
 		},
-		ExecuteFunc: driveArrayDeleteCmd,
+		ExecuteFunc:   driveArrayDeleteCmd,
+		AdminEndpoint: configuration.DeveloperEndpoint,
 	},
 	{
 		Description:  "Gets a drive array.",
@@ -88,7 +93,8 @@ var DriveArrayCmds = []command.Command{
 				"format":                  c.FlagSet.String("format", "yaml", "The output format. Supported values are 'json','csv','yaml'. The default format is human readable."),
 			}
 		},
-		ExecuteFunc: driveArrayGetCmd,
+		ExecuteFunc:   driveArrayGetCmd,
+		AdminEndpoint: configuration.DeveloperEndpoint,
 	},
 	{
 		Description:  "Lists a drive array's drives.",

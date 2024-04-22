@@ -37,7 +37,7 @@ var ApplyCmds = []command.Command{
 		AltSubject:   "delete",
 		Predicate:    command.NilDefaultStr,
 		AltPredicate: command.NilDefaultStr,
-		FlagSet:      flag.NewFlagSet("apply", flag.ExitOnError),
+		FlagSet:      flag.NewFlagSet("delete", flag.ExitOnError),
 		InitFunc: func(c *command.Command) {
 			c.Arguments = map[string]interface{}{
 				"read_config_from_file": c.FlagSet.String("f", command.NilDefaultStr, "The file "),
@@ -89,15 +89,13 @@ func deleteCmd(c *command.Command, client metalcloud.MetalCloudClient) (string, 
 	}
 
 	for _, object := range objects {
-		if err != nil {
-			return "", err
-		}
 		err := object.Delete(client)
 
 		if err != nil {
 			return "", err
 		}
 	}
+
 	return "", nil
 }
 

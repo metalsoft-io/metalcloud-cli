@@ -1316,6 +1316,12 @@ func createTemplateAssets(c *command.Command, client metalcloud.MetalCloudClient
 	_, createError := templateCreateCmd(&createTemplateCommand, client)
 
 	if createError != nil {
+		const labelErrorMsg = "Labels must start with a letter"
+
+		if createError != nil && strings.Contains(createError.Error(), labelErrorMsg) {
+			return "", createError
+		}
+
 		updateTemplateCommand := command.Command{
 			Description:  "Edit a template.",
 			Subject:      "os-template",

@@ -24,12 +24,12 @@ func main() {
 
 	if len(os.Args) < 2 {
 		//fmt.Fprintf(GetStdout(), "Invalid command! Use 'help' for a list of commands.\n")
-		fmt.Fprintf(configuration.GetStdout(), "%s\n", getHelp(clients, false))
+		fmt.Fprintf(configuration.GetStdout(), "%s\n", getHelp(clients))
 		os.Exit(-1)
 	}
 
 	if os.Args[1] == "help" {
-		fmt.Fprintf(configuration.GetStdout(), "%s\n", getHelp(clients, false))
+		fmt.Fprintf(configuration.GetStdout(), "%s\n", getHelp(clients))
 		os.Exit(0)
 	}
 
