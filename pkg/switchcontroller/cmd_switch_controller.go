@@ -48,8 +48,6 @@ managementPort: 22
 managementProtocol: API
 id: 3709
 identifierString: Cisco APIC
-options: []
-fabricConfiguration: []
 `,
 	},
 	{
@@ -89,6 +87,9 @@ metalcloud-cli switch-controller update -f update_sw_ctrl.yaml
 
 update_sw_ctrl.yaml:
 
+kind: SwitchDeviceController
+apiVersion: 1.0
+id: 3709
 options:
  vrf_shared_name: test1234
 fabricConfiguration:
@@ -98,7 +99,7 @@ fabricConfiguration:
  network_equipment_primary_san_subnet_pool: 192.168.0.0
  network_equipment_primary_san_subnet_prefix_size: 21
  network_equipment_primary_wan_ipv6_subnet_pool: fd1f:8bbb:56b3:800:0:0:0:0  
- network_equipment_description: test
+ network_equipment_description: test12
  network_equipment_country: UK
  network_equipment_city: Reading
  `,
