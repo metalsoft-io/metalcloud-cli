@@ -58,6 +58,8 @@ metalcloud-cli switch create --format yaml --raw-config switch.yml --return-id
 
 Dell OS10 - Data leaf
 =========================================================================== 
+kind: SwitchDevice
+apiVersion: 1.0
 identifierString: swd003
 datacenterName: dc-prod
 provisionerType: evpnvxlanl2
@@ -90,6 +92,8 @@ networkTypesAllowed:
 
 Dell OS10 - Storage leaf
 =========================================================================== 
+kind: SwitchDevice
+apiVersion: 1.0
 identifierString: sws001
 datacenterName: dc-prod
 provisionerType: evpnvxlanl2
@@ -117,6 +121,8 @@ networkTypesAllowed:
 
 Dell OS10 - Border leaf
 =========================================================================== 
+kind: SwitchDevice
+apiVersion: 1.0
 identifierString: swb001
 datacenterName: dc-prod
 provisionerType: evpnvxlanl2
@@ -144,6 +150,8 @@ networkTypesAllowed:
 
 JunOS leaf
 ===========================================================================
+kind: SwitchDevice
+apiVersion: 1.0
 identifierString: juniper-virtual-chassis-QFX5100
 datacenterName: dc-internal-test
 provisionerType: vlan
@@ -178,6 +186,8 @@ networkTypesAllowed:
 
 HP VPLS TOR
 ===========================================================================
+kind: SwitchDevice
+apiVersion: 1.0
 identifierString: US_CHG_QTS01_01_MJ40_ML43_01
 description: ToR switch
 #the datacenter label
@@ -214,12 +224,9 @@ volumeTemplateID: 0
 		FlagSet:      flag.NewFlagSet("Edit switch device", flag.ExitOnError),
 		InitFunc: func(c *command.Command) {
 			c.Arguments = map[string]interface{}{
-				"network_device_id_or_identifier_string": c.FlagSet.String("id", command.NilDefaultStr, colors.Red("(Required)")+" Switch id or identifier string. "),
 				"overwrite_hostname_from_switch":         c.FlagSet.Bool("retrieve-hostname-from-switch", false, colors.Green("(Flag)")+" Retrieve the hostname from the equipment instead of configuration file."),
 				"format":                                 c.FlagSet.String("format", "yaml", "The input format. Supported values are 'json','yaml'. The default format is json."),
 				"read_config_from_file":                  c.FlagSet.String("f", command.NilDefaultStr, colors.Red("(Required)")+" Read  configuration from file in the format specified with --format."),
-				"read_config_from_pipe":                  c.FlagSet.Bool("pipe", false, colors.Green("(Flag)")+" If set, read  configuration from pipe instead of from a file. Either this flag or the --raw-config option must be used."),
-				"return_id":                              c.FlagSet.Bool("return-id", false, "Will print the ID of the created object. Useful for automating tasks."),
 			}
 		},
 		ExecuteFunc: switchUpdateCmd,
@@ -402,29 +409,15 @@ func switchCreateCmd(c *command.Command, client metalcloud.MetalCloudClient) (st
 }
 
 func switchUpdateCmd(c *command.Command, client metalcloud.MetalCloudClient) (string, error) {
-	var obj metalcloud.SwitchDevice
-
-	err := command.GetRawObjectFromCommand(c, &obj)
+	obj, err := objects.ReadSingleObjectFromCommand(c, client)
 	if err != nil {
 		return "", err
 	}
+	retSW := (*obj).(metalcloud.SwitchDevice)
 
-	retSW, err := getSwitchFromCommandLine("id", c, client)
+	_, err = client.SwitchDeviceUpdate(retSW.NetworkEquipmentID, retSW, command.GetBoolParam(c.Arguments["overwrite_hostname_from_switch"]))
 	if err != nil {
 		return "", err
-	}
-
-	if obj.DatacenterName == "" {
-		return "", fmt.Errorf("datacenter name is required")
-	}
-
-	ret, err := client.SwitchDeviceUpdate(retSW.NetworkEquipmentID, obj, command.GetBoolParam(c.Arguments["overwrite_hostname_from_switch"]))
-	if err != nil {
-		return "", err
-	}
-
-	if command.GetBoolParam(c.Arguments["return_id"]) {
-		return fmt.Sprintf("%d", ret.NetworkEquipmentID), nil
 	}
 
 	return "", err

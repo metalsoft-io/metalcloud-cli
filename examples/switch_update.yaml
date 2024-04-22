@@ -1,14 +1,12 @@
 kind: SwitchDevice
 apiVersion: 1.0
 id: 9946
-identifierString: TCNuoqu5fP
 datacenterName: private-dc-794-bsi-1etqkj
 provisionerType: evpnvxlanl2
 provisionerPosition: other
-driver: dummy
 managementUsername: yflYwqX4GY
 managementPassword: zSiEu8mada
-managementAddress: 10.3.15.82
+managementAddress: 10.3.15.83
 managementPort: 22
 managementProtocol: ssh
 managementMACAddress: 05:17:08:4b:53:1d
