@@ -242,7 +242,7 @@ func variableDeleteCmd(c *command.Command, client metalcloud.MetalCloudClient) (
 	}
 
 	if !confirm {
-		return "", fmt.Errorf("Operation not confirmed. Aborting")
+		return "", fmt.Errorf("operation not confirmed. Aborting")
 	}
 
 	err = client.VariableDelete(retS.VariableID)
@@ -274,5 +274,5 @@ func getVariableFromCommand(paramName string, c *command.Command, client metalcl
 		}
 	}
 
-	return nil, fmt.Errorf("Could not locate variable with id/name %v", *v.(*interface{}))
+	return nil, fmt.Errorf("could not locate variable with id/name %v", *v.(*interface{}))
 }

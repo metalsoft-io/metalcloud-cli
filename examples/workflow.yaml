@@ -1,0 +1,9 @@
+kind: Workflow
+apiVersion: 1.0
+id: 39498
+userIDAuthenticated: 31
+label: my-workflow
+usage: global
+title: my-workflow
+createdTimestamp: "2024-04-17T12:49:45Z"
+updatedTimestamp: "2024-04-17T12:49:45Z"

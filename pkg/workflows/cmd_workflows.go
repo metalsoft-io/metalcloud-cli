@@ -10,6 +10,7 @@ import (
 	"github.com/metalsoft-io/metalcloud-cli/internal/colors"
 	"github.com/metalsoft-io/metalcloud-cli/internal/command"
 	"github.com/metalsoft-io/metalcloud-cli/internal/configuration"
+	"github.com/metalsoft-io/metalcloud-cli/internal/objects"
 	"github.com/metalsoft-io/tableformatter"
 )
 
@@ -57,16 +58,44 @@ var WorkflowCmds = []command.Command{
 		FlagSet:      flag.NewFlagSet("create workflow", flag.ExitOnError),
 		InitFunc: func(c *command.Command) {
 			c.Arguments = map[string]interface{}{
-				"label":               c.FlagSet.String("label", command.NilDefaultStr, "Workflow's label."),
-				"title":               c.FlagSet.String("title", command.NilDefaultStr, "Workflow's title."),
-				"usage":               c.FlagSet.String("usage", command.NilDefaultStr, "Workflow's usage, one of:  infrastructure, network_equipment, server, free_standing, storage_pool, user, os_template."),
-				"description":         c.FlagSet.String("description", command.NilDefaultStr, "Workflow's description"),
-				"deprecated":          c.FlagSet.Bool("deprecated", false, "Flag. Workflow's deprecation status. Default false"),
-				"icon_asset_data_uri": c.FlagSet.String("icon", command.NilDefaultStr, "Workflow's icon data"),
-				"return_id":           c.FlagSet.Bool("return-id", false, colors.Green("(Flag)")+" If set will print the ID of the created workflow. Useful for automating tasks."),
+				"read_config_from_file": c.FlagSet.String("f", command.NilDefaultStr, colors.Red("(Required)")+" Read configuration from file in the format specified with --format."),
+				"format":                c.FlagSet.String("format", "yaml", "The input format. Supported values are 'json','yaml'. The default format is json."),
+				"return_id":             c.FlagSet.Bool("return-id", false, colors.Green("(Flag)")+" If set will print the ID of the created workflow. Useful for automating tasks."),
 			}
 		},
 		ExecuteFunc: workflowCreateCmd,
+		Endpoint:    configuration.ExtendedEndpoint,
+	},
+	{
+		Description:  "Update a workflow",
+		Subject:      "workflow",
+		AltSubject:   "wf",
+		Predicate:    "update",
+		AltPredicate: "edit",
+		FlagSet:      flag.NewFlagSet("update workflow", flag.ExitOnError),
+		InitFunc: func(c *command.Command) {
+			c.Arguments = map[string]interface{}{
+				"read_config_from_file": c.FlagSet.String("f", command.NilDefaultStr, colors.Red("(Required)")+" Read configuration from file in the format specified with --format."),
+				"format":                c.FlagSet.String("format", "yaml", "The input format. Supported values are 'json','yaml'. The default format is json."),
+			}
+		},
+		ExecuteFunc: workflowUpdateCmd,
+		Endpoint:    configuration.ExtendedEndpoint,
+	},
+	{
+		Description:  "Delete a workflow.",
+		Subject:      "variable",
+		AltSubject:   "wf",
+		Predicate:    "delete",
+		AltPredicate: "rm",
+		FlagSet:      flag.NewFlagSet("delete variable", flag.ExitOnError),
+		InitFunc: func(c *command.Command) {
+			c.Arguments = map[string]interface{}{
+				"workflow_id_or_label": c.FlagSet.String("id", command.NilDefaultStr, "Workflow's id or label."),
+				"autoconfirm":          c.FlagSet.Bool("autoconfirm", false, colors.Green("(Flag)")+" If set it will assume action is confirmed"),
+			}
+		},
+		ExecuteFunc: workflowDeleteCmd,
 		Endpoint:    configuration.ExtendedEndpoint,
 	},
 	{
@@ -185,101 +214,55 @@ func workflowsListCmd(c *command.Command, client metalcloud.MetalCloudClient) (s
 }
 
 func workflowGetCmd(c *command.Command, client metalcloud.MetalCloudClient) (string, error) {
-
 	wf, err := command.GetWorkflowFromCommand("id", c, client)
 	if err != nil {
 		return "", err
 	}
 
-	schema := []tableformatter.SchemaField{
-		{
-			FieldName: "RUNLEVEL",
-			FieldType: tableformatter.TypeInt,
-			FieldSize: 6,
-		},
-		{
-			FieldName: "STAGES",
-			FieldType: tableformatter.TypeString,
-			FieldSize: 6,
-		},
-	}
-
-	list, err := client.WorkflowStages(wf.WorkflowID)
+	format := command.GetStringParam(c.Arguments["format"])
+	ret, err := objects.RenderRawObject(*wf, format, "Workflow")
 	if err != nil {
 		return "", err
 	}
 
-	runlevels := map[int][]string{}
-
-	for _, s := range *list {
-		stageDef, err := client.StageDefinitionGet(s.StageDefinitionID)
-		if err != nil {
-			return "", err
-		}
-
-		stageDescription := fmt.Sprintf("%s(#%d)-[WSI:# %d]",
-			stageDef.StageDefinitionTitle,
-			stageDef.StageDefinitionID,
-			s.WorkflowStageID,
-		)
-		runlevels[s.WorkflowStageRunLevel] = append(runlevels[s.WorkflowStageRunLevel], stageDescription)
-	}
-
-	data := [][]interface{}{}
-	for k, descriptions := range runlevels {
-
-		data = append(data, []interface{}{
-			k,
-			strings.Join(descriptions, " "),
-		})
-
-	}
-
-	tableformatter.TableSorter(schema).OrderBy(schema[0].FieldName).Sort(data)
-
-	topLine := fmt.Sprintf("Workflow %s (%d) has the following stages:", wf.WorkflowLabel, wf.WorkflowID)
-	table := tableformatter.Table{
-		Data:   data,
-		Schema: schema,
-	}
-	return table.RenderTable("Stages", topLine, command.GetStringParam(c.Arguments["format"]))
+	return ret, nil
 }
 
 func workflowCreateCmd(c *command.Command, client metalcloud.MetalCloudClient) (string, error) {
-
-	label, ok := command.GetStringParamOk(c.Arguments["label"])
-	if !ok {
-		return "", fmt.Errorf("-label is required")
-	}
-
-	usage, ok := command.GetStringParamOk(c.Arguments["usage"])
-	if !ok {
-		return "", fmt.Errorf("-usage is required. It must be one of infrastructure, network_equipment, server, free_standing, storage_pool, user, os_template")
-	}
-
-	wf := metalcloud.Workflow{
-		WorkflowLabel:        label,
-		WorkflowTitle:        command.GetStringParam(c.Arguments["title"]),
-		WorkflowUsage:        usage,
-		WorkflowDescription:  command.GetStringParam(c.Arguments["description"]),
-		WorkflowIsDeprecated: command.GetBoolParam(c.Arguments["deprecated"]),
-		IconAssetDataURI:     command.GetStringParam(c.Arguments["icon"]),
-	}
-
-	ret, err := client.WorkflowCreate(wf)
+	obj, err := objects.ReadSingleObjectFromCommand(c, client)
 	if err != nil {
 		return "", err
 	}
-	if command.GetBoolParam(c.Arguments["return_id"]) {
-		return fmt.Sprintf("%d", ret.WorkflowID), nil
+	wf := (*obj).(metalcloud.Workflow)
+
+	createdWf, err := client.WorkflowCreate(wf)
+	if err != nil {
+		return "", err
 	}
 
-	return "", nil
+	if command.GetBoolParam(c.Arguments["return_id"]) {
+		return fmt.Sprintf("%d", createdWf.WorkflowID), nil
+	}
 
+	return "", err
+}
+
+func workflowUpdateCmd(c *command.Command, client metalcloud.MetalCloudClient) (string, error) {
+	obj, err := objects.ReadSingleObjectFromCommand(c, client)
+	if err != nil {
+		return "", err
+	}
+	wf := (*obj).(metalcloud.Workflow)
+
+	_, err = client.WorkflowUpdate(wf.WorkflowID, wf)
+	if err != nil {
+		return "", err
+	}
+
+	return "", err
 }
 
 func workflowDeleteCmd(c *command.Command, client metalcloud.MetalCloudClient) (string, error) {
-
 	ret, err := command.GetWorkflowFromCommand("id", c, client)
 	if err != nil {
 		return "", err
@@ -307,7 +290,7 @@ func workflowDeleteCmd(c *command.Command, client metalcloud.MetalCloudClient) (
 	}
 
 	if !confirm {
-		return "", fmt.Errorf("Operation not confirmed. Aborting")
+		return "", fmt.Errorf("pperation not confirmed. Aborting")
 	}
 
 	err = client.WorkflowDelete(ret.WorkflowID)
@@ -316,7 +299,6 @@ func workflowDeleteCmd(c *command.Command, client metalcloud.MetalCloudClient) (
 }
 
 func workflowDeleteStageCmd(c *command.Command, client metalcloud.MetalCloudClient) (string, error) {
-
 	workflowStageID, ok := command.GetIntParamOk(c.Arguments["workflow_stage_id"])
 	if !ok {
 		return "", fmt.Errorf("-id is required (workflow-stage-id (WSI) number returned by get workflow")
