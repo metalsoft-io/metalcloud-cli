@@ -492,7 +492,6 @@ password: notcalvin
 			c.Arguments = map[string]interface{}{
 				"format":            c.FlagSet.String("format", command.NilDefaultStr, "The output format. Supported values are 'json','csv','yaml'. The default format is human readable."),
 				"server_id_or_uuid": c.FlagSet.Int("id", command.NilDefaultInt, colors.Red("(Required)")+" Server's id."),
-				"raw":               c.FlagSet.Bool("raw", false, colors.Green("(Flag)")+" When set the return will be a full dump of the object. This is useful when copying configurations. Only works with json and yaml formats."),
 			}
 		},
 		ExecuteFunc: serverInterfacesListCmd,
@@ -1194,7 +1193,7 @@ func serverGetCmd(c *command.Command, client metalcloud.MetalCloudClient) (strin
 	if err != nil {
 		return "", err
 	}
-	
+
 	format := command.GetStringParam(c.Arguments["format"])
 	ret, err := objects.RenderRawObject(*server, format, "Server")
 
@@ -1920,26 +1919,16 @@ func serverInterfacesListCmd(c *command.Command, client metalcloud.MetalCloudCli
 
 	format := command.GetStringParam(c.Arguments["format"])
 
-	if command.GetBoolParam(c.Arguments["raw"]) {
-		for _, s := range *list {
-			ret, err := objects.RenderRawObject(s, format, "ServerInterface")
-			if err != nil {
-				return "", err
-			}
-			sb.WriteString(ret)
-		}
-	} else {
-		table := tableformatter.Table{
-			Data:   data,
-			Schema: schema,
-		}
-		ret, err := table.RenderTable(fmt.Sprintf("Server interfaces of server #%d %s", server.ServerID, server.ServerSerialNumber), "", format)
-		if err != nil {
-			return "", err
-		}
-		sb.WriteString(ret)
+	table := tableformatter.Table{
+		Data:   data,
+		Schema: schema,
 	}
-
+	ret, err := table.RenderTable(fmt.Sprintf("Server interfaces of server #%d %s", server.ServerID, server.ServerSerialNumber), "", format)
+	if err != nil {
+		return "", err
+	}
+	sb.WriteString(ret)
+	
 	return sb.String(), nil
 }
 

@@ -276,7 +276,6 @@ volumeTemplateID: 0
 			c.Arguments = map[string]interface{}{
 				"network_device_id_or_identifier_string": c.FlagSet.String("id", command.NilDefaultStr, colors.Red("(Required)")+" Switch id or identifier string. "),
 				"format":                                 c.FlagSet.String("format", command.NilDefaultStr, "The output format. Supported values are 'json','csv','yaml'. The default format is human readable."),
-				"raw":                                    c.FlagSet.Bool("raw", false, colors.Green("(Flag)")+" When set the return will be a full dump of the object. This is useful when copying configurations. Only works with json and yaml formats."),
 			}
 		},
 		ExecuteFunc: switchInterfacesListCmd,
@@ -568,23 +567,15 @@ func switchInterfacesListCmd(c *command.Command, client metalcloud.MetalCloudCli
 
 	format := command.GetStringParam(c.Arguments["format"])
 
-	if command.GetBoolParam(c.Arguments["raw"]) {
-		ret, err := objects.RenderRawObject(*list, format, "ServerInterface")
-		if err != nil {
-			return "", err
-		}
-		sb.WriteString(ret)
-	} else {
-		table := tableformatter.Table{
-			Data:   data,
-			Schema: schema,
-		}
-		ret, err := table.RenderTable(fmt.Sprintf("Interfaces of switch %s (#%d)", sw.NetworkEquipmentIdentifierString, sw.NetworkEquipmentID), "", format)
-		if err != nil {
-			return "", err
-		}
-		sb.WriteString(ret)
+	table := tableformatter.Table{
+		Data:   data,
+		Schema: schema,
 	}
+	ret, err := table.RenderTable(fmt.Sprintf("Interfaces of switch %s (#%d)", sw.NetworkEquipmentIdentifierString, sw.NetworkEquipmentID), "", format)
+	if err != nil {
+		return "", err
+	}
+	sb.WriteString(ret)
 
 	return sb.String(), nil
 }

@@ -30,7 +30,6 @@ var SwitchDefaultsCmds = []command.Command{
 			c.Arguments = map[string]interface{}{
 				"datacenter_name": c.FlagSet.String("datacenter", command.NilDefaultStr, colors.Red("(Required)")+"The datacenter name for which to retrieve the switch defaults."),
 				"format":          c.FlagSet.String("format", command.NilDefaultStr, "The output format. Supported values are 'json','csv','yaml'. The default format is human readable."),
-				"raw":             c.FlagSet.Bool("raw", false, colors.Green("(Flag)")+" When set the return will be a full dump of the object. This is useful when copying configurations. Only works with json and yaml formats."),
 			}
 		},
 		ExecuteFunc: switchDefaultsListCmd,
