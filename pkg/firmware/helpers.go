@@ -166,7 +166,7 @@ func parseConfigFile(configFormat string, rawConfigFileContents []byte, configFi
 				return err
 			}
 
-			return fmt.Errorf("the '%s' field must be set in the raw-config file", value)
+			return fmt.Errorf("the '%s' field must be set in the read_config_from_file", value)
 		}
 	}
 
@@ -176,13 +176,13 @@ func parseConfigFile(configFormat string, rawConfigFileContents []byte, configFi
 			if configFile.LocalFirmwarePath == "" || configFile.CatalogUrl == "" {
 				firmwarePathValue, catalogUrlValue := "localFirmwarePath", "catalogUrl"
 
-				return fmt.Errorf("the '%s' and '%s' fields must be set in the raw-config file when downloading %s binaries", firmwarePathValue, catalogUrlValue, configFile.Vendor)
+				return fmt.Errorf("the '%s' and '%s' fields must be set in the read_config_from_file when downloading %s binaries", firmwarePathValue, catalogUrlValue, configFile.Vendor)
 			}
 		case catalogVendorLenovo:
 			if configFile.LocalFirmwarePath == "" {
 				firmwarePathValue := "localFirmwarePath"
 
-				return fmt.Errorf("the '%s' field must be set in the raw-config file when downloading %s binaries", firmwarePathValue, configFile.Vendor)
+				return fmt.Errorf("the '%s' field must be set in the read_config_from_file when downloading %s binaries", firmwarePathValue, configFile.Vendor)
 			}
 		default:
 			supportedVendors := []string{catalogVendorDell, catalogVendorHp, catalogVendorLenovo}
@@ -453,7 +453,7 @@ func uploadBinaryToRepository(binary *firmwareBinary, scpClient *scp.Client, ssh
 	} else {
 		firmwareBinaryFile, err = os.Open(firmwareBinaryPath)
 		if err != nil {
-			return fmt.Errorf("file not found at path %s. Make sure the local firmware path is set correctly in the raw-config file.", firmwareBinaryPath)
+			return fmt.Errorf("file not found at path %s. Make sure the local firmware path is set correctly in the read_config_from_file.", firmwareBinaryPath)
 		}
 		defer firmwareBinaryFile.Close()
 	}

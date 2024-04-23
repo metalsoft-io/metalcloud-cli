@@ -236,7 +236,7 @@ func switchDefaultsCreateCmd(c *command.Command, client metalcloud.MetalCloudCli
 
 	filePath, ok := command.GetStringParamOk(c.Arguments["read_config_from_file"])
 	if !ok {
-		return "", fmt.Errorf("-raw-config is required")
+		return "", fmt.Errorf("-f is required")
 	}
 
 	_, err := os.Open(filePath)

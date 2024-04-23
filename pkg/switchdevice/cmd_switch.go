@@ -52,7 +52,7 @@ var SwitchCmds = []command.Command{
 		ExecuteFunc: switchCreateCmd,
 		Endpoint:    configuration.DeveloperEndpoint,
 		Example: `
-metalcloud-cli switch create --format yaml --raw-config switch.yml --return-id
+metalcloud-cli switch create --format yaml --f switch.yml --return-id
 
 #Example configurations:
 
@@ -224,9 +224,9 @@ volumeTemplateID: 0
 		FlagSet:      flag.NewFlagSet("Edit switch device", flag.ExitOnError),
 		InitFunc: func(c *command.Command) {
 			c.Arguments = map[string]interface{}{
-				"overwrite_hostname_from_switch":         c.FlagSet.Bool("retrieve-hostname-from-switch", false, colors.Green("(Flag)")+" Retrieve the hostname from the equipment instead of configuration file."),
-				"format":                                 c.FlagSet.String("format", "yaml", "The input format. Supported values are 'json','yaml'. The default format is json."),
-				"read_config_from_file":                  c.FlagSet.String("f", command.NilDefaultStr, colors.Red("(Required)")+" Read  configuration from file in the format specified with --format."),
+				"overwrite_hostname_from_switch": c.FlagSet.Bool("retrieve-hostname-from-switch", false, colors.Green("(Flag)")+" Retrieve the hostname from the equipment instead of configuration file."),
+				"format":                         c.FlagSet.String("format", "yaml", "The input format. Supported values are 'json','yaml'. The default format is json."),
+				"read_config_from_file":          c.FlagSet.String("f", command.NilDefaultStr, colors.Red("(Required)")+" Read  configuration from file in the format specified with --format."),
 			}
 		},
 		ExecuteFunc: switchUpdateCmd,

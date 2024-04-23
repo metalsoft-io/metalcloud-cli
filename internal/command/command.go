@@ -221,7 +221,7 @@ func GetRawObjectFromCommand(c *Command, obj interface{}) error {
 		if configFilePath, ok := GetStringParamOk(c.Arguments["read_config_from_file"]); ok {
 			content, err = configuration.ReadInputFromFile(configFilePath)
 		} else {
-			return fmt.Errorf("-raw-config <path_to_json_file> or -pipe is required")
+			return fmt.Errorf("-f <path_to_json_file> or -pipe is required")
 		}
 	}
 
