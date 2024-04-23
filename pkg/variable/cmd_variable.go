@@ -1,7 +1,6 @@
 package variable
 
 import (
-	"encoding/json"
 	"flag"
 	"fmt"
 	"os"
@@ -11,10 +10,28 @@ import (
 	"github.com/metalsoft-io/metalcloud-cli/internal/colors"
 	"github.com/metalsoft-io/metalcloud-cli/internal/command"
 	"github.com/metalsoft-io/metalcloud-cli/internal/configuration"
+	"github.com/metalsoft-io/metalcloud-cli/internal/objects"
 	"github.com/metalsoft-io/tableformatter"
 )
 
 var VariablesCmds = []command.Command{
+	{
+		Description:  "Create a variable.",
+		Subject:      "variable",
+		AltSubject:   "var",
+		Predicate:    "create",
+		AltPredicate: "new",
+		FlagSet:      flag.NewFlagSet("create variable", flag.ExitOnError),
+		InitFunc: func(c *command.Command) {
+			c.Arguments = map[string]interface{}{
+				"read_config_from_file": c.FlagSet.String("f", command.NilDefaultStr, colors.Red("(Required)")+" Read configuration from file in the format specified with --format."),
+				"format":                c.FlagSet.String("format", "yaml", "The input format. Supported values are 'json','yaml'. The default format is json."),
+				"return_id":             c.FlagSet.Bool("return-id", false, colors.Green("(Flag)")+" If set will print the ID of the created variable. Useful for automating tasks."),
+			}
+		},
+		ExecuteFunc: variableCreateCmd,
+		Endpoint:    configuration.ExtendedEndpoint,
+	},
 	{
 		Description:  "Lists all variables.",
 		Subject:      "variable",
@@ -28,25 +45,39 @@ var VariablesCmds = []command.Command{
 				"usage":  c.FlagSet.String("usage", command.NilDefaultStr, "Variable's usage"),
 			}
 		},
-		ExecuteFunc: variablesListCmd,
+		ExecuteFunc: variableListCmd,
 		Endpoint:    configuration.ExtendedEndpoint,
 	},
 	{
-		Description:  "Create a variable.",
+		Description:  "Get a variable.",
 		Subject:      "variable",
 		AltSubject:   "var",
-		Predicate:    "create",
-		AltPredicate: "new",
-		FlagSet:      flag.NewFlagSet("create variable", flag.ExitOnError),
+		Predicate:    "get",
+		AltPredicate: "show",
+		FlagSet:      flag.NewFlagSet("get variable", flag.ExitOnError),
 		InitFunc: func(c *command.Command) {
 			c.Arguments = map[string]interface{}{
-				"name":                   c.FlagSet.String("name", command.NilDefaultStr, "Variable's name"),
-				"usage":                  c.FlagSet.String("usage", command.NilDefaultStr, "Variable's usage"),
-				"read_content_from_pipe": c.FlagSet.Bool("pipe", false, "Read variable's content read from pipe instead of terminal input"),
-				"return_id":              c.FlagSet.Bool("return-id", false, colors.Green("(Flag)")+" If set will print the ID of the created infrastructure. Useful for automating tasks."),
+				"variable_id": c.FlagSet.Int("id", command.NilDefaultInt, colors.Red("(Required)")+" Variable ID."),
+				"format":      c.FlagSet.String("format", "yaml", "The output format. Supported values are 'json','csv','yaml'. The default format is human readable."),
 			}
 		},
-		ExecuteFunc: variableCreateCmd,
+		ExecuteFunc: variableGetCmd,
+		Endpoint:    configuration.ExtendedEndpoint,
+	},
+	{
+		Description:  "Update a variable.",
+		Subject:      "variable",
+		AltSubject:   "var",
+		Predicate:    "update",
+		AltPredicate: "edit",
+		FlagSet:      flag.NewFlagSet("update variable", flag.ExitOnError),
+		InitFunc: func(c *command.Command) {
+			c.Arguments = map[string]interface{}{
+				"read_config_from_file": c.FlagSet.String("f", command.NilDefaultStr, colors.Red("(Required)")+" Read configuration from file in the format specified with --format."),
+				"format":                c.FlagSet.String("format", "yaml", "The input format. Supported values are 'json','yaml'. The default format is json."),
+			}
+		},
+		ExecuteFunc: variableUpdateCmd,
 		Endpoint:    configuration.ExtendedEndpoint,
 	},
 	{
@@ -67,8 +98,26 @@ var VariablesCmds = []command.Command{
 	},
 }
 
-func variablesListCmd(c *command.Command, client metalcloud.MetalCloudClient) (string, error) {
+func variableCreateCmd(c *command.Command, client metalcloud.MetalCloudClient) (string, error) {
+	obj, err := objects.ReadSingleObjectFromCommand(c, client)
+	if err != nil {
+		return "", err
+	}
+	variable := (*obj).(metalcloud.Variable)
 
+	createdVariable, err := client.VariableCreate(variable)
+	if err != nil {
+		return "", err
+	}
+
+	if command.GetBoolParam(c.Arguments["return_id"]) {
+		return fmt.Sprintf("%d", createdVariable.VariableID), nil
+	}
+
+	return "", err
+}
+
+func variableListCmd(c *command.Command, client metalcloud.MetalCloudClient) (string, error) {
 	usage := *c.Arguments["usage"].(*string)
 	if usage == command.NilDefaultStr {
 		usage = ""
@@ -130,54 +179,42 @@ func variablesListCmd(c *command.Command, client metalcloud.MetalCloudClient) (s
 	return table.RenderTable("Variables", "", command.GetStringParam(c.Arguments["format"]))
 }
 
-func variableCreateCmd(c *command.Command, client metalcloud.MetalCloudClient) (string, error) {
-	variable := metalcloud.Variable{}
-
-	if v, ok := command.GetStringParamOk(c.Arguments["name"]); ok {
-		variable.VariableName = v
-	} else {
-		return "", fmt.Errorf("name is required")
+func variableGetCmd(c *command.Command, client metalcloud.MetalCloudClient) (string, error) {
+	variableID, ok := command.GetIntParamOk(c.Arguments["variable_id"])
+	if !ok {
+		return "", fmt.Errorf("-id required")
 	}
 
-	variable.VariableUsage = command.GetStringParam(c.Arguments["usage"])
-
-	var err error
-	content := []byte{}
-
-	if command.GetBoolParam(c.Arguments["read_content_from_pipe"]) {
-		content, err = configuration.ReadInputFromPipe()
-	} else {
-		content, err = command.RequestInput("Variable content:")
-	}
-
+	variable, err := client.VariableGet(variableID)
 	if err != nil {
 		return "", err
 	}
 
-	if len(content) == 0 {
-		return "", fmt.Errorf("Content cannot be empty")
-	}
-
-	cleanedContent := strings.Trim(string(content), "\"\r\n")
-
-	b, err := json.Marshal(cleanedContent)
-
-	variable.VariableJSON = string(b)
-
-	ret, err := client.VariableCreate(variable)
+	format := command.GetStringParam(c.Arguments["format"])
+	ret, err := objects.RenderRawObject(*variable, format, "Variable")
 	if err != nil {
 		return "", err
 	}
 
-	if c.Arguments["return_id"] != nil && *c.Arguments["return_id"].(*bool) {
-		return fmt.Sprintf("%d", ret.VariableID), nil
+	return ret, nil
+}
+
+func variableUpdateCmd(c *command.Command, client metalcloud.MetalCloudClient) (string, error) {
+	obj, err := objects.ReadSingleObjectFromCommand(c, client)
+	if err != nil {
+		return "", err
+	}
+	variable := (*obj).(metalcloud.Variable)
+
+	_, err = client.VariableUpdate(variable.VariableID, variable)
+	if err != nil {
+		return "", err
 	}
 
 	return "", err
 }
 
 func variableDeleteCmd(c *command.Command, client metalcloud.MetalCloudClient) (string, error) {
-
 	retS, err := getVariableFromCommand("id", c, client)
 	if err != nil {
 		return "", err

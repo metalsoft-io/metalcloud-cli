@@ -16,7 +16,7 @@ import (
 	. "github.com/onsi/gomega"
 )
 
-func TestVariablesListCmd(t *testing.T) {
+func TestvariableListCmd(t *testing.T) {
 	RegisterTestingT(t)
 	ctrl := gomock.NewController(t)
 
@@ -45,7 +45,7 @@ func TestVariablesListCmd(t *testing.T) {
 		},
 	}
 
-	ret, err := variablesListCmd(&cmd, client)
+	ret, err := variableListCmd(&cmd, client)
 	Expect(err).To(BeNil())
 
 	var m []interface{}
@@ -66,7 +66,7 @@ func TestVariablesListCmd(t *testing.T) {
 		},
 	}
 
-	ret, err = variablesListCmd(&cmd, client)
+	ret, err = variableListCmd(&cmd, client)
 	Expect(err).To(BeNil())
 	Expect(ret).NotTo(BeEmpty())
 
@@ -80,7 +80,7 @@ func TestVariablesListCmd(t *testing.T) {
 		},
 	}
 
-	ret, err = variablesListCmd(&cmd, client)
+	ret, err = variableListCmd(&cmd, client)
 	Expect(err).To(BeNil())
 	Expect(ret).NotTo(BeEmpty())
 

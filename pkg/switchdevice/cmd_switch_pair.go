@@ -188,12 +188,12 @@ func switchPairListCmd(c *command.Command, client metalcloud.MetalCloudClient) (
 func switchPairGetCmd(c *command.Command, client metalcloud.MetalCloudClient) (string, error) {
 	swID1, ok := command.GetIntParamOk(c.Arguments["network_device_id1"])
 	if !ok {
-		return "", fmt.Errorf("-network_device_id1 required")
+		return "", fmt.Errorf("-switch1 required")
 	}
 
 	swID2, ok := command.GetIntParamOk(c.Arguments["network_device_id2"])
 	if !ok {
-		return "", fmt.Errorf("-network_device_id2 required")
+		return "", fmt.Errorf("-switch2 required")
 	}
 
 	t, ok := command.GetStringParamOk(c.Arguments["type"])

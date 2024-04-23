@@ -1,0 +1,10 @@
+kind: Variable
+apiVersion: 1.0
+id: 14728
+ownerID: 31
+userIDAuthenticated: 31
+name: myVariable
+usage: OSAsset
+json: '"My variable value"'
+createdTimestamp: "2024-04-23T13:16:35Z"
+updatedTimestamp: "2024-04-23T13:16:35Z"
