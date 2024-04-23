@@ -1,0 +1,6 @@
+kind: SwitchDeviceLink
+apiVersion: 1.0
+id: 1243
+switchID1: 10103
+switchID2: 10105
+type: mlag

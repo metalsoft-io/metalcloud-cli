@@ -10,10 +10,28 @@ import (
 	"github.com/metalsoft-io/metalcloud-cli/internal/colors"
 	"github.com/metalsoft-io/metalcloud-cli/internal/command"
 	"github.com/metalsoft-io/metalcloud-cli/internal/configuration"
+	"github.com/metalsoft-io/metalcloud-cli/internal/objects"
 	"github.com/metalsoft-io/tableformatter"
 )
 
 var SwitchPairCmds = []command.Command{
+	{
+		Description:  "Create switch pair.",
+		Subject:      "switch-pair",
+		AltSubject:   "sw-pair",
+		Predicate:    "create",
+		AltPredicate: "new",
+		FlagSet:      flag.NewFlagSet("Create a switch pair", flag.ExitOnError),
+		InitFunc: func(c *command.Command) {
+			c.Arguments = map[string]interface{}{
+				"read_config_from_file": c.FlagSet.String("f", command.NilDefaultStr, colors.Red("(Required)")+" Read configuration from file in the format specified with --format."),
+				"format":                c.FlagSet.String("format", "yaml", "The input format. Supported values are 'json','yaml'. The default format is json."),
+				"return_id":             c.FlagSet.Bool("return-id", false, "Will print the ID of the created object. Useful for automating tasks."),
+			}
+		},
+		ExecuteFunc: switchPairCreateCmd,
+		Endpoint:    configuration.DeveloperEndpoint,
+	},
 	{
 		Description:  "Lists switch pairs.",
 		Subject:      "switch-pair",
@@ -30,21 +48,37 @@ var SwitchPairCmds = []command.Command{
 		Endpoint:    configuration.DeveloperEndpoint,
 	},
 	{
-		Description:  "Create switch pair.",
+		Description:  "List a switch pair.",
 		Subject:      "switch-pair",
 		AltSubject:   "sw-pair",
-		Predicate:    "create",
-		AltPredicate: "new",
-		FlagSet:      flag.NewFlagSet("Create a switch pair", flag.ExitOnError),
+		Predicate:    "get",
+		AltPredicate: "show",
+		FlagSet:      flag.NewFlagSet("list switch pair", flag.ExitOnError),
 		InitFunc: func(c *command.Command) {
 			c.Arguments = map[string]interface{}{
-				"network_device_id_or_identifier_string1": c.FlagSet.String("switch1", command.NilDefaultStr, colors.Red("(Required)")+" First Switch's id or identifier string. "),
-				"network_device_id_or_identifier_string2": c.FlagSet.String("switch2", command.NilDefaultStr, colors.Red("(Required)")+" Second Switch's id or identifier string. "),
-				"type":      c.FlagSet.String("type", "mlag", "The type of link. The default and only link type supported is `mlag`"),
-				"return_id": c.FlagSet.Bool("return-id", false, "Will print the ID of the created object. Useful for automating tasks."),
+				"network_device_id1": c.FlagSet.Int("switch1", command.NilDefaultInt, colors.Red("(Required)")+" First Switch's id or identifier string. "),
+				"network_device_id2": c.FlagSet.Int("switch2", command.NilDefaultInt, colors.Red("(Required)")+" Second Switch's id or identifier string. "),
+				"type":               c.FlagSet.String("type", "mlag", "The type of link. The default and only link type supported is `mlag`"),
+				"format":             c.FlagSet.String("format", "yaml", "The output format. Supported values are 'json','csv','yaml'. The default format is human readable."),
 			}
 		},
-		ExecuteFunc: switchPairCreateCmd,
+		ExecuteFunc: switchPairGetCmd,
+		Endpoint:    configuration.DeveloperEndpoint,
+	},
+	{
+		Description:  "Update switch pair.",
+		Subject:      "switch-pair",
+		AltSubject:   "sw-pair",
+		Predicate:    "update",
+		AltPredicate: "edit",
+		FlagSet:      flag.NewFlagSet("Update a switch pair", flag.ExitOnError),
+		InitFunc: func(c *command.Command) {
+			c.Arguments = map[string]interface{}{
+				"read_config_from_file": c.FlagSet.String("f", command.NilDefaultStr, colors.Red("(Required)")+" Read configuration from file in the format specified with --format."),
+				"format":                c.FlagSet.String("format", "yaml", "The input format. Supported values are 'json','yaml'. The default format is json."),
+			}
+		},
+		ExecuteFunc: switchPairUpdateCmd,
 		Endpoint:    configuration.DeveloperEndpoint,
 	},
 	{
@@ -67,8 +101,26 @@ var SwitchPairCmds = []command.Command{
 	},
 }
 
-func switchPairListCmd(c *command.Command, client metalcloud.MetalCloudClient) (string, error) {
+func switchPairCreateCmd(c *command.Command, client metalcloud.MetalCloudClient) (string, error) {
+	obj, err := objects.ReadSingleObjectFromCommand(c, client)
+	if err != nil {
+		return "", err
+	}
+	da := (*obj).(metalcloud.SwitchDeviceLink)
 
+	createdSDL, err := client.SwitchDeviceLinkCreate(da.NetworkEquipmentID1, da.NetworkEquipmentID2, da.NetworkEquipmentLinkType)
+	if err != nil {
+		return "", err
+	}
+
+	if command.GetBoolParam(c.Arguments["return_id"]) {
+		return fmt.Sprintf("%d", createdSDL.NetworkEquipmentLinkID), nil
+	}
+
+	return "", err
+}
+
+func switchPairListCmd(c *command.Command, client metalcloud.MetalCloudClient) (string, error) {
 	list, err := client.SwitchDeviceLinks()
 
 	if err != nil {
@@ -131,37 +183,54 @@ func switchPairListCmd(c *command.Command, client metalcloud.MetalCloudClient) (
 		Schema: schema,
 	}
 	return table.RenderTable("Switch links", "", command.GetStringParam(c.Arguments["format"]))
-
 }
 
-func switchPairCreateCmd(c *command.Command, client metalcloud.MetalCloudClient) (string, error) {
+func switchPairGetCmd(c *command.Command, client metalcloud.MetalCloudClient) (string, error) {
+	swID1, ok := command.GetIntParamOk(c.Arguments["network_device_id1"])
+	if !ok {
+		return "", fmt.Errorf("-network_device_id1 required")
+	}
 
-	sw1, err := getSwitchFromCommandLineWithPrivateParam("network_device_id_or_identifier_string1", "switch1", c, client)
+	swID2, ok := command.GetIntParamOk(c.Arguments["network_device_id2"])
+	if !ok {
+		return "", fmt.Errorf("-network_device_id2 required")
+	}
+
+	t, ok := command.GetStringParamOk(c.Arguments["type"])
+	if !ok {
+		return "", fmt.Errorf("-type required")
+	}
+
+	sdl, err := client.SwitchDeviceLinkGet(swID1, swID2, t)
 	if err != nil {
 		return "", err
 	}
 
-	sw2, err := getSwitchFromCommandLineWithPrivateParam("network_device_id_or_identifier_string2", "switch2", c, client)
+	format := command.GetStringParam(c.Arguments["format"])
+	ret, err := objects.RenderRawObject(*sdl, format, "SwitchDeviceLink")
 	if err != nil {
 		return "", err
 	}
 
-	t := command.GetStringParam(c.Arguments["type"])
+	return ret, nil
+}
 
-	ret, err := client.SwitchDeviceLinkCreate(sw1.NetworkEquipmentID, sw2.NetworkEquipmentID, t)
+func switchPairUpdateCmd(c *command.Command, client metalcloud.MetalCloudClient) (string, error) {
+	obj, err := objects.ReadSingleObjectFromCommand(c, client)
 	if err != nil {
 		return "", err
 	}
+	da := (*obj).(metalcloud.SwitchDeviceLink)
 
-	if command.GetBoolParam(c.Arguments["return_id"]) {
-		return fmt.Sprintf("%d", ret.NetworkEquipmentLinkID), nil
+	_, err = client.SwitchDeviceLinkUpdate(da.NetworkEquipmentID1, da.NetworkEquipmentID2, da.NetworkEquipmentLinkType)
+	if err != nil {
+		return "", err
 	}
 
 	return "", err
 }
 
 func switchPairDeleteCmd(c *command.Command, client metalcloud.MetalCloudClient) (string, error) {
-
 	sw1, err := getSwitchFromCommandLineWithPrivateParam("network_device_id_or_identifier_string1", "switch1", c, client)
 	if err != nil {
 		return "", err

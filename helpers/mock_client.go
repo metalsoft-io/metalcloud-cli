@@ -3946,6 +3946,21 @@ func (mr *MockMetalCloudClientMockRecorder) SwitchDeviceLinkGet(networkEquipment
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SwitchDeviceLinkGet", reflect.TypeOf((*MockMetalCloudClient)(nil).SwitchDeviceLinkGet), networkEquipmentID1, networkEquipmentID2, linkType)
 }
 
+// SwitchDeviceLinkUpdate mocks base method.
+func (m *MockMetalCloudClient) SwitchDeviceLinkUpdate(networkEquipmentID1, networkEquipmentID2 int, networkEquipmentLinkType string) (*v3.SwitchDeviceLink, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "SwitchDeviceLinkUpdate", networkEquipmentID1, networkEquipmentID2, networkEquipmentLinkType)
+	ret0, _ := ret[0].(*v3.SwitchDeviceLink)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// SwitchDeviceLinkUpdate indicates an expected call of SwitchDeviceLinkUpdate.
+func (mr *MockMetalCloudClientMockRecorder) SwitchDeviceLinkUpdate(networkEquipmentID1, networkEquipmentID2, networkEquipmentLinkType interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SwitchDeviceLinkUpdate", reflect.TypeOf((*MockMetalCloudClient)(nil).SwitchDeviceLinkUpdate), networkEquipmentID1, networkEquipmentID2, networkEquipmentLinkType)
+}
+
 // SwitchDeviceLinks mocks base method.
 func (m *MockMetalCloudClient) SwitchDeviceLinks() (*map[int]v3.SwitchDeviceLink, error) {
 	m.ctrl.T.Helper()
