@@ -1,0 +1,16 @@
+kind: SubnetOOB
+apiVersion: 1.0
+id: 1325
+label: test-adi
+type: ipv4
+useForAutoAllocation: true
+forResourceType: server
+gatewayHex: 0a0a0a01
+gateway: 100.10.10.1
+netmask: 255.255.255.0
+size: 24
+rangeStartHex: a0a0a02
+rangeStart: 100.10.10.2
+rangeEndHex: a0a0afe
+rangeEnd: 100.10.10.254
+datacenter: dummy-qa-name4
