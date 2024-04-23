@@ -43,8 +43,9 @@ var InstanceArrayCmds = []command.Command{
 				"return_id":                           c.FlagSet.Bool("return-id", false, colors.Green("(Flag)")+" If set will print the ID of the created Instance Array. Useful for automating tasks."),
 			}
 		},
-		ExecuteFunc: instanceArrayCreateCmd,
-		Endpoint:    configuration.UserEndpoint,
+		ExecuteFunc:   instanceArrayCreateCmd,
+		Endpoint:      configuration.UserEndpoint,
+		AdminEndpoint: configuration.DeveloperEndpoint,
 	},
 	{
 		Description:  "Lists all instance arrays of an infrastructure.",
@@ -59,8 +60,9 @@ var InstanceArrayCmds = []command.Command{
 				"format":                     c.FlagSet.String("format", "", "The output format. Supported values are 'json','csv','yaml'. The default format is human readable."),
 			}
 		},
-		ExecuteFunc: instanceArrayListCmd,
-		Endpoint:    configuration.UserEndpoint,
+		ExecuteFunc:   instanceArrayListCmd,
+		Endpoint:      configuration.UserEndpoint,
+		AdminEndpoint: configuration.DeveloperEndpoint,
 	},
 	{
 		Description:  "Lists all instances of instance array.",
@@ -75,8 +77,9 @@ var InstanceArrayCmds = []command.Command{
 				"format":                     c.FlagSet.String("format", "", "The output format. Supported values are 'json','csv','yaml'. The default format is human readable."),
 			}
 		},
-		ExecuteFunc: instanceArrayInstancesListCmd,
-		Endpoint:    configuration.UserEndpoint,
+		ExecuteFunc:   instanceArrayInstancesListCmd,
+		Endpoint:      configuration.UserEndpoint,
+		AdminEndpoint: configuration.DeveloperEndpoint,
 	},
 	{
 		Description:  "Delete instance array.",
@@ -120,8 +123,9 @@ var InstanceArrayCmds = []command.Command{
 				"no_bKeepDetachingDrives":             c.FlagSet.Bool("do-not-keep-detaching-drives", false, colors.Green("(Flag)")+" If set and the number of Instance objects is reduced, then the detaching Drive objects will be deleted. If it's set to true, the detaching Drive objects will not be deleted."),
 			}
 		},
-		ExecuteFunc: instanceArrayEditCmd,
-		Endpoint:    configuration.UserEndpoint,
+		ExecuteFunc:   instanceArrayEditCmd,
+		Endpoint:      configuration.UserEndpoint,
+		AdminEndpoint: configuration.DeveloperEndpoint,
 	},
 	{
 		Description:  "Get instance array details.",
@@ -140,8 +144,9 @@ var InstanceArrayCmds = []command.Command{
 				"format":                     c.FlagSet.String("format", "", "The output format. Supported values are 'json','csv','yaml'. The default format is human readable."),
 			}
 		},
-		ExecuteFunc: instanceArrayGetCmd,
-		Endpoint:    configuration.UserEndpoint,
+		ExecuteFunc:   instanceArrayGetCmd,
+		Endpoint:      configuration.UserEndpoint,
+		AdminEndpoint: configuration.DeveloperEndpoint,
 	},
 }
 
