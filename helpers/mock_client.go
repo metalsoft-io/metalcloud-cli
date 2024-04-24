@@ -521,6 +521,20 @@ func (mr *MockMetalCloudClientMockRecorder) DatacenterCreateFromDatacenterWithCo
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "DatacenterCreateFromDatacenterWithConfig", reflect.TypeOf((*MockMetalCloudClient)(nil).DatacenterCreateFromDatacenterWithConfig), datacenter)
 }
 
+// DatacenterDelete mocks base method.
+func (m *MockMetalCloudClient) DatacenterDelete(datacenterName string) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "DatacenterDelete", datacenterName)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// DatacenterDelete indicates an expected call of DatacenterDelete.
+func (mr *MockMetalCloudClientMockRecorder) DatacenterDelete(datacenterName interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "DatacenterDelete", reflect.TypeOf((*MockMetalCloudClient)(nil).DatacenterDelete), datacenterName)
+}
+
 // DatacenterGet mocks base method.
 func (m *MockMetalCloudClient) DatacenterGet(datacenterName string) (*v3.Datacenter, error) {
 	m.ctrl.T.Helper()

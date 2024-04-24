@@ -115,7 +115,7 @@ func TestDatacenterYamlUnmarshal(t *testing.T) {
 	err = yaml.Unmarshal(content, &dcConf)
 	Expect(err).To(BeNil())
 
-	Expect(dcConf.ServerRegisterUsingGeneratedIPMICredentialsEnabled).To(BeTrue())
+	Expect(dcConf.Config.ServerRegisterUsingGeneratedIPMICredentialsEnabled).To(BeTrue())
 }
 
 func TestDatacenterUpdate(t *testing.T) {
@@ -149,7 +149,7 @@ func TestDatacenterUpdate(t *testing.T) {
 		{
 			Name: "dc-create-good1",
 			Cmd: command.MakeCommand(map[string]interface{}{
-				"datacenter_name":       dcConf.Datacenter.DatacenterName,
+				"datacenter_name":       dcConf.Metadata.DatacenterName,
 				"read_config_from_file": fileName,
 				"format":                "json",
 			}),
@@ -210,7 +210,7 @@ func TestDatacenterGet(t *testing.T) {
 	Expect(err).To(BeNil())
 
 	client.EXPECT().
-		DatacenterWithConfigGet(dcConf.Datacenter.DatacenterName).
+		DatacenterWithConfigGet(dcConf.Metadata.DatacenterName).
 		Return(&dcConf, nil).
 		AnyTimes()
 
@@ -273,7 +273,7 @@ var _dcFixture1 = metalcloud.Datacenter{
 }
 
 var _dcFixture1WithConfig = metalcloud.DatacenterWithConfig{
-	Datacenter: metalcloud.Datacenter{
+	Metadata: metalcloud.Datacenter{
 		DatacenterName:          "test",
 		DatacenterDisplayName:   "datacenterDisplayName",
 		UserID:                  1,
@@ -283,7 +283,7 @@ var _dcFixture1WithConfig = metalcloud.DatacenterWithConfig{
 		DatacenterTags:          []string{"t1", "t2"},
 		DatacenterNameParent:    "test",
 	},
-	DatacenterConfig: metalcloud.DatacenterConfig{
+	Config: metalcloud.DatacenterConfig{
 		NFSServer: "nfs://test-nfs/",
 	},
 }
