@@ -204,17 +204,52 @@ func switchDefaultsListCmd(c *command.Command, client metalcloud.MetalCloudClien
 			macAddress = new(string)
 		}
 
+		position := obj.NetworkEquipmentPosition
+		if position == nil {
+			position = new(string)
+		}
+
+		identifierString := obj.NetworkEquipmentIdentifierString
+		if identifierString == nil {
+			identifierString = new(string)
+		}
+
+		asn := obj.NetworkEquipmentAsn
+		if asn == nil {
+			asn = new(int)
+		}
+
+		loopbackAddressIpv4 := obj.NetworkEquipmentLoopbackAddressIpv4
+		if loopbackAddressIpv4 == nil {
+			loopbackAddressIpv4 = new(string)
+		}
+
+		loopbackAddressIpv6 := obj.NetworkEquipmentLoopbackAddressIpv6
+		if loopbackAddressIpv6 == nil {
+			loopbackAddressIpv6 = new(string)
+		}
+
+		vtepAddressIpv4 := obj.NetworkEquipmentVtepAddressIpv4
+		if vtepAddressIpv4 == nil {
+			vtepAddressIpv4 = new(string)
+		}
+
+		vtepAddressIpv6 := obj.NetworkEquipmentVtepAddressIpv6
+		if vtepAddressIpv6 == nil {
+			vtepAddressIpv6 = new(string)
+		}
+
 		data = append(data, []interface{}{
 			obj.NetworkEquipmentDefaultsID,
 			*serialNumber,
 			*macAddress,
-			obj.NetworkEquipmentPosition,
-			obj.NetworkEquipmentIdentifierString,
-			obj.NetworkEquipmentAsn,
-			obj.NetworkEquipmentLoopbackAddressIpv4,
-			obj.NetworkEquipmentLoopbackAddressIpv6,
-			obj.NetworkEquipmentVtepAddressIpv4,
-			obj.NetworkEquipmentVtepAddressIpv6,
+			*position,
+			*identifierString,
+			*asn,
+			*loopbackAddressIpv4,
+			*loopbackAddressIpv6,
+			*vtepAddressIpv4,
+			*vtepAddressIpv6,
 		})
 	}
 
