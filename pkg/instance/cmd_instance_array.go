@@ -94,8 +94,9 @@ var InstanceArrayCmds = []command.Command{
 				"autoconfirm":                c.FlagSet.Bool("autoconfirm", false, colors.Green("(Flag)")+" If set it will assume action is confirmed"),
 			}
 		},
-		ExecuteFunc: instanceArrayDeleteCmd,
-		Endpoint:    configuration.UserEndpoint,
+		ExecuteFunc:   instanceArrayDeleteCmd,
+		Endpoint:      configuration.UserEndpoint,
+		AdminEndpoint: configuration.DeveloperEndpoint,
 	},
 	{
 		Description:  "Edits an instance array.",

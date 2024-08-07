@@ -28,7 +28,8 @@ var InstanceCmds = []command.Command{
 				"autoconfirm": c.FlagSet.Bool("autoconfirm", false, colors.Green("(Flag)")+" If set it will assume action is confirmed"),
 			}
 		},
-		ExecuteFunc: instancePowerControlCmd,
+		ExecuteFunc:   instancePowerControlCmd,
+		AdminEndpoint: configuration.DeveloperEndpoint,
 	},
 
 	{
@@ -46,7 +47,8 @@ var InstanceCmds = []command.Command{
 				"format":                c.FlagSet.String("format", "", "The output format. Supported values are 'json','csv','yaml'. The default format is human readable."),
 			}
 		},
-		ExecuteFunc: instanceGetCmd,
+		ExecuteFunc:   instanceGetCmd,
+		AdminEndpoint: configuration.DeveloperEndpoint,
 	},
 	{
 		Description:  "Replace an instance's associated server. (EXPERIMENTAL)",
@@ -63,8 +65,9 @@ var InstanceCmds = []command.Command{
 				"return_afc_id": c.FlagSet.Bool("return-afc-id", false, colors.Green("(Flag)")+" If set it will return the AFC id of the operation."),
 			}
 		},
-		ExecuteFunc: instanceServerReplaceCmd,
-		Endpoint:    configuration.DeveloperEndpoint,
+		ExecuteFunc:   instanceServerReplaceCmd,
+		Endpoint:      configuration.DeveloperEndpoint,
+		AdminEndpoint: configuration.DeveloperEndpoint,
 	},
 	{
 		Description:  "Edit instance",
@@ -79,8 +82,9 @@ var InstanceCmds = []command.Command{
 				"custom_variables": c.FlagSet.String("custom-variables", command.NilDefaultStr, "Comma separated list of custom variables such as 'var1=value,var2=value'. If special characters need to be set use urlencode and pass the encoded string"),
 			}
 		},
-		ExecuteFunc: instanceEditCmd,
-		Endpoint:    configuration.DeveloperEndpoint,
+		ExecuteFunc:   instanceEditCmd,
+		Endpoint:      configuration.DeveloperEndpoint,
+		AdminEndpoint: configuration.DeveloperEndpoint,
 	},
 }
 
