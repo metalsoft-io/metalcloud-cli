@@ -28,8 +28,9 @@ var VolumeTemplateCmds = []command.Command{
 				"pxe_only":   c.FlagSet.Bool("pxe-only", false, "Show only templates that support pxe booting"),
 			}
 		},
-		ExecuteFunc: volumeTemplatesListCmd,
-		Endpoint:    configuration.ExtendedEndpoint,
+		ExecuteFunc:         volumeTemplatesListCmd,
+		Endpoint:            configuration.ExtendedEndpoint,
+		PermissionsRequired: []string{command.TEMPLATES_READ}, //while the user would have access to the volume template are deprecating this
 	},
 	{
 		Description:  "Create volume templates.",
@@ -65,8 +66,9 @@ var VolumeTemplateCmds = []command.Command{
 				"return_id":                  c.FlagSet.Bool("return-id", false, "(Optional) Will print the ID of the created Volume Template. Useful for automating tasks."),
 			}
 		},
-		ExecuteFunc: volumeTemplateCreateFromDriveCmd,
-		Endpoint:    configuration.ExtendedEndpoint,
+		ExecuteFunc:         volumeTemplateCreateFromDriveCmd,
+		Endpoint:            configuration.ExtendedEndpoint,
+		PermissionsRequired: []string{command.TEMPLATES_WRITE}, //while the user would have access to the volume template are deprecating this
 	},
 	{
 		Description:  "Allow other users of the platform to use the template.",
@@ -81,8 +83,9 @@ var VolumeTemplateCmds = []command.Command{
 				"os_bootstrap_function_name": c.FlagSet.String("os-bootstrap-function-name", command.NilDefaultStr, colors.Red("(Required)")+" Selects the cloudinit configuration function. Can be one of: provisioner_os_cloudinit_prepare_centos, provisioner_os_cloudinit_prepare_rhel, provisioner_os_cloudinit_prepare_ubuntu, provisioner_os_cloudinit_prepare_windows."),
 			}
 		},
-		ExecuteFunc: volumeTemplateMakePublicCmd,
-		Endpoint:    configuration.DeveloperEndpoint,
+		ExecuteFunc:         volumeTemplateMakePublicCmd,
+		Endpoint:            configuration.DeveloperEndpoint,
+		PermissionsRequired: []string{command.TEMPLATES_WRITE}, //while the user would have access to the volume template are deprecating this
 	},
 	{
 		Description:  "Stop other users of the platform from being able to use the template by allocating a specific owner.",
@@ -97,8 +100,9 @@ var VolumeTemplateCmds = []command.Command{
 				"user_id":             c.FlagSet.String("user-id", command.NilDefaultStr, "New owner user id or email."),
 			}
 		},
-		ExecuteFunc: volumeTemplateMakePrivateCmd,
-		Endpoint:    configuration.DeveloperEndpoint,
+		ExecuteFunc:         volumeTemplateMakePrivateCmd,
+		Endpoint:            configuration.DeveloperEndpoint,
+		PermissionsRequired: []string{command.TEMPLATES_WRITE}, //while the user would have access to the volume template are deprecating this
 	},
 }
 

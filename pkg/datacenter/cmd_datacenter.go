@@ -57,8 +57,9 @@ var DatacenterCmds = []command.Command{
 				"return_id":               c.FlagSet.Bool("return-id", false, "Will print the ID of the created Datacenter Useful for automating tasks."),
 			}
 		},
-		ExecuteFunc: datacenterCreateCmd,
-		Endpoint:    configuration.DeveloperEndpoint,
+		ExecuteFunc:         datacenterCreateCmd,
+		Endpoint:            configuration.DeveloperEndpoint,
+		PermissionsRequired: []string{command.DATACENTER_WRITE},
 	},
 	{
 		Description:  "Get datacenter",
@@ -76,8 +77,9 @@ var DatacenterCmds = []command.Command{
 				"json_path":              c.FlagSet.String("jsonpath", command.NilDefaultStr, "Filter the JSON config."),
 			}
 		},
-		ExecuteFunc: datacenterGetCmd,
-		Endpoint:    configuration.DeveloperEndpoint,
+		ExecuteFunc:         datacenterGetCmd,
+		Endpoint:            configuration.DeveloperEndpoint,
+		PermissionsRequired: []string{command.DATACENTER_READ},
 	},
 	{
 		Description:  "Update datacenter config",
@@ -94,8 +96,9 @@ var DatacenterCmds = []command.Command{
 				"format":                c.FlagSet.String("format", "json", "The input format. Supported values are 'json','yaml'. The default format is json."),
 			}
 		},
-		ExecuteFunc: datacenterUpdateCmd,
-		Endpoint:    configuration.DeveloperEndpoint,
+		ExecuteFunc:         datacenterUpdateCmd,
+		Endpoint:            configuration.DeveloperEndpoint,
+		PermissionsRequired: []string{command.DATACENTER_WRITE},
 	},
 }
 

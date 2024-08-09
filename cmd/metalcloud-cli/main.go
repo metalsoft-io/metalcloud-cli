@@ -17,19 +17,23 @@ func main() {
 	configuration.SetConsoleIOChannel(os.Stdin, os.Stdout)
 
 	clients, err := initClients()
+
 	if err != nil {
 		fmt.Fprintf(configuration.GetStdout(), "Could not initialize metal cloud client %s\n", err)
 		os.Exit(-1)
 	}
 
+	userId := clients[configuration.UserEndpoint].GetUserID()
+	permissions, err := getUserPermissions(userId, clients[configuration.UserEndpoint])
+
 	if len(os.Args) < 2 {
 		//fmt.Fprintf(GetStdout(), "Invalid command! Use 'help' for a list of commands.\n")
-		fmt.Fprintf(configuration.GetStdout(), "%s\n", getHelp(clients))
+		fmt.Fprintf(configuration.GetStdout(), "%s\n", getHelp(clients, permissions))
 		os.Exit(-1)
 	}
 
 	if os.Args[1] == "help" {
-		fmt.Fprintf(configuration.GetStdout(), "%s\n", getHelp(clients))
+		fmt.Fprintf(configuration.GetStdout(), "%s\n", getHelp(clients, permissions))
 		os.Exit(0)
 	}
 
@@ -40,9 +44,9 @@ func main() {
 
 	tableformatter.DefaultFoldAtLength = 1000
 
-	commands := getCommands(clients)
+	commands := getCommands(clients, permissions)
 
-	err = command.ExecuteCommand(os.Args, commands, clients)
+	err = command.ExecuteCommand(os.Args, commands, clients, permissions)
 
 	if err != nil {
 		fmt.Fprintf(configuration.GetStdout(), "%s\n", err)

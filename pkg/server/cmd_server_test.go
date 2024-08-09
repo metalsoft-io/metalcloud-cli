@@ -536,11 +536,6 @@ func TestServerImportCmd(t *testing.T) {
 		Return(&fullServer, nil).
 		AnyTimes()
 
-	client.EXPECT().
-		GetUserEmail().
-		Return(email).
-		AnyTimes()
-
 	user := metalcloud.User{
 		UserEmail: email,
 	}

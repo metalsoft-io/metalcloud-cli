@@ -10,6 +10,7 @@ import (
 	"io"
 	"net/url"
 	"reflect"
+	"slices"
 	"strconv"
 	"strings"
 	"syscall"
@@ -35,20 +36,21 @@ type CommandInitFunc = func(c *Command)
 
 // Command defines a command, arguments, description etc
 type Command struct {
-	Description   string
-	Subject       string
-	AltSubject    string
-	Predicate     string
-	AltPredicate  string
-	FlagSet       *flag.FlagSet
-	Arguments     map[string]interface{}
-	InitFunc      CommandInitFunc
-	ExecuteFunc   CommandExecuteFunc
-	Endpoint      string
-	Example       string
-	UserOnly      bool   //set if command is to be visible only to users regardless of endpoint
-	AdminOnly     bool   //set if command is to be visible only to admins regardless of endpoint
-	AdminEndpoint string //if set will be used instead of Endpoint for admins
+	Description         string
+	Subject             string
+	AltSubject          string
+	Predicate           string
+	AltPredicate        string
+	FlagSet             *flag.FlagSet
+	Arguments           map[string]interface{}
+	InitFunc            CommandInitFunc
+	ExecuteFunc         CommandExecuteFunc
+	Endpoint            string
+	Example             string
+	UserOnly            bool   //set if command is to be visible only to users regardless of endpoint
+	AdminOnly           bool   //set if command is to be visible only to admins regardless of endpoint
+	AdminEndpoint       string //if set will be used instead of Endpoint for admins
+	PermissionsRequired []string
 }
 
 type CommandTestCase struct {
@@ -436,7 +438,7 @@ func helpMessage(err error, subject string, predicate string) error {
 	return fmt.Errorf("%s Use '%s -h' for syntax help", err, subject)
 }
 
-func ExecuteCommand(args []string, commands []Command, clients map[string]metalcloud.MetalCloudClient) error {
+func ExecuteCommand(args []string, commands []Command, clients map[string]metalcloud.MetalCloudClient, permissions []string) error {
 	subject, predicate, count := validateArguments(args)
 
 	if count == 1 {
@@ -450,8 +452,8 @@ func ExecuteCommand(args []string, commands []Command, clients map[string]metalc
 				}
 			}
 
-			if foundNilPredicate == false {
-				return fmt.Errorf("Invalid command! %s", getPossiblePredicatesForSubjectHelp(subject, commandsForSubject))
+			if !foundNilPredicate {
+				return fmt.Errorf("invalid command: %s", getPossiblePredicatesForSubjectHelp(subject, commandsForSubject))
 			}
 		}
 	}
@@ -459,7 +461,7 @@ func ExecuteCommand(args []string, commands []Command, clients map[string]metalc
 	cmd := locateCommand(predicate, subject, commands)
 
 	if cmd == nil {
-		return fmt.Errorf("Invalid command! Use 'help' for a list of commands.")
+		return fmt.Errorf("invalid command! Use 'help' for a list of commands")
 	}
 
 	cmd.InitFunc(cmd)
@@ -502,7 +504,7 @@ func ExecuteCommand(args []string, commands []Command, clients map[string]metalc
 
 	endpoint := cmd.Endpoint
 
-	if configuration.IsAdmin() && cmd.AdminEndpoint != "" {
+	if slices.Contains(permissions, ADMIN_ACCESS) && cmd.AdminEndpoint != "" {
 		endpoint = cmd.AdminEndpoint
 	}
 

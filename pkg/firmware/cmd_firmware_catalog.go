@@ -38,8 +38,9 @@ var FirmwareCatalogCmds = []command.Command{
 				"debug":                     c.FlagSet.Bool("debug", false, colors.Green("(Flag)")+" If set, increases log level."),
 			}
 		},
-		ExecuteFunc: firmwareCatalogCreateCmd,
-		Endpoint:    configuration.DeveloperEndpoint,
+		ExecuteFunc:         firmwareCatalogCreateCmd,
+		Endpoint:            configuration.DeveloperEndpoint,
+		PermissionsRequired: []string{command.FIRMWARE_BASELINES_WRITE},
 		Example: `
 Dell example:
 metalcloud-cli firmware-catalog create --config-format yaml --raw-config .\example_dell.yaml --download-binaries --filter-server-types "M.32.32.2, M.32.64.2, M.40.32.1.v2" --repo-http-url http://176.223.226.61/repo/firmware/ --repo-ssh-path /home/repo/firmware --repo-ssh-port 22 --repo-ssh-user root --user-private-ssh-key-path ~/.ssh/id_rsa

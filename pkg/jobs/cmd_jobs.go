@@ -35,8 +35,9 @@ var JobsCmds = []command.Command{
 				"wide":   c.FlagSet.Bool("wide", false, colors.Green("(Flag)")+" If set shows more of the normally truncated request and response fields"),
 			}
 		},
-		ExecuteFunc: jobListCmdWithWatch,
-		Endpoint:    configuration.DeveloperEndpoint,
+		ExecuteFunc:         jobListCmdWithWatch,
+		Endpoint:            configuration.DeveloperEndpoint,
+		PermissionsRequired: []string{command.JOB_QUEUE_READ},
 	},
 	{
 		Description:  "Get job details.",
@@ -52,8 +53,9 @@ var JobsCmds = []command.Command{
 				"watch":  c.FlagSet.String("watch", command.NilDefaultStr, "If set to a human readable interval such as '4s', '1m' will print the job status until interrupted."),
 			}
 		},
-		ExecuteFunc: jobGetCmdWithWatch,
-		Endpoint:    configuration.DeveloperEndpoint,
+		ExecuteFunc:         jobGetCmdWithWatch,
+		Endpoint:            configuration.DeveloperEndpoint,
+		PermissionsRequired: []string{command.JOB_QUEUE_READ},
 	},
 	{
 		Description:  "Retry job.",
@@ -68,8 +70,9 @@ var JobsCmds = []command.Command{
 				"autoconfirm": c.FlagSet.Bool("autoconfirm", false, colors.Green("(Flag)")+" If set it will assume action is confirmed"),
 			}
 		},
-		ExecuteFunc: jobRetryCmd,
-		Endpoint:    configuration.DeveloperEndpoint,
+		ExecuteFunc:         jobRetryCmd,
+		Endpoint:            configuration.DeveloperEndpoint,
+		PermissionsRequired: []string{command.JOB_QUEUE_WRITE},
 	},
 	{
 		Description:  "Skip job.",
@@ -84,8 +87,9 @@ var JobsCmds = []command.Command{
 				"autoconfirm": c.FlagSet.Bool("autoconfirm", false, colors.Green("(Flag)")+" If set it will assume action is confirmed"),
 			}
 		},
-		ExecuteFunc: jobSkipCmd,
-		Endpoint:    configuration.DeveloperEndpoint,
+		ExecuteFunc:         jobSkipCmd,
+		Endpoint:            configuration.DeveloperEndpoint,
+		PermissionsRequired: []string{command.JOB_QUEUE_WRITE},
 	},
 	{
 		Description:  "Delete job.",
@@ -100,8 +104,9 @@ var JobsCmds = []command.Command{
 				"autoconfirm": c.FlagSet.Bool("autoconfirm", false, colors.Green("(Flag)")+" If set it will assume action is confirmed"),
 			}
 		},
-		ExecuteFunc: jobDeleteCmd,
-		Endpoint:    configuration.DeveloperEndpoint,
+		ExecuteFunc:         jobDeleteCmd,
+		Endpoint:            configuration.DeveloperEndpoint,
+		PermissionsRequired: []string{command.JOB_QUEUE_WRITE},
 	},
 	{
 		Description:  "Kill job.",
@@ -117,8 +122,9 @@ var JobsCmds = []command.Command{
 				"autoconfirm": c.FlagSet.Bool("autoconfirm", false, colors.Green("(Flag)")+" If set it will assume action is confirmed"),
 			}
 		},
-		ExecuteFunc: jobKillCmd,
-		Endpoint:    configuration.DeveloperEndpoint,
+		ExecuteFunc:         jobKillCmd,
+		Endpoint:            configuration.DeveloperEndpoint,
+		PermissionsRequired: []string{command.JOB_QUEUE_WRITE},
 	},
 }
 

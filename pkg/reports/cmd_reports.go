@@ -24,8 +24,9 @@ var ReportsCmds = []command.Command{
 				"format": c.FlagSet.String("format", command.NilDefaultStr, "The output format. Supported values are 'json','csv','yaml'. The default format is human readable."),
 			}
 		},
-		ExecuteFunc: devicesListCmd,
-		Endpoint:    configuration.DeveloperEndpoint,
+		ExecuteFunc:         devicesListCmd,
+		Endpoint:            configuration.DeveloperEndpoint,
+		PermissionsRequired: []string{command.ADMIN_ACCESS},
 	},
 }
 
