@@ -311,8 +311,9 @@ var OsTemplatesCmds = []command.Command{
 				"template_id_or_name": c.FlagSet.String("id", command.NilDefaultStr, "Template id or name"),
 			}
 		},
-		ExecuteFunc: templateMakePublicCmd,
-		Endpoint:    configuration.DeveloperEndpoint,
+		ExecuteFunc:         templateMakePublicCmd,
+		Endpoint:            configuration.DeveloperEndpoint,
+		PermissionsRequired: []string{command.TEMPLATES_WRITE},
 	},
 	{
 		Description:  "Stop other users of the platform from being able to use the OS template by allocating a specific owner.",
@@ -327,8 +328,9 @@ var OsTemplatesCmds = []command.Command{
 				"user_id":             c.FlagSet.String("user-id", command.NilDefaultStr, "New owner user id or email."),
 			}
 		},
-		ExecuteFunc: templateMakePrivateCmd,
-		Endpoint:    configuration.DeveloperEndpoint,
+		ExecuteFunc:         templateMakePrivateCmd,
+		Endpoint:            configuration.DeveloperEndpoint,
+		PermissionsRequired: []string{command.TEMPLATES_WRITE},
 	},
 	{
 		Description:  "List associated assets.",
