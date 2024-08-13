@@ -590,7 +590,7 @@ func serverStatusSetCmd(c *command.Command, client metalcloud.MetalCloudClient) 
 
 	newStatus, ok := command.GetStringParamOk(c.Arguments["status"])
 	if !ok {
-		return "", fmt.Errorf("-status is required (one of: on, off, reset, soft)")
+		return "", fmt.Errorf("-status is required")
 	}
 
 	var server metalcloud.Server

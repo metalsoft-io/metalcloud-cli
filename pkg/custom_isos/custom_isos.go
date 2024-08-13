@@ -28,6 +28,7 @@ var CustomISOCmds = []command.Command{
 		},
 		ExecuteFunc:   customISOListCmd,
 		AdminEndpoint: configuration.DeveloperEndpoint,
+		Endpoint:      configuration.UserEndpoint,
 	},
 	{
 		Description:  "Creates a custom iso.",
@@ -48,6 +49,7 @@ var CustomISOCmds = []command.Command{
 		},
 		ExecuteFunc:   customISOCreateCmd,
 		AdminEndpoint: configuration.DeveloperEndpoint,
+		Endpoint:      configuration.UserEndpoint,
 	},
 	{
 		Description:  "Update a custom iso.",
@@ -69,6 +71,7 @@ var CustomISOCmds = []command.Command{
 		},
 		ExecuteFunc:   customISOUpdateCmd,
 		AdminEndpoint: configuration.DeveloperEndpoint,
+		Endpoint:      configuration.UserEndpoint,
 	},
 	{
 		Description:  "Delete a custom iso.",
@@ -85,6 +88,7 @@ var CustomISOCmds = []command.Command{
 		},
 		ExecuteFunc:   customISODeleteCmd,
 		AdminEndpoint: configuration.DeveloperEndpoint,
+		Endpoint:      configuration.UserEndpoint,
 	},
 	{
 		Description:  "Boot a custom iso on a server.",
@@ -103,6 +107,8 @@ var CustomISOCmds = []command.Command{
 		},
 		ExecuteFunc:   customISOBootIntoServerCmd,
 		AdminEndpoint: configuration.DeveloperEndpoint,
+		AdminOnly:     true,
+		Endpoint:      configuration.UserEndpoint,
 	},
 }
 
