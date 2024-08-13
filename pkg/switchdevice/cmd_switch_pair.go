@@ -26,8 +26,9 @@ var SwitchPairCmds = []command.Command{
 				"format": c.FlagSet.String("format", command.NilDefaultStr, "The output format. Supported values are 'json','csv','yaml'. The default format is human readable."),
 			}
 		},
-		ExecuteFunc: switchPairListCmd,
-		Endpoint:    configuration.DeveloperEndpoint,
+		ExecuteFunc:         switchPairListCmd,
+		Endpoint:            configuration.DeveloperEndpoint,
+		PermissionsRequired: []string{command.SWITCHES_READ},
 	},
 	{
 		Description:  "Create switch pair.",
@@ -44,8 +45,9 @@ var SwitchPairCmds = []command.Command{
 				"return_id": c.FlagSet.Bool("return-id", false, "Will print the ID of the created object. Useful for automating tasks."),
 			}
 		},
-		ExecuteFunc: switchPairCreateCmd,
-		Endpoint:    configuration.DeveloperEndpoint,
+		ExecuteFunc:         switchPairCreateCmd,
+		Endpoint:            configuration.DeveloperEndpoint,
+		PermissionsRequired: []string{command.SWITCHES_WRITE},
 	},
 	{
 		Description:  "Delete a switch pair.",
@@ -62,8 +64,9 @@ var SwitchPairCmds = []command.Command{
 				"autoconfirm": c.FlagSet.Bool("autoconfirm", false, colors.Green("(Flag)")+" If set it will assume action is confirmed"),
 			}
 		},
-		ExecuteFunc: switchPairDeleteCmd,
-		Endpoint:    configuration.DeveloperEndpoint,
+		ExecuteFunc:         switchPairDeleteCmd,
+		Endpoint:            configuration.DeveloperEndpoint,
+		PermissionsRequired: []string{command.SWITCHES_WRITE},
 	},
 }
 

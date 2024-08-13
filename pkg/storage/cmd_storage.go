@@ -28,8 +28,9 @@ var StorageCmds = []command.Command{
 				"show_decommissioned": c.FlagSet.Bool("show-decommissioned", false, colors.Green("(Flag)")+" If set returns decommissioned servers which are normally hidden"),
 			}
 		},
-		ExecuteFunc: storageListCmd,
-		Endpoint:    configuration.DeveloperEndpoint,
+		ExecuteFunc:         storageListCmd,
+		Endpoint:            configuration.DeveloperEndpoint,
+		PermissionsRequired: []string{command.STORAGE_READ},
 	},
 }
 

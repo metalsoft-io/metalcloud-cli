@@ -30,8 +30,9 @@ var SwitchCmds = []command.Command{
 				"show_credentials": c.FlagSet.Bool("show-credentials", false, colors.Green("(Flag)")+" If set returns the switch management credentials. (Slow for large queries)"),
 			}
 		},
-		ExecuteFunc: switchListCmd,
-		Endpoint:    configuration.DeveloperEndpoint,
+		ExecuteFunc:         switchListCmd,
+		Endpoint:            configuration.DeveloperEndpoint,
+		PermissionsRequired: []string{command.SWITCHES_READ},
 	},
 	{
 		Description:  "Create switch device.",
@@ -49,8 +50,9 @@ var SwitchCmds = []command.Command{
 				"return_id":                      c.FlagSet.Bool("return-id", false, "Will print the ID of the created object. Useful for automating tasks."),
 			}
 		},
-		ExecuteFunc: switchCreateCmd,
-		Endpoint:    configuration.DeveloperEndpoint,
+		ExecuteFunc:         switchCreateCmd,
+		Endpoint:            configuration.DeveloperEndpoint,
+		PermissionsRequired: []string{command.SWITCHES_WRITE},
 		Example: `
 metalcloud-cli switch create --format yaml --raw-config switch.yml --return-id
 
@@ -222,8 +224,9 @@ volumeTemplateID: 0
 				"return_id":                              c.FlagSet.Bool("return-id", false, "Will print the ID of the created object. Useful for automating tasks."),
 			}
 		},
-		ExecuteFunc: switchEditCmd,
-		Endpoint:    configuration.DeveloperEndpoint,
+		ExecuteFunc:         switchEditCmd,
+		Endpoint:            configuration.DeveloperEndpoint,
+		PermissionsRequired: []string{command.SWITCHES_WRITE},
 	},
 	{
 		Description:  "Get a switch device.",
@@ -240,8 +243,9 @@ volumeTemplateID: 0
 				"raw":                                    c.FlagSet.Bool("raw", false, colors.Green("(Flag)")+" When set the return will be a full dump of the object. This is useful when copying configurations. Only works with json and yaml formats."),
 			}
 		},
-		ExecuteFunc: switchGetCmd,
-		Endpoint:    configuration.DeveloperEndpoint,
+		ExecuteFunc:         switchGetCmd,
+		Endpoint:            configuration.DeveloperEndpoint,
+		PermissionsRequired: []string{command.SWITCHES_READ},
 	},
 	{
 		Description:  "Delete a switch.",
@@ -256,8 +260,9 @@ volumeTemplateID: 0
 				"autoconfirm":                            c.FlagSet.Bool("autoconfirm", false, colors.Green("(Flag)")+" If set it will assume action is confirmed"),
 			}
 		},
-		ExecuteFunc: switchDeleteCmd,
-		Endpoint:    configuration.DeveloperEndpoint,
+		ExecuteFunc:         switchDeleteCmd,
+		Endpoint:            configuration.DeveloperEndpoint,
+		PermissionsRequired: []string{command.SWITCHES_WRITE},
 	},
 	{
 		Description:  "Lists switch interfaces.",
@@ -273,8 +278,9 @@ volumeTemplateID: 0
 				"raw":                                    c.FlagSet.Bool("raw", false, colors.Green("(Flag)")+" When set the return will be a full dump of the object. This is useful when copying configurations. Only works with json and yaml formats."),
 			}
 		},
-		ExecuteFunc: switchInterfacesListCmd,
-		Endpoint:    configuration.DeveloperEndpoint,
+		ExecuteFunc:         switchInterfacesListCmd,
+		Endpoint:            configuration.DeveloperEndpoint,
+		PermissionsRequired: []string{command.SWITCHES_READ},
 	},
 }
 

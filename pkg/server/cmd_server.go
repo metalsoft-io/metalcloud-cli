@@ -37,8 +37,9 @@ var ServersCmds = []command.Command{
 				"show_decommissioned": c.FlagSet.Bool("show-decommissioned", false, colors.Green("(Flag)")+" If set returns decommissioned servers which are normally hidden"),
 			}
 		},
-		ExecuteFunc: serversListCmd,
-		Endpoint:    configuration.DeveloperEndpoint,
+		ExecuteFunc:         serversListCmd,
+		Endpoint:            configuration.DeveloperEndpoint,
+		PermissionsRequired: []string{command.SERVERS_READ},
 		Example: `
 metalcloud-cli server list --filter "available used" # to show all available and used servers. One of: [available|unavailable|used|cleaning|registering]
 metalcloud-cli server list --show-credentials # to retrieve a list of credentials. Note: this will take a longer time.
@@ -60,8 +61,9 @@ metalcloud-cli server list --show-credentials # to retrieve a list of credential
 				"raw":               c.FlagSet.Bool("raw", false, colors.Green("(Flag)")+" If set returns the servers' raw object serialized using specified format"),
 			}
 		},
-		ExecuteFunc: serverGetCmd,
-		Endpoint:    configuration.DeveloperEndpoint,
+		ExecuteFunc:         serverGetCmd,
+		Endpoint:            configuration.DeveloperEndpoint,
+		PermissionsRequired: []string{command.SERVERS_READ},
 	},
 
 	{
@@ -79,8 +81,9 @@ metalcloud-cli server list --show-credentials # to retrieve a list of credential
 				"return_id":             c.FlagSet.Bool("return-id", false, "Will print the ID of the created object. Useful for automating tasks."),
 			}
 		},
-		ExecuteFunc: serverCreateCmd,
-		Endpoint:    configuration.DeveloperEndpoint,
+		ExecuteFunc:         serverCreateCmd,
+		Endpoint:            configuration.DeveloperEndpoint,
+		PermissionsRequired: []string{command.SERVERS_WRITE},
 	},
 
 	{
@@ -100,8 +103,9 @@ metalcloud-cli server list --show-credentials # to retrieve a list of credential
 				"return_id":     c.FlagSet.Bool("return-id", false, "Will print the ID of the created object. Useful for automating tasks."),
 			}
 		},
-		ExecuteFunc: serverRegisterCmd,
-		Endpoint:    configuration.DeveloperEndpoint,
+		ExecuteFunc:         serverRegisterCmd,
+		Endpoint:            configuration.DeveloperEndpoint,
+		PermissionsRequired: []string{command.SERVERS_WRITE},
 	},
 
 	{
@@ -120,8 +124,9 @@ metalcloud-cli server list --show-credentials # to retrieve a list of credential
 				"return_id":             c.FlagSet.Bool("return-id", false, "Will print the ID of the created object. Useful for automating tasks."),
 			}
 		},
-		ExecuteFunc: serverImportCmd,
-		Endpoint:    configuration.DeveloperEndpoint,
+		ExecuteFunc:         serverImportCmd,
+		Endpoint:            configuration.DeveloperEndpoint,
+		PermissionsRequired: []string{command.SERVERS_WRITE},
 		Example: `
 The following fields are required:
 
@@ -186,8 +191,9 @@ $ metalcloud-cli server import -format yaml -file ./input.yaml
 				"return_id":                  c.FlagSet.Bool("return-id", false, "Will print the ID of the created instance array. Useful for automating tasks."),
 			}
 		},
-		ExecuteFunc: serverAddToInfraCmd,
-		Endpoint:    configuration.DeveloperEndpoint,
+		ExecuteFunc:         serverAddToInfraCmd,
+		Endpoint:            configuration.DeveloperEndpoint,
+		PermissionsRequired: []string{command.SERVERS_WRITE},
 	},
 
 	{
@@ -205,8 +211,9 @@ $ metalcloud-cli server import -format yaml -file ./input.yaml
 				"return_id":             c.FlagSet.Bool("return-id", false, "(Optional) Will print the ID of the created object. Useful for automating tasks."),
 			}
 		},
-		ExecuteFunc: serverImportBatchCmd,
-		Endpoint:    configuration.DeveloperEndpoint,
+		ExecuteFunc:         serverImportBatchCmd,
+		Endpoint:            configuration.DeveloperEndpoint,
+		PermissionsRequired: []string{command.SERVERS_WRITE},
 		Example: `
 This command is the batch version of server import. The file format uses "---" separator between records. For example:
 
@@ -271,8 +278,9 @@ interfaces:
 				"bmc_mac_password": c.FlagSet.String("pass", command.NilDefaultStr, "Server's BMC password"),
 			}
 		},
-		ExecuteFunc: serverDefaultCredentialsAddCmd,
-		Endpoint:    configuration.DeveloperEndpoint,
+		ExecuteFunc:         serverDefaultCredentialsAddCmd,
+		Endpoint:            configuration.DeveloperEndpoint,
+		PermissionsRequired: []string{command.SERVERS_WRITE},
 	},
 
 	{
@@ -289,8 +297,9 @@ interfaces:
 				"read_config_from_file":  c.FlagSet.String("file", command.NilDefaultStr, colors.Red("(Required)")+" Read raw object from file"),
 			}
 		},
-		ExecuteFunc: serverDefaultCredentialsAddBatchCmd,
-		Endpoint:    configuration.DeveloperEndpoint,
+		ExecuteFunc:         serverDefaultCredentialsAddBatchCmd,
+		Endpoint:            configuration.DeveloperEndpoint,
+		PermissionsRequired: []string{command.SERVERS_WRITE},
 		Example: `
 This command supports one or more credentials in a yaml file format. The file format uses "---" separator between records. For example:
 
@@ -324,8 +333,9 @@ password: notcalvin
 				"show_credentials": c.FlagSet.Bool("show-credentials", false, colors.Green("(Flag)")+" If set returns the servers' ZTP BMC credentials. (Slow for large queries)"),
 			}
 		},
-		ExecuteFunc: serversDefaultCredentialsListCmd,
-		Endpoint:    configuration.DeveloperEndpoint,
+		ExecuteFunc:         serversDefaultCredentialsListCmd,
+		Endpoint:            configuration.DeveloperEndpoint,
+		PermissionsRequired: []string{command.SERVERS_READ},
 	},
 	{
 		Description:  "Remove default server BMC credentials for zero touch registration",
@@ -340,8 +350,9 @@ password: notcalvin
 				"autoconfirm":            c.FlagSet.Bool("autoconfirm", false, colors.Green("(Flag)")+" If set it will assume action is confirmed"),
 			}
 		},
-		ExecuteFunc: serverDefaultCredentialsRemoveCmd,
-		Endpoint:    configuration.DeveloperEndpoint,
+		ExecuteFunc:         serverDefaultCredentialsRemoveCmd,
+		Endpoint:            configuration.DeveloperEndpoint,
+		PermissionsRequired: []string{command.SERVERS_WRITE},
 	},
 
 	{
@@ -365,8 +376,9 @@ password: notcalvin
 				"read_config_from_pipe": c.FlagSet.Bool("pipe", false, colors.Green("(Flag)")+" If set, read raw object from pipe instead of from a file. Either this flag or the --raw-config option must be used."),
 			}
 		},
-		ExecuteFunc: serverEditCmd,
-		Endpoint:    configuration.DeveloperEndpoint,
+		ExecuteFunc:         serverEditCmd,
+		Endpoint:            configuration.DeveloperEndpoint,
+		PermissionsRequired: []string{command.SERVERS_WRITE},
 	},
 	{
 		Description:  "Edit server's IPMI",
@@ -384,8 +396,9 @@ password: notcalvin
 				"ipmi_update_in_bmc": c.FlagSet.Bool("update-credentials-on-bmc", false, "If set, the server's BMC credentials on the actual server will also be updated."),
 			}
 		},
-		ExecuteFunc: serverEditIPMICmd,
-		Endpoint:    configuration.DeveloperEndpoint,
+		ExecuteFunc:         serverEditIPMICmd,
+		Endpoint:            configuration.DeveloperEndpoint,
+		PermissionsRequired: []string{command.SERVERS_WRITE},
 	},
 	{
 		Description:  "Change server power status",
@@ -401,8 +414,9 @@ password: notcalvin
 				"autoconfirm": c.FlagSet.Bool("autoconfirm", false, colors.Green("(Flag)")+" If set it will assume action is confirmed"),
 			}
 		},
-		ExecuteFunc: serverPowerControlCmd,
-		Endpoint:    configuration.DeveloperEndpoint,
+		ExecuteFunc:         serverPowerControlCmd,
+		Endpoint:            configuration.DeveloperEndpoint,
+		PermissionsRequired: []string{command.SERVERS_WRITE},
 	},
 	{
 		Description:  "Change server status",
@@ -418,8 +432,9 @@ password: notcalvin
 				"autoconfirm": c.FlagSet.Bool("autoconfirm", false, colors.Green("(Flag)")+" If set it will assume action is confirmed"),
 			}
 		},
-		ExecuteFunc: serverStatusSetCmd,
-		Endpoint:    configuration.DeveloperEndpoint,
+		ExecuteFunc:         serverStatusSetCmd,
+		Endpoint:            configuration.DeveloperEndpoint,
+		PermissionsRequired: []string{command.SERVERS_WRITE},
 	},
 	{
 		Description:  "Reregister server",
@@ -435,8 +450,9 @@ password: notcalvin
 				"autoconfirm": c.FlagSet.Bool("autoconfirm", false, colors.Green("(Flag)")+" If set it will assume action is confirmed"),
 			}
 		},
-		ExecuteFunc: serverReregisterCmd,
-		Endpoint:    configuration.DeveloperEndpoint,
+		ExecuteFunc:         serverReregisterCmd,
+		Endpoint:            configuration.DeveloperEndpoint,
+		PermissionsRequired: []string{command.SERVERS_WRITE},
 	},
 	{
 		Description:  "Change server server type",
@@ -452,8 +468,9 @@ password: notcalvin
 				"autoconfirm": c.FlagSet.Bool("autoconfirm", false, colors.Green("(Flag)")+" If set it will assume action is confirmed"),
 			}
 		},
-		ExecuteFunc: serverServerTypeSetCmd,
-		Endpoint:    configuration.DeveloperEndpoint,
+		ExecuteFunc:         serverServerTypeSetCmd,
+		Endpoint:            configuration.DeveloperEndpoint,
+		PermissionsRequired: []string{command.SERVERS_WRITE},
 	},
 	{
 		Description:  "Change server rack information",
@@ -471,8 +488,9 @@ password: notcalvin
 				"autoconfirm": c.FlagSet.Bool("autoconfirm", false, colors.Green("(Flag)")+" If set it will assume action is confirmed"),
 			}
 		},
-		ExecuteFunc: serverRackInfoSetCmd,
-		Endpoint:    configuration.DeveloperEndpoint,
+		ExecuteFunc:         serverRackInfoSetCmd,
+		Endpoint:            configuration.DeveloperEndpoint,
+		PermissionsRequired: []string{command.SERVERS_WRITE},
 	},
 	{
 		Description:  "Change server inventory information",
@@ -488,8 +506,9 @@ password: notcalvin
 				"autoconfirm":  c.FlagSet.Bool("autoconfirm", false, colors.Green("(Flag)")+" If set it will assume action is confirmed"),
 			}
 		},
-		ExecuteFunc: serverInventoryInfoSetCmd,
-		Endpoint:    configuration.DeveloperEndpoint,
+		ExecuteFunc:         serverInventoryInfoSetCmd,
+		Endpoint:            configuration.DeveloperEndpoint,
+		PermissionsRequired: []string{command.SERVERS_WRITE},
 	},
 	{
 		Description:  "Lists server interfaces.",
@@ -505,8 +524,9 @@ password: notcalvin
 				"raw":               c.FlagSet.Bool("raw", false, colors.Green("(Flag)")+" When set the return will be a full dump of the object. This is useful when copying configurations. Only works with json and yaml formats."),
 			}
 		},
-		ExecuteFunc: serverInterfacesListCmd,
-		Endpoint:    configuration.DeveloperEndpoint,
+		ExecuteFunc:         serverInterfacesListCmd,
+		Endpoint:            configuration.DeveloperEndpoint,
+		PermissionsRequired: []string{command.SERVERS_READ},
 	},
 }
 
@@ -570,7 +590,7 @@ func serverStatusSetCmd(c *command.Command, client metalcloud.MetalCloudClient) 
 
 	newStatus, ok := command.GetStringParamOk(c.Arguments["status"])
 	if !ok {
-		return "", fmt.Errorf("-status is required (one of: on, off, reset, soft)")
+		return "", fmt.Errorf("-status is required")
 	}
 
 	var server metalcloud.Server
@@ -1586,7 +1606,12 @@ func createInfrastructureIfDoesNotExist(obj *ServerCreateUnmanagedInternal, clie
 
 	//if user not provided we use the current user
 	if obj.UserEmail == nil {
-		currentUserEmail := client.GetUserEmail()
+		userId := client.GetUserID()
+		user, err := client.UserGet(userId)
+		if err != nil {
+			return 0, err
+		}
+		currentUserEmail := user.UserEmail
 		obj.UserEmail = &currentUserEmail
 	}
 

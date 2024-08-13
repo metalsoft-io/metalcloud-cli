@@ -62,8 +62,9 @@ var UserCmds = []command.Command{
 				"filter": c.FlagSet.String("filter", "*", "Properties to use when filtering, for example '+user_is_billable:0 +user_language=en'. Defaults to '*'. Valid filter properties are: "+strings.Join(userFilterProperties, ", ")+"."),
 			}
 		},
-		ExecuteFunc: userListCmd,
-		Endpoint:    configuration.DeveloperEndpoint,
+		ExecuteFunc:         userListCmd,
+		Endpoint:            configuration.DeveloperEndpoint,
+		PermissionsRequired: []string{command.USERS_AND_PERMISSIONS_READ},
 	},
 }
 

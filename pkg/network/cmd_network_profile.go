@@ -31,8 +31,9 @@ var NetworkProfileCmds = []command.Command{
 				"format":     c.FlagSet.String("format", "", "The output format. Supported values are 'json','csv','yaml'. The default format is human readable."),
 			}
 		},
-		ExecuteFunc: networkProfileListCmd,
-		Endpoint:    configuration.DeveloperEndpoint,
+		ExecuteFunc:         networkProfileListCmd,
+		Endpoint:            configuration.DeveloperEndpoint,
+		PermissionsRequired: []string{command.NETWORK_PROFILES_READ},
 	},
 	{
 		Description:  "Lists vlans of network profile.",
@@ -47,8 +48,9 @@ var NetworkProfileCmds = []command.Command{
 				"format":             c.FlagSet.String("format", "", "The output format. Supported values are 'json','csv','yaml'. The default format is human readable."),
 			}
 		},
-		ExecuteFunc: networkProfileVlansListCmd,
-		Endpoint:    configuration.DeveloperEndpoint,
+		ExecuteFunc:         networkProfileVlansListCmd,
+		Endpoint:            configuration.DeveloperEndpoint,
+		PermissionsRequired: []string{command.NETWORK_PROFILES_READ},
 	},
 	{
 		Description:  "Get network profile details.",
@@ -64,8 +66,9 @@ var NetworkProfileCmds = []command.Command{
 				"raw":                c.FlagSet.Bool("raw", false, colors.Green("(Flag)")+" If set returns the raw object serialized using specified format"),
 			}
 		},
-		ExecuteFunc: networkProfileGetCmd,
-		Endpoint:    configuration.DeveloperEndpoint,
+		ExecuteFunc:         networkProfileGetCmd,
+		Endpoint:            configuration.DeveloperEndpoint,
+		PermissionsRequired: []string{command.NETWORK_PROFILES_READ},
 	},
 	{
 		Description:  "Create network profile.",
@@ -83,8 +86,10 @@ var NetworkProfileCmds = []command.Command{
 				"return_id":             c.FlagSet.Bool("return-id", false, "Will print the ID of the created object. Useful for automating tasks."),
 			}
 		},
-		ExecuteFunc: networkProfileCreateCmd,
-		Endpoint:    configuration.DeveloperEndpoint,
+		ExecuteFunc:         networkProfileCreateCmd,
+		Endpoint:            configuration.DeveloperEndpoint,
+		PermissionsRequired: []string{command.NETWORK_PROFILES_WRITE},
+
 		Example: `
 #create file network-profile.yaml:
 label: internet01
@@ -125,8 +130,10 @@ More details available https://docs.metalsoft.io/en/latest/guides/adding_a_netwo
 				"autoconfirm":        c.FlagSet.Bool("autoconfirm", false, colors.Green("(Flag)")+" If set it will assume action is confirmed"),
 			}
 		},
-		ExecuteFunc: networkProfileDeleteCmd,
-		Endpoint:    configuration.DeveloperEndpoint,
+		ExecuteFunc:         networkProfileDeleteCmd,
+		AdminEndpoint:       configuration.DeveloperEndpoint,
+		Endpoint:            configuration.UserEndpoint,
+		PermissionsRequired: []string{command.NETWORK_PROFILES_WRITE},
 	},
 	{
 		Description:  "Add a network profile to an instance array.",
@@ -142,8 +149,9 @@ More details available https://docs.metalsoft.io/en/latest/guides/adding_a_netwo
 				"instance_array_id":  c.FlagSet.Int("ia", command.NilDefaultInt, colors.Red("(Required)")+" Instance array's id"),
 			}
 		},
-		ExecuteFunc: networkProfileAssociateToInstanceArrayCmd,
-		Endpoint:    configuration.DeveloperEndpoint,
+		ExecuteFunc:   networkProfileAssociateToInstanceArrayCmd,
+		AdminEndpoint: configuration.DeveloperEndpoint,
+		Endpoint:      configuration.ExtendedEndpoint,
 	},
 	{
 		Description:  "Remove network profile from an instance array.",
@@ -158,8 +166,9 @@ More details available https://docs.metalsoft.io/en/latest/guides/adding_a_netwo
 				"network_id":        c.FlagSet.String("net", command.NilDefaultStr, colors.Red("(Required)")+" Network's id"),
 			}
 		},
-		ExecuteFunc: networkProfileRemoveFromInstanceArrayCmd,
-		Endpoint:    configuration.DeveloperEndpoint,
+		ExecuteFunc:   networkProfileRemoveFromInstanceArrayCmd,
+		AdminEndpoint: configuration.DeveloperEndpoint,
+		Endpoint:      configuration.ExtendedEndpoint,
 	},
 }
 

@@ -29,8 +29,9 @@ var SwitchControllerCmds = []command.Command{
 				"return_id":             c.FlagSet.Bool("return-id", false, "Will print the ID of the created object. Useful for automating tasks."),
 			}
 		},
-		ExecuteFunc: switchControllerCreateCmd,
-		Endpoint:    configuration.DeveloperEndpoint,
+		ExecuteFunc:         switchControllerCreateCmd,
+		Endpoint:            configuration.DeveloperEndpoint,
+		PermissionsRequired: []string{command.SWITCHES_WRITE},
 		Example: `
 metalcloud-cli switch-controller create --format yaml --raw-config switch-controller.yaml --return-id
 
@@ -63,8 +64,9 @@ managementPassword: hello123
 				"show_credentials": c.FlagSet.Bool("show-credentials", false, colors.Green("(Flag)")+" If set returns the switch management credentials. (Slow for large queries)"),
 			}
 		},
-		ExecuteFunc: switchControllersListCmd,
-		Endpoint:    configuration.DeveloperEndpoint,
+		ExecuteFunc:         switchControllersListCmd,
+		Endpoint:            configuration.DeveloperEndpoint,
+		PermissionsRequired: []string{command.SWITCHES_READ},
 	},
 	{
 		Description:  "Edit switch controller configuration",
@@ -82,8 +84,9 @@ managementPassword: hello123
 				"return_id":             c.FlagSet.Bool("return-id", false, "Will print the ID of the created object. Useful for automating tasks."),
 			}
 		},
-		ExecuteFunc: switchControllerEditCmd,
-		Endpoint:    configuration.DeveloperEndpoint,
+		ExecuteFunc:         switchControllerEditCmd,
+		Endpoint:            configuration.DeveloperEndpoint,
+		PermissionsRequired: []string{command.SWITCHES_WRITE},
 		Example: `
 metalcloud-cli switch-controller update --id 18 --raw-config update_sw_ctrl.yaml --format yaml
 
@@ -118,8 +121,9 @@ fabricConfiguration:
 				"raw":                                        c.FlagSet.Bool("raw", false, colors.Green("(Flag)")+" When set the return will be a full dump of the object. This is useful when copying configurations. Only works with json and yaml formats."),
 			}
 		},
-		ExecuteFunc: switchControllerGetCmd,
-		Endpoint:    configuration.DeveloperEndpoint,
+		ExecuteFunc:         switchControllerGetCmd,
+		Endpoint:            configuration.DeveloperEndpoint,
+		PermissionsRequired: []string{command.SWITCHES_READ},
 	},
 	{
 		Description:  "Creates multiple network equipment controller records, based on the fabric configuration of the switch controller.",
@@ -133,8 +137,9 @@ fabricConfiguration:
 				"network_controller_id_or_identifier_string": c.FlagSet.String("id", command.NilDefaultStr, colors.Red("(Required)")+" Switch controller id or identifier string. "),
 			}
 		},
-		ExecuteFunc: switchControllerSyncCmd,
-		Endpoint:    configuration.DeveloperEndpoint,
+		ExecuteFunc:         switchControllerSyncCmd,
+		Endpoint:            configuration.DeveloperEndpoint,
+		PermissionsRequired: []string{command.SWITCHES_WRITE},
 	},
 	{
 		Description:  "Delete a switch controller.",
@@ -149,8 +154,9 @@ fabricConfiguration:
 				"autoconfirm": c.FlagSet.Bool("autoconfirm", false, colors.Green("(Flag)")+" If set it will assume action is confirmed"),
 			}
 		},
-		ExecuteFunc: switchControllerDeleteCmd,
-		Endpoint:    configuration.DeveloperEndpoint,
+		ExecuteFunc:         switchControllerDeleteCmd,
+		Endpoint:            configuration.DeveloperEndpoint,
+		PermissionsRequired: []string{command.SWITCHES_WRITE},
 	},
 	{
 		Description:  "Lists switches managed by a controller.",
@@ -166,8 +172,9 @@ fabricConfiguration:
 				"raw": c.FlagSet.Bool("raw", false, colors.Green("(Flag)")+" When set the return will be a full dump of the object. This is useful when copying configurations. Only works with json and yaml formats."),
 			}
 		},
-		ExecuteFunc: switchControllerSwitchesListCmd,
-		Endpoint:    configuration.DeveloperEndpoint,
+		ExecuteFunc:         switchControllerSwitchesListCmd,
+		Endpoint:            configuration.DeveloperEndpoint,
+		PermissionsRequired: []string{command.SWITCHES_READ},
 	},
 }
 

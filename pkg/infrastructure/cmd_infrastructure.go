@@ -403,7 +403,7 @@ type infrastructureConfirmAndDoFunc func(infraID int, c *command.Command, client
 // infrastructureConfirmAndDo asks for confirmation and executes the given function
 func infrastructureConfirmAndDo(operation string, c *command.Command, client metalcloud.MetalCloudClient, f infrastructureConfirmAndDoFunc) (string, error) {
 
-	val, err := command.GetParam(c, "infrastructure_id_or_label", "infra")
+	val, err := command.GetParam(c, "infrastructure_id_or_label", "id")
 	if err != nil {
 		return "", err
 	}

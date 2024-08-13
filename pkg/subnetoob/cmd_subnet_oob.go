@@ -28,8 +28,9 @@ var SubnetOOBCmds = []command.Command{
 				"datacenter": c.FlagSet.String("datacenter", command.NilDefaultStr, "Quick filter to restrict the results to show only the subnets of a datacenter."),
 			}
 		},
-		ExecuteFunc: subnetOOBListCmd,
-		Endpoint:    configuration.DeveloperEndpoint,
+		ExecuteFunc:         subnetOOBListCmd,
+		Endpoint:            configuration.DeveloperEndpoint,
+		PermissionsRequired: []string{command.SUBNETS_READ},
 	},
 	{
 		Description:  "Get a subnet OOB.",
@@ -45,8 +46,9 @@ var SubnetOOBCmds = []command.Command{
 				"raw":           c.FlagSet.Bool("raw", false, colors.Green("(Flag)")+" When set the return will be a full dump of the object. This is useful when copying configurations. Only works with json and yaml formats."),
 			}
 		},
-		ExecuteFunc: subnetOOBGetCmd,
-		Endpoint:    configuration.DeveloperEndpoint,
+		ExecuteFunc:         subnetOOBGetCmd,
+		Endpoint:            configuration.DeveloperEndpoint,
+		PermissionsRequired: []string{command.SUBNETS_READ},
 	},
 	{
 		Description:  "Create an oob subnet.",
@@ -63,8 +65,9 @@ var SubnetOOBCmds = []command.Command{
 				"return_id":             c.FlagSet.Bool("return-id", false, "Will print the ID of the created object. Useful for automating tasks."),
 			}
 		},
-		ExecuteFunc: subnetOOBCreateCmd,
-		Endpoint:    configuration.DeveloperEndpoint,
+		ExecuteFunc:         subnetOOBCreateCmd,
+		Endpoint:            configuration.DeveloperEndpoint,
+		PermissionsRequired: []string{command.SUBNETS_WRITE},
 	},
 	{
 		Description:  "Delete an OOB subnet.",
@@ -79,8 +82,9 @@ var SubnetOOBCmds = []command.Command{
 				"autoconfirm":   c.FlagSet.Bool("autoconfirm", false, colors.Green("(Flag)")+" If set it will assume action is confirmed"),
 			}
 		},
-		ExecuteFunc: subnetOOBDeleteCmd,
-		Endpoint:    configuration.DeveloperEndpoint,
+		ExecuteFunc:         subnetOOBDeleteCmd,
+		Endpoint:            configuration.DeveloperEndpoint,
+		PermissionsRequired: []string{command.SUBNETS_WRITE},
 	},
 }
 

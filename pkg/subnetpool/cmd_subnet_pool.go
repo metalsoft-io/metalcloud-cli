@@ -29,8 +29,10 @@ var SubnetPoolCmds = []command.Command{
 				"datacenter": c.FlagSet.String("datacenter", command.NilDefaultStr, "Quick filter to restrict the results to show only the subnets of a datacenter."),
 			}
 		},
-		ExecuteFunc: subnetPoolListCmd,
-		Endpoint:    configuration.DeveloperEndpoint,
+		ExecuteFunc:         subnetPoolListCmd,
+		AdminEndpoint:       configuration.DeveloperEndpoint,
+		Endpoint:            configuration.ExtendedEndpoint,
+		PermissionsRequired: []string{command.SUBNETS_READ},
 	},
 	{
 		Description:  "Get a subnet pool.",
@@ -46,8 +48,10 @@ var SubnetPoolCmds = []command.Command{
 				"raw":            c.FlagSet.Bool("raw", false, colors.Green("(Flag)")+" When set the return will be a full dump of the object. This is useful when copying configurations. Only works with json and yaml formats."),
 			}
 		},
-		ExecuteFunc: subnetPoolGetCmd,
-		Endpoint:    configuration.DeveloperEndpoint,
+		ExecuteFunc:         subnetPoolGetCmd,
+		AdminEndpoint:       configuration.DeveloperEndpoint,
+		Endpoint:            configuration.ExtendedEndpoint,
+		PermissionsRequired: []string{command.SUBNETS_READ},
 	},
 	{
 		Description:  "Create a subnet pool.",
@@ -64,8 +68,10 @@ var SubnetPoolCmds = []command.Command{
 				"return_id":             c.FlagSet.Bool("return-id", false, "Will print the ID of the created Useful for automating tasks."),
 			}
 		},
-		ExecuteFunc: subnetPoolCreateCmd,
-		Endpoint:    configuration.DeveloperEndpoint,
+		ExecuteFunc:         subnetPoolCreateCmd,
+		AdminEndpoint:       configuration.DeveloperEndpoint,
+		Endpoint:            configuration.ExtendedEndpoint,
+		PermissionsRequired: []string{command.SUBNETS_WRITE},
 	},
 	{
 		Description:  "Delete a subnet pool.",
@@ -80,8 +86,10 @@ var SubnetPoolCmds = []command.Command{
 				"autoconfirm":    c.FlagSet.Bool("autoconfirm", false, colors.Green("(Flag)")+" If set it will assume action is confirmed"),
 			}
 		},
-		ExecuteFunc: subnetPoolDeleteCmd,
-		Endpoint:    configuration.DeveloperEndpoint,
+		ExecuteFunc:         subnetPoolDeleteCmd,
+		AdminEndpoint:       configuration.DeveloperEndpoint,
+		Endpoint:            configuration.ExtendedEndpoint,
+		PermissionsRequired: []string{command.SUBNETS_WRITE},
 	},
 }
 

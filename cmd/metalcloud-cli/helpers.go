@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"os"
 	"regexp"
+	"slices"
 	"strconv"
 	"strings"
 	"time"
@@ -53,10 +54,6 @@ func initClients() (map[string]metalcloud.MetalCloudClient, error) {
 
 	for clientName, suffix := range endpointSuffixes {
 
-		if (clientName == configuration.DeveloperEndpoint || clientName == configuration.ExtendedEndpoint) && !configuration.IsAdmin() {
-			continue
-		}
-
 		client, err := initClient(suffix)
 		if err != nil {
 			return nil, err
@@ -64,6 +61,20 @@ func initClients() (map[string]metalcloud.MetalCloudClient, error) {
 		clients[clientName] = client
 	}
 	return clients, nil
+}
+
+func getUser(userId int, client metalcloud.MetalCloudClient) (*metalcloud.User, error) {
+	return client.UserGet(userId)
+}
+
+func getUserPermissions(userId int, client metalcloud.MetalCloudClient) ([]string, error) {
+
+	user, err := getUser(userId, client)
+	if err != nil {
+		return []string{}, err
+	}
+
+	return (*user).UserPermissions, nil
 }
 
 func getUserIdFromAPIKey(apiKey string) (int, error) {
@@ -78,10 +89,6 @@ func initClient(endpointSuffix string) (metalcloud.MetalCloudClient, error) {
 
 	if v := os.Getenv("METALCLOUD_API_KEY"); v == "" {
 		return nil, fmt.Errorf("METALCLOUD_API_KEY must be set")
-	}
-
-	if v := os.Getenv("METALCLOUD_USER_EMAIL"); v == "" {
-		return nil, fmt.Errorf("METALCLOUD_USER_EMAIL must be set")
 	}
 
 	apiKey := os.Getenv("METALCLOUD_API_KEY")
@@ -121,7 +128,7 @@ func initClient(endpointSuffix string) (metalcloud.MetalCloudClient, error) {
 		Endpoint:             endpoint,
 		LoggingEnabled:       isLoggingEnabled(),
 		InsecureSkipVerify:   insecureSkipVerify,
-		User:                 os.Getenv("METALCLOUD_USER_EMAIL"),
+		User:                 "",
 		UserID:               userId,
 		AuthenticationMethod: metalcloud.AuthMethodBearer,
 		Timeout:              timeout,
@@ -130,9 +137,9 @@ func initClient(endpointSuffix string) (metalcloud.MetalCloudClient, error) {
 	return metalcloud.GetMetalcloudClientWithOptions(options)
 }
 
-func getHelp(clients map[string]metalcloud.MetalCloudClient) string {
+func getHelp(clients map[string]metalcloud.MetalCloudClient, permissions []string) string {
 	var sb strings.Builder
-	cmds := getCommands(clients)
+	cmds := getCommands(clients, permissions)
 	for _, c := range cmds {
 		c.InitFunc(&c)
 	}
@@ -159,7 +166,7 @@ func validateAPIKey(apiKey string) error {
 	return nil
 }
 
-func getCommands(clients map[string]metalcloud.MetalCloudClient) []command.Command {
+func getCommands(clients map[string]metalcloud.MetalCloudClient, permissions []string) []command.Command {
 	commands := [][]command.Command{
 		apply.ApplyCmds,
 		custom_isos.CustomISOCmds,
@@ -198,7 +205,7 @@ func getCommands(clients map[string]metalcloud.MetalCloudClient) []command.Comma
 
 	filteredCommands := []command.Command{}
 	for _, commandSet := range commands {
-		commands := fitlerCommandSet(commandSet, clients)
+		commands := fitlerCommandSet(commandSet, clients, permissions)
 		filteredCommands = append(filteredCommands, commands...)
 	}
 
@@ -206,10 +213,11 @@ func getCommands(clients map[string]metalcloud.MetalCloudClient) []command.Comma
 }
 
 // fitlerCommandSet Filters commands based on endpoint availability for client
-func fitlerCommandSet(commandSet []command.Command, clients map[string]metalcloud.MetalCloudClient) []command.Command {
+func fitlerCommandSet(commandSet []command.Command, clients map[string]metalcloud.MetalCloudClient, permissions []string) []command.Command {
 	filteredCommands := []command.Command{}
 	for _, command := range commandSet {
-		if endpointAvailableForCommand(command, clients) && commandVisibleForUser(command) {
+		if endpointAvailableForCommand(command, clients, permissions) && commandVisibleForUser(command, permissions) {
+
 			filteredCommands = append(filteredCommands, command)
 		}
 	}
@@ -217,21 +225,29 @@ func fitlerCommandSet(commandSet []command.Command, clients map[string]metalclou
 }
 
 // endpointAvailableForCommand Checks if the instantiated endpoint clients include the one needed for the command
-func endpointAvailableForCommand(command command.Command, clients map[string]metalcloud.MetalCloudClient) bool {
-	if configuration.IsAdmin() {
-		return clients[command.AdminEndpoint] != nil
+func endpointAvailableForCommand(c command.Command, clients map[string]metalcloud.MetalCloudClient, permissions []string) bool {
+	if slices.Contains(permissions, command.ADMIN_ACCESS) {
+
+		return clients[c.AdminEndpoint] != nil
 	}
-	return clients[command.Endpoint] != nil
+	return clients[c.Endpoint] != nil
 }
 
 // commandVisibleForUser returns true if the current user (which could be admin or not) has the ability to see the respective command
-func commandVisibleForUser(command command.Command) bool {
-	if command.UserOnly && configuration.IsAdmin() {
+func commandVisibleForUser(c command.Command, permissions []string) bool {
+
+	if c.UserOnly && slices.Contains(permissions, command.ADMIN_ACCESS) {
 		return false
 	}
 
-	if command.AdminOnly && !configuration.IsAdmin() {
+	if c.AdminOnly && !slices.Contains(permissions, command.ADMIN_ACCESS) {
 		return false
+	}
+
+	for _, permission := range c.PermissionsRequired {
+		if !slices.Contains(permissions, permission) {
+			return false
+		}
 	}
 
 	return true

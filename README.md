@@ -48,7 +48,6 @@ Configure credentials as environment variables:
 ```bash
 export METALCLOUD_API_KEY="<your key>"
 export METALCLOUD_ENDPOINT="https://api.bigstep.com"
-export METALCLOUD_USER_EMAIL="<your email>"
 ```
 
 ### Getting a list of supported commands
@@ -168,10 +167,7 @@ Some commands depend on various permissions. For instance you cannot access anot
 
 ### Admin commands
 
-To enable admin commands set the following environment variable:
-```bash
-export METALCLOUD_ADMIN="true"
-```
+If the user has the "admin_view" permission, additional commands will be visible. 
 
 ## Debugging information
 

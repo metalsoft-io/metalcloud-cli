@@ -21,10 +21,6 @@ const (
 	defaultSSHPort = "22"
 )
 
-func IsAdmin() bool {
-	return os.Getenv("METALCLOUD_ADMIN") == "true"
-}
-
 func ReadInputFromPipe() ([]byte, error) {
 
 	reader := bufio.NewReader(GetStdin())
@@ -101,11 +97,6 @@ func SetConsoleIOChannel(in io.Reader, out io.Writer) {
 	channel := GetConsoleIOChannel()
 	channel.Stdin = in
 	channel.Stdout = out
-}
-
-// GetUserEmail returns the API key's owner
-func GetUserEmail() string {
-	return os.Getenv("METALCLOUD_USER_EMAIL")
 }
 
 func GetFirmwareRepositoryURL() (string, error) {

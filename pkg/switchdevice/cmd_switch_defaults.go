@@ -33,8 +33,9 @@ var SwitchDefaultsCmds = []command.Command{
 				"raw":             c.FlagSet.Bool("raw", false, colors.Green("(Flag)")+" When set the return will be a full dump of the object. This is useful when copying configurations. Only works with json and yaml formats."),
 			}
 		},
-		ExecuteFunc: switchDefaultsListCmd,
-		Endpoint:    configuration.DeveloperEndpoint,
+		ExecuteFunc:         switchDefaultsListCmd,
+		Endpoint:            configuration.DeveloperEndpoint,
+		PermissionsRequired: []string{command.SWITCHES_READ},
 	},
 	{
 		Description:  "Create switch defaults.",
@@ -48,8 +49,9 @@ var SwitchDefaultsCmds = []command.Command{
 				"read_config_from_file": c.FlagSet.String("raw-config", command.NilDefaultStr, colors.Red("(Required)")+" Read configuration from a yaml file."),
 			}
 		},
-		ExecuteFunc: switchDefaultsCreateCmd,
-		Endpoint:    configuration.DeveloperEndpoint,
+		ExecuteFunc:         switchDefaultsCreateCmd,
+		Endpoint:            configuration.DeveloperEndpoint,
+		PermissionsRequired: []string{command.SWITCHES_WRITE},
 		Example: `
 This command supports one or more switch defaults records in a yaml file format. The file format uses "---" separator between records. Here are 3 examples. The first one contains only the required properties.
 
@@ -117,8 +119,9 @@ customVariables:
 				"switch_defaults_ids": c.FlagSet.String("ids", command.NilDefaultStr, colors.Red("(Required)")+" Comma separated list of switch defaults ids to be removed."),
 			}
 		},
-		ExecuteFunc: switchDefaultsDeleteCmd,
-		Endpoint:    configuration.DeveloperEndpoint,
+		ExecuteFunc:         switchDefaultsDeleteCmd,
+		Endpoint:            configuration.DeveloperEndpoint,
+		PermissionsRequired: []string{command.SWITCHES_WRITE},
 		Example: `
 metalcloud-cli switch-defaults delete -ids "834, 835, 836"
 `,
