@@ -1841,7 +1841,10 @@ func createIsoImageAsset(c *command.Command, repoTemplate RepoTemplate, assets *
 		return err
 	}
 
-	assetURL := "https://" + imageRepositoryHostname + isoPath
+	// assetURL := "https://" + imageRepositoryHostname + isoPath
+
+	// Until we enable ISO upload, the asset URL will be the source ISO path that is provided by the 'source-iso' parameter
+	assetURL := imagePath
 
 	templateType := assetTemplateTypeSimple
 	// Only change templateType if imagePath(source-iso) starts with http

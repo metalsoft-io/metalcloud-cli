@@ -30,6 +30,7 @@ var InstanceCmds = []command.Command{
 		},
 		ExecuteFunc:   instancePowerControlCmd,
 		AdminEndpoint: configuration.DeveloperEndpoint,
+		Endpoint:      configuration.UserEndpoint,
 	},
 
 	{
@@ -49,6 +50,7 @@ var InstanceCmds = []command.Command{
 		},
 		ExecuteFunc:   instanceGetCmd,
 		AdminEndpoint: configuration.DeveloperEndpoint,
+		Endpoint:      configuration.UserEndpoint,
 	},
 	{
 		Description:  "Replace an instance's associated server. (EXPERIMENTAL)",
@@ -83,7 +85,7 @@ var InstanceCmds = []command.Command{
 			}
 		},
 		ExecuteFunc:   instanceEditCmd,
-		Endpoint:      configuration.DeveloperEndpoint,
+		Endpoint:      configuration.UserEndpoint,
 		AdminEndpoint: configuration.DeveloperEndpoint,
 	},
 }
