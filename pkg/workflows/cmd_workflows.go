@@ -27,10 +27,9 @@ var WorkflowCmds = []command.Command{
 				"format": c.FlagSet.String("format", command.NilDefaultStr, "The output format. Supported values are 'json','csv','yaml'. The default format is human readable."),
 			}
 		},
-		ExecuteFunc:         workflowsListCmd,
-		Endpoint:            configuration.ExtendedEndpoint,
-		AdminEndpoint:       configuration.DeveloperEndpoint,
-		PermissionsRequired: []string{command.WORKFLOWS_READ},
+		ExecuteFunc:   workflowsListCmd,
+		Endpoint:      configuration.ExtendedEndpoint,
+		AdminEndpoint: configuration.DeveloperEndpoint,
 	},
 	{
 		Description:  "Get workflow details.",
@@ -45,10 +44,9 @@ var WorkflowCmds = []command.Command{
 				"format":               c.FlagSet.String("format", command.NilDefaultStr, "The output format. Supported values are 'json','csv','yaml'. The default format is human readable."),
 			}
 		},
-		ExecuteFunc:         workflowGetCmd,
-		Endpoint:            configuration.ExtendedEndpoint,
-		AdminEndpoint:       configuration.DeveloperEndpoint,
-		PermissionsRequired: []string{command.WORKFLOWS_READ},
+		ExecuteFunc:   workflowGetCmd,
+		Endpoint:      configuration.ExtendedEndpoint,
+		AdminEndpoint: configuration.DeveloperEndpoint,
 	},
 	{
 		Description:  "Create a workflow",
@@ -68,9 +66,8 @@ var WorkflowCmds = []command.Command{
 				"return_id":           c.FlagSet.Bool("return-id", false, colors.Green("(Flag)")+" If set will print the ID of the created workflow. Useful for automating tasks."),
 			}
 		},
-		ExecuteFunc:         workflowCreateCmd,
-		Endpoint:            configuration.ExtendedEndpoint,
-		PermissionsRequired: []string{command.WORKFLOWS_WRITE},
+		ExecuteFunc: workflowCreateCmd,
+		Endpoint:    configuration.ExtendedEndpoint,
 	},
 	{
 		Description:  "Delete a stage from a workflow.",
@@ -85,10 +82,9 @@ var WorkflowCmds = []command.Command{
 				"autoconfirm":       c.FlagSet.Bool("autoconfirm", false, colors.Green("(Flag)")+" If set it will assume action is confirmed"),
 			}
 		},
-		ExecuteFunc:         workflowDeleteStageCmd,
-		Endpoint:            configuration.ExtendedEndpoint,
-		AdminEndpoint:       configuration.DeveloperEndpoint,
-		PermissionsRequired: []string{command.WORKFLOWS_WRITE},
+		ExecuteFunc:   workflowDeleteStageCmd,
+		Endpoint:      configuration.ExtendedEndpoint,
+		AdminEndpoint: configuration.DeveloperEndpoint,
 	},
 }
 
