@@ -54,8 +54,9 @@ var OsAssetsCmds = []command.Command{
 				"return_id":              c.FlagSet.Bool("return-id", false, colors.Green("(Flag)")+" If set will print the ID of the created infrastructure. Useful for automating tasks."),
 			}
 		},
-		ExecuteFunc: AssetCreateCmd,
-		Endpoint:    configuration.DeveloperEndpoint,
+		ExecuteFunc:   AssetCreateCmd,
+		AdminEndpoint: configuration.DeveloperEndpoint,
+		Endpoint:      configuration.ExtendedEndpoint,
 	},
 	{
 		Description:  "Get asset contents",
