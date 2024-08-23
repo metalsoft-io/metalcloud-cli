@@ -249,7 +249,7 @@ func processDellBinaries(configFile rawConfigFile, dellManifest manifest, catalo
 
 	for dellServerType, msServerTypes := range supportedServerTypes {
 		for _, msServerType := range msServerTypes {
-			if !slices.Contains[string](metalsoftServerTypes, msServerType) {
+			if !slices.Contains(metalsoftServerTypes, msServerType) {
 				metalsoftServerTypes = append(metalsoftServerTypes, msServerType)
 			}
 		}
@@ -302,7 +302,7 @@ func processDellBinaries(configFile rawConfigFile, dellManifest manifest, catalo
 		validBinary := false
 		for _, supportedSystem := range supportedSystems {
 			systemName = supportedSystem["brandName"] + " " + supportedSystem["modelName"]
-			if !validBinary && slices.Contains[string](dellServerTypes, systemName) {
+			if !validBinary && slices.Contains(dellServerTypes, systemName) {
 				validBinary = true
 				break
 			}
@@ -396,11 +396,11 @@ func processDellBinaries(configFile rawConfigFile, dellManifest manifest, catalo
 
 		firmwareBinaryCollection = append(firmwareBinaryCollection, &firmwareBinary)
 
-		if !slices.Contains[string](catalog.ServerTypesSupported, systemName) {
+		if !slices.Contains(catalog.ServerTypesSupported, systemName) {
 			catalog.ServerTypesSupported = append(catalog.ServerTypesSupported, systemName)
 
 			for _, supportedServerType := range supportedServerTypes[systemName] {
-				if !slices.Contains[string](catalog.MetalSoftServerTypesSupported, supportedServerType) {
+				if !slices.Contains(catalog.MetalSoftServerTypesSupported, supportedServerType) {
 					catalog.MetalSoftServerTypesSupported = append(catalog.MetalSoftServerTypesSupported, supportedServerType)
 				}
 			}
