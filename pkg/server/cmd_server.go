@@ -1698,7 +1698,7 @@ func addServerToInfrastructure(serverID int, infrastructureIDOrLabel *string, ob
 
 	serverTypeID := server.ServerTypeID
 
-	instanceArrayLabel := server.ServerSerialNumber
+	instanceArrayLabel := "sn-" + server.ServerSerialNumber
 
 	if obj != nil && *obj.InstanceArrayLabel != "" {
 		instanceArrayLabel = *obj.InstanceArrayLabel
