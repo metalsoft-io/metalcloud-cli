@@ -3,7 +3,7 @@
 ![Build](https://github.com/metalsoft-io/metalcloud-cli/actions/workflows/build.yml/badge.svg)
 [![Coverage Status](https://coveralls.io/repos/github/bigstepinc/metalcloud-cli/badge.svg?branch=master)](https://coveralls.io/github/bigstepinc/metalcloud-cli?branch=master)
 
-This tool allows the manipulation of all Bigstep Metal Cloud elements via the command line.
+This tool allows the manipulation of all Metal Cloud elements via the command line.
 
 ![metalcloud-cli](https://bigstep.com/assets/images/blog/2019/metalcloud-cli-animated.gif)
 
@@ -47,7 +47,7 @@ Copy the api key. It should be of the form <number>:<letters>
 Configure credentials as environment variables:
 ```bash
 export METALCLOUD_API_KEY="<your key>"
-export METALCLOUD_ENDPOINT="https://api.bigstep.com"
+export METALCLOUD_ENDPOINT="https://metal.mycompany.com"
 ```
 
 ### Getting a list of supported commands
