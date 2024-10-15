@@ -11,6 +11,7 @@ import (
 
 	gomock "github.com/golang/mock/gomock"
 	metalcloud "github.com/metalsoft-io/metal-cloud-sdk-go/v3"
+	metalcloud2 "github.com/metalsoft-io/metal-cloud-sdk2-go"
 	mock_metalcloud "github.com/metalsoft-io/metalcloud-cli/helpers"
 	"github.com/metalsoft-io/metalcloud-cli/internal/configuration"
 	. "github.com/onsi/gomega"
@@ -107,12 +108,13 @@ func TestInitClients(t *testing.T) {
 	os.Setenv("METALCLOUD_API_KEY", fmt.Sprintf("%d:%s", rand.Intn(100), RandStringBytes(63)))
 	os.Setenv("METALCLOUD_ENDPOINT", "http://test1/1")
 
-	clients, err := initClients()
+	clients, client2, err := initClients()
 	Expect(err).To(BeNil())
 	Expect(clients).To(Not(BeNil()))
 	Expect(clients[configuration.UserEndpoint]).To(Not(BeNil()))
 	Expect(clients[configuration.ExtendedEndpoint]).To(Not(BeNil()))
 	Expect(clients[configuration.DeveloperEndpoint]).To(Not(BeNil()))
+	Expect(client2).To(Not(BeNil()))
 
 	//put back the env values
 	for k, v := range currentEnvVals {
@@ -156,17 +158,20 @@ func TestExecuteCommand(t *testing.T) {
 		"":                         client,
 	}
 
+	client2 := metalcloud2.NewAPIClient(metalcloud2.NewConfiguration())
+	client2.ChangeBasePath("http://test1/1")
+
 	permissions := []string{}
 
 	//check with wrong commands first, should return err
-	err := command.ExecuteCommand([]string{"", "test", "test"}, commands, clients, permissions)
+	err := command.ExecuteCommand([]string{"", "test", "test"}, commands, clients, client2, permissions)
 	Expect(err).NotTo(BeNil())
 
 	execFuncExecuted = false
 	initFuncExecuted = false
 
 	//should execute stuff help and not return error
-	err = command.ExecuteCommand([]string{"", "s", "p"}, commands, clients, permissions)
+	err = command.ExecuteCommand([]string{"", "s", "p"}, commands, clients, client2, permissions)
 	Expect(err).To(BeNil())
 	Expect(execFuncExecuted).To(BeTrue())
 	Expect(initFuncExecuted).To(BeTrue())
@@ -175,7 +180,7 @@ func TestExecuteCommand(t *testing.T) {
 	initFuncExecuted = false
 
 	//should execute stuff help and not return error
-	err = command.ExecuteCommand([]string{"", "tests", "testp"}, commands, clients, permissions)
+	err = command.ExecuteCommand([]string{"", "tests", "testp"}, commands, clients, client2, permissions)
 	Expect(err).To(BeNil())
 	Expect(execFuncExecuted).To(BeTrue())
 	Expect(initFuncExecuted).To(BeTrue())
@@ -183,7 +188,7 @@ func TestExecuteCommand(t *testing.T) {
 
 	//should refuse to execute call on unset endpoint
 	commands[0].Endpoint = configuration.DeveloperEndpoint
-	err = command.ExecuteCommand([]string{"", "tests", "testp"}, commands, clients, permissions)
+	err = command.ExecuteCommand([]string{"", "tests", "testp"}, commands, clients, client2, permissions)
 	Expect(err).NotTo(BeNil())
 
 	//check with correct endpoint
@@ -193,12 +198,12 @@ func TestExecuteCommand(t *testing.T) {
 	//should execute the call if endoint set, on the right endpoint
 	clients[configuration.DeveloperEndpoint] = devClient
 
-	err = command.ExecuteCommand([]string{"", "tests", "testp"}, commands, clients, permissions)
+	err = command.ExecuteCommand([]string{"", "tests", "testp"}, commands, clients, client2, permissions)
 	Expect(err).To(BeNil())
 	Expect(execFuncExecutedOnDeveloperEndpoint).To(BeTrue())
 
 	//should show list of possible predicates if correct subject provided
-	err = command.ExecuteCommand([]string{"", "tests"}, commands, clients, permissions)
+	err = command.ExecuteCommand([]string{"", "tests"}, commands, clients, client2, permissions)
 	Expect(err).NotTo(BeNil())
 	Expect(err.Error()).To(ContainSubstring("testp"))
 	Expect(execFuncExecuted).To(BeTrue())
@@ -211,7 +216,7 @@ func TestExecuteCommand(t *testing.T) {
 	// but subject has nil predicate
 	commands[0].Predicate = command.NilDefaultStr
 	devClient.EXPECT().GetEndpoint().Return("developer").Times(1)
-	err = command.ExecuteCommand([]string{"", "tests"}, commands, clients, permissions)
+	err = command.ExecuteCommand([]string{"", "tests"}, commands, clients, client2, permissions)
 	Expect(err).To(BeNil())
 	Expect(execFuncExecuted).To(BeTrue())
 	Expect(initFuncExecuted).To(BeTrue())
@@ -226,7 +231,7 @@ func TestExecuteCommand(t *testing.T) {
 
 	devClient.EXPECT().GetEndpoint().Return("developer").Times(1)
 
-	err = command.ExecuteCommand([]string{"", "tests", "testp"}, commands, clients, permissions)
+	err = command.ExecuteCommand([]string{"", "tests", "testp"}, commands, clients, client2, permissions)
 	Expect(err).To(BeNil())
 	Expect(execFuncExecuted).To(BeTrue())
 	Expect(initFuncExecuted).To(BeTrue())
@@ -245,7 +250,7 @@ func TestExecuteCommand(t *testing.T) {
 	commands[0].AdminEndpoint = ""
 	commands[0].Endpoint = configuration.UserEndpoint
 
-	err = command.ExecuteCommand([]string{"", "tests", "testp"}, commands, clients, permissions)
+	err = command.ExecuteCommand([]string{"", "tests", "testp"}, commands, clients, client2, permissions)
 	Expect(err).To(BeNil())
 	Expect(execFuncExecuted).To(BeTrue())
 	Expect(initFuncExecuted).To(BeTrue())

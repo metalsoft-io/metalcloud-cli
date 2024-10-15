@@ -10,6 +10,7 @@ import (
 	"time"
 
 	metalcloud "github.com/metalsoft-io/metal-cloud-sdk-go/v3"
+	metalcloud2 "github.com/metalsoft-io/metal-cloud-sdk2-go"
 	"github.com/metalsoft-io/metalcloud-cli/internal/command"
 	"github.com/metalsoft-io/metalcloud-cli/internal/configuration"
 
@@ -42,8 +43,7 @@ import (
 	"github.com/metalsoft-io/metalcloud-cli/pkg/workflows"
 )
 
-func initClients() (map[string]metalcloud.MetalCloudClient, error) {
-
+func initClients() (map[string]metalcloud.MetalCloudClient, *metalcloud2.APIClient, error) {
 	clients := map[string]metalcloud.MetalCloudClient{}
 	endpointSuffixes := map[string]string{
 		configuration.DeveloperEndpoint: "/api/developer/developer",
@@ -53,14 +53,22 @@ func initClients() (map[string]metalcloud.MetalCloudClient, error) {
 	}
 
 	for clientName, suffix := range endpointSuffixes {
-
 		client, err := initClient(suffix)
 		if err != nil {
-			return nil, err
+			return nil, nil, err
 		}
+
 		clients[clientName] = client
 	}
-	return clients, nil
+
+	config, err := clientConfiguration()
+	if err != nil {
+		return nil, nil, err
+	}
+
+	client2 := metalcloud2.NewAPIClient(config)
+
+	return clients, client2, nil
 }
 
 func getUser(userId int, client metalcloud.MetalCloudClient) (*metalcloud.User, error) {
@@ -135,6 +143,28 @@ func initClient(endpointSuffix string) (metalcloud.MetalCloudClient, error) {
 	}
 
 	return metalcloud.GetMetalcloudClientWithOptions(options)
+}
+
+func clientConfiguration() (*metalcloud2.Configuration, error) {
+	basePath := os.Getenv("METALCLOUD_ENDPOINT")
+	if basePath == "" {
+		return nil, fmt.Errorf("METALCLOUD_ENDPOINT must be set")
+	}
+
+	apiKey := os.Getenv("METALCLOUD_API_KEY")
+	if apiKey == "" {
+		return nil, fmt.Errorf("METALCLOUD_API_KEY must be set")
+	}
+
+	config := metalcloud2.NewConfiguration()
+
+	config.BasePath = basePath
+	config.UserAgent = "MetalCloud CLI"
+	config.AddDefaultHeader("Content-Type", "application/json")
+	config.AddDefaultHeader("Accept", "application/json")
+	config.AddDefaultHeader("Authorization", "Bearer "+apiKey)
+
+	return config, nil
 }
 
 func getHelp(clients map[string]metalcloud.MetalCloudClient, permissions []string) string {
