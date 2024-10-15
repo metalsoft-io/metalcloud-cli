@@ -16,8 +16,7 @@ import (
 func main() {
 	configuration.SetConsoleIOChannel(os.Stdin, os.Stdout)
 
-	clients, err := initClients()
-
+	clients, client2, err := initClients()
 	if err != nil {
 		fmt.Fprintf(configuration.GetStdout(), "Could not initialize metal cloud client %s\n", err)
 		os.Exit(-1)
@@ -46,7 +45,7 @@ func main() {
 
 	commands := getCommands(clients, permissions)
 
-	err = command.ExecuteCommand(os.Args, commands, clients, permissions)
+	err = command.ExecuteCommand(os.Args, commands, clients, client2, permissions)
 
 	if err != nil {
 		fmt.Fprintf(configuration.GetStdout(), "%s\n", err)

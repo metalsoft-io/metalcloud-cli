@@ -19,6 +19,7 @@ import (
 
 	"github.com/atomicgo/cursor"
 	metalcloud "github.com/metalsoft-io/metal-cloud-sdk-go/v3"
+	metalcloud2 "github.com/metalsoft-io/metal-cloud-sdk2-go"
 	. "github.com/onsi/gomega"
 	"gopkg.in/yaml.v3"
 
@@ -30,6 +31,7 @@ import (
 
 // CommandExecuteFunc a function type a command can take for executing the content
 type CommandExecuteFunc = func(c *Command, client metalcloud.MetalCloudClient) (string, error)
+type CommandExecuteFunc2 = func(c *Command, client *metalcloud2.APIClient) (string, error)
 
 // CommandInitFunc a function type a command can take for initializing the command
 type CommandInitFunc = func(c *Command)
@@ -45,6 +47,7 @@ type Command struct {
 	Arguments           map[string]interface{}
 	InitFunc            CommandInitFunc
 	ExecuteFunc         CommandExecuteFunc
+	ExecuteFunc2        CommandExecuteFunc2
 	Endpoint            string
 	Example             string
 	UserOnly            bool   //set if command is to be visible only to users regardless of endpoint
@@ -438,7 +441,7 @@ func helpMessage(err error, subject string, predicate string) error {
 	return fmt.Errorf("%s Use '%s -h' for syntax help", err, subject)
 }
 
-func ExecuteCommand(args []string, commands []Command, clients map[string]metalcloud.MetalCloudClient, permissions []string) error {
+func ExecuteCommand(args []string, commands []Command, clients map[string]metalcloud.MetalCloudClient, client2 *metalcloud2.APIClient, permissions []string) error {
 	subject, predicate, count := validateArguments(args)
 
 	if count == 1 {
@@ -508,12 +511,17 @@ func ExecuteCommand(args []string, commands []Command, clients map[string]metalc
 		endpoint = cmd.AdminEndpoint
 	}
 
-	client, ok := clients[endpoint]
-	if !ok {
-		return fmt.Errorf("Client not set for endpoint %s on command %s %s", endpoint, subject, predicate)
-	}
+	var ret string
+	if cmd.ExecuteFunc2 != nil {
+		ret, err = cmd.ExecuteFunc2(cmd, client2)
+	} else {
+		client, ok := clients[endpoint]
+		if !ok {
+			return fmt.Errorf("Client not set for endpoint %s on command %s %s", endpoint, subject, predicate)
+		}
 
-	ret, err := cmd.ExecuteFunc(cmd, client)
+		ret, err = cmd.ExecuteFunc(cmd, client)
+	}
 	if err != nil {
 		return helpMessage(err, subject, predicate)
 	}
