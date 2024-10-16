@@ -5,12 +5,11 @@ import (
 	"encoding/json"
 	"flag"
 	"fmt"
-	"os"
-	"strings"
 
 	metalcloud2 "github.com/metalsoft-io/metal-cloud-sdk2-go"
 	"github.com/metalsoft-io/metalcloud-cli/internal/colors"
 	"github.com/metalsoft-io/metalcloud-cli/internal/command"
+	"github.com/metalsoft-io/metalcloud-cli/pkg/utils"
 	"github.com/metalsoft-io/tableformatter"
 	"gopkg.in/yaml.v3"
 )
@@ -160,7 +159,7 @@ func vmPoolListCmd(ctx context.Context, c *command.Command, client *metalcloud2.
 	default:
 		table := tableformatter.Table{
 			Data:   formattedData,
-			Schema: fieldSchema(showCredentials),
+			Schema: vmPoolFieldSchema(showCredentials),
 		}
 
 		title := fmt.Sprintf("VM pools: %d active %d maintenance",
@@ -216,7 +215,7 @@ func vmPoolGetCmd(ctx context.Context, c *command.Command, client *metalcloud2.A
 
 		table := tableformatter.Table{
 			Data:   formattedData,
-			Schema: fieldSchema(showCredentials),
+			Schema: vmPoolFieldSchema(showCredentials),
 		}
 
 		return table.RenderTable("VM pool", "", format)
@@ -270,29 +269,16 @@ func vmPoolDeleteCmd(ctx context.Context, c *command.Command, client *metalcloud
 		return "", fmt.Errorf("-id is required")
 	}
 
-	confirm := command.GetBoolParam(c.Arguments["autoconfirm"])
-
-	if !confirm {
-		confirmationMessage := fmt.Sprintf("Deleting VM pool #%d.  Are you sure? Type \"yes\" to continue:", vmPoolId)
-
-		//this is simply so that we don't output a text on the command line under go test
-		if strings.HasSuffix(os.Args[0], ".test") {
-			confirmationMessage = ""
-		}
-
-		var err error
-		confirm, err = command.RequestConfirmation(confirmationMessage)
-		if err != nil {
-			return "", err
-		}
-
+	confirmed, err := utils.GetConfirmation(command.GetBoolParam(c.Arguments["autoconfirm"]), fmt.Sprintf("Deleting VM pool #%d.", vmPoolId))
+	if err != nil {
+		return "", err
 	}
 
-	if !confirm {
+	if !confirmed {
 		return "", fmt.Errorf("Operation not confirmed. Aborting")
 	}
 
-	_, err := client.VMPoolsApi.DeleteVMPool(ctx, float64(vmPoolId))
+	_, err = client.VMPoolsApi.DeleteVMPool(ctx, float64(vmPoolId))
 	if err != nil {
 		return "", err
 	}
@@ -300,13 +286,14 @@ func vmPoolDeleteCmd(ctx context.Context, c *command.Command, client *metalcloud
 	return "", err
 }
 
-func fieldSchema(showCredentials bool) []tableformatter.SchemaField {
+func vmPoolFieldSchema(showCredentials bool) []tableformatter.SchemaField {
 	schema := []tableformatter.SchemaField{
 		{
 			FieldName: "ID",
 			FieldType: tableformatter.TypeFloat,
 			FieldSize: 6,
 		},
+
 		{
 			FieldName: "STATUS",
 			FieldType: tableformatter.TypeString,
@@ -356,17 +343,17 @@ func fieldSchema(showCredentials bool) []tableformatter.SchemaField {
 }
 
 func formattedVMPoolRecord(vmPool metalcloud2.VmPool, showCredentials bool) []interface{} {
-	capacityRam := formattedCapacity(
+	capacityRam := utils.FormattedCapacity(
 		float64(vmPool.UsedRamGB)/float64(vmPool.TotalRamGB),
 		fmt.Sprintf("%.2f GB RAM used out of %.2f GB total", float64(vmPool.UsedRamGB), float64(vmPool.TotalRamGB)))
 
-	capacityStorage := formattedCapacity(
+	capacityStorage := utils.FormattedCapacity(
 		float64(vmPool.UsedRamGB)/float64(vmPool.TotalRamGB),
 		fmt.Sprintf("%.2f GB RAM used out of %.2f GB total", float64(vmPool.UsedRamGB), float64(vmPool.TotalRamGB)))
 
 	formattedRecord := []interface{}{
 		vmPool.Id,
-		formattedStatus(vmPool.Status),
+		utils.FormattedStatus(vmPool.Status),
 		vmPool.Name,
 		vmPool.ManagementHost,
 		capacityRam,
@@ -380,29 +367,4 @@ func formattedVMPoolRecord(vmPool metalcloud2.VmPool, showCredentials bool) []in
 	}
 
 	return formattedRecord
-}
-
-func formattedStatus(status string) string {
-	switch status {
-	case "active":
-		return colors.Blue(status)
-	case "maintenance":
-		return colors.Green(status)
-	case "":
-		return colors.Green(status)
-	default:
-		return colors.Yellow(status)
-	}
-}
-
-func formattedCapacity(usedPercentage float64, capacity string) string {
-	if usedPercentage >= 0.8 {
-		capacity = colors.Red(capacity)
-	} else if usedPercentage >= 0.5 {
-		capacity = colors.Red(capacity)
-	} else {
-		capacity = colors.Green(capacity)
-	}
-
-	return capacity
 }

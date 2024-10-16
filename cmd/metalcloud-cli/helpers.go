@@ -231,6 +231,7 @@ func getCommands(clients map[string]metalcloud.MetalCloudClient, permissions []s
 		variable.VariablesCmds,
 		version.VersionCmds,
 		vm.VmPoolsCmds,
+		vm.VmTypesCmds,
 		volumetemplate.VolumeTemplateCmds,
 		workflows.WorkflowCmds,
 	}
