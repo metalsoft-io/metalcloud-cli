@@ -5,6 +5,8 @@ import (
 	"encoding/json"
 	"flag"
 	"fmt"
+	"os"
+	"strings"
 
 	metalcloud2 "github.com/metalsoft-io/metal-cloud-sdk2-go"
 	"github.com/metalsoft-io/metalcloud-cli/internal/colors"
@@ -20,7 +22,7 @@ var VmPoolsCmds = []command.Command{
 		AltSubject:   "vm-pools",
 		Predicate:    "list",
 		AltPredicate: "ls",
-		FlagSet:      flag.NewFlagSet("List VM pools", flag.ExitOnError),
+		FlagSet:      flag.NewFlagSet("list VM pools", flag.ExitOnError),
 		InitFunc: func(c *command.Command) {
 			c.Arguments = map[string]interface{}{
 				"format":           c.FlagSet.String("format", command.NilDefaultStr, "The output format. Supported values are 'json','csv','yaml'. The default format is human readable."),
@@ -36,7 +38,7 @@ var VmPoolsCmds = []command.Command{
 		AltSubject:   "vm-pool",
 		Predicate:    "get",
 		AltPredicate: "show",
-		FlagSet:      flag.NewFlagSet("Get VM pool", flag.ExitOnError),
+		FlagSet:      flag.NewFlagSet("get VM pool", flag.ExitOnError),
 		InitFunc: func(c *command.Command) {
 			c.Arguments = map[string]interface{}{
 				"vm_pool_id":       c.FlagSet.Int("id", 0, "VM pool id"),
@@ -53,7 +55,7 @@ var VmPoolsCmds = []command.Command{
 		AltSubject:   "vm-pool",
 		Predicate:    "create",
 		AltPredicate: "new",
-		FlagSet:      flag.NewFlagSet("Create VM pool", flag.ExitOnError),
+		FlagSet:      flag.NewFlagSet("create VM pool", flag.ExitOnError),
 		InitFunc: func(c *command.Command) {
 			c.Arguments = map[string]interface{}{
 				"format":                c.FlagSet.String("format", "json", "The input format. Supported values are 'json','yaml'. The default format is json."),
@@ -63,6 +65,40 @@ var VmPoolsCmds = []command.Command{
 			}
 		},
 		ExecuteFunc2:        vmPoolCreateCmd,
+		PermissionsRequired: []string{command.VM_POOLS_WRITE},
+	},
+	{
+		Description:  "Update VM pool.",
+		Subject:      "vm-pool",
+		AltSubject:   "vm-pool",
+		Predicate:    "edit",
+		AltPredicate: "update",
+		FlagSet:      flag.NewFlagSet("update VM pool", flag.ExitOnError),
+		InitFunc: func(c *command.Command) {
+			c.Arguments = map[string]interface{}{
+				"vm_pool_id":            c.FlagSet.Int("id", 0, "VM pool id"),
+				"format":                c.FlagSet.String("format", "json", "The input format. Supported values are 'json','yaml'. The default format is json."),
+				"read_config_from_file": c.FlagSet.String("raw-config", command.NilDefaultStr, colors.Red("(Required)")+" Read raw object from file"),
+				"read_config_from_pipe": c.FlagSet.Bool("pipe", false, colors.Green("(Flag)")+" If set, read raw object from pipe instead of from a file. Either this flag or the --raw-config option must be used."),
+			}
+		},
+		ExecuteFunc2:        vmPoolUpdateCmd,
+		PermissionsRequired: []string{command.VM_POOLS_WRITE},
+	},
+	{
+		Description:  "Delete VM pool.",
+		Subject:      "vm-pool",
+		AltSubject:   "vm-pool",
+		Predicate:    "delete",
+		AltPredicate: "rm",
+		FlagSet:      flag.NewFlagSet("delete VM pool", flag.ExitOnError),
+		InitFunc: func(c *command.Command) {
+			c.Arguments = map[string]interface{}{
+				"vm_pool_id":  c.FlagSet.Int("id", 0, "VM pool id"),
+				"autoconfirm": c.FlagSet.Bool("autoconfirm", false, colors.Green("(Flag)")+" If set it will assume action is confirmed"),
+			}
+		},
+		ExecuteFunc2:        vmPoolDeleteCmd,
 		PermissionsRequired: []string{command.VM_POOLS_WRITE},
 	},
 }
@@ -80,9 +116,10 @@ func vmPoolListCmd(ctx context.Context, c *command.Command, client *metalcloud2.
 	format := command.GetStringParam(c.Arguments["format"])
 
 	rawData := []metalcloud2.VmPool{}
-	data := [][]interface{}{}
+	formattedData := [][]interface{}{}
 
 	statusCounts := map[string]int{
+		"registering": 0,
 		"active":      0,
 		"maintenance": 0,
 	}
@@ -100,40 +137,16 @@ func vmPoolListCmd(ctx context.Context, c *command.Command, client *metalcloud2.
 			statusCounts["maintenance"]++
 		}
 
-		capacityRam := formattedCapacity(
-			float64(vmPool.UsedRamGB)/float64(vmPool.TotalRamGB),
-			fmt.Sprintf("%.2f GB RAM used out of %.2f GB total", float64(vmPool.UsedRamGB), float64(vmPool.TotalRamGB)),
-			format)
-
-		capacityStorage := formattedCapacity(
-			float64(vmPool.UsedRamGB)/float64(vmPool.TotalRamGB),
-			fmt.Sprintf("%.2f GB RAM used out of %.2f GB total", float64(vmPool.UsedRamGB), float64(vmPool.TotalRamGB)),
-			format)
-
-		row := []interface{}{
-			vmPool.Id,
-			formattedStatus(vmPool.Status, format),
-			vmPool.Name,
-			vmPool.ManagementHost,
-			capacityRam,
-			capacityStorage,
-			vmPool.DatacenterName,
-		}
-		if showCredentials {
-			row = append(row, []interface{}{
-				vmPool.Certificate,
-			}...)
-		}
-
-		data = append(data, row)
+		formattedData = append(formattedData, formattedVMPoolRecord(vmPool, showCredentials))
 	}
 
 	switch format {
 	case "json", "JSON":
-		result, err := json.MarshalIndent(rawData, "", "  ")
+		result, err := json.MarshalIndent(rawData, "", "\t")
 		if err != nil {
 			return "", err
 		}
+
 		return string(result), nil
 
 	case "yaml", "YAML":
@@ -141,11 +154,12 @@ func vmPoolListCmd(ctx context.Context, c *command.Command, client *metalcloud2.
 		if err != nil {
 			return "", err
 		}
+
 		return string(result), nil
 
 	default:
 		table := tableformatter.Table{
-			Data:   data,
+			Data:   formattedData,
 			Schema: fieldSchema(showCredentials),
 		}
 
@@ -181,10 +195,11 @@ func vmPoolGetCmd(ctx context.Context, c *command.Command, client *metalcloud2.A
 
 	switch format {
 	case "json", "JSON":
-		result, err := json.MarshalIndent(vmPool, "", "  ")
+		result, err := json.MarshalIndent(vmPool, "", "\t")
 		if err != nil {
 			return "", err
 		}
+
 		return string(result), nil
 
 	case "yaml", "YAML":
@@ -192,40 +207,15 @@ func vmPoolGetCmd(ctx context.Context, c *command.Command, client *metalcloud2.A
 		if err != nil {
 			return "", err
 		}
+
 		return string(result), nil
 
 	default:
-		data := [][]interface{}{}
-
-		capacityRam := formattedCapacity(
-			float64(vmPool.UsedRamGB)/float64(vmPool.TotalRamGB),
-			fmt.Sprintf("%.2f GB RAM used out of %.2f GB total", float64(vmPool.UsedRamGB), float64(vmPool.TotalRamGB)),
-			format)
-
-		capacityStorage := formattedCapacity(
-			float64(vmPool.UsedRamGB)/float64(vmPool.TotalRamGB),
-			fmt.Sprintf("%.2f GB RAM used out of %.2f GB total", float64(vmPool.UsedRamGB), float64(vmPool.TotalRamGB)),
-			format)
-
-		row := []interface{}{
-			vmPool.Id,
-			formattedStatus(vmPool.Status, format),
-			vmPool.Name,
-			vmPool.ManagementHost,
-			capacityRam,
-			capacityStorage,
-			vmPool.DatacenterName,
-		}
-		if showCredentials {
-			row = append(row, []interface{}{
-				vmPool.Certificate,
-			}...)
-		}
-
-		data = append(data, row)
+		formattedData := [][]interface{}{}
+		formattedData = append(formattedData, formattedVMPoolRecord(vmPool, showCredentials))
 
 		table := tableformatter.Table{
-			Data:   data,
+			Data:   formattedData,
 			Schema: fieldSchema(showCredentials),
 		}
 
@@ -248,6 +238,63 @@ func vmPoolCreateCmd(ctx context.Context, c *command.Command, client *metalcloud
 
 	if command.GetBoolParam(c.Arguments["return_id"]) {
 		return fmt.Sprintf("%v", vmPool.Id), nil
+	}
+
+	return "", err
+}
+
+func vmPoolUpdateCmd(ctx context.Context, c *command.Command, client *metalcloud2.APIClient) (string, error) {
+	vmPoolId, ok := command.GetIntParamOk(c.Arguments["vm_pool_id"])
+	if !ok {
+		return "", fmt.Errorf("-id is required")
+	}
+
+	var obj metalcloud2.UpdateVmPool
+
+	err := command.GetRawObjectFromCommand(c, &obj)
+	if err != nil {
+		return "", err
+	}
+
+	_, _, err = client.VMPoolsApi.UpdateVMPool(ctx, obj, float64(vmPoolId))
+	if err != nil {
+		return "", err
+	}
+
+	return "", err
+}
+
+func vmPoolDeleteCmd(ctx context.Context, c *command.Command, client *metalcloud2.APIClient) (string, error) {
+	vmPoolId, ok := command.GetIntParamOk(c.Arguments["vm_pool_id"])
+	if !ok {
+		return "", fmt.Errorf("-id is required")
+	}
+
+	confirm := command.GetBoolParam(c.Arguments["autoconfirm"])
+
+	if !confirm {
+		confirmationMessage := fmt.Sprintf("Deleting VM pool #%d.  Are you sure? Type \"yes\" to continue:", vmPoolId)
+
+		//this is simply so that we don't output a text on the command line under go test
+		if strings.HasSuffix(os.Args[0], ".test") {
+			confirmationMessage = ""
+		}
+
+		var err error
+		confirm, err = command.RequestConfirmation(confirmationMessage)
+		if err != nil {
+			return "", err
+		}
+
+	}
+
+	if !confirm {
+		return "", fmt.Errorf("Operation not confirmed. Aborting")
+	}
+
+	_, err := client.VMPoolsApi.DeleteVMPool(ctx, float64(vmPoolId))
+	if err != nil {
+		return "", err
 	}
 
 	return "", err
@@ -308,11 +355,34 @@ func fieldSchema(showCredentials bool) []tableformatter.SchemaField {
 	return schema
 }
 
-func formattedStatus(status string, format string) string {
-	if format != "" {
-		return status
+func formattedVMPoolRecord(vmPool metalcloud2.VmPool, showCredentials bool) []interface{} {
+	capacityRam := formattedCapacity(
+		float64(vmPool.UsedRamGB)/float64(vmPool.TotalRamGB),
+		fmt.Sprintf("%.2f GB RAM used out of %.2f GB total", float64(vmPool.UsedRamGB), float64(vmPool.TotalRamGB)))
+
+	capacityStorage := formattedCapacity(
+		float64(vmPool.UsedRamGB)/float64(vmPool.TotalRamGB),
+		fmt.Sprintf("%.2f GB RAM used out of %.2f GB total", float64(vmPool.UsedRamGB), float64(vmPool.TotalRamGB)))
+
+	formattedRecord := []interface{}{
+		vmPool.Id,
+		formattedStatus(vmPool.Status),
+		vmPool.Name,
+		vmPool.ManagementHost,
+		capacityRam,
+		capacityStorage,
+		vmPool.DatacenterName,
+	}
+	if showCredentials {
+		formattedRecord = append(formattedRecord, []interface{}{
+			vmPool.Certificate,
+		}...)
 	}
 
+	return formattedRecord
+}
+
+func formattedStatus(status string) string {
 	switch status {
 	case "active":
 		return colors.Blue(status)
@@ -325,11 +395,7 @@ func formattedStatus(status string, format string) string {
 	}
 }
 
-func formattedCapacity(usedPercentage float64, capacity string, format string) string {
-	if format != "" {
-		return capacity
-	}
-
+func formattedCapacity(usedPercentage float64, capacity string) string {
 	if usedPercentage >= 0.8 {
 		capacity = colors.Red(capacity)
 	} else if usedPercentage >= 0.5 {
