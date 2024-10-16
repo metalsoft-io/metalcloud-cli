@@ -3,6 +3,7 @@ package command
 import (
 	"bufio"
 	"bytes"
+	"context"
 	"encoding/csv"
 	"encoding/json"
 	"flag"
@@ -31,7 +32,7 @@ import (
 
 // CommandExecuteFunc a function type a command can take for executing the content
 type CommandExecuteFunc = func(c *Command, client metalcloud.MetalCloudClient) (string, error)
-type CommandExecuteFunc2 = func(c *Command, client *metalcloud2.APIClient) (string, error)
+type CommandExecuteFunc2 = func(ctx context.Context, c *Command, client *metalcloud2.APIClient) (string, error)
 
 // CommandInitFunc a function type a command can take for initializing the command
 type CommandInitFunc = func(c *Command)
@@ -434,11 +435,18 @@ func validateArguments(args []string) (string, string, int) {
 }
 
 func helpMessage(err error, subject string, predicate string) error {
-	if predicate != NilDefaultStr {
-		return fmt.Errorf("%s Use '%s %s -h' for syntax help", err, subject, predicate)
+	message := err.Error()
+
+	swaggerErr, ok := err.(metalcloud2.GenericSwaggerError)
+	if ok {
+		message = swaggerErr.Error() + " [ " + string(swaggerErr.Body()) + " ]"
 	}
 
-	return fmt.Errorf("%s Use '%s -h' for syntax help", err, subject)
+	if predicate != NilDefaultStr {
+		return fmt.Errorf("%s\nUse '%s %s -h' for syntax help", message, subject, predicate)
+	}
+
+	return fmt.Errorf("%s\nUse '%s -h' for syntax help", message, subject)
 }
 
 func ExecuteCommand(args []string, commands []Command, clients map[string]metalcloud.MetalCloudClient, client2 *metalcloud2.APIClient, permissions []string) error {
@@ -513,7 +521,7 @@ func ExecuteCommand(args []string, commands []Command, clients map[string]metalc
 
 	var ret string
 	if cmd.ExecuteFunc2 != nil {
-		ret, err = cmd.ExecuteFunc2(cmd, client2)
+		ret, err = cmd.ExecuteFunc2(context.Background(), cmd, client2)
 	} else {
 		client, ok := clients[endpoint]
 		if !ok {
