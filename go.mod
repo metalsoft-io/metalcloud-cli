@@ -58,5 +58,3 @@ require (
 	golang.org/x/text v0.14.0 // indirect
 	gopkg.in/warnings.v0 v0.1.2 // indirect
 )
-
-replace github.com/metalsoft-io/metal-cloud-sdk2-go => ../metal-cloud-sdk2-go
