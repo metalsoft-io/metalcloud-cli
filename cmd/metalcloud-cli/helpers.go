@@ -39,6 +39,7 @@ import (
 	"github.com/metalsoft-io/metalcloud-cli/pkg/user"
 	"github.com/metalsoft-io/metalcloud-cli/pkg/variable"
 	"github.com/metalsoft-io/metalcloud-cli/pkg/version"
+	"github.com/metalsoft-io/metalcloud-cli/pkg/vm"
 	"github.com/metalsoft-io/metalcloud-cli/pkg/volumetemplate"
 	"github.com/metalsoft-io/metalcloud-cli/pkg/workflows"
 )
@@ -229,6 +230,10 @@ func getCommands(clients map[string]metalcloud.MetalCloudClient, permissions []s
 		user.UserCmds,
 		variable.VariablesCmds,
 		version.VersionCmds,
+		vm.VmInstanceGroupsCmds,
+		vm.VmInstancesCmds,
+		vm.VmPoolsCmds,
+		vm.VmTypesCmds,
 		volumetemplate.VolumeTemplateCmds,
 		workflows.WorkflowCmds,
 	}

@@ -21,5 +21,6 @@ __debug*
 
 # direnv
 .envrc
+.env
 
 /bin

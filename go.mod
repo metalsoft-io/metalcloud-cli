@@ -13,7 +13,7 @@ require (
 	github.com/jwalton/gchalk v1.3.0
 	github.com/kdomanski/iso9660 v0.3.1
 	github.com/metalsoft-io/metal-cloud-sdk-go/v3 v3.2.2
-	github.com/metalsoft-io/metal-cloud-sdk2-go v1.1.0
+	github.com/metalsoft-io/metal-cloud-sdk2-go v1.2.0
 	github.com/metalsoft-io/tableformatter v1.0.9
 	github.com/onsi/gomega v1.27.10
 	github.com/savaki/jq v0.0.0-20161209013833-0e6baecebbf8
