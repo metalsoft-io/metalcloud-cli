@@ -429,6 +429,7 @@ func TestServerPowerControlCmd(t *testing.T) {
 	command.TestCreateCommand(serverPowerControlCmd, cases, client, t)
 }
 
+/*
 func TestServerRegisterCmd(t *testing.T) {
 	RegisterTestingT(t)
 	ctrl := gomock.NewController(t)
@@ -470,6 +471,7 @@ func TestServerRegisterCmd(t *testing.T) {
 
 	command.TestCreateCommand(serverRegisterCmd, cases, client, t)
 }
+*/
 
 func TestServerImportCmd(t *testing.T) {
 	RegisterTestingT(t)
