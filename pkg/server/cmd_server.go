@@ -1,6 +1,7 @@
 package server
 
 import (
+	"context"
 	"errors"
 	"flag"
 	"fmt"
@@ -10,6 +11,7 @@ import (
 	"strings"
 
 	metalcloud "github.com/metalsoft-io/metal-cloud-sdk-go/v3"
+	metalcloud2 "github.com/metalsoft-io/metal-cloud-sdk2-go"
 	"github.com/metalsoft-io/metalcloud-cli/internal/colors"
 	"github.com/metalsoft-io/metalcloud-cli/internal/command"
 	"github.com/metalsoft-io/metalcloud-cli/internal/configuration"
@@ -95,16 +97,15 @@ metalcloud-cli server list --show-credentials # to retrieve a list of credential
 		FlagSet:      flag.NewFlagSet("register server", flag.ExitOnError),
 		InitFunc: func(c *command.Command) {
 			c.Arguments = map[string]interface{}{
-				"datacenter":    c.FlagSet.String("datacenter", command.NilDefaultStr, colors.Red("(Required)")+" The datacenter in which this server is to be registered."),
-				"server_vendor": c.FlagSet.String("server-vendor", command.NilDefaultStr, colors.Red("(Required)")+" Server vendor (driver) to use when interacting with the server. One of: `dell`,'hpe_legacy','hpe'."),
-				"mgmt_address":  c.FlagSet.String("mgmt-address", command.NilDefaultStr, colors.Red("(Required)")+" IP or DNS record for the server's management interface (BMC)."),
-				"mgmt_user":     c.FlagSet.String("mgmt-user", command.NilDefaultStr, colors.Red("(Required)")+" Server' BMC username."),
-				"mgmt_pass":     c.FlagSet.String("mgmt-pass", command.NilDefaultStr, colors.Red("(Required)")+" Server' BMC password."),
-				"return_id":     c.FlagSet.Bool("return-id", false, "Will print the ID of the created object. Useful for automating tasks."),
+				"siteId":      c.FlagSet.String("datacenter", command.NilDefaultStr, colors.Red("(Required)")+" The datacenter in which this server is to be registered."),
+				"bmcHostname": c.FlagSet.String("mgmt-address", command.NilDefaultStr, colors.Red("(Required)")+" IP or DNS record for the server's management interface (BMC)."),
+				"vendor":      c.FlagSet.String("server-vendor", command.NilDefaultStr, colors.Yellow("(Optional)")+" Server vendor (driver) to use when interacting with the server. One of: `Dell`,'HP','HPE','Lenovo'."),
+				"bmcUser":     c.FlagSet.String("mgmt-user", command.NilDefaultStr, colors.Yellow("(Optional)")+" Server' BMC username."),
+				"bmcPassword": c.FlagSet.String("mgmt-pass", command.NilDefaultStr, colors.Yellow("(Optional)")+" Server' BMC password."),
+				"return_id":   c.FlagSet.Bool("return-id", false, "Will print the ID of the created object. Useful for automating tasks."),
 			}
 		},
-		ExecuteFunc:         serverRegisterCmd,
-		Endpoint:            configuration.DeveloperEndpoint,
+		ExecuteFunc2:        serverRegisterCmd,
 		PermissionsRequired: []string{command.SERVERS_WRITE},
 	},
 
@@ -445,13 +446,10 @@ password: notcalvin
 		FlagSet:      flag.NewFlagSet("", flag.ExitOnError),
 		InitFunc: func(c *command.Command) {
 			c.Arguments = map[string]interface{}{
-				"server_id":   c.FlagSet.Int("id", command.NilDefaultInt, colors.Red("(Required)")+" Server's id."),
-				"skip_ipmi":   c.FlagSet.Bool("do-not-set-ipmi", false, "If set, the system will not change the IPMI credentials."),
-				"autoconfirm": c.FlagSet.Bool("autoconfirm", false, colors.Green("(Flag)")+" If set it will assume action is confirmed"),
+				"server_id": c.FlagSet.Int("id", command.NilDefaultInt, colors.Red("(Required)")+" Server's id."),
 			}
 		},
-		ExecuteFunc:         serverReregisterCmd,
-		Endpoint:            configuration.DeveloperEndpoint,
+		ExecuteFunc2:        serverReRegisterCmd,
 		PermissionsRequired: []string{command.SERVERS_WRITE},
 	},
 	{
@@ -559,27 +557,27 @@ func serverPowerControlCmd(c *command.Command, client metalcloud.MetalCloudClien
 		}
 
 		confirmationMessage := fmt.Sprintf("%s server (%d) of datacenter %s.  Are you sure? Type \"yes\" to continue:",
-		op,
-		server.ServerID,
-		server.DatacenterName,
-	)
+			op,
+			server.ServerID,
+			server.DatacenterName,
+		)
 
-	if strings.HasSuffix(os.Args[0], ".test") {
-		confirmationMessage = ""
+		if strings.HasSuffix(os.Args[0], ".test") {
+			confirmationMessage = ""
+		}
+
+		return confirmationMessage
+	})
+
+	if err != nil {
+		return "", err
 	}
 
-	return confirmationMessage
-})
+	if confirm {
+		err = client.ServerPowerSet(serverID, operation)
+	}
 
-if err != nil {
 	return "", err
-}
-
-if confirm {
-	err = client.ServerPowerSet(serverID, operation)
-}
-
-return "", err
 }
 
 func serverStatusSetCmd(c *command.Command, client metalcloud.MetalCloudClient) (string, error) {
@@ -610,42 +608,42 @@ func serverStatusSetCmd(c *command.Command, client metalcloud.MetalCloudClient) 
 		if !command.GetBoolParam(c.Arguments["autoconfirm"]) {
 
 			confirmationMessage = fmt.Sprintf("Server #%s (%s) of datacenter %s. Current status: %s new status: %s  Are you sure? Type \"yes\" to continue:",
-			colors.Blue(fmt.Sprintf("%d", server.ServerID)),
-			colors.Yellow(server.ServerSerialNumber),
-			server.DatacenterName,
-			colorizeServerStatus(server.ServerStatus),
-			colorizeServerStatus(newStatus),
-		)
+				colors.Blue(fmt.Sprintf("%d", server.ServerID)),
+				colors.Yellow(server.ServerSerialNumber),
+				server.DatacenterName,
+				colorizeServerStatus(server.ServerStatus),
+				colorizeServerStatus(newStatus),
+			)
+		}
+
+		if strings.HasSuffix(os.Args[0], ".test") {
+			confirmationMessage = ""
+		}
+
+		return confirmationMessage
+	})
+
+	if err != nil {
+		return "", err
 	}
 
-	if strings.HasSuffix(os.Args[0], ".test") {
-		confirmationMessage = ""
+	if confirm {
+
+		if newStatus == "decommissioned" {
+			err = client.ServerStatusUpdate(serverID, "unavailable")
+			if err != nil {
+				return "", err
+			}
+			err = client.ServerDecomission(serverID, true)
+			if err != nil {
+				return "", err
+			}
+		} else {
+			err = client.ServerStatusUpdate(serverID, newStatus)
+		}
 	}
 
-	return confirmationMessage
-})
-
-if err != nil {
 	return "", err
-}
-
-if confirm {
-
-	if newStatus == "decommissioned" {
-		err = client.ServerStatusUpdate(serverID, "unavailable")
-		if err != nil {
-			return "", err
-		}
-		err = client.ServerDecomission(serverID, true)
-		if err != nil {
-			return "", err
-		}
-	} else {
-		err = client.ServerStatusUpdate(serverID, newStatus)
-	}
-}
-
-return "", err
 }
 
 func serverServerTypeSetCmd(c *command.Command, client metalcloud.MetalCloudClient) (string, error) {
@@ -705,32 +703,32 @@ func serverServerTypeSetCmd(c *command.Command, client metalcloud.MetalCloudClie
 			}
 
 			confirmationMessage = fmt.Sprintf("Server #%s (%s) of datacenter %s. Current server type: %s (#%s) new server type: %s (#%s) Are you sure? Type \"yes\" to continue:",
-			colors.Blue(fmt.Sprintf("%d", server.ServerID)),
-			colors.Yellow(server.ServerSerialNumber),
-			server.DatacenterName,
-			colors.Red(oldServerType.ServerTypeName),
-			colors.Red(oldServerType.ServerTypeID),
-			colors.Green(newServerType.ServerTypeName),
-			colors.Green(newServerType.ServerTypeID),
-		)
+				colors.Blue(fmt.Sprintf("%d", server.ServerID)),
+				colors.Yellow(server.ServerSerialNumber),
+				server.DatacenterName,
+				colors.Red(oldServerType.ServerTypeName),
+				colors.Red(oldServerType.ServerTypeID),
+				colors.Green(newServerType.ServerTypeName),
+				colors.Green(newServerType.ServerTypeID),
+			)
+		}
+
+		if strings.HasSuffix(os.Args[0], ".test") {
+			confirmationMessage = ""
+		}
+
+		return confirmationMessage
+	})
+
+	if err != nil {
+		return "", err
 	}
 
-	if strings.HasSuffix(os.Args[0], ".test") {
-		confirmationMessage = ""
+	if confirm {
+		err = client.ServerEditProperty(serverID, "server_type_id", newServerType.ServerTypeID)
 	}
 
-	return confirmationMessage
-})
-
-if err != nil {
 	return "", err
-}
-
-if confirm {
-	err = client.ServerEditProperty(serverID, "server_type_id", newServerType.ServerTypeID)
-}
-
-return "", err
 }
 
 func serverRackInfoSetCmd(c *command.Command, client metalcloud.MetalCloudClient) (string, error) {
@@ -775,40 +773,40 @@ func serverRackInfoSetCmd(c *command.Command, client metalcloud.MetalCloudClient
 			newServerRackInfo := fmt.Sprintf("Rack:%s U:%d-%d", serverRackName, serverRackLowerU, serverRackUpperU)
 
 			confirmationMessage = fmt.Sprintf("Server #%s (%s) of datacenter %s. Current server rack info %s new rack info: %s. Are you sure? Type \"yes\" to continue:",
-			colors.Blue(fmt.Sprintf("%d", server.ServerID)),
-			colors.Yellow(server.ServerSerialNumber),
-			server.DatacenterName,
-			colors.Red(oldServerRackInfo),
-			colors.Green(newServerRackInfo),
-		)
+				colors.Blue(fmt.Sprintf("%d", server.ServerID)),
+				colors.Yellow(server.ServerSerialNumber),
+				server.DatacenterName,
+				colors.Red(oldServerRackInfo),
+				colors.Green(newServerRackInfo),
+			)
+		}
+
+		if strings.HasSuffix(os.Args[0], ".test") {
+			confirmationMessage = ""
+		}
+
+		return confirmationMessage
+	})
+
+	if err != nil {
+		return "", err
 	}
 
-	if strings.HasSuffix(os.Args[0], ".test") {
-		confirmationMessage = ""
+	if confirm {
+
+		lowerUStr := fmt.Sprintf("%d", serverRackLowerU)
+		upperUStr := fmt.Sprintf("%d", serverRackUpperU)
+
+		serverRackEdit := metalcloud.ServerEditRack{
+			ServerRackName:              &serverRackName,
+			ServerRackPositionLowerUnit: &lowerUStr,
+			ServerRackPositionUpperUnit: &upperUStr,
+		}
+
+		_, err = client.ServerEditRack(serverID, serverRackEdit)
 	}
 
-	return confirmationMessage
-})
-
-if err != nil {
 	return "", err
-}
-
-if confirm {
-
-	lowerUStr := fmt.Sprintf("%d", serverRackLowerU)
-	upperUStr := fmt.Sprintf("%d", serverRackUpperU)
-
-	serverRackEdit := metalcloud.ServerEditRack{
-		ServerRackName:              &serverRackName,
-		ServerRackPositionLowerUnit: &lowerUStr,
-		ServerRackPositionUpperUnit: &upperUStr,
-	}
-
-	_, err = client.ServerEditRack(serverID, serverRackEdit)
-}
-
-return "", err
 }
 
 func serverInventoryInfoSetCmd(c *command.Command, client metalcloud.MetalCloudClient) (string, error) {
@@ -839,85 +837,45 @@ func serverInventoryInfoSetCmd(c *command.Command, client metalcloud.MetalCloudC
 			oldInventoryID := getStringFromStringOrEmpty(server.ServerInventoryId)
 
 			confirmationMessage = fmt.Sprintf("Server #%s (%s) of datacenter %s. Current inventory id: %s new inventory id: %s. Are you sure? Type \"yes\" to continue:",
-			colors.Blue(fmt.Sprintf("%d", server.ServerID)),
-			colors.Yellow(server.ServerSerialNumber),
-			server.DatacenterName,
-			colors.Red(oldInventoryID),
-			colors.Green(inventoryID),
-		)
+				colors.Blue(fmt.Sprintf("%d", server.ServerID)),
+				colors.Yellow(server.ServerSerialNumber),
+				server.DatacenterName,
+				colors.Red(oldInventoryID),
+				colors.Green(inventoryID),
+			)
+		}
+
+		if strings.HasSuffix(os.Args[0], ".test") {
+			confirmationMessage = ""
+		}
+
+		return confirmationMessage
+	})
+
+	if err != nil {
+		return "", err
 	}
 
-	if strings.HasSuffix(os.Args[0], ".test") {
-		confirmationMessage = ""
+	if confirm {
+
+		serverEditInventory := metalcloud.ServerEditInventory{
+			ServerInventoryId: &inventoryID,
+		}
+
+		_, err = client.ServerEditInventory(serverID, serverEditInventory)
 	}
 
-	return confirmationMessage
-})
-
-if err != nil {
 	return "", err
 }
 
-if confirm {
-
-	serverEditInventory := metalcloud.ServerEditInventory{
-		ServerInventoryId: &inventoryID,
-	}
-
-	_, err = client.ServerEditInventory(serverID, serverEditInventory)
-}
-
-return "", err
-}
-
-func serverReregisterCmd(c *command.Command, client metalcloud.MetalCloudClient) (string, error) {
+func serverReRegisterCmd(ctx context.Context, c *command.Command, client *metalcloud2.APIClient) (string, error) {
 	serverID, ok := command.GetIntParamOk(c.Arguments["server_id"])
 	if !ok {
 		return "", fmt.Errorf("-id is required")
 	}
 
-	skipIpmi := command.GetBoolParam(c.Arguments["skip_ipmi"])
-
-	var server metalcloud.Server
-
-	if !command.GetBoolParam(c.Arguments["autoconfirm"]) {
-		serverPtr, err := client.ServerGet(serverID, false)
-		if err != nil {
-			return "", err
-		}
-		server = *serverPtr
-	}
-
-	confirm, err := command.ConfirmCommand(c, func() string {
-
-		confirmationMessage := ""
-
-		if !command.GetBoolParam(c.Arguments["autoconfirm"]) {
-
-			confirmationMessage = fmt.Sprintf("Server #%s (%s) BMC IP:%s of datacenter %s. Are you sure? Type \"yes\" to continue:",
-			colors.Blue(fmt.Sprintf("%d", server.ServerID)),
-			colors.Yellow(server.ServerSerialNumber),
-			server.ServerIPMIHost,
-			server.DatacenterName,
-		)
-	}
-
-	if strings.HasSuffix(os.Args[0], ".test") {
-		confirmationMessage = ""
-	}
-
-	return confirmationMessage
-})
-
-if err != nil {
+	_, _, err := client.ServerApi.ReRegisterServer(ctx, float64(serverID))
 	return "", err
-}
-
-if confirm {
-	err = client.ServerReregister(serverID, skipIpmi, false)
-}
-
-return "", err
 }
 
 func colorizeServerStatus(status string) string {
@@ -1082,11 +1040,11 @@ func serversListCmd(c *command.Command, client metalcloud.MetalCloudClient) (str
 			users := strings.Join(s.UserEmail[0], ",")
 
 			allocation = fmt.Sprintf("%s %s (#%d) IA:#%d Infra:#%d",
-			users,
-			s.InstanceLabel[0],
-			s.InstanceID[0],
-			s.InstanceArrayID[0],
-			s.InfrastructureID[0])
+				users,
+				s.InstanceLabel[0],
+				s.InstanceID[0],
+				s.InstanceArrayID[0],
+				s.InfrastructureID[0])
 			if len(allocation) > 30 {
 				allocation = strings.Fields(allocation)[0]
 			}
@@ -1114,14 +1072,14 @@ func serversListCmd(c *command.Command, client metalcloud.MetalCloudClient) (str
 		if s.ServerDiskCount > 0 {
 			if format == "" {
 				diskDescription = fmt.Sprintf("%s x %s GB %s",
-				colors.Yellow(s.ServerDiskCount),
-				colors.Yellow(s.ServerDiskSizeMbytes/1000),
-				colors.Yellow(s.ServerDiskType))
-			}else{
+					colors.Yellow(s.ServerDiskCount),
+					colors.Yellow(s.ServerDiskSizeMbytes/1000),
+					colors.Yellow(s.ServerDiskType))
+			} else {
 				diskDescription = fmt.Sprintf("%v x %v GB %v",
-				s.ServerDiskCount,
-				s.ServerDiskSizeMbytes/1000,
-				s.ServerDiskType)
+					s.ServerDiskCount,
+					s.ServerDiskSizeMbytes/1000,
+					s.ServerDiskType)
 			}
 		}
 
@@ -1137,14 +1095,14 @@ func serversListCmd(c *command.Command, client metalcloud.MetalCloudClient) (str
 		for capacity, serverInterfaces := range interfacesByCapacity {
 			if format == "" {
 				interfaceDescription = interfaceDescription +
-				fmt.Sprintf("%s x %s Gbps NICs",
-				colors.Magenta(len(serverInterfaces)),
-				colors.Magenta(capacity/1000))
-			}else{
+					fmt.Sprintf("%s x %s Gbps NICs",
+						colors.Magenta(len(serverInterfaces)),
+						colors.Magenta(capacity/1000))
+			} else {
 				interfaceDescription = interfaceDescription +
-				fmt.Sprintf("%v x %v Gbps NICs",
-				len(serverInterfaces),
-				capacity/1000)
+					fmt.Sprintf("%v x %v Gbps NICs",
+						len(serverInterfaces),
+						capacity/1000)
 			}
 		}
 
@@ -1152,77 +1110,77 @@ func serversListCmd(c *command.Command, client metalcloud.MetalCloudClient) (str
 		if s.ServerProcessorCount > 0 {
 			if format == "" {
 				hardwareConfig = fmt.Sprintf("%s x %s cores(ht), %s GB RAM, %s, %s",
-				colors.Blue(s.ServerProcessorCount),
-				colors.Blue(s.ServerProcessorCoreCount),
-				colors.Red(s.ServerRAMGbytes),
-				diskDescription,
-				interfaceDescription,
-			)
-		}else{
-			hardwareConfig = fmt.Sprintf("%v x %v cores(ht), %v GB RAM, %v, %v",
-			s.ServerProcessorCount,
-			s.ServerProcessorCoreCount,
-			s.ServerRAMGbytes,
-			diskDescription,
-			interfaceDescription,
-		)
-	}
-}
+					colors.Blue(s.ServerProcessorCount),
+					colors.Blue(s.ServerProcessorCoreCount),
+					colors.Red(s.ServerRAMGbytes),
+					diskDescription,
+					interfaceDescription,
+				)
+			} else {
+				hardwareConfig = fmt.Sprintf("%v x %v cores(ht), %v GB RAM, %v, %v",
+					s.ServerProcessorCount,
+					s.ServerProcessorCoreCount,
+					s.ServerRAMGbytes,
+					diskDescription,
+					interfaceDescription,
+				)
+			}
+		}
 
-status := s.ServerStatus
+		status := s.ServerStatus
 
-if format == "" {
-	switch status {
-	case "available":
-		status = colors.Blue(status)
-	case "used":
-		status = colors.Green(status)
-	case "unavailable":
-		status = colors.Magenta(status)
-	case "defective":
-		status = colors.Red(status)
-	default:
-		status = colors.Yellow(status)
+		if format == "" {
+			switch status {
+			case "available":
+				status = colors.Blue(status)
+			case "used":
+				status = colors.Green(status)
+			case "unavailable":
+				status = colors.Magenta(status)
+			case "defective":
+				status = colors.Red(status)
+			default:
+				status = colors.Yellow(status)
 
-	}
-}
+			}
+		}
 
-row := []interface{}{
-	s.ServerID,
-	status,
-	s.ServerTypeName,
-	s.ServerSerialNumber,
-	s.ServerIPMIHost,
-	allocation,
-	s.DatacenterName,
-}
+		row := []interface{}{
+			s.ServerID,
+			status,
+			s.ServerTypeName,
+			s.ServerSerialNumber,
+			s.ServerIPMIHost,
+			allocation,
+			s.DatacenterName,
+		}
 
-if command.GetBoolParam(c.Arguments["show_rack_info"]) {
+		if command.GetBoolParam(c.Arguments["show_rack_info"]) {
 
-	row = append(row, []interface{}{
-		strings.Join(s.ServerTags, ","),
-		s.ServerInventoryId,
-		s.ServerRackName,
-		s.ServerRackPositionLowerUnit,
-		s.ServerRackPositionUpperUnit,
-	}...)
-}
+			row = append(row, []interface{}{
+				strings.Join(s.ServerTags, ","),
+				s.ServerInventoryId,
+				s.ServerRackName,
+				s.ServerRackPositionLowerUnit,
+				s.ServerRackPositionUpperUnit,
+			}...)
+		}
 
-if command.GetBoolParam(c.Arguments["show_hardware"]) {
-	row = append(row, []interface{}{
-		hardwareConfig,
-	}...)
-}
+		if command.GetBoolParam(c.Arguments["show_hardware"]) {
+			row = append(row, []interface{}{
+				hardwareConfig,
+			}...)
+		}
 
-if command.GetBoolParam(c.Arguments["show_credentials"]) {
-	row = append(row, []interface{}{
-		credentialsUser,
-		credentialsPass,
-		//snmpCommunity,
-	}...)
-}
+		if command.GetBoolParam(c.Arguments["show_credentials"]) {
+			row = append(row, []interface{}{
+				credentialsUser,
+				credentialsPass,
+				//snmpCommunity,
+			}...)
+		}
 
-data = append(data, row)
+		data = append(data, row)
 
 	}
 
@@ -1232,11 +1190,11 @@ data = append(data, row)
 	}
 
 	title := fmt.Sprintf("Servers: %d available %d used %d cleaning %d registering %d unavailable",
-	statusCounts["available"],
-	statusCounts["used"],
-	statusCounts["cleaning"],
-	statusCounts["registering"],
-	statusCounts["unavailable"])
+		statusCounts["available"],
+		statusCounts["used"],
+		statusCounts["cleaning"],
+		statusCounts["registering"],
+		statusCounts["unavailable"])
 
 	if command.GetBoolParam(c.Arguments["show_decommissioned"]) {
 		title = title + fmt.Sprintf(" %d decommissioned", statusCounts["decommissioned"])
@@ -1361,10 +1319,10 @@ func serverGetCmd(c *command.Command, client metalcloud.MetalCloudClient) (strin
 		}
 
 		allocation = fmt.Sprintf("%s (#%d) IA:#%d Infra:#%d",
-		(*searchRes)[0].InstanceLabel,
-		(*searchRes)[0].InstanceID,
-		(*searchRes)[0].InstanceArrayID,
-		(*searchRes)[0].InfrastructureID)
+			(*searchRes)[0].InstanceLabel,
+			(*searchRes)[0].InstanceID,
+			(*searchRes)[0].InstanceArrayID,
+			(*searchRes)[0].InfrastructureID)
 	}
 
 	productName := server.ServerProductName
@@ -1395,15 +1353,15 @@ func serverGetCmd(c *command.Command, client metalcloud.MetalCloudClient) (strin
 	}
 
 	configuration := fmt.Sprintf("%d GB RAM %d x %s (%d cores) ",
-	server.ServerRAMGbytes,
-	server.ServerProcessorCount,
-	server.ServerProcessorName,
-	server.ServerProcessorCoreCount)
+		server.ServerRAMGbytes,
+		server.ServerProcessorCount,
+		server.ServerProcessorName,
+		server.ServerProcessorCoreCount)
 
 	disks := fmt.Sprintf("%d x %d GB [%s]",
-	server.ServerDiskCount,
-	server.ServerDiskSizeMbytes/1000,
-	server.ServerDiskType)
+		server.ServerDiskCount,
+		server.ServerDiskSizeMbytes/1000,
+		server.ServerDiskType)
 
 	serverInventoryID := ""
 	if server.ServerInventoryId != nil {
@@ -1514,44 +1472,21 @@ func serverCreateCmd(c *command.Command, client metalcloud.MetalCloudClient) (st
 	return "", err
 }
 
-func serverRegisterCmd(c *command.Command, client metalcloud.MetalCloudClient) (string, error) {
+func serverRegisterCmd(ctx context.Context, c *command.Command, client *metalcloud2.APIClient) (string, error) {
+	var obj metalcloud2.ServerRegistrationDto
 
-	datacenter, ok := command.GetStringParamOk(c.Arguments["datacenter"])
-	if !ok {
-		return "", fmt.Errorf("-datacenter is required")
-	}
-	server_vendor, ok := command.GetStringParamOk(c.Arguments["server_vendor"])
-	if !ok {
-		return "", fmt.Errorf("-server_vendor is required")
-	}
-	mgmt_address, ok := command.GetStringParamOk(c.Arguments["mgmt_address"])
-	if !ok {
-		return "", fmt.Errorf("-mgmt_address is required")
-	}
-	mgmt_user, ok := command.GetStringParamOk(c.Arguments["mgmt_user"])
-	if !ok {
-		return "", fmt.Errorf("-mgmt_user is required")
-	}
-	mgmt_pass, ok := command.GetStringParamOk(c.Arguments["mgmt_pass"])
-	if !ok {
-		return "", fmt.Errorf("-mgmt_pass is required")
+	err := command.GetRawObjectFromCommand(c, &obj)
+	if err != nil {
+		return "", err
 	}
 
-	obj := metalcloud.ServerCreateAndRegister{
-		DatacenterName:           datacenter,
-		ServerVendor:             server_vendor,
-		ServerManagementAddress:  mgmt_address,
-		ServerManagementUser:     mgmt_user,
-		ServerManagementPassword: mgmt_pass,
-	}
-
-	ret, err := client.ServerCreateAndRegister(obj)
+	server, _, err := client.ServerApi.RegisterServer(ctx, obj)
 	if err != nil {
 		return "", err
 	}
 
 	if command.GetBoolParam(c.Arguments["return_id"]) {
-		return fmt.Sprintf("%d", ret), nil
+		return fmt.Sprintf("%v", server.Id), nil
 	}
 
 	return "", err
@@ -2269,54 +2204,54 @@ func serverInterfacesListCmd(c *command.Command, client metalcloud.MetalCloudCli
 		networkType := strings.Join(s.NetworkType, ",")
 
 		switch_info := fmt.Sprintf("%s (#%d)",
-		s.NetworkEquipmentIdentifierString,
-		s.NetworkEquipmentID,
-	)
+			s.NetworkEquipmentIdentifierString,
+			s.NetworkEquipmentID,
+		)
 
-	capacity := fmt.Sprintf("%d Gbps", int(s.ServerInterfaceCapacityMBPs/1000))
+		capacity := fmt.Sprintf("%d Gbps", int(s.ServerInterfaceCapacityMBPs/1000))
 
-	data = append(data, []interface{}{
-		server.ServerID,
-		s.ServerInterfaceIndex,
-		networkType,
-		s.ServerInterfaceMACAddress,
-		s.NetworkEquipmentInterfaceIdentifierString,
-		switch_info,
-		s.NetworkEquipmentManagementAddress,
-		s.NetworkEquipmentInterfaceMACAddress,
-		capacity,
-		ips,
-	})
+		data = append(data, []interface{}{
+			server.ServerID,
+			s.ServerInterfaceIndex,
+			networkType,
+			s.ServerInterfaceMACAddress,
+			s.NetworkEquipmentInterfaceIdentifierString,
+			switch_info,
+			s.NetworkEquipmentManagementAddress,
+			s.NetworkEquipmentInterfaceMACAddress,
+			capacity,
+			ips,
+		})
 
-}
+	}
 
-tableformatter.TableSorter(schema).OrderBy(schema[0].FieldName).Sort(data)
+	tableformatter.TableSorter(schema).OrderBy(schema[0].FieldName).Sort(data)
 
-var sb strings.Builder
+	var sb strings.Builder
 
-format := command.GetStringParam(c.Arguments["format"])
+	format := command.GetStringParam(c.Arguments["format"])
 
-if command.GetBoolParam(c.Arguments["raw"]) {
-	for _, s := range *list {
-		ret, err := tableformatter.RenderRawObject(s, format, "Server interfaces")
+	if command.GetBoolParam(c.Arguments["raw"]) {
+		for _, s := range *list {
+			ret, err := tableformatter.RenderRawObject(s, format, "Server interfaces")
+			if err != nil {
+				return "", err
+			}
+			sb.WriteString(ret)
+		}
+	} else {
+		table := tableformatter.Table{
+			Data:   data,
+			Schema: schema,
+		}
+		ret, err := table.RenderTable(fmt.Sprintf("Server interfaces of server #%d %s", server.ServerID, server.ServerSerialNumber), "", format)
 		if err != nil {
 			return "", err
 		}
 		sb.WriteString(ret)
 	}
-} else {
-	table := tableformatter.Table{
-		Data:   data,
-		Schema: schema,
-	}
-	ret, err := table.RenderTable(fmt.Sprintf("Server interfaces of server #%d %s", server.ServerID, server.ServerSerialNumber), "", format)
-	if err != nil {
-		return "", err
-	}
-	sb.WriteString(ret)
-}
 
-return sb.String(), nil
+	return sb.String(), nil
 }
 
 type rackInfo struct {
@@ -2427,25 +2362,25 @@ func serverDefaultCredentialsRemoveCmd(c *command.Command, client metalcloud.Met
 	confirm, err := command.ConfirmCommand(c, func() string {
 
 		confirmationMessage := fmt.Sprintf("Are you sure you want to remove ZTP credentials with ID %d.  Are you sure? Type \"yes\" to continue:",
-		credID,
-	)
+			credID,
+		)
 
-	if strings.HasSuffix(os.Args[0], ".test") {
-		confirmationMessage = ""
+		if strings.HasSuffix(os.Args[0], ".test") {
+			confirmationMessage = ""
+		}
+
+		return confirmationMessage
+	})
+
+	if err != nil {
+		return "", err
 	}
 
-	return confirmationMessage
-})
+	if confirm {
+		err = client.ServerDefaultCredentialsRemove([]int{credID})
+	}
 
-if err != nil {
 	return "", err
-}
-
-if confirm {
-	err = client.ServerDefaultCredentialsRemove([]int{credID})
-}
-
-return "", err
 }
 
 func getAllZTPServerRecords(client metalcloud.MetalCloudClient) ([]metalcloud.ServerDefaultCredentials, error) {
