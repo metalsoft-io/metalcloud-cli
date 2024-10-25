@@ -69,26 +69,6 @@ metalcloud-cli server list --show-credentials # to retrieve a list of credential
 	},
 
 	{
-		Description:  "Create server.",
-		Subject:      "server",
-		AltSubject:   "srv",
-		Predicate:    "create",
-		AltPredicate: "new",
-		FlagSet:      flag.NewFlagSet("create server", flag.ExitOnError),
-		InitFunc: func(c *command.Command) {
-			c.Arguments = map[string]interface{}{
-				"format":                c.FlagSet.String("format", "json", "The input format. Supported values are 'json','yaml'. The default format is json."),
-				"read_config_from_file": c.FlagSet.String("raw-config", command.NilDefaultStr, colors.Red("(Required)")+" Read raw object from file"),
-				"read_config_from_pipe": c.FlagSet.Bool("pipe", false, colors.Green("(Flag)")+" If set, read raw object from pipe instead of from a file. Either this flag or the --raw-config option must be used."),
-				"return_id":             c.FlagSet.Bool("return-id", false, "Will print the ID of the created object. Useful for automating tasks."),
-			}
-		},
-		ExecuteFunc:         serverCreateCmd,
-		Endpoint:            configuration.DeveloperEndpoint,
-		PermissionsRequired: []string{command.SERVERS_WRITE},
-	},
-
-	{
 		Description:  "Register a server.",
 		Subject:      "server",
 		AltSubject:   "srv",
@@ -97,12 +77,10 @@ metalcloud-cli server list --show-credentials # to retrieve a list of credential
 		FlagSet:      flag.NewFlagSet("register server", flag.ExitOnError),
 		InitFunc: func(c *command.Command) {
 			c.Arguments = map[string]interface{}{
-				"siteId":      c.FlagSet.String("datacenter", command.NilDefaultStr, colors.Red("(Required)")+" The datacenter in which this server is to be registered."),
-				"bmcHostname": c.FlagSet.String("mgmt-address", command.NilDefaultStr, colors.Red("(Required)")+" IP or DNS record for the server's management interface (BMC)."),
-				"vendor":      c.FlagSet.String("server-vendor", command.NilDefaultStr, colors.Yellow("(Optional)")+" Server vendor (driver) to use when interacting with the server. One of: `Dell`,'HP','HPE','Lenovo'."),
-				"bmcUser":     c.FlagSet.String("mgmt-user", command.NilDefaultStr, colors.Yellow("(Optional)")+" Server' BMC username."),
-				"bmcPassword": c.FlagSet.String("mgmt-pass", command.NilDefaultStr, colors.Yellow("(Optional)")+" Server' BMC password."),
-				"return_id":   c.FlagSet.Bool("return-id", false, "Will print the ID of the created object. Useful for automating tasks."),
+				"format":                c.FlagSet.String("format", "json", "The input format. Supported values are 'json','yaml'. The default format is json."),
+				"read_config_from_file": c.FlagSet.String("raw-config", command.NilDefaultStr, colors.Red("(Required)")+" Read raw object from file"),
+				"read_config_from_pipe": c.FlagSet.Bool("pipe", false, colors.Green("(Flag)")+" If set, read raw object from pipe instead of from a file. Either this flag or the --raw-config option must be used."),
+				"return_id":             c.FlagSet.Bool("return-id", false, "Will print the ID of the created object. Useful for automating tasks."),
 			}
 		},
 		ExecuteFunc2:        serverRegisterCmd,
@@ -1452,24 +1430,6 @@ func serverGetCmd(c *command.Command, client metalcloud.MetalCloudClient) (strin
 	}
 
 	return sb.String(), nil
-}
-
-func serverCreateCmd(c *command.Command, client metalcloud.MetalCloudClient) (string, error) {
-
-	var obj metalcloud.Server
-
-	err := command.GetRawObjectFromCommand(c, &obj)
-
-	ret, err := client.ServerCreate(obj, false)
-	if err != nil {
-		return "", err
-	}
-
-	if command.GetBoolParam(c.Arguments["return_id"]) {
-		return fmt.Sprintf("%d", ret), nil
-	}
-
-	return "", err
 }
 
 func serverRegisterCmd(ctx context.Context, c *command.Command, client *metalcloud2.APIClient) (string, error) {
