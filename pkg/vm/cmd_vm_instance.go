@@ -5,7 +5,6 @@ import (
 	"encoding/json"
 	"flag"
 	"fmt"
-	"io"
 
 	metalcloud2 "github.com/metalsoft-io/metal-cloud-sdk2-go"
 	"github.com/metalsoft-io/metalcloud-cli/internal/colors"
@@ -341,7 +340,7 @@ func vmInstancePowerStatusGetCmd(ctx context.Context, c *command.Command, client
 		return "", fmt.Errorf("-id is required")
 	}
 
-	response, err := client.VMInstanceApi.GetVMInstancePowerStatus(ctx, float64(infrastructureId), float64(id))
+	powerStatus, response, err := client.VMInstanceApi.GetVMInstancePowerStatus(ctx, float64(infrastructureId), float64(id))
 	if err != nil {
 		return "", err
 	}
@@ -349,12 +348,7 @@ func vmInstancePowerStatusGetCmd(ctx context.Context, c *command.Command, client
 		return "", fmt.Errorf("HTTP error: %s", response.Status)
 	}
 
-	powerStatus, err := io.ReadAll(response.Body)
-	if err != nil {
-		return "", err
-	}
-
-	return string(powerStatus), nil
+	return powerStatus, nil
 }
 
 func vmInstanceStartCmd(ctx context.Context, c *command.Command, client *metalcloud2.APIClient) (string, error) {
