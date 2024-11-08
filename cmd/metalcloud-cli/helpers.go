@@ -252,12 +252,15 @@ func getCommands(clients map[string]metalcloud.MetalCloudClient, permissions []s
 // fitlerCommandSet Filters commands based on endpoint availability for client
 func fitlerCommandSet(commandSet []command.Command, clients map[string]metalcloud.MetalCloudClient, permissions []string) []command.Command {
 	filteredCommands := []command.Command{}
-	for _, command := range commandSet {
-		if endpointAvailableForCommand(command, clients, permissions) && commandVisibleForUser(command, permissions) {
 
+	for _, command := range commandSet {
+		if endpointAvailableForCommand(command, clients, permissions) &&
+			commandVisibleForUser(command, permissions) ||
+			command.ExecuteFunc2 != nil {
 			filteredCommands = append(filteredCommands, command)
 		}
 	}
+
 	return filteredCommands
 }
 
