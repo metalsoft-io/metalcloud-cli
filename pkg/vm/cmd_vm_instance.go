@@ -341,7 +341,7 @@ func vmInstancePowerStatusGetCmd(ctx context.Context, c *command.Command, client
 		return "", fmt.Errorf("-id is required")
 	}
 
-	response, err := client.VMInstanceApi.GetVMInstancePowerStatus(ctx, float64(infrastructureId), float64(id))
+	_, response, err := client.VMInstanceApi.GetVMInstancePowerStatus(ctx, float64(infrastructureId), float64(id))
 	if err != nil {
 		return "", err
 	}

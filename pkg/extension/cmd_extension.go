@@ -209,7 +209,7 @@ func extensionGetCmd(ctx context.Context, c *command.Command, client *metalcloud
 }
 
 func extensionCreateCmd(ctx context.Context, c *command.Command, client *metalcloud2.APIClient) (string, error) {
-	var obj metalcloud2.ExtensionDefinitionDto
+	var obj metalcloud2.CreateExtensionDto
 
 	err := command.GetRawObjectFromCommand(c, &obj)
 	if err != nil {
@@ -234,7 +234,7 @@ func extensionUpdateCmd(ctx context.Context, c *command.Command, client *metalcl
 		return "", fmt.Errorf("-id is required")
 	}
 
-	var obj metalcloud2.ExtensionDefinitionDto
+	var obj metalcloud2.UpdateExtensionDto
 
 	err := command.GetRawObjectFromCommand(c, &obj)
 	if err != nil {
