@@ -18,6 +18,7 @@ import (
 	"github.com/metalsoft-io/metalcloud-cli/pkg/custom_isos"
 	"github.com/metalsoft-io/metalcloud-cli/pkg/datacenter"
 	"github.com/metalsoft-io/metalcloud-cli/pkg/drive"
+	"github.com/metalsoft-io/metalcloud-cli/pkg/extension"
 	"github.com/metalsoft-io/metalcloud-cli/pkg/firewall"
 	"github.com/metalsoft-io/metalcloud-cli/pkg/firmware"
 	"github.com/metalsoft-io/metalcloud-cli/pkg/infrastructure"
@@ -205,6 +206,7 @@ func getCommands(clients map[string]metalcloud.MetalCloudClient, permissions []s
 		drive.DriveArrayCmds,
 		drive.DriveSnapshotCmds,
 		drive.SharedDriveCmds,
+		extension.ExtensionCmds,
 		firewall.FirewallRuleCmds,
 		firmware.FirmwareCatalogCmds,
 		infrastructure.InfrastructureCmds,
@@ -250,12 +252,15 @@ func getCommands(clients map[string]metalcloud.MetalCloudClient, permissions []s
 // fitlerCommandSet Filters commands based on endpoint availability for client
 func fitlerCommandSet(commandSet []command.Command, clients map[string]metalcloud.MetalCloudClient, permissions []string) []command.Command {
 	filteredCommands := []command.Command{}
-	for _, command := range commandSet {
-		if endpointAvailableForCommand(command, clients, permissions) && commandVisibleForUser(command, permissions) {
 
+	for _, command := range commandSet {
+		if endpointAvailableForCommand(command, clients, permissions) &&
+			commandVisibleForUser(command, permissions) ||
+			command.ExecuteFunc2 != nil {
 			filteredCommands = append(filteredCommands, command)
 		}
 	}
+
 	return filteredCommands
 }
 

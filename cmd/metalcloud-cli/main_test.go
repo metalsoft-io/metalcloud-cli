@@ -379,7 +379,13 @@ func TestCheckForDuplicates(t *testing.T) {
 			}
 
 			sf1 := reflect.ValueOf(a.ExecuteFunc)
+			if a.ExecuteFunc2 != nil {
+				sf1 = reflect.ValueOf(a.ExecuteFunc2)
+			}
 			sf2 := reflect.ValueOf(b.ExecuteFunc)
+			if b.ExecuteFunc2 != nil {
+				sf2 = reflect.ValueOf(b.ExecuteFunc2)
+			}
 
 			if sf1.Pointer() == sf2.Pointer() {
 				t.Errorf("commands have same executeFunc:\na=%+v\nb=%+v", a, b)
