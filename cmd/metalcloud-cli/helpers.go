@@ -207,6 +207,7 @@ func getCommands(clients map[string]metalcloud.MetalCloudClient, permissions []s
 		drive.DriveSnapshotCmds,
 		drive.SharedDriveCmds,
 		extension.ExtensionCmds,
+		extension.ExtensionInstanceCmds,
 		firewall.FirewallRuleCmds,
 		firmware.FirmwareCatalogCmds,
 		infrastructure.InfrastructureCmds,
