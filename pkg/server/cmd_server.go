@@ -1088,7 +1088,7 @@ func serversListCmd(c *command.Command, client metalcloud.MetalCloudClient) (str
 				s.InstanceArrayID[0],
 				s.InfrastructureID[0])
 			if len(allocation) > 30 {
-				allocation = stringutils.TruncateString(allocation, 10)
+				allocation = strings.Fields(allocation)[0]
 			}
 		}
 
