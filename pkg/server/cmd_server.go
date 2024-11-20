@@ -937,6 +937,7 @@ func colorizeServerStatus(status string) string {
 func serversListCmd(c *command.Command, client metalcloud.MetalCloudClient) (string, error) {
 
 	filter := command.GetStringParam(c.Arguments["filter"])
+	format := command.GetStringParam(c.Arguments["format"])
 
 	list, err := client.ServersSearch(filtering.ConvertToSearchFieldFormat(filter))
 	if err != nil {
@@ -1146,18 +1147,20 @@ func serversListCmd(c *command.Command, client metalcloud.MetalCloudClient) (str
 
 		status := s.ServerStatus
 
-		switch status {
-		case "available":
-			status = colors.Blue(status)
-		case "used":
-			status = colors.Green(status)
-		case "unavailable":
-			status = colors.Magenta(status)
-		case "defective":
-			status = colors.Red(status)
-		default:
-			status = colors.Yellow(status)
+		if format == "" {
+			switch status {
+			case "available":
+				status = colors.Blue(status)
+			case "used":
+				status = colors.Green(status)
+			case "unavailable":
+				status = colors.Magenta(status)
+			case "defective":
+				status = colors.Red(status)
+			default:
+				status = colors.Yellow(status)
 
+			}
 		}
 
 		row := []interface{}{
