@@ -579,11 +579,14 @@ func commandHelpSummary(cmd Command) string {
 		command = fmt.Sprintf("%s %s", cmd.Subject, cmd.Predicate)
 	}
 
-	cmdHelpSummary := fmt.Sprintf("Command: %-40s %s (alternatively use \"%s %s\")\n",
+	alternate := ""
+	if cmd.AltPredicate != NilDefaultStr && cmd.AltSubject != NilDefaultStr {
+		alternate = fmt.Sprintf(" (alternatively use \"%s %s\")", colors.Bold(cmd.AltSubject), colors.Bold(cmd.AltPredicate))
+	}
+	cmdHelpSummary := fmt.Sprintf("Command: %-36s %s%s\n",
 		colors.Bold(command),
 		cmd.Description,
-		colors.Bold(cmd.AltSubject),
-		colors.Bold(cmd.AltPredicate))
+		alternate)
 
 	sb.WriteString(cmdHelpSummary)
 
