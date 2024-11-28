@@ -668,7 +668,7 @@ func infrastructureGetCmd(c *command.Command, client metalcloud.MetalCloudClient
 		Data:   data,
 		Schema: schema,
 	}
-	return table.RenderTable("Infrastructures", topLine, command.GetStringParam(c.Arguments["format"]))
+	return table.RenderTable("resources", topLine, command.GetStringParam(c.Arguments["format"]))
 }
 
 func listWorkflowStagesCmd(c *command.Command, client metalcloud.MetalCloudClient) (string, error) {
