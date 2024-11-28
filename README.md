@@ -21,7 +21,7 @@ brew install metalcloud-cli
 
 To install on any CentOS/Redhat Linux distribution:
 ```
-$ sudo yum install $(curl -s https://api.github.com/repos/metalsoft-io/metalcloud-cli/releases/latest | grep -i browser_download_url  | grep "$(dpkg --print-architecture)" | grep rpm | head -n 1 | cut -d'"' -f4)
+sudo yum install $(curl -s https://api.github.com/repos/metalsoft-io/metalcloud-cli/releases/latest | grep -i browser_download_url  | grep "$(dpkg --print-architecture)" | grep rpm | head -n 1 | cut -d'"' -f4)
 ```
 
 To install on any Debian/Ubuntu distributions:
