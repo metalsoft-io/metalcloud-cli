@@ -10,6 +10,8 @@ This tool allows the manipulation of all Metal Cloud elements via the command li
 
 ### Installation
 
+Refer to the [latest release](https://github.com/metalsoft-io/metalcloud-cli/releases/latest) for the correct package you need to install.
+
 To install on Mac OS X:
 ```
 brew tap metalsoft-io/homebrew-repo
@@ -18,7 +20,7 @@ brew install metalcloud-cli
 
 To install on any CentOS/Redhat Linux distribution:
 ```
-$ sudo yum install https://github.com/metalsoft-io/metalcloud-cli/releases/download/v1.0.3/metalcloud-cli_1.0.3_linux_amd64.rpm
+$ sudo yum install $(curl -s https://api.github.com/repos/metalsoft-io/metalcloud-cli/releases/latest | grep -i browser_download_url  | grep "$(dpkg --print-architecture)" | grep rpm | head -n 1 | cut -d'"' -f4)
 ```
 
 To install on any Debian/Ubuntu distributions:
