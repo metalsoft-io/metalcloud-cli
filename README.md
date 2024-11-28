@@ -10,7 +10,8 @@ This tool allows the manipulation of all Metal Cloud elements via the command li
 
 ### Installation
 
-Refer to the [latest release](https://github.com/metalsoft-io/metalcloud-cli/releases/latest) for the correct package you need to install.
+> [!IMPORTANT]
+> Refer to the [latest release](https://github.com/metalsoft-io/metalcloud-cli/releases/latest) for the correct package you need to install.
 
 To install on Mac OS X:
 ```
