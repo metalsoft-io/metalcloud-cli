@@ -27,10 +27,12 @@ var InfrastructureCmds = []command.Command{
 			c.Arguments = map[string]interface{}{
 				"infrastructure_label": c.FlagSet.String("label", "", colors.Red("(Required)")+" Infrastructure's label"),
 				"datacenter":           c.FlagSet.String("datacenter", command.NilDefaultStr, colors.Red("(Required)")+" Infrastructure datacenter"),
+				"user_id":              c.FlagSet.String("owner", command.NilDefaultStr, "(Optional) The infrastructure's owner email or id."),
 				"return_id":            c.FlagSet.Bool("return-id", false, colors.Green("(Flag)")+" If set will print the ID of the created infrastructure. Useful for automating tasks."),
 			}
 		},
 		ExecuteFunc: infrastructureCreateCmd,
+		Endpoint:    configuration.DeveloperEndpoint,
 	},
 	{
 		Description:  "Lists all infrastructures.",
@@ -181,6 +183,15 @@ func infrastructureCreateCmd(c *command.Command, client metalcloud.MetalCloudCli
 	ia := metalcloud.Infrastructure{
 		InfrastructureLabel: *infrastructureLabel.(*string),
 		DatacenterName:      *datacenter.(*string),
+	}
+
+	if c.Arguments["user_id"] != nil {
+		user, err := command.GetUserFromCommand("owner", c, client)
+		if err != nil {
+			return "", err
+		}
+		ia.UserIDowner = user.UserID
+		ia.UserEmailOwner = user.UserEmail
 	}
 
 	retInfra, err := client.InfrastructureCreate(ia)
@@ -668,7 +679,7 @@ func infrastructureGetCmd(c *command.Command, client metalcloud.MetalCloudClient
 		Data:   data,
 		Schema: schema,
 	}
-	return table.RenderTable("Infrastructures", topLine, command.GetStringParam(c.Arguments["format"]))
+	return table.RenderTable("resources", topLine, command.GetStringParam(c.Arguments["format"]))
 }
 
 func listWorkflowStagesCmd(c *command.Command, client metalcloud.MetalCloudClient) (string, error) {
