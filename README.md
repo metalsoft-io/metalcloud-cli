@@ -5,7 +5,7 @@
 
 This tool allows the manipulation of all Metal Cloud elements via the command line.
 
-![metalcloud-cli](https://bigstep.com/assets/images/blog/2019/metalcloud-cli-animated.gif)
+![metalcloud-cli](doc/images/metalcloud-cli-animated.gif)
 
 
 ### Installation
