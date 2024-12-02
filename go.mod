@@ -18,7 +18,7 @@ require (
 	github.com/onsi/gomega v1.27.10
 	github.com/savaki/jq v0.0.0-20161209013833-0e6baecebbf8
 	github.com/sergi/go-diff v1.1.0
-	golang.org/x/crypto v0.16.0
+	golang.org/x/crypto v0.21.0
 	gopkg.in/yaml.v2 v2.4.0
 	gopkg.in/yaml.v3 v3.0.1
 )
@@ -51,10 +51,10 @@ require (
 	github.com/xanzy/ssh-agent v0.3.3 // indirect
 	github.com/ybbus/jsonrpc v2.1.2+incompatible // indirect
 	golang.org/x/exp v0.0.0-20230626212559-97b1e661b5df
-	golang.org/x/net v0.19.0
+	golang.org/x/net v0.23.0
 	golang.org/x/oauth2 v0.23.0 // indirect
-	golang.org/x/sys v0.15.0 // indirect
-	golang.org/x/term v0.15.0 // indirect
+	golang.org/x/sys v0.18.0 // indirect
+	golang.org/x/term v0.18.0 // indirect
 	golang.org/x/text v0.14.0 // indirect
 	gopkg.in/warnings.v0 v0.1.2 // indirect
 )
