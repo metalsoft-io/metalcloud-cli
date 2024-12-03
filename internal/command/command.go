@@ -439,7 +439,11 @@ func helpMessage(err error, subject string, predicate string) error {
 
 	swaggerErr, ok := err.(metalcloud2.GenericSwaggerError)
 	if ok {
-		message = swaggerErr.Error() + " [ " + string(swaggerErr.Body()) + " ]"
+		if strings.Contains(swaggerErr.Error(), "404") || strings.Contains(swaggerErr.Error(), "Not Found") {
+			message = "This version of CLI (" + configuration.Version + ") is only compatible with a controller versioned 6.4 and above."
+		} else {
+			message = swaggerErr.Error() + " [ " + string(swaggerErr.Body()) + " ]"
+		}
 	}
 
 	if predicate != NilDefaultStr {

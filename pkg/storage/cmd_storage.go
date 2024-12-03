@@ -1,10 +1,12 @@
 package storage
 
 import (
+	"context"
 	"flag"
 	"fmt"
 
 	metalcloud "github.com/metalsoft-io/metal-cloud-sdk-go/v3"
+	metalcloud2 "github.com/metalsoft-io/metal-cloud-sdk2-go"
 	"github.com/metalsoft-io/metalcloud-cli/internal/colors"
 	"github.com/metalsoft-io/metalcloud-cli/internal/command"
 	"github.com/metalsoft-io/metalcloud-cli/internal/configuration"
@@ -31,6 +33,24 @@ var StorageCmds = []command.Command{
 		ExecuteFunc:         storageListCmd,
 		Endpoint:            configuration.DeveloperEndpoint,
 		PermissionsRequired: []string{command.STORAGE_READ},
+	},
+	{
+		Description:  "Creates a storage.",
+		Subject:      "storage",
+		AltSubject:   "storages",
+		Predicate:    "create",
+		AltPredicate: "new",
+		FlagSet:      flag.NewFlagSet("create storage", flag.ExitOnError),
+		InitFunc: func(c *command.Command) {
+			c.Arguments = map[string]interface{}{
+				"format":                c.FlagSet.String("format", "json", "The input format. Supported values are 'json','yaml'. The default format is json."),
+				"read_config_from_file": c.FlagSet.String("raw-config", command.NilDefaultStr, colors.Red("(Required)")+" Read raw object from file"),
+				"read_config_from_pipe": c.FlagSet.Bool("pipe", false, colors.Green("(Flag)")+" If set, read raw object from pipe instead of from a file. Either this flag or the --raw-config option must be used."),
+				"return_id":             c.FlagSet.Bool("return-id", false, "Will print the Id of the created object. Useful for automating tasks."),
+			}
+		},
+		ExecuteFunc2:        storageCreateCmd,
+		PermissionsRequired: []string{command.STORAGE_WRITE},
 	},
 }
 
@@ -193,4 +213,24 @@ func storageListCmd(c *command.Command, client metalcloud.MetalCloudClient) (str
 	}
 
 	return table.RenderTable(title, "", command.GetStringParam(c.Arguments["format"]))
+}
+
+func storageCreateCmd(ctx context.Context, c *command.Command, client *metalcloud2.APIClient) (string, error) {
+	var obj metalcloud2.CreateStorage
+
+	err := command.GetRawObjectFromCommand(c, &obj)
+	if err != nil {
+		return "", err
+	}
+
+	storage, _, err := client.StorageApi.CreateStorage(ctx, obj)
+	if err != nil {
+		return "", err
+	}
+
+	if command.GetBoolParam(c.Arguments["return_id"]) {
+		return fmt.Sprintf("%v", storage.Id), nil
+	}
+
+	return "", err
 }
