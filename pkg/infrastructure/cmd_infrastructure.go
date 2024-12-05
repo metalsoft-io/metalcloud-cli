@@ -392,16 +392,26 @@ func infrastructureListAdminCmd(c *command.Command, client metalcloud.MetalCloud
 
 			status := ""
 
+			format := command.GetStringParam(c.Arguments["format"])
 			if i.InfrastructureServiceStatus == "active" {
 				status = colors.Green("Deployed")
+				if format != "" {
+					status = "Deployed"
+				}
 			}
 
 			if i.InfrastructureServiceStatus == "ordered" {
 				status = colors.Blue("Ordered (deploy not started)")
+				if format != "" {
+					status = "Ordered (deploy not started)"
+				}
 			}
 
 			if i.InfrastructureServiceStatus == "deleted" {
 				status = colors.Magenta("Deleted")
+				if format != "" {
+					status = "Deleted"
+				}
 			}
 
 			data = append(data, []interface{}{
@@ -576,10 +586,17 @@ func infrastructureListAdminCmd(c *command.Command, client metalcloud.MetalCloud
 				return "", err
 			}
 
+			format := command.GetStringParam(c.Arguments["format"])
 			for _, ia := range *iaList {
 				status := colors.Green(ia.InstanceArrayServiceStatus)
+				if format != "" {
+					status = ia.InstanceArrayServiceStatus
+				}
 				if ia.InstanceArrayServiceStatus != "ordered" && ia.InstanceArrayOperation.InstanceArrayDeployType == "edit" && ia.InstanceArrayOperation.InstanceArrayDeployStatus == "not_started" {
 					status = colors.Blue("edited")
+					if format != "" {
+						status = "edited"
+					}
 				}
 
 				volumeTemplateName := ""
@@ -605,9 +622,13 @@ func infrastructureListAdminCmd(c *command.Command, client metalcloud.MetalCloud
 				fwMgmtDisabled,
 			)
 
+		object_type :=  colors.Green("InstanceArray")
+		if format != "" {
+			object_type =  "InstanceArray"
+		}
 			data = append(data, []interface{}{
 				ia.InstanceArrayID,
-				colors.Green("InstanceArray"),
+				object_type,
 				ia.InstanceArrayOperation.InstanceArrayLabel,
 				details,
 				status,
@@ -622,8 +643,14 @@ func infrastructureListAdminCmd(c *command.Command, client metalcloud.MetalCloud
 
 		for _, da := range *daList {
 			status := colors.Green(da.DriveArrayServiceStatus)
+			if format != "" {
+				status = da.DriveArrayServiceStatus
+			}
 			if da.DriveArrayServiceStatus != "ordered" && da.DriveArrayOperation.DriveArrayDeployType == "edit" && da.DriveArrayOperation.DriveArrayDeployStatus == "not_started" {
 				status = colors.Blue("edited")
+				if format != "" {
+					status = "edited"
+				}
 			}
 
 			volumeTemplateName := ""
@@ -652,9 +679,13 @@ func infrastructureListAdminCmd(c *command.Command, client metalcloud.MetalCloud
 			da.StoragePoolID,
 		)
 
+		object_type :=  colors.Blue("DriveArray")
+		if format != "" {
+			object_type = "DriveArray"
+		}
 		data = append(data, []interface{}{
 			da.DriveArrayID,
-			colors.Blue("DriveArray"),
+			object_type,
 			da.DriveArrayOperation.DriveArrayLabel,
 			details,
 			status,
@@ -668,8 +699,14 @@ func infrastructureListAdminCmd(c *command.Command, client metalcloud.MetalCloud
 
 	for _, sda := range *sdaList {
 		status := colors.Green(sda.SharedDriveServiceStatus)
+		if format != "" {
+			status = sda.SharedDriveServiceStatus
+		}
 		if sda.SharedDriveServiceStatus != "ordered" && sda.SharedDriveOperation.SharedDriveDeployType == "edit" && sda.SharedDriveOperation.SharedDriveDeployStatus == "not_started" {
 			status = colors.Blue("edited")
+			if format != "" {
+				status = "edited"
+			}
 		}
 
 		details := fmt.Sprintf("%d GB size, type: %s, i/o limit policy: %s, WWW: %s, storage pool: #%d",
@@ -680,9 +717,13 @@ func infrastructureListAdminCmd(c *command.Command, client metalcloud.MetalCloud
 		sda.StoragePoolID,
 	)
 
+		object_type :=  colors.Magenta("SharedDrive")
+		if format != "" {
+			object_type = "SharedDrive"
+		}
 	data = append(data, []interface{}{
 		sda.SharedDriveID,
-		colors.Magenta("SharedDrive"),
+		object_type,
 		sda.SharedDriveLabel,
 		details,
 		status,
