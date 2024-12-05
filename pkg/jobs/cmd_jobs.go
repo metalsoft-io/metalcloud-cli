@@ -195,17 +195,20 @@ func jobListCmd(c *command.Command, client metalcloud.MetalCloudClient) (string,
 
 		status := s.AFCStatus
 
-		switch status {
-		case "thrown_error":
-			status = colors.Red(status)
-		case "thrown_error_while_retrying":
-			status = colors.Magenta(status)
-		case "running":
-			status = colors.Yellow(status)
-		case "returned_success":
-			status = colors.Green(status)
-		default:
-			status = colors.Yellow(status)
+		format := command.GetStringParam(c.Arguments["format"])
+		if format == "" {
+			switch status {
+			case "thrown_error":
+				status = colors.Red(status)
+			case "thrown_error_while_retrying":
+				status = colors.Magenta(status)
+			case "running":
+				status = colors.Yellow(status)
+			case "returned_success":
+				status = colors.Green(status)
+			default:
+				status = colors.Yellow(status)
+			}
 		}
 
 		durationObj, err := durationSinceZuluUTC(s.AFCCreatedTimestamp)
@@ -230,12 +233,14 @@ func jobListCmd(c *command.Command, client metalcloud.MetalCloudClient) (string,
 		}
 
 		retries := fmt.Sprintf("%d/%d", s.AFCRetryCount, s.AFCRetryMax)
-		if s.AFCRetryCount >= s.AFCRetryMax {
-			retries = colors.Red(retries)
-		} else if s.AFCRetryCount < s.AFCRetryMax && s.AFCRetryCount > 1 {
-			retries = colors.Yellow(retries)
-		} else {
-			retries = colors.Green(retries)
+		if format == "" {
+			if s.AFCRetryCount >= s.AFCRetryMax {
+				retries = colors.Red(retries)
+			} else if s.AFCRetryCount < s.AFCRetryMax && s.AFCRetryCount > 1 {
+				retries = colors.Yellow(retries)
+			} else {
+				retries = colors.Green(retries)
+			}
 		}
 
 		request := ""
@@ -308,13 +313,13 @@ func jobListCmd(c *command.Command, client metalcloud.MetalCloudClient) (string,
 	}
 
 	title := fmt.Sprintf("Jobs: %d thrown error %d thrown error retrying  %d running %d returned success",
-		statusCounts["thrown_error"],
-		statusCounts["thrown_error_while_retrying"],
-		statusCounts["running"],
-		statusCounts["returned_success"],
-	)
+	statusCounts["thrown_error"],
+	statusCounts["thrown_error_while_retrying"],
+	statusCounts["running"],
+	statusCounts["returned_success"],
+)
 
-	return table.RenderTable(title, "", command.GetStringParam(c.Arguments["format"]))
+return table.RenderTable(title, "", command.GetStringParam(c.Arguments["format"]))
 
 }
 
@@ -426,14 +431,16 @@ func jobGetCmd(c *command.Command, client metalcloud.MetalCloudClient) (string, 
 	}
 
 	retries := fmt.Sprintf("%d/%d", s.AFCRetryCount, s.AFCRetryMax)
-	if s.AFCRetryCount >= s.AFCRetryMax {
-		retries = colors.Red(retries)
-	} else if s.AFCRetryCount < s.AFCRetryMax && s.AFCRetryCount > 1 {
-		retries = colors.Yellow(retries)
-	} else {
-		retries = colors.Green(retries)
+	format := command.GetStringParam(c.Arguments["format"])
+	if format == "" {
+		if s.AFCRetryCount >= s.AFCRetryMax {
+			retries = colors.Red(retries)
+		} else if s.AFCRetryCount < s.AFCRetryMax && s.AFCRetryCount > 1 {
+			retries = colors.Yellow(retries)
+		} else {
+			retries = colors.Green(retries)
+		}
 	}
-
 	request := ""
 	switch s.AFCFunctionName {
 	case "infrastructure_provision":
@@ -500,7 +507,7 @@ func jobGetCmd(c *command.Command, client metalcloud.MetalCloudClient) (string, 
 		command.Watch(func() (string, error) {
 			return table.RenderTransposedTable(title, "", command.GetStringParam(c.Arguments["format"]))
 		},
-			interval)
+		interval)
 	}
 
 	return table.RenderTransposedTable(title, "", command.GetStringParam(c.Arguments["format"]))
@@ -522,25 +529,25 @@ func jobRetryCmd(c *command.Command, client metalcloud.MetalCloudClient) (string
 	confirm, err := command.ConfirmCommand(c, func() string {
 
 		confirmationMessage := fmt.Sprintf("Retrying Job #%d.  Are you sure? Type \"yes\" to continue:",
-			afc_id,
-		)
+		afc_id,
+	)
 
-		if strings.HasSuffix(os.Args[0], ".test") {
-			confirmationMessage = ""
-		}
-
-		return confirmationMessage
-	})
-
-	if err != nil {
-		return "", err
+	if strings.HasSuffix(os.Args[0], ".test") {
+		confirmationMessage = ""
 	}
 
-	if confirm {
-		err = client.AFCRetryCall(afc_id)
-	}
+	return confirmationMessage
+})
 
-	return jobGetCmd(c, client)
+if err != nil {
+	return "", err
+}
+
+if confirm {
+	err = client.AFCRetryCall(afc_id)
+}
+
+return jobGetCmd(c, client)
 }
 
 func jobSkipCmd(c *command.Command, client metalcloud.MetalCloudClient) (string, error) {
@@ -558,25 +565,25 @@ func jobSkipCmd(c *command.Command, client metalcloud.MetalCloudClient) (string,
 	confirm, err := command.ConfirmCommand(c, func() string {
 
 		confirmationMessage := fmt.Sprintf("Skipping Job #%d.  Are you sure? Type \"yes\" to continue:",
-			afc_id,
-		)
+		afc_id,
+	)
 
-		if strings.HasSuffix(os.Args[0], ".test") {
-			confirmationMessage = ""
-		}
-
-		return confirmationMessage
-	})
-
-	if err != nil {
-		return "", err
+	if strings.HasSuffix(os.Args[0], ".test") {
+		confirmationMessage = ""
 	}
 
-	if confirm {
-		err = client.AFCSkip(afc_id)
-	}
+	return confirmationMessage
+})
 
-	return jobGetCmd(c, client)
+if err != nil {
+	return "", err
+}
+
+if confirm {
+	err = client.AFCSkip(afc_id)
+}
+
+return jobGetCmd(c, client)
 }
 
 func jobDeleteCmd(c *command.Command, client metalcloud.MetalCloudClient) (string, error) {
@@ -594,25 +601,25 @@ func jobDeleteCmd(c *command.Command, client metalcloud.MetalCloudClient) (strin
 	confirm, err := command.ConfirmCommand(c, func() string {
 
 		confirmationMessage := fmt.Sprintf("Deleting Job #%d.  Are you sure? Type \"yes\" to continue:",
-			afc_id,
-		)
+		afc_id,
+	)
 
-		if strings.HasSuffix(os.Args[0], ".test") {
-			confirmationMessage = ""
-		}
-
-		return confirmationMessage
-	})
-
-	if err != nil {
-		return "", err
+	if strings.HasSuffix(os.Args[0], ".test") {
+		confirmationMessage = ""
 	}
 
-	if confirm {
-		err = client.AFCDelete(afc_id)
-	}
+	return confirmationMessage
+})
 
-	return jobGetCmd(c, client)
+if err != nil {
+	return "", err
+}
+
+if confirm {
+	err = client.AFCDelete(afc_id)
+}
+
+return jobGetCmd(c, client)
 }
 
 func jobKillCmd(c *command.Command, client metalcloud.MetalCloudClient) (string, error) {
@@ -632,25 +639,25 @@ func jobKillCmd(c *command.Command, client metalcloud.MetalCloudClient) (string,
 	confirm, err := command.ConfirmCommand(c, func() string {
 
 		confirmationMessage := fmt.Sprintf("Killing Job #%d.  Are you sure? Type \"yes\" to continue:",
-			afc_id,
-		)
+		afc_id,
+	)
 
-		if strings.HasSuffix(os.Args[0], ".test") {
-			confirmationMessage = ""
-		}
-
-		return confirmationMessage
-	})
-
-	if err != nil {
-		return "", err
+	if strings.HasSuffix(os.Args[0], ".test") {
+		confirmationMessage = ""
 	}
 
-	if confirm {
-		err = client.AFCMarkForDeath(afc_id, mark)
-	}
+	return confirmationMessage
+})
 
-	return jobGetCmd(c, client)
+if err != nil {
+	return "", err
+}
+
+if confirm {
+	err = client.AFCMarkForDeath(afc_id, mark)
+}
+
+return jobGetCmd(c, client)
 }
 
 func durationSinceZuluUTC(t string) (time.Duration, error) {
