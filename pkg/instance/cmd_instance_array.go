@@ -258,381 +258,389 @@ func instanceArrayEditCmd(c *command.Command, client metalcloud.MetalCloudClient
 		nil,
 		nil)
 
-	return "", err
-}
-
-func instanceArrayListCmd(c *command.Command, client metalcloud.MetalCloudClient) (string, error) {
-
-	infra, err := command.GetInfrastructureFromCommand("infra", c, client)
-	if err != nil {
 		return "", err
 	}
 
-	iaList, err := client.InstanceArrays(infra.InfrastructureID)
-	if err != nil {
-		return "", err
-	}
+	func instanceArrayListCmd(c *command.Command, client metalcloud.MetalCloudClient) (string, error) {
 
-	schema := []tableformatter.SchemaField{
-		{
-			FieldName: "ID",
-			FieldType: tableformatter.TypeInt,
-			FieldSize: 6,
-		},
-		{
-			FieldName: "LABEL",
-			FieldType: tableformatter.TypeString,
-			FieldSize: 15,
-		},
-		{
-			FieldName: "STATUS",
-			FieldType: tableformatter.TypeString,
-			FieldSize: 10,
-		},
-		{
-			FieldName: "INST_CNT",
-			FieldType: tableformatter.TypeInt,
-			FieldSize: 10,
-		},
-	}
-
-	data := [][]interface{}{}
-	for _, ia := range *iaList {
-		status := ia.InstanceArrayServiceStatus
-		if ia.InstanceArrayServiceStatus != "ordered" && ia.InstanceArrayOperation.InstanceArrayDeployType == "edit" && ia.InstanceArrayOperation.InstanceArrayDeployStatus == "not_started" {
-			status = "edited"
-		}
-		if ia.InstanceArrayServiceStatus != "ordered" && ia.InstanceArrayOperation.InstanceArrayDeployType == "delete" && ia.InstanceArrayOperation.InstanceArrayDeployStatus == "not_started" {
-			status = "marked for delete"
-		}
-		data = append(data, []interface{}{
-			ia.InstanceArrayID,
-			ia.InstanceArrayOperation.InstanceArrayLabel,
-			status,
-			ia.InstanceArrayOperation.InstanceArrayInstanceCount})
-	}
-
-	tableformatter.TableSorter(schema).OrderBy(schema[0].FieldName).Sort(data)
-
-	table := tableformatter.Table{
-		Data:   data,
-		Schema: schema,
-	}
-	return table.RenderTable("Instance Arrays", "", command.GetStringParam(c.Arguments["format"]))
-}
-
-func instanceArrayDeleteCmd(c *command.Command, client metalcloud.MetalCloudClient) (string, error) {
-
-	retIA, err := command.GetInstanceArrayFromCommand("id", c, client)
-	if err != nil {
-		return "", err
-	}
-
-	retInfra, err := client.InfrastructureGet(retIA.InfrastructureID)
-	if err != nil {
-		return "", err
-	}
-
-	confirm := false
-
-	if command.GetBoolParam(c.Arguments["autoconfirm"]) {
-		confirm = true
-	} else {
-
-		confirmationMessage := fmt.Sprintf("Deleting instance array %s (%d) - from infrastructure %s (%d).  Are you sure? Type \"yes\" to continue:",
-			retIA.InstanceArrayLabel, retIA.InstanceArrayID,
-			retInfra.InfrastructureLabel, retInfra.InfrastructureID)
-
-		//this is simply so that we don't output a text on the command line under go test
-		if strings.HasSuffix(os.Args[0], ".test") {
-			confirmationMessage = ""
-		}
-
-		confirm, err = command.RequestConfirmation(confirmationMessage)
+		infra, err := command.GetInfrastructureFromCommand("infra", c, client)
 		if err != nil {
 			return "", err
 		}
-	}
 
-	if !confirm {
-		return "", fmt.Errorf("Operation not confirmed. Aborting")
-	}
+		iaList, err := client.InstanceArrays(infra.InfrastructureID)
+		if err != nil {
+			return "", err
+		}
 
-	err = client.InstanceArrayDelete(retIA.InstanceArrayID)
+		schema := []tableformatter.SchemaField{
+			{
+				FieldName: "ID",
+				FieldType: tableformatter.TypeInt,
+				FieldSize: 6,
+			},
+			{
+				FieldName: "LABEL",
+				FieldType: tableformatter.TypeString,
+				FieldSize: 15,
+			},
+			{
+				FieldName: "STATUS",
+				FieldType: tableformatter.TypeString,
+				FieldSize: 10,
+			},
+			{
+				FieldName: "INST_CNT",
+				FieldType: tableformatter.TypeInt,
+				FieldSize: 10,
+			},
+		}
 
-	return "", err
-}
+		data := [][]interface{}{}
+		for _, ia := range *iaList {
+			status := ia.InstanceArrayServiceStatus
+			if ia.InstanceArrayServiceStatus != "ordered" && ia.InstanceArrayOperation.InstanceArrayDeployType == "edit" && ia.InstanceArrayOperation.InstanceArrayDeployStatus == "not_started" {
+				status = "edited"
+			}
+			if ia.InstanceArrayServiceStatus != "ordered" && ia.InstanceArrayOperation.InstanceArrayDeployType == "delete" && ia.InstanceArrayOperation.InstanceArrayDeployStatus == "not_started" {
+				status = "marked for delete"
+			}
+			data = append(data, []interface{}{
+				ia.InstanceArrayID,
+				ia.InstanceArrayOperation.InstanceArrayLabel,
+				status,
+				ia.InstanceArrayOperation.InstanceArrayInstanceCount})
+			}
 
-func instanceArrayGetNetworkAttachments(c *command.Command, client metalcloud.MetalCloudClient) (string, error) {
+			tableformatter.TableSorter(schema).OrderBy(schema[0].FieldName).Sort(data)
 
-	retIA, err := command.GetInstanceArrayFromCommand("id", c, client)
-	if err != nil {
-		return "", err
-	}
+			table := tableformatter.Table{
+				Data:   data,
+				Schema: schema,
+			}
+			return table.RenderTable("Instance Arrays", "", command.GetStringParam(c.Arguments["format"]))
+		}
 
-	if &retIA == nil {
-		return "", fmt.Errorf("instance array should not be nil")
-	}
+		func instanceArrayDeleteCmd(c *command.Command, client metalcloud.MetalCloudClient) (string, error) {
 
-	dataNetworkAttachments := [][]interface{}{}
-
-	schemaNetworkAttachments := []tableformatter.SchemaField{
-
-		{
-			FieldName: "Port",
-			FieldType: tableformatter.TypeString,
-			FieldSize: 6,
-		},
-		{
-			FieldName: "Network",
-			FieldType: tableformatter.TypeString,
-			FieldSize: 10,
-		},
-		{
-			FieldName: "Profile",
-			FieldType: tableformatter.TypeString,
-			FieldSize: 10,
-		},
-	}
-	instanceArrayNetworkProfiles, err := client.NetworkProfileListByInstanceArray(retIA.InstanceArrayID)
-	if err != nil {
-		return "", err
-	}
-	for _, IAinterface := range retIA.InstanceArrayInterfaces {
-		index := strconv.Itoa(IAinterface.InstanceArrayInterfaceIndex + 1)
-		net := "unattached"
-		profile := ""
-		if IAinterface.NetworkID != 0 {
-			n, err := client.NetworkGet(IAinterface.NetworkID)
+			retIA, err := command.GetInstanceArrayFromCommand("id", c, client)
 			if err != nil {
 				return "", err
 			}
-			profileId := (*instanceArrayNetworkProfiles)[IAinterface.NetworkID]
-			if profileId != 0 {
-				networkProfile, err := client.NetworkProfileGet(profileId)
+
+			retInfra, err := client.InfrastructureGet(retIA.InfrastructureID)
+			if err != nil {
+				return "", err
+			}
+
+			confirm := false
+
+			if command.GetBoolParam(c.Arguments["autoconfirm"]) {
+				confirm = true
+			} else {
+
+				confirmationMessage := fmt.Sprintf("Deleting instance array %s (%d) - from infrastructure %s (%d).  Are you sure? Type \"yes\" to continue:",
+				retIA.InstanceArrayLabel, retIA.InstanceArrayID,
+				retInfra.InfrastructureLabel, retInfra.InfrastructureID)
+
+				//this is simply so that we don't output a text on the command line under go test
+				if strings.HasSuffix(os.Args[0], ".test") {
+					confirmationMessage = ""
+				}
+
+				confirm, err = command.RequestConfirmation(confirmationMessage)
 				if err != nil {
 					return "", err
 				}
-				profile = networkProfile.NetworkProfileLabel + " (#" + strconv.Itoa(profileId) + ")"
 			}
 
-			net = n.NetworkType + "(#" + strconv.Itoa(IAinterface.NetworkID) + ")"
+			if !confirm {
+				return "", fmt.Errorf("Operation not confirmed. Aborting")
+			}
+
+			err = client.InstanceArrayDelete(retIA.InstanceArrayID)
+
+			return "", err
 		}
 
-		IAdataRow := []interface{}{
-			"#" + index,
-			net,
-			profile,
+		func instanceArrayGetNetworkAttachments(c *command.Command, client metalcloud.MetalCloudClient) (string, error) {
+
+			retIA, err := command.GetInstanceArrayFromCommand("id", c, client)
+			if err != nil {
+				return "", err
+			}
+
+			if &retIA == nil {
+				return "", fmt.Errorf("instance array should not be nil")
+			}
+
+			dataNetworkAttachments := [][]interface{}{}
+
+			schemaNetworkAttachments := []tableformatter.SchemaField{
+
+				{
+					FieldName: "Port",
+					FieldType: tableformatter.TypeString,
+					FieldSize: 6,
+				},
+				{
+					FieldName: "Network",
+					FieldType: tableformatter.TypeString,
+					FieldSize: 10,
+				},
+				{
+					FieldName: "Profile",
+					FieldType: tableformatter.TypeString,
+					FieldSize: 10,
+				},
+			}
+			instanceArrayNetworkProfiles, err := client.NetworkProfileListByInstanceArray(retIA.InstanceArrayID)
+			if err != nil {
+				return "", err
+			}
+			for _, IAinterface := range retIA.InstanceArrayInterfaces {
+				index := strconv.Itoa(IAinterface.InstanceArrayInterfaceIndex + 1)
+				net := "unattached"
+				profile := ""
+				if IAinterface.NetworkID != 0 {
+					n, err := client.NetworkGet(IAinterface.NetworkID)
+					if err != nil {
+						return "", err
+					}
+					profileId := (*instanceArrayNetworkProfiles)[IAinterface.NetworkID]
+					if profileId != 0 {
+						networkProfile, err := client.NetworkProfileGet(profileId)
+						if err != nil {
+							return "", err
+						}
+						profile = networkProfile.NetworkProfileLabel + " (#" + strconv.Itoa(profileId) + ")"
+					}
+
+					net = n.NetworkType + "(#" + strconv.Itoa(IAinterface.NetworkID) + ")"
+				}
+
+				IAdataRow := []interface{}{
+					"#" + index,
+					net,
+					profile,
+				}
+
+				dataNetworkAttachments = append(dataNetworkAttachments, IAdataRow)
+			}
+
+			tableNetworkAttachments := tableformatter.Table{
+				Data:   dataNetworkAttachments,
+				Schema: schemaNetworkAttachments,
+			}
+			subtitleNetworkAttachmentsRender := "NETWORK ATTACHEMENTS\n--------------------\nNetworks to which this instance array is attached to:\n"
+
+			return tableNetworkAttachments.RenderTable("", subtitleNetworkAttachmentsRender, command.GetStringParam(c.Arguments["format"]))
 		}
 
-		dataNetworkAttachments = append(dataNetworkAttachments, IAdataRow)
+		func instanceArrayGetCmd(c *command.Command, client metalcloud.MetalCloudClient) (string, error) {
+
+			retIA, err := command.GetInstanceArrayFromCommand("id", c, client)
+			if err != nil {
+				return "", err
+			}
+
+			infra, err := client.InfrastructureGet(retIA.InfrastructureID)
+			if err != nil {
+				return "", err
+			}
+
+			schema := []tableformatter.SchemaField{
+				{
+					FieldName: "ID",
+					FieldType: tableformatter.TypeString,
+					FieldSize: 6,
+				},
+				{
+					FieldName: "STATUS",
+					FieldType: tableformatter.TypeString,
+					FieldSize: 6,
+				},
+				{
+					FieldName: "LABEL",
+					FieldType: tableformatter.TypeString,
+					FieldSize: 6,
+				},
+				{
+					FieldName: "INFRASTRUCTURE",
+					FieldType: tableformatter.TypeString,
+					FieldSize: 6,
+				},
+				{
+					FieldName: "DETAILS",
+					FieldType: tableformatter.TypeString,
+					FieldSize: 6,
+				},
+			}
+
+			if command.GetBoolParam(c.Arguments["show_custom_variables"]) {
+				schema = append(schema, tableformatter.SchemaField{
+					FieldName: "CUSTOM_VARS",
+					FieldType: tableformatter.TypeString,
+					FieldSize: 6,
+				})
+			}
+
+			format := command.GetStringParam(c.Arguments["format"])
+			status := colors.Green(retIA.InstanceArrayServiceStatus)
+			if format != "" {
+				status = retIA.InstanceArrayServiceStatus
+			}
+			if retIA.InstanceArrayServiceStatus != "ordered" && retIA.InstanceArrayOperation.InstanceArrayDeployType == "edit" && retIA.InstanceArrayOperation.InstanceArrayDeployStatus == "not_started" {
+				if format == "" {
+					status = colors.Blue("edited")
+				}else{
+					status = "edited"
+				}
+			}
+
+			volumeTemplateName := ""
+			if retIA.InstanceArrayOperation.VolumeTemplateID != 0 {
+				vt, err := client.VolumeTemplateGet(retIA.InstanceArrayOperation.VolumeTemplateID)
+				if err != nil {
+					return "", err
+				}
+				volumeTemplateName = fmt.Sprintf("%s [#%d] ", vt.VolumeTemplateDisplayName, vt.VolumeTemplateID)
+			}
+
+			fwMgmtDisabled := ""
+			if !retIA.InstanceArrayFirewallManaged {
+				fwMgmtDisabled = " fw mgmt disabled"
+			}
+
+			details := fmt.Sprintf("%d instances (%d RAM, %d cores, %d disks %s %s%s)",
+			retIA.InstanceArrayOperation.InstanceArrayInstanceCount,
+			retIA.InstanceArrayOperation.InstanceArrayRAMGbytes,
+			retIA.InstanceArrayOperation.InstanceArrayProcessorCount*retIA.InstanceArrayProcessorCoreCount,
+			retIA.InstanceArrayOperation.InstanceArrayDiskCount,
+			retIA.InstanceArrayOperation.InstanceArrayBootMethod,
+			volumeTemplateName,
+			fwMgmtDisabled,
+		)
+
+		custom_vars := ""
+		if command.GetBoolParam(c.Arguments["show_custom_variables"]) {
+			custom_vars = command.GetKeyValueStringFromMap(retIA.InstanceArrayCustomVariables)
+		}
+
+		data := [][]interface{}{
+			{
+				"#" + strconv.Itoa(retIA.InstanceArrayID),
+				status,
+				retIA.InstanceArrayLabel,
+				infra.InfrastructureLabel + " #" + strconv.Itoa(retIA.InfrastructureID),
+				details,
+				custom_vars,
+			},
+		}
+
+		table := tableformatter.Table{
+			Data:   data,
+			Schema: schema,
+		}
+
+		return table.RenderTable("", "", command.GetStringParam(c.Arguments["format"]))
 	}
 
-	tableNetworkAttachments := tableformatter.Table{
-		Data:   dataNetworkAttachments,
-		Schema: schemaNetworkAttachments,
-	}
-	subtitleNetworkAttachmentsRender := "NETWORK ATTACHEMENTS\n--------------------\nNetworks to which this instance array is attached to:\n"
+	func instanceArrayInstancesListCmd(c *command.Command, client metalcloud.MetalCloudClient) (string, error) {
 
-	return tableNetworkAttachments.RenderTable("", subtitleNetworkAttachmentsRender, command.GetStringParam(c.Arguments["format"]))
-}
-
-func instanceArrayGetCmd(c *command.Command, client metalcloud.MetalCloudClient) (string, error) {
-
-	retIA, err := command.GetInstanceArrayFromCommand("id", c, client)
-	if err != nil {
-		return "", err
-	}
-
-	infra, err := client.InfrastructureGet(retIA.InfrastructureID)
-	if err != nil {
-		return "", err
-	}
-
-	schema := []tableformatter.SchemaField{
-		{
-			FieldName: "ID",
-			FieldType: tableformatter.TypeString,
-			FieldSize: 6,
-		},
-		{
-			FieldName: "STATUS",
-			FieldType: tableformatter.TypeString,
-			FieldSize: 6,
-		},
-		{
-			FieldName: "LABEL",
-			FieldType: tableformatter.TypeString,
-			FieldSize: 6,
-		},
-		{
-			FieldName: "INFRASTRUCTURE",
-			FieldType: tableformatter.TypeString,
-			FieldSize: 6,
-		},
-		{
-			FieldName: "DETAILS",
-			FieldType: tableformatter.TypeString,
-			FieldSize: 6,
-		},
-	}
-
-	if command.GetBoolParam(c.Arguments["show_custom_variables"]) {
-		schema = append(schema, tableformatter.SchemaField{
-			FieldName: "CUSTOM_VARS",
-			FieldType: tableformatter.TypeString,
-			FieldSize: 6,
-		})
-	}
-
-	status := colors.Green(retIA.InstanceArrayServiceStatus)
-	if retIA.InstanceArrayServiceStatus != "ordered" && retIA.InstanceArrayOperation.InstanceArrayDeployType == "edit" && retIA.InstanceArrayOperation.InstanceArrayDeployStatus == "not_started" {
-		status = colors.Blue("edited")
-	}
-
-	volumeTemplateName := ""
-	if retIA.InstanceArrayOperation.VolumeTemplateID != 0 {
-		vt, err := client.VolumeTemplateGet(retIA.InstanceArrayOperation.VolumeTemplateID)
+		retIA, err := command.GetInstanceArrayFromCommand("id", c, client)
 		if err != nil {
 			return "", err
 		}
-		volumeTemplateName = fmt.Sprintf("%s [#%d] ", vt.VolumeTemplateDisplayName, vt.VolumeTemplateID)
-	}
 
-	fwMgmtDisabled := ""
-	if !retIA.InstanceArrayFirewallManaged {
-		fwMgmtDisabled = " fw mgmt disabled"
-	}
+		schema := []tableformatter.SchemaField{
 
-	details := fmt.Sprintf("%d instances (%d RAM, %d cores, %d disks %s %s%s)",
-		retIA.InstanceArrayOperation.InstanceArrayInstanceCount,
-		retIA.InstanceArrayOperation.InstanceArrayRAMGbytes,
-		retIA.InstanceArrayOperation.InstanceArrayProcessorCount*retIA.InstanceArrayProcessorCoreCount,
-		retIA.InstanceArrayOperation.InstanceArrayDiskCount,
-		retIA.InstanceArrayOperation.InstanceArrayBootMethod,
-		volumeTemplateName,
-		fwMgmtDisabled,
-	)
-
-	custom_vars := ""
-	if command.GetBoolParam(c.Arguments["show_custom_variables"]) {
-		custom_vars = command.GetKeyValueStringFromMap(retIA.InstanceArrayCustomVariables)
-	}
-
-	data := [][]interface{}{
-		{
-			"#" + strconv.Itoa(retIA.InstanceArrayID),
-			status,
-			retIA.InstanceArrayLabel,
-			infra.InfrastructureLabel + " #" + strconv.Itoa(retIA.InfrastructureID),
-			details,
-			custom_vars,
-		},
-	}
-
-	table := tableformatter.Table{
-		Data:   data,
-		Schema: schema,
-	}
-
-	return table.RenderTable("", "", command.GetStringParam(c.Arguments["format"]))
-}
-
-func instanceArrayInstancesListCmd(c *command.Command, client metalcloud.MetalCloudClient) (string, error) {
-
-	retIA, err := command.GetInstanceArrayFromCommand("id", c, client)
-	if err != nil {
-		return "", err
-	}
-
-	schema := []tableformatter.SchemaField{
-
-		{
-			FieldName: "ID",
-			FieldType: tableformatter.TypeInt,
-			FieldSize: 6,
-		},
-		{
-			FieldName: "SUBDOMAIN",
-			FieldType: tableformatter.TypeString,
-			FieldSize: 10,
-		},
-		{
-			FieldName: "WAN_IP",
-			FieldType: tableformatter.TypeString,
-			FieldSize: 10,
-		},
-		{
-			FieldName: "DETAILS",
-			FieldType: tableformatter.TypeString,
-			FieldSize: 10,
-		},
-		{
-			FieldName: "STATUS",
-			FieldType: tableformatter.TypeString,
-			FieldSize: 5,
-		},
-	}
-
-	if command.GetBoolParam(c.Arguments["show_credentials"]) {
-
-		schema = append(schema, tableformatter.SchemaField{
-			FieldName: "CREDENTIALS",
-			FieldType: tableformatter.TypeString,
-			FieldSize: 5,
-		})
-	}
-
-	if command.GetBoolParam(c.Arguments["show_power_status"]) {
-
-		schema = append(schema, tableformatter.SchemaField{
-			FieldName: "POWER",
-			FieldType: tableformatter.TypeString,
-			FieldSize: 5,
-		})
-	}
-
-	if command.GetBoolParam(c.Arguments["show_iscsi_credentials"]) {
-
-		schema = append(schema, tableformatter.SchemaField{
-			FieldName: "ISCSI",
-			FieldType: tableformatter.TypeString,
-			FieldSize: 5,
-		})
-	}
-
-	data := [][]interface{}{}
-
-	iList, err := client.InstanceArrayInstances(retIA.InstanceArrayID)
-	if err != nil {
-		return "", err
-	}
-
-	for _, i := range *iList {
-		status := i.InstanceServiceStatus
-		if i.InstanceServiceStatus != "ordered" && i.InstanceOperation.InstanceDeployType == "edit" && i.InstanceOperation.InstanceDeployStatus == "not_started" {
-			status = "edited"
+			{
+				FieldName: "ID",
+				FieldType: tableformatter.TypeInt,
+				FieldSize: 6,
+			},
+			{
+				FieldName: "SUBDOMAIN",
+				FieldType: tableformatter.TypeString,
+				FieldSize: 10,
+			},
+			{
+				FieldName: "WAN_IP",
+				FieldType: tableformatter.TypeString,
+				FieldSize: 10,
+			},
+			{
+				FieldName: "DETAILS",
+				FieldType: tableformatter.TypeString,
+				FieldSize: 10,
+			},
+			{
+				FieldName: "STATUS",
+				FieldType: tableformatter.TypeString,
+				FieldSize: 5,
+			},
 		}
 
-		volumeTemplateName := ""
-		if i.InstanceOperation.TemplateIDOrigin != 0 {
-			vt, err := client.VolumeTemplateGet(i.InstanceOperation.TemplateIDOrigin)
-			if err != nil {
-				return "", err
+		if command.GetBoolParam(c.Arguments["show_credentials"]) {
+
+			schema = append(schema, tableformatter.SchemaField{
+				FieldName: "CREDENTIALS",
+				FieldType: tableformatter.TypeString,
+				FieldSize: 5,
+			})
+		}
+
+		if command.GetBoolParam(c.Arguments["show_power_status"]) {
+
+			schema = append(schema, tableformatter.SchemaField{
+				FieldName: "POWER",
+				FieldType: tableformatter.TypeString,
+				FieldSize: 5,
+			})
+		}
+
+		if command.GetBoolParam(c.Arguments["show_iscsi_credentials"]) {
+
+			schema = append(schema, tableformatter.SchemaField{
+				FieldName: "ISCSI",
+				FieldType: tableformatter.TypeString,
+				FieldSize: 5,
+			})
+		}
+
+		data := [][]interface{}{}
+
+		iList, err := client.InstanceArrayInstances(retIA.InstanceArrayID)
+		if err != nil {
+			return "", err
+		}
+
+		for _, i := range *iList {
+			status := i.InstanceServiceStatus
+			if i.InstanceServiceStatus != "ordered" && i.InstanceOperation.InstanceDeployType == "edit" && i.InstanceOperation.InstanceDeployStatus == "not_started" {
+				status = "edited"
 			}
-			volumeTemplateName = fmt.Sprintf("%s [#%d] ", vt.VolumeTemplateDisplayName, vt.VolumeTemplateID)
-		}
 
-		serverType := ""
-		if i.ServerTypeID != 0 {
-			st, err := client.ServerTypeGet(i.ServerTypeID)
-			if err != nil {
-				return "", err
+			volumeTemplateName := ""
+			if i.InstanceOperation.TemplateIDOrigin != 0 {
+				vt, err := client.VolumeTemplateGet(i.InstanceOperation.TemplateIDOrigin)
+				if err != nil {
+					return "", err
+				}
+				volumeTemplateName = fmt.Sprintf("%s [#%d] ", vt.VolumeTemplateDisplayName, vt.VolumeTemplateID)
 			}
-			serverType = st.ServerTypeDisplayName
-		}
 
-		details := fmt.Sprintf("%s (#%d) %s",
+			serverType := ""
+			if i.ServerTypeID != 0 {
+				st, err := client.ServerTypeGet(i.ServerTypeID)
+				if err != nil {
+					return "", err
+				}
+				serverType = st.ServerTypeDisplayName
+			}
+
+			details := fmt.Sprintf("%s (#%d) %s",
 			serverType,
 			i.ServerID,
 			volumeTemplateName,
@@ -713,10 +721,10 @@ func instanceArrayInstancesListCmd(c *command.Command, client metalcloud.MetalCl
 		return "", err
 	}
 	subtitle := fmt.Sprintf("Instances of instance array %s (#%d) of infrastructure %s (#%d):",
-		retIA.InstanceArrayLabel,
-		retIA.InstanceArrayID,
-		infra.InfrastructureLabel,
-		infra.InfrastructureID)
+	retIA.InstanceArrayLabel,
+	retIA.InstanceArrayID,
+	infra.InfrastructureLabel,
+	infra.InfrastructureID)
 
 	tableformatter.TableSorter(schema).OrderBy(schema[0].FieldName).Sort(data)
 
@@ -779,24 +787,24 @@ func argsToInstanceArray(m map[string]interface{}, c *command.Command, client me
 			}
 			return vt.VolumeTemplateID, nil
 		},
-		)
-		if err != nil {
-			ia.VolumeTemplateID = 0
-		}
-		ia.VolumeTemplateID = vtID
+	)
+	if err != nil {
+		ia.VolumeTemplateID = 0
+	}
+	ia.VolumeTemplateID = vtID
+}
+
+if v, ok := command.GetStringParamOk(c.Arguments["custom_variables"]); ok {
+
+	m, err := command.GetKeyValueMapFromString(v)
+	if err != nil {
+		return nil, err
 	}
 
-	if v, ok := command.GetStringParamOk(c.Arguments["custom_variables"]); ok {
+	ia.InstanceArrayCustomVariables = m
+}
 
-		m, err := command.GetKeyValueMapFromString(v)
-		if err != nil {
-			return nil, err
-		}
-
-		ia.InstanceArrayCustomVariables = m
-	}
-
-	return &ia, nil
+return &ia, nil
 }
 
 func argsToInstanceArrayOperation(m map[string]interface{}, iao *metalcloud.InstanceArrayOperation, c *command.Command, client metalcloud.MetalCloudClient) error {
@@ -848,23 +856,23 @@ func argsToInstanceArrayOperation(m map[string]interface{}, iao *metalcloud.Inst
 			}
 			return vt.VolumeTemplateID, nil
 		},
-		)
-		if err != nil {
-			iao.VolumeTemplateID = 0
-		}
-		iao.VolumeTemplateID = vtID
+	)
+	if err != nil {
+		iao.VolumeTemplateID = 0
+	}
+	iao.VolumeTemplateID = vtID
+}
+
+if v, ok := command.GetStringParamOk(c.Arguments["custom_variables"]); ok {
+
+	m, err := command.GetKeyValueMapFromString(v)
+	if err != nil {
+		return err
 	}
 
-	if v, ok := command.GetStringParamOk(c.Arguments["custom_variables"]); ok {
-
-		m, err := command.GetKeyValueMapFromString(v)
-		if err != nil {
-			return err
-		}
-
-		iao.InstanceArrayCustomVariables = m
-	}
-	return nil
+	iao.InstanceArrayCustomVariables = m
+}
+return nil
 }
 
 func copyInstanceArrayToOperation(ia metalcloud.InstanceArray, iao *metalcloud.InstanceArrayOperation) {
