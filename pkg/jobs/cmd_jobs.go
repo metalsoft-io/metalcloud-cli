@@ -395,18 +395,21 @@ func jobGetCmd(c *command.Command, client metalcloud.MetalCloudClient) (string, 
 	data := [][]interface{}{}
 
 	status := s.AFCStatus
+	format := command.GetStringParam(c.Arguments["format"])
 
-	switch status {
-	case "thrown_error":
-		status = colors.Red(status)
-	case "thrown_error_while_retrying":
-		status = colors.Magenta(status)
-	case "running":
-		status = colors.Yellow(status)
-	case "returned_success":
-		status = colors.Green(status)
-	default:
-		status = colors.Yellow(status)
+	if format == "" {
+		switch status {
+		case "thrown_error":
+			status = colors.Red(status)
+		case "thrown_error_while_retrying":
+			status = colors.Magenta(status)
+		case "running":
+			status = colors.Yellow(status)
+		case "returned_success":
+			status = colors.Green(status)
+		default:
+			status = colors.Yellow(status)
+		}
 	}
 
 	durationObj, err := durationSinceZuluUTC(s.AFCCreatedTimestamp)
@@ -431,7 +434,7 @@ func jobGetCmd(c *command.Command, client metalcloud.MetalCloudClient) (string, 
 	}
 
 	retries := fmt.Sprintf("%d/%d", s.AFCRetryCount, s.AFCRetryMax)
-	format := command.GetStringParam(c.Arguments["format"])
+
 	if format == "" {
 		if s.AFCRetryCount >= s.AFCRetryMax {
 			retries = colors.Red(retries)
