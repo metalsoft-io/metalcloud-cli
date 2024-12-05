@@ -246,6 +246,8 @@ func userListCmd(c *command.Command, client metalcloud.MetalCloudClient) (string
 	for _, i := range *iList {
 		status := ""
 
+	format := command.GetStringParam(c.Arguments["format"])
+    if format == "" {
 		if i.UserBlocked {
 			status = colors.Red("Blocked")
 		} else if i.UserIsSuspended {
@@ -253,6 +255,15 @@ func userListCmd(c *command.Command, client metalcloud.MetalCloudClient) (string
 		} else {
 			status = colors.Green("Active")
 		}
+	}else{
+		if i.UserBlocked {
+			status = "Blocked"
+		} else if i.UserIsSuspended {
+			status = "Suspended"
+		} else {
+			status = "Active"
+		}
+	}
 
 		data = append(data, []interface{}{
 			i.UserID,
