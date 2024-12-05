@@ -151,27 +151,31 @@ func storageListCmd(c *command.Command, client metalcloud.MetalCloudClient) (str
 
 		status := s.StoragePoolStatus
 
-		switch status {
-		case "active":
-			status = colors.Blue(status)
-		case "maintenance":
-			status = colors.Green(status)
-		case "":
-			status = colors.Green(status)
+		format := command.GetStringParam(c.Arguments["format"])
+		if format == "" {
+			switch status {
+			case "active":
+				status = colors.Blue(status)
+			case "maintenance":
+				status = colors.Green(status)
+			case "":
+				status = colors.Green(status)
 
-		default:
-			status = colors.Yellow(status)
+			default:
+				status = colors.Yellow(status)
 
+			}
 		}
 
 		usedPercentage := float64(s.StoragePoolCapacityTotalCachedRealMbytes-s.StoragePoolCapacityFreeCachedRealMbytes) / float64(s.StoragePoolCapacityTotalCachedRealMbytes)
 
 		capacity := fmt.Sprintf("%.2f TB physically used out of %.2f TB total, %0.2f TB virtually allocated",
-			float64(s.StoragePoolCapacityTotalCachedRealMbytes-s.StoragePoolCapacityFreeCachedRealMbytes)/(1024*1024),
-			float64(s.StoragePoolCapacityTotalCachedRealMbytes)/(1024*1024),
-			float64(s.StoragePoolCapacityUsedCachedVirtualMbytes)/(1024*1024),
-		)
+		float64(s.StoragePoolCapacityTotalCachedRealMbytes-s.StoragePoolCapacityFreeCachedRealMbytes)/(1024*1024),
+		float64(s.StoragePoolCapacityTotalCachedRealMbytes)/(1024*1024),
+		float64(s.StoragePoolCapacityUsedCachedVirtualMbytes)/(1024*1024),
+	)
 
+	if format == "" {
 		if usedPercentage >= 0.8 {
 			capacity = colors.Red(capacity)
 		} else if usedPercentage >= 0.5 {
@@ -179,40 +183,41 @@ func storageListCmd(c *command.Command, client metalcloud.MetalCloudClient) (str
 		} else {
 			capacity = colors.Green(capacity)
 		}
-
-		row := []interface{}{
-			s.StoragePoolID,
-			status,
-			s.StoragePoolName,
-			s.StoragePoolEndpoint,
-			capacity,
-			s.DatacenterName,
-		}
-		if command.GetBoolParam(c.Arguments["show_credentials"]) {
-			row = append(row, []interface{}{
-				credentialsUser,
-				credentialsPass,
-			}...)
-		}
-
-		data = append(data, row)
-
 	}
 
-	table := tableformatter.Table{
-		Data:   data,
-		Schema: schema,
+	row := []interface{}{
+		s.StoragePoolID,
+		status,
+		s.StoragePoolName,
+		s.StoragePoolEndpoint,
+		capacity,
+		s.DatacenterName,
+	}
+	if command.GetBoolParam(c.Arguments["show_credentials"]) {
+		row = append(row, []interface{}{
+			credentialsUser,
+			credentialsPass,
+		}...)
 	}
 
-	title := fmt.Sprintf("Storage pools: %d active %d maintenance",
-		statusCounts["active"],
-		statusCounts["maintenance"])
+	data = append(data, row)
 
-	if command.GetBoolParam(c.Arguments["show_decommissioned"]) {
-		title = title + fmt.Sprintf(" %d decommissioned", statusCounts["decommissioned"])
-	}
+}
 
-	return table.RenderTable(title, "", command.GetStringParam(c.Arguments["format"]))
+table := tableformatter.Table{
+	Data:   data,
+	Schema: schema,
+}
+
+title := fmt.Sprintf("Storage pools: %d active %d maintenance",
+statusCounts["active"],
+statusCounts["maintenance"])
+
+if command.GetBoolParam(c.Arguments["show_decommissioned"]) {
+	title = title + fmt.Sprintf(" %d decommissioned", statusCounts["decommissioned"])
+}
+
+return table.RenderTable(title, "", command.GetStringParam(c.Arguments["format"]))
 }
 
 func storageCreateCmd(ctx context.Context, c *command.Command, client *metalcloud2.APIClient) (string, error) {
