@@ -265,25 +265,46 @@ func infrastructureListAdminCmd(c *command.Command, client metalcloud.MetalCloud
 
 		status := ""
 
+		format := command.GetStringParam(c.Arguments["format"])
 		if i.InfrastructureServiceStatus == "active" && i.AFCExecutedSuccess == i.AFCTotal {
-			status = colors.Green("Deployed")
+			if format == "" {
+				status = colors.Green("Deployed")
+			}else{
+				status = "Deployed"
+			}
 		}
 
 		if i.InfrastructureServiceStatus == "ordered" && i.AFCTotal == 0 {
-			status = colors.Blue("Ordered (deploy not started)")
+			if format == "" {
+				status = colors.Blue("Ordered (deploy not started)")
+			}else{
+				status = "Ordered (deploy not started)"
+			}
 		}
 
 		if i.AFCExecutedSuccess < i.AFCTotal {
 
 			if i.AFCThrownError == 0 {
-				status = colors.Yellow(fmt.Sprintf("Deploy ongoing - %d/%d", i.AFCExecutedSuccess, i.AFCTotal))
+				if format == "" {
+					status = colors.Yellow(fmt.Sprintf("Deploy ongoing - %d/%d", i.AFCExecutedSuccess, i.AFCTotal))
+				}else{
+					status = fmt.Sprintf("Deploy ongoing - %d/%d", i.AFCExecutedSuccess, i.AFCTotal)
+				}
 			} else {
-				status = colors.Red(fmt.Sprintf("Deploy ongoing - Thrown error at %d/%d", i.AFCExecutedSuccess, i.AFCTotal))
+				if format == "" {
+					status = colors.Red(fmt.Sprintf("Deploy ongoing - Thrown error at %d/%d", i.AFCExecutedSuccess, i.AFCTotal))
+				}else{
+					status = fmt.Sprintf("Deploy ongoing - Thrown error at %d/%d", i.AFCExecutedSuccess, i.AFCTotal)
+				}
 			}
 		}
 
 		if i.InfrastructureServiceStatus == "deleted" {
-			status = colors.Magenta("Deleted")
+			if format == "" {
+				status = colors.Magenta("Deleted")
+			}else{
+				status = "Deleted"
+			}
 		}
 
 		userEmail := ""
@@ -308,321 +329,321 @@ func infrastructureListAdminCmd(c *command.Command, client metalcloud.MetalCloud
 		schema[0].FieldName,
 		schema[1].FieldName).Sort(data)
 
-	topLine := fmt.Sprintf("Infrastructures")
+		topLine := fmt.Sprintf("Infrastructures")
 
-	table := tableformatter.Table{
-		Data:   data,
-		Schema: schema,
-	}
-	return table.RenderTable("Infrastructures", topLine, command.GetStringParam(c.Arguments["format"]))
-}
-
-func infrastructureListUserCmd(c *command.Command, client metalcloud.MetalCloudClient) (string, error) {
-
-	iList, err := client.Infrastructures()
-	if err != nil {
-		return "", err
-	}
-
-	schema := []tableformatter.SchemaField{
-		{
-			FieldName: "ID",
-			FieldType: tableformatter.TypeInt,
-			FieldSize: 6,
-		},
-		{
-			FieldName: "LABEL",
-			FieldType: tableformatter.TypeString,
-			FieldSize: 15,
-		},
-		{
-			FieldName: "STATUS",
-			FieldType: tableformatter.TypeString,
-			FieldSize: 5,
-		},
-		{
-			FieldName: "OWNER",
-			FieldType: tableformatter.TypeString,
-			FieldSize: 20,
-		},
-		{
-			FieldName: "DATACENTER",
-			FieldType: tableformatter.TypeString,
-			FieldSize: 10,
-		},
-		{
-			FieldName: "CREATED",
-			FieldType: tableformatter.TypeString,
-			FieldSize: 10,
-		},
-		{
-			FieldName: "UPDATED",
-			FieldType: tableformatter.TypeString,
-			FieldSize: 10,
-		},
-	}
-
-	data := [][]interface{}{}
-	for _, i := range *iList {
-
-		if i.InfrastructureServiceStatus == "deleted" && !command.GetBoolParam(c.Arguments["show_deleted"]) {
-			continue
+		table := tableformatter.Table{
+			Data:   data,
+			Schema: schema,
 		}
-
-		status := ""
-
-		if i.InfrastructureServiceStatus == "active" {
-			status = colors.Green("Deployed")
-		}
-
-		if i.InfrastructureServiceStatus == "ordered" {
-			status = colors.Blue("Ordered (deploy not started)")
-		}
-
-		if i.InfrastructureServiceStatus == "deleted" {
-			status = colors.Magenta("Deleted")
-		}
-
-		data = append(data, []interface{}{
-			i.InfrastructureID,
-			i.InfrastructureLabel,
-			status,
-			i.UserEmailOwner,
-			i.DatacenterName,
-			i.InfrastructureCreatedTimestamp,
-			i.InfrastructureUpdatedTimestamp,
-		})
-
+		return table.RenderTable("Infrastructures", topLine, command.GetStringParam(c.Arguments["format"]))
 	}
 
-	tableformatter.TableSorter(schema).OrderBy(
-		schema[3].FieldName,
-		schema[0].FieldName,
-		schema[1].FieldName).Sort(data)
+	func infrastructureListUserCmd(c *command.Command, client metalcloud.MetalCloudClient) (string, error) {
 
-	topLine := fmt.Sprintf("Infrastructures")
-
-	table := tableformatter.Table{
-		Data:   data,
-		Schema: schema,
-	}
-	return table.RenderTable("Infrastructures", topLine, command.GetStringParam(c.Arguments["format"]))
-}
-
-type infrastructureConfirmAndDoFunc func(infraID int, c *command.Command, client metalcloud.MetalCloudClient) (string, error)
-
-// infrastructureConfirmAndDo asks for confirmation and executes the given function
-func infrastructureConfirmAndDo(operation string, c *command.Command, client metalcloud.MetalCloudClient, f infrastructureConfirmAndDoFunc) (string, error) {
-
-	val, err := command.GetParam(c, "infrastructure_id_or_label", "id")
-	if err != nil {
-		return "", err
-	}
-
-	infraID, err := command.GetIDOrDo(*val.(*string), func(label string) (int, error) {
-		ia, err := client.InfrastructureGetByLabel(label)
-		if err != nil {
-			return 0, err
-		}
-		return ia.InfrastructureID, nil
-	})
-	if err != nil {
-		return "", err
-	}
-
-	confirm := false
-
-	if command.GetBoolParam(c.Arguments["autoconfirm"]) {
-		confirm = true
-	} else {
-
-		retInfra, err := client.InfrastructureGet(infraID)
+		iList, err := client.Infrastructures()
 		if err != nil {
 			return "", err
 		}
 
-		confirmationMessage := fmt.Sprintf("%s infrastructure %s (%d). Are you sure? Type \"yes\" to continue:", operation, retInfra.InfrastructureLabel, retInfra.InfrastructureID)
-
-		//this is simply so that we don't output a text on the command line under go test
-		if strings.HasSuffix(os.Args[0], ".test") {
-			confirmationMessage = ""
+		schema := []tableformatter.SchemaField{
+			{
+				FieldName: "ID",
+				FieldType: tableformatter.TypeInt,
+				FieldSize: 6,
+			},
+			{
+				FieldName: "LABEL",
+				FieldType: tableformatter.TypeString,
+				FieldSize: 15,
+			},
+			{
+				FieldName: "STATUS",
+				FieldType: tableformatter.TypeString,
+				FieldSize: 5,
+			},
+			{
+				FieldName: "OWNER",
+				FieldType: tableformatter.TypeString,
+				FieldSize: 20,
+			},
+			{
+				FieldName: "DATACENTER",
+				FieldType: tableformatter.TypeString,
+				FieldSize: 10,
+			},
+			{
+				FieldName: "CREATED",
+				FieldType: tableformatter.TypeString,
+				FieldSize: 10,
+			},
+			{
+				FieldName: "UPDATED",
+				FieldType: tableformatter.TypeString,
+				FieldSize: 10,
+			},
 		}
 
-		confirm, err = command.RequestConfirmation(confirmationMessage)
-		if err != nil {
-			return "", err
-		}
-	}
+		data := [][]interface{}{}
+		for _, i := range *iList {
 
-	if !confirm {
-		return "", fmt.Errorf("Operation not confirmed. Aborting")
-	}
-
-	return f(infraID, c, client)
-}
-
-func infrastructureDeleteCmd(c *command.Command, client metalcloud.MetalCloudClient) (string, error) {
-	return infrastructureConfirmAndDo("Delete", c, client,
-		func(infraID int, c *command.Command, client metalcloud.MetalCloudClient) (string, error) {
-			return "", client.InfrastructureDelete(infraID)
-		})
-}
-
-func infrastructureDeployCmd(c *command.Command, client metalcloud.MetalCloudClient) (string, error) {
-
-	return infrastructureConfirmAndDo("Deploy", c, client,
-		func(infraID int, c *command.Command, client metalcloud.MetalCloudClient) (string, error) {
-
-			shutDownOptions := metalcloud.ShutdownOptions{
-				HardShutdownAfterTimeout:   !command.GetBoolParam(c.Arguments["no_hard_shutdown_after_timeout"]),
-				AttemptSoftShutdown:        !command.GetBoolParam(c.Arguments["no_attempt_soft_shutdown"]),
-				SoftShutdownTimeoutSeconds: command.GetIntParam(c.Arguments["soft_shutdown_timeout_seconds"]),
+			if i.InfrastructureServiceStatus == "deleted" && !command.GetBoolParam(c.Arguments["show_deleted"]) {
+				continue
 			}
 
-			err := client.InfrastructureDeploy(
-				infraID,
-				shutDownOptions,
-				command.GetBoolParam(c.Arguments["allow_data_loss"]),
-				command.GetBoolParam(c.Arguments["skip_ansible"]),
-			)
+			status := ""
+
+			if i.InfrastructureServiceStatus == "active" {
+				status = colors.Green("Deployed")
+			}
+
+			if i.InfrastructureServiceStatus == "ordered" {
+				status = colors.Blue("Ordered (deploy not started)")
+			}
+
+			if i.InfrastructureServiceStatus == "deleted" {
+				status = colors.Magenta("Deleted")
+			}
+
+			data = append(data, []interface{}{
+				i.InfrastructureID,
+				i.InfrastructureLabel,
+				status,
+				i.UserEmailOwner,
+				i.DatacenterName,
+				i.InfrastructureCreatedTimestamp,
+				i.InfrastructureUpdatedTimestamp,
+			})
+
+		}
+
+		tableformatter.TableSorter(schema).OrderBy(
+			schema[3].FieldName,
+			schema[0].FieldName,
+			schema[1].FieldName).Sort(data)
+
+			topLine := fmt.Sprintf("Infrastructures")
+
+			table := tableformatter.Table{
+				Data:   data,
+				Schema: schema,
+			}
+			return table.RenderTable("Infrastructures", topLine, command.GetStringParam(c.Arguments["format"]))
+		}
+
+		type infrastructureConfirmAndDoFunc func(infraID int, c *command.Command, client metalcloud.MetalCloudClient) (string, error)
+
+		// infrastructureConfirmAndDo asks for confirmation and executes the given function
+		func infrastructureConfirmAndDo(operation string, c *command.Command, client metalcloud.MetalCloudClient, f infrastructureConfirmAndDoFunc) (string, error) {
+
+			val, err := command.GetParam(c, "infrastructure_id_or_label", "id")
 			if err != nil {
 				return "", err
 			}
 
-			if command.GetBoolParam(c.Arguments["block_until_deployed"]) {
+			infraID, err := command.GetIDOrDo(*val.(*string), func(label string) (int, error) {
+				ia, err := client.InfrastructureGetByLabel(label)
+				if err != nil {
+					return 0, err
+				}
+				return ia.InfrastructureID, nil
+			})
+			if err != nil {
+				return "", err
+			}
 
-				time.Sleep(time.Duration(command.GetIntParam(c.Arguments["block_check_interval"])) * time.Second) //wait until the system picks up the afc
+			confirm := false
 
-				err := loopUntilInfraReady(infraID, command.GetIntParam(c.Arguments["block_timeout"]), command.GetIntParam(c.Arguments["block_check_interval"]), client)
+			if command.GetBoolParam(c.Arguments["autoconfirm"]) {
+				confirm = true
+			} else {
 
-				if err != nil && strings.HasPrefix(err.Error(), "timeout after") {
+				retInfra, err := client.InfrastructureGet(infraID)
+				if err != nil {
 					return "", err
-				} //else we ignore errors as they might be infrastrucure not found due to infrastructure being deleted
+				}
+
+				confirmationMessage := fmt.Sprintf("%s infrastructure %s (%d). Are you sure? Type \"yes\" to continue:", operation, retInfra.InfrastructureLabel, retInfra.InfrastructureID)
+
+				//this is simply so that we don't output a text on the command line under go test
+				if strings.HasSuffix(os.Args[0], ".test") {
+					confirmationMessage = ""
+				}
+
+				confirm, err = command.RequestConfirmation(confirmationMessage)
+				if err != nil {
+					return "", err
+				}
 			}
 
-			return "", nil
-		})
-}
+			if !confirm {
+				return "", fmt.Errorf("Operation not confirmed. Aborting")
+			}
 
-func infrastructureRevertCmd(c *command.Command, client metalcloud.MetalCloudClient) (string, error) {
-
-	return infrastructureConfirmAndDo("Revert", c, client,
-		func(infraID int, c *command.Command, client metalcloud.MetalCloudClient) (string, error) {
-			return "", client.InfrastructureOperationCancel(infraID)
-		})
-}
-
-func infrastructureGetCmd(c *command.Command, client metalcloud.MetalCloudClient) (string, error) {
-
-	retInfra, err := command.GetInfrastructureFromCommand("id", c, client)
-	if err != nil {
-		return "", err
-	}
-
-	schema := []tableformatter.SchemaField{
-
-		{
-			FieldName: "ID",
-			FieldType: tableformatter.TypeInt,
-			FieldSize: 6,
-		},
-		{
-			FieldName: "OBJECT_TYPE",
-			FieldType: tableformatter.TypeString,
-			FieldSize: 15,
-		},
-		{
-			FieldName: "LABEL",
-			FieldType: tableformatter.TypeString,
-			FieldSize: 10,
-		},
-		{
-			FieldName: "DETAILS",
-			FieldType: tableformatter.TypeString,
-			FieldSize: 50,
-		},
-		{
-			FieldName: "STATUS",
-			FieldType: tableformatter.TypeString,
-			FieldSize: 5,
-		},
-	}
-
-	data := [][]interface{}{}
-
-	iaList, err := client.InstanceArrays(retInfra.InfrastructureID)
-	if err != nil {
-		return "", err
-	}
-
-	for _, ia := range *iaList {
-		status := colors.Green(ia.InstanceArrayServiceStatus)
-		if ia.InstanceArrayServiceStatus != "ordered" && ia.InstanceArrayOperation.InstanceArrayDeployType == "edit" && ia.InstanceArrayOperation.InstanceArrayDeployStatus == "not_started" {
-			status = colors.Blue("edited")
+			return f(infraID, c, client)
 		}
 
-		volumeTemplateName := ""
-		if ia.InstanceArrayOperation.VolumeTemplateID != 0 {
-			vt, err := client.VolumeTemplateGet(ia.InstanceArrayOperation.VolumeTemplateID)
+		func infrastructureDeleteCmd(c *command.Command, client metalcloud.MetalCloudClient) (string, error) {
+			return infrastructureConfirmAndDo("Delete", c, client,
+			func(infraID int, c *command.Command, client metalcloud.MetalCloudClient) (string, error) {
+				return "", client.InfrastructureDelete(infraID)
+			})
+		}
+
+		func infrastructureDeployCmd(c *command.Command, client metalcloud.MetalCloudClient) (string, error) {
+
+			return infrastructureConfirmAndDo("Deploy", c, client,
+			func(infraID int, c *command.Command, client metalcloud.MetalCloudClient) (string, error) {
+
+				shutDownOptions := metalcloud.ShutdownOptions{
+					HardShutdownAfterTimeout:   !command.GetBoolParam(c.Arguments["no_hard_shutdown_after_timeout"]),
+					AttemptSoftShutdown:        !command.GetBoolParam(c.Arguments["no_attempt_soft_shutdown"]),
+					SoftShutdownTimeoutSeconds: command.GetIntParam(c.Arguments["soft_shutdown_timeout_seconds"]),
+				}
+
+				err := client.InfrastructureDeploy(
+					infraID,
+					shutDownOptions,
+					command.GetBoolParam(c.Arguments["allow_data_loss"]),
+					command.GetBoolParam(c.Arguments["skip_ansible"]),
+				)
+				if err != nil {
+					return "", err
+				}
+
+				if command.GetBoolParam(c.Arguments["block_until_deployed"]) {
+
+					time.Sleep(time.Duration(command.GetIntParam(c.Arguments["block_check_interval"])) * time.Second) //wait until the system picks up the afc
+
+					err := loopUntilInfraReady(infraID, command.GetIntParam(c.Arguments["block_timeout"]), command.GetIntParam(c.Arguments["block_check_interval"]), client)
+
+					if err != nil && strings.HasPrefix(err.Error(), "timeout after") {
+						return "", err
+					} //else we ignore errors as they might be infrastrucure not found due to infrastructure being deleted
+				}
+
+				return "", nil
+			})
+		}
+
+		func infrastructureRevertCmd(c *command.Command, client metalcloud.MetalCloudClient) (string, error) {
+
+			return infrastructureConfirmAndDo("Revert", c, client,
+			func(infraID int, c *command.Command, client metalcloud.MetalCloudClient) (string, error) {
+				return "", client.InfrastructureOperationCancel(infraID)
+			})
+		}
+
+		func infrastructureGetCmd(c *command.Command, client metalcloud.MetalCloudClient) (string, error) {
+
+			retInfra, err := command.GetInfrastructureFromCommand("id", c, client)
 			if err != nil {
 				return "", err
 			}
-			volumeTemplateName = fmt.Sprintf("%s [#%d] ", vt.VolumeTemplateDisplayName, vt.VolumeTemplateID)
-		}
 
-		fwMgmtDisabled := ""
-		if !ia.InstanceArrayFirewallManaged {
-			fwMgmtDisabled = " fw mgmt disabled"
-		}
-		details := fmt.Sprintf("%d instances (%d RAM, %d cores, %d disks %s %s%s)",
-			ia.InstanceArrayOperation.InstanceArrayInstanceCount,
-			ia.InstanceArrayOperation.InstanceArrayRAMGbytes,
-			ia.InstanceArrayOperation.InstanceArrayProcessorCount*ia.InstanceArrayProcessorCoreCount,
-			ia.InstanceArrayOperation.InstanceArrayDiskCount,
-			ia.InstanceArrayOperation.InstanceArrayBootMethod,
-			volumeTemplateName,
-			fwMgmtDisabled,
-		)
+			schema := []tableformatter.SchemaField{
 
-		data = append(data, []interface{}{
-			ia.InstanceArrayID,
-			colors.Green("InstanceArray"),
-			ia.InstanceArrayOperation.InstanceArrayLabel,
-			details,
-			status,
-		})
+				{
+					FieldName: "ID",
+					FieldType: tableformatter.TypeInt,
+					FieldSize: 6,
+				},
+				{
+					FieldName: "OBJECT_TYPE",
+					FieldType: tableformatter.TypeString,
+					FieldSize: 15,
+				},
+				{
+					FieldName: "LABEL",
+					FieldType: tableformatter.TypeString,
+					FieldSize: 10,
+				},
+				{
+					FieldName: "DETAILS",
+					FieldType: tableformatter.TypeString,
+					FieldSize: 50,
+				},
+				{
+					FieldName: "STATUS",
+					FieldType: tableformatter.TypeString,
+					FieldSize: 5,
+				},
+			}
 
-	}
+			data := [][]interface{}{}
 
-	daList, err := client.DriveArrays(retInfra.InfrastructureID)
-	if err != nil {
-		return "", err
-	}
-
-	for _, da := range *daList {
-		status := colors.Green(da.DriveArrayServiceStatus)
-		if da.DriveArrayServiceStatus != "ordered" && da.DriveArrayOperation.DriveArrayDeployType == "edit" && da.DriveArrayOperation.DriveArrayDeployStatus == "not_started" {
-			status = colors.Blue("edited")
-		}
-
-		volumeTemplateName := ""
-		if da.DriveArrayOperation.VolumeTemplateID != 0 {
-			vt, err := client.VolumeTemplateGet(da.DriveArrayOperation.VolumeTemplateID)
+			iaList, err := client.InstanceArrays(retInfra.InfrastructureID)
 			if err != nil {
 				return "", err
 			}
-			volumeTemplateName = fmt.Sprintf("%s [#%d]", vt.VolumeTemplateDisplayName, vt.VolumeTemplateID)
+
+			for _, ia := range *iaList {
+				status := colors.Green(ia.InstanceArrayServiceStatus)
+				if ia.InstanceArrayServiceStatus != "ordered" && ia.InstanceArrayOperation.InstanceArrayDeployType == "edit" && ia.InstanceArrayOperation.InstanceArrayDeployStatus == "not_started" {
+					status = colors.Blue("edited")
+				}
+
+				volumeTemplateName := ""
+				if ia.InstanceArrayOperation.VolumeTemplateID != 0 {
+					vt, err := client.VolumeTemplateGet(ia.InstanceArrayOperation.VolumeTemplateID)
+					if err != nil {
+						return "", err
+					}
+					volumeTemplateName = fmt.Sprintf("%s [#%d] ", vt.VolumeTemplateDisplayName, vt.VolumeTemplateID)
+				}
+
+				fwMgmtDisabled := ""
+				if !ia.InstanceArrayFirewallManaged {
+					fwMgmtDisabled = " fw mgmt disabled"
+				}
+				details := fmt.Sprintf("%d instances (%d RAM, %d cores, %d disks %s %s%s)",
+				ia.InstanceArrayOperation.InstanceArrayInstanceCount,
+				ia.InstanceArrayOperation.InstanceArrayRAMGbytes,
+				ia.InstanceArrayOperation.InstanceArrayProcessorCount*ia.InstanceArrayProcessorCoreCount,
+				ia.InstanceArrayOperation.InstanceArrayDiskCount,
+				ia.InstanceArrayOperation.InstanceArrayBootMethod,
+				volumeTemplateName,
+				fwMgmtDisabled,
+			)
+
+			data = append(data, []interface{}{
+				ia.InstanceArrayID,
+				colors.Green("InstanceArray"),
+				ia.InstanceArrayOperation.InstanceArrayLabel,
+				details,
+				status,
+			})
+
 		}
 
-		attachedToInstanceArrayStr := ""
-		for _, ia := range *iaList {
-			if ia.InstanceArrayID == da.DriveArrayOperation.InstanceArrayID {
-				attachedToInstanceArrayStr = fmt.Sprintf("%s [#%d]", ia.InstanceArrayLabel, ia.InstanceArrayID)
-				break
+		daList, err := client.DriveArrays(retInfra.InfrastructureID)
+		if err != nil {
+			return "", err
+		}
+
+		for _, da := range *daList {
+			status := colors.Green(da.DriveArrayServiceStatus)
+			if da.DriveArrayServiceStatus != "ordered" && da.DriveArrayOperation.DriveArrayDeployType == "edit" && da.DriveArrayOperation.DriveArrayDeployStatus == "not_started" {
+				status = colors.Blue("edited")
 			}
-		}
 
-		details := fmt.Sprintf("%d drives - %.1f GB %s %s attached to: %s, storage pool: #%d",
+			volumeTemplateName := ""
+			if da.DriveArrayOperation.VolumeTemplateID != 0 {
+				vt, err := client.VolumeTemplateGet(da.DriveArrayOperation.VolumeTemplateID)
+				if err != nil {
+					return "", err
+				}
+				volumeTemplateName = fmt.Sprintf("%s [#%d]", vt.VolumeTemplateDisplayName, vt.VolumeTemplateID)
+			}
+
+			attachedToInstanceArrayStr := ""
+			for _, ia := range *iaList {
+				if ia.InstanceArrayID == da.DriveArrayOperation.InstanceArrayID {
+					attachedToInstanceArrayStr = fmt.Sprintf("%s [#%d]", ia.InstanceArrayLabel, ia.InstanceArrayID)
+					break
+				}
+			}
+
+			details := fmt.Sprintf("%d drives - %.1f GB %s %s attached to: %s, storage pool: #%d",
 			da.DriveArrayOperation.DriveArrayCount,
 			float64(da.DriveArrayOperation.DriveSizeMBytesDefault/1024),
 			da.DriveArrayOperation.DriveArrayStorageType,
@@ -652,34 +673,34 @@ func infrastructureGetCmd(c *command.Command, client metalcloud.MetalCloudClient
 		}
 
 		details := fmt.Sprintf("%d GB size, type: %s, i/o limit policy: %s, WWW: %s, storage pool: #%d",
-			int(sda.SharedDriveSizeMbytes/1024),
-			sda.SharedDriveStorageType,
-			sda.SharedDriveIOLimitPolicy,
-			sda.SharedDriveWWN,
-			sda.StoragePoolID,
-		)
+		int(sda.SharedDriveSizeMbytes/1024),
+		sda.SharedDriveStorageType,
+		sda.SharedDriveIOLimitPolicy,
+		sda.SharedDriveWWN,
+		sda.StoragePoolID,
+	)
 
-		data = append(data, []interface{}{
-			sda.SharedDriveID,
-			colors.Magenta("SharedDrive"),
-			sda.SharedDriveLabel,
-			details,
-			status,
-		})
+	data = append(data, []interface{}{
+		sda.SharedDriveID,
+		colors.Magenta("SharedDrive"),
+		sda.SharedDriveLabel,
+		details,
+		status,
+	})
 
-	}
+}
 
-	topLine := fmt.Sprintf("Infrastructure %s (%d) - datacenter %s owner %s",
-		retInfra.InfrastructureLabel,
-		retInfra.InfrastructureID,
-		retInfra.DatacenterName,
-		retInfra.UserEmailOwner)
+topLine := fmt.Sprintf("Infrastructure %s (%d) - datacenter %s owner %s",
+retInfra.InfrastructureLabel,
+retInfra.InfrastructureID,
+retInfra.DatacenterName,
+retInfra.UserEmailOwner)
 
-	table := tableformatter.Table{
-		Data:   data,
-		Schema: schema,
-	}
-	return table.RenderTable("resources", topLine, command.GetStringParam(c.Arguments["format"]))
+table := tableformatter.Table{
+	Data:   data,
+	Schema: schema,
+}
+return table.RenderTable("resources", topLine, command.GetStringParam(c.Arguments["format"]))
 }
 
 func listWorkflowStagesCmd(c *command.Command, client metalcloud.MetalCloudClient) (string, error) {
