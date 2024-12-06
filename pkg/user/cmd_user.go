@@ -119,6 +119,7 @@ var UserCmds = []command.Command{
 				"account":        c.FlagSet.String("account", command.NilDefaultStr, "The account to assign the user to."),
 				"limits_profile": c.FlagSet.String("limits-profile", command.NilDefaultStr, "Pass a JSON file name from which the system will read the limit values."),
 				"set_billable":   c.FlagSet.Bool("set-billable", false, colors.Green("(Flag)")+" If set the user will be created with the billable flag set to True."),
+				"set_verified":   c.FlagSet.Bool("set-verified", false, colors.Green("(Flag)")+" If set the user will be created with the email verified flag set to True."),
 				"no_color":       c.FlagSet.Bool("no-color", false, colors.Green("(Flag)")+" Disable coloring."),
 				"return_id":      c.FlagSet.Bool("return-id", false, colors.Green("(Flag)")+" If set will print the ID of the created user. Useful for automating tasks."),
 			}
@@ -433,12 +434,13 @@ func userCreateCmd(ctx context.Context, c *command.Command, client *metalcloud2.
 	account := command.GetStringParam(c.Arguments["account"])
 	accountId, _ := strconv.ParseInt(account, 10, 64)
 	limitsProfile := command.GetStringParam(c.Arguments["limits_profile"])
+	emailVerified := command.GetBoolParam(c.Arguments["set_verified"])
 
 	ret, _, err := client.UsersApi.CreateUser(ctx, metalcloud2.CreateUserDto{
 		DisplayName:   displayName,
 		Email:         userName,
 		AccessLevel:   role,
-		EmailVerified: true,
+		EmailVerified: emailVerified,
 		AccountId:     float64(accountId),
 	})
 
