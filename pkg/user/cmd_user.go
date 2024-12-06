@@ -143,6 +143,21 @@ var UserCmds = []command.Command{
 		ExecuteFunc2: userSetBillableCmd,
 	},
 	{
+		Description:  "Set user email as verified",
+		Subject:      "user",
+		Predicate:    "email-verified-set",
+		AltSubject:   "email-verified",
+		AltPredicate: "set",
+		FlagSet:      flag.NewFlagSet("set user email as verified", flag.ExitOnError),
+		InitFunc: func(c *command.Command) {
+			c.Arguments = map[string]interface{}{
+				"user_id": c.FlagSet.String("user-id", "", colors.Red("(Required)")+" The user ID."),
+				"set":     c.FlagSet.Bool("set", false, "If set the user email will be set as verified. If not set the user email will be set as not verified."),
+			}
+		},
+		ExecuteFunc2: userSetVerifiedCmd,
+	},
+	{
 		Description:  "Update user limits",
 		Subject:      "user",
 		Predicate:    "limits-set",
@@ -512,6 +527,27 @@ func userSetBillableCmd(ctx context.Context, c *command.Command, client *metalcl
 	}, userID)
 	if err != nil {
 		return "", fmt.Errorf("can't set user billable: %w", err)
+	}
+	return "", nil
+}
+
+func userSetVerifiedCmd(ctx context.Context, c *command.Command, client *metalcloud2.APIClient) (string, error) {
+
+	userID := command.GetStringParam(c.Arguments["user_id"])
+	if userID == "" {
+		return "", fmt.Errorf("user-id is required")
+	}
+
+	set := command.GetBoolParam(c.Arguments["set"])
+	emailStatus := "not_verified"
+	if set {
+		emailStatus = "verified"
+	}
+	_, _, err := client.UsersApi.UpdateUser(ctx, metalcloud2.UpdateUserDto{
+		EmailStatus: emailStatus,
+	}, userID)
+	if err != nil {
+		return "", fmt.Errorf("can't set user email status: %w", err)
 	}
 	return "", nil
 }
