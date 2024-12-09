@@ -55,6 +55,12 @@ var userFilterProperties = []string{
 	"user_promotion_tags_json",
 }
 
+const PERMISSION_CREATE_VERIFIED_USER = "create_verified_user"
+
+var supportedPermissions = []string{
+	PERMISSION_CREATE_VERIFIED_USER,
+}
+
 var UserCmds = []command.Command{
 	{
 		Description:  "Lists all users.",
@@ -119,6 +125,7 @@ var UserCmds = []command.Command{
 				"account":        c.FlagSet.String("account", command.NilDefaultStr, "The account to assign the user to."),
 				"limits_profile": c.FlagSet.String("limits-profile", command.NilDefaultStr, "Pass a JSON file name from which the system will read the limit values."),
 				"set_billable":   c.FlagSet.Bool("set-billable", false, colors.Green("(Flag)")+" If set the user will be created with the billable flag set to True."),
+				"set_verified":   c.FlagSet.Bool("set-verified", false, colors.Green("(Flag)")+" If set the user will be created with the email verified flag set to True."),
 				"no_color":       c.FlagSet.Bool("no-color", false, colors.Green("(Flag)")+" Disable coloring."),
 				"return_id":      c.FlagSet.Bool("return-id", false, colors.Green("(Flag)")+" If set will print the ID of the created user. Useful for automating tasks."),
 			}
@@ -140,6 +147,21 @@ var UserCmds = []command.Command{
 			}
 		},
 		ExecuteFunc2: userSetBillableCmd,
+	},
+	{
+		Description:  "Set user email as verified",
+		Subject:      "user",
+		Predicate:    "email-verified-set",
+		AltSubject:   "email-verified",
+		AltPredicate: "set",
+		FlagSet:      flag.NewFlagSet("set user email as verified", flag.ExitOnError),
+		InitFunc: func(c *command.Command) {
+			c.Arguments = map[string]interface{}{
+				"user_id": c.FlagSet.String("user-id", "", colors.Red("(Required)")+" The user ID."),
+				"set":     c.FlagSet.Bool("set", false, "If set the user email will be set as verified. If not set the user email will be set as not verified."),
+			}
+		},
+		ExecuteFunc2: userSetVerifiedCmd,
 	},
 	{
 		Description:  "Update user limits",
@@ -199,6 +221,22 @@ var UserCmds = []command.Command{
 		},
 		ExecuteFunc2: userSetAccountCmd,
 	},
+	{
+		Description:  "set permissions for a user",
+		Subject:      "user",
+		Predicate:    "permission-set",
+		AltSubject:   command.NilDefaultStr,
+		AltPredicate: command.NilDefaultStr,
+		FlagSet:      flag.NewFlagSet("set permissions for a user", flag.ExitOnError),
+		InitFunc: func(c *command.Command) {
+			c.Arguments = map[string]interface{}{
+				"user_id":    c.FlagSet.String("user-id", "", colors.Red("(Required)")+" The user ID."),
+				"permission": c.FlagSet.String("permission", "", colors.Red("(Required)")+" The permission to set."),
+				"enable":     c.FlagSet.Bool("enable", true, colors.Red("(Required)")+" Enable or disable the permission."),
+			}
+		},
+		ExecuteFunc2: userSetPermissionsCmd,
+	},
 }
 
 func userListCmd(c *command.Command, client metalcloud.MetalCloudClient) (string, error) {
@@ -246,24 +284,24 @@ func userListCmd(c *command.Command, client metalcloud.MetalCloudClient) (string
 	for _, i := range *iList {
 		status := ""
 
-	format := command.GetStringParam(c.Arguments["format"])
-    if format == "" {
-		if i.UserBlocked {
-			status = colors.Red("Blocked")
-		} else if i.UserIsSuspended {
-			status = colors.Red("Suspended")
+		format := command.GetStringParam(c.Arguments["format"])
+		if format == "" {
+			if i.UserBlocked {
+				status = colors.Red("Blocked")
+			} else if i.UserIsSuspended {
+				status = colors.Red("Suspended")
+			} else {
+				status = colors.Green("Active")
+			}
 		} else {
-			status = colors.Green("Active")
+			if i.UserBlocked {
+				status = "Blocked"
+			} else if i.UserIsSuspended {
+				status = "Suspended"
+			} else {
+				status = "Active"
+			}
 		}
-	}else{
-		if i.UserBlocked {
-			status = "Blocked"
-		} else if i.UserIsSuspended {
-			status = "Suspended"
-		} else {
-			status = "Active"
-		}
-	}
 
 		data = append(data, []interface{}{
 			i.UserID,
@@ -433,12 +471,13 @@ func userCreateCmd(ctx context.Context, c *command.Command, client *metalcloud2.
 	account := command.GetStringParam(c.Arguments["account"])
 	accountId, _ := strconv.ParseInt(account, 10, 64)
 	limitsProfile := command.GetStringParam(c.Arguments["limits_profile"])
+	emailVerified := command.GetBoolParam(c.Arguments["set_verified"])
 
 	ret, _, err := client.UsersApi.CreateUser(ctx, metalcloud2.CreateUserDto{
 		DisplayName:   displayName,
 		Email:         userName,
 		AccessLevel:   role,
-		EmailVerified: true,
+		EmailVerified: emailVerified,
 		AccountId:     float64(accountId),
 	})
 
@@ -514,6 +553,27 @@ func userSetBillableCmd(ctx context.Context, c *command.Command, client *metalcl
 	return "", nil
 }
 
+func userSetVerifiedCmd(ctx context.Context, c *command.Command, client *metalcloud2.APIClient) (string, error) {
+
+	userID := command.GetStringParam(c.Arguments["user_id"])
+	if userID == "" {
+		return "", fmt.Errorf("user-id is required")
+	}
+
+	set := command.GetBoolParam(c.Arguments["set"])
+	emailStatus := "not_verified"
+	if set {
+		emailStatus = "verified"
+	}
+	_, _, err := client.UsersApi.UpdateUser(ctx, metalcloud2.UpdateUserDto{
+		EmailStatus: emailStatus,
+	}, userID)
+	if err != nil {
+		return "", fmt.Errorf("can't set user email status: %w", err)
+	}
+	return "", nil
+}
+
 func userUpdateLimitsCmd(ctx context.Context, c *command.Command, client *metalcloud2.APIClient) (string, error) {
 	userID, ok := command.GetStringParamOk(c.Arguments["user_id"])
 	if !ok {
@@ -576,6 +636,43 @@ func userSetAccountCmd(ctx context.Context, c *command.Command, client *metalclo
 	}, userID)
 	if err != nil {
 		return "", fmt.Errorf("can't set user account: %w", err)
+	}
+	return "", nil
+}
+
+func userSetPermissionsCmd(ctx context.Context, c *command.Command, client *metalcloud2.APIClient) (string, error) {
+	userID, ok := command.GetStringParamOk(c.Arguments["user_id"])
+	if !ok {
+		return "", fmt.Errorf("user-id is required")
+	}
+	permission, ok := command.GetStringParamOk(c.Arguments["permission"])
+	if !ok {
+		return "", fmt.Errorf("permission is required")
+	}
+
+	if !slices.Contains(supportedPermissions, permission) {
+		return "", fmt.Errorf("permission '%s' is not supported", permission)
+	}
+
+	enable, ok := command.GetBoolParamOk(c.Arguments["enable"])
+	if !ok {
+		return "", fmt.Errorf("enable is required")
+	}
+	permissionDto := metalcloud2.UserResourcePermissionDto{
+		ResourcePermission: permission,
+		EnablePermission:   enable,
+	}
+
+	_, _, err := client.UsersApi.UpdateUser(ctx, metalcloud2.UpdateUserDto{
+		Permissions: &metalcloud2.UserResourcePermissionsDto{
+			SpecialPermissions: []metalcloud2.UserResourcePermissionDto{
+				permissionDto,
+			},
+		},
+	},
+		userID)
+	if err != nil {
+		return "", fmt.Errorf("can't set user permission: %w", err)
 	}
 	return "", nil
 }
