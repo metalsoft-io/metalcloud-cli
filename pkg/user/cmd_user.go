@@ -78,7 +78,8 @@ var UserCmds = []command.Command{
 		ExecuteFunc:         userListCmd,
 		Endpoint:            configuration.DeveloperEndpoint,
 		PermissionsRequired: []string{command.USERS_AND_PERMISSIONS_READ},
-	}, {
+	},
+	{
 		Description:  "Shows information about a user.",
 		Subject:      "user",
 		Predicate:    "show",
@@ -94,7 +95,6 @@ var UserCmds = []command.Command{
 		},
 		ExecuteFunc2: userShowCmd,
 	},
-
 	{
 		Description:  "Show user limits",
 		Subject:      "user",
