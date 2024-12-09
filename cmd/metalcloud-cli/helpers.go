@@ -120,7 +120,8 @@ func initClient(endpointSuffix string) (metalcloud.MetalCloudClient, error) {
 	endpoint := fmt.Sprintf("%s%s", endpointHost, endpointSuffix)
 
 	insecureSkipVerify := false
-	if strings.ToLower(os.Getenv("METALCLOUD_INSECURE_SKIP_VERIFY")) == "true" {
+	insecureEnv := strings.ToLower(os.Getenv("METALCLOUD_INSECURE_SKIP_VERIFY"))
+	if insecureEnv == "true" || insecureEnv == "1" {
 		insecureSkipVerify = true
 	}
 
@@ -256,8 +257,8 @@ func fitlerCommandSet(commandSet []command.Command, clients map[string]metalclou
 
 	for _, command := range commandSet {
 		if endpointAvailableForCommand(command, clients, permissions) &&
-			commandVisibleForUser(command, permissions) ||
-			command.ExecuteFunc2 != nil {
+		commandVisibleForUser(command, permissions) ||
+		command.ExecuteFunc2 != nil {
 			filteredCommands = append(filteredCommands, command)
 		}
 	}
@@ -296,7 +297,7 @@ func commandVisibleForUser(c command.Command, permissions []string) bool {
 
 func sameCommand(a *command.Command, b *command.Command) bool {
 	return a.Subject == b.Subject &&
-		a.AltSubject == b.AltSubject &&
-		a.Predicate == b.Predicate &&
-		a.AltPredicate == b.AltPredicate
+	a.AltSubject == b.AltSubject &&
+	a.Predicate == b.Predicate &&
+	a.AltPredicate == b.AltPredicate
 }
