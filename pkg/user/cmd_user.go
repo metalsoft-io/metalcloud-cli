@@ -88,7 +88,7 @@ var UserCmds = []command.Command{
 		FlagSet:      flag.NewFlagSet("show user", flag.ExitOnError),
 		InitFunc: func(c *command.Command) {
 			c.Arguments = map[string]interface{}{
-				"user_id": c.FlagSet.String("user-id", "0", colors.Red("(Required)")+" The user ID."),
+				"user_id": c.FlagSet.String("id", "0", colors.Red("(Required)")+" The user ID."),
 				"format":  c.FlagSet.String("format", "", "The output format. Supported values are 'json','csv','yaml'. The default format is human readable."),
 				"raw":     c.FlagSet.Bool("raw", false, colors.Green("(Flag)")+" If set returns the user raw object serialized using specified format"),
 			}
@@ -104,7 +104,7 @@ var UserCmds = []command.Command{
 		FlagSet:      flag.NewFlagSet("show user limits", flag.ExitOnError),
 		InitFunc: func(c *command.Command) {
 			c.Arguments = map[string]interface{}{
-				"user_id": c.FlagSet.String("user-id", "0", colors.Red("(Required)")+" The user ID."),
+				"user_id": c.FlagSet.String("id", "0", colors.Red("(Required)")+" The user ID."),
 				"format":  c.FlagSet.String("format", "json", "The output format. Supported values are 'json','yaml'. The raw object will be returned"),
 			}
 		},
@@ -142,7 +142,7 @@ var UserCmds = []command.Command{
 		FlagSet:      flag.NewFlagSet("set user as billable", flag.ExitOnError),
 		InitFunc: func(c *command.Command) {
 			c.Arguments = map[string]interface{}{
-				"user_id": c.FlagSet.String("user-id", "", colors.Red("(Required)")+" The user ID."),
+				"user_id": c.FlagSet.String("id", "", colors.Red("(Required)")+" The user ID."),
 				"set":     c.FlagSet.Bool("set", false, "If set the user will be set as billable. If not set the user will be set as non-billable."),
 			}
 		},
@@ -157,7 +157,7 @@ var UserCmds = []command.Command{
 		FlagSet:      flag.NewFlagSet("set user email as verified", flag.ExitOnError),
 		InitFunc: func(c *command.Command) {
 			c.Arguments = map[string]interface{}{
-				"user_id": c.FlagSet.String("user-id", "", colors.Red("(Required)")+" The user ID."),
+				"user_id": c.FlagSet.String("id", "", colors.Red("(Required)")+" The user ID."),
 				"set":     c.FlagSet.Bool("set", false, "If set the user email will be set as verified. If not set the user email will be set as not verified."),
 			}
 		},
@@ -172,7 +172,7 @@ var UserCmds = []command.Command{
 		FlagSet:      flag.NewFlagSet("update user limits", flag.ExitOnError),
 		InitFunc: func(c *command.Command) {
 			c.Arguments = map[string]interface{}{
-				"user_id":        c.FlagSet.String("user-id", "0", colors.Red("(Required)")+" The user ID."),
+				"user_id":        c.FlagSet.String("id", "0", colors.Red("(Required)")+" The user ID."),
 				"limits_profile": c.FlagSet.String("limits-profile", command.NilDefaultStr, colors.Red("(Required)")+" Pass a JSON file name from which the system will read the limit values."),
 			}
 		},
@@ -187,7 +187,7 @@ var UserCmds = []command.Command{
 		FlagSet:      flag.NewFlagSet("archive user", flag.ExitOnError),
 		InitFunc: func(c *command.Command) {
 			c.Arguments = map[string]interface{}{
-				"user_id": c.FlagSet.String("user-id", "", colors.Red("(Required)")+" The user ID."),
+				"user_id": c.FlagSet.String("id", "", colors.Red("(Required)")+" The user ID."),
 			}
 		},
 		ExecuteFunc2: userArchiveCmd,
@@ -201,7 +201,7 @@ var UserCmds = []command.Command{
 		FlagSet:      flag.NewFlagSet("unarchive user", flag.ExitOnError),
 		InitFunc: func(c *command.Command) {
 			c.Arguments = map[string]interface{}{
-				"user_id": c.FlagSet.String("user-id", "", colors.Red("(Required)")+" The user ID."),
+				"user_id": c.FlagSet.String("id", "", colors.Red("(Required)")+" The user ID."),
 			}
 		},
 		ExecuteFunc2: userUnarchiveCmd,
@@ -215,7 +215,7 @@ var UserCmds = []command.Command{
 		FlagSet:      flag.NewFlagSet("set account for user", flag.ExitOnError),
 		InitFunc: func(c *command.Command) {
 			c.Arguments = map[string]interface{}{
-				"user_id":    c.FlagSet.String("user-id", "", colors.Red("(Required)")+" The user ID."),
+				"user_id":    c.FlagSet.String("id", "", colors.Red("(Required)")+" The user ID."),
 				"account_id": c.FlagSet.String("account-id", "", colors.Red("(Required)")+" The account ID."),
 			}
 		},
@@ -230,7 +230,7 @@ var UserCmds = []command.Command{
 		FlagSet:      flag.NewFlagSet("set permissions for a user", flag.ExitOnError),
 		InitFunc: func(c *command.Command) {
 			c.Arguments = map[string]interface{}{
-				"user_id":    c.FlagSet.String("user-id", "", colors.Red("(Required)")+" The user ID."),
+				"user_id":    c.FlagSet.String("id", "", colors.Red("(Required)")+" The user ID."),
 				"permission": c.FlagSet.String("permission", "", colors.Red("(Required)")+" The permission to set."),
 				"enable":     c.FlagSet.Bool("enable", true, colors.Red("(Required)")+" Enable or disable the permission."),
 			}
@@ -540,7 +540,7 @@ func readLimitsProfile(cmd *command.Command) (metalcloud2.UserLimitsDto, error) 
 func userSetBillableCmd(ctx context.Context, c *command.Command, client *metalcloud2.APIClient) (string, error) {
 	userID, ok := command.GetStringParamOk(c.Arguments["user_id"])
 	if !ok || userID == "" {
-		return "", fmt.Errorf("user-id is required")
+		return "", fmt.Errorf("id is required")
 	}
 
 	billable := command.GetBoolParam(c.Arguments["set"])
@@ -557,7 +557,7 @@ func userSetVerifiedCmd(ctx context.Context, c *command.Command, client *metalcl
 
 	userID := command.GetStringParam(c.Arguments["user_id"])
 	if userID == "" {
-		return "", fmt.Errorf("user-id is required")
+		return "", fmt.Errorf("id is required")
 	}
 
 	set := command.GetBoolParam(c.Arguments["set"])
@@ -577,7 +577,7 @@ func userSetVerifiedCmd(ctx context.Context, c *command.Command, client *metalcl
 func userUpdateLimitsCmd(ctx context.Context, c *command.Command, client *metalcloud2.APIClient) (string, error) {
 	userID, ok := command.GetStringParamOk(c.Arguments["user_id"])
 	if !ok {
-		return "", fmt.Errorf("user-id is required")
+		return "", fmt.Errorf("id is required")
 	}
 
 	limits, err := readLimitsProfile(c)
@@ -597,7 +597,7 @@ func userUpdateLimitsCmd(ctx context.Context, c *command.Command, client *metalc
 func userArchiveCmd(ctx context.Context, c *command.Command, client *metalcloud2.APIClient) (string, error) {
 	userID, ok := command.GetStringParamOk(c.Arguments["user_id"])
 	if !ok {
-		return "", fmt.Errorf("user-id is required")
+		return "", fmt.Errorf("id is required")
 	}
 	_, _, err := client.UsersApi.ArchiveUser(ctx, userID)
 	if err != nil {
@@ -609,7 +609,7 @@ func userArchiveCmd(ctx context.Context, c *command.Command, client *metalcloud2
 func userUnarchiveCmd(ctx context.Context, c *command.Command, client *metalcloud2.APIClient) (string, error) {
 	userID, ok := command.GetStringParamOk(c.Arguments["user_id"])
 	if !ok {
-		return "", fmt.Errorf("user-id is required")
+		return "", fmt.Errorf("id is required")
 	}
 	_, _, err := client.UsersApi.UnarchiveUser(ctx, userID)
 	if err != nil {
@@ -621,7 +621,7 @@ func userUnarchiveCmd(ctx context.Context, c *command.Command, client *metalclou
 func userSetAccountCmd(ctx context.Context, c *command.Command, client *metalcloud2.APIClient) (string, error) {
 	userID, ok := command.GetStringParamOk(c.Arguments["user_id"])
 	if !ok {
-		return "", fmt.Errorf("user-id is required")
+		return "", fmt.Errorf("id is required")
 	}
 	accountID, ok := command.GetStringParamOk(c.Arguments["account_id"])
 	if !ok {
@@ -643,7 +643,7 @@ func userSetAccountCmd(ctx context.Context, c *command.Command, client *metalclo
 func userSetPermissionsCmd(ctx context.Context, c *command.Command, client *metalcloud2.APIClient) (string, error) {
 	userID, ok := command.GetStringParamOk(c.Arguments["user_id"])
 	if !ok {
-		return "", fmt.Errorf("user-id is required")
+		return "", fmt.Errorf("id is required")
 	}
 	permission, ok := command.GetStringParamOk(c.Arguments["permission"])
 	if !ok {
