@@ -337,8 +337,7 @@ func userShowCmd(ctx context.Context, c *command.Command, client *metalcloud2.AP
 	numericID := int(tempID)
 	result, _, err := client.UsersApi.GetUser(ctx, userID, nil)
 	if err != nil {
-		fmt.Printf("Error: %s\n", err.Error())
-		return "", err
+		return "", fmt.Errorf("can't get user info: %w", err)
 	}
 	account := ""
 	if result.AccountId != "" {
@@ -436,10 +435,13 @@ func userShowCmd(ctx context.Context, c *command.Command, client *metalcloud2.AP
 
 func userShowLimitsCmd(ctx context.Context, c *command.Command, client *metalcloud2.APIClient) (string, error) {
 	userID := command.GetStringParam(c.Arguments["user_id"])
+	_, err := strconv.ParseInt(userID, 10, 64)
+	if err != nil {
+		return "", fmt.Errorf("invalid user id '%s'", userID)
+	}
 	result, _, err := client.UsersApi.GetUserLimits(ctx, userID)
 	if err != nil {
-		fmt.Printf("Error: %s\n", err.Error())
-		return "", err
+		return "", fmt.Errorf("can't get user limits: %w", err)
 	}
 	format := command.GetStringParam(c.Arguments["format"])
 	if format == "" {
@@ -482,7 +484,7 @@ func userCreateCmd(ctx context.Context, c *command.Command, client *metalcloud2.
 	})
 
 	if err != nil {
-		return "", err
+		return "", fmt.Errorf("can't create user: %w", err)
 	}
 	id := ret.Id
 

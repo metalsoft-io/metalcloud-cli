@@ -18,7 +18,7 @@ func main() {
 
 	clients, client2, err := initClients()
 	if err != nil {
-		fmt.Fprintf(configuration.GetStdout(), "Could not initialize metal cloud client %s\n", err)
+		fmt.Fprintf(os.Stderr, "Could not initialize metal cloud client %s\n", err)
 		os.Exit(-1)
 	}
 
@@ -26,8 +26,7 @@ func main() {
 	permissions, err := getUserPermissions(userId, clients[configuration.UserEndpoint])
 
 	if len(os.Args) < 2 {
-		//fmt.Fprintf(GetStdout(), "Invalid command! Use 'help' for a list of commands.\n")
-		fmt.Fprintf(configuration.GetStdout(), "%s\n", getHelp(clients, permissions))
+		fmt.Fprintf(os.Stderr, "%s\n", getHelp(clients, permissions))
 		os.Exit(-1)
 	}
 
@@ -37,7 +36,7 @@ func main() {
 	}
 
 	if len(os.Args) == 1 {
-		fmt.Fprint(configuration.GetStdout(), "Invalid command! Use 'help' for a list of commands\n")
+		fmt.Fprint(os.Stderr, "Invalid command! Use 'help' for a list of commands\n")
 		os.Exit(-1)
 	}
 
@@ -48,7 +47,7 @@ func main() {
 	err = command.ExecuteCommand(os.Args, commands, clients, client2, permissions)
 
 	if err != nil {
-		fmt.Fprintf(configuration.GetStdout(), "%s\n", err)
+		fmt.Fprintf(os.Stderr, "%s\n", err)
 		os.Exit(-2)
 	}
 }
