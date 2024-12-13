@@ -29,6 +29,7 @@ var VmTypesCmds = []command.Command{
 		},
 		ExecuteFunc2:        vmTypeListCmd,
 		PermissionsRequired: []string{command.VM_TYPES_READ},
+		MinApiVersion:       "v6.3",
 	},
 	{
 		Description:  "Get VM type.",
@@ -45,6 +46,7 @@ var VmTypesCmds = []command.Command{
 		},
 		ExecuteFunc2:        vmTypeGetCmd,
 		PermissionsRequired: []string{command.VM_TYPES_READ},
+		MinApiVersion:       "v6.3",
 	},
 	{
 		Description:  "Create VM type.",
@@ -63,6 +65,7 @@ var VmTypesCmds = []command.Command{
 		},
 		ExecuteFunc2:        vmTypeCreateCmd,
 		PermissionsRequired: []string{command.VM_TYPES_WRITE},
+		MinApiVersion:       "v6.3",
 	},
 	{
 		Description:  "Update VM type.",
@@ -81,6 +84,7 @@ var VmTypesCmds = []command.Command{
 		},
 		ExecuteFunc2:        vmTypeUpdateCmd,
 		PermissionsRequired: []string{command.VM_TYPES_WRITE},
+		MinApiVersion:       "v6.3",
 	},
 	{
 		Description:  "Delete VM type.",
@@ -97,6 +101,7 @@ var VmTypesCmds = []command.Command{
 		},
 		ExecuteFunc2:        vmTypeDeleteCmd,
 		PermissionsRequired: []string{command.VM_TYPES_WRITE},
+		MinApiVersion:       "v6.3",
 	},
 }
 

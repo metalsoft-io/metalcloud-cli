@@ -85,6 +85,7 @@ metalcloud-cli server list --show-credentials # to retrieve a list of credential
 		},
 		ExecuteFunc2:        serverRegisterCmd,
 		PermissionsRequired: []string{command.SERVERS_WRITE},
+		MinApiVersion:       "v6.4",
 	},
 
 	{
@@ -429,6 +430,7 @@ password: notcalvin
 		},
 		ExecuteFunc2:        serverReRegisterCmd,
 		PermissionsRequired: []string{command.SERVERS_WRITE},
+		MinApiVersion:       "v6.4",
 	},
 	{
 		Description:  "Change server server type",

@@ -29,6 +29,7 @@ var ExtensionCmds = []command.Command{
 		},
 		ExecuteFunc2:        extensionListCmd,
 		PermissionsRequired: []string{command.EXTENSIONS_READ},
+		MinApiVersion:       "v6.4",
 	},
 	{
 		Description:  "Get extension.",
@@ -45,6 +46,7 @@ var ExtensionCmds = []command.Command{
 		},
 		ExecuteFunc2:        extensionGetCmd,
 		PermissionsRequired: []string{command.EXTENSIONS_READ},
+		MinApiVersion:       "v6.4",
 	},
 	{
 		Description:  "Create extension.",
@@ -63,6 +65,7 @@ var ExtensionCmds = []command.Command{
 		},
 		ExecuteFunc2:        extensionCreateCmd,
 		PermissionsRequired: []string{command.EXTENSIONS_WRITE},
+		MinApiVersion:       "v6.4",
 	},
 	{
 		Description:  "Update extension.",
@@ -81,6 +84,7 @@ var ExtensionCmds = []command.Command{
 		},
 		ExecuteFunc2:        extensionUpdateCmd,
 		PermissionsRequired: []string{command.EXTENSIONS_WRITE},
+		MinApiVersion:       "v6.4",
 	},
 	{
 		Description:  "Archive extension.",
@@ -97,6 +101,7 @@ var ExtensionCmds = []command.Command{
 		},
 		ExecuteFunc2:        extensionArchiveCmd,
 		PermissionsRequired: []string{command.EXTENSIONS_WRITE},
+		MinApiVersion:       "v6.4",
 	},
 	{
 		Description:  "Publish extension.",
@@ -113,6 +118,7 @@ var ExtensionCmds = []command.Command{
 		},
 		ExecuteFunc2:        extensionPublishCmd,
 		PermissionsRequired: []string{command.EXTENSIONS_WRITE},
+		MinApiVersion:       "v6.4",
 	},
 }
 

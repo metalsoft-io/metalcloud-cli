@@ -93,7 +93,8 @@ var UserCmds = []command.Command{
 				"raw":     c.FlagSet.Bool("raw", false, colors.Green("(Flag)")+" If set returns the user raw object serialized using specified format"),
 			}
 		},
-		ExecuteFunc2: userShowCmd,
+		ExecuteFunc2:  userShowCmd,
+		MinApiVersion: "v6.3",
 	},
 	{
 		Description:  "Show user limits",
@@ -108,7 +109,8 @@ var UserCmds = []command.Command{
 				"format":  c.FlagSet.String("format", "json", "The output format. Supported values are 'json','yaml'. The raw object will be returned"),
 			}
 		},
-		ExecuteFunc2: userShowLimitsCmd,
+		ExecuteFunc2:  userShowLimitsCmd,
+		MinApiVersion: "v6.3",
 	},
 	{
 		Description:  "Creates an user in the built-in user database",
@@ -130,7 +132,8 @@ var UserCmds = []command.Command{
 				"return_id":      c.FlagSet.Bool("return-id", false, colors.Green("(Flag)")+" If set will print the ID of the created user. Useful for automating tasks."),
 			}
 		},
-		ExecuteFunc2: userCreateCmd,
+		ExecuteFunc2:  userCreateCmd,
+		MinApiVersion: "v6.4",
 	},
 
 	{
@@ -146,7 +149,8 @@ var UserCmds = []command.Command{
 				"set":     c.FlagSet.Bool("set", false, "If set the user will be set as billable. If not set the user will be set as non-billable."),
 			}
 		},
-		ExecuteFunc2: userSetBillableCmd,
+		ExecuteFunc2:  userSetBillableCmd,
+		MinApiVersion: "v6.3",
 	},
 	{
 		Description:  "Set user email as verified",
@@ -161,7 +165,8 @@ var UserCmds = []command.Command{
 				"set":     c.FlagSet.Bool("set", false, "If set the user email will be set as verified. If not set the user email will be set as not verified."),
 			}
 		},
-		ExecuteFunc2: userSetVerifiedCmd,
+		ExecuteFunc2:  userSetVerifiedCmd,
+		MinApiVersion: "v6.3",
 	},
 	{
 		Description:  "Update user limits",
@@ -176,7 +181,8 @@ var UserCmds = []command.Command{
 				"limits_profile": c.FlagSet.String("limits-profile", command.NilDefaultStr, colors.Red("(Required)")+" Pass a JSON file name from which the system will read the limit values."),
 			}
 		},
-		ExecuteFunc2: userUpdateLimitsCmd,
+		ExecuteFunc2:  userUpdateLimitsCmd,
+		MinApiVersion: "v6.3",
 	},
 	{
 		Description:  "Archive a user",
@@ -190,7 +196,8 @@ var UserCmds = []command.Command{
 				"user_id": c.FlagSet.String("id", "", colors.Red("(Required)")+" The user ID."),
 			}
 		},
-		ExecuteFunc2: userArchiveCmd,
+		ExecuteFunc2:  userArchiveCmd,
+		MinApiVersion: "v6.3",
 	},
 	{
 		Description:  "Unarchive a user",
@@ -204,7 +211,8 @@ var UserCmds = []command.Command{
 				"user_id": c.FlagSet.String("id", "", colors.Red("(Required)")+" The user ID."),
 			}
 		},
-		ExecuteFunc2: userUnarchiveCmd,
+		ExecuteFunc2:  userUnarchiveCmd,
+		MinApiVersion: "v6.3",
 	},
 	{
 		Description:  "Set a account for a user",
@@ -219,7 +227,8 @@ var UserCmds = []command.Command{
 				"account_id": c.FlagSet.String("account-id", "", colors.Red("(Required)")+" The account ID."),
 			}
 		},
-		ExecuteFunc2: userSetAccountCmd,
+		ExecuteFunc2:  userSetAccountCmd,
+		MinApiVersion: "v6.3",
 	},
 	{
 		Description:  "set permissions for a user",
@@ -235,7 +244,8 @@ var UserCmds = []command.Command{
 				"enable":     c.FlagSet.Bool("enable", true, colors.Red("(Required)")+" Enable or disable the permission."),
 			}
 		},
-		ExecuteFunc2: userSetPermissionsCmd,
+		ExecuteFunc2:  userSetPermissionsCmd,
+		MinApiVersion: "v6.3",
 	},
 }
 

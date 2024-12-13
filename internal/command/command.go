@@ -25,6 +25,7 @@ import (
 	"gopkg.in/yaml.v3"
 
 	"golang.org/x/crypto/ssh/terminal"
+	"golang.org/x/mod/semver"
 
 	"github.com/metalsoft-io/metalcloud-cli/internal/colors"
 	"github.com/metalsoft-io/metalcloud-cli/internal/configuration"
@@ -55,6 +56,7 @@ type Command struct {
 	AdminOnly           bool   //set if command is to be visible only to admins regardless of endpoint
 	AdminEndpoint       string //if set will be used instead of Endpoint for admins
 	PermissionsRequired []string
+	MinApiVersion       string
 }
 
 type CommandTestCase struct {
@@ -437,15 +439,6 @@ func validateArguments(args []string) (string, string, int) {
 func helpMessage(err error, subject string, predicate string) error {
 	message := err.Error()
 
-	swaggerErr, ok := err.(metalcloud2.GenericSwaggerError)
-	if ok {
-		if strings.Contains(swaggerErr.Error(), "404") || strings.Contains(swaggerErr.Error(), "Not Found") {
-			message = "This version of CLI (" + configuration.Version + ") is only compatible with a controller versioned 6.4 and above."
-		} else {
-			message = swaggerErr.Error() + " [ " + string(swaggerErr.Body()) + " ]"
-		}
-	}
-
 	if predicate != NilDefaultStr {
 		return fmt.Errorf("%s\nUse '%s %s -h' for syntax help", message, subject, predicate)
 	}
@@ -453,7 +446,7 @@ func helpMessage(err error, subject string, predicate string) error {
 	return fmt.Errorf("%s\nUse '%s -h' for syntax help", message, subject)
 }
 
-func ExecuteCommand(args []string, commands []Command, clients map[string]metalcloud.MetalCloudClient, client2 *metalcloud2.APIClient, permissions []string) error {
+func ExecuteCommand(args []string, commands []Command, clients map[string]metalcloud.MetalCloudClient, client2 *metalcloud2.APIClient, client2Version string, permissions []string) error {
 	subject, predicate, count := validateArguments(args)
 
 	if count == 1 {
@@ -525,6 +518,11 @@ func ExecuteCommand(args []string, commands []Command, clients map[string]metalc
 
 	var ret string
 	if cmd.ExecuteFunc2 != nil {
+		if cmd.MinApiVersion != "" {
+			if client2Version != "develop" && semver.Compare(cmd.MinApiVersion, client2Version) != -1 {
+				return fmt.Errorf("this command requires API version %s. Your endpoint is running version %s", cmd.MinApiVersion, client2Version)
+			}
+		}
 		ret, err = cmd.ExecuteFunc2(context.Background(), cmd, client2)
 	} else {
 		client, ok := clients[endpoint]

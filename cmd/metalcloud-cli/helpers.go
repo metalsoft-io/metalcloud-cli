@@ -9,6 +9,8 @@ import (
 	"strings"
 	"time"
 
+	"golang.org/x/net/context"
+
 	metalcloud "github.com/metalsoft-io/metal-cloud-sdk-go/v3"
 	metalcloud2 "github.com/metalsoft-io/metal-cloud-sdk2-go"
 	"github.com/metalsoft-io/metalcloud-cli/internal/command"
@@ -45,7 +47,9 @@ import (
 	"github.com/metalsoft-io/metalcloud-cli/pkg/workflows"
 )
 
-func initClients() (map[string]metalcloud.MetalCloudClient, *metalcloud2.APIClient, error) {
+func initClients() (map[string]metalcloud.MetalCloudClient, *metalcloud2.APIClient, string, error) {
+	version := "develop"
+
 	clients := map[string]metalcloud.MetalCloudClient{}
 	endpointSuffixes := map[string]string{
 		configuration.DeveloperEndpoint: "/api/developer/developer",
@@ -57,7 +61,7 @@ func initClients() (map[string]metalcloud.MetalCloudClient, *metalcloud2.APIClie
 	for clientName, suffix := range endpointSuffixes {
 		client, err := initClient(suffix)
 		if err != nil {
-			return nil, nil, err
+			return nil, nil, "", err
 		}
 
 		clients[clientName] = client
@@ -65,12 +69,22 @@ func initClients() (map[string]metalcloud.MetalCloudClient, *metalcloud2.APIClie
 
 	config, err := clientConfiguration()
 	if err != nil {
-		return nil, nil, err
+		return nil, nil, "", err
 	}
 
 	client2 := metalcloud2.NewAPIClient(config)
 
-	return clients, client2, nil
+	versionInfo, _, err := client2.SystemApi.GetVersion(context.Background())
+	if err != nil {
+		swaggerErr, ok := err.(metalcloud2.GenericSwaggerError)
+		if ok && (strings.Contains(swaggerErr.Error(), "404") || strings.Contains(swaggerErr.Error(), "Not Found")) {
+			version = "v6.2" // GetVersion was not available before v6.2.1
+		}
+	} else {
+		version = versionInfo.Version
+	}
+
+	return clients, client2, version, nil
 }
 
 func getUser(userId int, client metalcloud.MetalCloudClient) (*metalcloud.User, error) {
@@ -257,8 +271,8 @@ func fitlerCommandSet(commandSet []command.Command, clients map[string]metalclou
 
 	for _, command := range commandSet {
 		if endpointAvailableForCommand(command, clients, permissions) &&
-		commandVisibleForUser(command, permissions) ||
-		command.ExecuteFunc2 != nil {
+			commandVisibleForUser(command, permissions) ||
+			command.ExecuteFunc2 != nil {
 			filteredCommands = append(filteredCommands, command)
 		}
 	}
@@ -297,7 +311,7 @@ func commandVisibleForUser(c command.Command, permissions []string) bool {
 
 func sameCommand(a *command.Command, b *command.Command) bool {
 	return a.Subject == b.Subject &&
-	a.AltSubject == b.AltSubject &&
-	a.Predicate == b.Predicate &&
-	a.AltPredicate == b.AltPredicate
+		a.AltSubject == b.AltSubject &&
+		a.Predicate == b.Predicate &&
+		a.AltPredicate == b.AltPredicate
 }

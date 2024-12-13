@@ -32,6 +32,7 @@ var VmInstancesCmds = []command.Command{
 		},
 		ExecuteFunc2:        vmInstanceGetCmd,
 		PermissionsRequired: []string{command.VMS_READ},
+		MinApiVersion:       "v6.3",
 	},
 	{
 		Description:  "Create VM instance.",
@@ -51,6 +52,7 @@ var VmInstancesCmds = []command.Command{
 		},
 		ExecuteFunc2:        vmInstanceCreateCmd,
 		PermissionsRequired: []string{command.VMS_WRITE},
+		MinApiVersion:       "v6.3",
 	},
 	{
 		Description:  "Update VM instance.",
@@ -70,6 +72,7 @@ var VmInstancesCmds = []command.Command{
 		},
 		ExecuteFunc2:        vmInstanceUpdateCmd,
 		PermissionsRequired: []string{command.VMS_WRITE},
+		MinApiVersion:       "v6.3",
 	},
 	{
 		Description:  "Delete VM instance.",
@@ -87,6 +90,7 @@ var VmInstancesCmds = []command.Command{
 		},
 		ExecuteFunc2:        vmInstanceDeleteCmd,
 		PermissionsRequired: []string{command.VMS_WRITE},
+		MinApiVersion:       "v6.3",
 	},
 	{
 		Description:  "Change VM instance type.",
@@ -104,6 +108,7 @@ var VmInstancesCmds = []command.Command{
 		},
 		ExecuteFunc2:        vmInstanceTypeChangeCmd,
 		PermissionsRequired: []string{command.VMS_WRITE},
+		MinApiVersion:       "v6.3",
 	},
 	{
 		Description:  "Get VM instance power status.",
@@ -120,6 +125,7 @@ var VmInstancesCmds = []command.Command{
 		},
 		ExecuteFunc2:        vmInstancePowerStatusGetCmd,
 		PermissionsRequired: []string{command.VMS_READ},
+		MinApiVersion:       "v6.3",
 	},
 	{
 		Description:  "Start VM instance.",
@@ -137,6 +143,7 @@ var VmInstancesCmds = []command.Command{
 		},
 		ExecuteFunc2:        vmInstanceStartCmd,
 		PermissionsRequired: []string{command.VMS_WRITE},
+		MinApiVersion:       "v6.3",
 	},
 	{
 		Description:  "Reboot VM instance.",
@@ -154,6 +161,7 @@ var VmInstancesCmds = []command.Command{
 		},
 		ExecuteFunc2:        vmInstanceRebootCmd,
 		PermissionsRequired: []string{command.VMS_WRITE},
+		MinApiVersion:       "v6.3",
 	},
 	{
 		Description:  "Shutdown VM instance.",
@@ -171,6 +179,7 @@ var VmInstancesCmds = []command.Command{
 		},
 		ExecuteFunc2:        vmInstanceShutdownCmd,
 		PermissionsRequired: []string{command.VMS_WRITE},
+		MinApiVersion:       "v6.3",
 	},
 }
 

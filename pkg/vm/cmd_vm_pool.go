@@ -30,6 +30,7 @@ var VmPoolsCmds = []command.Command{
 		},
 		ExecuteFunc2:        vmPoolListCmd,
 		PermissionsRequired: []string{command.VM_POOLS_READ},
+		MinApiVersion:       "v6.3",
 	},
 	{
 		Description:  "Get VM pool.",
@@ -47,6 +48,7 @@ var VmPoolsCmds = []command.Command{
 		},
 		ExecuteFunc2:        vmPoolGetCmd,
 		PermissionsRequired: []string{command.VM_POOLS_READ},
+		MinApiVersion:       "v6.3",
 	},
 	{
 		Description:  "Create VM pool.",
@@ -65,6 +67,7 @@ var VmPoolsCmds = []command.Command{
 		},
 		ExecuteFunc2:        vmPoolCreateCmd,
 		PermissionsRequired: []string{command.VM_POOLS_WRITE},
+		MinApiVersion:       "v6.3",
 	},
 	{
 		Description:  "Update VM pool.",
@@ -83,6 +86,7 @@ var VmPoolsCmds = []command.Command{
 		},
 		ExecuteFunc2:        vmPoolUpdateCmd,
 		PermissionsRequired: []string{command.VM_POOLS_WRITE},
+		MinApiVersion:       "v6.3",
 	},
 	{
 		Description:  "Delete VM pool.",
@@ -99,6 +103,7 @@ var VmPoolsCmds = []command.Command{
 		},
 		ExecuteFunc2:        vmPoolDeleteCmd,
 		PermissionsRequired: []string{command.VM_POOLS_WRITE},
+		MinApiVersion:       "v6.3",
 	},
 }
 

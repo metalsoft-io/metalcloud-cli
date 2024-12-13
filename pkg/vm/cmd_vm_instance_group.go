@@ -30,6 +30,7 @@ var VmInstanceGroupsCmds = []command.Command{
 		},
 		ExecuteFunc2:        vmInstanceGroupListCmd,
 		PermissionsRequired: []string{command.VMS_READ},
+		MinApiVersion:       "v6.3",
 	},
 	{
 		Description:  "Get VM instance group details.",
@@ -47,6 +48,7 @@ var VmInstanceGroupsCmds = []command.Command{
 		},
 		ExecuteFunc2:        vmInstanceGroupGetCmd,
 		PermissionsRequired: []string{command.VMS_READ},
+		MinApiVersion:       "v6.3",
 	},
 	{
 		Description:  "List VM instance group VMs.",
@@ -64,6 +66,7 @@ var VmInstanceGroupsCmds = []command.Command{
 		},
 		ExecuteFunc2:        vmInstanceGroupVmsListCmd,
 		PermissionsRequired: []string{command.VMS_READ},
+		MinApiVersion:       "v6.3",
 	},
 	{
 		Description:  "Create VM instance group.",
@@ -83,6 +86,7 @@ var VmInstanceGroupsCmds = []command.Command{
 		},
 		ExecuteFunc2:        vmInstanceGroupCreateCmd,
 		PermissionsRequired: []string{command.VMS_WRITE},
+		MinApiVersion:       "v6.3",
 	},
 	{
 		Description:  "Update VM instance group.",
@@ -102,6 +106,7 @@ var VmInstanceGroupsCmds = []command.Command{
 		},
 		ExecuteFunc2:        vmInstanceGroupUpdateCmd,
 		PermissionsRequired: []string{command.VMS_WRITE},
+		MinApiVersion:       "v6.3",
 	},
 	{
 		Description:  "Delete VM instance group.",
@@ -119,6 +124,7 @@ var VmInstanceGroupsCmds = []command.Command{
 		},
 		ExecuteFunc2:        vmInstanceGroupDeleteCmd,
 		PermissionsRequired: []string{command.VMS_WRITE},
+		MinApiVersion:       "v6.3",
 	},
 }
 

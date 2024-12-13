@@ -29,6 +29,7 @@ var ExtensionInstanceCmds = []command.Command{
 		},
 		ExecuteFunc2:        extensionInstancesListCmd,
 		PermissionsRequired: []string{command.EXTENSIONS_READ},
+		MinApiVersion:       "v6.4",
 	},
 	{
 		Description:  "Get extension-instance.",
@@ -45,6 +46,7 @@ var ExtensionInstanceCmds = []command.Command{
 		},
 		ExecuteFunc2:        extensionInstanceGetCmd,
 		PermissionsRequired: []string{command.EXTENSIONS_READ},
+		MinApiVersion:       "v6.4",
 	},
 	{
 		Description:  "Create extension-instance.",
@@ -64,6 +66,7 @@ var ExtensionInstanceCmds = []command.Command{
 		},
 		ExecuteFunc2:        extensionInstanceCreateCmd,
 		PermissionsRequired: []string{command.EXTENSIONS_WRITE},
+		MinApiVersion:       "v6.4",
 	},
 	{
 		Description:  "Update extension-instance.",
@@ -82,6 +85,7 @@ var ExtensionInstanceCmds = []command.Command{
 		},
 		ExecuteFunc2:        extensionInstanceUpdateCmd,
 		PermissionsRequired: []string{command.EXTENSIONS_WRITE},
+		MinApiVersion:       "v6.4",
 	},
 	{
 		Description:  "Delete extension-instance.",
@@ -98,6 +102,7 @@ var ExtensionInstanceCmds = []command.Command{
 		},
 		ExecuteFunc2:        extensionInstanceDeleteCmd,
 		PermissionsRequired: []string{command.EXTENSIONS_WRITE},
+		MinApiVersion:       "v6.4",
 	},
 }
 
