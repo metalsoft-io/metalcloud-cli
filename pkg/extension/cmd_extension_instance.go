@@ -266,7 +266,7 @@ func extensionInstanceFieldSchema() []tableformatter.SchemaField {
 	schema := []tableformatter.SchemaField{
 		{
 			FieldName: "ID",
-			FieldType: tableformatter.TypeFloat,
+			FieldType: tableformatter.TypeString,
 			FieldSize: 6,
 		},
 
@@ -288,11 +288,9 @@ func extensionInstanceFieldSchema() []tableformatter.SchemaField {
 
 func formattedExtensionInstanceRecord(extensionInstance metalcloud2.ExtensionInstanceDto) []interface{} {
 	formattedRecord := []interface{}{
-		extensionInstance.Id,
+		fmt.Sprintf("%.0f", extensionInstance.Id),
 		extensionInstance.InfrastructureId,
 		extensionInstance.Label,
-		// extensionInstance.InputVariables,
-		// extensionInstance.OutputVariables,
 	}
 
 	return formattedRecord

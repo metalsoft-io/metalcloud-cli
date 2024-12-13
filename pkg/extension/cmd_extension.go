@@ -299,7 +299,7 @@ func extensionFieldSchema() []tableformatter.SchemaField {
 	schema := []tableformatter.SchemaField{
 		{
 			FieldName: "ID",
-			FieldType: tableformatter.TypeFloat,
+			FieldType: tableformatter.TypeString,
 			FieldSize: 6,
 		},
 
@@ -333,7 +333,7 @@ func extensionFieldSchema() []tableformatter.SchemaField {
 
 func formattedExtensionInfoRecord(extension metalcloud2.ExtensionInfoDto) []interface{} {
 	formattedRecord := []interface{}{
-		extension.Id,
+		fmt.Sprintf("%.0f", extension.Id),
 		extension.Name,
 		extension.Label,
 		extension.Description,
