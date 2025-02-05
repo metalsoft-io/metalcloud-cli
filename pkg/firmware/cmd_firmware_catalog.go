@@ -98,7 +98,7 @@ func firmwareCatalogCreateCmd(c *command.Command, client metalcloud.MetalCloudCl
 	if configFormatValue, ok := command.GetStringParamOk(c.Arguments["config_format"]); !ok {
 		return "", fmt.Errorf("the 'config-format' parameter must be specified when creating a firmware catalog")
 	} else {
-		if !slices.Contains[string](validFormats, configFormatValue) {
+		if !slices.Contains(validFormats, configFormatValue) {
 			return "", fmt.Errorf("the 'config-format' parameter must be one of %v", validFormats)
 		}
 		configFormat = configFormatValue

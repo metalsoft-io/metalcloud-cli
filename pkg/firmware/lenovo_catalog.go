@@ -328,12 +328,12 @@ func processLenovoCatalog(client metalcloud.MetalCloudClient, configFile rawConf
 	serverTypesSupported := []string{}
 
 	for metalsoftServerType, servers := range serverFilteredInfoMap {
-		if !slices.Contains[string](metalsoftSupportedServerTypes, metalsoftServerType) {
+		if !slices.Contains(metalsoftSupportedServerTypes, metalsoftServerType) {
 			metalsoftSupportedServerTypes = append(metalsoftSupportedServerTypes, metalsoftServerType)
 		}
 
 		for _, server := range servers {
-			if !slices.Contains[string](serverTypesSupported, server.VendorSkuId) {
+			if !slices.Contains(serverTypesSupported, server.VendorSkuId) {
 				serverTypesSupported = append(serverTypesSupported, server.VendorSkuId)
 			}
 

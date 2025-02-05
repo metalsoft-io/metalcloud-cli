@@ -160,7 +160,7 @@ func parseConfigFile(configFormat string, rawConfigFileContents []byte, configFi
 
 		isSet := field.IsValid() && (!field.IsZero() || field.Kind() == reflect.Bool)
 
-		if !isSet && !slices.Contains[string](optionalFields, fieldName) {
+		if !isSet && !slices.Contains(optionalFields, fieldName) {
 			value, err := configFileParameterToValue(fieldName)
 			if err != nil {
 				return err
@@ -398,7 +398,7 @@ func uploadBinariesToRepository(binaryCollection []*firmwareBinary, replaceIfExi
 	}
 
 	for _, firmwareBinary := range binaryCollection {
-		firmwareBinaryExists := !slices.Contains[string](missingBinaries, firmwareBinary.FileName)
+		firmwareBinaryExists := !slices.Contains(missingBinaries, firmwareBinary.FileName)
 
 		if firmwareBinaryExists && !replaceIfExists {
 			continue
@@ -499,7 +499,7 @@ func retrieveSupportedServerTypes(client metalcloud.MetalCloudClient, input stri
 		}
 
 		for _, serverType := range serverTypes {
-			if !slices.Contains[string](supportedServerTypes[serverType], serverTypeObject.ServerTypeName) {
+			if !slices.Contains(supportedServerTypes[serverType], serverTypeObject.ServerTypeName) {
 				supportedServerTypes[serverType] = append(supportedServerTypes[serverType], serverTypeObject.ServerTypeName)
 			}
 		}
@@ -517,19 +517,19 @@ func retrieveSupportedServerTypes(client metalcloud.MetalCloudClient, input stri
 
 	for _, serverType := range serverTypesList {
 		serverType = strings.TrimSpace(serverType)
-		if !slices.Contains[string](metalsoftServerTypes, serverType) {
+		if !slices.Contains(metalsoftServerTypes, serverType) {
 			return nil, nil, fmt.Errorf("cannot filter server type '%s' because it is not supported by Metalsoft. Supported types are %+v", serverType, metalsoftServerTypes)
 		}
 
 		for actualServerType, metalsoftServerTypes := range supportedServerTypes {
-			if slices.Contains[string](metalsoftServerTypes, serverType) {
-				if !slices.Contains[string](filteredServerTypes[actualServerType], serverType) {
+			if slices.Contains(metalsoftServerTypes, serverType) {
+				if !slices.Contains(filteredServerTypes[actualServerType], serverType) {
 					filteredServerTypes[actualServerType] = append(filteredServerTypes[actualServerType], serverType)
 				}
 			}
 		}
 
-		if !slices.Contains[string](filteredMetalsoftServerTypes, serverType) {
+		if !slices.Contains(filteredMetalsoftServerTypes, serverType) {
 			filteredMetalsoftServerTypes = append(filteredMetalsoftServerTypes, serverType)
 		}
 	}
