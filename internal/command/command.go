@@ -519,7 +519,7 @@ func ExecuteCommand(args []string, commands []Command, clients map[string]metalc
 	var ret string
 	if cmd.ExecuteFunc2 != nil {
 		if cmd.MinApiVersion != "" {
-			if client2Version != "develop" && semver.Compare(cmd.MinApiVersion, client2Version) != -1 {
+			if client2Version != "develop" && semver.Compare(cmd.MinApiVersion, client2Version) > 0 {
 				return fmt.Errorf("this command requires API version %s. Your endpoint is running version %s", cmd.MinApiVersion, client2Version)
 			}
 		}
