@@ -24,7 +24,7 @@ var VmInstanceGroupsCmds = []command.Command{
 		FlagSet:      flag.NewFlagSet("list VM instance groups", flag.ExitOnError),
 		InitFunc: func(c *command.Command) {
 			c.Arguments = map[string]interface{}{
-				"infrastructure_id": c.FlagSet.String("infra", command.NilDefaultStr, colors.Red("(Required)")+" Infrastructure's Id."),
+				"infrastructure_id": c.FlagSet.Int("infra", command.NilDefaultInt, colors.Red("(Required)")+" Infrastructure's Id."),
 				"format":            c.FlagSet.String("format", command.NilDefaultStr, "The output format. Supported values are 'json','csv','yaml'. The default format is human readable."),
 			}
 		},
@@ -41,7 +41,7 @@ var VmInstanceGroupsCmds = []command.Command{
 		FlagSet:      flag.NewFlagSet("get VM instance group", flag.ExitOnError),
 		InitFunc: func(c *command.Command) {
 			c.Arguments = map[string]interface{}{
-				"infrastructure_id":    c.FlagSet.String("infra", command.NilDefaultStr, colors.Red("(Required)")+" Infrastructure's Id."),
+				"infrastructure_id":    c.FlagSet.Int("infra", command.NilDefaultInt, colors.Red("(Required)")+" Infrastructure's Id."),
 				"vm_instance_group_id": c.FlagSet.Int("id", 0, "VM instance group Id"),
 				"format":               c.FlagSet.String("format", command.NilDefaultStr, "The output format. Supported values are 'json','csv','yaml'. The default format is human readable."),
 			}
@@ -59,7 +59,7 @@ var VmInstanceGroupsCmds = []command.Command{
 		FlagSet:      flag.NewFlagSet("list VM instance group VMs", flag.ExitOnError),
 		InitFunc: func(c *command.Command) {
 			c.Arguments = map[string]interface{}{
-				"infrastructure_id":    c.FlagSet.String("infra", command.NilDefaultStr, colors.Red("(Required)")+" Infrastructure's Id."),
+				"infrastructure_id":    c.FlagSet.Int("infra", command.NilDefaultInt, colors.Red("(Required)")+" Infrastructure's Id."),
 				"vm_instance_group_id": c.FlagSet.Int("id", 0, "VM instance group Id"),
 				"format":               c.FlagSet.String("format", command.NilDefaultStr, "The output format. Supported values are 'json','csv','yaml'. The default format is human readable."),
 			}
@@ -77,7 +77,7 @@ var VmInstanceGroupsCmds = []command.Command{
 		FlagSet:      flag.NewFlagSet("create VM instance group", flag.ExitOnError),
 		InitFunc: func(c *command.Command) {
 			c.Arguments = map[string]interface{}{
-				"infrastructure_id":     c.FlagSet.String("infra", command.NilDefaultStr, colors.Red("(Required)")+" Infrastructure's Id."),
+				"infrastructure_id":     c.FlagSet.Int("infra", command.NilDefaultInt, colors.Red("(Required)")+" Infrastructure's Id."),
 				"format":                c.FlagSet.String("format", "json", "The input format. Supported values are 'json','yaml'. The default format is json."),
 				"read_config_from_file": c.FlagSet.String("raw-config", command.NilDefaultStr, colors.Red("(Required)")+" Read raw object from file"),
 				"read_config_from_pipe": c.FlagSet.Bool("pipe", false, colors.Green("(Flag)")+" If set, read raw object from pipe instead of from a file. Either this flag or the --raw-config option must be used."),
@@ -97,7 +97,7 @@ var VmInstanceGroupsCmds = []command.Command{
 		FlagSet:      flag.NewFlagSet("update VM instance group", flag.ExitOnError),
 		InitFunc: func(c *command.Command) {
 			c.Arguments = map[string]interface{}{
-				"infrastructure_id":     c.FlagSet.String("infra", command.NilDefaultStr, colors.Red("(Required)")+" Infrastructure's Id."),
+				"infrastructure_id":     c.FlagSet.Int("infra", command.NilDefaultInt, colors.Red("(Required)")+" Infrastructure's Id."),
 				"vm_instance_group_id":  c.FlagSet.Int("id", 0, "VM instance group Id"),
 				"format":                c.FlagSet.String("format", "json", "The input format. Supported values are 'json','yaml'. The default format is json."),
 				"read_config_from_file": c.FlagSet.String("raw-config", command.NilDefaultStr, colors.Red("(Required)")+" Read raw object from file"),
@@ -117,7 +117,7 @@ var VmInstanceGroupsCmds = []command.Command{
 		FlagSet:      flag.NewFlagSet("delete VM instance group", flag.ExitOnError),
 		InitFunc: func(c *command.Command) {
 			c.Arguments = map[string]interface{}{
-				"infrastructure_id":    c.FlagSet.String("infra", command.NilDefaultStr, colors.Red("(Required)")+" Infrastructure's Id."),
+				"infrastructure_id":    c.FlagSet.Int("infra", command.NilDefaultInt, colors.Red("(Required)")+" Infrastructure's Id."),
 				"vm_instance_group_id": c.FlagSet.Int("id", 0, "VM instance group Id"),
 				"autoconfirm":          c.FlagSet.Bool("autoconfirm", false, colors.Green("(Flag)")+" If set it will assume action is confirmed"),
 			}
