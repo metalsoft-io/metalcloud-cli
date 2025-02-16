@@ -1,66 +1,73 @@
 # metalcloud-cli
 
 ![Build](https://github.com/metalsoft-io/metalcloud-cli/actions/workflows/build.yml/badge.svg)
-[![Coverage Status](https://coveralls.io/repos/github/bigstepinc/metalcloud-cli/badge.svg?branch=master)](https://coveralls.io/github/bigstepinc/metalcloud-cli?branch=master)
+[![Coverage Status](https://coveralls.io/repos/github/bigstepinc/metalcloud-cli/badge.svg?branch=main)](https://coveralls.io/github/bigstepinc/metalcloud-cli?branch=main)
 
 This tool allows the manipulation of all Metal Cloud elements via the command line.
 
-![metalcloud-cli](doc/images/metalcloud-cli-animated.gif)
-
-
-### Installation
+## Installation
 
 > [!IMPORTANT]
 > Refer to the [latest release](https://github.com/metalsoft-io/metalcloud-cli/releases/latest) for the correct package you need to install.
 
 To install on Mac OS X:
-```
+
+```bash
 brew tap metalsoft-io/homebrew-repo
 brew install metalcloud-cli
 ```
 
 To install on any CentOS/Redhat Linux distribution:
-```
+
+```bash
 sudo yum install $(curl -s https://api.github.com/repos/metalsoft-io/metalcloud-cli/releases/latest | grep -i browser_download_url | grep "amd64" | grep -i linux | grep rpm | head -n 1 | cut -d'"' -f4)
 ```
 
 To install on any Debian/Ubuntu distributions:
-```
+
+```bash
 curl -skL $(curl -s https://api.github.com/repos/metalsoft-io/metalcloud-cli/releases/latest | grep -i browser_download_url  | grep "$(dpkg --print-architecture)" | grep deb | head -n 1 | cut -d'"' -f4) -o metalcloud-cli.deb && sudo dpkg -i metalcloud-cli.deb
 ```
 
 To install on Windows:
 Binaries are available [here](https://github.com/metalsoft-io/metalcloud-cli/releases/latest):
-```
+
+```bash
 https://github.com/metalsoft-io/metalcloud-cli/releases/latest
 ```
 
-
 To install using `go get` (this should also work on Windows):
+
 ```bash
 go get github.com/metalsoft-io/metalcloud-cli
 ```
 
-### Getting the API key
+## Getting the API key
 
-In the Metalcloud's Infrastructure Editor go to the upper left corner and click on your email. Then go to **Settings** > **API & SDKs** > **API credentials**
-
-Copy the api key. It should be of the form <number>:<letters>
+In the MetalCloud's Infrastructure Editor go to the upper left corner and click on your email. Then go to **Settings** > **API & SDKs** > **API credentials** and copy the api key.
 
 Configure credentials as environment variables:
+
 ```bash
-export METALCLOUD_API_KEY="<your key>"
 export METALCLOUD_ENDPOINT="https://metal.mycompany.com"
+export METALCLOUD_API_KEY="<your key>"
 ```
 
-### Getting a list of supported commands
+Alternatively you can put the endpoint and API key configuration in a `metalcloud.yaml` configuration file:
+
+```yaml
+endpoint: 'https://metal.mycompany.com'
+api_key: '<your key>'
+```
+
+## Getting a list of supported commands
 
 Use `metalcloud-cli help` for a list of supported commands.
 
-
-### Getting started
+## Getting started
 
 To create an infrastructure:
+
 ```bash
 metalcloud-cli infrastructure create --label test --datacenter test --return-id
 ```
@@ -74,7 +81,7 @@ metalcloud-cli infrastructure list
 +-------+-----------------------------------------+-------------------------------+-----------+-----------+---------------------+---------------------+
 ```
 
-To create an instance array in that infrastructure, get the ID of the infrastructure from above (12345):
+To create an server instance group in that infrastructure, get the ID of the infrastructure from above (12345):
 
 ```bash
 metalcloud-cli instance-array create --infra 12345 --label master --proc 1 --proc-core-count 8 --ram 16
@@ -112,8 +119,7 @@ Infrastructures I have access to (as test@test.com)
 Total: 2 elements
 ```
 
-
-### Apply support
+## Apply support
 
 Apply creates or updates a resource from a file. The supported format is yaml.
 
@@ -123,7 +129,7 @@ metalcloud-cli apply -f resources.yaml
 
 The type of the requested resource needs to be specified using the field *kind*.
 
-```
+```yaml
 cat resources.yaml
 
 kind: InstanceArray
@@ -140,9 +146,10 @@ name: my-secret
 
 The objects and their fields can be found in the [SDK documentation](https://godoc.org/github.com/metalsoft-io/metal-cloud-sdk-go). The fields will be in the format specified in the yaml tag. For example `SubnetPool` object has a field named `subnet_pool_prefix_human_readable` in JSON format. In the YAML file used as imput for this command, the field should be called `prefix`. 
 
-### Condensed format
+## Condensed format
 
 The CLI also provides a "condensed format" for most of it's commands:
+
 * instance-array = ia
 * drive-array = da
 * infrastructure = infra
@@ -151,36 +158,39 @@ The CLI also provides a "condensed format" for most of it's commands:
 ...
 
 This allows commands such as:
+
 ```bash
 metalcloud-cli infra ls
 ```
 
-### Using label instead of IDs
+## Using label instead of IDs
 
 Most commands also take a label instead of an id as a parameter. For example:
+
 ```bash
 metalcloud-cli infra show --id complex-demo
 ```
 
-
-### Permissions
+## Permissions
 
 Some commands depend on various permissions. For instance you cannot access another user's infrastructure unless you are a delegate of it. 
 
+## Admin commands
 
-### Admin commands
-
-If the user has the "admin_view" permission, additional commands will be visible. 
+If the user has the "admin_view" permission, additional commands will be visible.
 
 ## Debugging information
 
 To enable debugging information in the output set the following environment variable:
+
 ```bash
 export METALCLOUD_LOGGING_ENABLED=true
 ```
-### Building the CLI
+
+## Building the CLI
 
 To run the unit tests:
+
 `go test ./...`
 
 To build manually:
@@ -190,7 +200,8 @@ To build manually:
 The build process is automated by travis. Just push into the repository using the appropriate tag:
 
 Use `git tag` to get the last tag:
-```
+
+```bash
 git tag
 v1.6.7
 v1.6.8
@@ -206,36 +217,41 @@ v1.7.6
 v1.7.7
 v1.7.8
 ```
+
 Push new changes with new tag:
-```
+
+```bash
 git add .
 git commit -m "commit comment"
 git tag v1.0.1
 git push --tags
 ```
 
-A coverage report is generated automatically at each build by [coverall](https://coveralls.io/github/metalsoft-io/metalcloud-cli?branch=master). There is a lower limit to the coverage currently set at 20%. 
+A coverage report is generated automatically at each build by [coverall](https://coveralls.io/github/metalsoft-io/metalcloud-cli?branch=master). There is a lower limit to the coverage currently set at 20%.
 
 It is a good idea to update the master branch as well (with no tag):
-```
+
+```bash
 git push
 ```
 
-### Updating the SDK
+## Updating the SDK
 
-To update the SDK update `go.mod` file then regenerate the interfaces used for testing. 
+To update the SDK update `go.mod` file then regenerate the interfaces used for testing.
 Ifacemaker is needed
-```
+
+```bash
 go get ifacemaker
 ```
 
-```
+```bash
 go generate
 ```
+
 If new objects are added in the SDK `helpers/fix_package.go` will need to be updated.
 
-
 If for some reason you get errors try running the following command manually:
+
 `mockgen -source=/Users/alex/code/metal-cloud-sdk-go/metal_cloud_client.go -destination=helpers/mock_client.go`
 
 You need mockgen installed.

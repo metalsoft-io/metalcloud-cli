@@ -1,7 +1,0 @@
-datacenter: us-chi-qts01-dc 
-prefix: 100.255.226.0
-netmask: 255.255.255.0
-size: 24
-type: ipv4
-routable: true
-destination: wan

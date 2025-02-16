@@ -22,5 +22,11 @@ __debug*
 # direnv
 .envrc
 .env
+metalcloud.yaml
 
 /bin
+*.log
+
+# Go workspace file
+go.work
+go.work.sum
