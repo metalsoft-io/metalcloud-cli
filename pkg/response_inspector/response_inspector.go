@@ -9,7 +9,7 @@ import (
 
 func InspectResponse(httpRes *http.Response, err error) error {
 	if err != nil {
-		if httpRes != nil {
+		if httpRes != nil && httpRes.StatusCode >= 400 {
 			err := fmt.Errorf("%s - %s", httpRes.Status, httpRes.Body)
 			logger.Get().Error().Err(err).Msg("")
 			return err
@@ -17,7 +17,7 @@ func InspectResponse(httpRes *http.Response, err error) error {
 		logger.Get().Error().Err(err).Msg("")
 		return err
 	}
-	if httpRes.StatusCode != 200 {
+	if httpRes.StatusCode >= 400 {
 		err := fmt.Errorf("%s - %s", httpRes.Status, httpRes.Body)
 		logger.Get().Error().Err(err).Msg("")
 		return err
