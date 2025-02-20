@@ -17,8 +17,7 @@ var cleanupPolicyPrintConfig = formatter.PrintConfig{
 			Title: "#",
 		},
 		"Label": {
-			Title:    "Label",
-			IsStatus: true,
+			Title: "Label",
 		},
 		"CleanupDrivesForOobEnabledServer": {
 			Title: "Cleanup Server Drives",

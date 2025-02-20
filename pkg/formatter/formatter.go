@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"os"
 	"strings"
+	"time"
 
 	"reflect"
 
@@ -19,9 +20,9 @@ const (
 )
 
 type RecordFieldConfig struct {
-	Title    string
-	Hidden   bool
-	IsStatus bool
+	Title       string
+	Hidden      bool
+	Transformer func(interface{}) string
 }
 
 type PrintConfig struct {
@@ -160,25 +161,62 @@ func getFieldNamesAndValues(record interface{}, printConfig *PrintConfig) (table
 					title = fieldConfig.Title
 				}
 				names = append(names, title)
-				values = append(values, val.Field(i).Interface())
+				values = append(values, extractValue(val.Field(i)))
 
-				if fieldConfig.IsStatus {
+				if fieldConfig.Transformer != nil {
 					configs = append(configs, table.ColumnConfig{
-						Name:        fieldConfig.Title,
-						Transformer: text.Transformer(formatStatusValue),
+						Name:        title,
+						Transformer: text.Transformer(fieldConfig.Transformer),
 					})
 				}
 			}
 		} else {
 			names = append(names, field.Name)
-			values = append(values, val.Field(i).Interface())
+			values = append(values, extractValue(val.Field(i)))
 		}
 	}
 
 	return names, values, configs
 }
 
-func formatStatusValue(value interface{}) string {
+func extractValue(value reflect.Value) interface{} {
+	if !value.IsValid() {
+		return nil
+	}
+
+	if value.Kind() == reflect.Pointer {
+		value = value.Elem()
+	}
+
+	switch value.Kind() {
+	case reflect.String:
+		return value.String()
+	case reflect.Bool:
+		return value.Bool()
+	case reflect.Int, reflect.Int8, reflect.Int16, reflect.Int32, reflect.Int64:
+		return value.Int()
+	case reflect.Uint, reflect.Uint8, reflect.Uint16, reflect.Uint32, reflect.Uint64:
+		return value.Uint()
+	case reflect.Float32, reflect.Float64:
+		return value.Float()
+	case reflect.Array, reflect.Slice:
+		var result []interface{}
+		for i := 0; i < value.Len(); i++ {
+			result = append(result, extractValue(value.Index(i)))
+		}
+		return result
+	case reflect.Map:
+		var result []string
+		for _, key := range value.MapKeys() {
+			result = append(result, fmt.Sprintf("%s: %s", key.String(), extractValue(value.MapIndex(key))))
+		}
+		return result
+	default:
+		return value.String()
+	}
+}
+
+func FormatStatusValue(value interface{}) string {
 	if _, ok := value.(string); ok {
 		var color text.Color
 		switch value {
@@ -188,10 +226,43 @@ func formatStatusValue(value interface{}) string {
 			color = text.FgGreen
 		case "unavailable":
 			color = text.FgMagenta
+		case "registering":
+			color = text.FgCyan
+		case "cleaning":
+			color = text.FgHiCyan
+		case "cleaning_required":
+			color = text.FgHiCyan
+		case "updating_firmware":
+			color = text.FgHiYellow
+		case "pending_registration":
+			color = text.FgHiYellow
+		case "used_registering":
+			color = text.FgHiGreen
+		case "used_diagnostics":
+			color = text.FgHiGreen
+		case "decommissioned":
+			color = text.FgHiRed
+		case "removed_from_rack":
+			color = text.FgHiRed
+		case "defective":
+			color = text.FgRed
 		default:
 			color = text.FgYellow
 		}
 		return color.Sprintf("%s", value)
 	}
+	return fmt.Sprint(value)
+}
+
+func FormatDateTimeValue(value interface{}) string {
+	if _, ok := value.(string); ok {
+		tm, err := time.Parse("2006-01-02T15:04:05Z", value.(string))
+		if err != nil {
+			return fmt.Sprint(value)
+		}
+
+		return tm.Local().Format(time.RFC1123)
+	}
+
 	return fmt.Sprint(value)
 }

@@ -11,6 +11,31 @@ import (
 	"github.com/metalsoft-io/metalcloud-cli/pkg/response_inspector"
 )
 
+var userPrintConfig = formatter.PrintConfig{
+	FieldsConfig: map[string]formatter.RecordFieldConfig{
+		"Id": {
+			Title: "#",
+		},
+		"DisplayName": {
+			Title: "Name",
+		},
+		"Email": {
+			Title: "E-mail",
+		},
+		"CreatedTimestamp": {
+			Title:       "Created",
+			Transformer: formatter.FormatDateTimeValue,
+		},
+		"LastLoginTimestamp": {
+			Title:       "Last Login",
+			Transformer: formatter.FormatDateTimeValue,
+		},
+		"AccessLevel": {
+			Title: "Access",
+		},
+	},
+}
+
 func List(ctx context.Context) error {
 	logger.Get().Info().Msgf("Listing all users")
 
@@ -24,7 +49,7 @@ func List(ctx context.Context) error {
 		return err
 	}
 
-	return formatter.PrintResult(userList, nil)
+	return formatter.PrintResult(userList, &userPrintConfig)
 }
 
 func Get(ctx context.Context, userId string) error {
@@ -47,5 +72,5 @@ func Get(ctx context.Context, userId string) error {
 		return err
 	}
 
-	return formatter.PrintResult(userInfo, nil)
+	return formatter.PrintResult(userInfo, &userPrintConfig)
 }

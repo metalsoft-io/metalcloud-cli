@@ -17,8 +17,7 @@ var serverPrintConfig = formatter.PrintConfig{
 			Title: "#",
 		},
 		"ServerUUID": {
-			Title:    "UUID",
-			IsStatus: true,
+			Title: "UUID",
 		},
 		"SerialNumber": {
 			Title: "S/N",
@@ -29,8 +28,8 @@ var serverPrintConfig = formatter.PrintConfig{
 		"Vendor": {},
 		"Model":  {},
 		"ServerStatus": {
-			Title:    "Status",
-			IsStatus: true,
+			Title:       "Status",
+			Transformer: formatter.FormatStatusValue,
 		},
 	},
 }
