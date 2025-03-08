@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"strconv"
 
-	"github.com/metalsoft-io/metalcloud-cli/cmd/metalcloud-cli/system"
+	"github.com/metalsoft-io/metalcloud-cli/pkg/api"
 	"github.com/metalsoft-io/metalcloud-cli/pkg/formatter"
 	"github.com/metalsoft-io/metalcloud-cli/pkg/logger"
 	"github.com/metalsoft-io/metalcloud-cli/pkg/response_inspector"
@@ -37,10 +37,7 @@ var serverPrintConfig = formatter.PrintConfig{
 func ServerList(ctx context.Context) error {
 	logger.Get().Info().Msgf("Listing all servers")
 
-	client, err := system.GetApiClient(ctx)
-	if err != nil {
-		return err
-	}
+	client := api.GetApiClient(ctx)
 
 	serverList, httpRes, err := client.ServerAPI.GetServers(ctx).Execute()
 	if err := response_inspector.InspectResponse(httpRes, err); err != nil {
@@ -53,17 +50,14 @@ func ServerList(ctx context.Context) error {
 func ServerGet(ctx context.Context, serverId string) error {
 	logger.Get().Info().Msgf("Get server '%s'", serverId)
 
-	client, err := system.GetApiClient(ctx)
-	if err != nil {
-		return err
-	}
-
 	serverIdNumber, err := strconv.ParseFloat(serverId, 32)
 	if err != nil {
 		err := fmt.Errorf("invalid server ID: '%s'", serverId)
 		logger.Get().Error().Err(err).Msg("")
 		return err
 	}
+
+	client := api.GetApiClient(ctx)
 
 	serverInfo, httpRes, err := client.ServerAPI.GetServerInfo(ctx, float32(serverIdNumber)).Execute()
 	if err := response_inspector.InspectResponse(httpRes, err); err != nil {

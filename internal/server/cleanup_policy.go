@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"strconv"
 
-	"github.com/metalsoft-io/metalcloud-cli/cmd/metalcloud-cli/system"
+	"github.com/metalsoft-io/metalcloud-cli/pkg/api"
 	"github.com/metalsoft-io/metalcloud-cli/pkg/formatter"
 	"github.com/metalsoft-io/metalcloud-cli/pkg/logger"
 	"github.com/metalsoft-io/metalcloud-cli/pkg/response_inspector"
@@ -49,10 +49,7 @@ var cleanupPolicyPrintConfig = formatter.PrintConfig{
 func CleanupPolicyList(ctx context.Context) error {
 	logger.Get().Info().Msgf("Listing all server cleanup policies")
 
-	client, err := system.GetApiClient(ctx)
-	if err != nil {
-		return err
-	}
+	client := api.GetApiClient(ctx)
 
 	cleanupPoliciesList, httpRes, err := client.ServerCleanupPolicyAPI.GetServerCleanupPolicies(ctx).Execute()
 	if err := response_inspector.InspectResponse(httpRes, err); err != nil {
@@ -65,17 +62,14 @@ func CleanupPolicyList(ctx context.Context) error {
 func CleanupPolicyGet(ctx context.Context, cleanupPolicyId string) error {
 	logger.Get().Info().Msgf("Get server cleanup policy '%s'", cleanupPolicyId)
 
-	client, err := system.GetApiClient(ctx)
-	if err != nil {
-		return err
-	}
-
 	cleanupPolicyIdNumber, err := strconv.ParseFloat(cleanupPolicyId, 32)
 	if err != nil {
 		err := fmt.Errorf("invalid server cleanup policy ID: '%s'", cleanupPolicyId)
 		logger.Get().Error().Err(err).Msg("")
 		return err
 	}
+
+	client := api.GetApiClient(ctx)
 
 	cleanupPolicy, httpRes, err := client.ServerCleanupPolicyAPI.GetServerCleanupPolicyInfo(ctx, float32(cleanupPolicyIdNumber)).Execute()
 	if err := response_inspector.InspectResponse(httpRes, err); err != nil {

@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"strconv"
 
-	"github.com/metalsoft-io/metalcloud-cli/cmd/metalcloud-cli/system"
+	"github.com/metalsoft-io/metalcloud-cli/pkg/api"
 	"github.com/metalsoft-io/metalcloud-cli/pkg/formatter"
 	"github.com/metalsoft-io/metalcloud-cli/pkg/logger"
 	"github.com/metalsoft-io/metalcloud-cli/pkg/response_inspector"
@@ -42,10 +42,7 @@ var infrastructurePrintConfig = formatter.PrintConfig{
 func InfrastructureList(ctx context.Context) error {
 	logger.Get().Info().Msgf("Listing all infrastructures")
 
-	client, err := system.GetApiClient(ctx)
-	if err != nil {
-		return err
-	}
+	client := api.GetApiClient(ctx)
 
 	infrastructureList, httpRes, err := client.InfrastructureAPI.GetInfrastructures(ctx).SortBy([]string{"id:ASC"}).Execute()
 	if err := response_inspector.InspectResponse(httpRes, err); err != nil {
@@ -65,10 +62,7 @@ func InfrastructureGet(ctx context.Context, infrastructureId string) error {
 		return err
 	}
 
-	client, err := system.GetApiClient(ctx)
-	if err != nil {
-		return err
-	}
+	client := api.GetApiClient(ctx)
 
 	infrastructureInfo, httpRes, err := client.InfrastructureAPI.GetInfrastructure(ctx, float32(infrastructureIdNumber)).Execute()
 	if err := response_inspector.InspectResponse(httpRes, err); err != nil {
@@ -88,16 +82,13 @@ func InfrastructureCreate(ctx context.Context, infrastructureLabel string, infra
 		return err
 	}
 
-	client, err := system.GetApiClient(ctx)
-	if err != nil {
-		return err
-	}
-
 	createInfrastructure := sdk.InfrastructureCreate{
 		Label:       infrastructureLabel,
 		Description: &infrastructureDescription,
 		SiteId:      float32(siteIdNumber),
 	}
+
+	client := api.GetApiClient(ctx)
 
 	infrastructureInfo, httpRes, err := client.InfrastructureAPI.CreateInfrastructure(ctx).InfrastructureCreate(createInfrastructure).Execute()
 	if err := response_inspector.InspectResponse(httpRes, err); err != nil {
@@ -117,10 +108,7 @@ func InfrastructureUpdate(ctx context.Context, infrastructureId string) error {
 		return err
 	}
 
-	client, err := system.GetApiClient(ctx)
-	if err != nil {
-		return err
-	}
+	client := api.GetApiClient(ctx)
 
 	infrastructureInfo, httpRes, err := client.InfrastructureAPI.UpdateInfrastructureConfiguration(ctx, float32(infrastructureIdNumber)).Execute()
 	if err := response_inspector.InspectResponse(httpRes, err); err != nil {

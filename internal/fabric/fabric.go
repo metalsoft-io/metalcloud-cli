@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"strconv"
 
-	"github.com/metalsoft-io/metalcloud-cli/cmd/metalcloud-cli/system"
+	"github.com/metalsoft-io/metalcloud-cli/pkg/api"
 	"github.com/metalsoft-io/metalcloud-cli/pkg/formatter"
 	"github.com/metalsoft-io/metalcloud-cli/pkg/logger"
 	"github.com/metalsoft-io/metalcloud-cli/pkg/response_inspector"
@@ -28,10 +28,7 @@ var fabricPrintConfig = formatter.PrintConfig{
 func FabricList(ctx context.Context) error {
 	logger.Get().Info().Msgf("Listing all fabrics")
 
-	client, err := system.GetApiClient(ctx)
-	if err != nil {
-		return err
-	}
+	client := api.GetApiClient(ctx)
 
 	fabricList, httpRes, err := client.NetworkFabricAPI.GetNetworkFabrics(ctx).Execute()
 	if err := response_inspector.InspectResponse(httpRes, err); err != nil {
@@ -44,17 +41,14 @@ func FabricList(ctx context.Context) error {
 func FabricGet(ctx context.Context, fabricId string) error {
 	logger.Get().Info().Msgf("Get fabric '%s'", fabricId)
 
-	client, err := system.GetApiClient(ctx)
-	if err != nil {
-		return err
-	}
-
 	fabricIdNumber, err := strconv.ParseFloat(fabricId, 32)
 	if err != nil {
 		err := fmt.Errorf("invalid fabric ID: '%s'", fabricId)
 		logger.Get().Error().Err(err).Msg("")
 		return err
 	}
+
+	client := api.GetApiClient(ctx)
 
 	fabricInfo, httpRes, err := client.NetworkFabricAPI.GetNetworkFabricById(ctx, float32(fabricIdNumber)).Execute()
 	if err := response_inspector.InspectResponse(httpRes, err); err != nil {
@@ -93,10 +87,7 @@ func FabricCreate(ctx context.Context, fabricName string, fabricDescription stri
 		FabricConfiguration: fabricConfiguration,
 	}
 
-	client, err := system.GetApiClient(ctx)
-	if err != nil {
-		return err
-	}
+	client := api.GetApiClient(ctx)
 
 	fabricInfo, httpRes, err := client.NetworkFabricAPI.CreateNetworkFabric(ctx).CreateNetworkFabric(createFabric).Execute()
 	if err := response_inspector.InspectResponse(httpRes, err); err != nil {
@@ -109,17 +100,14 @@ func FabricCreate(ctx context.Context, fabricName string, fabricDescription stri
 func FabricUpdate(ctx context.Context, fabricId string) error {
 	logger.Get().Info().Msgf("Update fabric '%s'", fabricId)
 
-	client, err := system.GetApiClient(ctx)
-	if err != nil {
-		return err
-	}
-
 	fabricIdNumber, err := strconv.ParseFloat(fabricId, 32)
 	if err != nil {
 		err := fmt.Errorf("invalid fabric ID: '%s'", fabricId)
 		logger.Get().Error().Err(err).Msg("")
 		return err
 	}
+
+	client := api.GetApiClient(ctx)
 
 	fabricInfo, httpRes, err := client.NetworkFabricAPI.GetNetworkFabricById(ctx, float32(fabricIdNumber)).Execute()
 	if err := response_inspector.InspectResponse(httpRes, err); err != nil {

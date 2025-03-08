@@ -5,6 +5,9 @@ import (
 	"fmt"
 	"strconv"
 	"strings"
+
+	"github.com/metalsoft-io/metalcloud-cli/pkg/api"
+	"github.com/metalsoft-io/metalcloud-cli/pkg/response_inspector"
 )
 
 const allowDevelop = true
@@ -12,14 +15,11 @@ const minMajor = 7
 const minMinor = 0
 
 func ValidateVersion(ctx context.Context) error {
-	client, err := GetApiClient(ctx)
-	if err != nil {
-		return err
-	}
+	client := api.GetApiClient(ctx)
 
-	version, _, err := client.SystemAPI.GetVersion(ctx).Execute()
-	if err != nil {
-		return fmt.Errorf("failed to get version: %v", err)
+	version, httpRes, err := client.SystemAPI.GetVersion(ctx).Execute()
+	if err := response_inspector.InspectResponse(httpRes, err); err != nil {
+		return err
 	}
 
 	if allowDevelop && version.Version == "develop" {

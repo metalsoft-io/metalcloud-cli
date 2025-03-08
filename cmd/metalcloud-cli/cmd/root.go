@@ -1,16 +1,15 @@
 package cmd
 
 import (
-	"context"
 	"fmt"
 	"os"
 	"slices"
 	"strings"
 
 	"github.com/metalsoft-io/metalcloud-cli/cmd/metalcloud-cli/system"
+	"github.com/metalsoft-io/metalcloud-cli/pkg/api"
 	"github.com/metalsoft-io/metalcloud-cli/pkg/formatter"
 	"github.com/metalsoft-io/metalcloud-cli/pkg/logger"
-	sdk "github.com/metalsoft-io/metalcloud-sdk-go"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 )
@@ -67,25 +66,8 @@ func rootPersistentPreRun(cmd *cobra.Command, args []string) error {
 		return err
 	}
 
-	// Initialize API client using the arguments from the command line or environment variables
-	cfg := sdk.NewConfiguration()
-	cfg.UserAgent = "metalcloud-cli"
-	cfg.Servers = []sdk.ServerConfiguration{
-		{
-			URL:         viper.GetString(system.ConfigEndpoint),
-			Description: "MetalSoft",
-		},
-	}
-
-	// Set debug mode
-	cfg.Debug = viper.GetBool(system.ConfigDebug)
-
 	// Create API client
-	apiClient := sdk.NewAPIClient(cfg)
-
-	ctx := cmd.Context()
-	ctx = context.WithValue(ctx, system.ApiClientContextKey, apiClient)
-	ctx = context.WithValue(ctx, sdk.ContextAccessToken, viper.GetString(system.ConfigApiKey))
+	ctx := api.SetApiClient(cmd.Context(), viper.GetString(system.ConfigEndpoint), viper.GetString(system.ConfigApiKey), viper.GetBool(system.ConfigDebug))
 
 	// Validate the version of the CLI
 	err = system.ValidateVersion(ctx)

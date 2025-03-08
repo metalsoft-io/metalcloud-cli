@@ -1,11 +1,5 @@
 package system
 
-type ContextKey string
-
-const (
-	ApiClientContextKey ContextKey = "apiClient"
-)
-
 const (
 	ConfigPrefix   = "metalcloud"
 	ConfigName     = "metalcloud"

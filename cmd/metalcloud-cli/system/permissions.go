@@ -2,11 +2,9 @@ package system
 
 import (
 	"context"
-	"fmt"
-	"strconv"
-	"strings"
 
-	"github.com/spf13/viper"
+	"github.com/metalsoft-io/metalcloud-cli/pkg/api"
+	"github.com/metalsoft-io/metalcloud-cli/pkg/response_inspector"
 )
 
 const REQUIRED_PERMISSION = "requiredPermission"
@@ -50,22 +48,11 @@ const (
 )
 
 func GetUserPermissions(ctx context.Context) ([]string, error) {
-	client, err := GetApiClient(ctx)
-	if err != nil {
+	client := api.GetApiClient(ctx)
+
+	user, httpRes, err := client.AuthenticationAPI.GetCurrentUser(ctx).Execute()
+	if err := response_inspector.InspectResponse(httpRes, err); err != nil {
 		return nil, err
-	}
-
-	// TODO: Retrieve the user Id from the API
-	apiKey := viper.GetString(ConfigApiKey)
-	userIdStr := strings.Split(apiKey, ":")[0]
-	userId, err := strconv.Atoi(userIdStr)
-	if err != nil {
-		return nil, fmt.Errorf("failed to convert userId to int: %v", err)
-	}
-
-	user, _, err := client.UserAPI.GetUser(ctx, float32(userId)).Execute()
-	if err != nil {
-		return nil, fmt.Errorf("failed to get user: %v", err)
 	}
 
 	// TODO: The API returns the permissions of the user in a map with no specific type
