@@ -144,7 +144,7 @@ name: my-secret
 
 ```
 
-The objects and their fields can be found in the [SDK documentation](https://godoc.org/github.com/metalsoft-io/metal-cloud-sdk-go). The fields will be in the format specified in the yaml tag. For example `SubnetPool` object has a field named `subnet_pool_prefix_human_readable` in JSON format. In the YAML file used as imput for this command, the field should be called `prefix`. 
+The objects and their fields can be found in the [SDK documentation](https://godoc.org/github.com/metalsoft-io/metal-cloud-sdk-go). The fields will be in the format specified in the yaml tag. For example `SubnetPool` object has a field named `subnet_pool_prefix_human_readable` in JSON format. In the YAML file used as input for this command, the field should be called `prefix`.
 
 ## Condensed format
 
@@ -173,7 +173,7 @@ metalcloud-cli infra show --id complex-demo
 
 ## Permissions
 
-Some commands depend on various permissions. For instance you cannot access another user's infrastructure unless you are a delegate of it. 
+Some commands depend on various permissions. For instance you cannot access another user's infrastructure unless you are a delegate of it.
 
 ## Admin commands
 

@@ -2,6 +2,7 @@ package infrastructure
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"strconv"
 
@@ -39,12 +40,33 @@ var infrastructurePrintConfig = formatter.PrintConfig{
 	},
 }
 
-func InfrastructureList(ctx context.Context) error {
+func InfrastructureList(ctx context.Context, showOwnOnly bool, showOrdered bool, showDeleted bool) error {
 	logger.Get().Info().Msgf("Listing all infrastructures")
 
 	client := api.GetApiClient(ctx)
 
-	infrastructureList, httpRes, err := client.InfrastructureAPI.GetInfrastructures(ctx).SortBy([]string{"id:ASC"}).Execute()
+	request := client.InfrastructureAPI.GetInfrastructures(ctx)
+
+	if showOwnOnly {
+		userId := api.GetUserId(ctx)
+		request = request.FilterUserIdOwner([]string{"$eq:" + userId})
+	}
+
+	statusFilters := []string{}
+	if !showOrdered {
+		statusFilters = append(statusFilters, "$not:$eq:ordered")
+	}
+	if !showDeleted {
+		statusFilters = append(statusFilters, "$not:$eq:deleted")
+	}
+
+	if len(statusFilters) > 0 {
+		request = request.FilterServiceStatus(statusFilters)
+	}
+
+	request = request.SortBy([]string{"id:ASC"})
+
+	infrastructureList, httpRes, err := request.Execute()
 	if err := response_inspector.InspectResponse(httpRes, err); err != nil {
 		return err
 	}
@@ -52,27 +74,18 @@ func InfrastructureList(ctx context.Context) error {
 	return formatter.PrintResult(infrastructureList, &infrastructurePrintConfig)
 }
 
-func InfrastructureGet(ctx context.Context, infrastructureId string) error {
-	logger.Get().Info().Msgf("Get infrastructure '%s'", infrastructureId)
+func InfrastructureGet(ctx context.Context, infrastructureIdOrLabel string) error {
+	logger.Get().Info().Msgf("Get infrastructure '%s'", infrastructureIdOrLabel)
 
-	infrastructureIdNumber, err := strconv.ParseFloat(infrastructureId, 32)
+	infrastructureInfo, err := GetInfrastructureByIdOrLabel(ctx, infrastructureIdOrLabel)
 	if err != nil {
-		err := fmt.Errorf("invalid infrastructure ID: '%s'", infrastructureId)
-		logger.Get().Error().Err(err).Msg("")
-		return err
-	}
-
-	client := api.GetApiClient(ctx)
-
-	infrastructureInfo, httpRes, err := client.InfrastructureAPI.GetInfrastructure(ctx, float32(infrastructureIdNumber)).Execute()
-	if err := response_inspector.InspectResponse(httpRes, err); err != nil {
 		return err
 	}
 
 	return formatter.PrintResult(infrastructureInfo, &infrastructurePrintConfig)
 }
 
-func InfrastructureCreate(ctx context.Context, infrastructureLabel string, infrastructureDescription string, siteId string) error {
+func InfrastructureCreate(ctx context.Context, siteId string, infrastructureLabel string) error {
 	logger.Get().Info().Msgf("Create infrastructure '%s'", infrastructureLabel)
 
 	siteIdNumber, err := strconv.ParseFloat(siteId, 32)
@@ -83,9 +96,9 @@ func InfrastructureCreate(ctx context.Context, infrastructureLabel string, infra
 	}
 
 	createInfrastructure := sdk.InfrastructureCreate{
-		Label:       infrastructureLabel,
-		Description: &infrastructureDescription,
-		SiteId:      float32(siteIdNumber),
+		Label:  infrastructureLabel,
+		SiteId: float32(siteIdNumber),
+		Meta:   sdk.NewInfrastructureMeta(),
 	}
 
 	client := api.GetApiClient(ctx)
@@ -98,22 +111,75 @@ func InfrastructureCreate(ctx context.Context, infrastructureLabel string, infra
 	return formatter.PrintResult(infrastructureInfo, &infrastructurePrintConfig)
 }
 
-func InfrastructureUpdate(ctx context.Context, infrastructureId string) error {
-	logger.Get().Info().Msgf("Update infrastructure '%s'", infrastructureId)
+func InfrastructureUpdate(ctx context.Context, infrastructureIdOrLabel string, label string, customVariables string) error {
+	logger.Get().Info().Msgf("Update infrastructure '%s'", infrastructureIdOrLabel)
 
-	infrastructureIdNumber, err := strconv.ParseFloat(infrastructureId, 32)
+	infrastructureInfo, err := GetInfrastructureByIdOrLabel(ctx, infrastructureIdOrLabel)
 	if err != nil {
-		err := fmt.Errorf("invalid infrastructure ID: '%s'", infrastructureId)
-		logger.Get().Error().Err(err).Msg("")
 		return err
+	}
+
+	updateInfrastructure := sdk.UpdateInfrastructure{}
+
+	if label != "" {
+		updateInfrastructure.Label = &label
+	} else {
+		updateInfrastructure.Label = &infrastructureInfo.Label
+	}
+
+	if customVariables != "" {
+		err = json.Unmarshal([]byte(customVariables), &updateInfrastructure.CustomVariables)
+		if err != nil {
+			logger.Get().Error().Err(err).Msg("")
+			return err
+		}
 	}
 
 	client := api.GetApiClient(ctx)
 
-	infrastructureInfo, httpRes, err := client.InfrastructureAPI.UpdateInfrastructureConfiguration(ctx, float32(infrastructureIdNumber)).Execute()
+	infrastructureInfo, httpRes, err := client.InfrastructureAPI.UpdateInfrastructureConfiguration(ctx, infrastructureInfo.Id).
+		UpdateInfrastructure(updateInfrastructure).
+		IfMatch(strconv.Itoa(int(*infrastructureInfo.Config.Revision))).
+		Execute()
 	if err := response_inspector.InspectResponse(httpRes, err); err != nil {
 		return err
 	}
 
 	return formatter.PrintResult(infrastructureInfo, &infrastructurePrintConfig)
+}
+
+func GetInfrastructureByIdOrLabel(ctx context.Context, infrastructureIdOrLabel string) (*sdk.Infrastructure, error) {
+	client := api.GetApiClient(ctx)
+
+	infrastructureList, httpRes, err := client.InfrastructureAPI.GetInfrastructures(ctx).Search(infrastructureIdOrLabel).Execute()
+	if err := response_inspector.InspectResponse(httpRes, err); err != nil {
+		return nil, err
+	}
+
+	if len(infrastructureList.Data) == 0 {
+		err := fmt.Errorf("infrastructure '%s' not found", infrastructureIdOrLabel)
+		logger.Get().Error().Err(err).Msg("")
+		return nil, err
+	}
+
+	var infrastructureInfo sdk.Infrastructure
+	for _, infrastructure := range infrastructureList.Data {
+		if infrastructure.Label == infrastructureIdOrLabel {
+			infrastructureInfo = infrastructure
+			break
+		}
+
+		if strconv.Itoa(int(infrastructure.Id)) == infrastructureIdOrLabel {
+			infrastructureInfo = infrastructure
+			break
+		}
+	}
+
+	if infrastructureInfo.Id == 0 {
+		err := fmt.Errorf("infrastructure '%s' not found", infrastructureIdOrLabel)
+		logger.Get().Error().Err(err).Msg("")
+		return nil, err
+	}
+
+	return &infrastructureInfo, nil
 }

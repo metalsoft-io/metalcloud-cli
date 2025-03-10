@@ -47,17 +47,17 @@ const (
 	EXTENSIONS_WRITE            = "extensions_write"
 )
 
-func GetUserPermissions(ctx context.Context) ([]string, error) {
+func GetUserPermissions(ctx context.Context) (string, []string, error) {
 	client := api.GetApiClient(ctx)
 
 	user, httpRes, err := client.AuthenticationAPI.GetCurrentUser(ctx).Execute()
 	if err := response_inspector.InspectResponse(httpRes, err); err != nil {
-		return nil, err
+		return "", nil, err
 	}
 
 	// TODO: The API returns the permissions of the user in a map with no specific type
 	if user.Permissions == nil || user.Permissions.AdditionalProperties == nil {
-		return nil, nil
+		return user.Id, nil, nil
 	}
 
 	userPermissions := make([]string, 0, len(user.Permissions.AdditionalProperties))
@@ -74,5 +74,5 @@ func GetUserPermissions(ctx context.Context) ([]string, error) {
 		userPermissions = append(userPermissions, k)
 	}
 
-	return userPermissions, nil
+	return user.Id, userPermissions, nil
 }

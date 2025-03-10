@@ -6,12 +6,14 @@ import (
 
 	"github.com/metalsoft-io/metalcloud-cli/pkg/logger"
 	sdk "github.com/metalsoft-io/metalcloud-sdk-go"
+	"github.com/spf13/cobra"
 )
 
 type ContextKey string
 
 const (
 	ApiClientContextKey ContextKey = "apiClient"
+	UserIdContextKey    ContextKey = "userId"
 )
 
 func GetApiClient(ctx context.Context) *sdk.APIClient {
@@ -19,14 +21,14 @@ func GetApiClient(ctx context.Context) *sdk.APIClient {
 	if client == nil {
 		err := fmt.Errorf("SDK client not found in context")
 		logger.Get().Error().Err(err).Msg("")
-		panic(err)
+		cobra.CheckErr(err)
 	}
 
 	apiClient, ok := client.(*sdk.APIClient)
 	if !ok {
 		err := fmt.Errorf("invalid SDK client in context")
 		logger.Get().Error().Err(err).Msg("")
-		panic(err)
+		cobra.CheckErr(err)
 	}
 
 	return apiClient
@@ -71,4 +73,26 @@ func SetApiClient(ctx context.Context, apiEndpoint string, apiKey string, debug 
 	ctx = context.WithValue(ctx, sdk.ContextAccessToken, apiKey)
 
 	return ctx
+}
+
+func GetUserId(ctx context.Context) string {
+	userId := ctx.Value(UserIdContextKey)
+	if userId == nil {
+		err := fmt.Errorf("user ID not found in context")
+		logger.Get().Error().Err(err).Msg("")
+		cobra.CheckErr(err)
+	}
+
+	userIdStr, ok := userId.(string)
+	if !ok {
+		err := fmt.Errorf("invalid user ID in context")
+		logger.Get().Error().Err(err).Msg("")
+		cobra.CheckErr(err)
+	}
+
+	return userIdStr
+}
+
+func SetUserId(ctx context.Context, userId string) context.Context {
+	return context.WithValue(ctx, UserIdContextKey, userId)
 }
