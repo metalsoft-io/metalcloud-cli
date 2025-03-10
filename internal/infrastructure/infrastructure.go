@@ -148,6 +148,27 @@ func InfrastructureUpdate(ctx context.Context, infrastructureIdOrLabel string, l
 	return formatter.PrintResult(infrastructureInfo, &infrastructurePrintConfig)
 }
 
+func InfrastructureDelete(ctx context.Context, infrastructureIdOrLabel string) error {
+	logger.Get().Info().Msgf("Delete infrastructure '%s'", infrastructureIdOrLabel)
+
+	infrastructureInfo, err := GetInfrastructureByIdOrLabel(ctx, infrastructureIdOrLabel)
+	if err != nil {
+		return err
+	}
+
+	client := api.GetApiClient(ctx)
+
+	httpRes, err := client.InfrastructureAPI.
+		DeleteInfrastructure(ctx, infrastructureInfo.Id).
+		IfMatch(strconv.Itoa(int(infrastructureInfo.Revision))).
+		Execute()
+	if err := response_inspector.InspectResponse(httpRes, err); err != nil {
+		return err
+	}
+
+	return nil
+}
+
 func GetInfrastructureByIdOrLabel(ctx context.Context, infrastructureIdOrLabel string) (*sdk.Infrastructure, error) {
 	client := api.GetApiClient(ctx)
 

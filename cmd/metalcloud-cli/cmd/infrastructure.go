@@ -70,6 +70,18 @@ var (
 			return infrastructure.InfrastructureUpdate(cmd.Context(), args[0], label, customVariables)
 		},
 	}
+
+	infrastructureDeleteCmd = &cobra.Command{
+		Use:          "delete infrastructure_id_or_label",
+		Aliases:      []string{"rm"},
+		Short:        "Delete infrastructure.",
+		SilenceUsage: true,
+		Annotations:  map[string]string{system.REQUIRED_PERMISSION: system.SITE_WRITE}, // TODO: Use specific permission
+		Args:         cobra.ExactArgs(1),
+		RunE: func(cmd *cobra.Command, args []string) error {
+			return infrastructure.InfrastructureDelete(cmd.Context(), args[0])
+		},
+	}
 )
 
 func init() {
@@ -85,5 +97,7 @@ func init() {
 	infrastructureCmd.AddCommand(infrastructureCreateCmd)
 
 	infrastructureCmd.AddCommand(infrastructureUpdateCmd)
-	infrastructureListCmd.Flags().StringVar(&customVariables, "custom-variables", "", "Set of infrastructure custom variables.")
+	infrastructureUpdateCmd.Flags().StringVar(&customVariables, "custom-variables", "", "Set of infrastructure custom variables.")
+
+	infrastructureCmd.AddCommand(infrastructureDeleteCmd)
 }
