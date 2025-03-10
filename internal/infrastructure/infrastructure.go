@@ -169,6 +169,58 @@ func InfrastructureDelete(ctx context.Context, infrastructureIdOrLabel string) e
 	return nil
 }
 
+func InfrastructureDeploy(ctx context.Context, infrastructureIdOrLabel string, allowDataLoss bool, attemptSoftShutdown bool, attemptHardShutdown bool, softShutdownTimeout int, forceShutdown bool) error {
+	logger.Get().Info().Msgf("Deploy infrastructure '%s'", infrastructureIdOrLabel)
+
+	infrastructureInfo, err := GetInfrastructureByIdOrLabel(ctx, infrastructureIdOrLabel)
+	if err != nil {
+		return err
+	}
+
+	infrastructureDeployOptions := sdk.InfrastructureDeployOptions{
+		AllowDataLoss: allowDataLoss,
+		ShutdownOptions: sdk.InfrastructureDeployShutdownOptions{
+			AttemptSoftShutdown: attemptSoftShutdown,
+			AttemptHardShutdown: attemptHardShutdown,
+			SoftShutdownTimeout: float32(softShutdownTimeout),
+			ForceShutdown:       forceShutdown,
+		},
+		ServerTypeIdToPreferredServerIds: map[string]interface{}{},
+	}
+
+	client := api.GetApiClient(ctx)
+
+	infrastructureInfo, httpRes, err := client.InfrastructureAPI.
+		DeployInfrastructure(ctx, infrastructureInfo.Id).
+		InfrastructureDeployOptions(infrastructureDeployOptions).
+		Execute()
+	if err := response_inspector.InspectResponse(httpRes, err); err != nil {
+		return err
+	}
+
+	return formatter.PrintResult(infrastructureInfo, &infrastructurePrintConfig)
+}
+
+func InfrastructureRevert(ctx context.Context, infrastructureIdOrLabel string) error {
+	logger.Get().Info().Msgf("Revert infrastructure '%s' changes", infrastructureIdOrLabel)
+
+	infrastructureInfo, err := GetInfrastructureByIdOrLabel(ctx, infrastructureIdOrLabel)
+	if err != nil {
+		return err
+	}
+
+	client := api.GetApiClient(ctx)
+
+	httpRes, err := client.InfrastructureAPI.
+		RevertInfrastructure(ctx, infrastructureInfo.Id).
+		Execute()
+	if err := response_inspector.InspectResponse(httpRes, err); err != nil {
+		return err
+	}
+
+	return nil
+}
+
 func GetInfrastructureByIdOrLabel(ctx context.Context, infrastructureIdOrLabel string) (*sdk.Infrastructure, error) {
 	client := api.GetApiClient(ctx)
 

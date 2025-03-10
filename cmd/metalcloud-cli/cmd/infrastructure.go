@@ -7,10 +7,15 @@ import (
 )
 
 var (
-	showOwnOnly     bool
-	showOrdered     bool
-	showDeleted     bool
-	customVariables string
+	showOwnOnly         bool
+	showOrdered         bool
+	showDeleted         bool
+	customVariables     string
+	allowDataLoss       bool
+	attemptSoftShutdown bool
+	attemptHardShutdown bool
+	softShutdownTimeout int
+	forceShutdown       bool
 
 	infrastructureCmd = &cobra.Command{
 		Use:     "infrastructure [command]",
@@ -82,6 +87,30 @@ var (
 			return infrastructure.InfrastructureDelete(cmd.Context(), args[0])
 		},
 	}
+
+	infrastructureDeployCmd = &cobra.Command{
+		Use:          "deploy infrastructure_id_or_label",
+		Aliases:      []string{"apply"},
+		Short:        "Deploy infrastructure.",
+		SilenceUsage: true,
+		Annotations:  map[string]string{system.REQUIRED_PERMISSION: system.SITE_WRITE}, // TODO: Use specific permission
+		Args:         cobra.ExactArgs(1),
+		RunE: func(cmd *cobra.Command, args []string) error {
+			return infrastructure.InfrastructureDeploy(cmd.Context(), args[0], allowDataLoss, attemptSoftShutdown, attemptHardShutdown, softShutdownTimeout, forceShutdown)
+		},
+	}
+
+	infrastructureRevertCmd = &cobra.Command{
+		Use:          "revert infrastructure_id_or_label",
+		Aliases:      []string{"undo"},
+		Short:        "Revert infrastructure changes.",
+		SilenceUsage: true,
+		Annotations:  map[string]string{system.REQUIRED_PERMISSION: system.SITE_WRITE}, // TODO: Use specific permission
+		Args:         cobra.ExactArgs(1),
+		RunE: func(cmd *cobra.Command, args []string) error {
+			return infrastructure.InfrastructureRevert(cmd.Context(), args[0])
+		},
+	}
 )
 
 func init() {
@@ -100,4 +129,13 @@ func init() {
 	infrastructureUpdateCmd.Flags().StringVar(&customVariables, "custom-variables", "", "Set of infrastructure custom variables.")
 
 	infrastructureCmd.AddCommand(infrastructureDeleteCmd)
+
+	infrastructureCmd.AddCommand(infrastructureDeployCmd)
+	infrastructureDeployCmd.Flags().BoolVar(&allowDataLoss, "allow-data-loss", false, "If set, deploy will not throw error if data loss is expected.")
+	infrastructureDeployCmd.Flags().BoolVar(&attemptSoftShutdown, "attempt-soft-shutdown", true, "If set, attempt a soft (ACPI) power off of all the servers in the infrastructure before the deploy.")
+	infrastructureDeployCmd.Flags().BoolVar(&attemptHardShutdown, "attempt-hard-shutdown", true, "If set, force a hard power off after timeout expired and the server is not powered off")
+	infrastructureDeployCmd.Flags().IntVar(&softShutdownTimeout, "soft-shutdown-timeout", 180, "Timeout to wait for soft shutdown before forcing hard shutdown.")
+	infrastructureDeployCmd.Flags().BoolVar(&forceShutdown, "force-shutdown", false, "If set, deploy will force shutdown of all servers in the infrastructure.")
+
+	infrastructureCmd.AddCommand(infrastructureRevertCmd)
 }
