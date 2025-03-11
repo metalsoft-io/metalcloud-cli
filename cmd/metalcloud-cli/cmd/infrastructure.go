@@ -7,7 +7,7 @@ import (
 )
 
 var (
-	showOwnOnly         bool
+	showAll             bool
 	showOrdered         bool
 	showDeleted         bool
 	customVariables     string
@@ -31,7 +31,7 @@ var (
 		SilenceUsage: true,
 		Annotations:  map[string]string{system.REQUIRED_PERMISSION: system.SITE_READ}, // TODO: Use specific permission
 		RunE: func(cmd *cobra.Command, args []string) error {
-			return infrastructure.InfrastructureList(cmd.Context(), showOwnOnly, showOrdered, showDeleted)
+			return infrastructure.InfrastructureList(cmd.Context(), showAll, showOrdered, showDeleted)
 		},
 	}
 
@@ -117,7 +117,7 @@ func init() {
 	rootCmd.AddCommand(infrastructureCmd)
 
 	infrastructureCmd.AddCommand(infrastructureListCmd)
-	infrastructureListCmd.Flags().BoolVar(&showOwnOnly, "show-own-only", true, "If set will return only infrastructures owned by the current user.")
+	infrastructureListCmd.Flags().BoolVar(&showAll, "show-all", false, "If set will return all infrastructures.")
 	infrastructureListCmd.Flags().BoolVar(&showOrdered, "show-ordered", false, "If set will also return ordered (created but not deployed) infrastructures.")
 	infrastructureListCmd.Flags().BoolVar(&showDeleted, "show-deleted", false, "If set will also return deleted infrastructures.")
 

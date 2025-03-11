@@ -15,33 +15,44 @@ var cleanupPolicyPrintConfig = formatter.PrintConfig{
 	FieldsConfig: map[string]formatter.RecordFieldConfig{
 		"Id": {
 			Title: "#",
+			Order: 1,
 		},
 		"Label": {
-			Title: "Label",
+			Title:    "Label",
+			MaxWidth: 30,
+			Order:    2,
 		},
 		"CleanupDrivesForOobEnabledServer": {
-			Title: "Cleanup Server Drives",
+			Title: "Cleanup Drives",
+			Order: 3,
 		},
 		"RecreateRaid": {
 			Title: "Recrate RAID",
+			Order: 4,
 		},
 		"DisableEmbeddedNics": {
-			Title: "Disable Embedded NICs",
+			Title: "Disable Emb. NICs",
+			Order: 5,
 		},
 		"RaidOneDrive": {
 			Title: "RAID 1 Drive",
+			Order: 6,
 		},
 		"RaidTwoDrives": {
 			Title: "RAID 2 Drives",
+			Order: 7,
 		},
 		"RaidEvenNumberMoreThanTwoDrives": {
 			Title: "RAID Even Drives",
+			Order: 8,
 		},
 		"RaidOddNumberMoreThanOneDrive": {
 			Title: "RAID Odd Drives",
+			Order: 9,
 		},
 		"SkipRaidActions": {
 			Title: "Skip RAID Actions",
+			Order: 10,
 		},
 	},
 }

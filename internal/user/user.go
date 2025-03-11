@@ -15,23 +15,29 @@ var userPrintConfig = formatter.PrintConfig{
 	FieldsConfig: map[string]formatter.RecordFieldConfig{
 		"Id": {
 			Title: "#",
+			Order: 1,
 		},
 		"DisplayName": {
 			Title: "Name",
+			Order: 2,
 		},
 		"Email": {
 			Title: "E-mail",
+			Order: 3,
 		},
 		"CreatedTimestamp": {
 			Title:       "Created",
 			Transformer: formatter.FormatDateTimeValue,
+			Order:       4,
 		},
 		"LastLoginTimestamp": {
 			Title:       "Last Login",
 			Transformer: formatter.FormatDateTimeValue,
+			Order:       5,
 		},
 		"AccessLevel": {
 			Title: "Access",
+			Order: 6,
 		},
 	},
 }

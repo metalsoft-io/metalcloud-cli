@@ -22,7 +22,10 @@ const (
 type RecordFieldConfig struct {
 	Title       string
 	Hidden      bool
+	Order       int
+	MaxWidth    int
 	Transformer func(interface{}) string
+	InnerFields map[string]RecordFieldConfig
 }
 
 type PrintConfig struct {
@@ -64,8 +67,6 @@ func generateTable(result interface{}, printConfig *PrintConfig) table.Writer {
 	t := table.NewWriter()
 	t.SetOutputMirror(os.Stdout)
 
-	var columnConfigs []table.ColumnConfig
-
 	// Check if the result is a struct with slice field named data
 	paginatedData, ok := getPaginatedData(result)
 	if ok {
@@ -75,7 +76,7 @@ func generateTable(result interface{}, printConfig *PrintConfig) table.Writer {
 			names, values, configs := getFieldNamesAndValues(paginatedData.Index(i).Interface(), printConfig)
 			if !headerSet {
 				t.AppendHeader(names)
-				columnConfigs = configs
+				t.SetColumnConfigs(configs)
 
 				headerSet = true
 			}
@@ -86,36 +87,29 @@ func generateTable(result interface{}, printConfig *PrintConfig) table.Writer {
 		names, values, configs := getFieldNamesAndValues(result, printConfig)
 		t.AppendHeader(names)
 		t.AppendRows([]table.Row{values})
-		columnConfigs = configs
+		t.SetColumnConfigs(configs)
 	}
 
 	t.SetStyle(table.StyleLight)
-	if len(columnConfigs) > 0 {
-		t.SetColumnConfigs(columnConfigs)
-	}
 
 	return t
 }
 
 func getPaginatedData(record interface{}) (*reflect.Value, bool) {
-	// Get the reflected value and type
 	val := reflect.ValueOf(record)
 	if val.Kind() == reflect.Ptr {
 		val = val.Elem()
 	}
 
-	// Check if it's a struct
 	if val.Kind() != reflect.Struct {
 		return nil, false
 	}
 
-	// Look for "Data" field
 	field := val.FieldByName("Data")
 	if !field.IsValid() {
 		return nil, false
 	}
 
-	// Check if field is a slice
 	if field.Kind() != reflect.Slice {
 		return nil, false
 	}
@@ -124,59 +118,128 @@ func getPaginatedData(record interface{}) (*reflect.Value, bool) {
 }
 
 func getFieldNamesAndValues(record interface{}, printConfig *PrintConfig) (table.Row, table.Row, []table.ColumnConfig) {
-	// Handle nil input
 	if record == nil {
 		return nil, nil, nil
 	}
 
-	// Get reflected value
 	val := reflect.ValueOf(record)
 	if val.Kind() == reflect.Ptr {
 		val = val.Elem()
 	}
 
-	// Must be a struct
 	if val.Kind() != reflect.Struct {
 		return nil, nil, nil
 	}
 
-	// Get type for field names
 	fieldType := val.Type()
-	fieldCount := val.NumField()
 
 	names := make(table.Row, 0)
 	values := make(table.Row, 0)
 	configs := make([]table.ColumnConfig, 0)
 
-	// Iterate through fields
-	for i := 0; i < fieldCount; i++ {
-		field := fieldType.Field(i)
-
-		// Check if the print config exists
-		if printConfig != nil {
-			fieldConfig, ok := printConfig.FieldsConfig[field.Name]
-			if ok && !fieldConfig.Hidden {
-				title := field.Name
-				if fieldConfig.Title != "" {
-					title = fieldConfig.Title
-				}
-				names = append(names, title)
-				values = append(values, extractValue(val.Field(i)))
-
-				if fieldConfig.Transformer != nil {
-					configs = append(configs, table.ColumnConfig{
-						Name:        title,
-						Transformer: text.Transformer(fieldConfig.Transformer),
-					})
-				}
-			}
-		} else {
-			names = append(names, field.Name)
+	if printConfig == nil {
+		for i := 0; i < val.NumField(); i++ {
+			names = append(names, fieldType.Field(i).Name)
 			values = append(values, extractValue(val.Field(i)))
 		}
+	} else {
+		count, maxOrder := getColumnsCount(&printConfig.FieldsConfig)
+		if count < maxOrder {
+			count = maxOrder
+		}
+
+		names = make(table.Row, count)
+		values = make(table.Row, count)
+
+		populate(record, &printConfig.FieldsConfig, &names, &values, &configs)
 	}
 
 	return names, values, configs
+}
+
+func getColumnsCount(fieldsConfig *map[string]RecordFieldConfig) (int, int) {
+	count := 0
+	maxOrder := 0
+
+	for fieldName, fieldConfig := range *fieldsConfig {
+		if !fieldConfig.Hidden {
+			count++
+			if fieldConfig.Order > maxOrder {
+				maxOrder = fieldConfig.Order
+			}
+		}
+
+		if len(fieldConfig.InnerFields) > 0 {
+			innerCount, innerMaxOrder := getColumnsCount(&fieldConfig.InnerFields)
+
+			count += innerCount
+			if innerMaxOrder > maxOrder {
+				maxOrder = innerMaxOrder
+			}
+		}
+
+		if fieldConfig.Order == 0 {
+			tempFieldConfig := (*fieldsConfig)[fieldName]
+			tempFieldConfig.Order = count
+			(*fieldsConfig)[fieldName] = tempFieldConfig
+		}
+	}
+
+	return count, maxOrder
+}
+
+func populate(record interface{}, fieldsConfig *map[string]RecordFieldConfig, names *table.Row, values *table.Row, configs *[]table.ColumnConfig) {
+	if record == nil {
+		return
+	}
+
+	val := reflect.ValueOf(record)
+	if val.Kind() == reflect.Ptr {
+		val = val.Elem()
+	}
+
+	if val.Kind() != reflect.Struct {
+		// Add headers even if the record is not a valid value
+		for fieldName, fieldConfig := range *fieldsConfig {
+			addField(fieldConfig, fieldName, nil, names, values, configs)
+		}
+		return
+	}
+
+	fieldType := val.Type()
+
+	for i := 0; i < val.NumField(); i++ {
+		field := fieldType.Field(i)
+
+		fieldConfig, ok := (*fieldsConfig)[field.Name]
+		if ok {
+			addField(fieldConfig, field.Name, extractValue(val.Field(i)), names, values, configs)
+
+			if len(fieldConfig.InnerFields) > 0 {
+				populate(val.Field(i).Interface(), &fieldConfig.InnerFields, names, values, configs)
+			}
+		}
+	}
+}
+
+func addField(fieldConfig RecordFieldConfig, fieldName string, fieldValue interface{}, names *table.Row, values *table.Row, configs *[]table.ColumnConfig) {
+	if !fieldConfig.Hidden {
+		title := fieldName
+		if fieldConfig.Title != "" {
+			title = fieldConfig.Title
+		}
+
+		(*names)[fieldConfig.Order-1] = title
+		if fieldConfig.Transformer != nil || fieldConfig.MaxWidth > 0 {
+			*configs = append(*configs, table.ColumnConfig{
+				Name:        title,
+				WidthMax:    fieldConfig.MaxWidth,
+				Transformer: text.Transformer(fieldConfig.Transformer),
+			})
+		}
+
+		(*values)[fieldConfig.Order-1] = fieldValue
+	}
 }
 
 func extractValue(value reflect.Value) interface{} {

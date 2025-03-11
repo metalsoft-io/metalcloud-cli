@@ -15,21 +15,30 @@ var serverPrintConfig = formatter.PrintConfig{
 	FieldsConfig: map[string]formatter.RecordFieldConfig{
 		"ServerId": {
 			Title: "#",
+			Order: 1,
 		},
 		"ServerUUID": {
 			Title: "UUID",
+			Order: 2,
 		},
 		"SerialNumber": {
 			Title: "S/N",
+			Order: 3,
 		},
 		"ManagementAddress": {
 			Title: "IP",
+			Order: 4,
 		},
-		"Vendor": {},
-		"Model":  {},
+		"Vendor": {
+			Order: 5,
+		},
+		"Model": {
+			Order: 6,
+		},
 		"ServerStatus": {
 			Title:       "Status",
 			Transformer: formatter.FormatStatusValue,
+			Order:       7,
 		},
 	},
 }

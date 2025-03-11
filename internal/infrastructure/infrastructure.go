@@ -17,37 +17,56 @@ var infrastructurePrintConfig = formatter.PrintConfig{
 	FieldsConfig: map[string]formatter.RecordFieldConfig{
 		"Id": {
 			Title: "#",
+			Order: 1,
 		},
-		"Label": {},
+		"Label": {
+			MaxWidth: 30,
+			Order:    2,
+		},
+		"Config": {
+			Hidden: true,
+			InnerFields: map[string]formatter.RecordFieldConfig{
+				"Label": {
+					Title:    "Config Label",
+					MaxWidth: 30,
+					Order:    3,
+				},
+			},
+		},
 		"ServiceStatus": {
 			Title:       "Status",
 			Transformer: formatter.FormatStatusValue,
+			Order:       4,
 		},
 		"UserIdOwner": {
 			Title: "Owner",
+			Order: 5,
 		},
 		"SiteId": {
 			Title: "Site",
+			Order: 6,
 		},
 		"CreatedTimestamp": {
 			Title:       "Created",
 			Transformer: formatter.FormatDateTimeValue,
+			Order:       7,
 		},
 		"UpdatedTimestamp": {
 			Title:       "Updated",
 			Transformer: formatter.FormatDateTimeValue,
+			Order:       8,
 		},
 	},
 }
 
-func InfrastructureList(ctx context.Context, showOwnOnly bool, showOrdered bool, showDeleted bool) error {
+func InfrastructureList(ctx context.Context, showAll bool, showOrdered bool, showDeleted bool) error {
 	logger.Get().Info().Msgf("Listing all infrastructures")
 
 	client := api.GetApiClient(ctx)
 
 	request := client.InfrastructureAPI.GetInfrastructures(ctx)
 
-	if showOwnOnly {
+	if !showAll {
 		userId := api.GetUserId(ctx)
 		request = request.FilterUserIdOwner([]string{"$eq:" + userId})
 	}

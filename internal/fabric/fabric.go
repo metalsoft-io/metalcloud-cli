@@ -16,11 +16,17 @@ var fabricPrintConfig = formatter.PrintConfig{
 	FieldsConfig: map[string]formatter.RecordFieldConfig{
 		"Id": {
 			Title: "#",
+			Order: 1,
 		},
-		"Name":        {},
-		"Description": {},
+		"Name": {
+			Order: 2,
+		},
+		"Description": {
+			Order: 3,
+		},
 		"FabricConfiguration.FabricType": {
 			Title: "Type",
+			Order: 4,
 		},
 	},
 }
