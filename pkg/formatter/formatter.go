@@ -95,26 +95,32 @@ func generateTable(result interface{}, printConfig *PrintConfig) table.Writer {
 	return t
 }
 
+// getPaginatedData checks if the record is a slice or struct with a slice field named Data
+// and returns the value of the slice if it exists
 func getPaginatedData(record interface{}) (*reflect.Value, bool) {
-	val := reflect.ValueOf(record)
-	if val.Kind() == reflect.Ptr {
-		val = val.Elem()
+	recordValue := reflect.ValueOf(record)
+	if recordValue.Kind() == reflect.Ptr {
+		recordValue = recordValue.Elem()
 	}
 
-	if val.Kind() != reflect.Struct {
+	if recordValue.Kind() == reflect.Slice {
+		return &recordValue, true
+	}
+
+	if recordValue.Kind() != reflect.Struct {
 		return nil, false
 	}
 
-	field := val.FieldByName("Data")
-	if !field.IsValid() {
+	dataField := recordValue.FieldByName("Data")
+	if !dataField.IsValid() {
 		return nil, false
 	}
 
-	if field.Kind() != reflect.Slice {
+	if dataField.Kind() != reflect.Slice {
 		return nil, false
 	}
 
-	return &field, true
+	return &dataField, true
 }
 
 func getFieldNamesAndValues(record interface{}, printConfig *PrintConfig) (table.Row, table.Row, []table.ColumnConfig) {
@@ -122,25 +128,25 @@ func getFieldNamesAndValues(record interface{}, printConfig *PrintConfig) (table
 		return nil, nil, nil
 	}
 
-	val := reflect.ValueOf(record)
-	if val.Kind() == reflect.Ptr {
-		val = val.Elem()
+	recordValue := reflect.ValueOf(record)
+	if recordValue.Kind() == reflect.Ptr {
+		recordValue = recordValue.Elem()
 	}
 
-	if val.Kind() != reflect.Struct {
+	if recordValue.Kind() != reflect.Struct {
 		return nil, nil, nil
 	}
 
-	fieldType := val.Type()
+	fieldType := recordValue.Type()
 
 	names := make(table.Row, 0)
 	values := make(table.Row, 0)
 	configs := make([]table.ColumnConfig, 0)
 
 	if printConfig == nil {
-		for i := 0; i < val.NumField(); i++ {
+		for i := 0; i < recordValue.NumField(); i++ {
 			names = append(names, fieldType.Field(i).Name)
-			values = append(values, extractValue(val.Field(i)))
+			values = append(values, extractValue(recordValue.Field(i)))
 		}
 	} else {
 		count, maxOrder := getColumnsCount(&printConfig.FieldsConfig)
@@ -193,12 +199,12 @@ func populate(record interface{}, fieldsConfig *map[string]RecordFieldConfig, na
 		return
 	}
 
-	val := reflect.ValueOf(record)
-	if val.Kind() == reflect.Ptr {
-		val = val.Elem()
+	recordValue := reflect.ValueOf(record)
+	if recordValue.Kind() == reflect.Ptr {
+		recordValue = recordValue.Elem()
 	}
 
-	if val.Kind() != reflect.Struct {
+	if recordValue.Kind() != reflect.Struct {
 		// Add headers even if the record is not a valid value
 		for fieldName, fieldConfig := range *fieldsConfig {
 			addField(fieldConfig, fieldName, nil, names, values, configs)
@@ -206,17 +212,17 @@ func populate(record interface{}, fieldsConfig *map[string]RecordFieldConfig, na
 		return
 	}
 
-	fieldType := val.Type()
+	fieldType := recordValue.Type()
 
-	for i := 0; i < val.NumField(); i++ {
+	for i := 0; i < recordValue.NumField(); i++ {
 		field := fieldType.Field(i)
 
 		fieldConfig, ok := (*fieldsConfig)[field.Name]
 		if ok {
-			addField(fieldConfig, field.Name, extractValue(val.Field(i)), names, values, configs)
+			addField(fieldConfig, field.Name, extractValue(recordValue.Field(i)), names, values, configs)
 
 			if len(fieldConfig.InnerFields) > 0 {
-				populate(val.Field(i).Interface(), &fieldConfig.InnerFields, names, values, configs)
+				populate(recordValue.Field(i).Interface(), &fieldConfig.InnerFields, names, values, configs)
 			}
 		}
 	}

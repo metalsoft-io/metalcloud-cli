@@ -3,10 +3,18 @@ package cmd
 import (
 	"github.com/metalsoft-io/metalcloud-cli/cmd/metalcloud-cli/system"
 	"github.com/metalsoft-io/metalcloud-cli/internal/server"
+	"github.com/metalsoft-io/metalcloud-cli/pkg/utils"
 	"github.com/spf13/cobra"
 )
 
 var (
+	serverFlags = struct {
+		showCredentials bool
+		filterStatus    string
+		filterType      string
+		configSource    string
+	}{}
+
 	serverCmd = &cobra.Command{
 		Use:     "server [command]",
 		Aliases: []string{"srv", "servers"},
@@ -21,25 +29,53 @@ var (
 		SilenceUsage: true,
 		Annotations:  map[string]string{system.REQUIRED_PERMISSION: system.SERVERS_READ},
 		RunE: func(cmd *cobra.Command, args []string) error {
-			return server.ServerList(cmd.Context())
+			return server.ServerList(cmd.Context(),
+				serverFlags.showCredentials,
+				serverFlags.filterStatus,
+				serverFlags.filterType)
 		},
 	}
 
 	serverGetCmd = &cobra.Command{
-		Use:          "get",
+		Use:          "get server_id",
 		Aliases:      []string{"show"},
 		Short:        "Get server info.",
 		SilenceUsage: true,
 		Annotations:  map[string]string{system.REQUIRED_PERMISSION: system.SERVERS_READ},
 		Args:         cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
-			return server.ServerGet(cmd.Context(), args[0])
+			return server.ServerGet(cmd.Context(), args[0],
+				serverFlags.showCredentials)
+		},
+	}
+
+	serverRegisterCmd = &cobra.Command{
+		Use:          "register",
+		Aliases:      []string{"new"},
+		Short:        "Register a server.",
+		SilenceUsage: true,
+		Annotations:  map[string]string{system.REQUIRED_PERMISSION: system.SERVERS_WRITE},
+		RunE: func(cmd *cobra.Command, args []string) error {
+			var config []byte
+			var err error
+
+			if serverFlags.configSource == "pipe" {
+				config, err = utils.ReadConfigFromPipe()
+			} else {
+				config, err = utils.ReadConfigFromFile(serverFlags.configSource)
+			}
+
+			if err != nil {
+				return err
+			}
+
+			return server.ServerRegister(cmd.Context(), config)
 		},
 	}
 
 	// server cleanup policy commands
 	serverCleanupPolicyCmd = &cobra.Command{
-		Use:     "server cleanup-policy [command]",
+		Use:     "cleanup-policy [command]",
 		Aliases: []string{"cp"},
 		Short:   "Server cleanup policy management",
 		Long:    `Server cleanup policy management commands.`,
@@ -72,9 +108,20 @@ var (
 func init() {
 	rootCmd.AddCommand(serverCmd)
 
+	// Server commands
 	serverCmd.AddCommand(serverListCmd)
-	serverCmd.AddCommand(serverGetCmd)
+	serverListCmd.Flags().BoolVar(&serverFlags.showCredentials, "show-credentials", false, "If set returns the server IPMI credentials.")
+	serverListCmd.Flags().StringVar(&serverFlags.filterStatus, "filter-status", "", "Filter the result by server status.")
+	serverListCmd.Flags().StringVar(&serverFlags.filterType, "filter-type", "", "Filter the result by server type.")
 
+	serverCmd.AddCommand(serverGetCmd)
+	serverGetCmd.Flags().BoolVar(&serverFlags.showCredentials, "show-credentials", false, "If set returns the server IPMI credentials.")
+
+	serverCmd.AddCommand(serverRegisterCmd)
+	serverRegisterCmd.Flags().StringVar(&serverFlags.configSource, "config-source", "", "Source of the new server configuration. Can be 'pipe' or path to a JSON file.")
+	serverRegisterCmd.MarkFlagsOneRequired("config-source")
+
+	// Server Cleanup Policy commands
 	serverCmd.AddCommand(serverCleanupPolicyCmd)
 	serverCleanupPolicyCmd.AddCommand(serverCleanupPolicyListCmd)
 	serverCleanupPolicyCmd.AddCommand(serverCleanupPolicyGetCmd)
