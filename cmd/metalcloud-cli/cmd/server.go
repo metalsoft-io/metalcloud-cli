@@ -57,15 +57,7 @@ var (
 		SilenceUsage: true,
 		Annotations:  map[string]string{system.REQUIRED_PERMISSION: system.SERVERS_WRITE},
 		RunE: func(cmd *cobra.Command, args []string) error {
-			var config []byte
-			var err error
-
-			if serverFlags.configSource == "pipe" {
-				config, err = utils.ReadConfigFromPipe()
-			} else {
-				config, err = utils.ReadConfigFromFile(serverFlags.configSource)
-			}
-
+			config, err := utils.ReadConfigFromPipeOrFile(serverFlags.configSource)
 			if err != nil {
 				return err
 			}

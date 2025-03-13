@@ -130,35 +130,35 @@ func SiteDecommission(ctx context.Context, siteIdOrName string) error {
 	return nil
 }
 
-func GetSiteByIdOrLabel(ctx context.Context, siteIdOrName string) (*sdk.Site, error) {
+func GetSiteByIdOrLabel(ctx context.Context, siteIdOrLabel string) (*sdk.Site, error) {
 	client := api.GetApiClient(ctx)
 
-	siteList, httpRes, err := client.SiteAPI.GetSites(ctx).Search(siteIdOrName).Execute()
+	siteList, httpRes, err := client.SiteAPI.GetSites(ctx).Search(siteIdOrLabel).Execute()
 	if err := response_inspector.InspectResponse(httpRes, err); err != nil {
 		return nil, err
 	}
 
 	if len(siteList.Data) == 0 {
-		err := fmt.Errorf("site '%s' not found", siteIdOrName)
+		err := fmt.Errorf("site '%s' not found", siteIdOrLabel)
 		logger.Get().Error().Err(err).Msg("")
 		return nil, err
 	}
 
 	var siteInfo sdk.Site
 	for _, site := range siteList.Data {
-		if site.Name == siteIdOrName {
+		if site.Name == siteIdOrLabel {
 			siteInfo = site
 			break
 		}
 
-		if strconv.Itoa(int(site.Id)) == siteIdOrName {
+		if strconv.Itoa(int(site.Id)) == siteIdOrLabel {
 			siteInfo = site
 			break
 		}
 	}
 
 	if siteInfo.Id == 0 {
-		err := fmt.Errorf("site '%s' not found", siteIdOrName)
+		err := fmt.Errorf("site '%s' not found", siteIdOrLabel)
 		logger.Get().Error().Err(err).Msg("")
 		return nil, err
 	}

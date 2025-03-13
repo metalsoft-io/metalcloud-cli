@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"os"
 	"regexp"
+	"strconv"
 	"strings"
 )
 
@@ -22,6 +23,15 @@ func CreateSlug(input string) string {
 	slug = strings.ToLower(slug)
 
 	return slug
+}
+
+func GetFloat32FromString(input string) (float32, error) {
+	result, err := strconv.ParseFloat(input, 32)
+	if err != nil {
+		return 0, err
+	}
+
+	return float32(result), nil
 }
 
 func ReadConfigFromPipe() ([]byte, error) {
@@ -45,4 +55,12 @@ func ReadConfigFromFile(configSource string) ([]byte, error) {
 	}
 
 	return content, nil
+}
+
+func ReadConfigFromPipeOrFile(configSource string) ([]byte, error) {
+	if configSource == "pipe" {
+		return ReadConfigFromPipe()
+	}
+
+	return ReadConfigFromFile(configSource)
 }

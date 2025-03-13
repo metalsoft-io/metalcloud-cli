@@ -3,10 +3,15 @@ package cmd
 import (
 	"github.com/metalsoft-io/metalcloud-cli/cmd/metalcloud-cli/system"
 	"github.com/metalsoft-io/metalcloud-cli/internal/fabric"
+	"github.com/metalsoft-io/metalcloud-cli/pkg/utils"
 	"github.com/spf13/cobra"
 )
 
 var (
+	fabricFlags = struct {
+		configSource string
+	}{}
+
 	fabricCmd = &cobra.Command{
 		Use:     "fabric [command]",
 		Aliases: []string{"fc", "fabrics"},
@@ -38,26 +43,51 @@ var (
 	}
 
 	fabricCreateCmd = &cobra.Command{
-		Use:          "create",
+		Use:          "create site_id_or_label fabric_name fabric_type [fabric_description]",
 		Aliases:      []string{"new"},
 		Short:        "Create new fabric.",
 		SilenceUsage: true,
 		Annotations:  map[string]string{system.REQUIRED_PERMISSION: system.SITE_WRITE}, // TODO: Use specific permission
-		Args:         cobra.ExactArgs(3),
+		Args:         cobra.RangeArgs(3, 4),
 		RunE: func(cmd *cobra.Command, args []string) error {
-			return fabric.FabricCreate(cmd.Context(), args[0], args[1], args[2])
+			description := args[1]
+			if len(args) > 3 {
+				description = args[3]
+			}
+
+			config, err := utils.ReadConfigFromPipeOrFile(fabricFlags.configSource)
+			if err != nil {
+				return err
+			}
+
+			return fabric.FabricCreate(cmd.Context(), args[0], args[1], args[2], description, config)
 		},
 	}
 
 	fabricUpdateCmd = &cobra.Command{
-		Use:          "update",
+		Use:          "update fabric_id [fabric_name [fabric_description]]",
 		Aliases:      []string{"edit"},
 		Short:        "Update fabric configuration.",
 		SilenceUsage: true,
 		Annotations:  map[string]string{system.REQUIRED_PERMISSION: system.SITE_WRITE}, // TODO: Use specific permission
-		Args:         cobra.ExactArgs(1),
+		Args:         cobra.RangeArgs(1, 3),
 		RunE: func(cmd *cobra.Command, args []string) error {
-			return fabric.FabricUpdate(cmd.Context(), args[0])
+			name := ""
+			if len(args) > 1 {
+				name = args[1]
+			}
+
+			description := ""
+			if len(args) > 2 {
+				description = args[2]
+			}
+
+			config, err := utils.ReadConfigFromPipeOrFile(fabricFlags.configSource)
+			if err != nil {
+				return err
+			}
+
+			return fabric.FabricUpdate(cmd.Context(), args[0], name, description, config)
 		},
 	}
 )
@@ -66,7 +96,14 @@ func init() {
 	rootCmd.AddCommand(fabricCmd)
 
 	fabricCmd.AddCommand(fabricListCmd)
+
 	fabricCmd.AddCommand(fabricGetCmd)
+
 	fabricCmd.AddCommand(fabricCreateCmd)
+	fabricCreateCmd.Flags().StringVar(&fabricFlags.configSource, "config-source", "", "Source of the new fabric configuration. Can be 'pipe' or path to a JSON file.")
+	fabricCreateCmd.MarkFlagsOneRequired("config-source")
+
 	fabricCmd.AddCommand(fabricUpdateCmd)
+	fabricUpdateCmd.Flags().StringVar(&fabricFlags.configSource, "config-source", "", "Source of the updated fabric configuration. Can be 'pipe' or path to a JSON file.")
+	fabricUpdateCmd.MarkFlagsOneRequired("config-source")
 }
