@@ -330,11 +330,14 @@ func FormatStatusValue(value interface{}) string {
 func FormatDateTimeValue(value interface{}) string {
 	if _, ok := value.(string); ok {
 		tm, err := time.Parse("2006-01-02T15:04:05Z", value.(string))
-		if err != nil {
-			return fmt.Sprint(value)
+		if err == nil {
+			return tm.Local().Format(time.RFC822)
 		}
 
-		return tm.Local().Format(time.RFC1123)
+		tm, err = time.Parse("2006-01-02T15:04:05.", value.(string))
+		if err == nil {
+			return tm.Local().Format(time.RFC822)
+		}
 	}
 
 	return fmt.Sprint(value)

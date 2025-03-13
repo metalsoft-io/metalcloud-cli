@@ -163,7 +163,7 @@ func FabricUpdate(ctx context.Context, fabricId string, fabricName string, descr
 		Name:                sdk.PtrString(fabricName),
 		Description:         sdk.PtrString(description),
 		SiteId:              fabricInfo.SiteId,
-		FabricConfiguration: &fabricConfiguration,
+		FabricConfiguration: fabricConfiguration,
 	}
 
 	client := api.GetApiClient(ctx)
