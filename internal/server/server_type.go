@@ -7,6 +7,8 @@ import (
 	"github.com/metalsoft-io/metalcloud-cli/pkg/formatter"
 	"github.com/metalsoft-io/metalcloud-cli/pkg/logger"
 	"github.com/metalsoft-io/metalcloud-cli/pkg/response_inspector"
+	"github.com/metalsoft-io/metalcloud-cli/pkg/utils"
+	sdk "github.com/metalsoft-io/metalcloud-sdk-go"
 )
 
 var serverTypePrintConfig = formatter.PrintConfig{
@@ -65,4 +67,20 @@ func ServerTypeList(ctx context.Context) error {
 	}
 
 	return formatter.PrintResult(typesList, &serverTypePrintConfig)
+}
+
+func GetServerTypeByIdOrLabel(ctx context.Context, serverTypeIdOrLabel string) (*sdk.ServerType, error) {
+	client := api.GetApiClient(ctx)
+
+	serverTypeId, err := utils.GetFloat32FromString(serverTypeIdOrLabel)
+	if err != nil {
+		return nil, err
+	}
+
+	serverTypeInfo, httpRes, err := client.ServerTypeAPI.GetServerTypeInfo(ctx, serverTypeId).Execute()
+	if err := response_inspector.InspectResponse(httpRes, err); err != nil {
+		return nil, err
+	}
+
+	return serverTypeInfo, nil
 }
