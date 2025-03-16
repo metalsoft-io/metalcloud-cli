@@ -2,6 +2,7 @@ package instance
 
 import (
 	"context"
+	"strconv"
 
 	"github.com/metalsoft-io/metalcloud-cli/internal/infrastructure"
 	"github.com/metalsoft-io/metalcloud-cli/internal/server"
@@ -42,6 +43,23 @@ var instanceGroupPrintConfig = formatter.PrintConfig{
 			Title:       "Updated",
 			Transformer: formatter.FormatDateTimeValue,
 			Order:       6,
+		},
+	},
+}
+
+var instanceGroupConfigPrintConfig = formatter.PrintConfig{
+	FieldsConfig: map[string]formatter.RecordFieldConfig{
+		"Label": {
+			MaxWidth: 30,
+			Order:    1,
+		},
+		"InstanceCount": {
+			Title: "Count",
+			Order: 2,
+		},
+		"VolumeTemplateId": {
+			Title: "OS Template Id",
+			Order: 3,
 		},
 	},
 }
@@ -117,10 +135,93 @@ func InstanceGroupCreate(ctx context.Context, infrastructureIdOrLabel string, la
 
 	client := api.GetApiClient(ctx)
 
-	instanceGroupList, httpRes, err := client.ServerInstanceGroupAPI.CreateServerInstanceGroup(ctx, int32(infra.Id)).ServerInstanceGroupCreate(payload).Execute()
+	instanceGroupInfo, httpRes, err := client.ServerInstanceGroupAPI.CreateServerInstanceGroup(ctx, int32(infra.Id)).ServerInstanceGroupCreate(payload).Execute()
 	if err := response_inspector.InspectResponse(httpRes, err); err != nil {
 		return err
 	}
 
-	return formatter.PrintResult(instanceGroupList, &instanceGroupPrintConfig)
+	return formatter.PrintResult(instanceGroupInfo, &instanceGroupPrintConfig)
+}
+
+func InstanceGroupUpdate(ctx context.Context, instanceGroupId string, label string, instanceCount int, osTemplateId int) error {
+	logger.Get().Info().Msgf("Update instance group %s", instanceGroupId)
+
+	instanceGroupIdNumerical, err := utils.GetFloat32FromString(instanceGroupId)
+	if err != nil {
+		return err
+	}
+
+	payload := sdk.ServerInstanceGroupUpdate{}
+
+	if label != "" {
+		payload.Label = &label
+	}
+
+	if instanceCount > 0 {
+		payload.InstanceCount = sdk.PtrInt32(int32(instanceCount))
+	}
+
+	if osTemplateId > 0 {
+		payload.VolumeTemplateId = sdk.PtrInt32(int32(osTemplateId))
+	}
+
+	client := api.GetApiClient(ctx)
+
+	instanceGroupConfig, httpRes, err := client.ServerInstanceGroupAPI.GetServerInstanceGroupConfig(ctx, int32(instanceGroupIdNumerical)).Execute()
+	if err := response_inspector.InspectResponse(httpRes, err); err != nil {
+		return err
+	}
+
+	instanceGroupConfig, httpRes, err = client.ServerInstanceGroupAPI.UpdateServerInstanceGroupConfig(ctx, int32(instanceGroupIdNumerical)).
+		IfMatch(strconv.Itoa(int(instanceGroupConfig.Revision))).
+		ServerInstanceGroupUpdate(payload).
+		Execute()
+	if err := response_inspector.InspectResponse(httpRes, err); err != nil {
+		return err
+	}
+
+	return formatter.PrintResult(instanceGroupConfig, &instanceGroupConfigPrintConfig)
+}
+
+func InstanceGroupDelete(ctx context.Context, instanceGroupId string) error {
+	logger.Get().Info().Msgf("Delete instance group %s", instanceGroupId)
+
+	instanceGroupIdNumerical, err := utils.GetFloat32FromString(instanceGroupId)
+	if err != nil {
+		return err
+	}
+
+	client := api.GetApiClient(ctx)
+
+	instanceGroup, httpRes, err := client.ServerInstanceGroupAPI.GetServerInstanceGroup(ctx, int32(instanceGroupIdNumerical)).Execute()
+	if err := response_inspector.InspectResponse(httpRes, err); err != nil {
+		return err
+	}
+
+	httpRes, err = client.ServerInstanceGroupAPI.DeleteServerInstanceGroup(ctx, int32(instanceGroupIdNumerical)).
+		IfMatch(strconv.Itoa(int(instanceGroup.Revision))).
+		Execute()
+	if err := response_inspector.InspectResponse(httpRes, err); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func InstanceGroupInstances(ctx context.Context, instanceGroupId string) error {
+	logger.Get().Info().Msgf("List instances of instance group %s", instanceGroupId)
+
+	instanceGroupIdNumerical, err := utils.GetFloat32FromString(instanceGroupId)
+	if err != nil {
+		return err
+	}
+
+	client := api.GetApiClient(ctx)
+
+	instancesList, httpRes, err := client.ServerInstanceGroupAPI.GetServerInstanceGroupServerInstances(ctx, int32(instanceGroupIdNumerical)).Execute()
+	if err := response_inspector.InspectResponse(httpRes, err); err != nil {
+		return err
+	}
+
+	return formatter.PrintResult(instancesList, &instancePrintConfig)
 }
