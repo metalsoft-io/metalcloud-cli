@@ -26,7 +26,7 @@ var (
 	}
 
 	userGetCmd = &cobra.Command{
-		Use:          "get",
+		Use:          "get user_id",
 		Aliases:      []string{"show"},
 		Short:        "Get user details.",
 		SilenceUsage: true,
@@ -36,6 +36,18 @@ var (
 			return user.Get(cmd.Context(), args[0])
 		},
 	}
+
+	userLimitsGetCmd = &cobra.Command{
+		Use:          "limits user_id",
+		Aliases:      []string{"limits-get"},
+		Short:        "Get user limits.",
+		SilenceUsage: true,
+		Annotations:  map[string]string{system.REQUIRED_PERMISSION: system.USERS_AND_PERMISSIONS_READ},
+		Args:         cobra.ExactArgs(1),
+		RunE: func(cmd *cobra.Command, args []string) error {
+			return user.GetLimits(cmd.Context(), args[0])
+		},
+	}
 )
 
 func init() {
@@ -43,4 +55,5 @@ func init() {
 
 	userCmd.AddCommand(userListCmd)
 	userCmd.AddCommand(userGetCmd)
+	userCmd.AddCommand(userLimitsGetCmd)
 }

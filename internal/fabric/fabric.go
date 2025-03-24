@@ -27,9 +27,23 @@ var fabricPrintConfig = formatter.PrintConfig{
 		"Description": {
 			Order: 3,
 		},
-		"FabricConfiguration.FabricType": {
-			Title: "Type",
-			Order: 4,
+		"FabricConfiguration": {
+			Hidden: true,
+			InnerFields: map[string]formatter.RecordFieldConfig{
+				"EthernetFabric": {
+					Hidden: true,
+					InnerFields: map[string]formatter.RecordFieldConfig{
+						"FabricType": {
+							Title: "Type",
+							Order: 4,
+						},
+						"DefaultVlan": {
+							Title: "Default VLAN",
+							Order: 5,
+						},
+					},
+				},
+			},
 		},
 	},
 }

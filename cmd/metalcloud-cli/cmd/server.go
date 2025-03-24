@@ -85,6 +85,18 @@ var (
 			return server.ServerTypeList(cmd.Context())
 		},
 	}
+
+	serverTypeGetCmd = &cobra.Command{
+		Use:          "get",
+		Aliases:      []string{"show"},
+		Short:        "Get server type info.",
+		SilenceUsage: true,
+		Annotations:  map[string]string{system.REQUIRED_PERMISSION: system.SERVERS_READ},
+		Args:         cobra.ExactArgs(1),
+		RunE: func(cmd *cobra.Command, args []string) error {
+			return server.ServerTypeGet(cmd.Context(), args[0])
+		},
+	}
 )
 
 // Server Cleanup Policy commands
@@ -139,6 +151,7 @@ func init() {
 	// Server Type commands
 	serverCmd.AddCommand(serverTypeCmd)
 	serverTypeCmd.AddCommand(serverTypeListCmd)
+	serverTypeCmd.AddCommand(serverTypeGetCmd)
 
 	// Server Cleanup Policy commands
 	serverCmd.AddCommand(serverCleanupPolicyCmd)

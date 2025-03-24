@@ -31,6 +31,15 @@ var infrastructurePrintConfig = formatter.PrintConfig{
 					MaxWidth: 30,
 					Order:    3,
 				},
+				"DeployStatus": {
+					Title:       "Deploy Status",
+					Transformer: formatter.FormatStatusValue,
+					Order:       9,
+				},
+				"InfrastructureDeployId": {
+					Title: "Deploy ID",
+					Order: 10,
+				},
 			},
 		},
 		"ServiceStatus": {

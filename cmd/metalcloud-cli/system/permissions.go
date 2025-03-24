@@ -2,6 +2,7 @@ package system
 
 import (
 	"context"
+	"fmt"
 
 	"github.com/metalsoft-io/metalcloud-cli/pkg/api"
 	"github.com/metalsoft-io/metalcloud-cli/pkg/response_inspector"
@@ -57,7 +58,7 @@ func GetUserPermissions(ctx context.Context) (string, []string, error) {
 
 	// TODO: The API returns the permissions of the user in a map with no specific type
 	if user.Permissions == nil || user.Permissions.AdditionalProperties == nil {
-		return user.Id, nil, nil
+		return fmt.Sprintf("%d", int(user.Id)), nil, nil
 	}
 
 	userPermissions := make([]string, 0, len(user.Permissions.AdditionalProperties))
@@ -74,5 +75,5 @@ func GetUserPermissions(ctx context.Context) (string, []string, error) {
 		userPermissions = append(userPermissions, k)
 	}
 
-	return user.Id, userPermissions, nil
+	return fmt.Sprintf("%d", int(user.Id)), userPermissions, nil
 }

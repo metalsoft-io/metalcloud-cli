@@ -74,3 +74,23 @@ func Get(ctx context.Context, userId string) error {
 
 	return formatter.PrintResult(userInfo, &userPrintConfig)
 }
+
+func GetLimits(ctx context.Context, userId string) error {
+	logger.Get().Info().Msgf("Get user '%s' limits", userId)
+
+	userIdNumber, err := strconv.ParseFloat(userId, 32)
+	if err != nil {
+		err := fmt.Errorf("invalid user ID: '%s'", userId)
+		logger.Get().Error().Err(err).Msg("")
+		return err
+	}
+
+	client := api.GetApiClient(ctx)
+
+	userInfo, httpRes, err := client.UserAPI.GetUserLimits(ctx, float32(userIdNumber)).Execute()
+	if err := response_inspector.InspectResponse(httpRes, err); err != nil {
+		return err
+	}
+
+	return formatter.PrintResult(userInfo, &userPrintConfig)
+}

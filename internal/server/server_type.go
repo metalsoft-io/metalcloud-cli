@@ -69,6 +69,17 @@ func ServerTypeList(ctx context.Context) error {
 	return formatter.PrintResult(typesList, &serverTypePrintConfig)
 }
 
+func ServerTypeGet(ctx context.Context, serverTypeIdOrLabel string) error {
+	logger.Get().Info().Msgf("Get server type %s info", serverTypeIdOrLabel)
+
+	serverType, err := GetServerTypeByIdOrLabel(ctx, serverTypeIdOrLabel)
+	if err != nil {
+		return err
+	}
+
+	return formatter.PrintResult(serverType, &serverTypePrintConfig)
+}
+
 func GetServerTypeByIdOrLabel(ctx context.Context, serverTypeIdOrLabel string) (*sdk.ServerType, error) {
 	client := api.GetApiClient(ctx)
 
