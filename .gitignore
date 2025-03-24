@@ -26,6 +26,7 @@ metalcloud.yaml
 
 /bin
 *.log
+*.json
 
 # Go workspace file
 go.work

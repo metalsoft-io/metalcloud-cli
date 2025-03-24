@@ -27,6 +27,10 @@ var fabricPrintConfig = formatter.PrintConfig{
 		"Description": {
 			Order: 3,
 		},
+		"SiteId": {
+			Title: "Site",
+			Order: 4,
+		},
 		"FabricConfiguration": {
 			Hidden: true,
 			InnerFields: map[string]formatter.RecordFieldConfig{
@@ -35,11 +39,11 @@ var fabricPrintConfig = formatter.PrintConfig{
 					InnerFields: map[string]formatter.RecordFieldConfig{
 						"FabricType": {
 							Title: "Type",
-							Order: 4,
+							Order: 5,
 						},
 						"DefaultVlan": {
 							Title: "Default VLAN",
-							Order: 5,
+							Order: 6,
 						},
 					},
 				},
