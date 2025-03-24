@@ -67,71 +67,6 @@ var (
 	}
 )
 
-// Server Type commands
-var (
-	serverTypeCmd = &cobra.Command{
-		Use:   "type [command]",
-		Short: "Server type management",
-		Long:  `Server type management commands.`,
-	}
-
-	serverTypeListCmd = &cobra.Command{
-		Use:          "list",
-		Aliases:      []string{"ls"},
-		Short:        "Lists server types.",
-		SilenceUsage: true,
-		Annotations:  map[string]string{system.REQUIRED_PERMISSION: system.SERVERS_READ},
-		RunE: func(cmd *cobra.Command, args []string) error {
-			return server.ServerTypeList(cmd.Context())
-		},
-	}
-
-	serverTypeGetCmd = &cobra.Command{
-		Use:          "get",
-		Aliases:      []string{"show"},
-		Short:        "Get server type info.",
-		SilenceUsage: true,
-		Annotations:  map[string]string{system.REQUIRED_PERMISSION: system.SERVERS_READ},
-		Args:         cobra.ExactArgs(1),
-		RunE: func(cmd *cobra.Command, args []string) error {
-			return server.ServerTypeGet(cmd.Context(), args[0])
-		},
-	}
-)
-
-// Server Cleanup Policy commands
-var (
-	serverCleanupPolicyCmd = &cobra.Command{
-		Use:     "cleanup-policy [command]",
-		Aliases: []string{"cp"},
-		Short:   "Server cleanup policy management",
-		Long:    `Server cleanup policy management commands.`,
-	}
-
-	serverCleanupPolicyListCmd = &cobra.Command{
-		Use:          "list",
-		Aliases:      []string{"ls"},
-		Short:        "Lists server cleanup policies.",
-		SilenceUsage: true,
-		Annotations:  map[string]string{system.REQUIRED_PERMISSION: system.SERVERS_READ},
-		RunE: func(cmd *cobra.Command, args []string) error {
-			return server.CleanupPolicyList(cmd.Context())
-		},
-	}
-
-	serverCleanupPolicyGetCmd = &cobra.Command{
-		Use:          "get",
-		Aliases:      []string{"show"},
-		Short:        "Get server cleanup policy.",
-		SilenceUsage: true,
-		Annotations:  map[string]string{system.REQUIRED_PERMISSION: system.SERVERS_READ},
-		Args:         cobra.ExactArgs(1),
-		RunE: func(cmd *cobra.Command, args []string) error {
-			return server.CleanupPolicyGet(cmd.Context(), args[0])
-		},
-	}
-)
-
 func init() {
 	rootCmd.AddCommand(serverCmd)
 
@@ -147,14 +82,4 @@ func init() {
 	serverCmd.AddCommand(serverRegisterCmd)
 	serverRegisterCmd.Flags().StringVar(&serverFlags.configSource, "config-source", "", "Source of the new server configuration. Can be 'pipe' or path to a JSON file.")
 	serverRegisterCmd.MarkFlagsOneRequired("config-source")
-
-	// Server Type commands
-	serverCmd.AddCommand(serverTypeCmd)
-	serverTypeCmd.AddCommand(serverTypeListCmd)
-	serverTypeCmd.AddCommand(serverTypeGetCmd)
-
-	// Server Cleanup Policy commands
-	serverCmd.AddCommand(serverCleanupPolicyCmd)
-	serverCleanupPolicyCmd.AddCommand(serverCleanupPolicyListCmd)
-	serverCleanupPolicyCmd.AddCommand(serverCleanupPolicyGetCmd)
 }

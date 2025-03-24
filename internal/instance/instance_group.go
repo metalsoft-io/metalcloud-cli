@@ -5,7 +5,7 @@ import (
 	"strconv"
 
 	"github.com/metalsoft-io/metalcloud-cli/internal/infrastructure"
-	"github.com/metalsoft-io/metalcloud-cli/internal/server"
+	"github.com/metalsoft-io/metalcloud-cli/internal/server_type"
 	"github.com/metalsoft-io/metalcloud-cli/internal/template"
 	"github.com/metalsoft-io/metalcloud-cli/pkg/api"
 	"github.com/metalsoft-io/metalcloud-cli/pkg/formatter"
@@ -113,7 +113,7 @@ func InstanceGroupCreate(ctx context.Context, infrastructureIdOrLabel string, la
 		return err
 	}
 
-	serverType, err := server.GetServerTypeByIdOrLabel(ctx, serverTypeId)
+	serverType, err := server_type.GetServerTypeByIdOrLabel(ctx, serverTypeId)
 	if err != nil {
 		return err
 	}
