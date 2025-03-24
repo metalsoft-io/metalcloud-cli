@@ -334,6 +334,11 @@ func FormatDateTimeValue(value interface{}) string {
 			return tm.Local().Format(time.RFC822)
 		}
 
+		tm, err = time.Parse("2006-01-02T15:04:05.000Z", value.(string))
+		if err == nil {
+			return tm.Local().Format(time.RFC822)
+		}
+
 		tm, err = time.Parse("2006-01-02T15:04:05.", value.(string))
 		if err == nil {
 			return tm.Local().Format(time.RFC822)
