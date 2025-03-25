@@ -8,9 +8,10 @@ import (
 	"github.com/metalsoft-io/metalcloud-cli/pkg/logger"
 	"github.com/metalsoft-io/metalcloud-cli/pkg/response_inspector"
 	"github.com/metalsoft-io/metalcloud-cli/pkg/utils"
+	sdk "github.com/metalsoft-io/metalcloud-sdk-go"
 )
 
-var networkDevicePrintConfig = formatter.PrintConfig{
+var NetworkDevicePrintConfig = formatter.PrintConfig{
 	FieldsConfig: map[string]formatter.RecordFieldConfig{
 		"Id": {
 			Title: "#",
@@ -56,23 +57,32 @@ func NetworkDeviceList(ctx context.Context) error {
 		return err
 	}
 
-	return formatter.PrintResult(networkDeviceList, &networkDevicePrintConfig)
+	return formatter.PrintResult(networkDeviceList, &NetworkDevicePrintConfig)
 }
 
 func NetworkDeviceGet(ctx context.Context, networkDeviceId string) error {
 	logger.Get().Info().Msgf("Get network device %s details", networkDeviceId)
 
-	networkDeviceIdNumeric, err := utils.GetFloat32FromString(networkDeviceId)
+	networkDevice, err := GetNetworkDeviceById(ctx, networkDeviceId)
 	if err != nil {
 		return err
+	}
+
+	return formatter.PrintResult(networkDevice, &NetworkDevicePrintConfig)
+}
+
+func GetNetworkDeviceById(ctx context.Context, networkDeviceId string) (*sdk.NetworkDevice, error) {
+	networkDeviceIdNumeric, err := utils.GetFloat32FromString(networkDeviceId)
+	if err != nil {
+		return nil, err
 	}
 
 	client := api.GetApiClient(ctx)
 
 	networkDevice, httpRes, err := client.NetworkDeviceAPI.GetNetworkDevice(ctx, networkDeviceIdNumeric).Execute()
 	if err := response_inspector.InspectResponse(httpRes, err); err != nil {
-		return err
+		return nil, err
 	}
 
-	return formatter.PrintResult(networkDevice, &networkDevicePrintConfig)
+	return networkDevice, nil
 }

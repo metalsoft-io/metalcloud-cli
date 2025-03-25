@@ -31,7 +31,7 @@ var (
 	}
 
 	fabricGetCmd = &cobra.Command{
-		Use:          "get",
+		Use:          "get fabric_id",
 		Aliases:      []string{"show"},
 		Short:        "Get fabric info.",
 		SilenceUsage: true,
@@ -90,6 +90,42 @@ var (
 			return fabric.FabricUpdate(cmd.Context(), args[0], name, description, config)
 		},
 	}
+
+	fabricDevicesGetCmd = &cobra.Command{
+		Use:          "get-devices fabric_id",
+		Aliases:      []string{"show-devices"},
+		Short:        "List fabric devices.",
+		SilenceUsage: true,
+		Annotations:  map[string]string{system.REQUIRED_PERMISSION: system.SITE_READ}, // TODO: Use specific permission
+		Args:         cobra.ExactArgs(1),
+		RunE: func(cmd *cobra.Command, args []string) error {
+			return fabric.FabricDevicesGet(cmd.Context(), args[0])
+		},
+	}
+
+	fabricDevicesAddCmd = &cobra.Command{
+		Use:          "add-device fabric_id device_id...",
+		Aliases:      []string{"join-device"},
+		Short:        "Add network device(s) to a fabric.",
+		SilenceUsage: true,
+		Annotations:  map[string]string{system.REQUIRED_PERMISSION: system.SITE_READ}, // TODO: Use specific permission
+		Args:         cobra.MinimumNArgs(2),
+		RunE: func(cmd *cobra.Command, args []string) error {
+			return fabric.FabricDevicesAdd(cmd.Context(), args[0], args[1:])
+		},
+	}
+
+	fabricDevicesRemoveCmd = &cobra.Command{
+		Use:          "remove-device fabric_id device_id",
+		Aliases:      []string{"delete-device"},
+		Short:        "Remove network device from a fabric.",
+		SilenceUsage: true,
+		Annotations:  map[string]string{system.REQUIRED_PERMISSION: system.SITE_READ}, // TODO: Use specific permission
+		Args:         cobra.ExactArgs(2),
+		RunE: func(cmd *cobra.Command, args []string) error {
+			return fabric.FabricDevicesRemove(cmd.Context(), args[0], args[1])
+		},
+	}
 )
 
 func init() {
@@ -106,4 +142,8 @@ func init() {
 	fabricCmd.AddCommand(fabricUpdateCmd)
 	fabricUpdateCmd.Flags().StringVar(&fabricFlags.configSource, "config-source", "", "Source of the updated fabric configuration. Can be 'pipe' or path to a JSON file.")
 	fabricUpdateCmd.MarkFlagsOneRequired("config-source")
+
+	fabricCmd.AddCommand(fabricDevicesGetCmd)
+	fabricCmd.AddCommand(fabricDevicesAddCmd)
+	fabricCmd.AddCommand(fabricDevicesRemoveCmd)
 }
