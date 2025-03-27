@@ -52,15 +52,6 @@ var fabricPrintConfig = formatter.PrintConfig{
 	},
 }
 
-var fabricDevicesPrintConfig = formatter.PrintConfig{
-	FieldsConfig: map[string]formatter.RecordFieldConfig{
-		"Id": {
-			Title: "#",
-			Order: 1,
-		},
-	},
-}
-
 func FabricList(ctx context.Context) error {
 	logger.Get().Info().Msgf("Listing all fabrics")
 
@@ -207,7 +198,7 @@ func FabricDevicesGet(ctx context.Context, fabricId string) error {
 
 	client := api.GetApiClient(ctx)
 
-	devicesList, httpRes, err := client.NetworkFabricAPI.GetFabricAndNetworkEquipment(ctx, int32(fabricIdNumeric)).Execute()
+	devicesList, httpRes, err := client.NetworkFabricAPI.GetFabricAndNetworkDevices(ctx, int32(fabricIdNumeric)).Execute()
 	if err := response_inspector.InspectResponse(httpRes, err); err != nil {
 		return err
 	}
@@ -251,8 +242,8 @@ func FabricDevicesAdd(ctx context.Context, fabricId string, deviceIds []string) 
 
 	client := api.GetApiClient(ctx)
 
-	_, httpRes, err := client.NetworkFabricAPI.AddNetworkEquipmentsToFabric(ctx, int32(fabricIdNumeric)).
-		NetworkEquipmentToFabric(sdk.NetworkEquipmentToFabric{NetworkEquipmentIds: deviceIdsNumeric}).
+	_, httpRes, err := client.NetworkFabricAPI.AddNetworkDevicesToFabric(ctx, int32(fabricIdNumeric)).
+		NetworkDevicesToFabric(sdk.NetworkDevicesToFabric{NetworkDeviceIds: deviceIdsNumeric}).
 		Execute()
 	if err := response_inspector.InspectResponse(httpRes, err); err != nil {
 		return err
@@ -286,7 +277,7 @@ func FabricDevicesRemove(ctx context.Context, fabricId string, deviceId string) 
 
 	client := api.GetApiClient(ctx)
 
-	_, httpRes, err := client.NetworkFabricAPI.RemoveNetworkEquipmentFromFabric(ctx, int32(fabricIdNumeric), int32(deviceIdNumeric)).
+	_, httpRes, err := client.NetworkFabricAPI.RemoveNetworkDeviceFromFabric(ctx, int32(fabricIdNumeric), int32(deviceIdNumeric)).
 		Execute()
 	if err := response_inspector.InspectResponse(httpRes, err); err != nil {
 		return err

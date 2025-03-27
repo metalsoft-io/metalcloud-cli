@@ -291,6 +291,8 @@ func FormatStatusValue(value interface{}) string {
 		switch value {
 		case "available":
 			color = text.FgBlue
+		case "ready":
+			color = text.FgBlue
 		case "used":
 			color = text.FgGreen
 		case "unavailable":
