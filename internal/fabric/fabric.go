@@ -198,12 +198,12 @@ func FabricDevicesGet(ctx context.Context, fabricId string) error {
 
 	client := api.GetApiClient(ctx)
 
-	devicesList, httpRes, err := client.NetworkFabricAPI.GetFabricAndNetworkDevices(ctx, int32(fabricIdNumeric)).Execute()
+	devicesList, httpRes, err := client.NetworkFabricAPI.GetFabricNetworkDevices(ctx, int32(fabricIdNumeric)).Execute()
 	if err := response_inspector.InspectResponse(httpRes, err); err != nil {
 		return err
 	}
 
-	return formatter.PrintResult(devicesList.NetworkEquipment, &network_device.NetworkDevicePrintConfig)
+	return formatter.PrintResult(devicesList.Data, &network_device.NetworkDevicePrintConfig)
 }
 
 func FabricDevicesAdd(ctx context.Context, fabricId string, deviceIds []string) error {

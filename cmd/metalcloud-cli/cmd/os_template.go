@@ -2,45 +2,45 @@ package cmd
 
 import (
 	"github.com/metalsoft-io/metalcloud-cli/cmd/metalcloud-cli/system"
-	"github.com/metalsoft-io/metalcloud-cli/internal/template"
+	"github.com/metalsoft-io/metalcloud-cli/internal/os_template"
 	"github.com/spf13/cobra"
 )
 
 var (
-	templateCmd = &cobra.Command{
-		Use:     "template [command]",
+	osTemplateCmd = &cobra.Command{
+		Use:     "os-template [command]",
 		Aliases: []string{"templates"},
-		Short:   "Template management",
-		Long:    `Template management commands.`,
+		Short:   "OS template management",
+		Long:    `OS template management commands.`,
 	}
 
-	templateListCmd = &cobra.Command{
+	osTemplateListCmd = &cobra.Command{
 		Use:          "list",
 		Aliases:      []string{"ls"},
-		Short:        "List all templates.",
+		Short:        "List all OS templates.",
 		SilenceUsage: true,
 		Annotations:  map[string]string{system.REQUIRED_PERMISSION: system.TEMPLATES_READ},
 		RunE: func(cmd *cobra.Command, args []string) error {
-			return template.TemplateList(cmd.Context())
+			return os_template.OsTemplateList(cmd.Context())
 		},
 	}
 
-	templateGetCmd = &cobra.Command{
-		Use:          "get template_id",
+	osTemplateGetCmd = &cobra.Command{
+		Use:          "get os_template_id",
 		Aliases:      []string{"show"},
-		Short:        "Get template details.",
+		Short:        "Get OS template details.",
 		SilenceUsage: true,
 		Annotations:  map[string]string{system.REQUIRED_PERMISSION: system.TEMPLATES_READ},
 		Args:         cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
-			return template.TemplateGet(cmd.Context(), args[0])
+			return os_template.OsTemplateGet(cmd.Context(), args[0])
 		},
 	}
 )
 
 func init() {
-	rootCmd.AddCommand(templateCmd)
+	rootCmd.AddCommand(osTemplateCmd)
 
-	templateCmd.AddCommand(templateListCmd)
-	templateCmd.AddCommand(templateGetCmd)
+	osTemplateCmd.AddCommand(osTemplateListCmd)
+	osTemplateCmd.AddCommand(osTemplateGetCmd)
 }

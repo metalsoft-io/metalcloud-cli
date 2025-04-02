@@ -5,8 +5,8 @@ import (
 	"strconv"
 
 	"github.com/metalsoft-io/metalcloud-cli/internal/infrastructure"
+	"github.com/metalsoft-io/metalcloud-cli/internal/os_template"
 	"github.com/metalsoft-io/metalcloud-cli/internal/server_type"
-	"github.com/metalsoft-io/metalcloud-cli/internal/template"
 	"github.com/metalsoft-io/metalcloud-cli/pkg/api"
 	"github.com/metalsoft-io/metalcloud-cli/pkg/formatter"
 	"github.com/metalsoft-io/metalcloud-cli/pkg/logger"
@@ -125,7 +125,7 @@ func InstanceGroupCreate(ctx context.Context, infrastructureIdOrLabel string, la
 	}
 
 	if osTemplateId != "" {
-		osTemplate, err := template.GetTemplateByIdOrLabel(ctx, osTemplateId)
+		osTemplate, err := os_template.GetOsTemplateByIdOrLabel(ctx, osTemplateId)
 		if err != nil {
 			return err
 		}

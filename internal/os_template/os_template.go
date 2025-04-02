@@ -1,4 +1,4 @@
-package template
+package os_template
 
 import (
 	"context"
@@ -11,7 +11,7 @@ import (
 	sdk "github.com/metalsoft-io/metalcloud-sdk-go"
 )
 
-var templatePrintConfig = formatter.PrintConfig{
+var osTemplatePrintConfig = formatter.PrintConfig{
 	FieldsConfig: map[string]formatter.RecordFieldConfig{
 		"Id": {
 			Title: "#",
@@ -55,42 +55,42 @@ var templatePrintConfig = formatter.PrintConfig{
 	},
 }
 
-func TemplateList(ctx context.Context) error {
-	logger.Get().Info().Msgf("Listing all templates")
+func OsTemplateList(ctx context.Context) error {
+	logger.Get().Info().Msgf("Listing all OS templates")
 
 	client := api.GetApiClient(ctx)
 
-	templateList, httpRes, err := client.OSTemplateAPI.GetOSTemplates(ctx).Execute()
+	osTemplateList, httpRes, err := client.OSTemplateAPI.GetOSTemplates(ctx).Execute()
 	if err := response_inspector.InspectResponse(httpRes, err); err != nil {
 		return err
 	}
 
-	return formatter.PrintResult(templateList, &templatePrintConfig)
+	return formatter.PrintResult(osTemplateList, &osTemplatePrintConfig)
 }
 
-func TemplateGet(ctx context.Context, templateId string) error {
-	logger.Get().Info().Msgf("Get template %s details", templateId)
+func OsTemplateGet(ctx context.Context, osTemplateId string) error {
+	logger.Get().Info().Msgf("Get OS template %s details", osTemplateId)
 
-	template, err := GetTemplateByIdOrLabel(ctx, templateId)
+	osTemplate, err := GetOsTemplateByIdOrLabel(ctx, osTemplateId)
 	if err != nil {
 		return err
 	}
 
-	return formatter.PrintResult(template, &templatePrintConfig)
+	return formatter.PrintResult(osTemplate, &osTemplatePrintConfig)
 }
 
-func GetTemplateByIdOrLabel(ctx context.Context, templateIdOrLabel string) (*sdk.OSTemplate, error) {
+func GetOsTemplateByIdOrLabel(ctx context.Context, osTemplateIdOrLabel string) (*sdk.OSTemplate, error) {
 	client := api.GetApiClient(ctx)
 
-	templateId, err := utils.GetFloat32FromString(templateIdOrLabel)
+	osTemplateId, err := utils.GetFloat32FromString(osTemplateIdOrLabel)
 	if err != nil {
 		return nil, err
 	}
 
-	templateInfo, httpRes, err := client.OSTemplateAPI.GetOSTemplate(ctx, templateId).Execute()
+	osTemplateInfo, httpRes, err := client.OSTemplateAPI.GetOSTemplate(ctx, osTemplateId).Execute()
 	if err := response_inspector.InspectResponse(httpRes, err); err != nil {
 		return nil, err
 	}
 
-	return templateInfo, nil
+	return osTemplateInfo, nil
 }
