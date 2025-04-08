@@ -91,6 +91,18 @@ var (
 		},
 	}
 
+	fabricActivateCmd = &cobra.Command{
+		Use:          "activate fabric_id",
+		Aliases:      []string{"start"},
+		Short:        "Activate a fabric.",
+		SilenceUsage: true,
+		Annotations:  map[string]string{system.REQUIRED_PERMISSION: system.SITE_WRITE}, // TODO: Use specific permission
+		Args:         cobra.ExactArgs(1),
+		RunE: func(cmd *cobra.Command, args []string) error {
+			return fabric.FabricActivate(cmd.Context(), args[0])
+		},
+	}
+
 	fabricDevicesGetCmd = &cobra.Command{
 		Use:          "get-devices fabric_id",
 		Aliases:      []string{"show-devices"},
@@ -142,6 +154,8 @@ func init() {
 	fabricCmd.AddCommand(fabricUpdateCmd)
 	fabricUpdateCmd.Flags().StringVar(&fabricFlags.configSource, "config-source", "", "Source of the updated fabric configuration. Can be 'pipe' or path to a JSON file.")
 	fabricUpdateCmd.MarkFlagsOneRequired("config-source")
+
+	fabricCmd.AddCommand(fabricActivateCmd)
 
 	fabricCmd.AddCommand(fabricDevicesGetCmd)
 	fabricCmd.AddCommand(fabricDevicesAddCmd)

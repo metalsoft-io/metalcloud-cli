@@ -31,6 +31,11 @@ var fabricPrintConfig = formatter.PrintConfig{
 			Title: "Site",
 			Order: 4,
 		},
+		"Status": {
+			Title:       "Status",
+			Transformer: formatter.FormatStatusValue,
+			Order:       5,
+		},
 		"FabricConfiguration": {
 			Hidden: true,
 			InnerFields: map[string]formatter.RecordFieldConfig{
@@ -39,11 +44,11 @@ var fabricPrintConfig = formatter.PrintConfig{
 					InnerFields: map[string]formatter.RecordFieldConfig{
 						"FabricType": {
 							Title: "Type",
-							Order: 5,
+							Order: 6,
 						},
 						"DefaultVlan": {
 							Title: "Default VLAN",
-							Order: 6,
+							Order: 7,
 						},
 					},
 				},
@@ -186,6 +191,32 @@ func FabricUpdate(ctx context.Context, fabricId string, fabricName string, descr
 	}
 
 	return formatter.PrintResult(fabricInfoUpdated, &fabricPrintConfig)
+}
+
+func FabricActivate(ctx context.Context, fabricId string) error {
+	logger.Get().Info().Msgf("Activate fabric '%s'", fabricId)
+
+	fabricIdNumeric, err := utils.GetFloat32FromString(fabricId)
+	if err != nil {
+		return err
+	}
+
+	fabricInfo, err := GetFabricById(ctx, fabricId)
+	if err != nil {
+		return err
+	}
+
+	client := api.GetApiClient(ctx)
+
+	fabricInfo, httpRes, err := client.NetworkFabricAPI.
+		ActivateNetworkFabric(ctx, int32(fabricIdNumeric)).
+		IfMatch(fabricInfo.Revision).
+		Execute()
+	if err := response_inspector.InspectResponse(httpRes, err); err != nil {
+		return err
+	}
+
+	return formatter.PrintResult(fabricInfo, &fabricPrintConfig)
 }
 
 func FabricDevicesGet(ctx context.Context, fabricId string) error {

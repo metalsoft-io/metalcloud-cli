@@ -321,6 +321,8 @@ func FormatStatusValue(value interface{}) string {
 			color = text.FgGreen
 		case "ordered":
 			color = text.FgCyan
+		case "draft":
+			color = text.FgCyan
 		default:
 			color = text.FgYellow
 		}

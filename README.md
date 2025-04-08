@@ -1,7 +1,7 @@
 # metalcloud-cli
 
 ![Build](https://github.com/metalsoft-io/metalcloud-cli/actions/workflows/build.yml/badge.svg)
-[![Coverage Status](https://coveralls.io/repos/github/bigstepinc/metalcloud-cli/badge.svg?branch=main)](https://coveralls.io/github/bigstepinc/metalcloud-cli?branch=main)
+[![Coverage Status](https://coveralls.io/repos/github/metalsoft-io/metalcloud-cli/badge.svg?branch=main)](https://coveralls.io/github/metalsoft-io/metalcloud-cli?branch=main)
 
 This tool allows the manipulation of all Metal Cloud elements via the command line.
 
