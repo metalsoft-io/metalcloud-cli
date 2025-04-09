@@ -1,4 +1,4 @@
-package instance
+package server_instance
 
 import (
 	"context"
@@ -10,7 +10,7 @@ import (
 	"github.com/metalsoft-io/metalcloud-cli/pkg/utils"
 )
 
-var instancePrintConfig = formatter.PrintConfig{
+var serverInstancePrintConfig = formatter.PrintConfig{
 	FieldsConfig: map[string]formatter.RecordFieldConfig{
 		"Id": {
 			Title: "#",
@@ -46,20 +46,20 @@ var instancePrintConfig = formatter.PrintConfig{
 	},
 }
 
-func InstanceGet(ctx context.Context, instanceId string) error {
-	logger.Get().Info().Msgf("Get instance details for %s", instanceId)
+func ServerInstanceGet(ctx context.Context, serverInstanceId string) error {
+	logger.Get().Info().Msgf("Get server instance details for %s", serverInstanceId)
 
-	instanceIdNumerical, err := utils.GetFloat32FromString(instanceId)
+	serverInstanceIdNumerical, err := utils.GetFloat32FromString(serverInstanceId)
 	if err != nil {
 		return err
 	}
 
 	client := api.GetApiClient(ctx)
 
-	instanceInfo, httpRes, err := client.ServerInstanceAPI.GetServerInstance(ctx, int32(instanceIdNumerical)).Execute()
+	serverInstanceInfo, httpRes, err := client.ServerInstanceAPI.GetServerInstance(ctx, int32(serverInstanceIdNumerical)).Execute()
 	if err := response_inspector.InspectResponse(httpRes, err); err != nil {
 		return err
 	}
 
-	return formatter.PrintResult(instanceInfo, &instanceGroupPrintConfig)
+	return formatter.PrintResult(serverInstanceInfo, &serverInstancePrintConfig)
 }
