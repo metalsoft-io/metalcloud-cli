@@ -2,7 +2,7 @@ package cmd
 
 import (
 	"github.com/metalsoft-io/metalcloud-cli/cmd/metalcloud-cli/system"
-	instance "github.com/metalsoft-io/metalcloud-cli/internal/server_instance"
+	"github.com/metalsoft-io/metalcloud-cli/internal/server_instance"
 	"github.com/spf13/cobra"
 )
 
@@ -29,7 +29,7 @@ var (
 		Annotations:  map[string]string{system.REQUIRED_PERMISSION: system.SITE_READ}, // TODO: Use specific permission
 		Args:         cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
-			return instance.ServerInstanceGroupList(cmd.Context(), args[0])
+			return server_instance.ServerInstanceGroupList(cmd.Context(), args[0])
 		},
 	}
 
@@ -41,7 +41,7 @@ var (
 		Annotations:  map[string]string{system.REQUIRED_PERMISSION: system.SITE_READ}, // TODO: Use specific permission
 		Args:         cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
-			return instance.ServerInstanceGroupGet(cmd.Context(), args[0])
+			return server_instance.ServerInstanceGroupGet(cmd.Context(), args[0])
 		},
 	}
 
@@ -58,7 +58,7 @@ var (
 				os_template_id = args[4]
 			}
 
-			return instance.ServerInstanceGroupCreate(cmd.Context(), args[0], args[1], args[2], args[3], os_template_id)
+			return server_instance.ServerInstanceGroupCreate(cmd.Context(), args[0], args[1], args[2], args[3], os_template_id)
 		},
 	}
 
@@ -70,7 +70,7 @@ var (
 		Annotations:  map[string]string{system.REQUIRED_PERMISSION: system.SITE_READ}, // TODO: Use specific permission
 		Args:         cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
-			return instance.ServerInstanceGroupUpdate(cmd.Context(), args[0], serverInstanceGroupFlags.label, serverInstanceGroupFlags.instanceCount, serverInstanceGroupFlags.osTemplateId)
+			return server_instance.ServerInstanceGroupUpdate(cmd.Context(), args[0], serverInstanceGroupFlags.label, serverInstanceGroupFlags.instanceCount, serverInstanceGroupFlags.osTemplateId)
 		},
 	}
 
@@ -82,7 +82,7 @@ var (
 		Annotations:  map[string]string{system.REQUIRED_PERMISSION: system.SITE_READ}, // TODO: Use specific permission
 		Args:         cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
-			return instance.ServerInstanceGroupDelete(cmd.Context(), args[0])
+			return server_instance.ServerInstanceGroupDelete(cmd.Context(), args[0])
 		},
 	}
 
@@ -94,7 +94,7 @@ var (
 		Annotations:  map[string]string{system.REQUIRED_PERMISSION: system.SITE_READ}, // TODO: Use specific permission
 		Args:         cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
-			return instance.ServerInstanceGroupInstances(cmd.Context(), args[0])
+			return server_instance.ServerInstanceGroupInstances(cmd.Context(), args[0])
 		},
 	}
 )
@@ -116,7 +116,7 @@ var (
 		Annotations:  map[string]string{system.REQUIRED_PERMISSION: system.SITE_READ}, // TODO: Use specific permission
 		Args:         cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
-			return instance.ServerInstanceGet(cmd.Context(), args[0])
+			return server_instance.ServerInstanceGet(cmd.Context(), args[0])
 		},
 	}
 )

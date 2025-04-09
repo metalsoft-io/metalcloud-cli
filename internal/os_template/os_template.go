@@ -2,12 +2,14 @@ package os_template
 
 import (
 	"context"
+	"encoding/json"
+	"fmt"
+	"strconv"
 
 	"github.com/metalsoft-io/metalcloud-cli/pkg/api"
 	"github.com/metalsoft-io/metalcloud-cli/pkg/formatter"
 	"github.com/metalsoft-io/metalcloud-cli/pkg/logger"
 	"github.com/metalsoft-io/metalcloud-cli/pkg/response_inspector"
-	"github.com/metalsoft-io/metalcloud-cli/pkg/utils"
 	sdk "github.com/metalsoft-io/metalcloud-sdk-go"
 )
 
@@ -55,6 +57,19 @@ var osTemplatePrintConfig = formatter.PrintConfig{
 	},
 }
 
+var osTemplateCredentialsPrintConfig = formatter.PrintConfig{
+	FieldsConfig: map[string]formatter.RecordFieldConfig{
+		"Username": {
+			Title: "Username",
+			Order: 1,
+		},
+		"Password": {
+			Title: "Password",
+			Order: 2,
+		},
+	},
+}
+
 func OsTemplateList(ctx context.Context) error {
 	logger.Get().Info().Msgf("Listing all OS templates")
 
@@ -79,10 +94,100 @@ func OsTemplateGet(ctx context.Context, osTemplateId string) error {
 	return formatter.PrintResult(osTemplate, &osTemplatePrintConfig)
 }
 
+func OsTemplateCreate(ctx context.Context, config []byte) error {
+	logger.Get().Info().Msgf("Creating OS template")
+
+	var osTemplateConfig sdk.OSTemplateCreate
+
+	err := json.Unmarshal(config, &osTemplateConfig)
+	if err != nil {
+		return err
+	}
+
+	client := api.GetApiClient(ctx)
+
+	osTemplate, httpRes, err := client.OSTemplateAPI.CreateOSTemplate(ctx).OSTemplateCreate(osTemplateConfig).Execute()
+	if err := response_inspector.InspectResponse(httpRes, err); err != nil {
+		return err
+	}
+
+	return formatter.PrintResult(osTemplate, &osTemplatePrintConfig)
+}
+
+func OsTemplateUpdate(ctx context.Context, osTemplateId string, config []byte) error {
+	logger.Get().Info().Msgf("Updating OS template %s", osTemplateId)
+
+	osTemplateIdNumeric, revision, err := getOsTemplateIdAndRevision(ctx, osTemplateId)
+	if err != nil {
+		return err
+	}
+
+	var osTemplateConfig sdk.OSTemplateUpdate
+
+	err = json.Unmarshal(config, &osTemplateConfig)
+	if err != nil {
+		return err
+	}
+
+	client := api.GetApiClient(ctx)
+
+	osTemplate, httpRes, err := client.OSTemplateAPI.
+		UpdateOSTemplate(ctx, osTemplateIdNumeric).
+		OSTemplateUpdate(osTemplateConfig).
+		IfMatch(revision).
+		Execute()
+	if err := response_inspector.InspectResponse(httpRes, err); err != nil {
+		return err
+	}
+
+	return formatter.PrintResult(osTemplate, &osTemplatePrintConfig)
+}
+
+func OsTemplateDelete(ctx context.Context, osTemplateId string) error {
+	logger.Get().Info().Msgf("Deleting OS template %s", osTemplateId)
+
+	osTemplateIdNumeric, err := getOsTemplateId(osTemplateId)
+	if err != nil {
+		return err
+	}
+
+	client := api.GetApiClient(ctx)
+
+	httpRes, err := client.OSTemplateAPI.
+		DeleteOSTemplate(ctx, osTemplateIdNumeric).
+		Execute()
+	if err := response_inspector.InspectResponse(httpRes, err); err != nil {
+		return err
+	}
+
+	logger.Get().Info().Msgf("OS template %s deleted", osTemplateId)
+	return nil
+}
+
+func OsTemplateGetCredentials(ctx context.Context, osTemplateId string) error {
+	logger.Get().Info().Msgf("Getting credentials for OS template %s", osTemplateId)
+
+	osTemplateIdNumeric, err := getOsTemplateId(osTemplateId)
+	if err != nil {
+		return err
+	}
+
+	client := api.GetApiClient(ctx)
+
+	credentials, httpRes, err := client.OSTemplateAPI.
+		GetOSTemplateCredentials(ctx, osTemplateIdNumeric).
+		Execute()
+	if err := response_inspector.InspectResponse(httpRes, err); err != nil {
+		return err
+	}
+
+	return formatter.PrintResult(credentials, &osTemplateCredentialsPrintConfig)
+}
+
 func GetOsTemplateByIdOrLabel(ctx context.Context, osTemplateIdOrLabel string) (*sdk.OSTemplate, error) {
 	client := api.GetApiClient(ctx)
 
-	osTemplateId, err := utils.GetFloat32FromString(osTemplateIdOrLabel)
+	osTemplateId, err := getOsTemplateId(osTemplateIdOrLabel)
 	if err != nil {
 		return nil, err
 	}
@@ -93,4 +198,31 @@ func GetOsTemplateByIdOrLabel(ctx context.Context, osTemplateIdOrLabel string) (
 	}
 
 	return osTemplateInfo, nil
+}
+
+func getOsTemplateId(osTemplateId string) (float32, error) {
+	osTemplateIdNumeric, err := strconv.ParseFloat(osTemplateId, 32)
+	if err != nil {
+		err := fmt.Errorf("invalid OS template ID: '%s'", osTemplateId)
+		logger.Get().Error().Err(err).Msg("")
+		return 0, err
+	}
+
+	return float32(osTemplateIdNumeric), nil
+}
+
+func getOsTemplateIdAndRevision(ctx context.Context, osTemplateId string) (float32, string, error) {
+	osTemplateIdNumeric, err := getOsTemplateId(osTemplateId)
+	if err != nil {
+		return 0, "", err
+	}
+
+	client := api.GetApiClient(ctx)
+
+	osTemplate, httpRes, err := client.OSTemplateAPI.GetOSTemplate(ctx, float32(osTemplateIdNumeric)).Execute()
+	if err := response_inspector.InspectResponse(httpRes, err); err != nil {
+		return 0, "", err
+	}
+
+	return float32(osTemplateIdNumeric), strconv.Itoa(int(osTemplate.Revision)), nil
 }
