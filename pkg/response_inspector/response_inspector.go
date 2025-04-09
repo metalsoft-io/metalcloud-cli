@@ -1,7 +1,9 @@
 package response_inspector
 
 import (
+	"encoding/json"
 	"fmt"
+	"io"
 	"net/http"
 
 	"github.com/metalsoft-io/metalcloud-cli/pkg/logger"
@@ -24,4 +26,23 @@ func InspectResponse(httpRes *http.Response, err error) error {
 	}
 
 	return nil
+}
+
+func ParseResponseBody(httpRes *http.Response) (map[string]interface{}, error) {
+	if httpRes == nil {
+		return nil, fmt.Errorf("http response is nil")
+	}
+
+	bodyBytes, err := io.ReadAll(httpRes.Body)
+	if err != nil {
+		return nil, fmt.Errorf("failed to read response body: %v", err)
+	}
+	defer httpRes.Body.Close()
+
+	var result map[string]interface{}
+	if err := json.Unmarshal(bodyBytes, &result); err != nil {
+		return nil, fmt.Errorf("failed to unmarshal response body: %v", err)
+	}
+
+	return result, nil
 }

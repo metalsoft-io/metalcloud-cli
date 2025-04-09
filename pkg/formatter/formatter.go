@@ -86,6 +86,16 @@ func generateTable(result interface{}, printConfig *PrintConfig) table.Writer {
 		// Check if the result is a string
 		t.AppendHeader(table.Row{"Result"})
 		t.AppendRows([]table.Row{{result}})
+	} else if reflect.TypeOf(result).Kind() == reflect.Map {
+		// Check if the result is a map
+		keys := make(table.Row, 0)
+		values := make(table.Row, 0)
+		for k, v := range result.(map[string]interface{}) {
+			keys = append(keys, k)
+			values = append(values, v)
+		}
+		t.AppendHeader(keys)
+		t.AppendRows([]table.Row{values})
 	} else {
 		// Print the result as a table
 		names, values, configs := getFieldNamesAndValues(result, printConfig)
