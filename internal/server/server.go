@@ -171,7 +171,35 @@ func ServerRegister(ctx context.Context, config []byte) error {
 		return err
 	}
 
-	return formatter.PrintResult(registrationInfo, nil)
+	return formatter.PrintResult(registrationInfo, &formatter.PrintConfig{
+		FieldsConfig: map[string]formatter.RecordFieldConfig{
+			"ServerId": {
+				Title: "#",
+				Order: 1,
+			},
+			"ServerUUID": {
+				Title: "UUID",
+				Order: 2,
+			},
+			"SerialNumber": {
+				Title: "S/N",
+				Order: 3,
+			},
+			"JobInfo": {
+				Hidden: true,
+				InnerFields: map[string]formatter.RecordFieldConfig{
+					"JobId": {
+						Title: "Job Id",
+						Order: 4,
+					},
+					"JobGroupId": {
+						Title: "Job Group Id",
+						Order: 5,
+					},
+				},
+			},
+		},
+	})
 }
 
 func ServerReRegister(ctx context.Context, serverId string) error {
@@ -189,11 +217,31 @@ func ServerReRegister(ctx context.Context, serverId string) error {
 		return err
 	}
 
-	return formatter.PrintResult(response, nil)
+	return formatter.PrintResult(response, &formatter.PrintConfig{
+		FieldsConfig: map[string]formatter.RecordFieldConfig{
+			"ServerId": {
+				Title: "#",
+				Order: 1,
+			},
+			"JobInfo": {
+				Hidden: true,
+				InnerFields: map[string]formatter.RecordFieldConfig{
+					"JobId": {
+						Title: "Job Id",
+						Order: 2,
+					},
+					"JobGroupId": {
+						Title: "Job Group Id",
+						Order: 3,
+					},
+				},
+			},
+		},
+	})
 }
 
-func ServerDelete(ctx context.Context, serverId string) error {
-	logger.Get().Info().Msgf("Deleting server '%s'", serverId)
+func ServerFactoryReset(ctx context.Context, serverId string) error {
+	logger.Get().Info().Msgf("Factory resetting server '%s'", serverId)
 
 	serverIdNumeric, revision, err := getServerIdAndRevision(ctx, serverId)
 	if err != nil {
@@ -202,12 +250,13 @@ func ServerDelete(ctx context.Context, serverId string) error {
 
 	client := api.GetApiClient(ctx)
 
-	httpRes, err := client.ServerAPI.DeleteServer(ctx, serverIdNumeric).IfMatch(revision).Execute()
+	httpRes, err := client.ServerAPI.ResetServerToFactoryDefaults(ctx, serverIdNumeric).IfMatch(revision).Execute()
 	if err := response_inspector.InspectResponse(httpRes, err); err != nil {
 		return err
 	}
 
-	fmt.Printf("Server '%s' deleted.\n", serverId)
+	logger.Get().Info().Msgf("Factory reset initiated for server '%s'", serverId)
+
 	return nil
 }
 
@@ -226,12 +275,33 @@ func ServerArchive(ctx context.Context, serverId string) error {
 		return err
 	}
 
-	fmt.Printf("Server '%s' archived.\n", serverId)
+	logger.Get().Info().Msgf("Server '%s' archived", serverId)
+
+	return nil
+}
+
+func ServerDelete(ctx context.Context, serverId string) error {
+	logger.Get().Info().Msgf("Deleting server '%s'", serverId)
+
+	serverIdNumeric, revision, err := getServerIdAndRevision(ctx, serverId)
+	if err != nil {
+		return err
+	}
+
+	client := api.GetApiClient(ctx)
+
+	httpRes, err := client.ServerAPI.DeleteServer(ctx, serverIdNumeric).IfMatch(revision).Execute()
+	if err := response_inspector.InspectResponse(httpRes, err); err != nil {
+		return err
+	}
+
+	logger.Get().Info().Msgf("Server '%s' deleted", serverId)
+
 	return nil
 }
 
 func ServerPower(ctx context.Context, serverId string, action string) error {
-	logger.Get().Info().Msgf("Setting power state for server '%s' to '%s'", serverId, action)
+	logger.Get().Info().Msgf("Setting power status for server '%s' to '%s'", serverId, action)
 
 	validActions := map[string]bool{
 		"on":    true,
@@ -261,12 +331,13 @@ func ServerPower(ctx context.Context, serverId string, action string) error {
 		return err
 	}
 
-	fmt.Printf("Power state for server '%s' set to '%s'.\n", serverId, action)
+	logger.Get().Info().Msgf("Power status for server '%s' set to '%s'", serverId, action)
+
 	return nil
 }
 
 func ServerPowerStatus(ctx context.Context, serverId string) error {
-	logger.Get().Info().Msgf("Getting power state for server '%s'", serverId)
+	logger.Get().Info().Msgf("Getting power status for server '%s'", serverId)
 
 	serverIdNumeric, err := getServerId(serverId)
 	if err != nil {
@@ -280,7 +351,8 @@ func ServerPowerStatus(ctx context.Context, serverId string) error {
 		return err
 	}
 
-	fmt.Printf("Power state for server '%s' is '%s'.\n", serverId, powerStatus)
+	logger.Get().Info().Msgf("Power status for server '%s' is '%s'", serverId, powerStatus)
+
 	return formatter.PrintResult(powerStatus, nil)
 }
 
@@ -328,7 +400,8 @@ func ServerUpdateIpmiCredentials(ctx context.Context, serverId string, username 
 		return err
 	}
 
-	fmt.Printf("IPMI credentials for server '%s' updated.\n", serverId)
+	logger.Get().Info().Msgf("IPMI credentials for server '%s' updated", serverId)
+
 	return formatter.PrintResult(serverCredentials, nil)
 }
 
@@ -342,12 +415,13 @@ func ServerEnableSnmp(ctx context.Context, serverId string) error {
 
 	client := api.GetApiClient(ctx)
 
-	result, httpRes, err := client.ServerAPI.UpdateServerEnableSnmp(ctx, serverIdNumeric).IfMatch(revision).Execute()
+	_, httpRes, err := client.ServerAPI.UpdateServerEnableSnmp(ctx, serverIdNumeric).IfMatch(revision).Execute()
 	if err := response_inspector.InspectResponse(httpRes, err); err != nil {
 		return err
 	}
 
-	fmt.Printf("SNMP enabled for server '%s'. Result: %v\n", serverId, result)
+	logger.Get().Info().Msgf("SNMP enabled for server '%s'", serverId)
+
 	return nil
 }
 
@@ -366,26 +440,8 @@ func ServerEnableSyslog(ctx context.Context, serverId string) error {
 		return err
 	}
 
-	fmt.Printf("Syslog enabled for server '%s'.\n", serverId)
-	return nil
-}
+	logger.Get().Info().Msgf("Syslog enabled for server '%s'", serverId)
 
-func ServerFactoryReset(ctx context.Context, serverId string) error {
-	logger.Get().Info().Msgf("Factory resetting server '%s'", serverId)
-
-	serverIdNumeric, revision, err := getServerIdAndRevision(ctx, serverId)
-	if err != nil {
-		return err
-	}
-
-	client := api.GetApiClient(ctx)
-
-	httpRes, err := client.ServerAPI.ResetServerToFactoryDefaults(ctx, serverIdNumeric).IfMatch(revision).Execute()
-	if err := response_inspector.InspectResponse(httpRes, err); err != nil {
-		return err
-	}
-
-	fmt.Printf("Factory reset initiated for server '%s'.\n", serverId)
 	return nil
 }
 

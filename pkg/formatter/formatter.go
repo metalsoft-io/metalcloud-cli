@@ -82,6 +82,10 @@ func generateTable(result interface{}, printConfig *PrintConfig) table.Writer {
 			}
 			t.AppendRows([]table.Row{values})
 		}
+	} else if reflect.TypeOf(result).Kind() == reflect.String {
+		// Check if the result is a string
+		t.AppendHeader(table.Row{"Result"})
+		t.AppendRows([]table.Row{{result}})
 	} else {
 		// Print the result as a table
 		names, values, configs := getFieldNamesAndValues(result, printConfig)

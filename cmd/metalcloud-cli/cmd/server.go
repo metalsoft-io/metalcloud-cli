@@ -78,15 +78,14 @@ var (
 		},
 	}
 
-	serverDeleteCmd = &cobra.Command{
-		Use:          "delete server_id",
-		Aliases:      []string{"rm"},
-		Short:        "Delete a server.",
+	serverFactoryResetCmd = &cobra.Command{
+		Use:          "factory-reset server_id",
+		Short:        "Reset a server to factory defaults.",
 		SilenceUsage: true,
 		Annotations:  map[string]string{system.REQUIRED_PERMISSION: system.SERVERS_WRITE},
 		Args:         cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
-			return server.ServerDelete(cmd.Context(), args[0])
+			return server.ServerFactoryReset(cmd.Context(), args[0])
 		},
 	}
 
@@ -98,6 +97,18 @@ var (
 		Args:         cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			return server.ServerArchive(cmd.Context(), args[0])
+		},
+	}
+
+	serverDeleteCmd = &cobra.Command{
+		Use:          "delete server_id",
+		Aliases:      []string{"rm"},
+		Short:        "Delete a server.",
+		SilenceUsage: true,
+		Annotations:  map[string]string{system.REQUIRED_PERMISSION: system.SERVERS_WRITE},
+		Args:         cobra.ExactArgs(1),
+		RunE: func(cmd *cobra.Command, args []string) error {
+			return server.ServerDelete(cmd.Context(), args[0])
 		},
 	}
 
@@ -171,17 +182,6 @@ var (
 		},
 	}
 
-	serverFactoryResetCmd = &cobra.Command{
-		Use:          "factory-reset server_id",
-		Short:        "Reset a server to factory defaults.",
-		SilenceUsage: true,
-		Annotations:  map[string]string{system.REQUIRED_PERMISSION: system.SERVERS_WRITE},
-		Args:         cobra.ExactArgs(1),
-		RunE: func(cmd *cobra.Command, args []string) error {
-			return server.ServerFactoryReset(cmd.Context(), args[0])
-		},
-	}
-
 	serverVncInfoCmd = &cobra.Command{
 		Use:          "vnc-info server_id",
 		Short:        "Get server VNC information.",
@@ -234,9 +234,11 @@ func init() {
 
 	serverCmd.AddCommand(serverReRegisterCmd)
 
-	serverCmd.AddCommand(serverDeleteCmd)
+	serverCmd.AddCommand(serverFactoryResetCmd)
 
 	serverCmd.AddCommand(serverArchiveCmd)
+
+	serverCmd.AddCommand(serverDeleteCmd)
 
 	serverCmd.AddCommand(serverPowerCmd)
 	serverPowerCmd.Flags().StringVar(&serverFlags.powerAction, "action", "", "Power action: on, off, reset, cycle, soft")
@@ -253,8 +255,6 @@ func init() {
 	serverCmd.AddCommand(serverEnableSnmpCmd)
 
 	serverCmd.AddCommand(serverEnableSyslogCmd)
-
-	serverCmd.AddCommand(serverFactoryResetCmd)
 
 	serverCmd.AddCommand(serverVncInfoCmd)
 
