@@ -81,6 +81,63 @@ func FabricGet(ctx context.Context, fabricId string) error {
 	return formatter.PrintResult(fabricInfo, &fabricPrintConfig)
 }
 
+func FabricConfigExample(ctx context.Context, fabricType string) error {
+	var fabricConfiguration sdk.NetworkFabricFabricConfiguration
+	switch fabricType {
+	case "ethernet":
+		ethernetConfig := sdk.EthernetFabric{
+			FabricType:                       sdk.FABRICTYPE_ETHERNET,
+			DefaultNetworkProfileId:          sdk.PtrInt32(101),
+			GnmiMonitoringEnabled:            sdk.PtrBool(false),
+			SyslogMonitoringEnabled:          sdk.PtrBool(true),
+			ZeroTouchEnabled:                 sdk.PtrBool(false),
+			AsnRanges:                        []string{"65000-65010"},
+			DefaultVlan:                      sdk.PtrInt32(10),
+			ExtraInternalIPsPerSubnet:        sdk.PtrInt32(2),
+			LagRanges:                        []string{"100-200", "300-400"},
+			LeafSwitchesHaveMlagPairs:        sdk.PtrBool(false),
+			MlagRanges:                       []string{"30-40", "50-60"},
+			NumberOfSpinesNextToLeafSwitches: sdk.PtrInt32(2),
+			PreventVlanCleanup:               []string{"1000-1100"},
+			PreventCleanupFromUplinks:        sdk.PtrBool(true),
+			ReservedVlans:                    []string{"2000-2100", "2200-2300"},
+			VlanRanges:                       []string{"3000-3100", "2000-2100"},
+			VniPrefix:                        sdk.PtrInt32(5000),
+			VrfVlanRanges:                    []string{"400-450", "460-470"},
+		}
+
+		fabricConfiguration = sdk.NetworkFabricFabricConfiguration{
+			EthernetFabric: &ethernetConfig,
+		}
+	case "fibre_channel":
+		fcConfig := sdk.FibreChannelFabric{
+			FabricType:               sdk.FABRICTYPE_FIBRE_CHANNEL,
+			DefaultNetworkProfileId:  sdk.PtrInt32(101),
+			GnmiMonitoringEnabled:    sdk.PtrBool(false),
+			SyslogMonitoringEnabled:  sdk.PtrBool(true),
+			ZeroTouchEnabled:         sdk.PtrBool(false),
+			VsanId:                   sdk.PtrInt32(1),
+			TopologyType:             sdk.FABRICTOPOLOGYTYPE_MESH,
+			Mtu:                      sdk.PtrFloat32(1200),
+			ZoningConfiguration:      map[string]interface{}{"zone1": []string{"wwn1", "wwn2"}},
+			InteropMode:              sdk.PtrString("full"),
+			QosConfiguration:         map[string]interface{}{"qos1": "low"},
+			TrunkingConfiguration:    map[string]interface{}{"trunk1": []string{"wwn1", "wwn2"}},
+			PortChannelConfiguration: map[string]interface{}{"port1": []string{"wwn1", "wwn2"}},
+		}
+
+		fabricConfiguration = sdk.NetworkFabricFabricConfiguration{
+			FibreChannelFabric: &fcConfig,
+		}
+	default:
+		err := fmt.Errorf("invalid fabric type: '%s'", fabricType)
+		logger.Get().Error().Err(err).Msg("")
+		return err
+	}
+
+	return formatter.PrintResult(fabricConfiguration, nil)
+}
+
 func FabricCreate(ctx context.Context, siteIdOrLabel string, fabricName string, fabricType string, description string, config []byte) error {
 	logger.Get().Info().Msgf("Create fabric '%s'", fabricName)
 

@@ -42,6 +42,17 @@ var (
 		},
 	}
 
+	fabricConfigExampleCmd = &cobra.Command{
+		Use:          "config-example fabric_type",
+		Short:        "Returns example of fabric configuration.",
+		SilenceUsage: true,
+		Annotations:  map[string]string{system.REQUIRED_PERMISSION: system.SITE_READ}, // TODO: Use specific permission
+		Args:         cobra.ExactArgs(1),
+		RunE: func(cmd *cobra.Command, args []string) error {
+			return fabric.FabricConfigExample(cmd.Context(), args[0])
+		},
+	}
+
 	fabricCreateCmd = &cobra.Command{
 		Use:          "create site_id_or_label fabric_name fabric_type [fabric_description]",
 		Aliases:      []string{"new"},
@@ -146,6 +157,8 @@ func init() {
 	fabricCmd.AddCommand(fabricListCmd)
 
 	fabricCmd.AddCommand(fabricGetCmd)
+
+	fabricCmd.AddCommand(fabricConfigExampleCmd)
 
 	fabricCmd.AddCommand(fabricCreateCmd)
 	fabricCreateCmd.Flags().StringVar(&fabricFlags.configSource, "config-source", "", "Source of the new fabric configuration. Can be 'pipe' or path to a JSON file.")
