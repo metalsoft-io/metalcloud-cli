@@ -130,7 +130,7 @@ func ServerInstanceGroupCreate(ctx context.Context, infrastructureIdOrLabel stri
 			return err
 		}
 
-		payload.VolumeTemplateId = sdk.PtrInt32(int32(osTemplate.Id))
+		payload.OsTemplateId = sdk.PtrInt32(int32(osTemplate.Id))
 	}
 
 	client := api.GetApiClient(ctx)
@@ -162,7 +162,7 @@ func ServerInstanceGroupUpdate(ctx context.Context, serverInstanceGroupId string
 	}
 
 	if osTemplateId > 0 {
-		payload.VolumeTemplateId = sdk.PtrInt32(int32(osTemplateId))
+		payload.OsTemplateId = sdk.PtrInt32(int32(osTemplateId))
 	}
 
 	client := api.GetApiClient(ctx)

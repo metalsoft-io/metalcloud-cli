@@ -77,6 +77,18 @@ var (
 			return site.SiteDecommission(cmd.Context(), args[0])
 		},
 	}
+
+	siteGetAgentsCmd = &cobra.Command{
+		Use:          "agents site_id_or_name",
+		Aliases:      []string{"get-agents", "list-agents"},
+		Short:        "Get agents for a site.",
+		SilenceUsage: true,
+		Annotations:  map[string]string{system.REQUIRED_PERMISSION: system.SITE_READ}, // TODO: Use specific permission
+		Args:         cobra.ExactArgs(1),
+		RunE: func(cmd *cobra.Command, args []string) error {
+			return site.SiteGetAgents(cmd.Context(), args[0])
+		},
+	}
 )
 
 func init() {
@@ -91,4 +103,6 @@ func init() {
 	siteCmd.AddCommand(siteUpdateCmd)
 
 	siteCmd.AddCommand(siteDecommissionCmd)
+
+	siteCmd.AddCommand(siteGetAgentsCmd)
 }

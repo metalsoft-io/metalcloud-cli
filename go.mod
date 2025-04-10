@@ -6,7 +6,7 @@ toolchain go1.23.4
 
 require (
 	github.com/jedib0t/go-pretty/v6 v6.6.7
-	github.com/metalsoft-io/metalcloud-sdk-go v0.0.0-20250409153851-c7893c81e2ed
+	github.com/metalsoft-io/metalcloud-sdk-go v0.0.0-20250410104542-5576f0a02e20
 	github.com/rs/zerolog v1.34.0
 	github.com/spf13/cobra v1.9.1
 	github.com/spf13/viper v1.20.1
