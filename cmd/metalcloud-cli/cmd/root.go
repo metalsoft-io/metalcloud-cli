@@ -31,7 +31,6 @@ This CLI requires the correct version of the CLI to be used with the MetalSoft M
 func init() {
 	cobra.OnInitialize(initConfig)
 
-	// TODO: Support default config file location 'metalcloud.yaml' ?
 	rootCmd.PersistentFlags().StringVar(&cfgFile, "config", "", "config file")
 
 	// Add the global persistent flags

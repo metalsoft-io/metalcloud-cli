@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"strconv"
+	"strings"
 
 	"github.com/metalsoft-io/metalcloud-cli/pkg/api"
 	"github.com/metalsoft-io/metalcloud-cli/pkg/formatter"
@@ -283,4 +284,275 @@ func GetInfrastructureByIdOrLabel(ctx context.Context, infrastructureIdOrLabel s
 	}
 
 	return &infrastructureInfo, nil
+}
+
+func InfrastructureGetUsers(ctx context.Context, infrastructureIdOrLabel string) error {
+	logger.Get().Info().Msgf("Getting users for infrastructure '%s'", infrastructureIdOrLabel)
+
+	infrastructureInfo, err := GetInfrastructureByIdOrLabel(ctx, infrastructureIdOrLabel)
+	if err != nil {
+		return err
+	}
+
+	client := api.GetApiClient(ctx)
+
+	usersPaginated, httpRes, err := client.InfrastructureAPI.
+		GetInfrastructureUsers(ctx, infrastructureInfo.Id).
+		Execute()
+	if err := response_inspector.InspectResponse(httpRes, err); err != nil {
+		return err
+	}
+
+	return formatter.PrintResult(usersPaginated, &formatter.PrintConfig{
+		FieldsConfig: map[string]formatter.RecordFieldConfig{
+			"Id": {
+				Title: "#",
+				Order: 1,
+			},
+			"DisplayName": {
+				Title: "Name",
+				Order: 2,
+			},
+			"Email": {
+				Title: "E-mail",
+				Order: 3,
+			},
+			"AccessLevel": {
+				Title: "Access",
+				Order: 4,
+			},
+		},
+	})
+}
+
+func InfrastructureAddUser(ctx context.Context, infrastructureIdOrLabel string, userEmail string, createMissing string) error {
+	logger.Get().Info().Msgf("Adding user to infrastructure '%s'", infrastructureIdOrLabel)
+
+	infrastructureInfo, err := GetInfrastructureByIdOrLabel(ctx, infrastructureIdOrLabel)
+	if err != nil {
+		return err
+	}
+
+	addUserConfig := sdk.AddUserToInfrastructure{
+		UserEmail:         userEmail,
+		CreateIfNotExists: strings.ToLower(createMissing) == "true",
+	}
+
+	client := api.GetApiClient(ctx)
+
+	httpRes, err := client.InfrastructureAPI.
+		AddInfrastructureUser(ctx, infrastructureInfo.Id).
+		AddUserToInfrastructure(addUserConfig).
+		Execute()
+	if err := response_inspector.InspectResponse(httpRes, err); err != nil {
+		return err
+	}
+
+	logger.Get().Info().Msgf("User added to infrastructure '%s'", infrastructureIdOrLabel)
+	return nil
+}
+
+func InfrastructureRemoveUser(ctx context.Context, infrastructureIdOrLabel string, userId string) error {
+	logger.Get().Info().Msgf("Removing user '%s' from infrastructure '%s'", userId, infrastructureIdOrLabel)
+
+	infrastructureInfo, err := GetInfrastructureByIdOrLabel(ctx, infrastructureIdOrLabel)
+	if err != nil {
+		return err
+	}
+
+	userIdNumber, err := strconv.ParseFloat(userId, 32)
+	if err != nil {
+		err := fmt.Errorf("invalid user ID: '%s'", userId)
+		logger.Get().Error().Err(err).Msg("")
+		return err
+	}
+
+	client := api.GetApiClient(ctx)
+
+	httpRes, err := client.InfrastructureAPI.
+		RemoveInfrastructureUser(ctx, infrastructureInfo.Id, float32(userIdNumber)).
+		Execute()
+	if err := response_inspector.InspectResponse(httpRes, err); err != nil {
+		return err
+	}
+
+	logger.Get().Info().Msgf("User '%s' removed from infrastructure '%s'", userId, infrastructureIdOrLabel)
+	return nil
+}
+
+func InfrastructureGetUserLimits(ctx context.Context, infrastructureIdOrLabel string) error {
+	logger.Get().Info().Msgf("Getting user limits for infrastructure '%s'", infrastructureIdOrLabel)
+
+	infrastructureInfo, err := GetInfrastructureByIdOrLabel(ctx, infrastructureIdOrLabel)
+	if err != nil {
+		return err
+	}
+
+	client := api.GetApiClient(ctx)
+
+	userLimits, httpRes, err := client.InfrastructureAPI.
+		GetInfrastructureUserLimits(ctx, infrastructureInfo.Id).
+		Execute()
+	if err := response_inspector.InspectResponse(httpRes, err); err != nil {
+		return err
+	}
+
+	return formatter.PrintResult(userLimits, &formatter.PrintConfig{
+		FieldsConfig: map[string]formatter.RecordFieldConfig{
+			"ComputeNodesInstancesToProvisionLimit": {
+				Title: "Compute Nodes Limit",
+				Order: 1,
+			},
+			"DrivesAttachedToInstancesLimit": {
+				Title: "Drives Limit",
+				Order: 2,
+			},
+			"InfrastructuresLimit": {
+				Title: "Infrastructures Limit",
+				Order: 3,
+			},
+		},
+	})
+}
+
+func InfrastructureGetStatistics(ctx context.Context, infrastructureIdOrLabel string) error {
+	logger.Get().Info().Msgf("Getting statistics for infrastructure '%s'", infrastructureIdOrLabel)
+
+	infrastructureInfo, err := GetInfrastructureByIdOrLabel(ctx, infrastructureIdOrLabel)
+	if err != nil {
+		return err
+	}
+
+	client := api.GetApiClient(ctx)
+
+	statistics, httpRes, err := client.InfrastructureAPI.
+		GetInfrastructureStatistics(ctx, infrastructureInfo.Id).
+		Execute()
+	if err := response_inspector.InspectResponse(httpRes, err); err != nil {
+		return err
+	}
+
+	return formatter.PrintResult(statistics, &formatter.PrintConfig{
+		FieldsConfig: map[string]formatter.RecordFieldConfig{
+			"GroupId": {
+				Title: "Group Id",
+				Order: 1,
+			},
+			"GroupCreatedTimestamp": {
+				Title:       "Created",
+				Transformer: formatter.FormatDateTimeValue,
+				Order:       2,
+			},
+			"GroupCompletedTimestamp": {
+				Title:       "Completed",
+				Transformer: formatter.FormatDateTimeValue,
+				Order:       3,
+			},
+			"JobsThrownError": {
+				Title: "Errors",
+				Order: 4,
+			},
+			"JobsCompleted": {
+				Title: "Completed",
+				Order: 5,
+			},
+		},
+	})
+}
+
+func InfrastructureGetConfigInfo(ctx context.Context, infrastructureIdOrLabel string) error {
+	logger.Get().Info().Msgf("Getting configuration info for infrastructure '%s'", infrastructureIdOrLabel)
+
+	infrastructureInfo, err := GetInfrastructureByIdOrLabel(ctx, infrastructureIdOrLabel)
+	if err != nil {
+		return err
+	}
+
+	client := api.GetApiClient(ctx)
+
+	configInfo, httpRes, err := client.InfrastructureAPI.
+		GetInfrastructureConfigInfo(ctx, infrastructureInfo.Id).
+		Execute()
+	if err := response_inspector.InspectResponse(httpRes, err); err != nil {
+		return err
+	}
+
+	return formatter.PrintResult(configInfo, &formatter.PrintConfig{
+		FieldsConfig: map[string]formatter.RecordFieldConfig{
+			"Label": {
+				Title: "Label",
+				Order: 1,
+			},
+			"InfrastructureDeployId": {
+				Title: "Deploy ID",
+				Order: 2,
+			},
+			"DeployType": {
+				Title: "Deploy Type",
+				Order: 3,
+			},
+			"DeployStatus": {
+				Title:       "Deploy Status",
+				Transformer: formatter.FormatStatusValue,
+				Order:       4,
+			},
+			"UpdatedTimestamp": {
+				Title:       "Updated",
+				Transformer: formatter.FormatDateTimeValue,
+				Order:       5,
+			},
+		},
+	})
+}
+
+func InfrastructureGetAllStatistics(ctx context.Context) error {
+	logger.Get().Info().Msgf("Getting statistics for all infrastructures")
+
+	client := api.GetApiClient(ctx)
+
+	statistics, httpRes, err := client.InfrastructureAPI.
+		GetAllInfrastructureStatistics(ctx).
+		Execute()
+	if err := response_inspector.InspectResponse(httpRes, err); err != nil {
+		return err
+	}
+
+	return formatter.PrintResult(statistics, &formatter.PrintConfig{
+		FieldsConfig: map[string]formatter.RecordFieldConfig{
+			"InfrastructureCount": {
+				Title: "Total Infrastructures",
+				Order: 1,
+			},
+			"InfrastructureServiceStatus": {
+				Hidden: true,
+				InnerFields: map[string]formatter.RecordFieldConfig{
+					"Active": {
+						Title: "Active",
+						Order: 2,
+					},
+					"Ordered": {
+						Title: "Ordered",
+						Order: 3,
+					},
+				},
+			},
+			"OngoingInfrastructureCount": {
+				Title: "Ongoing Deployment",
+				Order: 4,
+			},
+			"InfrastructureDeployOngoingStatusCount": {
+				Hidden: true,
+				InnerFields: map[string]formatter.RecordFieldConfig{
+					"ThrownError": {
+						Title: "Errored",
+						Order: 5,
+					},
+					"ThrownErrorRetrying": {
+						Title: "Retrying",
+						Order: 6,
+					},
+				},
+			},
+		},
+	})
 }

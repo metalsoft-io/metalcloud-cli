@@ -122,6 +122,92 @@ var (
 			return infrastructure.InfrastructureRevert(cmd.Context(), args[0])
 		},
 	}
+
+	infrastructureGetUsersCmd = &cobra.Command{
+		Use:          "users infrastructure_id_or_label",
+		Aliases:      []string{"list-users", "get-users"},
+		Short:        "Get users for an infrastructure.",
+		SilenceUsage: true,
+		Annotations:  map[string]string{system.REQUIRED_PERMISSION: system.USERS_AND_PERMISSIONS_READ},
+		Args:         cobra.ExactArgs(1),
+		RunE: func(cmd *cobra.Command, args []string) error {
+			return infrastructure.InfrastructureGetUsers(cmd.Context(), args[0])
+		},
+	}
+
+	infrastructureAddUserCmd = &cobra.Command{
+		Use:          "add-user infrastructure_id_or_label user_email [create_if_not_exists]",
+		Short:        "Add a user to an infrastructure.",
+		SilenceUsage: true,
+		Annotations:  map[string]string{system.REQUIRED_PERMISSION: system.USERS_AND_PERMISSIONS_WRITE},
+		Args:         cobra.RangeArgs(2, 3),
+		RunE: func(cmd *cobra.Command, args []string) error {
+			createMissing := "false"
+			if len(args) == 3 {
+				createMissing = args[2]
+			}
+			return infrastructure.InfrastructureAddUser(cmd.Context(), args[0], args[1], createMissing)
+		},
+	}
+
+	infrastructureRemoveUserCmd = &cobra.Command{
+		Use:          "remove-user infrastructure_id_or_label user_id",
+		Aliases:      []string{"delete-user"},
+		Short:        "Remove a user from an infrastructure.",
+		SilenceUsage: true,
+		Annotations:  map[string]string{system.REQUIRED_PERMISSION: system.USERS_AND_PERMISSIONS_WRITE},
+		Args:         cobra.ExactArgs(2),
+		RunE: func(cmd *cobra.Command, args []string) error {
+			return infrastructure.InfrastructureRemoveUser(cmd.Context(), args[0], args[1])
+		},
+	}
+
+	infrastructureGetUserLimitsCmd = &cobra.Command{
+		Use:          "user-limits infrastructure_id_or_label",
+		Aliases:      []string{"get-user-limits"},
+		Short:        "Get user limits for an infrastructure.",
+		SilenceUsage: true,
+		Annotations:  map[string]string{system.REQUIRED_PERMISSION: system.USERS_AND_PERMISSIONS_READ},
+		Args:         cobra.ExactArgs(1),
+		RunE: func(cmd *cobra.Command, args []string) error {
+			return infrastructure.InfrastructureGetUserLimits(cmd.Context(), args[0])
+		},
+	}
+
+	infrastructureGetStatisticsCmd = &cobra.Command{
+		Use:          "statistics infrastructure_id_or_label",
+		Aliases:      []string{"stats", "get-statistics"},
+		Short:        "Get statistics for an infrastructure.",
+		SilenceUsage: true,
+		Annotations:  map[string]string{system.REQUIRED_PERMISSION: system.SITE_READ},
+		Args:         cobra.ExactArgs(1),
+		RunE: func(cmd *cobra.Command, args []string) error {
+			return infrastructure.InfrastructureGetStatistics(cmd.Context(), args[0])
+		},
+	}
+
+	infrastructureGetConfigInfoCmd = &cobra.Command{
+		Use:          "config-info infrastructure_id_or_label",
+		Aliases:      []string{"get-config-info"},
+		Short:        "Get configuration information for an infrastructure.",
+		SilenceUsage: true,
+		Annotations:  map[string]string{system.REQUIRED_PERMISSION: system.SITE_READ},
+		Args:         cobra.ExactArgs(1),
+		RunE: func(cmd *cobra.Command, args []string) error {
+			return infrastructure.InfrastructureGetConfigInfo(cmd.Context(), args[0])
+		},
+	}
+
+	infrastructureGetAllStatisticsCmd = &cobra.Command{
+		Use:          "all-statistics",
+		Aliases:      []string{"all-stats", "get-all-statistics"},
+		Short:        "Get statistics for all infrastructures.",
+		SilenceUsage: true,
+		Annotations:  map[string]string{system.REQUIRED_PERMISSION: system.SITE_READ},
+		RunE: func(cmd *cobra.Command, args []string) error {
+			return infrastructure.InfrastructureGetAllStatistics(cmd.Context())
+		},
+	}
 )
 
 func init() {
@@ -149,4 +235,18 @@ func init() {
 	infrastructureDeployCmd.Flags().BoolVar(&infrastructureFlags.forceShutdown, "force-shutdown", false, "If set, deploy will force shutdown of all servers in the infrastructure.")
 
 	infrastructureCmd.AddCommand(infrastructureRevertCmd)
+
+	infrastructureCmd.AddCommand(infrastructureGetUsersCmd)
+
+	infrastructureCmd.AddCommand(infrastructureAddUserCmd)
+
+	infrastructureCmd.AddCommand(infrastructureRemoveUserCmd)
+
+	infrastructureCmd.AddCommand(infrastructureGetUserLimitsCmd)
+
+	infrastructureCmd.AddCommand(infrastructureGetStatisticsCmd)
+
+	infrastructureCmd.AddCommand(infrastructureGetConfigInfoCmd)
+
+	infrastructureCmd.AddCommand(infrastructureGetAllStatisticsCmd)
 }
