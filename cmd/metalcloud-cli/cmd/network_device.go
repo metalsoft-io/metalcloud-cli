@@ -45,6 +45,16 @@ var (
 		},
 	}
 
+	networkDeviceConfigExampleCmd = &cobra.Command{
+		Use:          "config-example",
+		Short:        "Get network device configuration example.",
+		SilenceUsage: true,
+		Annotations:  map[string]string{system.REQUIRED_PERMISSION: system.SWITCHES_READ},
+		RunE: func(cmd *cobra.Command, args []string) error {
+			return network_device.NetworkDeviceConfigExample(cmd.Context())
+		},
+	}
+
 	networkDeviceCreateCmd = &cobra.Command{
 		Use:          "create",
 		Aliases:      []string{"new"},
@@ -219,6 +229,8 @@ func init() {
 	networkDeviceListCmd.Flags().StringVar(&networkDeviceFlags.filterStatus, "filter-status", "", "Filter the result by network device status.")
 
 	networkDeviceCmd.AddCommand(networkDeviceGetCmd)
+
+	networkDeviceCmd.AddCommand(networkDeviceConfigExampleCmd)
 
 	networkDeviceCmd.AddCommand(networkDeviceCreateCmd)
 	networkDeviceCreateCmd.Flags().StringVar(&networkDeviceFlags.configSource, "config-source", "", "Source of the new network device configuration. Can be 'pipe' or path to a JSON file.")

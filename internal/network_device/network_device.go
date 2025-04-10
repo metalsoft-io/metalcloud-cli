@@ -81,6 +81,38 @@ func NetworkDeviceGet(ctx context.Context, networkDeviceId string) error {
 	return formatter.PrintResult(networkDevice, &NetworkDevicePrintConfig)
 }
 
+func NetworkDeviceConfigExample(ctx context.Context) error {
+	networkDeviceConfiguration := sdk.CreateNetworkDevice{
+		SiteId:           sdk.PtrInt32(1),
+		Driver:           sdk.NETWORKDEVICEDRIVER_SONIC_ENTERPRISE,
+		IdentifierString: sdk.PtrString("example"),
+		SerialNumber:     sdk.PtrString("1234567890"),
+		ChassisRackId:    sdk.PtrInt32(1),
+		Position:         "leaf",
+		IsGateway:        sdk.PtrBool(false),
+		IsStorageSwitch:  sdk.PtrBool(false),
+		IsBorderDevice:   sdk.PtrBool(false),
+	}
+
+	networkDeviceConfiguration.ManagementAddress.Set(sdk.PtrString("1.1.1.1"))
+	networkDeviceConfiguration.ManagementPort.Set(sdk.PtrInt32(22))
+	networkDeviceConfiguration.Username.Set(sdk.PtrString("admin"))
+	networkDeviceConfiguration.ManagementPassword.Set(sdk.PtrString("password"))
+
+	networkDeviceConfiguration.SyslogEnabled.Set(sdk.PtrBool(true))
+
+	networkDeviceConfiguration.ManagementAddressGateway.Set(sdk.PtrString("1.1.1.1"))
+	networkDeviceConfiguration.ManagementAddressMask.Set(sdk.PtrString("255.255.255.0"))
+	networkDeviceConfiguration.ManagementMAC.Set(sdk.PtrString("AA:BB:CC:DD:EE:FF"))
+	networkDeviceConfiguration.ChassisIdentifier.Set(sdk.PtrString("example"))
+	networkDeviceConfiguration.LoopbackAddress.Set(sdk.PtrString("127.0.0.1"))
+	networkDeviceConfiguration.VtepAddress.Set(nil)
+	networkDeviceConfiguration.Asn.Set(sdk.PtrFloat32(65000))
+	networkDeviceConfiguration.DefaultMtu.Set(sdk.PtrFloat32(1500))
+
+	return formatter.PrintResult(networkDeviceConfiguration, nil)
+}
+
 func NetworkDeviceCreate(ctx context.Context, config []byte) error {
 	logger.Get().Info().Msgf("Creating network device")
 
