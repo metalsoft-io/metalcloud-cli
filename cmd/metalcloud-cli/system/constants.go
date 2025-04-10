@@ -10,4 +10,5 @@ const (
 	ConfigEndpoint = "endpoint"
 	ConfigApiKey   = "api_key"
 	ConfigDebug    = "debug"
+	ConfigInsecure = "insecure_skip_verify"
 )

@@ -40,6 +40,7 @@ func init() {
 	rootCmd.PersistentFlags().StringP(logger.ConfigLogFile, "l", "", "Set the log file path")
 	rootCmd.PersistentFlags().StringP(formatter.ConfigFormat, "f", "text", "The output format. Supported values are 'text','csv','md','json','yaml'.")
 	rootCmd.PersistentFlags().BoolP(system.ConfigDebug, "d", false, "Set to true to enable debug logging")
+	rootCmd.PersistentFlags().BoolP(system.ConfigInsecure, "i", false, "Set to true to allow insecure transport")
 
 	err := viper.BindPFlags(rootCmd.PersistentFlags())
 	if err != nil {
@@ -77,7 +78,12 @@ func rootPersistentPreRun(cmd *cobra.Command, args []string) error {
 	}
 
 	// Create API client
-	ctx := api.SetApiClient(cmd.Context(), viper.GetString(system.ConfigEndpoint), viper.GetString(system.ConfigApiKey), viper.GetBool(system.ConfigDebug))
+	ctx := api.SetApiClient(cmd.Context(),
+		viper.GetString(system.ConfigEndpoint),
+		viper.GetString(system.ConfigApiKey),
+		viper.GetBool(system.ConfigDebug),
+		viper.GetBool(system.ConfigInsecure),
+	)
 
 	// Validate the version of the CLI
 	err = system.ValidateVersion(ctx)

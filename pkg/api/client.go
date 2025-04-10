@@ -2,7 +2,9 @@ package api
 
 import (
 	"context"
+	"crypto/tls"
 	"fmt"
+	"net/http"
 
 	"github.com/metalsoft-io/metalcloud-cli/pkg/logger"
 	sdk "github.com/metalsoft-io/metalcloud-sdk-go"
@@ -52,7 +54,7 @@ func GetApiClientE(ctx context.Context) (*sdk.APIClient, error) {
 	return apiClient, nil
 }
 
-func SetApiClient(ctx context.Context, apiEndpoint string, apiKey string, debug bool) context.Context {
+func SetApiClient(ctx context.Context, apiEndpoint string, apiKey string, debug bool, insecure bool) context.Context {
 	// Initialize API client using the arguments from the command line or environment variables
 	cfg := sdk.NewConfiguration()
 	cfg.UserAgent = "metalcloud-cli"
@@ -61,6 +63,14 @@ func SetApiClient(ctx context.Context, apiEndpoint string, apiKey string, debug 
 			URL:         apiEndpoint,
 			Description: "MetalSoft",
 		},
+	}
+
+	if insecure {
+		cfg.HTTPClient = &http.Client{
+			Transport: &http.Transport{
+				TLSClientConfig: &tls.Config{InsecureSkipVerify: true},
+			},
+		}
 	}
 
 	// Set debug mode
