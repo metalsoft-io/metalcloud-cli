@@ -125,7 +125,7 @@ func ServerList(ctx context.Context, showCredentials bool, filterStatus string, 
 func ServerGet(ctx context.Context, serverId string, showCredentials bool) error {
 	logger.Get().Info().Msgf("Get server '%s'", serverId)
 
-	serverIdNumeric, err := getServerId(serverId)
+	serverIdNumeric, err := GetServerId(serverId)
 	if err != nil {
 		return err
 	}
@@ -339,7 +339,7 @@ func ServerPower(ctx context.Context, serverId string, action string) error {
 func ServerPowerStatus(ctx context.Context, serverId string) error {
 	logger.Get().Info().Msgf("Getting power status for server '%s'", serverId)
 
-	serverIdNumeric, err := getServerId(serverId)
+	serverIdNumeric, err := GetServerId(serverId)
 	if err != nil {
 		return err
 	}
@@ -448,7 +448,7 @@ func ServerEnableSyslog(ctx context.Context, serverId string) error {
 func ServerVncInfo(ctx context.Context, serverId string) error {
 	logger.Get().Info().Msgf("Getting VNC info for server '%s'", serverId)
 
-	serverIdNumeric, err := getServerId(serverId)
+	serverIdNumeric, err := GetServerId(serverId)
 	if err != nil {
 		return err
 	}
@@ -489,7 +489,7 @@ func ServerVncInfo(ctx context.Context, serverId string) error {
 func ServerRemoteConsoleInfo(ctx context.Context, serverId string) error {
 	logger.Get().Info().Msgf("Getting remote console info for server '%s'", serverId)
 
-	serverIdNumeric, err := getServerId(serverId)
+	serverIdNumeric, err := GetServerId(serverId)
 	if err != nil {
 		return err
 	}
@@ -514,7 +514,7 @@ func ServerRemoteConsoleInfo(ctx context.Context, serverId string) error {
 func ServerCapabilities(ctx context.Context, serverId string) error {
 	logger.Get().Info().Msgf("Getting capabilities for server '%s'", serverId)
 
-	serverIdNumeric, err := getServerId(serverId)
+	serverIdNumeric, err := GetServerId(serverId)
 	if err != nil {
 		return err
 	}
@@ -544,7 +544,7 @@ func ServerCapabilities(ctx context.Context, serverId string) error {
 	})
 }
 
-func getServerId(serverId string) (float32, error) {
+func GetServerId(serverId string) (float32, error) {
 	serverIdNumeric, err := strconv.ParseFloat(serverId, 32)
 	if err != nil {
 		err := fmt.Errorf("invalid server ID: '%s'", serverId)
@@ -556,7 +556,7 @@ func getServerId(serverId string) (float32, error) {
 }
 
 func getServerIdAndRevision(ctx context.Context, serverId string) (float32, string, error) {
-	serverIdNumeric, err := getServerId(serverId)
+	serverIdNumeric, err := GetServerId(serverId)
 	if err != nil {
 		return 0, "", err
 	}
