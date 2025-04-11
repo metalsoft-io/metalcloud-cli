@@ -294,6 +294,8 @@ func extractValue(value reflect.Value) interface{} {
 			result = append(result, fmt.Sprintf("%s: %s", key.String(), extractValue(value.MapIndex(key))))
 		}
 		return result
+	case reflect.Invalid:
+		return nil
 	default:
 		return value.String()
 	}
@@ -346,6 +348,10 @@ func FormatStatusValue(value interface{}) string {
 }
 
 func FormatDateTimeValue(value interface{}) string {
+	if value == nil {
+		return ""
+	}
+
 	if _, ok := value.(string); ok {
 		tm, err := time.Parse("2006-01-02T15:04:05Z", value.(string))
 		if err == nil {
@@ -361,6 +367,10 @@ func FormatDateTimeValue(value interface{}) string {
 		if err == nil {
 			return tm.Local().Format(time.RFC822)
 		}
+	}
+
+	if tm, ok := value.(time.Time); ok {
+		return tm.Local().Format(time.RFC822)
 	}
 
 	return fmt.Sprint(value)

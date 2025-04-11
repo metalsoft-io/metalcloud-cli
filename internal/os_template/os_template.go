@@ -184,6 +184,61 @@ func OsTemplateGetCredentials(ctx context.Context, osTemplateId string) error {
 	return formatter.PrintResult(credentials, &osTemplateCredentialsPrintConfig)
 }
 
+func OsTemplateGetAssets(ctx context.Context, osTemplateId string) error {
+	logger.Get().Info().Msgf("Getting assets for OS template %s", osTemplateId)
+
+	osTemplateIdNumeric, err := getOsTemplateId(osTemplateId)
+	if err != nil {
+		return err
+	}
+
+	client := api.GetApiClient(ctx)
+
+	// Use the template asset API with filter for this template ID
+	templateAssetList, httpRes, err := client.TemplateAssetAPI.
+		GetTemplateAssets(ctx).
+		FilterTemplateId([]string{"$eq:" + fmt.Sprintf("%d", int32(osTemplateIdNumeric))}).
+		Execute()
+	if err := response_inspector.InspectResponse(httpRes, err); err != nil {
+		return err
+	}
+
+	return formatter.PrintResult(templateAssetList, &formatter.PrintConfig{
+		FieldsConfig: map[string]formatter.RecordFieldConfig{
+			"Id": {
+				Title: "#",
+				Order: 1,
+			},
+			"Usage": {
+				Title: "Usage",
+				Order: 2,
+			},
+			"File": {
+				Hidden: true,
+				InnerFields: map[string]formatter.RecordFieldConfig{
+					"Name": {
+						Title: "Filename",
+						Order: 3,
+					},
+					"MimeType": {
+						Title: "MIME Type",
+						Order: 4,
+					},
+					"Size": {
+						Title: "Size",
+						Order: 5,
+					},
+				},
+			},
+			"CreatedAt": {
+				Title:       "Created",
+				Transformer: formatter.FormatDateTimeValue,
+				Order:       6,
+			},
+		},
+	})
+}
+
 func GetOsTemplateByIdOrLabel(ctx context.Context, osTemplateIdOrLabel string) (*sdk.OSTemplate, error) {
 	client := api.GetApiClient(ctx)
 

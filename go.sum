@@ -28,8 +28,8 @@ github.com/mattn/go-isatty v0.0.20 h1:xfD0iDuEKnDkl03q4limB+vH+GxLEtL/jb4xVJSWWE
 github.com/mattn/go-isatty v0.0.20/go.mod h1:W+V8PltTTMOvKvAeJH7IuucS94S2C6jfK/D7dTCTo3Y=
 github.com/mattn/go-runewidth v0.0.16 h1:E5ScNMtiwvlvB5paMFdw9p4kSQzbXFikJ5SQO6TULQc=
 github.com/mattn/go-runewidth v0.0.16/go.mod h1:Jdepj2loyihRzMpdS35Xk/zdY8IAYHsh153qUoGf23w=
-github.com/metalsoft-io/metalcloud-sdk-go v0.0.0-20250410104542-5576f0a02e20 h1:p2/o8WzdGLF6PR+Ch7V7BH5zxvcZvKGAhR366dsz7ZA=
-github.com/metalsoft-io/metalcloud-sdk-go v0.0.0-20250410104542-5576f0a02e20/go.mod h1:wqJc8ospMheVHjAeKcn+gpOD7SEfkNM2sdXaLXYg+Wc=
+github.com/metalsoft-io/metalcloud-sdk-go v0.0.0-20250411052653-3c4dd8bcec6c h1:Fr8M2j9ZEorpkVXPgidppsDmVSucu3FFAhiEZe4PhE0=
+github.com/metalsoft-io/metalcloud-sdk-go v0.0.0-20250411052653-3c4dd8bcec6c/go.mod h1:wqJc8ospMheVHjAeKcn+gpOD7SEfkNM2sdXaLXYg+Wc=
 github.com/pelletier/go-toml/v2 v2.2.4 h1:mye9XuhQ6gvn5h28+VilKrrPoQVanw5PMw/TB0t5Ec4=
 github.com/pelletier/go-toml/v2 v2.2.4/go.mod h1:2gIqNv+qfxSVS7cM2xJQKtLSTLUE9V8t9Stt+h56mCY=
 github.com/pkg/errors v0.9.1/go.mod h1:bwawxfHBFNV+L2hUp1rHADufV3IMtnDRdf1r5NINEl0=

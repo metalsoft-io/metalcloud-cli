@@ -100,6 +100,18 @@ var (
 			return os_template.OsTemplateGetCredentials(cmd.Context(), args[0])
 		},
 	}
+
+	osTemplateGetAssetsCmd = &cobra.Command{
+		Use:          "get-assets os_template_id",
+		Aliases:      []string{"assets"},
+		Short:        "Get assets for an OS template.",
+		SilenceUsage: true,
+		Annotations:  map[string]string{system.REQUIRED_PERMISSION: system.TEMPLATES_READ},
+		Args:         cobra.ExactArgs(1),
+		RunE: func(cmd *cobra.Command, args []string) error {
+			return os_template.OsTemplateGetAssets(cmd.Context(), args[0])
+		},
+	}
 )
 
 func init() {
@@ -118,4 +130,5 @@ func init() {
 
 	osTemplateCmd.AddCommand(osTemplateDeleteCmd)
 	osTemplateCmd.AddCommand(osTemplateGetCredentialsCmd)
+	osTemplateCmd.AddCommand(osTemplateGetAssetsCmd)
 }
