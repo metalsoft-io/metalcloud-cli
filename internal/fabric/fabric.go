@@ -73,7 +73,7 @@ func FabricList(ctx context.Context) error {
 func FabricGet(ctx context.Context, fabricId string) error {
 	logger.Get().Info().Msgf("Get fabric '%s'", fabricId)
 
-	fabricInfo, err := GetFabricById(ctx, fabricId)
+	fabricInfo, err := GetFabricByIdOrLabel(ctx, fabricId)
 	if err != nil {
 		return err
 	}
@@ -194,7 +194,7 @@ func FabricCreate(ctx context.Context, siteIdOrLabel string, fabricName string, 
 func FabricUpdate(ctx context.Context, fabricId string, fabricName string, description string, config []byte) error {
 	logger.Get().Info().Msgf("Update fabric '%s'", fabricId)
 
-	fabricInfo, err := GetFabricById(ctx, fabricId)
+	fabricInfo, err := GetFabricByIdOrLabel(ctx, fabricId)
 	if err != nil {
 		return err
 	}
@@ -258,7 +258,7 @@ func FabricActivate(ctx context.Context, fabricId string) error {
 		return err
 	}
 
-	fabricInfo, err := GetFabricById(ctx, fabricId)
+	fabricInfo, err := GetFabricByIdOrLabel(ctx, fabricId)
 	if err != nil {
 		return err
 	}
@@ -297,7 +297,7 @@ func FabricDevicesGet(ctx context.Context, fabricId string) error {
 func FabricDevicesAdd(ctx context.Context, fabricId string, deviceIds []string) error {
 	logger.Get().Info().Msgf("Adding devices '%v' to fabric '%s'", deviceIds, fabricId)
 
-	fabricInfo, err := GetFabricById(ctx, fabricId)
+	fabricInfo, err := GetFabricByIdOrLabel(ctx, fabricId)
 	if err != nil {
 		return err
 	}
@@ -343,7 +343,7 @@ func FabricDevicesAdd(ctx context.Context, fabricId string, deviceIds []string) 
 func FabricDevicesRemove(ctx context.Context, fabricId string, deviceId string) error {
 	logger.Get().Info().Msgf("Removing device '%s' from fabric '%s'", deviceId, fabricId)
 
-	fabricInfo, err := GetFabricById(ctx, fabricId)
+	fabricInfo, err := GetFabricByIdOrLabel(ctx, fabricId)
 	if err != nil {
 		return err
 	}
@@ -374,18 +374,30 @@ func FabricDevicesRemove(ctx context.Context, fabricId string, deviceId string) 
 	return nil
 }
 
-func GetFabricById(ctx context.Context, fabricId string) (*sdk.NetworkFabric, error) {
+func GetFabricByIdOrLabel(ctx context.Context, fabricIdOrLabel string) (*sdk.NetworkFabric, error) {
 	client := api.GetApiClient(ctx)
 
-	fabricIdNumber, err := utils.GetFloat32FromString(fabricId)
-	if err != nil {
-		return nil, err
+	fabricIdNumber, err := utils.GetFloat32FromString(fabricIdOrLabel)
+	if err == nil {
+		fabricInfo, httpRes, err := client.NetworkFabricAPI.GetNetworkFabricById(ctx, fabricIdNumber).Execute()
+		if err = response_inspector.InspectResponse(httpRes, err); err == nil {
+			return fabricInfo, nil
+		}
 	}
 
-	fabricInfo, httpRes, err := client.NetworkFabricAPI.GetNetworkFabricById(ctx, fabricIdNumber).Execute()
+	fabrics, httpRes, err := client.NetworkFabricAPI.
+		GetNetworkFabrics(ctx).
+		FilterName([]string{fabricIdOrLabel}).
+		Execute()
 	if err = response_inspector.InspectResponse(httpRes, err); err != nil {
 		return nil, err
 	}
 
-	return fabricInfo, nil
+	if len(fabrics.Data) == 0 {
+		err := fmt.Errorf("fabric '%s' not found", fabricIdOrLabel)
+		logger.Get().Error().Err(err).Msg("")
+		return nil, err
+	}
+
+	return &fabrics.Data[0], nil
 }
