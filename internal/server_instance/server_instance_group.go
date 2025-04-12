@@ -2,6 +2,7 @@ package server_instance
 
 import (
 	"context"
+	"fmt"
 	"strconv"
 
 	"github.com/metalsoft-io/metalcloud-cli/internal/infrastructure"
@@ -64,6 +65,36 @@ var serverInstanceGroupConfigPrintConfig = formatter.PrintConfig{
 	},
 }
 
+var networkConnectionPrintConfig = formatter.PrintConfig{
+	FieldsConfig: map[string]formatter.RecordFieldConfig{
+		"Id": {
+			Title: "#",
+			Order: 1,
+		},
+		"NetworkId": {
+			Title: "Network ID",
+			Order: 2,
+		},
+		"Network": {
+			Title:    "Network",
+			Order:    3,
+			MaxWidth: 30,
+		},
+		"SubnetId": {
+			Title: "Subnet ID",
+			Order: 4,
+		},
+		"SubnetGateway": {
+			Title: "Gateway",
+			Order: 5,
+		},
+		"SubnetPrefixSize": {
+			Title: "Prefix Size",
+			Order: 6,
+		},
+	},
+}
+
 func ServerInstanceGroupList(ctx context.Context, infrastructureIdOrLabel string) error {
 	logger.Get().Info().Msgf("List all server instance groups for infrastructure %s", infrastructureIdOrLabel)
 
@@ -85,7 +116,7 @@ func ServerInstanceGroupList(ctx context.Context, infrastructureIdOrLabel string
 func ServerInstanceGroupGet(ctx context.Context, serverInstanceGroupId string) error {
 	logger.Get().Info().Msgf("Get server instance group details for %s", serverInstanceGroupId)
 
-	serverInstanceGroupIdNumerical, err := utils.GetFloat32FromString(serverInstanceGroupId)
+	serverInstanceGroupIdNumerical, err := GetServerInstanceGroupId(serverInstanceGroupId)
 	if err != nil {
 		return err
 	}
@@ -146,7 +177,7 @@ func ServerInstanceGroupCreate(ctx context.Context, infrastructureIdOrLabel stri
 func ServerInstanceGroupUpdate(ctx context.Context, serverInstanceGroupId string, label string, instanceCount int, osTemplateId int) error {
 	logger.Get().Info().Msgf("Update server instance group %s", serverInstanceGroupId)
 
-	serverInstanceGroupIdNumerical, err := utils.GetFloat32FromString(serverInstanceGroupId)
+	serverInstanceGroupIdNumerical, err := GetServerInstanceGroupId(serverInstanceGroupId)
 	if err != nil {
 		return err
 	}
@@ -186,7 +217,7 @@ func ServerInstanceGroupUpdate(ctx context.Context, serverInstanceGroupId string
 func ServerInstanceGroupDelete(ctx context.Context, serverInstanceGroupId string) error {
 	logger.Get().Info().Msgf("Delete server instance group %s", serverInstanceGroupId)
 
-	serverInstanceGroupIdNumerical, err := utils.GetFloat32FromString(serverInstanceGroupId)
+	serverInstanceGroupIdNumerical, err := GetServerInstanceGroupId(serverInstanceGroupId)
 	if err != nil {
 		return err
 	}
@@ -211,7 +242,7 @@ func ServerInstanceGroupDelete(ctx context.Context, serverInstanceGroupId string
 func ServerInstanceGroupInstances(ctx context.Context, serverInstanceGroupId string) error {
 	logger.Get().Info().Msgf("List instances of server instance group %s", serverInstanceGroupId)
 
-	serverInstanceGroupIdNumerical, err := utils.GetFloat32FromString(serverInstanceGroupId)
+	serverInstanceGroupIdNumerical, err := GetServerInstanceGroupId(serverInstanceGroupId)
 	if err != nil {
 		return err
 	}
@@ -224,4 +255,166 @@ func ServerInstanceGroupInstances(ctx context.Context, serverInstanceGroupId str
 	}
 
 	return formatter.PrintResult(serverInstancesList, &serverInstancePrintConfig)
+}
+
+func ServerInstanceGroupNetworkList(ctx context.Context, serverInstanceGroupId string) error {
+	logger.Get().Info().Msgf("List network connections for server instance group %s", serverInstanceGroupId)
+
+	serverInstanceGroupIdNumerical, err := GetServerInstanceGroupId(serverInstanceGroupId)
+	if err != nil {
+		return err
+	}
+
+	client := api.GetApiClient(ctx)
+
+	connections, httpRes, err := client.ServerInstanceGroupAPI.GetServerInstanceGroupNetworkConfigurationConnections(ctx, int32(serverInstanceGroupIdNumerical)).Execute()
+	if err := response_inspector.InspectResponse(httpRes, err); err != nil {
+		return err
+	}
+
+	return formatter.PrintResult(connections, &networkConnectionPrintConfig)
+}
+
+func ServerInstanceGroupNetworkGet(ctx context.Context, serverInstanceGroupId string, networkConnectionId string) error {
+	logger.Get().Info().Msgf("Get network connection %s details for server instance group %s", networkConnectionId, serverInstanceGroupId)
+
+	serverInstanceGroupIdNumerical, err := GetServerInstanceGroupId(serverInstanceGroupId)
+	if err != nil {
+		return err
+	}
+
+	networkConnectionIdNumerical, err := utils.GetFloat32FromString(networkConnectionId)
+	if err != nil {
+		return err
+	}
+
+	client := api.GetApiClient(ctx)
+
+	connection, httpRes, err := client.ServerInstanceGroupAPI.GetServerInstanceGroupNetworkConfigurationConnectionById(ctx, int32(serverInstanceGroupIdNumerical), int32(networkConnectionIdNumerical)).Execute()
+	if err := response_inspector.InspectResponse(httpRes, err); err != nil {
+		return err
+	}
+
+	return formatter.PrintResult(connection, &networkConnectionPrintConfig)
+}
+
+func ServerInstanceGroupNetworkConnect(ctx context.Context, serverInstanceGroupId string, networkId string, accessMode string, isTagged string, redundancy string) error {
+	logger.Get().Info().Msgf("Create network connection for server instance group %s", serverInstanceGroupId)
+
+	serverInstanceGroupIdNumerical, err := GetServerInstanceGroupId(serverInstanceGroupId)
+	if err != nil {
+		return err
+	}
+
+	tagged, err := strconv.ParseBool(isTagged)
+	if err != nil {
+		return fmt.Errorf("invalid tagged value: %s", isTagged)
+	}
+
+	payload := sdk.CreateServerInstanceGroupNetworkConnectionDto{
+		LogicalNetworkId: networkId,
+		AccessMode:       accessMode,
+		Tagged:           tagged,
+	}
+
+	if redundancy != "" {
+		payload.Redundancy = *sdk.NewNullableRedundancyConfig(
+			&sdk.RedundancyConfig{
+				Mode: redundancy,
+			},
+		)
+	}
+
+	client := api.GetApiClient(ctx)
+
+	connection, httpRes, err := client.ServerInstanceGroupAPI.CreateServerInstanceGroupNetworkConfigurationConnection(ctx, int32(serverInstanceGroupIdNumerical)).CreateServerInstanceGroupNetworkConnectionDto(payload).Execute()
+	if err := response_inspector.InspectResponse(httpRes, err); err != nil {
+		return err
+	}
+
+	return formatter.PrintResult(connection, &networkConnectionPrintConfig)
+}
+
+func ServerInstanceGroupNetworkUpdate(ctx context.Context, serverInstanceGroupId string, networkConnectionId string, accessMode string, isTagged string, redundancy string) error {
+	logger.Get().Info().Msgf("Update network connection %s for server instance group %s", networkConnectionId, serverInstanceGroupId)
+
+	serverInstanceGroupIdNumerical, err := GetServerInstanceGroupId(serverInstanceGroupId)
+	if err != nil {
+		return err
+	}
+
+	networkConnectionIdNumerical, err := utils.GetFloat32FromString(networkConnectionId)
+	if err != nil {
+		return err
+	}
+
+	payload := sdk.UpdateNetworkEndpointGroupLogicalNetworkDto{}
+
+	if accessMode != "" {
+		payload.AccessMode = &accessMode
+	}
+
+	if isTagged != "" {
+		tagged, err := strconv.ParseBool(isTagged)
+		if err != nil {
+			return fmt.Errorf("invalid tagged value: %s", isTagged)
+		}
+
+		payload.Tagged = &tagged
+	}
+
+	if redundancy != "" {
+		payload.Redundancy = *sdk.NewNullableRedundancyConfig(
+			&sdk.RedundancyConfig{
+				Mode: redundancy,
+			},
+		)
+	}
+
+	client := api.GetApiClient(ctx)
+
+	connection, httpRes, err := client.ServerInstanceGroupAPI.
+		UpdateServerInstanceGroupNetworkConfigurationConnection(ctx, int32(serverInstanceGroupIdNumerical), networkConnectionIdNumerical).
+		UpdateNetworkEndpointGroupLogicalNetworkDto(payload).
+		Execute()
+	if err := response_inspector.InspectResponse(httpRes, err); err != nil {
+		return err
+	}
+
+	return formatter.PrintResult(connection, &networkConnectionPrintConfig)
+}
+
+func ServerInstanceGroupNetworkDisconnect(ctx context.Context, serverInstanceGroupId string, networkConnectionId string) error {
+	logger.Get().Info().Msgf("Delete network connection %s from server instance group %s", networkConnectionId, serverInstanceGroupId)
+
+	serverInstanceGroupIdNumerical, err := GetServerInstanceGroupId(serverInstanceGroupId)
+	if err != nil {
+		return err
+	}
+
+	networkConnectionIdNumerical, err := utils.GetFloat32FromString(networkConnectionId)
+	if err != nil {
+		return err
+	}
+
+	client := api.GetApiClient(ctx)
+
+	httpRes, err := client.ServerInstanceGroupAPI.DeleteServerInstanceGroupNetworkConfigurationConnection(ctx, int32(serverInstanceGroupIdNumerical), int32(networkConnectionIdNumerical)).Execute()
+	if err := response_inspector.InspectResponse(httpRes, err); err != nil {
+		return err
+	}
+
+	logger.Get().Info().Msgf("Network connection %s successfully deleted", networkConnectionId)
+	return nil
+}
+
+func GetServerInstanceGroupId(serverInstanceGroupId string) (float32, error) {
+	serverInstanceGroupIdNumeric, err := strconv.ParseFloat(serverInstanceGroupId, 32)
+	if err != nil {
+		err := fmt.Errorf("invalid server instance group ID: '%s'", serverInstanceGroupId)
+		logger.Get().Error().Err(err).Msg("")
+		return 0, err
+	}
+
+	return float32(serverInstanceGroupIdNumeric), nil
 }

@@ -24,7 +24,7 @@ var (
 		Aliases:      []string{"ls"},
 		Short:        "List all subnets.",
 		SilenceUsage: true,
-		Annotations:  map[string]string{system.REQUIRED_PERMISSION: system.SUBNETS_READ},
+		Annotations:  map[string]string{system.REQUIRED_PERMISSION: system.PERMISSION_SUBNETS_READ},
 		RunE: func(cmd *cobra.Command, args []string) error {
 			return subnet.SubnetList(cmd.Context())
 		},
@@ -35,7 +35,7 @@ var (
 		Aliases:      []string{"show"},
 		Short:        "Get subnet details.",
 		SilenceUsage: true,
-		Annotations:  map[string]string{system.REQUIRED_PERMISSION: system.SUBNETS_READ},
+		Annotations:  map[string]string{system.REQUIRED_PERMISSION: system.PERMISSION_SUBNETS_READ},
 		Args:         cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			return subnet.SubnetGet(cmd.Context(), args[0])
@@ -46,7 +46,7 @@ var (
 		Use:          "config-example",
 		Short:        "Get subnet configuration example.",
 		SilenceUsage: true,
-		Annotations:  map[string]string{system.REQUIRED_PERMISSION: system.SUBNETS_READ},
+		Annotations:  map[string]string{system.REQUIRED_PERMISSION: system.PERMISSION_SUBNETS_READ},
 		RunE: func(cmd *cobra.Command, args []string) error {
 			return subnet.SubnetConfigExample(cmd.Context())
 		},
@@ -57,7 +57,7 @@ var (
 		Aliases:      []string{"new"},
 		Short:        "Create a subnet.",
 		SilenceUsage: true,
-		Annotations:  map[string]string{system.REQUIRED_PERMISSION: system.SUBNETS_WRITE},
+		Annotations:  map[string]string{system.REQUIRED_PERMISSION: system.PERMISSION_SUBNETS_WRITE},
 		RunE: func(cmd *cobra.Command, args []string) error {
 			config, err := utils.ReadConfigFromPipeOrFile(subnetFlags.configSource)
 			if err != nil {
@@ -73,7 +73,7 @@ var (
 		Aliases:      []string{"modify"},
 		Short:        "Update a subnet.",
 		SilenceUsage: true,
-		Annotations:  map[string]string{system.REQUIRED_PERMISSION: system.SUBNETS_WRITE},
+		Annotations:  map[string]string{system.REQUIRED_PERMISSION: system.PERMISSION_SUBNETS_WRITE},
 		Args:         cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			config, err := utils.ReadConfigFromPipeOrFile(subnetFlags.configSource)
@@ -90,7 +90,7 @@ var (
 		Aliases:      []string{"rm"},
 		Short:        "Delete a subnet.",
 		SilenceUsage: true,
-		Annotations:  map[string]string{system.REQUIRED_PERMISSION: system.SUBNETS_WRITE},
+		Annotations:  map[string]string{system.REQUIRED_PERMISSION: system.PERMISSION_SUBNETS_WRITE},
 		Args:         cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			return subnet.SubnetDelete(cmd.Context(), args[0])

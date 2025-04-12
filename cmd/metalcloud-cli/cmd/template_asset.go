@@ -27,7 +27,7 @@ var (
 		Aliases:      []string{"ls"},
 		Short:        "List all template assets.",
 		SilenceUsage: true,
-		Annotations:  map[string]string{system.REQUIRED_PERMISSION: system.TEMPLATES_READ},
+		Annotations:  map[string]string{system.REQUIRED_PERMISSION: system.PERMISSION_TEMPLATES_READ},
 		RunE: func(cmd *cobra.Command, args []string) error {
 			return template_asset.TemplateAssetList(
 				cmd.Context(),
@@ -42,7 +42,7 @@ var (
 		Aliases:      []string{"show"},
 		Short:        "Get template asset details.",
 		SilenceUsage: true,
-		Annotations:  map[string]string{system.REQUIRED_PERMISSION: system.TEMPLATES_READ},
+		Annotations:  map[string]string{system.REQUIRED_PERMISSION: system.PERMISSION_TEMPLATES_READ},
 		Args:         cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			return template_asset.TemplateAssetGet(cmd.Context(), args[0])
@@ -53,7 +53,7 @@ var (
 		Use:          "config-example",
 		Short:        "Get template asset configuration example.",
 		SilenceUsage: true,
-		Annotations:  map[string]string{system.REQUIRED_PERMISSION: system.TEMPLATES_READ},
+		Annotations:  map[string]string{system.REQUIRED_PERMISSION: system.PERMISSION_TEMPLATES_READ},
 		RunE: func(cmd *cobra.Command, args []string) error {
 			return template_asset.TemplateAssetConfigExample(cmd.Context())
 		},
@@ -64,7 +64,7 @@ var (
 		Aliases:      []string{"new"},
 		Short:        "Create a template asset.",
 		SilenceUsage: true,
-		Annotations:  map[string]string{system.REQUIRED_PERMISSION: system.TEMPLATES_WRITE},
+		Annotations:  map[string]string{system.REQUIRED_PERMISSION: system.PERMISSION_TEMPLATES_WRITE},
 		RunE: func(cmd *cobra.Command, args []string) error {
 			config, err := utils.ReadConfigFromPipeOrFile(templateAssetFlags.configSource)
 			if err != nil {
@@ -80,7 +80,7 @@ var (
 		Aliases:      []string{"edit"},
 		Short:        "Update a template asset.",
 		SilenceUsage: true,
-		Annotations:  map[string]string{system.REQUIRED_PERMISSION: system.TEMPLATES_WRITE},
+		Annotations:  map[string]string{system.REQUIRED_PERMISSION: system.PERMISSION_TEMPLATES_WRITE},
 		Args:         cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			config, err := utils.ReadConfigFromPipeOrFile(templateAssetFlags.configSource)
@@ -97,7 +97,7 @@ var (
 		Aliases:      []string{"rm"},
 		Short:        "Delete a template asset.",
 		SilenceUsage: true,
-		Annotations:  map[string]string{system.REQUIRED_PERMISSION: system.TEMPLATES_WRITE},
+		Annotations:  map[string]string{system.REQUIRED_PERMISSION: system.PERMISSION_TEMPLATES_WRITE},
 		Args:         cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			return template_asset.TemplateAssetDelete(cmd.Context(), args[0])

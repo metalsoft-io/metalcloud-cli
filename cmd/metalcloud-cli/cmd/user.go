@@ -27,7 +27,7 @@ var (
 		Aliases:      []string{"ls"},
 		Short:        "List all users.",
 		SilenceUsage: true,
-		Annotations:  map[string]string{system.REQUIRED_PERMISSION: system.USERS_AND_PERMISSIONS_READ},
+		Annotations:  map[string]string{system.REQUIRED_PERMISSION: system.PERMISSION_USERS_READ},
 		RunE: func(cmd *cobra.Command, args []string) error {
 			return user.List(cmd.Context())
 		},
@@ -38,7 +38,7 @@ var (
 		Aliases:      []string{"show"},
 		Short:        "Get user details.",
 		SilenceUsage: true,
-		Annotations:  map[string]string{system.REQUIRED_PERMISSION: system.USERS_AND_PERMISSIONS_READ},
+		Annotations:  map[string]string{system.REQUIRED_PERMISSION: system.PERMISSION_USERS_READ},
 		Args:         cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			return user.Get(cmd.Context(), args[0])
@@ -50,7 +50,7 @@ var (
 		Aliases:      []string{"limits-get"},
 		Short:        "Get user limits.",
 		SilenceUsage: true,
-		Annotations:  map[string]string{system.REQUIRED_PERMISSION: system.USERS_AND_PERMISSIONS_READ},
+		Annotations:  map[string]string{system.REQUIRED_PERMISSION: system.PERMISSION_USERS_READ},
 		Args:         cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			return user.GetLimits(cmd.Context(), args[0])
@@ -62,7 +62,7 @@ var (
 		Aliases:      []string{"new"},
 		Short:        "Create a new user.",
 		SilenceUsage: true,
-		Annotations:  map[string]string{system.REQUIRED_PERMISSION: system.USERS_AND_PERMISSIONS_WRITE},
+		Annotations:  map[string]string{system.REQUIRED_PERMISSION: system.PERMISSION_USERS_WRITE},
 		RunE: func(cmd *cobra.Command, args []string) error {
 			config, err := utils.ReadConfigFromPipeOrFile(userFlags.configSource)
 			if err != nil {
@@ -78,7 +78,7 @@ var (
 		Aliases:      []string{"remove"},
 		Short:        "Archive a user.",
 		SilenceUsage: true,
-		Annotations:  map[string]string{system.REQUIRED_PERMISSION: system.USERS_AND_PERMISSIONS_WRITE},
+		Annotations:  map[string]string{system.REQUIRED_PERMISSION: system.PERMISSION_USERS_WRITE},
 		Args:         cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			return user.Archive(cmd.Context(), args[0])
@@ -90,7 +90,7 @@ var (
 		Aliases:      []string{"restore"},
 		Short:        "Unarchive a user.",
 		SilenceUsage: true,
-		Annotations:  map[string]string{system.REQUIRED_PERMISSION: system.USERS_AND_PERMISSIONS_WRITE},
+		Annotations:  map[string]string{system.REQUIRED_PERMISSION: system.PERMISSION_USERS_WRITE},
 		Args:         cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			return user.Unarchive(cmd.Context(), args[0])
@@ -102,7 +102,7 @@ var (
 		Aliases:      []string{"update-limits"},
 		Short:        "Update user limits.",
 		SilenceUsage: true,
-		Annotations:  map[string]string{system.REQUIRED_PERMISSION: system.USERS_AND_PERMISSIONS_WRITE},
+		Annotations:  map[string]string{system.REQUIRED_PERMISSION: system.PERMISSION_USERS_WRITE},
 		Args:         cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			config, err := utils.ReadConfigFromPipeOrFile(userFlags.configSource)
@@ -119,7 +119,7 @@ var (
 		Aliases:      []string{"update-config"},
 		Short:        "Update user configuration.",
 		SilenceUsage: true,
-		Annotations:  map[string]string{system.REQUIRED_PERMISSION: system.USERS_AND_PERMISSIONS_WRITE},
+		Annotations:  map[string]string{system.REQUIRED_PERMISSION: system.PERMISSION_USERS_WRITE},
 		Args:         cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			config, err := utils.ReadConfigFromPipeOrFile(userFlags.configSource)
@@ -136,7 +136,7 @@ var (
 		Aliases:      []string{"move-account"},
 		Short:        "Change user account.",
 		SilenceUsage: true,
-		Annotations:  map[string]string{system.REQUIRED_PERMISSION: system.USERS_AND_PERMISSIONS_WRITE},
+		Annotations:  map[string]string{system.REQUIRED_PERMISSION: system.PERMISSION_USERS_WRITE},
 		Args:         cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			return user.ChangeAccount(cmd.Context(), args[0], userFlags.accountId)
@@ -148,7 +148,7 @@ var (
 		Aliases:      []string{"get-ssh-keys"},
 		Short:        "Get user SSH keys.",
 		SilenceUsage: true,
-		Annotations:  map[string]string{system.REQUIRED_PERMISSION: system.USERS_AND_PERMISSIONS_READ},
+		Annotations:  map[string]string{system.REQUIRED_PERMISSION: system.PERMISSION_USERS_READ},
 		Args:         cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			return user.GetSSHKeys(cmd.Context(), args[0])
@@ -160,7 +160,7 @@ var (
 		Aliases:      []string{"add-ssh-key"},
 		Short:        "Add an SSH key to a user.",
 		SilenceUsage: true,
-		Annotations:  map[string]string{system.REQUIRED_PERMISSION: system.USERS_AND_PERMISSIONS_WRITE},
+		Annotations:  map[string]string{system.REQUIRED_PERMISSION: system.PERMISSION_USERS_WRITE},
 		Args:         cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			return user.AddSSHKey(cmd.Context(), args[0], userFlags.sshKeyContent)
@@ -172,7 +172,7 @@ var (
 		Aliases:      []string{"delete-ssh-key", "remove-ssh-key"},
 		Short:        "Delete an SSH key from a user.",
 		SilenceUsage: true,
-		Annotations:  map[string]string{system.REQUIRED_PERMISSION: system.USERS_AND_PERMISSIONS_WRITE},
+		Annotations:  map[string]string{system.REQUIRED_PERMISSION: system.PERMISSION_USERS_WRITE},
 		Args:         cobra.ExactArgs(2),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			return user.DeleteSSHKey(cmd.Context(), args[0], args[1])
@@ -184,7 +184,7 @@ var (
 		Aliases:      []string{"get-api-key"},
 		Short:        "Get user API key.",
 		SilenceUsage: true,
-		Annotations:  map[string]string{system.REQUIRED_PERMISSION: system.USERS_AND_PERMISSIONS_READ},
+		Annotations:  map[string]string{system.REQUIRED_PERMISSION: system.PERMISSION_USERS_READ},
 		Args:         cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			return user.GetAPIKey(cmd.Context(), args[0])
@@ -196,7 +196,7 @@ var (
 		Aliases:      []string{"new-api-key"},
 		Short:        "Regenerate user API key.",
 		SilenceUsage: true,
-		Annotations:  map[string]string{system.REQUIRED_PERMISSION: system.USERS_AND_PERMISSIONS_WRITE},
+		Annotations:  map[string]string{system.REQUIRED_PERMISSION: system.PERMISSION_USERS_WRITE},
 		Args:         cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			return user.RegenerateAPIKey(cmd.Context(), args[0])
@@ -208,7 +208,7 @@ var (
 		Aliases:      []string{"disable"},
 		Short:        "Suspend a user.",
 		SilenceUsage: true,
-		Annotations:  map[string]string{system.REQUIRED_PERMISSION: system.USERS_AND_PERMISSIONS_WRITE},
+		Annotations:  map[string]string{system.REQUIRED_PERMISSION: system.PERMISSION_USERS_WRITE},
 		Args:         cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			return user.Suspend(cmd.Context(), args[0], userFlags.reason)
@@ -220,7 +220,7 @@ var (
 		Aliases:      []string{"enable"},
 		Short:        "Unsuspend a user.",
 		SilenceUsage: true,
-		Annotations:  map[string]string{system.REQUIRED_PERMISSION: system.USERS_AND_PERMISSIONS_WRITE},
+		Annotations:  map[string]string{system.REQUIRED_PERMISSION: system.PERMISSION_USERS_WRITE},
 		Args:         cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			return user.Unsuspend(cmd.Context(), args[0])
@@ -232,7 +232,7 @@ var (
 		Aliases:      []string{"get-permissions"},
 		Short:        "Get user permissions.",
 		SilenceUsage: true,
-		Annotations:  map[string]string{system.REQUIRED_PERMISSION: system.USERS_AND_PERMISSIONS_READ},
+		Annotations:  map[string]string{system.REQUIRED_PERMISSION: system.PERMISSION_USERS_READ},
 		Args:         cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			return user.GetPermissions(cmd.Context(), args[0])
@@ -244,7 +244,7 @@ var (
 		Aliases:      []string{"update-permissions"},
 		Short:        "Update user permissions.",
 		SilenceUsage: true,
-		Annotations:  map[string]string{system.REQUIRED_PERMISSION: system.USERS_AND_PERMISSIONS_WRITE},
+		Annotations:  map[string]string{system.REQUIRED_PERMISSION: system.PERMISSION_USERS_AND_PERMISSIONS_WRITE},
 		Args:         cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			config, err := utils.ReadConfigFromPipeOrFile(userFlags.configSource)

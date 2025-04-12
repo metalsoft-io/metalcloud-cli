@@ -31,7 +31,7 @@ var (
 		Aliases:      []string{"ls"},
 		Short:        "List all infrastructures.",
 		SilenceUsage: true,
-		Annotations:  map[string]string{system.REQUIRED_PERMISSION: system.SITE_READ}, // TODO: Use specific permission
+		Annotations:  map[string]string{system.REQUIRED_PERMISSION: system.PERMISSION_INFRASTRUCTURES_READ},
 		RunE: func(cmd *cobra.Command, args []string) error {
 			return infrastructure.InfrastructureList(cmd.Context(),
 				infrastructureFlags.showAll,
@@ -45,7 +45,7 @@ var (
 		Aliases:      []string{"show"},
 		Short:        "Get infrastructure details.",
 		SilenceUsage: true,
-		Annotations:  map[string]string{system.REQUIRED_PERMISSION: system.SITE_READ}, // TODO: Use specific permission
+		Annotations:  map[string]string{system.REQUIRED_PERMISSION: system.PERMISSION_INFRASTRUCTURES_READ},
 		Args:         cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			return infrastructure.InfrastructureGet(cmd.Context(), args[0])
@@ -57,7 +57,7 @@ var (
 		Aliases:      []string{"new"},
 		Short:        "Create new infrastructure.",
 		SilenceUsage: true,
-		Annotations:  map[string]string{system.REQUIRED_PERMISSION: system.SITE_WRITE}, // TODO: Use specific permission
+		Annotations:  map[string]string{system.REQUIRED_PERMISSION: system.PERMISSION_INFRASTRUCTURES_WRITE},
 		Args:         cobra.ExactArgs(2),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			return infrastructure.InfrastructureCreate(cmd.Context(), args[0], args[1])
@@ -69,7 +69,7 @@ var (
 		Aliases:      []string{"edit"},
 		Short:        "Update infrastructure configuration.",
 		SilenceUsage: true,
-		Annotations:  map[string]string{system.REQUIRED_PERMISSION: system.SITE_WRITE}, // TODO: Use specific permission
+		Annotations:  map[string]string{system.REQUIRED_PERMISSION: system.PERMISSION_INFRASTRUCTURES_WRITE},
 		Args:         cobra.MinimumNArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			label := ""
@@ -87,7 +87,7 @@ var (
 		Aliases:      []string{"rm"},
 		Short:        "Delete infrastructure.",
 		SilenceUsage: true,
-		Annotations:  map[string]string{system.REQUIRED_PERMISSION: system.SITE_WRITE}, // TODO: Use specific permission
+		Annotations:  map[string]string{system.REQUIRED_PERMISSION: system.PERMISSION_INFRASTRUCTURES_WRITE},
 		Args:         cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			return infrastructure.InfrastructureDelete(cmd.Context(), args[0])
@@ -99,7 +99,7 @@ var (
 		Aliases:      []string{"apply"},
 		Short:        "Deploy infrastructure.",
 		SilenceUsage: true,
-		Annotations:  map[string]string{system.REQUIRED_PERMISSION: system.SITE_WRITE}, // TODO: Use specific permission
+		Annotations:  map[string]string{system.REQUIRED_PERMISSION: system.PERMISSION_INFRASTRUCTURES_WRITE},
 		Args:         cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			return infrastructure.InfrastructureDeploy(cmd.Context(), args[0],
@@ -116,7 +116,7 @@ var (
 		Aliases:      []string{"undo"},
 		Short:        "Revert infrastructure changes.",
 		SilenceUsage: true,
-		Annotations:  map[string]string{system.REQUIRED_PERMISSION: system.SITE_WRITE}, // TODO: Use specific permission
+		Annotations:  map[string]string{system.REQUIRED_PERMISSION: system.PERMISSION_INFRASTRUCTURES_WRITE},
 		Args:         cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			return infrastructure.InfrastructureRevert(cmd.Context(), args[0])
@@ -128,7 +128,7 @@ var (
 		Aliases:      []string{"list-users", "get-users"},
 		Short:        "Get users for an infrastructure.",
 		SilenceUsage: true,
-		Annotations:  map[string]string{system.REQUIRED_PERMISSION: system.USERS_AND_PERMISSIONS_READ},
+		Annotations:  map[string]string{system.REQUIRED_PERMISSION: system.PERMISSION_INFRASTRUCTURES_WRITE},
 		Args:         cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			return infrastructure.InfrastructureGetUsers(cmd.Context(), args[0])
@@ -139,7 +139,7 @@ var (
 		Use:          "add-user infrastructure_id_or_label user_email [create_if_not_exists]",
 		Short:        "Add a user to an infrastructure.",
 		SilenceUsage: true,
-		Annotations:  map[string]string{system.REQUIRED_PERMISSION: system.USERS_AND_PERMISSIONS_WRITE},
+		Annotations:  map[string]string{system.REQUIRED_PERMISSION: system.PERMISSION_INFRASTRUCTURES_WRITE},
 		Args:         cobra.RangeArgs(2, 3),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			createMissing := "false"
@@ -155,7 +155,7 @@ var (
 		Aliases:      []string{"delete-user"},
 		Short:        "Remove a user from an infrastructure.",
 		SilenceUsage: true,
-		Annotations:  map[string]string{system.REQUIRED_PERMISSION: system.USERS_AND_PERMISSIONS_WRITE},
+		Annotations:  map[string]string{system.REQUIRED_PERMISSION: system.PERMISSION_INFRASTRUCTURES_WRITE},
 		Args:         cobra.ExactArgs(2),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			return infrastructure.InfrastructureRemoveUser(cmd.Context(), args[0], args[1])
@@ -167,7 +167,7 @@ var (
 		Aliases:      []string{"get-user-limits"},
 		Short:        "Get user limits for an infrastructure.",
 		SilenceUsage: true,
-		Annotations:  map[string]string{system.REQUIRED_PERMISSION: system.USERS_AND_PERMISSIONS_READ},
+		Annotations:  map[string]string{system.REQUIRED_PERMISSION: system.PERMISSION_INFRASTRUCTURES_READ},
 		Args:         cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			return infrastructure.InfrastructureGetUserLimits(cmd.Context(), args[0])
@@ -179,7 +179,7 @@ var (
 		Aliases:      []string{"stats", "get-statistics"},
 		Short:        "Get statistics for an infrastructure.",
 		SilenceUsage: true,
-		Annotations:  map[string]string{system.REQUIRED_PERMISSION: system.SITE_READ},
+		Annotations:  map[string]string{system.REQUIRED_PERMISSION: system.PERMISSION_INFRASTRUCTURES_READ},
 		Args:         cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			return infrastructure.InfrastructureGetStatistics(cmd.Context(), args[0])
@@ -191,7 +191,7 @@ var (
 		Aliases:      []string{"get-config-info"},
 		Short:        "Get configuration information for an infrastructure.",
 		SilenceUsage: true,
-		Annotations:  map[string]string{system.REQUIRED_PERMISSION: system.SITE_READ},
+		Annotations:  map[string]string{system.REQUIRED_PERMISSION: system.PERMISSION_INFRASTRUCTURES_READ},
 		Args:         cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			return infrastructure.InfrastructureGetConfigInfo(cmd.Context(), args[0])
@@ -203,7 +203,7 @@ var (
 		Aliases:      []string{"all-stats", "get-all-statistics"},
 		Short:        "Get statistics for all infrastructures.",
 		SilenceUsage: true,
-		Annotations:  map[string]string{system.REQUIRED_PERMISSION: system.SITE_READ},
+		Annotations:  map[string]string{system.REQUIRED_PERMISSION: system.PERMISSION_INFRASTRUCTURES_READ},
 		RunE: func(cmd *cobra.Command, args []string) error {
 			return infrastructure.InfrastructureGetAllStatistics(cmd.Context())
 		},

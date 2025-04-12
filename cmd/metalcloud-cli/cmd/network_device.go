@@ -27,7 +27,7 @@ var (
 		Aliases:      []string{"ls"},
 		Short:        "List all network devices.",
 		SilenceUsage: true,
-		Annotations:  map[string]string{system.REQUIRED_PERMISSION: system.SWITCHES_READ},
+		Annotations:  map[string]string{system.REQUIRED_PERMISSION: system.PERMISSION_SWITCHES_READ},
 		RunE: func(cmd *cobra.Command, args []string) error {
 			return network_device.NetworkDeviceList(cmd.Context(), networkDeviceFlags.filterStatus)
 		},
@@ -38,7 +38,7 @@ var (
 		Aliases:      []string{"show"},
 		Short:        "Get network device details.",
 		SilenceUsage: true,
-		Annotations:  map[string]string{system.REQUIRED_PERMISSION: system.SWITCHES_READ},
+		Annotations:  map[string]string{system.REQUIRED_PERMISSION: system.PERMISSION_SWITCHES_READ},
 		Args:         cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			return network_device.NetworkDeviceGet(cmd.Context(), args[0])
@@ -49,7 +49,7 @@ var (
 		Use:          "config-example",
 		Short:        "Get network device configuration example.",
 		SilenceUsage: true,
-		Annotations:  map[string]string{system.REQUIRED_PERMISSION: system.SWITCHES_READ},
+		Annotations:  map[string]string{system.REQUIRED_PERMISSION: system.PERMISSION_SWITCHES_READ},
 		RunE: func(cmd *cobra.Command, args []string) error {
 			return network_device.NetworkDeviceConfigExample(cmd.Context())
 		},
@@ -60,7 +60,7 @@ var (
 		Aliases:      []string{"new"},
 		Short:        "Create a network device.",
 		SilenceUsage: true,
-		Annotations:  map[string]string{system.REQUIRED_PERMISSION: system.SWITCHES_WRITE},
+		Annotations:  map[string]string{system.REQUIRED_PERMISSION: system.PERMISSION_SWITCHES_WRITE},
 		RunE: func(cmd *cobra.Command, args []string) error {
 			config, err := utils.ReadConfigFromPipeOrFile(networkDeviceFlags.configSource)
 			if err != nil {
@@ -76,7 +76,7 @@ var (
 		Aliases:      []string{"modify"},
 		Short:        "Update a network device.",
 		SilenceUsage: true,
-		Annotations:  map[string]string{system.REQUIRED_PERMISSION: system.SWITCHES_WRITE},
+		Annotations:  map[string]string{system.REQUIRED_PERMISSION: system.PERMISSION_SWITCHES_WRITE},
 		Args:         cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			config, err := utils.ReadConfigFromPipeOrFile(networkDeviceFlags.configSource)
@@ -93,7 +93,7 @@ var (
 		Aliases:      []string{"rm"},
 		Short:        "Delete a network device.",
 		SilenceUsage: true,
-		Annotations:  map[string]string{system.REQUIRED_PERMISSION: system.SWITCHES_WRITE},
+		Annotations:  map[string]string{system.REQUIRED_PERMISSION: system.PERMISSION_SWITCHES_WRITE},
 		Args:         cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			return network_device.NetworkDeviceDelete(cmd.Context(), args[0])
@@ -104,7 +104,7 @@ var (
 		Use:          "archive network_device_id",
 		Short:        "Archive a network device.",
 		SilenceUsage: true,
-		Annotations:  map[string]string{system.REQUIRED_PERMISSION: system.SWITCHES_WRITE},
+		Annotations:  map[string]string{system.REQUIRED_PERMISSION: system.PERMISSION_SWITCHES_WRITE},
 		Args:         cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			return network_device.NetworkDeviceArchive(cmd.Context(), args[0])
@@ -115,7 +115,7 @@ var (
 		Use:          "discover network_device_id",
 		Short:        "Discover network device interfaces, hardware and software configuration.",
 		SilenceUsage: true,
-		Annotations:  map[string]string{system.REQUIRED_PERMISSION: system.SWITCHES_WRITE},
+		Annotations:  map[string]string{system.REQUIRED_PERMISSION: system.PERMISSION_SWITCHES_WRITE},
 		Args:         cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			return network_device.NetworkDeviceDiscover(cmd.Context(), args[0])
@@ -126,7 +126,7 @@ var (
 		Use:          "get-credentials network_device_id",
 		Short:        "Get network device credentials.",
 		SilenceUsage: true,
-		Annotations:  map[string]string{system.REQUIRED_PERMISSION: system.SWITCHES_READ},
+		Annotations:  map[string]string{system.REQUIRED_PERMISSION: system.PERMISSION_SWITCHES_READ},
 		Args:         cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			return network_device.NetworkDeviceGetCredentials(cmd.Context(), args[0])
@@ -137,7 +137,7 @@ var (
 		Use:          "get-ports network_device_id",
 		Short:        "Get port statistics for network device directly from the device.",
 		SilenceUsage: true,
-		Annotations:  map[string]string{system.REQUIRED_PERMISSION: system.SWITCHES_READ},
+		Annotations:  map[string]string{system.REQUIRED_PERMISSION: system.PERMISSION_SWITCHES_READ},
 		Args:         cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			return network_device.NetworkDeviceGetPorts(cmd.Context(), args[0])
@@ -148,7 +148,7 @@ var (
 		Use:          "get-inventory-ports network_device_id",
 		Short:        "Get all ports for network device from the inventory (cached).",
 		SilenceUsage: true,
-		Annotations:  map[string]string{system.REQUIRED_PERMISSION: system.SWITCHES_READ},
+		Annotations:  map[string]string{system.REQUIRED_PERMISSION: system.PERMISSION_SWITCHES_READ},
 		Args:         cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			return network_device.NetworkDeviceGetInventoryPorts(cmd.Context(), args[0])
@@ -159,7 +159,7 @@ var (
 		Use:          "set-port-status network_device_id",
 		Short:        "Set port status for a network device.",
 		SilenceUsage: true,
-		Annotations:  map[string]string{system.REQUIRED_PERMISSION: system.SWITCHES_WRITE},
+		Annotations:  map[string]string{system.REQUIRED_PERMISSION: system.PERMISSION_SWITCHES_WRITE},
 		Args:         cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			return network_device.NetworkDeviceSetPortStatus(cmd.Context(), args[0], networkDeviceFlags.portId, networkDeviceFlags.portStatusAction)
@@ -170,7 +170,7 @@ var (
 		Use:          "reset network_device_id",
 		Short:        "Reset a network device to default state and destroy all configurations.",
 		SilenceUsage: true,
-		Annotations:  map[string]string{system.REQUIRED_PERMISSION: system.SWITCHES_WRITE},
+		Annotations:  map[string]string{system.REQUIRED_PERMISSION: system.PERMISSION_SWITCHES_WRITE},
 		Args:         cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			return network_device.NetworkDeviceReset(cmd.Context(), args[0])
@@ -181,7 +181,7 @@ var (
 		Use:          "change-status network_device_id status",
 		Short:        "Change the status of a network device.",
 		SilenceUsage: true,
-		Annotations:  map[string]string{system.REQUIRED_PERMISSION: system.SWITCHES_WRITE},
+		Annotations:  map[string]string{system.REQUIRED_PERMISSION: system.PERMISSION_SWITCHES_WRITE},
 		Args:         cobra.ExactArgs(2),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			return network_device.NetworkDeviceChangeStatus(cmd.Context(), args[0], args[1])
@@ -192,7 +192,7 @@ var (
 		Use:          "enable-syslog network_device_id",
 		Short:        "Enable remote syslog for a network device.",
 		SilenceUsage: true,
-		Annotations:  map[string]string{system.REQUIRED_PERMISSION: system.SWITCHES_WRITE},
+		Annotations:  map[string]string{system.REQUIRED_PERMISSION: system.PERMISSION_SWITCHES_WRITE},
 		Args:         cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			return network_device.NetworkDeviceEnableSyslog(cmd.Context(), args[0])
@@ -203,7 +203,7 @@ var (
 		Use:          "get-defaults site_label",
 		Short:        "Get network device defaults for a site.",
 		SilenceUsage: true,
-		Annotations:  map[string]string{system.REQUIRED_PERMISSION: system.SWITCHES_READ},
+		Annotations:  map[string]string{system.REQUIRED_PERMISSION: system.PERMISSION_SWITCHES_READ},
 		Args:         cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			return network_device.NetworkDeviceGetDefaults(cmd.Context(), args[0])
@@ -214,7 +214,7 @@ var (
 		Use:          "get-iscsi-boot-servers network_device_id",
 		Short:        "Get iSCSI boot servers connected through this network device.",
 		SilenceUsage: true,
-		Annotations:  map[string]string{system.REQUIRED_PERMISSION: system.SWITCHES_READ},
+		Annotations:  map[string]string{system.REQUIRED_PERMISSION: system.PERMISSION_SWITCHES_READ},
 		Args:         cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			return network_device.NetworkDeviceGetIscsiBootServers(cmd.Context(), args[0])

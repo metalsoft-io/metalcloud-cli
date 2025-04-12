@@ -26,7 +26,7 @@ var (
 		Aliases:      []string{"ls"},
 		Short:        "List all OS templates.",
 		SilenceUsage: true,
-		Annotations:  map[string]string{system.REQUIRED_PERMISSION: system.TEMPLATES_READ},
+		Annotations:  map[string]string{system.REQUIRED_PERMISSION: system.PERMISSION_TEMPLATES_READ},
 		RunE: func(cmd *cobra.Command, args []string) error {
 			return os_template.OsTemplateList(cmd.Context())
 		},
@@ -37,7 +37,7 @@ var (
 		Aliases:      []string{"show"},
 		Short:        "Get OS template details.",
 		SilenceUsage: true,
-		Annotations:  map[string]string{system.REQUIRED_PERMISSION: system.TEMPLATES_READ},
+		Annotations:  map[string]string{system.REQUIRED_PERMISSION: system.PERMISSION_TEMPLATES_READ},
 		Args:         cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			return os_template.OsTemplateGet(cmd.Context(), args[0])
@@ -49,7 +49,7 @@ var (
 		Aliases:      []string{"new"},
 		Short:        "Create a new OS template.",
 		SilenceUsage: true,
-		Annotations:  map[string]string{system.REQUIRED_PERMISSION: system.TEMPLATES_WRITE},
+		Annotations:  map[string]string{system.REQUIRED_PERMISSION: system.PERMISSION_TEMPLATES_WRITE},
 		RunE: func(cmd *cobra.Command, args []string) error {
 			config, err := utils.ReadConfigFromPipeOrFile(osTemplateFlags.configSource)
 			if err != nil {
@@ -65,7 +65,7 @@ var (
 		Aliases:      []string{"edit"},
 		Short:        "Update an OS template.",
 		SilenceUsage: true,
-		Annotations:  map[string]string{system.REQUIRED_PERMISSION: system.TEMPLATES_WRITE},
+		Annotations:  map[string]string{system.REQUIRED_PERMISSION: system.PERMISSION_TEMPLATES_WRITE},
 		Args:         cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			config, err := utils.ReadConfigFromPipeOrFile(osTemplateFlags.configSource)
@@ -82,7 +82,7 @@ var (
 		Aliases:      []string{"rm"},
 		Short:        "Delete an OS template.",
 		SilenceUsage: true,
-		Annotations:  map[string]string{system.REQUIRED_PERMISSION: system.TEMPLATES_WRITE},
+		Annotations:  map[string]string{system.REQUIRED_PERMISSION: system.PERMISSION_TEMPLATES_WRITE},
 		Args:         cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			return os_template.OsTemplateDelete(cmd.Context(), args[0])
@@ -94,7 +94,7 @@ var (
 		Aliases:      []string{"creds"},
 		Short:        "Get credentials for an OS template.",
 		SilenceUsage: true,
-		Annotations:  map[string]string{system.REQUIRED_PERMISSION: system.TEMPLATES_READ},
+		Annotations:  map[string]string{system.REQUIRED_PERMISSION: system.PERMISSION_TEMPLATES_READ},
 		Args:         cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			return os_template.OsTemplateGetCredentials(cmd.Context(), args[0])
@@ -106,7 +106,7 @@ var (
 		Aliases:      []string{"assets"},
 		Short:        "Get assets for an OS template.",
 		SilenceUsage: true,
-		Annotations:  map[string]string{system.REQUIRED_PERMISSION: system.TEMPLATES_READ},
+		Annotations:  map[string]string{system.REQUIRED_PERMISSION: system.PERMISSION_TEMPLATES_READ},
 		Args:         cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			return os_template.OsTemplateGetAssets(cmd.Context(), args[0])

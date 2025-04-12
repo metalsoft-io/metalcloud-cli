@@ -19,7 +19,7 @@ var (
 		Aliases:      []string{"ls"},
 		Short:        "Lists server types.",
 		SilenceUsage: true,
-		Annotations:  map[string]string{system.REQUIRED_PERMISSION: system.SERVERS_READ},
+		Annotations:  map[string]string{system.REQUIRED_PERMISSION: system.PERMISSION_SERVER_TYPES_READ},
 		RunE: func(cmd *cobra.Command, args []string) error {
 			return server_type.ServerTypeList(cmd.Context())
 		},
@@ -30,7 +30,7 @@ var (
 		Aliases:      []string{"show"},
 		Short:        "Get server type info.",
 		SilenceUsage: true,
-		Annotations:  map[string]string{system.REQUIRED_PERMISSION: system.SERVERS_READ},
+		Annotations:  map[string]string{system.REQUIRED_PERMISSION: system.PERMISSION_SERVER_TYPES_READ},
 		Args:         cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			return server_type.ServerTypeGet(cmd.Context(), args[0])

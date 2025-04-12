@@ -29,7 +29,7 @@ var (
 		Aliases:      []string{"ls"},
 		Short:        "List all servers.",
 		SilenceUsage: true,
-		Annotations:  map[string]string{system.REQUIRED_PERMISSION: system.SERVERS_READ},
+		Annotations:  map[string]string{system.REQUIRED_PERMISSION: system.PERMISSION_SERVERS_READ},
 		RunE: func(cmd *cobra.Command, args []string) error {
 			return server.ServerList(cmd.Context(),
 				serverFlags.showCredentials,
@@ -43,7 +43,7 @@ var (
 		Aliases:      []string{"show"},
 		Short:        "Get server info.",
 		SilenceUsage: true,
-		Annotations:  map[string]string{system.REQUIRED_PERMISSION: system.SERVERS_READ},
+		Annotations:  map[string]string{system.REQUIRED_PERMISSION: system.PERMISSION_SERVERS_READ},
 		Args:         cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			return server.ServerGet(cmd.Context(), args[0],
@@ -56,7 +56,7 @@ var (
 		Aliases:      []string{"new"},
 		Short:        "Register a server.",
 		SilenceUsage: true,
-		Annotations:  map[string]string{system.REQUIRED_PERMISSION: system.SERVERS_WRITE},
+		Annotations:  map[string]string{system.REQUIRED_PERMISSION: system.PERMISSION_SERVERS_WRITE},
 		RunE: func(cmd *cobra.Command, args []string) error {
 			config, err := utils.ReadConfigFromPipeOrFile(serverFlags.configSource)
 			if err != nil {
@@ -71,7 +71,7 @@ var (
 		Use:          "re-register server_id",
 		Short:        "Re-register an existing server.",
 		SilenceUsage: true,
-		Annotations:  map[string]string{system.REQUIRED_PERMISSION: system.SERVERS_WRITE},
+		Annotations:  map[string]string{system.REQUIRED_PERMISSION: system.PERMISSION_SERVERS_WRITE},
 		Args:         cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			return server.ServerReRegister(cmd.Context(), args[0])
@@ -82,7 +82,7 @@ var (
 		Use:          "factory-reset server_id",
 		Short:        "Reset a server to factory defaults.",
 		SilenceUsage: true,
-		Annotations:  map[string]string{system.REQUIRED_PERMISSION: system.SERVERS_WRITE},
+		Annotations:  map[string]string{system.REQUIRED_PERMISSION: system.PERMISSION_SERVERS_WRITE},
 		Args:         cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			return server.ServerFactoryReset(cmd.Context(), args[0])
@@ -93,7 +93,7 @@ var (
 		Use:          "archive server_id",
 		Short:        "Archive a server.",
 		SilenceUsage: true,
-		Annotations:  map[string]string{system.REQUIRED_PERMISSION: system.SERVERS_WRITE},
+		Annotations:  map[string]string{system.REQUIRED_PERMISSION: system.PERMISSION_SERVERS_WRITE},
 		Args:         cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			return server.ServerArchive(cmd.Context(), args[0])
@@ -105,7 +105,7 @@ var (
 		Aliases:      []string{"rm"},
 		Short:        "Delete a server.",
 		SilenceUsage: true,
-		Annotations:  map[string]string{system.REQUIRED_PERMISSION: system.SERVERS_WRITE},
+		Annotations:  map[string]string{system.REQUIRED_PERMISSION: system.PERMISSION_SERVERS_WRITE},
 		Args:         cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			return server.ServerDelete(cmd.Context(), args[0])
@@ -116,7 +116,7 @@ var (
 		Use:          "power server_id",
 		Short:        "Control server power state.",
 		SilenceUsage: true,
-		Annotations:  map[string]string{system.REQUIRED_PERMISSION: system.SERVERS_WRITE},
+		Annotations:  map[string]string{system.REQUIRED_PERMISSION: system.PERMISSION_SERVERS_WRITE},
 		Args:         cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			return server.ServerPower(cmd.Context(), args[0], serverFlags.powerAction)
@@ -127,7 +127,7 @@ var (
 		Use:          "power-status server_id",
 		Short:        "Get server power status.",
 		SilenceUsage: true,
-		Annotations:  map[string]string{system.REQUIRED_PERMISSION: system.SERVERS_READ},
+		Annotations:  map[string]string{system.REQUIRED_PERMISSION: system.PERMISSION_SERVERS_READ},
 		Args:         cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			return server.ServerPowerStatus(cmd.Context(), args[0])
@@ -138,7 +138,7 @@ var (
 		Use:          "update server_id",
 		Short:        "Update server information.",
 		SilenceUsage: true,
-		Annotations:  map[string]string{system.REQUIRED_PERMISSION: system.SERVERS_WRITE},
+		Annotations:  map[string]string{system.REQUIRED_PERMISSION: system.PERMISSION_SERVERS_WRITE},
 		Args:         cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			config, err := utils.ReadConfigFromPipeOrFile(serverFlags.configSource)
@@ -153,7 +153,7 @@ var (
 		Use:          "update-ipmi-credentials server_id username password",
 		Short:        "Update server IPMI credentials.",
 		SilenceUsage: true,
-		Annotations:  map[string]string{system.REQUIRED_PERMISSION: system.SERVERS_WRITE},
+		Annotations:  map[string]string{system.REQUIRED_PERMISSION: system.PERMISSION_SERVERS_WRITE},
 		Args:         cobra.ExactArgs(3),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			return server.ServerUpdateIpmiCredentials(cmd.Context(), args[0], args[1], args[2])
@@ -164,7 +164,7 @@ var (
 		Use:          "enable-snmp server_id",
 		Short:        "Enable SNMP on server.",
 		SilenceUsage: true,
-		Annotations:  map[string]string{system.REQUIRED_PERMISSION: system.SERVERS_WRITE},
+		Annotations:  map[string]string{system.REQUIRED_PERMISSION: system.PERMISSION_SERVERS_WRITE},
 		Args:         cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			return server.ServerEnableSnmp(cmd.Context(), args[0])
@@ -175,7 +175,7 @@ var (
 		Use:          "enable-syslog server_id",
 		Short:        "Enable remote syslog for a server.",
 		SilenceUsage: true,
-		Annotations:  map[string]string{system.REQUIRED_PERMISSION: system.SERVERS_WRITE},
+		Annotations:  map[string]string{system.REQUIRED_PERMISSION: system.PERMISSION_SERVERS_WRITE},
 		Args:         cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			return server.ServerEnableSyslog(cmd.Context(), args[0])
@@ -186,7 +186,7 @@ var (
 		Use:          "vnc-info server_id",
 		Short:        "Get server VNC information.",
 		SilenceUsage: true,
-		Annotations:  map[string]string{system.REQUIRED_PERMISSION: system.SERVERS_READ},
+		Annotations:  map[string]string{system.REQUIRED_PERMISSION: system.PERMISSION_SERVERS_READ},
 		Args:         cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			return server.ServerVncInfo(cmd.Context(), args[0])
@@ -197,7 +197,7 @@ var (
 		Use:          "console-info server_id",
 		Short:        "Get server remote console information.",
 		SilenceUsage: true,
-		Annotations:  map[string]string{system.REQUIRED_PERMISSION: system.SERVERS_READ},
+		Annotations:  map[string]string{system.REQUIRED_PERMISSION: system.PERMISSION_SERVERS_READ},
 		Args:         cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			return server.ServerRemoteConsoleInfo(cmd.Context(), args[0])
@@ -208,7 +208,7 @@ var (
 		Use:          "capabilities server_id",
 		Short:        "Get server capabilities.",
 		SilenceUsage: true,
-		Annotations:  map[string]string{system.REQUIRED_PERMISSION: system.SERVERS_READ},
+		Annotations:  map[string]string{system.REQUIRED_PERMISSION: system.PERMISSION_SERVERS_READ},
 		Args:         cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			return server.ServerCapabilities(cmd.Context(), args[0])

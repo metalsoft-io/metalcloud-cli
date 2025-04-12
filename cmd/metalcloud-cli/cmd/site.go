@@ -19,7 +19,7 @@ var (
 		Aliases:      []string{"ls"},
 		Short:        "List all sites.",
 		SilenceUsage: true,
-		Annotations:  map[string]string{system.REQUIRED_PERMISSION: system.SITE_READ}, // TODO: Use specific permission
+		Annotations:  map[string]string{system.REQUIRED_PERMISSION: system.PERMISSION_DATACENTER_READ},
 		RunE: func(cmd *cobra.Command, args []string) error {
 			return site.SiteList(cmd.Context())
 		},
@@ -30,7 +30,7 @@ var (
 		Aliases:      []string{"show"},
 		Short:        "Get site details.",
 		SilenceUsage: true,
-		Annotations:  map[string]string{system.REQUIRED_PERMISSION: system.SITE_READ}, // TODO: Use specific permission
+		Annotations:  map[string]string{system.REQUIRED_PERMISSION: system.PERMISSION_DATACENTER_READ},
 		Args:         cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			return site.SiteGet(cmd.Context(), args[0])
@@ -42,7 +42,7 @@ var (
 		Aliases:      []string{"new"},
 		Short:        "Create new site.",
 		SilenceUsage: true,
-		Annotations:  map[string]string{system.REQUIRED_PERMISSION: system.SITE_WRITE}, // TODO: Use specific permission
+		Annotations:  map[string]string{system.REQUIRED_PERMISSION: system.PERMISSION_DATACENTER_WRITE},
 		Args:         cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			return site.SiteCreate(cmd.Context(), args[0])
@@ -54,7 +54,7 @@ var (
 		Aliases:      []string{"edit"},
 		Short:        "Update site configuration.",
 		SilenceUsage: true,
-		Annotations:  map[string]string{system.REQUIRED_PERMISSION: system.SITE_WRITE}, // TODO: Use specific permission
+		Annotations:  map[string]string{system.REQUIRED_PERMISSION: system.PERMISSION_DATACENTER_WRITE},
 		Args:         cobra.MinimumNArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			name := ""
@@ -71,7 +71,7 @@ var (
 		Aliases:      []string{"archive"},
 		Short:        "Decommission site.",
 		SilenceUsage: true,
-		Annotations:  map[string]string{system.REQUIRED_PERMISSION: system.SITE_WRITE}, // TODO: Use specific permission
+		Annotations:  map[string]string{system.REQUIRED_PERMISSION: system.PERMISSION_DATACENTER_WRITE},
 		Args:         cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			return site.SiteDecommission(cmd.Context(), args[0])
@@ -83,7 +83,7 @@ var (
 		Aliases:      []string{"get-agents", "list-agents"},
 		Short:        "Get agents for a site.",
 		SilenceUsage: true,
-		Annotations:  map[string]string{system.REQUIRED_PERMISSION: system.SITE_READ}, // TODO: Use specific permission
+		Annotations:  map[string]string{system.REQUIRED_PERMISSION: system.PERMISSION_DATACENTER_READ},
 		Args:         cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			return site.SiteGetAgents(cmd.Context(), args[0])

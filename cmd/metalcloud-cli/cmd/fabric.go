@@ -24,7 +24,7 @@ var (
 		Aliases:      []string{"ls"},
 		Short:        "List all fabrics.",
 		SilenceUsage: true,
-		Annotations:  map[string]string{system.REQUIRED_PERMISSION: system.SITE_READ}, // TODO: Use specific permission
+		Annotations:  map[string]string{system.REQUIRED_PERMISSION: system.PERMISSION_NETWORK_FABRICS_READ},
 		RunE: func(cmd *cobra.Command, args []string) error {
 			return fabric.FabricList(cmd.Context())
 		},
@@ -35,7 +35,7 @@ var (
 		Aliases:      []string{"show"},
 		Short:        "Get fabric info.",
 		SilenceUsage: true,
-		Annotations:  map[string]string{system.REQUIRED_PERMISSION: system.SITE_READ}, // TODO: Use specific permission
+		Annotations:  map[string]string{system.REQUIRED_PERMISSION: system.PERMISSION_NETWORK_FABRICS_READ},
 		Args:         cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			return fabric.FabricGet(cmd.Context(), args[0])
@@ -46,7 +46,7 @@ var (
 		Use:          "config-example fabric_type",
 		Short:        "Returns example of fabric configuration.",
 		SilenceUsage: true,
-		Annotations:  map[string]string{system.REQUIRED_PERMISSION: system.SITE_READ}, // TODO: Use specific permission
+		Annotations:  map[string]string{system.REQUIRED_PERMISSION: system.PERMISSION_NETWORK_FABRICS_WRITE},
 		Args:         cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			return fabric.FabricConfigExample(cmd.Context(), args[0])
@@ -58,7 +58,7 @@ var (
 		Aliases:      []string{"new"},
 		Short:        "Create new fabric.",
 		SilenceUsage: true,
-		Annotations:  map[string]string{system.REQUIRED_PERMISSION: system.SITE_WRITE}, // TODO: Use specific permission
+		Annotations:  map[string]string{system.REQUIRED_PERMISSION: system.PERMISSION_NETWORK_FABRICS_WRITE},
 		Args:         cobra.RangeArgs(3, 4),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			description := args[1]
@@ -80,7 +80,7 @@ var (
 		Aliases:      []string{"edit"},
 		Short:        "Update fabric configuration.",
 		SilenceUsage: true,
-		Annotations:  map[string]string{system.REQUIRED_PERMISSION: system.SITE_WRITE}, // TODO: Use specific permission
+		Annotations:  map[string]string{system.REQUIRED_PERMISSION: system.PERMISSION_NETWORK_FABRICS_WRITE},
 		Args:         cobra.RangeArgs(1, 3),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			name := ""
@@ -107,7 +107,7 @@ var (
 		Aliases:      []string{"start"},
 		Short:        "Activate a fabric.",
 		SilenceUsage: true,
-		Annotations:  map[string]string{system.REQUIRED_PERMISSION: system.SITE_WRITE}, // TODO: Use specific permission
+		Annotations:  map[string]string{system.REQUIRED_PERMISSION: system.PERMISSION_NETWORK_FABRICS_WRITE},
 		Args:         cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			return fabric.FabricActivate(cmd.Context(), args[0])
@@ -119,7 +119,7 @@ var (
 		Aliases:      []string{"show-devices"},
 		Short:        "List fabric devices.",
 		SilenceUsage: true,
-		Annotations:  map[string]string{system.REQUIRED_PERMISSION: system.SITE_READ}, // TODO: Use specific permission
+		Annotations:  map[string]string{system.REQUIRED_PERMISSION: system.PERMISSION_NETWORK_FABRICS_WRITE},
 		Args:         cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			return fabric.FabricDevicesGet(cmd.Context(), args[0])
@@ -131,7 +131,7 @@ var (
 		Aliases:      []string{"join-device"},
 		Short:        "Add network device(s) to a fabric.",
 		SilenceUsage: true,
-		Annotations:  map[string]string{system.REQUIRED_PERMISSION: system.SITE_READ}, // TODO: Use specific permission
+		Annotations:  map[string]string{system.REQUIRED_PERMISSION: system.PERMISSION_NETWORK_FABRICS_WRITE},
 		Args:         cobra.MinimumNArgs(2),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			return fabric.FabricDevicesAdd(cmd.Context(), args[0], args[1:])
@@ -143,7 +143,7 @@ var (
 		Aliases:      []string{"delete-device"},
 		Short:        "Remove network device from a fabric.",
 		SilenceUsage: true,
-		Annotations:  map[string]string{system.REQUIRED_PERMISSION: system.SITE_READ}, // TODO: Use specific permission
+		Annotations:  map[string]string{system.REQUIRED_PERMISSION: system.PERMISSION_NETWORK_FABRICS_WRITE},
 		Args:         cobra.ExactArgs(2),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			return fabric.FabricDevicesRemove(cmd.Context(), args[0], args[1])

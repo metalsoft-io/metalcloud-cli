@@ -25,7 +25,7 @@ var (
 		Aliases:      []string{"ls"},
 		Short:        "List all drives for an infrastructure.",
 		SilenceUsage: true,
-		Annotations:  map[string]string{system.REQUIRED_PERMISSION: system.STORAGE_READ},
+		Annotations:  map[string]string{system.REQUIRED_PERMISSION: system.PERMISSION_STORAGE_READ},
 		Args:         cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			return drive.DriveList(cmd.Context(), args[0], driveFlags.filterStatus)
@@ -37,7 +37,7 @@ var (
 		Aliases:      []string{"show"},
 		Short:        "Get drive details.",
 		SilenceUsage: true,
-		Annotations:  map[string]string{system.REQUIRED_PERMISSION: system.STORAGE_READ},
+		Annotations:  map[string]string{system.REQUIRED_PERMISSION: system.PERMISSION_STORAGE_READ},
 		Args:         cobra.ExactArgs(2),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			return drive.DriveGet(cmd.Context(), args[0], args[1])
@@ -49,7 +49,7 @@ var (
 		Aliases:      []string{"new"},
 		Short:        "Create a new drive.",
 		SilenceUsage: true,
-		Annotations:  map[string]string{system.REQUIRED_PERMISSION: system.STORAGE_READ},
+		Annotations:  map[string]string{system.REQUIRED_PERMISSION: system.PERMISSION_STORAGE_READ},
 		Args:         cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			config, err := utils.ReadConfigFromPipeOrFile(driveFlags.configSource)
@@ -66,7 +66,7 @@ var (
 		Aliases:      []string{"rm"},
 		Short:        "Delete a drive.",
 		SilenceUsage: true,
-		Annotations:  map[string]string{system.REQUIRED_PERMISSION: system.STORAGE_READ},
+		Annotations:  map[string]string{system.REQUIRED_PERMISSION: system.PERMISSION_STORAGE_READ},
 		Args:         cobra.ExactArgs(2),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			return drive.DriveDelete(cmd.Context(), args[0], args[1])
@@ -78,7 +78,7 @@ var (
 		Aliases:      []string{"config-update"},
 		Short:        "Update drive configuration.",
 		SilenceUsage: true,
-		Annotations:  map[string]string{system.REQUIRED_PERMISSION: system.STORAGE_READ},
+		Annotations:  map[string]string{system.REQUIRED_PERMISSION: system.PERMISSION_STORAGE_READ},
 		Args:         cobra.ExactArgs(2),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			config, err := utils.ReadConfigFromPipeOrFile(driveFlags.configSource)
@@ -95,7 +95,7 @@ var (
 		Aliases:      []string{"meta-update"},
 		Short:        "Update drive metadata.",
 		SilenceUsage: true,
-		Annotations:  map[string]string{system.REQUIRED_PERMISSION: system.STORAGE_READ},
+		Annotations:  map[string]string{system.REQUIRED_PERMISSION: system.PERMISSION_STORAGE_READ},
 		Args:         cobra.ExactArgs(2),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			config, err := utils.ReadConfigFromPipeOrFile(driveFlags.configSource)
@@ -112,7 +112,7 @@ var (
 		Aliases:      []string{"hosts"},
 		Short:        "Get hosts for a drive.",
 		SilenceUsage: true,
-		Annotations:  map[string]string{system.REQUIRED_PERMISSION: system.STORAGE_READ},
+		Annotations:  map[string]string{system.REQUIRED_PERMISSION: system.PERMISSION_STORAGE_READ},
 		Args:         cobra.ExactArgs(2),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			return drive.DriveGetHosts(cmd.Context(), args[0], args[1])
@@ -124,7 +124,7 @@ var (
 		Aliases:      []string{"hosts-update"},
 		Short:        "Update hosts for a drive.",
 		SilenceUsage: true,
-		Annotations:  map[string]string{system.REQUIRED_PERMISSION: system.STORAGE_READ},
+		Annotations:  map[string]string{system.REQUIRED_PERMISSION: system.PERMISSION_STORAGE_READ},
 		Args:         cobra.ExactArgs(2),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			config, err := utils.ReadConfigFromPipeOrFile(driveFlags.configSource)
@@ -141,7 +141,7 @@ var (
 		Aliases:      []string{"get-config-info"},
 		Short:        "Get configuration information for a drive.",
 		SilenceUsage: true,
-		Annotations:  map[string]string{system.REQUIRED_PERMISSION: system.STORAGE_READ},
+		Annotations:  map[string]string{system.REQUIRED_PERMISSION: system.PERMISSION_STORAGE_READ},
 		Args:         cobra.ExactArgs(2),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			return drive.DriveGetConfigInfo(cmd.Context(), args[0], args[1])

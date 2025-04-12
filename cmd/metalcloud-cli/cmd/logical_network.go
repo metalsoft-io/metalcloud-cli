@@ -24,7 +24,7 @@ var (
 		Aliases:      []string{"ls"},
 		Short:        "List all logical networks, optionally filtered by fabric.",
 		SilenceUsage: true,
-		Annotations:  map[string]string{system.REQUIRED_PERMISSION: system.NETWORK_PROFILES_READ},
+		Annotations:  map[string]string{system.REQUIRED_PERMISSION: system.PERMISSION_NETWORK_PROFILES_READ},
 		Args:         cobra.MaximumNArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			fabricIdOrLabel := ""
@@ -40,7 +40,7 @@ var (
 		Aliases:      []string{"show"},
 		Short:        "Get logical network details.",
 		SilenceUsage: true,
-		Annotations:  map[string]string{system.REQUIRED_PERMISSION: system.NETWORK_PROFILES_READ},
+		Annotations:  map[string]string{system.REQUIRED_PERMISSION: system.PERMISSION_NETWORK_PROFILES_READ},
 		Args:         cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			return logical_network.LogicalNetworkGet(cmd.Context(), args[0])
@@ -52,7 +52,7 @@ var (
 		Aliases:      []string{"new"},
 		Short:        "Create a new logical network.",
 		SilenceUsage: true,
-		Annotations:  map[string]string{system.REQUIRED_PERMISSION: system.NETWORK_PROFILES_WRITE},
+		Annotations:  map[string]string{system.REQUIRED_PERMISSION: system.PERMISSION_NETWORK_PROFILES_READ},
 		Args:         cobra.NoArgs,
 		RunE: func(cmd *cobra.Command, args []string) error {
 			config, err := utils.ReadConfigFromPipeOrFile(logicalNetworkFlags.configSource)
@@ -69,7 +69,7 @@ var (
 		Aliases:      []string{"rm"},
 		Short:        "Delete a logical network.",
 		SilenceUsage: true,
-		Annotations:  map[string]string{system.REQUIRED_PERMISSION: system.NETWORK_PROFILES_WRITE},
+		Annotations:  map[string]string{system.REQUIRED_PERMISSION: system.PERMISSION_NETWORK_PROFILES_READ},
 		Args:         cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			return logical_network.LogicalNetworkDelete(cmd.Context(), args[0])
@@ -81,7 +81,7 @@ var (
 		Aliases:      []string{"edit"},
 		Short:        "Update a logical network.",
 		SilenceUsage: true,
-		Annotations:  map[string]string{system.REQUIRED_PERMISSION: system.NETWORK_PROFILES_WRITE},
+		Annotations:  map[string]string{system.REQUIRED_PERMISSION: system.PERMISSION_NETWORK_PROFILES_READ},
 		Args:         cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			config, err := utils.ReadConfigFromPipeOrFile(logicalNetworkFlags.configSource)

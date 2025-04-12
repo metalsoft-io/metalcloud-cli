@@ -24,7 +24,7 @@ var (
 		Aliases:      []string{"ls"},
 		Short:        "List all custom ISOs.",
 		SilenceUsage: true,
-		Annotations:  map[string]string{system.REQUIRED_PERMISSION: system.TEMPLATES_READ},
+		Annotations:  map[string]string{system.REQUIRED_PERMISSION: system.PERMISSION_TEMPLATES_READ},
 		RunE: func(cmd *cobra.Command, args []string) error {
 			return custom_iso.CustomIsoList(cmd.Context())
 		},
@@ -35,7 +35,7 @@ var (
 		Aliases:      []string{"show"},
 		Short:        "Get custom ISO details.",
 		SilenceUsage: true,
-		Annotations:  map[string]string{system.REQUIRED_PERMISSION: system.TEMPLATES_READ},
+		Annotations:  map[string]string{system.REQUIRED_PERMISSION: system.PERMISSION_TEMPLATES_READ},
 		Args:         cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			return custom_iso.CustomIsoGet(cmd.Context(), args[0])
@@ -46,7 +46,7 @@ var (
 		Use:          "config-example",
 		Short:        "Get custom ISO configuration example.",
 		SilenceUsage: true,
-		Annotations:  map[string]string{system.REQUIRED_PERMISSION: system.TEMPLATES_READ},
+		Annotations:  map[string]string{system.REQUIRED_PERMISSION: system.PERMISSION_TEMPLATES_WRITE},
 		RunE: func(cmd *cobra.Command, args []string) error {
 			return custom_iso.CustomIsoConfigExample(cmd.Context())
 		},
@@ -57,7 +57,7 @@ var (
 		Aliases:      []string{"new"},
 		Short:        "Create a new custom ISO.",
 		SilenceUsage: true,
-		Annotations:  map[string]string{system.REQUIRED_PERMISSION: system.TEMPLATES_WRITE},
+		Annotations:  map[string]string{system.REQUIRED_PERMISSION: system.PERMISSION_TEMPLATES_WRITE},
 		RunE: func(cmd *cobra.Command, args []string) error {
 			config, err := utils.ReadConfigFromPipeOrFile(customIsoFlags.configSource)
 			if err != nil {
@@ -73,7 +73,7 @@ var (
 		Aliases:      []string{"edit"},
 		Short:        "Update a custom ISO.",
 		SilenceUsage: true,
-		Annotations:  map[string]string{system.REQUIRED_PERMISSION: system.TEMPLATES_WRITE},
+		Annotations:  map[string]string{system.REQUIRED_PERMISSION: system.PERMISSION_TEMPLATES_WRITE},
 		Args:         cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			config, err := utils.ReadConfigFromPipeOrFile(customIsoFlags.configSource)
@@ -90,7 +90,7 @@ var (
 		Aliases:      []string{"rm"},
 		Short:        "Delete a custom ISO.",
 		SilenceUsage: true,
-		Annotations:  map[string]string{system.REQUIRED_PERMISSION: system.TEMPLATES_WRITE},
+		Annotations:  map[string]string{system.REQUIRED_PERMISSION: system.PERMISSION_TEMPLATES_WRITE},
 		Args:         cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			return custom_iso.CustomIsoDelete(cmd.Context(), args[0])
@@ -101,7 +101,7 @@ var (
 		Use:          "make-public custom_iso_id",
 		Short:        "Make a custom ISO public.",
 		SilenceUsage: true,
-		Annotations:  map[string]string{system.REQUIRED_PERMISSION: system.TEMPLATES_WRITE},
+		Annotations:  map[string]string{system.REQUIRED_PERMISSION: system.PERMISSION_TEMPLATES_WRITE},
 		Args:         cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			return custom_iso.CustomIsoMakePublic(cmd.Context(), args[0])
@@ -113,7 +113,7 @@ var (
 		Aliases:      []string{"boot"},
 		Short:        "Boot a server using a custom ISO.",
 		SilenceUsage: true,
-		Annotations:  map[string]string{system.REQUIRED_PERMISSION: system.SERVERS_WRITE},
+		Annotations:  map[string]string{system.REQUIRED_PERMISSION: system.PERMISSION_TEMPLATES_READ},
 		Args:         cobra.ExactArgs(2),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			return custom_iso.CustomIsoBootServer(cmd.Context(), args[0], args[1])

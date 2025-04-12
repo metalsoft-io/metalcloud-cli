@@ -20,7 +20,7 @@ var (
 		Aliases:      []string{"ls"},
 		Short:        "Lists server cleanup policies.",
 		SilenceUsage: true,
-		Annotations:  map[string]string{system.REQUIRED_PERMISSION: system.SERVERS_READ},
+		Annotations:  map[string]string{system.REQUIRED_PERMISSION: system.PERMISSION_SERVERS_READ},
 		RunE: func(cmd *cobra.Command, args []string) error {
 			return server_cleanup_policy.CleanupPolicyList(cmd.Context())
 		},
@@ -31,7 +31,7 @@ var (
 		Aliases:      []string{"show"},
 		Short:        "Get server cleanup policy.",
 		SilenceUsage: true,
-		Annotations:  map[string]string{system.REQUIRED_PERMISSION: system.SERVERS_READ},
+		Annotations:  map[string]string{system.REQUIRED_PERMISSION: system.PERMISSION_SERVERS_READ},
 		Args:         cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			return server_cleanup_policy.CleanupPolicyGet(cmd.Context(), args[0])

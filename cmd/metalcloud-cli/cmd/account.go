@@ -27,7 +27,7 @@ var (
 		Aliases:      []string{"ls"},
 		Short:        "List all accounts.",
 		SilenceUsage: true,
-		Annotations:  map[string]string{system.REQUIRED_PERMISSION: system.USERS_AND_PERMISSIONS_READ},
+		Annotations:  map[string]string{system.REQUIRED_PERMISSION: system.PERMISSION_USERS_READ},
 		RunE: func(cmd *cobra.Command, args []string) error {
 			return account.AccountList(cmd.Context())
 		},
@@ -38,7 +38,7 @@ var (
 		Aliases:      []string{"show"},
 		Short:        "Get account details.",
 		SilenceUsage: true,
-		Annotations:  map[string]string{system.REQUIRED_PERMISSION: system.USERS_AND_PERMISSIONS_READ},
+		Annotations:  map[string]string{system.REQUIRED_PERMISSION: system.PERMISSION_USERS_READ},
 		Args:         cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			return account.AccountGet(cmd.Context(), args[0])
@@ -50,7 +50,7 @@ var (
 		Aliases:      []string{"new"},
 		Short:        "Create a new account.",
 		SilenceUsage: true,
-		Annotations:  map[string]string{system.REQUIRED_PERMISSION: system.USERS_AND_PERMISSIONS_WRITE},
+		Annotations:  map[string]string{system.REQUIRED_PERMISSION: system.PERMISSION_USERS_WRITE},
 		RunE: func(cmd *cobra.Command, args []string) error {
 			config, err := utils.ReadConfigFromPipeOrFile(accountFlags.configSource)
 			if err != nil {
@@ -66,7 +66,7 @@ var (
 		Aliases:      []string{"edit"},
 		Short:        "Update an account.",
 		SilenceUsage: true,
-		Annotations:  map[string]string{system.REQUIRED_PERMISSION: system.USERS_AND_PERMISSIONS_WRITE},
+		Annotations:  map[string]string{system.REQUIRED_PERMISSION: system.PERMISSION_USERS_WRITE},
 		Args:         cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			config, err := utils.ReadConfigFromPipeOrFile(accountFlags.configSource)
@@ -83,7 +83,7 @@ var (
 		Aliases:      []string{"ar"},
 		Short:        "Archive an account.",
 		SilenceUsage: true,
-		Annotations:  map[string]string{system.REQUIRED_PERMISSION: system.USERS_AND_PERMISSIONS_WRITE},
+		Annotations:  map[string]string{system.REQUIRED_PERMISSION: system.PERMISSION_USERS_WRITE},
 		Args:         cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			return account.AccountArchive(cmd.Context(), args[0])
@@ -95,7 +95,7 @@ var (
 		Aliases:      []string{"get-users", "list-users"},
 		Short:        "Get users for an account.",
 		SilenceUsage: true,
-		Annotations:  map[string]string{system.REQUIRED_PERMISSION: system.USERS_AND_PERMISSIONS_READ},
+		Annotations:  map[string]string{system.REQUIRED_PERMISSION: system.PERMISSION_USERS_READ},
 		Args:         cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			return account.AccountGetUsers(cmd.Context(), args[0])
