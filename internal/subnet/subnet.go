@@ -23,27 +23,27 @@ var SubnetPrintConfig = formatter.PrintConfig{
 			Title: "Name",
 			Order: 2,
 		},
-		"Network": {
-			Title: "Network",
+		"IpVersion": {
+			Title: "IP Version",
 			Order: 3,
 		},
-		"Gateway": {
-			Title: "Gateway",
+		"NetworkAddress": {
+			Title: "Network Address",
 			Order: 4,
+		},
+		"PrefixLength": {
+			Title: "Prefix",
+			Order: 5,
 		},
 		"Netmask": {
 			Title: "Netmask",
-			Order: 5,
-		},
-		"Type": {
-			Title: "Type",
 			Order: 6,
 		},
-		"SiteId": {
-			Title: "Site ID",
+		"IsPool": {
+			Title: "Pool",
 			Order: 7,
 		},
-		"CreatedTimestamp": {
+		"CreatedAt": {
 			Title:       "Created",
 			Transformer: formatter.FormatDateTimeValue,
 			Order:       8,
@@ -190,10 +190,10 @@ func getSubnetIdAndRevision(ctx context.Context, subnetId string) (float32, stri
 
 	client := api.GetApiClient(ctx)
 
-	subnet, httpRes, err := client.SubnetAPI.GetSubnet(ctx, float32(subnetIdNumeric)).Execute()
+	subnet, httpRes, err := client.SubnetAPI.GetSubnet(ctx, subnetIdNumeric).Execute()
 	if err := response_inspector.InspectResponse(httpRes, err); err != nil {
 		return 0, "", err
 	}
 
-	return float32(subnetIdNumeric), strconv.Itoa(int(subnet.Revision)), nil
+	return subnetIdNumeric, strconv.Itoa(int(subnet.Revision)), nil
 }

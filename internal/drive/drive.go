@@ -146,7 +146,7 @@ func DriveCreate(ctx context.Context, infrastructureIdOrLabel string, config []b
 		return err
 	}
 
-	var driveConfig sdk.CreateDrive
+	var driveConfig sdk.CreateSharedDrive
 	err = json.Unmarshal(config, &driveConfig)
 	if err != nil {
 		return err
@@ -156,7 +156,7 @@ func DriveCreate(ctx context.Context, infrastructureIdOrLabel string, config []b
 
 	drive, httpRes, err := client.DriveAPI.
 		CreateDrive(ctx, infrastructureInfo.Id).
-		CreateDrive(driveConfig).
+		CreateSharedDrive(driveConfig).
 		Execute()
 	if err := response_inspector.InspectResponse(httpRes, err); err != nil {
 		return err
@@ -207,7 +207,7 @@ func DriveUpdateConfig(ctx context.Context, infrastructureIdOrLabel string, driv
 		return err
 	}
 
-	var driveConfigUpdate sdk.UpdateDrive
+	var driveConfigUpdate sdk.UpdateSharedDrive
 	err = json.Unmarshal(config, &driveConfigUpdate)
 	if err != nil {
 		return err
@@ -217,7 +217,7 @@ func DriveUpdateConfig(ctx context.Context, infrastructureIdOrLabel string, driv
 
 	drive, httpRes, err := client.DriveAPI.
 		PatchDriveConfig(ctx, infrastructureInfo.Id, driveIdNumeric).
-		UpdateDrive(driveConfigUpdate).
+		UpdateSharedDrive(driveConfigUpdate).
 		IfMatch(revision).
 		Execute()
 	if err := response_inspector.InspectResponse(httpRes, err); err != nil {
@@ -241,7 +241,7 @@ func DriveUpdateMeta(ctx context.Context, infrastructureIdOrLabel string, driveI
 		return err
 	}
 
-	var driveMetaUpdate sdk.UpdateDriveMeta
+	var driveMetaUpdate sdk.UpdateSharedDriveMeta
 	err = json.Unmarshal(config, &driveMetaUpdate)
 	if err != nil {
 		return err
@@ -251,7 +251,7 @@ func DriveUpdateMeta(ctx context.Context, infrastructureIdOrLabel string, driveI
 
 	drive, httpRes, err := client.DriveAPI.
 		PatchDriveMeta(ctx, infrastructureInfo.Id, driveIdNumeric).
-		UpdateDriveMeta(driveMetaUpdate).
+		UpdateSharedDriveMeta(driveMetaUpdate).
 		Execute()
 	if err := response_inspector.InspectResponse(httpRes, err); err != nil {
 		return err
@@ -300,7 +300,7 @@ func DriveUpdateHosts(ctx context.Context, infrastructureIdOrLabel string, drive
 		return err
 	}
 
-	var hostsUpdate sdk.DriveHostsModifyBulk
+	var hostsUpdate sdk.SharedDriveHostsModifyBulk
 	err = json.Unmarshal(config, &hostsUpdate)
 	if err != nil {
 		return err
@@ -310,7 +310,7 @@ func DriveUpdateHosts(ctx context.Context, infrastructureIdOrLabel string, drive
 
 	hosts, httpRes, err := client.DriveAPI.
 		UpdateDriveServerInstanceGroupHostsBulk(ctx, infrastructureInfo.Id, driveIdNumeric).
-		DriveHostsModifyBulk(hostsUpdate).
+		SharedDriveHostsModifyBulk(hostsUpdate).
 		Execute()
 	if err := response_inspector.InspectResponse(httpRes, err); err != nil {
 		return err
