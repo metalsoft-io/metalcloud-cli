@@ -13,6 +13,8 @@ import (
 const allowDevelop = true
 const minMajor = 7
 const minMinor = 0
+const maxMajor = 7
+const maxMinor = 0
 
 func ValidateVersion(ctx context.Context) error {
 	client := api.GetApiClient(ctx)
@@ -41,7 +43,7 @@ func ValidateVersion(ctx context.Context) error {
 		return fmt.Errorf("invalid version: %s", version.Version)
 	}
 
-	if major < minMajor || (major == minMajor && minor < minMinor) {
+	if major < minMajor || major > maxMajor || (major == minMajor && minor < minMinor) || (major == maxMajor && minor > maxMinor) {
 		return fmt.Errorf("incompatible version: %s", version.Version)
 	}
 

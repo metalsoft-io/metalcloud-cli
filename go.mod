@@ -6,7 +6,7 @@ toolchain go1.23.4
 
 require (
 	github.com/jedib0t/go-pretty/v6 v6.6.7
-	github.com/metalsoft-io/metalcloud-sdk-go v0.0.0-20250414092620-bd20ac0ca100
+	github.com/metalsoft-io/metalcloud-sdk-go v0.0.0-20250414193845-b2fc93a7bfd0
 	github.com/rs/zerolog v1.34.0
 	github.com/spf13/cobra v1.9.1
 	github.com/spf13/viper v1.20.1
@@ -32,5 +32,4 @@ require (
 	go.uber.org/multierr v1.11.0 // indirect
 	golang.org/x/sys v0.32.0 // indirect
 	golang.org/x/text v0.24.0 // indirect
-	gopkg.in/validator.v2 v2.0.1 // indirect
 )
