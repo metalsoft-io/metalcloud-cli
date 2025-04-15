@@ -214,6 +214,141 @@ var (
 			return server.ServerCapabilities(cmd.Context(), args[0])
 		},
 	}
+
+	// New Firmware Management Commands
+	serverFirmwareCmd = &cobra.Command{
+		Use:     "firmware [command]",
+		Aliases: []string{"fw"},
+		Short:   "Server firmware management",
+		Long:    `Server firmware management commands.`,
+	}
+
+	serverFirmwareComponentsListCmd = &cobra.Command{
+		Use:          "components server_id",
+		Aliases:      []string{"list-components", "ls"},
+		Short:        "List firmware components for a server.",
+		SilenceUsage: true,
+		Annotations:  map[string]string{system.REQUIRED_PERMISSION: system.PERMISSION_SERVERS_READ},
+		Args:         cobra.ExactArgs(1),
+		RunE: func(cmd *cobra.Command, args []string) error {
+			return server.ServerFirmwareComponentsList(cmd.Context(), args[0])
+		},
+	}
+
+	serverFirmwareComponentGetCmd = &cobra.Command{
+		Use:          "component-info server_id component_id",
+		Aliases:      []string{"get-component"},
+		Short:        "Get firmware component information.",
+		SilenceUsage: true,
+		Annotations:  map[string]string{system.REQUIRED_PERMISSION: system.PERMISSION_SERVERS_READ},
+		Args:         cobra.ExactArgs(2),
+		RunE: func(cmd *cobra.Command, args []string) error {
+			return server.ServerFirmwareComponentGet(cmd.Context(), args[0], args[1])
+		},
+	}
+
+	serverFirmwareComponentUpdateCmd = &cobra.Command{
+		Use:          "update-component server_id component_id",
+		Short:        "Update firmware component settings.",
+		SilenceUsage: true,
+		Annotations:  map[string]string{system.REQUIRED_PERMISSION: system.PERMISSION_SERVERS_WRITE},
+		Args:         cobra.ExactArgs(2),
+		RunE: func(cmd *cobra.Command, args []string) error {
+			config, err := utils.ReadConfigFromPipeOrFile(serverFlags.configSource)
+			if err != nil {
+				return err
+			}
+			return server.ServerFirmwareComponentUpdate(cmd.Context(), args[0], args[1], config)
+		},
+	}
+
+	serverFirmwareUpdateInfoCmd = &cobra.Command{
+		Use:          "update-info server_id",
+		Short:        "Update firmware information for a server.",
+		SilenceUsage: true,
+		Annotations:  map[string]string{system.REQUIRED_PERMISSION: system.PERMISSION_SERVERS_WRITE},
+		Args:         cobra.ExactArgs(1),
+		RunE: func(cmd *cobra.Command, args []string) error {
+			return server.ServerFirmwareUpdateInfo(cmd.Context(), args[0])
+		},
+	}
+
+	serverFirmwareInventoryCmd = &cobra.Command{
+		Use:          "inventory server_id",
+		Short:        "Get firmware inventory from redfish.",
+		SilenceUsage: true,
+		Annotations:  map[string]string{system.REQUIRED_PERMISSION: system.PERMISSION_SERVERS_READ},
+		Args:         cobra.ExactArgs(1),
+		RunE: func(cmd *cobra.Command, args []string) error {
+			return server.ServerFirmwareInventory(cmd.Context(), args[0])
+		},
+	}
+
+	serverFirmwareUpgradeCmd = &cobra.Command{
+		Use:          "upgrade server_id",
+		Short:        "Upgrade firmware for all components on a server.",
+		SilenceUsage: true,
+		Annotations:  map[string]string{system.REQUIRED_PERMISSION: system.PERMISSION_SERVERS_WRITE},
+		Args:         cobra.ExactArgs(1),
+		RunE: func(cmd *cobra.Command, args []string) error {
+			return server.ServerFirmwareUpgrade(cmd.Context(), args[0])
+		},
+	}
+
+	serverFirmwareComponentUpgradeCmd = &cobra.Command{
+		Use:          "upgrade-component server_id component_id",
+		Short:        "Upgrade firmware for a specific component.",
+		SilenceUsage: true,
+		Annotations:  map[string]string{system.REQUIRED_PERMISSION: system.PERMISSION_SERVERS_WRITE},
+		Args:         cobra.ExactArgs(2),
+		RunE: func(cmd *cobra.Command, args []string) error {
+			config, err := utils.ReadConfigFromPipeOrFile(serverFlags.configSource)
+			if err != nil {
+				return err
+			}
+			return server.ServerFirmwareComponentUpgrade(cmd.Context(), args[0], args[1], config)
+		},
+	}
+
+	serverFirmwareScheduleUpgradeCmd = &cobra.Command{
+		Use:          "schedule-upgrade server_id",
+		Short:        "Schedule a firmware upgrade for a server.",
+		SilenceUsage: true,
+		Annotations:  map[string]string{system.REQUIRED_PERMISSION: system.PERMISSION_SERVERS_WRITE},
+		Args:         cobra.ExactArgs(1),
+		RunE: func(cmd *cobra.Command, args []string) error {
+			config, err := utils.ReadConfigFromPipeOrFile(serverFlags.configSource)
+			if err != nil {
+				return err
+			}
+			return server.ServerFirmwareScheduleUpgrade(cmd.Context(), args[0], config)
+		},
+	}
+
+	serverFirmwareFetchVersionsCmd = &cobra.Command{
+		Use:          "fetch-versions server_id",
+		Short:        "Fetch available firmware versions for a server.",
+		SilenceUsage: true,
+		Annotations:  map[string]string{system.REQUIRED_PERMISSION: system.PERMISSION_SERVERS_WRITE},
+		Args:         cobra.ExactArgs(1),
+		RunE: func(cmd *cobra.Command, args []string) error {
+			return server.ServerFirmwareFetchVersions(cmd.Context(), args[0])
+		},
+	}
+
+	serverFirmwareGenerateAuditCmd = &cobra.Command{
+		Use:          "generate-audit",
+		Short:        "Generate firmware upgrade audit for servers.",
+		SilenceUsage: true,
+		Annotations:  map[string]string{system.REQUIRED_PERMISSION: system.PERMISSION_SERVERS_READ},
+		RunE: func(cmd *cobra.Command, args []string) error {
+			config, err := utils.ReadConfigFromPipeOrFile(serverFlags.configSource)
+			if err != nil {
+				return err
+			}
+			return server.ServerFirmwareGenerateAudit(cmd.Context(), config)
+		},
+	}
 )
 
 func init() {
@@ -261,4 +396,45 @@ func init() {
 	serverCmd.AddCommand(serverRemoteConsoleInfoCmd)
 
 	serverCmd.AddCommand(serverCapabilitiesCmd)
+
+	// Firmware commands
+	serverCmd.AddCommand(serverFirmwareCmd)
+
+	// Firmware component listing
+	serverFirmwareCmd.AddCommand(serverFirmwareComponentsListCmd)
+
+	// Get firmware component info
+	serverFirmwareCmd.AddCommand(serverFirmwareComponentGetCmd)
+
+	// Update firmware component
+	serverFirmwareCmd.AddCommand(serverFirmwareComponentUpdateCmd)
+	serverFirmwareComponentUpdateCmd.Flags().StringVar(&serverFlags.configSource, "config-source", "", "Source of the component update configuration. Can be 'pipe' or path to a JSON file.")
+	serverFirmwareComponentUpdateCmd.MarkFlagsOneRequired("config-source")
+
+	// Update firmware info
+	serverFirmwareCmd.AddCommand(serverFirmwareUpdateInfoCmd)
+
+	// Get firmware inventory
+	serverFirmwareCmd.AddCommand(serverFirmwareInventoryCmd)
+
+	// Upgrade firmware
+	serverFirmwareCmd.AddCommand(serverFirmwareUpgradeCmd)
+
+	// Upgrade component firmware
+	serverFirmwareCmd.AddCommand(serverFirmwareComponentUpgradeCmd)
+	serverFirmwareComponentUpgradeCmd.Flags().StringVar(&serverFlags.configSource, "config-source", "", "Source of the firmware upgrade configuration. Can be 'pipe' or path to a JSON file.")
+	serverFirmwareComponentUpgradeCmd.MarkFlagsOneRequired("config-source")
+
+	// Schedule firmware upgrade
+	serverFirmwareCmd.AddCommand(serverFirmwareScheduleUpgradeCmd)
+	serverFirmwareScheduleUpgradeCmd.Flags().StringVar(&serverFlags.configSource, "config-source", "", "Source of the schedule configuration. Can be 'pipe' or path to a JSON file.")
+	serverFirmwareScheduleUpgradeCmd.MarkFlagsOneRequired("config-source")
+
+	// Fetch firmware versions
+	serverFirmwareCmd.AddCommand(serverFirmwareFetchVersionsCmd)
+
+	// Generate firmware audit
+	serverFirmwareCmd.AddCommand(serverFirmwareGenerateAuditCmd)
+	serverFirmwareGenerateAuditCmd.Flags().StringVar(&serverFlags.configSource, "config-source", "", "Source of the audit configuration. Can be 'pipe' or path to a JSON file.")
+	serverFirmwareGenerateAuditCmd.MarkFlagsOneRequired("config-source")
 }
