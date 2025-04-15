@@ -20,6 +20,31 @@ var StoragePrintConfig = formatter.PrintConfig{
 			Title: "#",
 			Order: 1,
 		},
+		"SiteId": {
+			Title: "Site",
+			Order: 2,
+		},
+		"Driver": {
+			Title: "Driver",
+			Order: 3,
+		},
+		"Technology": {
+			Title: "Technology",
+			Order: 4,
+		},
+		"Type": {
+			Title: "Type",
+			Order: 5,
+		},
+		"Name": {
+			Title: "Name",
+			Order: 6,
+		},
+		"Status": {
+			Title:       "Status",
+			Transformer: formatter.FormatStatusValue,
+			Order:       7,
+		},
 	},
 }
 
