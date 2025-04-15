@@ -118,7 +118,7 @@ func List(ctx context.Context) error {
 
 	client := api.GetApiClient(ctx)
 
-	userList, httpRes, err := client.UserAPI.GetUsers(ctx).Execute()
+	userList, httpRes, err := client.UsersAPI.GetUsers(ctx).Execute()
 	if err := response_inspector.InspectResponse(httpRes, err); err != nil {
 		return err
 	}
@@ -136,7 +136,7 @@ func Get(ctx context.Context, userId string) error {
 
 	client := api.GetApiClient(ctx)
 
-	userInfo, httpRes, err := client.UserAPI.GetUser(ctx, userIdNumber).Execute()
+	userInfo, httpRes, err := client.UsersAPI.GetUser(ctx, userIdNumber).Execute()
 	if err := response_inspector.InspectResponse(httpRes, err); err != nil {
 		return err
 	}
@@ -154,7 +154,7 @@ func GetLimits(ctx context.Context, userId string) error {
 
 	client := api.GetApiClient(ctx)
 
-	userLimits, httpRes, err := client.UserAPI.GetUserLimits(ctx, userIdNumber).Execute()
+	userLimits, httpRes, err := client.UsersAPI.GetUserLimits(ctx, userIdNumber).Execute()
 	if err := response_inspector.InspectResponse(httpRes, err); err != nil {
 		return err
 	}
@@ -173,7 +173,7 @@ func Create(ctx context.Context, config []byte) error {
 
 	client := api.GetApiClient(ctx)
 
-	userInfo, httpRes, err := client.UserAPI.CreateUserAuthorized(ctx).CreateUser(userConfig).Execute()
+	userInfo, httpRes, err := client.UsersAPI.CreateUserAuthorized(ctx).CreateUser(userConfig).Execute()
 	if err := response_inspector.InspectResponse(httpRes, err); err != nil {
 		return err
 	}
@@ -191,7 +191,7 @@ func Archive(ctx context.Context, userId string) error {
 
 	client := api.GetApiClient(ctx)
 
-	userInfo, httpRes, err := client.UserAPI.ArchiveUser(ctx, userIdNumber).IfMatch(revision).Execute()
+	userInfo, httpRes, err := client.UsersAPI.ArchiveUser(ctx, userIdNumber).IfMatch(revision).Execute()
 	if err := response_inspector.InspectResponse(httpRes, err); err != nil {
 		return err
 	}
@@ -210,7 +210,7 @@ func Unarchive(ctx context.Context, userId string) error {
 
 	client := api.GetApiClient(ctx)
 
-	userInfo, httpRes, err := client.UserAPI.UnarchiveUser(ctx, userIdNumber).IfMatch(revision).Execute()
+	userInfo, httpRes, err := client.UsersAPI.UnarchiveUser(ctx, userIdNumber).IfMatch(revision).Execute()
 	if err := response_inspector.InspectResponse(httpRes, err); err != nil {
 		return err
 	}
@@ -235,7 +235,7 @@ func UpdateLimits(ctx context.Context, userId string, config []byte) error {
 
 	client := api.GetApiClient(ctx)
 
-	userLimits, httpRes, err := client.UserAPI.UpdateUserLimits(ctx, userIdNumber).UserLimits(userLimitsConfig).IfMatch(revision).Execute()
+	userLimits, httpRes, err := client.UsersAPI.UpdateUserLimits(ctx, userIdNumber).UserLimits(userLimitsConfig).IfMatch(revision).Execute()
 	if err := response_inspector.InspectResponse(httpRes, err); err != nil {
 		return err
 	}
@@ -260,7 +260,7 @@ func UpdateConfig(ctx context.Context, userId string, config []byte) error {
 
 	client := api.GetApiClient(ctx)
 
-	userConfiguration, httpRes, err := client.UserAPI.UpdateUserConfig(ctx, userIdNumber).UpdateUser(userConfig).IfMatch(revision).Execute()
+	userConfiguration, httpRes, err := client.UsersAPI.UpdateUserConfig(ctx, userIdNumber).UpdateUser(userConfig).IfMatch(revision).Execute()
 	if err := response_inspector.InspectResponse(httpRes, err); err != nil {
 		return err
 	}
@@ -283,7 +283,7 @@ func ChangeAccount(ctx context.Context, userId string, accountId float32) error 
 
 	client := api.GetApiClient(ctx)
 
-	userInfo, httpRes, err := client.UserAPI.ChangeUserAccount(ctx, userIdNumber).ChangeUserAccount(changeAccount).IfMatch(revision).Execute()
+	userInfo, httpRes, err := client.UsersAPI.ChangeUserAccount(ctx, userIdNumber).ChangeUserAccount(changeAccount).IfMatch(revision).Execute()
 	if err := response_inspector.InspectResponse(httpRes, err); err != nil {
 		return err
 	}
@@ -302,7 +302,7 @@ func GetSSHKeys(ctx context.Context, userId string) error {
 
 	client := api.GetApiClient(ctx)
 
-	sshKeys, httpRes, err := client.UserAPI.GetUserSshKeys(ctx, userIdNumber).Execute()
+	sshKeys, httpRes, err := client.UsersAPI.GetUserSshKeys(ctx, userIdNumber).Execute()
 	if err := response_inspector.InspectResponse(httpRes, err); err != nil {
 		return err
 	}
@@ -324,7 +324,7 @@ func AddSSHKey(ctx context.Context, userId string, keyContent string) error {
 
 	client := api.GetApiClient(ctx)
 
-	sshKey, httpRes, err := client.UserAPI.AddUserSshKey(ctx, userIdNumber).CreateUserSSHKeyDto(sshKeyData).Execute()
+	sshKey, httpRes, err := client.UsersAPI.AddUserSshKey(ctx, userIdNumber).CreateUserSSHKeyDto(sshKeyData).Execute()
 	if err := response_inspector.InspectResponse(httpRes, err); err != nil {
 		return err
 	}
@@ -350,57 +350,13 @@ func DeleteSSHKey(ctx context.Context, userId string, keyId string) error {
 
 	client := api.GetApiClient(ctx)
 
-	httpRes, err := client.UserAPI.DeleteUserSshKey(ctx, userIdNumber, float32(keyIdNumber)).Execute()
+	httpRes, err := client.UsersAPI.DeleteUserSshKey(ctx, userIdNumber, float32(keyIdNumber)).Execute()
 	if err := response_inspector.InspectResponse(httpRes, err); err != nil {
 		return err
 	}
 
 	logger.Get().Info().Msgf("SSH key '%s' deleted for user '%s'", keyId, userId)
 	return nil
-}
-
-func GetAPIKey(ctx context.Context, userId string) error {
-	logger.Get().Info().Msgf("Getting API key for user '%s'", userId)
-
-	userIdNumber, err := getUserId(userId)
-	if err != nil {
-		return err
-	}
-
-	client := api.GetApiClient(ctx)
-
-	apiKey, httpRes, err := client.UserAPI.GetUserApiKey(ctx, userIdNumber).Execute()
-	if err := response_inspector.InspectResponse(httpRes, err); err != nil {
-		return err
-	}
-
-	return formatter.PrintResult(apiKey, &userApiKeyPrintConfig)
-}
-
-func RegenerateAPIKey(ctx context.Context, userId string) error {
-	logger.Get().Info().Msgf("Regenerating API key for user '%s'", userId)
-
-	userIdNumber, revision, err := getUserIdAndRevision(ctx, userId)
-	if err != nil {
-		return err
-	}
-
-	client := api.GetApiClient(ctx)
-
-	_, httpRes, err := client.UserAPI.RegenerateUserApiKey(ctx, userIdNumber).IfMatch(revision).Execute()
-	if err := response_inspector.InspectResponse(httpRes, err); err != nil {
-		return err
-	}
-
-	logger.Get().Info().Msgf("API key regenerated for user '%s'", userId)
-
-	// Get the new API key to display it
-	apiKey, httpRes, err := client.UserAPI.GetUserApiKey(ctx, userIdNumber).Execute()
-	if err := response_inspector.InspectResponse(httpRes, err); err != nil {
-		return err
-	}
-
-	return formatter.PrintResult(apiKey, &userApiKeyPrintConfig)
 }
 
 func Suspend(ctx context.Context, userId string, reason string) error {
@@ -417,7 +373,7 @@ func Suspend(ctx context.Context, userId string, reason string) error {
 
 	client := api.GetApiClient(ctx)
 
-	suspendInfo, httpRes, err := client.UserAPI.SuspendUser(ctx, userIdNumber).UserSuspend(suspendReason).IfMatch(revision).Execute()
+	suspendInfo, httpRes, err := client.UsersAPI.SuspendUser(ctx, userIdNumber).UserSuspend(suspendReason).IfMatch(revision).Execute()
 	if err := response_inspector.InspectResponse(httpRes, err); err != nil {
 		return err
 	}
@@ -436,7 +392,7 @@ func Unsuspend(ctx context.Context, userId string) error {
 
 	client := api.GetApiClient(ctx)
 
-	httpRes, err := client.UserAPI.UnsuspendUser(ctx, userIdNumber).IfMatch(revision).Execute()
+	httpRes, err := client.UsersAPI.UnsuspendUser(ctx, userIdNumber).IfMatch(revision).Execute()
 	if err := response_inspector.InspectResponse(httpRes, err); err != nil {
 		return err
 	}
@@ -455,7 +411,7 @@ func GetPermissions(ctx context.Context, userId string) error {
 
 	client := api.GetApiClient(ctx)
 
-	permissions, httpRes, err := client.UserAPI.GetUserPermissions(ctx, userIdNumber).Execute()
+	permissions, httpRes, err := client.UsersAPI.GetUserPermissions(ctx, userIdNumber).Execute()
 	if err := response_inspector.InspectResponse(httpRes, err); err != nil {
 		return err
 	}
@@ -479,7 +435,7 @@ func UpdatePermissions(ctx context.Context, userId string, config []byte) error 
 
 	client := api.GetApiClient(ctx)
 
-	permissions, httpRes, err := client.UserAPI.UpdateUserPermissions(ctx, userIdNumber).UpdateUserPermissionsDto(permissionsConfig).IfMatch(revision).Execute()
+	permissions, httpRes, err := client.UsersAPI.UpdateUserPermissions(ctx, userIdNumber).UpdateUserPermissionsDto(permissionsConfig).IfMatch(revision).Execute()
 	if err := response_inspector.InspectResponse(httpRes, err); err != nil {
 		return err
 	}
@@ -507,7 +463,7 @@ func getUserIdAndRevision(ctx context.Context, userId string) (float32, string, 
 
 	client := api.GetApiClient(ctx)
 
-	user, httpRes, err := client.UserAPI.GetUser(ctx, float32(userIdNumeric)).Execute()
+	user, httpRes, err := client.UsersAPI.GetUser(ctx, float32(userIdNumeric)).Execute()
 	if err := response_inspector.InspectResponse(httpRes, err); err != nil {
 		return 0, "", err
 	}

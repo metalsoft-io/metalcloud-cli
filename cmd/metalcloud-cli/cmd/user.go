@@ -179,30 +179,6 @@ var (
 		},
 	}
 
-	userApiKeyGetCmd = &cobra.Command{
-		Use:          "api-key user_id",
-		Aliases:      []string{"get-api-key"},
-		Short:        "Get user API key.",
-		SilenceUsage: true,
-		Annotations:  map[string]string{system.REQUIRED_PERMISSION: system.PERMISSION_USERS_READ},
-		Args:         cobra.ExactArgs(1),
-		RunE: func(cmd *cobra.Command, args []string) error {
-			return user.GetAPIKey(cmd.Context(), args[0])
-		},
-	}
-
-	userApiKeyRegenerateCmd = &cobra.Command{
-		Use:          "regenerate-api-key user_id",
-		Aliases:      []string{"new-api-key"},
-		Short:        "Regenerate user API key.",
-		SilenceUsage: true,
-		Annotations:  map[string]string{system.REQUIRED_PERMISSION: system.PERMISSION_USERS_WRITE},
-		Args:         cobra.ExactArgs(1),
-		RunE: func(cmd *cobra.Command, args []string) error {
-			return user.RegenerateAPIKey(cmd.Context(), args[0])
-		},
-	}
-
 	userSuspendCmd = &cobra.Command{
 		Use:          "suspend user_id",
 		Aliases:      []string{"disable"},
@@ -294,10 +270,6 @@ func init() {
 	userSshKeyAddCmd.Flags().StringVar(&userFlags.sshKeyContent, "key", "", "The content of the SSH key.")
 	userSshKeyAddCmd.MarkFlagRequired("key")
 	userCmd.AddCommand(userSshKeyDeleteCmd)
-
-	// API Key
-	userCmd.AddCommand(userApiKeyGetCmd)
-	userCmd.AddCommand(userApiKeyRegenerateCmd)
 
 	// Suspend/Unsuspend
 	userCmd.AddCommand(userSuspendCmd)

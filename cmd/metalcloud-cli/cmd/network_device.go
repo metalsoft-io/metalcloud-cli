@@ -200,7 +200,7 @@ var (
 	}
 
 	networkDeviceGetDefaultsCmd = &cobra.Command{
-		Use:          "get-defaults site_label",
+		Use:          "get-defaults site_id",
 		Short:        "Get network device defaults for a site.",
 		SilenceUsage: true,
 		Annotations:  map[string]string{system.REQUIRED_PERMISSION: system.PERMISSION_SWITCHES_READ},

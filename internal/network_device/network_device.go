@@ -11,6 +11,7 @@ import (
 	"github.com/metalsoft-io/metalcloud-cli/pkg/formatter"
 	"github.com/metalsoft-io/metalcloud-cli/pkg/logger"
 	"github.com/metalsoft-io/metalcloud-cli/pkg/response_inspector"
+	"github.com/metalsoft-io/metalcloud-cli/pkg/utils"
 	sdk "github.com/metalsoft-io/metalcloud-sdk-go"
 )
 
@@ -451,13 +452,18 @@ func NetworkDeviceEnableSyslog(ctx context.Context, networkDeviceId string) erro
 	return nil
 }
 
-func NetworkDeviceGetDefaults(ctx context.Context, siteLabel string) error {
-	logger.Get().Info().Msgf("Getting network device defaults for site %s", siteLabel)
+func NetworkDeviceGetDefaults(ctx context.Context, siteId string) error {
+	logger.Get().Info().Msgf("Getting network device defaults for site %s", siteId)
+
+	siteIdNumeric, err := utils.GetFloat32FromString(siteId)
+	if err != nil {
+		return err
+	}
 
 	client := api.GetApiClient(ctx)
 
 	defaults, httpRes, err := client.NetworkDeviceAPI.
-		GetNetworkDeviceDefaults(ctx, siteLabel).
+		GetNetworkDeviceDefaults(ctx, siteIdNumeric).
 		Execute()
 	if err := response_inspector.InspectResponse(httpRes, err); err != nil {
 		return err

@@ -308,7 +308,6 @@ func StorageConfigExample(ctx context.Context) error {
 		Tags:                     []string{"tag1", "tag2"},
 		PortGroupAllocationOrder: map[string]interface{}{},
 		PortGroupPhysicalPorts:   map[string]interface{}{},
-		DefaultIoLimitPolicy:     sdk.PtrString("defaultIoLimitPolicy"),
 		SubnetType:               "subnetType",
 		Options: &sdk.UpdateStorageOptions{
 			EnableDataReduction:         sdk.PtrFloat32(1),
