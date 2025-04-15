@@ -58,6 +58,10 @@ func ReadConfigFromFile(configSource string) ([]byte, error) {
 }
 
 func ReadConfigFromPipeOrFile(configSource string) ([]byte, error) {
+	if configSource == "" {
+		return nil, nil
+	}
+
 	if configSource == "pipe" {
 		return ReadConfigFromPipe()
 	}
