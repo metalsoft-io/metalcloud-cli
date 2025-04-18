@@ -56,7 +56,7 @@ func StorageList(ctx context.Context, filterTechnology string) error {
 	request := client.StorageAPI.GetStorages(ctx)
 
 	if filterTechnology != "" {
-		request = request.FilterTechnology(strings.Split(filterTechnology, ","))
+		request = request.FilterTechnologies(strings.Split(filterTechnology, ","))
 	}
 
 	storageList, httpRes, err := request.SortBy([]string{"id:ASC"}).Execute()
@@ -293,7 +293,7 @@ func StorageConfigExample(ctx context.Context) error {
 		UserId:                   sdk.PtrFloat32(1),
 		SiteId:                   1,
 		Driver:                   "netapp",
-		Technology:               "netapp",
+		Technologies:             []string{"block"},
 		Type:                     "type",
 		Name:                     "name",
 		IscsiHost:                sdk.PtrString("iscsiHost"),

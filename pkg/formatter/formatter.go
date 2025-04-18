@@ -352,20 +352,24 @@ func FormatDateTimeValue(value interface{}) string {
 		return ""
 	}
 
-	if _, ok := value.(string); ok {
-		tm, err := time.Parse("2006-01-02T15:04:05Z", value.(string))
+	if stringValue, ok := value.(string); ok {
+		tm, err := time.Parse("2006-01-02T15:04:05Z", stringValue)
 		if err == nil {
 			return tm.Local().Format(time.RFC822)
 		}
 
-		tm, err = time.Parse("2006-01-02T15:04:05.000Z", value.(string))
+		tm, err = time.Parse("2006-01-02T15:04:05.000Z", stringValue)
 		if err == nil {
 			return tm.Local().Format(time.RFC822)
 		}
 
-		tm, err = time.Parse("2006-01-02T15:04:05.", value.(string))
+		tm, err = time.Parse("2006-01-02T15:04:05.", stringValue)
 		if err == nil {
 			return tm.Local().Format(time.RFC822)
+		}
+
+		if stringValue == "0000-00-00T00:00:00Z" {
+			return ""
 		}
 	}
 

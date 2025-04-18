@@ -20,26 +20,32 @@ var userPrintConfig = formatter.PrintConfig{
 			Order: 1,
 		},
 		"DisplayName": {
-			Title: "Name",
-			Order: 2,
+			Title:    "Name",
+			MaxWidth: 30,
+			Order:    2,
 		},
 		"Email": {
-			Title: "E-mail",
-			Order: 3,
+			Title:    "E-mail",
+			MaxWidth: 30,
+			Order:    3,
+		},
+		"AccessLevel": {
+			Title: "Role",
+			Order: 4,
+		},
+		"IsArchived": {
+			Title: "Archived",
+			Order: 5,
 		},
 		"CreatedTimestamp": {
 			Title:       "Created",
 			Transformer: formatter.FormatDateTimeValue,
-			Order:       4,
+			Order:       6,
 		},
 		"LastLoginTimestamp": {
 			Title:       "Last Login",
 			Transformer: formatter.FormatDateTimeValue,
-			Order:       5,
-		},
-		"AccessLevel": {
-			Title: "Access",
-			Order: 6,
+			Order:       7,
 		},
 	},
 }
@@ -57,15 +63,6 @@ var userLimitsPrintConfig = formatter.PrintConfig{
 		"InfrastructuresLimit": {
 			Title: "Infrastructures Limit",
 			Order: 3,
-		},
-	},
-}
-
-var userApiKeyPrintConfig = formatter.PrintConfig{
-	FieldsConfig: map[string]formatter.RecordFieldConfig{
-		"ApiKey": {
-			Title: "API Key",
-			Order: 1,
 		},
 	},
 }
@@ -113,12 +110,42 @@ var userPermissionsPrintConfig = formatter.PrintConfig{
 	},
 }
 
-func List(ctx context.Context) error {
+func List(ctx context.Context, archived bool, filterId, filterDisplayName, filterEmail, filterAccountId, filterInfrastructureId, sortBy, search, searchBy string) error {
 	logger.Get().Info().Msgf("Listing all users")
 
 	client := api.GetApiClient(ctx)
 
-	userList, httpRes, err := client.UsersAPI.GetUsers(ctx).Execute()
+	request := client.UsersAPI.GetUsers(ctx)
+
+	if !archived {
+		request = request.FilterArchived([]string{"false"})
+	}
+	if filterId != "" {
+		request = request.FilterId([]string{filterId})
+	}
+	if filterDisplayName != "" {
+		request = request.FilterDisplayName([]string{filterDisplayName})
+	}
+	if filterEmail != "" {
+		request = request.FilterEmail([]string{filterEmail})
+	}
+	if filterAccountId != "" {
+		request = request.FilterAccountId([]string{filterAccountId})
+	}
+	if filterInfrastructureId != "" {
+		request = request.FilterInfrastructureIdDefault([]string{filterInfrastructureId})
+	}
+	if sortBy != "" {
+		request = request.SortBy([]string{sortBy})
+	}
+	if search != "" {
+		request = request.Search(search)
+	}
+	if searchBy != "" {
+		request = request.SearchBy([]string{searchBy})
+	}
+
+	userList, httpRes, err := request.Execute()
 	if err := response_inspector.InspectResponse(httpRes, err); err != nil {
 		return err
 	}
@@ -142,24 +169,6 @@ func Get(ctx context.Context, userId string) error {
 	}
 
 	return formatter.PrintResult(userInfo, &userPrintConfig)
-}
-
-func GetLimits(ctx context.Context, userId string) error {
-	logger.Get().Info().Msgf("Get user '%s' limits", userId)
-
-	userIdNumber, err := getUserId(userId)
-	if err != nil {
-		return err
-	}
-
-	client := api.GetApiClient(ctx)
-
-	userLimits, httpRes, err := client.UsersAPI.GetUserLimits(ctx, userIdNumber).Execute()
-	if err := response_inspector.InspectResponse(httpRes, err); err != nil {
-		return err
-	}
-
-	return formatter.PrintResult(userLimits, &userLimitsPrintConfig)
 }
 
 func Create(ctx context.Context, config []byte) error {
@@ -201,7 +210,7 @@ func Archive(ctx context.Context, userId string) error {
 }
 
 func Unarchive(ctx context.Context, userId string) error {
-	logger.Get().Info().Msgf("Unarchiving user '%s'", userId)
+	logger.Get().Info().Msgf("Un-archiving user '%s'", userId)
 
 	userIdNumber, revision, err := getUserIdAndRevision(ctx, userId)
 	if err != nil {
@@ -215,8 +224,26 @@ func Unarchive(ctx context.Context, userId string) error {
 		return err
 	}
 
-	logger.Get().Info().Msgf("User '%s' unarchived", userId)
+	logger.Get().Info().Msgf("User '%s' un-archived", userId)
 	return formatter.PrintResult(userInfo, &userPrintConfig)
+}
+
+func GetLimits(ctx context.Context, userId string) error {
+	logger.Get().Info().Msgf("Get user '%s' limits", userId)
+
+	userIdNumber, err := getUserId(userId)
+	if err != nil {
+		return err
+	}
+
+	client := api.GetApiClient(ctx)
+
+	userLimits, httpRes, err := client.UsersAPI.GetUserLimits(ctx, userIdNumber).Execute()
+	if err := response_inspector.InspectResponse(httpRes, err); err != nil {
+		return err
+	}
+
+	return formatter.PrintResult(userLimits, &userLimitsPrintConfig)
 }
 
 func UpdateLimits(ctx context.Context, userId string, config []byte) error {
@@ -383,7 +410,7 @@ func Suspend(ctx context.Context, userId string, reason string) error {
 }
 
 func Unsuspend(ctx context.Context, userId string) error {
-	logger.Get().Info().Msgf("Unsuspending user '%s'", userId)
+	logger.Get().Info().Msgf("Un-suspending user '%s'", userId)
 
 	userIdNumber, revision, err := getUserIdAndRevision(ctx, userId)
 	if err != nil {
@@ -397,7 +424,7 @@ func Unsuspend(ctx context.Context, userId string) error {
 		return err
 	}
 
-	logger.Get().Info().Msgf("User '%s' unsuspended", userId)
+	logger.Get().Info().Msgf("User '%s' un-suspended", userId)
 	return nil
 }
 

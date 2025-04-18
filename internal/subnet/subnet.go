@@ -161,6 +161,8 @@ func SubnetConfigExample(ctx context.Context) error {
 		NetworkAddress:                "192.168.1.0",
 		PrefixLength:                  24,
 		IsPool:                        false,
+		ParentSubnetId:                0,
+		Gateway:                       "192.168.1.1",
 		VrfId:                         0,
 		AllocationDenylist:            []string{},
 		AllowedChildOverlapConditions: []string{},

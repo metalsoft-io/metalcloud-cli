@@ -9,10 +9,19 @@ import (
 
 var (
 	userFlags = struct {
-		configSource  string
-		accountId     float32
-		sshKeyContent string
-		reason        string
+		configSource           string
+		accountId              float32
+		sshKeyContent          string
+		reason                 string
+		archived               bool
+		filterId               string
+		filterDisplayName      string
+		filterEmail            string
+		filterAccountId        string
+		filterInfrastructureId string
+		sortBy                 string
+		search                 string
+		searchBy               string
 	}{}
 
 	userCmd = &cobra.Command{
@@ -29,7 +38,18 @@ var (
 		SilenceUsage: true,
 		Annotations:  map[string]string{system.REQUIRED_PERMISSION: system.PERMISSION_USERS_READ},
 		RunE: func(cmd *cobra.Command, args []string) error {
-			return user.List(cmd.Context())
+			return user.List(
+				cmd.Context(),
+				userFlags.archived,
+				userFlags.filterId,
+				userFlags.filterDisplayName,
+				userFlags.filterEmail,
+				userFlags.filterAccountId,
+				userFlags.filterInfrastructureId,
+				userFlags.sortBy,
+				userFlags.search,
+				userFlags.searchBy,
+			)
 		},
 	}
 
@@ -42,18 +62,6 @@ var (
 		Args:         cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			return user.Get(cmd.Context(), args[0])
-		},
-	}
-
-	userLimitsGetCmd = &cobra.Command{
-		Use:          "limits user_id",
-		Aliases:      []string{"limits-get"},
-		Short:        "Get user limits.",
-		SilenceUsage: true,
-		Annotations:  map[string]string{system.REQUIRED_PERMISSION: system.PERMISSION_USERS_READ},
-		Args:         cobra.ExactArgs(1),
-		RunE: func(cmd *cobra.Command, args []string) error {
-			return user.GetLimits(cmd.Context(), args[0])
 		},
 	}
 
@@ -94,6 +102,18 @@ var (
 		Args:         cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			return user.Unarchive(cmd.Context(), args[0])
+		},
+	}
+
+	userLimitsGetCmd = &cobra.Command{
+		Use:          "limits user_id",
+		Aliases:      []string{"limits-get"},
+		Short:        "Get user limits.",
+		SilenceUsage: true,
+		Annotations:  map[string]string{system.REQUIRED_PERMISSION: system.PERMISSION_USERS_READ},
+		Args:         cobra.ExactArgs(1),
+		RunE: func(cmd *cobra.Command, args []string) error {
+			return user.GetLimits(cmd.Context(), args[0])
 		},
 	}
 
@@ -237,8 +257,17 @@ func init() {
 	rootCmd.AddCommand(userCmd)
 
 	userCmd.AddCommand(userListCmd)
+	userListCmd.Flags().BoolVar(&userFlags.archived, "archived", false, "Include archived users in the list.")
+	userListCmd.Flags().StringVar(&userFlags.filterId, "filter-id", "", "Filter by user ID.")
+	userListCmd.Flags().StringVar(&userFlags.filterDisplayName, "filter-display-name", "", "Filter by display name.")
+	userListCmd.Flags().StringVar(&userFlags.filterEmail, "filter-email", "", "Filter by email.")
+	userListCmd.Flags().StringVar(&userFlags.filterAccountId, "filter-account-id", "", "Filter by account ID.")
+	userListCmd.Flags().StringVar(&userFlags.filterInfrastructureId, "filter-infrastructure-id", "", "Filter by default infrastructure ID.")
+	userListCmd.Flags().StringVar(&userFlags.sortBy, "sort-by", "id:ASC", "Sort by field (e.g., 'id:ASC').")
+	userListCmd.Flags().StringVar(&userFlags.search, "search", "", "Search term to filter results.")
+	userListCmd.Flags().StringVar(&userFlags.searchBy, "search-by", "", "Fields to search by (e.g., 'displayName,email').")
+
 	userCmd.AddCommand(userGetCmd)
-	userCmd.AddCommand(userLimitsGetCmd)
 
 	// User create
 	userCmd.AddCommand(userCreateCmd)
@@ -250,6 +279,7 @@ func init() {
 	userCmd.AddCommand(userUnarchiveCmd)
 
 	// User limits update
+	userCmd.AddCommand(userLimitsGetCmd)
 	userCmd.AddCommand(userLimitsUpdateCmd)
 	userLimitsUpdateCmd.Flags().StringVar(&userFlags.configSource, "config-source", "", "Source of the user limits configuration. Can be 'pipe' or path to a JSON file.")
 	userLimitsUpdateCmd.MarkFlagsOneRequired("config-source")

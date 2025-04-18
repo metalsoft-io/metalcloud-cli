@@ -311,23 +311,26 @@ func ServerInstanceGroupNetworkConnect(ctx context.Context, serverInstanceGroupI
 		return fmt.Errorf("invalid tagged value: %s", isTagged)
 	}
 
-	payload := sdk.CreateServerInstanceGroupNetworkConnectionDto{
+	payload := sdk.CreateServerInstanceGroupNetworkConnection{
 		LogicalNetworkId: networkId,
-		AccessMode:       accessMode,
+		AccessMode:       sdk.NetworkEndpointGroupAllowedAccessMode(accessMode),
 		Tagged:           tagged,
 	}
 
 	if redundancy != "" {
 		payload.Redundancy = *sdk.NewNullableRedundancyConfig(
 			&sdk.RedundancyConfig{
-				Mode: redundancy,
+				Mode: sdk.NetworkEndpointGroupRedundancyMode(redundancy),
 			},
 		)
 	}
 
 	client := api.GetApiClient(ctx)
 
-	connection, httpRes, err := client.ServerInstanceGroupAPI.CreateServerInstanceGroupNetworkConfigurationConnection(ctx, int32(serverInstanceGroupIdNumerical)).CreateServerInstanceGroupNetworkConnectionDto(payload).Execute()
+	connection, httpRes, err := client.ServerInstanceGroupAPI.
+		CreateServerInstanceGroupNetworkConfigurationConnection(ctx, int32(serverInstanceGroupIdNumerical)).
+		CreateServerInstanceGroupNetworkConnection(payload).
+		Execute()
 	if err := response_inspector.InspectResponse(httpRes, err); err != nil {
 		return err
 	}
@@ -348,10 +351,11 @@ func ServerInstanceGroupNetworkUpdate(ctx context.Context, serverInstanceGroupId
 		return err
 	}
 
-	payload := sdk.UpdateNetworkEndpointGroupLogicalNetworkDto{}
+	payload := sdk.UpdateNetworkEndpointGroupLogicalNetwork{}
 
 	if accessMode != "" {
-		payload.AccessMode = &accessMode
+		accessModeValue := sdk.NetworkEndpointGroupAllowedAccessMode(accessMode)
+		payload.AccessMode = &accessModeValue
 	}
 
 	if isTagged != "" {
@@ -366,7 +370,7 @@ func ServerInstanceGroupNetworkUpdate(ctx context.Context, serverInstanceGroupId
 	if redundancy != "" {
 		payload.Redundancy = *sdk.NewNullableRedundancyConfig(
 			&sdk.RedundancyConfig{
-				Mode: redundancy,
+				Mode: sdk.NetworkEndpointGroupRedundancyMode(redundancy),
 			},
 		)
 	}
@@ -375,7 +379,7 @@ func ServerInstanceGroupNetworkUpdate(ctx context.Context, serverInstanceGroupId
 
 	connection, httpRes, err := client.ServerInstanceGroupAPI.
 		UpdateServerInstanceGroupNetworkConfigurationConnection(ctx, int32(serverInstanceGroupIdNumerical), networkConnectionIdNumerical).
-		UpdateNetworkEndpointGroupLogicalNetworkDto(payload).
+		UpdateNetworkEndpointGroupLogicalNetwork(payload).
 		Execute()
 	if err := response_inspector.InspectResponse(httpRes, err); err != nil {
 		return err

@@ -159,6 +159,22 @@ func LogicalNetworkUpdate(ctx context.Context, logicalNetworkId string, config [
 	return formatter.PrintResult(logicalNetwork, &logicalNetworkPrintConfig)
 }
 
+func LogicalNetworkConfigExample(ctx context.Context) error {
+	logicalNetworkConfiguration := sdk.CreateLogicalNetwork{
+		Label:              sdk.PtrString("example-logical-network"),
+		Name:               sdk.PtrString("Example Logical Network"),
+		Description:        sdk.PtrString("Example logical network description"),
+		FabricId:           1,
+		InfrastructureId:   sdk.PtrFloat32(1),
+		LogicalNetworkType: "vlan",
+		Annotations: map[string]interface{}{
+			"example-key": "example-value",
+		},
+	}
+
+	return formatter.PrintResult(logicalNetworkConfiguration, nil)
+}
+
 func getLogicalNetworkId(logicalNetworkId string) (float32, error) {
 	logicalNetworkIdNumeric, err := strconv.ParseFloat(logicalNetworkId, 32)
 	if err != nil {

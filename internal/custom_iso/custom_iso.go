@@ -207,9 +207,9 @@ func CustomIsoBootServer(ctx context.Context, customIsoId string, serverId strin
 func CustomIsoConfigExample(ctx context.Context) error {
 	// Example create custom ISO configuration
 	customIsoConfiguration := sdk.CreateCustomIso{
-		Name:        "example-iso",
-		DisplayName: sdk.PtrString("Example Custom ISO"),
-		AccessUrl:   "http://example.com/isos/example.iso",
+		Label:     "example-iso",
+		Name:      sdk.PtrString("Example Custom ISO"),
+		AccessUrl: "http://example.com/isos/example.iso",
 	}
 
 	return formatter.PrintResult(customIsoConfiguration, nil)

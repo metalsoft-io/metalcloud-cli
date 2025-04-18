@@ -47,6 +47,17 @@ var (
 		},
 	}
 
+	logicalNetworkConfigExampleCmd = &cobra.Command{
+		Use:          "config-example",
+		Aliases:      []string{"example"},
+		Short:        "Get example of logical network configuration.",
+		SilenceUsage: true,
+		Annotations:  map[string]string{system.REQUIRED_PERMISSION: system.PERMISSION_NETWORK_PROFILES_READ},
+		RunE: func(cmd *cobra.Command, args []string) error {
+			return logical_network.LogicalNetworkConfigExample(cmd.Context())
+		},
+	}
+
 	logicalNetworkCreateCmd = &cobra.Command{
 		Use:          "create",
 		Aliases:      []string{"new"},
@@ -99,6 +110,8 @@ func init() {
 
 	logicalNetworkCmd.AddCommand(logicalNetworkListCmd)
 	logicalNetworkCmd.AddCommand(logicalNetworkGetCmd)
+
+	logicalNetworkCmd.AddCommand(logicalNetworkConfigExampleCmd)
 
 	logicalNetworkCmd.AddCommand(logicalNetworkCreateCmd)
 	logicalNetworkCreateCmd.Flags().StringVar(&logicalNetworkFlags.configSource, "config-source", "", "Source of the new logical network configuration. Can be 'pipe' or path to a JSON file.")
