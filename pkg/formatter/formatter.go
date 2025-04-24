@@ -11,6 +11,7 @@ import (
 
 	"github.com/jedib0t/go-pretty/v6/table"
 	"github.com/jedib0t/go-pretty/v6/text"
+	sdk "github.com/metalsoft-io/metalcloud-sdk-go"
 	"github.com/spf13/viper"
 	"gopkg.in/yaml.v3"
 )
@@ -294,6 +295,13 @@ func extractValue(value reflect.Value) interface{} {
 			result = append(result, fmt.Sprintf("%s: %s", key.String(), extractValue(value.MapIndex(key))))
 		}
 		return result
+	case reflect.Struct:
+		if reflect.TypeOf(value) == reflect.TypeOf(sdk.NullableInt32{}) {
+			if value.Interface().(sdk.NullableInt32).IsSet() {
+				return value.Interface().(sdk.NullableInt32).Get()
+			}
+		}
+		return nil
 	case reflect.Invalid:
 		return nil
 	default:

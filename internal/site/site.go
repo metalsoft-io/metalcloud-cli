@@ -107,7 +107,7 @@ func SiteCreate(ctx context.Context, siteName string) error {
 
 	createSite := sdk.SiteCreate{
 		Name: siteName,
-		Slug: sdk.PtrString(utils.CreateSlug(siteName)),
+		Slug: utils.CreateSlug(siteName),
 	}
 
 	client := api.GetApiClient(ctx)

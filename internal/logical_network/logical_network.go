@@ -16,43 +16,72 @@ import (
 
 var logicalNetworkPrintConfig = formatter.PrintConfig{
 	FieldsConfig: map[string]formatter.RecordFieldConfig{
-		"Id": {
-			Title: "#",
-			Order: 1,
-		},
-		"Label": {
-			MaxWidth: 30,
-			Order:    2,
-		},
-		"Name": {
-			MaxWidth: 30,
-			Order:    3,
-		},
-		"Description": {
-			MaxWidth: 30,
-			Order:    4,
-		},
-		"LogicalNetworkType": {
-			Title: "Type",
-			Order: 5,
-		},
-		"FabricId": {
-			Title: "Fabric ID",
-			Order: 6,
-		},
-		"InfrastructureId": {
-			Title: "Infra ID",
-			Order: 7,
+		"VlanLogicalNetwork": {
+			Hidden: true,
+			InnerFields: map[string]formatter.RecordFieldConfig{
+				"Id": {
+					Title: "#",
+					Order: 1,
+				},
+				"Label": {
+					MaxWidth: 30,
+					Order:    2,
+				},
+				"Name": {
+					MaxWidth: 30,
+					Order:    3,
+				},
+				"Kind": {
+					Title: "Kind",
+					Order: 4,
+				},
+				"FabricId": {
+					Title: "Fabric ID",
+					Order: 5,
+				},
+				"InfrastructureId": {
+					Title: "Infra ID",
+					Order: 6,
+				},
+			},
 		},
 	},
 }
 
-func LogicalNetworkList(ctx context.Context, fabricIdOrLabel string) error {
+type ListFlags struct {
+	FilterId               []string
+	FilterLabel            []string
+	FilterFabricId         []string
+	FilterInfrastructureId []string
+	FilterKind             []string
+	SortBy                 []string
+}
+
+func LogicalNetworkList(ctx context.Context, fabricIdOrLabel string, flags ListFlags) error {
 	logger.Get().Info().Msgf("Listing logical networks")
 
 	client := api.GetApiClient(ctx)
 
-	request := client.LogicalNetworksAPI.GetAllLogicalNetworks(ctx)
+	request := client.LogicalNetworkAPI.GetLogicalNetworks(ctx)
+
+	if len(flags.FilterId) > 0 {
+		request = request.FilterId(flags.FilterId)
+	}
+	if len(flags.FilterLabel) > 0 {
+		request = request.FilterLabel(flags.FilterLabel)
+	}
+	if len(flags.FilterFabricId) > 0 {
+		request = request.FilterFabricId(flags.FilterFabricId)
+	}
+	if len(flags.FilterInfrastructureId) > 0 {
+		request = request.FilterInfrastructureId(flags.FilterInfrastructureId)
+	}
+	if len(flags.FilterKind) > 0 {
+		request = request.FilterKind(flags.FilterKind)
+	}
+	if len(flags.SortBy) > 0 {
+		request = request.SortBy(flags.SortBy)
+	}
 
 	if fabricIdOrLabel != "" {
 		fabric, err := fabric.GetFabricByIdOrLabel(ctx, fabricIdOrLabel)
@@ -81,7 +110,7 @@ func LogicalNetworkGet(ctx context.Context, logicalNetworkId string) error {
 
 	client := api.GetApiClient(ctx)
 
-	logicalNetwork, httpRes, err := client.LogicalNetworksAPI.GetLogicalNetworkById(ctx, logicalNetworkIdNumeric).Execute()
+	logicalNetwork, httpRes, err := client.LogicalNetworkAPI.GetLogicalNetwork(ctx, logicalNetworkIdNumeric).Execute()
 	if err := response_inspector.InspectResponse(httpRes, err); err != nil {
 		return err
 	}
@@ -89,47 +118,180 @@ func LogicalNetworkGet(ctx context.Context, logicalNetworkId string) error {
 	return formatter.PrintResult(logicalNetwork, &logicalNetworkPrintConfig)
 }
 
-func LogicalNetworkCreate(ctx context.Context, config []byte) error {
+func LogicalNetworkConfigExample(ctx context.Context, kind string) error {
+	logicalNetworkConfiguration := sdk.CreateLogicalNetworkRequest{}
+
+	if kind == string(sdk.LOGICALNETWORKKIND_VLAN) {
+		logicalNetworkConfiguration.CreateVlanLogicalNetwork = &sdk.CreateVlanLogicalNetwork{
+			Kind:             sdk.LOGICALNETWORKKIND_VLAN,
+			Label:            sdk.PtrString("example-logical-network"),
+			Name:             sdk.PtrString("Example Logical Network"),
+			FabricId:         1,
+			InfrastructureId: *sdk.NewNullableInt32(sdk.PtrInt32(1)),
+			Vlan: sdk.CreateVlanLogicalNetworkVlanProperties{
+				VlanAllocationStrategies: []sdk.CreateVlanAllocationStrategy{
+					{
+						CreateAutoVlanAllocationStrategy: &sdk.CreateAutoVlanAllocationStrategy{
+							Kind: sdk.ALLOCATIONSTRATEGYKIND_AUTO,
+							Scope: sdk.CreateResourceScope{
+								Kind:       sdk.RESOURCESCOPEKIND_FABRIC,
+								ResourceId: 1,
+							},
+							GranularityLevel: *sdk.NewNullableVlanAllocationGranularityLevel(sdk.VLANALLOCATIONGRANULARITYLEVEL_NETWORK_DEVICE.Ptr()),
+						},
+					},
+				},
+			},
+			Ipv4: sdk.CreateVlanLogicalNetworkIpv4Properties{
+				SubnetAllocationStrategies: []sdk.CreateIpv4SubnetAllocationStrategy{
+					{
+						CreateAutoIpv4SubnetAllocationStrategy: &sdk.CreateAutoIpv4SubnetAllocationStrategy{
+							Kind: sdk.ALLOCATIONSTRATEGYKIND_AUTO,
+							Scope: sdk.CreateResourceScope{
+								Kind:       sdk.RESOURCESCOPEKIND_FABRIC,
+								ResourceId: 1,
+							},
+							PrefixLength:  24,
+							SubnetPoolIds: []int32{2, 3},
+						},
+					},
+				},
+			},
+			Ipv6: &sdk.CreateVlanLogicalNetworkIpv6Properties{
+				SubnetAllocationStrategies: []sdk.CreateIpv6SubnetAllocationStrategy{
+					{
+						CreateAutoIpv6SubnetAllocationStrategy: &sdk.CreateAutoIpv6SubnetAllocationStrategy{
+							Kind: sdk.ALLOCATIONSTRATEGYKIND_AUTO,
+							Scope: sdk.CreateResourceScope{
+								Kind:       sdk.RESOURCESCOPEKIND_FABRIC,
+								ResourceId: 1,
+							},
+							PrefixLength:  64,
+							SubnetPoolIds: []int32{2, 3},
+						},
+					},
+				},
+			},
+			RouteDomainId: *sdk.NewNullableInt32(sdk.PtrInt32(1)),
+			Annotations: &map[string]string{
+				"example": "example",
+			},
+		}
+	} else if kind == string(sdk.LOGICALNETWORKKIND_VXLAN) {
+		logicalNetworkConfiguration.CreateVxlanLogicalNetwork = &sdk.CreateVxlanLogicalNetwork{
+			Kind:             sdk.LOGICALNETWORKKIND_VXLAN,
+			Label:            sdk.PtrString("example-logical-network"),
+			Name:             sdk.PtrString("Example Logical Network"),
+			FabricId:         1,
+			InfrastructureId: *sdk.NewNullableInt32(sdk.PtrInt32(1)),
+			Vlan: sdk.CreateVxlanLogicalNetworkVlanProperties{
+				VlanAllocationStrategies: []sdk.CreateVlanAllocationStrategy{
+					{
+						CreateAutoVlanAllocationStrategy: &sdk.CreateAutoVlanAllocationStrategy{
+							Kind: sdk.ALLOCATIONSTRATEGYKIND_AUTO,
+							Scope: sdk.CreateResourceScope{
+								Kind:       sdk.RESOURCESCOPEKIND_FABRIC,
+								ResourceId: 1,
+							},
+							GranularityLevel: *sdk.NewNullableVlanAllocationGranularityLevel(sdk.VLANALLOCATIONGRANULARITYLEVEL_NETWORK_DEVICE.Ptr()),
+						},
+					},
+				},
+			},
+			Vxlan: sdk.CreateVxlanLogicalNetworkVxlanProperties{
+				VniAllocationStrategies: []sdk.CreateVniAllocationStrategy{
+					{
+						CreateAutoVniAllocationStrategy: &sdk.CreateAutoVniAllocationStrategy{
+							Kind: sdk.ALLOCATIONSTRATEGYKIND_AUTO,
+							Scope: sdk.CreateResourceScope{
+								Kind:       sdk.RESOURCESCOPEKIND_FABRIC,
+								ResourceId: 1,
+							},
+						},
+					},
+				},
+			},
+			Ipv4: sdk.CreateVxlanLogicalNetworkIpv4Properties{
+				SubnetAllocationStrategies: []sdk.CreateIpv4SubnetAllocationStrategy{
+					{
+						CreateAutoIpv4SubnetAllocationStrategy: &sdk.CreateAutoIpv4SubnetAllocationStrategy{
+							Kind: sdk.ALLOCATIONSTRATEGYKIND_AUTO,
+							Scope: sdk.CreateResourceScope{
+								Kind:       sdk.RESOURCESCOPEKIND_FABRIC,
+								ResourceId: 1,
+							},
+							PrefixLength:  24,
+							SubnetPoolIds: []int32{2, 3},
+						},
+					},
+				},
+			},
+			Ipv6: &sdk.CreateVxlanLogicalNetworkIpv6Properties{
+				SubnetAllocationStrategies: []sdk.CreateIpv6SubnetAllocationStrategy{
+					{
+						CreateAutoIpv6SubnetAllocationStrategy: &sdk.CreateAutoIpv6SubnetAllocationStrategy{
+							Kind: sdk.ALLOCATIONSTRATEGYKIND_AUTO,
+							Scope: sdk.CreateResourceScope{
+								Kind:       sdk.RESOURCESCOPEKIND_FABRIC,
+								ResourceId: 1,
+							},
+							PrefixLength:  64,
+							SubnetPoolIds: []int32{2, 3},
+						},
+					},
+				},
+			},
+			RouteDomainId: *sdk.NewNullableInt32(sdk.PtrInt32(1)),
+			Annotations: &map[string]string{
+				"example": "example",
+			},
+		}
+	} else {
+		err := fmt.Errorf("unsupported logical network kind '%s'", kind)
+		logger.Get().Error().Err(err).Msg("")
+		return err
+	}
+
+	return formatter.PrintResult(logicalNetworkConfiguration, nil)
+}
+
+func LogicalNetworkCreate(ctx context.Context, kind string, config []byte) error {
 	logger.Get().Info().Msgf("Creating logical network")
 
-	var logicalNetworkConfig sdk.CreateLogicalNetwork
-	err := json.Unmarshal(config, &logicalNetworkConfig)
-	if err != nil {
+	var logicalNetworkConfig sdk.CreateLogicalNetworkRequest
+	if kind == string(sdk.LOGICALNETWORKKIND_VLAN) {
+		vlanLogicalNetwork := sdk.CreateVlanLogicalNetwork{}
+		err := json.Unmarshal(config, &vlanLogicalNetwork)
+		if err != nil {
+			return err
+		}
+
+		logicalNetworkConfig.CreateVlanLogicalNetwork = &vlanLogicalNetwork
+	} else if kind == string(sdk.LOGICALNETWORKKIND_VXLAN) {
+		vxlanLogicalNetwork := sdk.CreateVxlanLogicalNetwork{}
+		err := json.Unmarshal(config, &vxlanLogicalNetwork)
+		if err != nil {
+			return err
+		}
+
+		logicalNetworkConfig.CreateVxlanLogicalNetwork = &vxlanLogicalNetwork
+	} else {
+		err := fmt.Errorf("unsupported logical network kind '%s'", kind)
+		logger.Get().Error().Err(err).Msg("")
 		return err
 	}
 
 	client := api.GetApiClient(ctx)
 
-	logicalNetwork, httpRes, err := client.LogicalNetworksAPI.
+	logicalNetwork, httpRes, err := client.LogicalNetworkAPI.
 		CreateLogicalNetwork(ctx).
-		CreateLogicalNetwork(logicalNetworkConfig).
+		CreateLogicalNetworkRequest(logicalNetworkConfig).
 		Execute()
 	if err := response_inspector.InspectResponse(httpRes, err); err != nil {
 		return err
 	}
 
 	return formatter.PrintResult(logicalNetwork, &logicalNetworkPrintConfig)
-}
-
-func LogicalNetworkDelete(ctx context.Context, logicalNetworkId string) error {
-	logger.Get().Info().Msgf("Deleting logical network '%s'", logicalNetworkId)
-
-	logicalNetworkIdNumeric, err := getLogicalNetworkId(logicalNetworkId)
-	if err != nil {
-		return err
-	}
-
-	client := api.GetApiClient(ctx)
-
-	httpRes, err := client.LogicalNetworksAPI.
-		DeleteLogicalNetwork(ctx, logicalNetworkIdNumeric).
-		Execute()
-	if err := response_inspector.InspectResponse(httpRes, err); err != nil {
-		return err
-	}
-
-	logger.Get().Info().Msgf("Logical network '%s' deleted", logicalNetworkId)
-	return nil
 }
 
 func LogicalNetworkUpdate(ctx context.Context, logicalNetworkId string, config []byte) error {
@@ -148,7 +310,7 @@ func LogicalNetworkUpdate(ctx context.Context, logicalNetworkId string, config [
 
 	client := api.GetApiClient(ctx)
 
-	logicalNetwork, httpRes, err := client.LogicalNetworksAPI.
+	logicalNetwork, httpRes, err := client.LogicalNetworkAPI.
 		UpdateLogicalNetwork(ctx, logicalNetworkIdNumeric).
 		UpdateLogicalNetwork(logicalNetworkUpdate).
 		Execute()
@@ -159,20 +321,25 @@ func LogicalNetworkUpdate(ctx context.Context, logicalNetworkId string, config [
 	return formatter.PrintResult(logicalNetwork, &logicalNetworkPrintConfig)
 }
 
-func LogicalNetworkConfigExample(ctx context.Context) error {
-	logicalNetworkConfiguration := sdk.CreateLogicalNetwork{
-		Label:              sdk.PtrString("example-logical-network"),
-		Name:               sdk.PtrString("Example Logical Network"),
-		Description:        sdk.PtrString("Example logical network description"),
-		FabricId:           1,
-		InfrastructureId:   sdk.PtrFloat32(1),
-		LogicalNetworkType: "vlan",
-		Annotations: map[string]interface{}{
-			"example-key": "example-value",
-		},
+func LogicalNetworkDelete(ctx context.Context, logicalNetworkId string) error {
+	logger.Get().Info().Msgf("Deleting logical network '%s'", logicalNetworkId)
+
+	logicalNetworkIdNumeric, err := getLogicalNetworkId(logicalNetworkId)
+	if err != nil {
+		return err
 	}
 
-	return formatter.PrintResult(logicalNetworkConfiguration, nil)
+	client := api.GetApiClient(ctx)
+
+	httpRes, err := client.LogicalNetworkAPI.
+		DeleteLogicalNetwork(ctx, logicalNetworkIdNumeric).
+		Execute()
+	if err := response_inspector.InspectResponse(httpRes, err); err != nil {
+		return err
+	}
+
+	logger.Get().Info().Msgf("Logical network '%s' deleted", logicalNetworkId)
+	return nil
 }
 
 func getLogicalNetworkId(logicalNetworkId string) (float32, error) {

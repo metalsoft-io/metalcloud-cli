@@ -26,7 +26,7 @@ var userPrintConfig = formatter.PrintConfig{
 		},
 		"Email": {
 			Title:    "E-mail",
-			MaxWidth: 30,
+			MaxWidth: 50,
 			Order:    3,
 		},
 		"AccessLevel": {

@@ -226,7 +226,7 @@ func init() {
 	rootCmd.AddCommand(networkDeviceCmd)
 
 	networkDeviceCmd.AddCommand(networkDeviceListCmd)
-	networkDeviceListCmd.Flags().StringVar(&networkDeviceFlags.filterStatus, "filter-status", "", "Filter the result by network device status.")
+	networkDeviceListCmd.Flags().StringVar(&networkDeviceFlags.filterStatus, "filter-status", "active", "Filter the result by network device status.")
 
 	networkDeviceCmd.AddCommand(networkDeviceGetCmd)
 
