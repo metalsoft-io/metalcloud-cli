@@ -31,16 +31,16 @@ This CLI requires the correct version of the CLI to be used with the MetalSoft M
 func init() {
 	cobra.OnInitialize(initConfig)
 
-	rootCmd.PersistentFlags().StringVar(&cfgFile, "config", "", "config file")
+	rootCmd.PersistentFlags().StringVarP(&cfgFile, "config", "c", "", "Config file path")
 
 	// Add the global persistent flags
 	rootCmd.PersistentFlags().StringP(system.ConfigEndpoint, "e", "", "MetalCloud API Endpoint")
 	rootCmd.PersistentFlags().StringP(system.ConfigApiKey, "k", "", "MetalCloud API Key")
-	rootCmd.PersistentFlags().StringP(logger.ConfigVerbosity, "v", "INFO", "Set the log level verbosity")
-	rootCmd.PersistentFlags().StringP(logger.ConfigLogFile, "l", "", "Set the log file path")
-	rootCmd.PersistentFlags().StringP(formatter.ConfigFormat, "f", "text", "The output format. Supported values are 'text','csv','md','json','yaml'.")
-	rootCmd.PersistentFlags().BoolP(system.ConfigDebug, "d", false, "Set to true to enable debug logging")
-	rootCmd.PersistentFlags().BoolP(system.ConfigInsecure, "i", false, "Set to true to allow insecure transport")
+	rootCmd.PersistentFlags().StringP(logger.ConfigVerbosity, "v", "INFO", "Log level verbosity")
+	rootCmd.PersistentFlags().StringP(logger.ConfigLogFile, "l", "", "Log file path")
+	rootCmd.PersistentFlags().StringP(formatter.ConfigFormat, "f", "text", "Output format. Supported values are 'text','csv','md','json','yaml'.")
+	rootCmd.PersistentFlags().BoolP(system.ConfigDebug, "d", false, "Set to enable debug logging")
+	rootCmd.PersistentFlags().BoolP(system.ConfigInsecure, "i", false, "Set to allow insecure transport")
 
 	err := viper.BindPFlags(rootCmd.PersistentFlags())
 	if err != nil {

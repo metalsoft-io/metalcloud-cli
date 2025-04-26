@@ -23,6 +23,7 @@ __debug*
 .envrc
 .env
 metalcloud.yaml
+*.yaml
 
 /bin
 *.log
