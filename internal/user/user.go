@@ -345,13 +345,13 @@ func AddSSHKey(ctx context.Context, userId string, keyContent string) error {
 		return err
 	}
 
-	sshKeyData := sdk.CreateUserSSHKeyDto{
+	sshKeyData := sdk.CreateUserSSHKey{
 		SshKey: keyContent,
 	}
 
 	client := api.GetApiClient(ctx)
 
-	sshKey, httpRes, err := client.UsersAPI.AddUserSshKey(ctx, userIdNumber).CreateUserSSHKeyDto(sshKeyData).Execute()
+	sshKey, httpRes, err := client.UsersAPI.AddUserSshKey(ctx, userIdNumber).CreateUserSSHKey(sshKeyData).Execute()
 	if err := response_inspector.InspectResponse(httpRes, err); err != nil {
 		return err
 	}
@@ -454,7 +454,7 @@ func UpdatePermissions(ctx context.Context, userId string, config []byte) error 
 		return err
 	}
 
-	var permissionsConfig sdk.UpdateUserPermissionsDto
+	var permissionsConfig sdk.UpdateUserPermissions
 	err = json.Unmarshal(config, &permissionsConfig)
 	if err != nil {
 		return err
@@ -462,7 +462,7 @@ func UpdatePermissions(ctx context.Context, userId string, config []byte) error 
 
 	client := api.GetApiClient(ctx)
 
-	permissions, httpRes, err := client.UsersAPI.UpdateUserPermissions(ctx, userIdNumber).UpdateUserPermissionsDto(permissionsConfig).IfMatch(revision).Execute()
+	permissions, httpRes, err := client.UsersAPI.UpdateUserPermissions(ctx, userIdNumber).UpdateUserPermissions(permissionsConfig).IfMatch(revision).Execute()
 	if err := response_inspector.InspectResponse(httpRes, err); err != nil {
 		return err
 	}
