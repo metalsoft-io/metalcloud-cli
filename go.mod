@@ -12,14 +12,14 @@ require (
 	github.com/golang/mock v1.6.0
 	github.com/jwalton/gchalk v1.3.0
 	github.com/kdomanski/iso9660 v0.3.1
-	github.com/metalsoft-io/metal-cloud-sdk-go/v3 v3.2.2
+	github.com/metalsoft-io/metal-cloud-sdk-go/v3 v3.2.4
 	github.com/metalsoft-io/metal-cloud-sdk2-go v1.9.2
 	github.com/metalsoft-io/tableformatter v1.0.9
 	github.com/onsi/gomega v1.34.1
 	github.com/savaki/jq v0.0.0-20161209013833-0e6baecebbf8
 	github.com/sergi/go-diff v1.3.2-0.20230802210424-5b0b94c5c0d3
 	golang.org/x/crypto v0.31.0
-	golang.org/x/mod v0.19.0
+	golang.org/x/mod v0.20.0
 	gopkg.in/yaml.v2 v2.4.0
 	gopkg.in/yaml.v3 v3.0.1
 )
@@ -35,7 +35,7 @@ require (
 	github.com/pjbgf/sha1cd v0.3.0 // indirect
 	github.com/skeema/knownhosts v1.3.0 // indirect
 	golang.org/x/sync v0.10.0 // indirect
-	golang.org/x/tools v0.23.0 // indirect
+	golang.org/x/tools v0.24.0 // indirect
 )
 
 require (
@@ -51,7 +51,7 @@ require (
 	github.com/kevinburke/ssh_config v1.2.0 // indirect
 	github.com/xanzy/ssh-agent v0.3.3 // indirect
 	github.com/ybbus/jsonrpc v2.1.2+incompatible // indirect
-	golang.org/x/exp v0.0.0-20240719175910-8a7402abbf56
+	golang.org/x/exp v0.0.0-20240823005443-9b4947da3948
 	golang.org/x/net v0.33.0
 	golang.org/x/oauth2 v0.23.0 // indirect
 	golang.org/x/sys v0.28.0 // indirect
