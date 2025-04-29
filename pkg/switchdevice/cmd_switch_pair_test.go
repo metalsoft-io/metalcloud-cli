@@ -10,6 +10,7 @@ import (
 	. "github.com/onsi/gomega"
 
 	"github.com/metalsoft-io/metalcloud-cli/internal/command"
+	"github.com/metalsoft-io/metalcloud-cli/internal/fixtures"
 )
 
 func TestSwitchPairList(t *testing.T) {
@@ -66,7 +67,7 @@ func TestSwitchPairCreate(t *testing.T) {
 
 	var swl metalcloud.SwitchDeviceLink
 
-	err := json.Unmarshal([]byte(_switchDeviceLinkFixture1), &swl)
+	err := json.Unmarshal([]byte(fixtures.SwitchDeviceLinkFixture1), &swl)
 	if err != nil {
 		t.Error(err)
 	}
@@ -77,6 +78,9 @@ func TestSwitchPairCreate(t *testing.T) {
 		AnyTimes()
 
 	sw1, err := getSwitchFixture1()
+	if err != nil {
+		t.Error(err)
+	}
 
 	client.EXPECT().
 		SwitchDeviceGet(7, false).
@@ -114,7 +118,7 @@ func TestSwitchPairDelete(t *testing.T) {
 
 	var swl metalcloud.SwitchDeviceLink
 
-	err := json.Unmarshal([]byte(_switchDeviceLinkFixture1), &swl)
+	err := json.Unmarshal([]byte(fixtures.SwitchDeviceLinkFixture1), &swl)
 	if err != nil {
 		t.Error(err)
 	}
@@ -125,7 +129,9 @@ func TestSwitchPairDelete(t *testing.T) {
 		AnyTimes()
 
 	sw1, err := getSwitchFixture1()
-
+	if err != nil {
+		t.Error(err)
+	}
 	client.EXPECT().
 		SwitchDeviceGet(7, false).
 		Return(&sw1, nil).
@@ -151,5 +157,3 @@ func TestSwitchPairDelete(t *testing.T) {
 	_, err = switchPairDeleteCmd(&cmd, client)
 	Expect(err).To(BeNil())
 }
-
-const _switchDeviceLinkFixture1 = "{\"network_equipment_link_id\": 7,\"network_equipment_id_1\": 7,\"network_equipment_id_2\": 8,\"network_equipment_link_type\": \"mlag\",\"network_equipment_link_properties\": []}"
