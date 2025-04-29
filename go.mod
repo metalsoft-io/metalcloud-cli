@@ -1,8 +1,7 @@
 module github.com/metalsoft-io/metalcloud-cli
 
 go 1.22
-
-toolchain go1.22.6
+toolchain go1.24.1
 
 require (
 	github.com/atomicgo/cursor v0.0.1
@@ -18,7 +17,7 @@ require (
 	github.com/onsi/gomega v1.34.1
 	github.com/savaki/jq v0.0.0-20161209013833-0e6baecebbf8
 	github.com/sergi/go-diff v1.3.2-0.20230802210424-5b0b94c5c0d3
-	golang.org/x/crypto v0.31.0
+	golang.org/x/crypto v0.35.0
 	golang.org/x/mod v0.20.0
 	gopkg.in/yaml.v2 v2.4.0
 	gopkg.in/yaml.v3 v3.0.1
@@ -34,7 +33,7 @@ require (
 	github.com/google/go-cmp v0.6.0 // indirect
 	github.com/pjbgf/sha1cd v0.3.0 // indirect
 	github.com/skeema/knownhosts v1.3.0 // indirect
-	golang.org/x/sync v0.10.0 // indirect
+	golang.org/x/sync v0.11.0 // indirect
 	golang.org/x/tools v0.24.0 // indirect
 )
 
@@ -54,8 +53,8 @@ require (
 	golang.org/x/exp v0.0.0-20240823005443-9b4947da3948
 	golang.org/x/net v0.33.0
 	golang.org/x/oauth2 v0.23.0 // indirect
-	golang.org/x/sys v0.28.0 // indirect
-	golang.org/x/term v0.27.0 // indirect
-	golang.org/x/text v0.21.0 // indirect
+	golang.org/x/sys v0.30.0 // indirect
+	golang.org/x/term v0.29.0 // indirect
+	golang.org/x/text v0.22.0 // indirect
 	gopkg.in/warnings.v0 v0.1.2 // indirect
 )
