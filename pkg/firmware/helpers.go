@@ -492,10 +492,22 @@ func retrieveSupportedServerTypes(client metalcloud.MetalCloudClient, input stri
 	}
 
 	for _, serverTypeObject := range *serversTypeObject {
-		var serverTypes []string
-		err := json.Unmarshal([]byte(serverTypeObject.ServerTypeAllowedVendorSkuIdsJSON), &serverTypes)
+		var rawServerTypes []interface{}
+		err := json.Unmarshal([]byte(serverTypeObject.ServerTypeAllowedVendorSkuIdsJSON), &rawServerTypes)
 		if err != nil {
-			return nil, nil, fmt.Errorf("Error unmarshalling server types: %v", err)
+			return nil, nil, fmt.Errorf("error unmarshalling server types: %v", err)
+		}
+
+		var serverTypes []string
+		for _, v := range rawServerTypes {
+			switch val := v.(type) {
+			case string:
+				serverTypes = append(serverTypes, val)
+			case float64:
+				serverTypes = append(serverTypes, fmt.Sprintf("%.0f", val)) // format number without decimals
+			default:
+				return nil, nil, fmt.Errorf("unsupported type in server types array: %T", v)
+			}
 		}
 
 		for _, serverType := range serverTypes {
