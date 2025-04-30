@@ -19,10 +19,10 @@ var (
 
 	rootCmd = &cobra.Command{
 		Use:   "metalcloud-cli",
-		Short: "MetalSoft MetalCloud CLI",
-		Long: `A CLI for interacting with MetalSoft MetalCloud instance.
+		Short: "MetalCloud CLI",
+		Long: `A CLI for interacting with MetalSoft instance.
 
-This CLI requires the correct version of the CLI to be used with the MetalSoft MetalCloud instance.`,
+This CLI requires the correct version of the CLI to be used with the MetalCloud instance of compatible version.`,
 		PersistentPreRunE:  rootPersistentPreRun,
 		PersistentPostRunE: rootPersistentPostRun,
 	}
@@ -34,8 +34,8 @@ func init() {
 	rootCmd.PersistentFlags().StringVarP(&cfgFile, "config", "c", "", "Config file path")
 
 	// Add the global persistent flags
-	rootCmd.PersistentFlags().StringP(system.ConfigEndpoint, "e", "", "MetalCloud API Endpoint")
-	rootCmd.PersistentFlags().StringP(system.ConfigApiKey, "k", "", "MetalCloud API Key")
+	rootCmd.PersistentFlags().StringP(system.ConfigEndpoint, "e", "", "MetalCloud API endpoint")
+	rootCmd.PersistentFlags().StringP(system.ConfigApiKey, "k", "", "MetalCloud API key")
 	rootCmd.PersistentFlags().StringP(logger.ConfigVerbosity, "v", "INFO", "Log level verbosity")
 	rootCmd.PersistentFlags().StringP(logger.ConfigLogFile, "l", "", "Log file path")
 	rootCmd.PersistentFlags().StringP(formatter.ConfigFormat, "f", "text", "Output format. Supported values are 'text','csv','md','json','yaml'.")

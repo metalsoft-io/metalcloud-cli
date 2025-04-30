@@ -1,9 +1,8 @@
 # metalcloud-cli
 
 ![Build](https://github.com/metalsoft-io/metalcloud-cli/actions/workflows/build.yml/badge.svg)
-[![Coverage Status](https://coveralls.io/repos/github/metalsoft-io/metalcloud-cli/badge.svg?branch=main)](https://coveralls.io/github/metalsoft-io/metalcloud-cli?branch=main)
 
-This tool allows the manipulation of all Metal Cloud elements via the command line.
+The MetalCloud CLI allows management of all MetalCloud instance objects via the command line.
 
 ## Installation
 
@@ -44,7 +43,7 @@ go get github.com/metalsoft-io/metalcloud-cli
 
 ## Getting the API key
 
-In the MetalCloud's Infrastructure Editor go to the upper left corner and click on your email. Then go to **Settings** > **API & SDKs** > **API credentials** and copy the api key.
+In the MetalCloud's UI go to the upper left corner and click on your initials. Then go to **Account Settings** > **API Key** and copy the API key.
 
 Configure credentials as environment variables:
 
@@ -62,61 +61,64 @@ api_key: '<your key>'
 
 ## Getting a list of supported commands
 
-Use `metalcloud-cli help` for a list of supported commands.
+Use `metalcloud-cli --help` for a list of supported commands.
 
 ## Getting started
 
 To create an infrastructure:
 
 ```bash
-metalcloud-cli infrastructure create --label test --datacenter test --return-id
-```
+metalcloud-cli infrastructure create 11 demo
 
-```bash
 metalcloud-cli infrastructure list
-+-------+-----------------------------------------+-------------------------------+-----------+-----------+---------------------+---------------------+
-| ID    | LABEL                                   | OWNER                         | REL.      | STATUS    | CREATED             | UPDATED             |
-+-------+-----------------------------------------+-------------------------------+-----------+-----------+---------------------+---------------------+
-| 12345 | complex-demo                            | d.d@sdd.com                   | OWNER     | active    | 2019-03-28T15:23:08Z| 2019-03-28T15:23:08Z|
-+-------+-----------------------------------------+-------------------------------+-----------+-----------+---------------------+---------------------+
 ```
 
-To create an server instance group in that infrastructure, get the ID of the infrastructure from above (12345):
-
-```bash
-metalcloud-cli instance-array create --infra 12345 --label master --proc 1 --proc-core-count 8 --ram 16
+```txt
+┌──────┬───────────┬──────────────┬─────────┬───────┬──────┬──────────────────────┬──────────────────────┬───────────────┬───────────┐
+│    # │ LABEL     │ CONFIG LABEL │ STATUS  │ OWNER │ SITE │ CREATED              │ UPDATED              │ DEPLOY STATUS │ DEPLOY ID │
+├──────┼───────────┼──────────────┼─────────┼───────┼──────┼──────────────────────┼──────────────────────┼───────────────┼───────────┤
+│ 1689 │ demo      │ demo         │ ordered │    10 │   11 │ 24 Mar 25 09:52 EET  │ 24 Mar 25 10:19 EET  │ not_started   │           │
+└──────┴───────────┴──────────────┴─────────┴───────┴──────┴──────────────────────┴──────────────────────┴───────────────┴───────────┘
 ```
 
-To view the id of the previously created drive array:
+To create an server instance group with one instance and label `master` in that infrastructure, get the ID of the infrastructure from above (1689), the server type ID (12):
 
 ```bash
-metalcloud-cli instance-array list --infra 12345
-+-------+---------------------+---------------------+-----------+
-| ID    | LABEL               | STATUS              | INST_CNT  |
-+-------+---------------------+---------------------+-----------+
-| 54321 | master              | ordered             | 1         |
-+-------+---------------------+---------------------+-----------+
-Total: 1 Instance Arrays
+metalcloud-cli server-instance-group create 1689 master 12 1
+```
+
+To view the details of the created server instance group:
+
+```bash
+metalcloud-cli server-instance-group list 1689
+```
+
+```txt
+┌─────┬─────────┬──────────┬─────────┬─────────────────────┬─────────────────────┐
+│   # │ LABEL   │ INFRA ID │ STATUS  │ CREATED             │ UPDATED             │
+├─────┼─────────┼──────────┼─────────┼─────────────────────┼─────────────────────┤
+│ 824 │ master  │     1689 │ ordered │ 24 Mar 25 21:49 EET │ 24 Mar 25 21:49 EET │
+└─────┴─────────┴──────────┴─────────┴─────────────────────┴─────────────────────┘
 ```
 
 To create a drive array and attach it to the previous instance array:
 
 ```bash
-metalcloud-cli drive-array create --infra 12345 --label master-da --ia 54321
+echo '{"label": "my-drive", "logicalNetworkId": 5, "sizeMb": 2024}' | metalcloud-cli drive create 1689 --config-source pipe
 ```
 
-To view the current status of the infrastructure
+To view the current status of the infrastructure:
 
 ```bash
-metalcloud-cli infrastructure get --id 12345
-Infrastructures I have access to (as test@test.com)
-+-------+----------------+-------------------------------+-----------------------------------------------------------------------+-----------+
-| ID    | OBJECT_TYPE    | LABEL                         | DETAILS                                                               | STATUS    |
-+-------+----------------+-------------------------------+-----------------------------------------------------------------------+-----------+
-| 36791 | InstanceArray  | master                        | 1 instances (16 RAM, 8 cores, 1 disks)                                | ordered   |
-| 47398 | DriveArray     | master-da                     | 1 drives - 40.0 GB iscsi_ssd (volume_template:0) attached to: 36791   | ordered   |
-+-------+----------------+-------------------------------+-----------------------------------------------------------------------+-----------+
-Total: 2 elements
+metalcloud-cli infrastructure get 1689
+```
+
+```txt
+┌──────┬───────────┬──────────────┬─────────┬───────┬──────┬──────────────────────┬──────────────────────┬───────────────┬───────────┐
+│    # │ LABEL     │ CONFIG LABEL │ STATUS  │ OWNER │ SITE │ CREATED              │ UPDATED              │ DEPLOY STATUS │ DEPLOY ID │
+├──────┼───────────┼──────────────┼─────────┼───────┼──────┼──────────────────────┼──────────────────────┼───────────────┼───────────┤
+│ 1689 │ demo      │ demo         │ ordered │    10 │   11 │ 24 Mar 25 09:52 EET  │ 24 Mar 25 10:19 EET  │ not_started   │           │
+└──────┴───────────┴──────────────┴─────────┴───────┴──────┴──────────────────────┴──────────────────────┴───────────────┴───────────┘
 ```
 
 ## Apply support
@@ -144,14 +146,13 @@ name: my-secret
 
 ```
 
-The objects and their fields can be found in the [SDK documentation](https://godoc.org/github.com/metalsoft-io/metal-cloud-sdk-go). The fields will be in the format specified in the yaml tag. For example `SubnetPool` object has a field named `subnet_pool_prefix_human_readable` in JSON format. In the YAML file used as input for this command, the field should be called `prefix`.
+The objects and their fields can be found in the [SDK documentation](https://pkg.go.dev/github.com/metalsoft-io/metalcloud-sdk-go). The fields will be in the format specified in the yaml tag.
 
-## Condensed format
+## Aliases
 
-The CLI also provides a "condensed format" for most of it's commands:
+The CLI also provides aliases for most of it's commands:
 
-* instance-array = ia
-* drive-array = da
+* server-instance-group = ia
 * infrastructure = infra
 * list = ls
 * delete = rm
@@ -168,7 +169,7 @@ metalcloud-cli infra ls
 Most commands also take a label instead of an id as a parameter. For example:
 
 ```bash
-metalcloud-cli infra show --id complex-demo
+metalcloud-cli site get demo-site
 ```
 
 ## Permissions
@@ -177,15 +178,11 @@ Some commands depend on various permissions. For instance you cannot access anot
 
 ## Admin commands
 
-If the user has the "admin_view" permission, additional commands will be visible.
+If the user has admin permissions, additional commands will be available.
 
 ## Debugging information
 
-To enable debugging information in the output set the following environment variable:
-
-```bash
-export METALCLOUD_LOGGING_ENABLED=true
-```
+To enable debugging information in the output add the `-d` flag to the command.
 
 ## Building the CLI
 
@@ -195,7 +192,7 @@ To run the unit tests:
 
 To build manually:
 
-`go build ./cmd/...`
+`go build ./cmd/metalcloud-cli/`
 
 The build process is automated by travis. Just push into the repository using the appropriate tag:
 
@@ -223,13 +220,11 @@ Push new changes with new tag:
 ```bash
 git add .
 git commit -m "commit comment"
-git tag v1.0.1
+git tag v7.0.1
 git push --tags
 ```
 
-A coverage report is generated automatically at each build by [coverall](https://coveralls.io/github/metalsoft-io/metalcloud-cli?branch=master). There is a lower limit to the coverage currently set at 20%.
-
-It is a good idea to update the master branch as well (with no tag):
+It is a good idea to update the main branch as well (with no tag):
 
 ```bash
 git push
@@ -237,21 +232,4 @@ git push
 
 ## Updating the SDK
 
-To update the SDK update `go.mod` file then regenerate the interfaces used for testing.
-Ifacemaker is needed
-
-```bash
-go get ifacemaker
-```
-
-```bash
-go generate
-```
-
-If new objects are added in the SDK `helpers/fix_package.go` will need to be updated.
-
-If for some reason you get errors try running the following command manually:
-
-`mockgen -source=/Users/alex/code/metal-cloud-sdk-go/metal_cloud_client.go -destination=helpers/mock_client.go`
-
-You need mockgen installed.
+To update the SDK follow the instructions in the [BUILDING.md](https://github.com/metalsoft-io/metalcloud-sdk-go/blob/main/BUILDING.md)
