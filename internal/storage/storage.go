@@ -175,7 +175,7 @@ func StorageGetDrives(ctx context.Context, storageId string, limit float32, page
 
 	client := api.GetApiClient(ctx)
 
-	request := client.StorageAPI.GetStorageSharedDrives(ctx, storageIdNumeric)
+	request := client.StorageAPI.GetStorageDrives(ctx, storageIdNumeric)
 
 	// Set pagination if provided
 	if limit > 0 {
