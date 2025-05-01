@@ -40,12 +40,13 @@ func ReadConfigFromPipe() ([]byte, error) {
 		return nil, fmt.Errorf("no data piped to stdin")
 	}
 
-	content, err := os.ReadFile("/dev/stdin")
+	var content = make([]byte, 100000)
+	size, err := os.Stdin.Read(content)
 	if err != nil {
 		return nil, err
 	}
 
-	return content, nil
+	return content[:size], nil
 }
 
 func ReadConfigFromFile(configSource string) ([]byte, error) {
