@@ -1,16 +1,20 @@
 package cmd
 
 import (
+	"encoding/json"
+	"fmt"
+
 	"github.com/metalsoft-io/metalcloud-cli/cmd/metalcloud-cli/system"
 	"github.com/metalsoft-io/metalcloud-cli/internal/user"
 	"github.com/metalsoft-io/metalcloud-cli/pkg/utils"
+	sdk "github.com/metalsoft-io/metalcloud-sdk-go"
 	"github.com/spf13/cobra"
 )
 
 var (
 	userFlags = struct {
 		configSource           string
-		accountId              float32
+		accountId              int
 		sshKeyContent          string
 		reason                 string
 		archived               bool
@@ -22,6 +26,12 @@ var (
 		sortBy                 string
 		search                 string
 		searchBy               string
+		displayName            string
+		email                  string
+		password               string
+		accessLevel            string
+		emailVerified          bool
+		createWithAccount      bool
 	}{}
 
 	userCmd = &cobra.Command{
@@ -72,12 +82,72 @@ var (
 		SilenceUsage: true,
 		Annotations:  map[string]string{system.REQUIRED_PERMISSION: system.PERMISSION_USERS_WRITE},
 		RunE: func(cmd *cobra.Command, args []string) error {
+			// If config source is provided, use it
+			if userFlags.configSource != "" {
+				config, err := utils.ReadConfigFromPipeOrFile(userFlags.configSource)
+				if err != nil {
+					return err
+				}
+				return user.Create(cmd.Context(), config)
+			}
+
+			// Otherwise build config from command line parameters
+			userConfig := sdk.CreateUser{
+				Email:    userFlags.email,
+				Password: sdk.PtrString(userFlags.password),
+			}
+
+			if cmd.Flags().Changed("email-verified") {
+				userConfig.EmailVerified = sdk.PtrBool(userFlags.emailVerified)
+			}
+
+			if userFlags.accessLevel != "" {
+				userConfig.AccessLevel = userFlags.accessLevel
+			} else {
+				userConfig.AccessLevel = "user"
+			}
+
+			if userFlags.displayName != "" {
+				userConfig.DisplayName = userFlags.displayName
+			} else {
+				userConfig.DisplayName = userFlags.email
+			}
+
+			if userFlags.accountId != 0 {
+				userConfig.AccountId = sdk.PtrFloat32(float32(userFlags.accountId))
+			}
+
+			if userFlags.createWithAccount {
+				userConfig.CreateWithAccount = sdk.PtrBool(userFlags.createWithAccount)
+			}
+
+			configBytes, err := json.Marshal(userConfig)
+			if err != nil {
+				return fmt.Errorf("could not marshal user configuration: %s", err)
+			}
+
+			return user.Create(cmd.Context(), configBytes)
+		},
+	}
+
+	userCreateBulkCmd = &cobra.Command{
+		Use:          "create-bulk",
+		Aliases:      []string{"bulk-create", "new-bulk"},
+		Short:        "Create multiple users in a single operation.",
+		SilenceUsage: true,
+		Annotations:  map[string]string{system.REQUIRED_PERMISSION: system.PERMISSION_USERS_WRITE},
+		RunE: func(cmd *cobra.Command, args []string) error {
+			// Config source is required for bulk operations
+			if userFlags.configSource == "" {
+				return fmt.Errorf("config-source is required for bulk user creation")
+			}
+
 			config, err := utils.ReadConfigFromPipeOrFile(userFlags.configSource)
 			if err != nil {
 				return err
 			}
 
-			return user.Create(cmd.Context(), config)
+			return user.CreateBulk(cmd.Context(), config)
 		},
 	}
 
@@ -272,7 +342,25 @@ func init() {
 	// User create
 	userCmd.AddCommand(userCreateCmd)
 	userCreateCmd.Flags().StringVar(&userFlags.configSource, "config-source", "", "Source of the new user configuration. Can be 'pipe' or path to a JSON file.")
-	userCreateCmd.MarkFlagsOneRequired("config-source")
+
+	// Individual fields for user creation
+	userCreateCmd.Flags().StringVar(&userFlags.email, "email", "", "User's email address")
+	userCreateCmd.Flags().BoolVar(&userFlags.emailVerified, "email-verified", false, "Set the user email as verified")
+	userCreateCmd.Flags().StringVar(&userFlags.password, "password", "", "User's password (if not provided, a random password will be generated)")
+	userCreateCmd.Flags().StringVar(&userFlags.displayName, "display-name", "", "User's display name")
+	userCreateCmd.Flags().StringVar(&userFlags.accessLevel, "access-level", "", "Access level (e.g., 'admin', 'user')")
+	userCreateCmd.Flags().IntVar(&userFlags.accountId, "account-id", 0, "Account ID to associate the user with")
+	userCreateCmd.Flags().BoolVar(&userFlags.createWithAccount, "create-with-account", false, "Create new account for the user")
+
+	// Mark required fields that are mutually exclusive with config-source
+	userCreateCmd.MarkFlagsMutuallyExclusive("config-source", "email")
+	userCreateCmd.MarkFlagsRequiredTogether("email", "password")
+	userCreateCmd.MarkFlagsMutuallyExclusive("account-id", "create-with-account")
+
+	// User create bulk
+	userCmd.AddCommand(userCreateBulkCmd)
+	userCreateBulkCmd.Flags().StringVar(&userFlags.configSource, "config-source", "", "Source of the bulk user configuration. Can be 'pipe' or path to a JSON/YAML file with an array of user configs.")
+	userCreateBulkCmd.MarkFlagRequired("config-source")
 
 	// User archive/unarchive
 	userCmd.AddCommand(userArchiveCmd)
@@ -291,7 +379,7 @@ func init() {
 
 	// Change account
 	userCmd.AddCommand(userChangeAccountCmd)
-	userChangeAccountCmd.Flags().Float32Var(&userFlags.accountId, "account-id", 0, "The ID of the account to move the user to.")
+	userChangeAccountCmd.Flags().IntVar(&userFlags.accountId, "account-id", 0, "The ID of the account to move the user to.")
 	userChangeAccountCmd.MarkFlagRequired("account-id")
 
 	// SSH Keys

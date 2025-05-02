@@ -6,6 +6,8 @@ import (
 	"fmt"
 	"strconv"
 
+	"gopkg.in/yaml.v3"
+
 	"github.com/metalsoft-io/metalcloud-cli/pkg/api"
 	"github.com/metalsoft-io/metalcloud-cli/pkg/formatter"
 	"github.com/metalsoft-io/metalcloud-cli/pkg/logger"
@@ -190,6 +192,75 @@ func Create(ctx context.Context, config []byte) error {
 	return formatter.PrintResult(userInfo, &userPrintConfig)
 }
 
+// CreateBulk creates multiple users from a JSON or YAML configuration
+func CreateBulk(ctx context.Context, config []byte) error {
+	logger.Get().Info().Msgf("Creating users in bulk")
+
+	// Try to parse as JSON first
+	var usersConfig []sdk.CreateUser
+	err := json.Unmarshal(config, &usersConfig)
+
+	// If JSON parsing fails, try YAML
+	if err != nil {
+		err = yaml.Unmarshal(config, &usersConfig)
+		if err != nil {
+			return fmt.Errorf("could not parse configuration as JSON or YAML: %s", err)
+		}
+	}
+
+	if len(usersConfig) == 0 {
+		return fmt.Errorf("no users found in configuration")
+	}
+
+	client := api.GetApiClient(ctx)
+
+	// Track results for reporting
+	results := make([]interface{}, 0)
+	errors := make([]error, 0)
+
+	logger.Get().Info().Msgf("Creating %d users", len(usersConfig))
+
+	// Process each user
+	for i, userConfig := range usersConfig {
+		userInfo, httpRes, err := client.UsersAPI.CreateUserAuthorized(ctx).CreateUser(userConfig).Execute()
+		if err := response_inspector.InspectResponse(httpRes, err); err != nil {
+			logger.Get().Error().Msgf("Failed to create user %d: %s", i+1, err)
+			errors = append(errors, fmt.Errorf("user %d (%s): %s", i+1, userConfig.Email, err))
+			continue
+		}
+
+		results = append(results, userInfo)
+		logger.Get().Info().Msgf("Created user %d: %s", i+1, userConfig.Email)
+	}
+
+	// Print summary
+	logger.Get().Info().Msgf("Bulk user creation complete: %d created, %d failed", len(results), len(errors))
+
+	// Print any errors that occurred
+	errorsText := ""
+	if len(errors) > 0 {
+		logger.Get().Error().Msgf("Errors encountered during bulk creation:")
+		for _, err := range errors {
+			logger.Get().Error().Msgf("  - %s", err)
+			errorsText += fmt.Sprintf("\n  - %s", err)
+		}
+	}
+
+	// Print the successfully created users
+	if len(results) > 0 {
+		err = formatter.PrintResult(results, &userPrintConfig)
+	}
+
+	if len(errors) > 0 || err != nil {
+		if err != nil {
+			errorsText += fmt.Sprintf("\n  - %s", err)
+		}
+		return fmt.Errorf("bulk user creation completed with errors: %s", errorsText)
+	}
+
+	return nil
+}
+
 func Archive(ctx context.Context, userId string) error {
 	logger.Get().Info().Msgf("Archiving user '%s'", userId)
 
@@ -296,8 +367,8 @@ func UpdateConfig(ctx context.Context, userId string, config []byte) error {
 	return formatter.PrintResult(userConfiguration, nil)
 }
 
-func ChangeAccount(ctx context.Context, userId string, accountId float32) error {
-	logger.Get().Info().Msgf("Changing account for user '%s' to account '%g'", userId, accountId)
+func ChangeAccount(ctx context.Context, userId string, accountId int) error {
+	logger.Get().Info().Msgf("Changing account for user '%s' to account '%d'", userId, accountId)
 
 	userIdNumber, revision, err := getUserIdAndRevision(ctx, userId)
 	if err != nil {
@@ -305,7 +376,7 @@ func ChangeAccount(ctx context.Context, userId string, accountId float32) error 
 	}
 
 	changeAccount := sdk.ChangeUserAccount{
-		NewAccountId: accountId,
+		NewAccountId: float32(accountId),
 	}
 
 	client := api.GetApiClient(ctx)
@@ -315,7 +386,7 @@ func ChangeAccount(ctx context.Context, userId string, accountId float32) error 
 		return err
 	}
 
-	logger.Get().Info().Msgf("Account changed for user '%s' to account '%g'", userId, accountId)
+	logger.Get().Info().Msgf("Account changed for user '%s' to account '%d'", userId, accountId)
 	return formatter.PrintResult(userInfo, &userPrintConfig)
 }
 
