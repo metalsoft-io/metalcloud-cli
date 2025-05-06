@@ -110,6 +110,28 @@ func FirmwareCatalogCreate(ctx context.Context, config []byte) error {
 }
 
 func FirmwareCatalogUpdate(ctx context.Context, firmwareCatalogId string, config []byte) error {
+	// First unmarshal into a more generic map to extract ID if needed
+	var rawConfig map[string]interface{}
+	if err := json.Unmarshal(config, &rawConfig); err != nil {
+		return err
+	}
+
+	// If firmwareCatalogId is empty, try to get it from the config
+	if firmwareCatalogId == "" {
+		if id, exists := rawConfig["id"]; exists && id != nil {
+			firmwareCatalogId = fmt.Sprintf("%v", id)
+			logger.Get().Info().Msgf("Using firmware catalog ID '%s' from config", firmwareCatalogId)
+		} else {
+			return fmt.Errorf("firmware catalog ID is required either as parameter or in the config file")
+		}
+	} else {
+		if id, exists := rawConfig["id"]; exists && id != nil {
+			if id != firmwareCatalogId {
+				return fmt.Errorf("firmware catalog ID '%s' in config does not match the provided ID '%s'", id, firmwareCatalogId)
+			}
+		}
+	}
+
 	logger.Get().Info().Msgf("Updating firmware catalog '%s'", firmwareCatalogId)
 
 	firmwareCatalogIdNumeric, err := getFirmwareCatalogId(firmwareCatalogId)
@@ -117,10 +139,32 @@ func FirmwareCatalogUpdate(ctx context.Context, firmwareCatalogId string, config
 		return err
 	}
 
+	// Try to unmarshal into the proper update structure
 	var firmwareCatalogConfig sdk.UpdateFirmwareCatalog
 	err = json.Unmarshal(config, &firmwareCatalogConfig)
-	if err != nil {
-		return err
+
+	// If unmarshaling into UpdateFirmwareCatalog fails, try with FirmwareCatalog
+	if err != nil || len(firmwareCatalogConfig.AdditionalProperties) > 0 {
+		var fullCatalog sdk.FirmwareCatalog
+		if err := json.Unmarshal(config, &fullCatalog); err != nil {
+			// If both fail, return an error
+			return fmt.Errorf("firmware catalog config does not match the expected format")
+		}
+
+		// Copy relevant fields from FirmwareCatalog to UpdateFirmwareCatalog
+		firmwareCatalogConfig = sdk.UpdateFirmwareCatalog{}
+
+		firmwareCatalogConfig.Name = fullCatalog.Name
+		firmwareCatalogConfig.Description = fullCatalog.Description
+		firmwareCatalogConfig.Vendor = sdk.FirmwareVendorType(fullCatalog.Vendor)
+		firmwareCatalogConfig.VendorId = fullCatalog.VendorId
+		firmwareCatalogConfig.VendorUrl = fullCatalog.VendorUrl
+		firmwareCatalogConfig.UpdateType = sdk.CatalogUpdateType(fullCatalog.UpdateType)
+		firmwareCatalogConfig.VendorConfiguration = fullCatalog.VendorConfiguration
+		firmwareCatalogConfig.MetalsoftServerTypesSupported = fullCatalog.MetalsoftServerTypesSupported
+		firmwareCatalogConfig.VendorServerTypesSupported = fullCatalog.VendorServerTypesSupported
+
+		logger.Get().Info().Msg("Converted FirmwareCatalog to UpdateFirmwareCatalog format")
 	}
 
 	client := api.GetApiClient(ctx)
@@ -160,21 +204,17 @@ func FirmwareCatalogDelete(ctx context.Context, firmwareCatalogId string) error 
 func FirmwareCatalogConfigExample(ctx context.Context) error {
 	// Example create firmware catalog configuration
 	firmwareCatalogConfiguration := sdk.CreateFirmwareCatalog{
-		Name:        "example-firmware-catalog",
-		Description: sdk.PtrString("Example firmware catalog for Dell servers"),
+		Name:        "DELL Enterprise catalog",
+		Description: sdk.PtrString("The catalog contains the latest BIOS, firmware, drivers, and certain applications for both Microsoft Windows and Linux operating systems."),
 		Vendor:      "dell",
-		VendorId:    sdk.PtrString("R740"),
-		VendorUrl:   sdk.PtrString("https://dell.com/support/firmware/R740"),
+		VendorId:    sdk.PtrString("48912fae-2b46-4b4c-bafe-2c709c7b0ad2"),
+		VendorUrl:   sdk.PtrString("https://downloads.dell.com/catalog/Catalog.gz"),
 		UpdateType:  "online",
 		VendorConfiguration: map[string]interface{}{
-			"credentials": map[string]interface{}{
-				"username": "api_user",
-				"api_key":  "API_KEY_HERE",
-			},
 			"update_frequency": "daily",
 		},
-		MetalsoftServerTypesSupported: []string{"dell_r740", "dell_r640"},
-		VendorServerTypesSupported:    []string{"poweredge_r740", "poweredge_r640"},
+		MetalsoftServerTypesSupported: []string{"M.4.8.2", "M.4.16.2"},
+		VendorServerTypesSupported:    []string{"R740", "R640"},
 	}
 
 	return formatter.PrintResult(firmwareCatalogConfiguration, nil)

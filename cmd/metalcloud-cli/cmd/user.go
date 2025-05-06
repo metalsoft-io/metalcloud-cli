@@ -76,9 +76,14 @@ var (
 	}
 
 	userCreateCmd = &cobra.Command{
-		Use:          "create",
-		Aliases:      []string{"new"},
-		Short:        "Create a new user.",
+		Use:     "create",
+		Aliases: []string{"new"},
+		Short:   "Create a new user.",
+		Example: `  metalcloud-cli user create --email test.user@metalsoft.io --password secret --access-level user
+  metalcloud-cli user create --email test.user@metalsoft.io --password secret --access-level user --display-name "Test User" --email-verified true --account-id 12345
+  echo '{"email": "test.user@metalsoft.io", "password": "secret", "accessLevel": "user"}' | metalcloud-cli user create --config-source pipe
+  metalcloud-cli user create --config-source user1.json
+`,
 		SilenceUsage: true,
 		Annotations:  map[string]string{system.REQUIRED_PERMISSION: system.PERMISSION_USERS_WRITE},
 		RunE: func(cmd *cobra.Command, args []string) error {

@@ -274,7 +274,7 @@ func NetworkDeviceGetPorts(ctx context.Context, networkDeviceId string) error {
 		return err
 	}
 
-	return formatter.PrintResult(portsInfo.Ports, &formatter.PrintConfig{
+	return formatter.PrintResult(portsInfo.Data, &formatter.PrintConfig{
 		FieldsConfig: map[string]formatter.RecordFieldConfig{
 			"PortName": {
 				Title: "Name",
@@ -306,32 +306,6 @@ func NetworkDeviceGetPorts(ctx context.Context, networkDeviceId string) error {
 			},
 		},
 	})
-}
-
-func NetworkDeviceGetInventoryPorts(ctx context.Context, networkDeviceId string) error {
-	logger.Get().Info().Msgf("Getting network device %s inventory ports", networkDeviceId)
-
-	networkDeviceIdNumeric, err := getNetworkDeviceId(networkDeviceId)
-	if err != nil {
-		return err
-	}
-
-	client := api.GetApiClient(ctx)
-
-	httpRes, err := client.NetworkDeviceAPI.
-		GetNetworkDeviceInventoryPorts(ctx, networkDeviceIdNumeric).
-		Execute()
-	if err := response_inspector.InspectResponse(httpRes, err); err != nil {
-		return err
-	}
-
-	// Parse response body to display inventory ports
-	inventoryPortsMap, err := response_inspector.ParseResponseBody(httpRes)
-	if err != nil {
-		return err
-	}
-
-	return formatter.PrintResult(inventoryPortsMap, nil)
 }
 
 func NetworkDeviceSetPortStatus(ctx context.Context, networkDeviceId string, portId string, action string) error {

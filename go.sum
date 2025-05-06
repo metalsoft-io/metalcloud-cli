@@ -32,6 +32,8 @@ github.com/metalsoft-io/metalcloud-sdk-go v0.0.0-20250429055436-bd85eb456df9 h1:
 github.com/metalsoft-io/metalcloud-sdk-go v0.0.0-20250429055436-bd85eb456df9/go.mod h1:hiAan5sFB5IhIhhM1jczQ3hCM8K0mbZ9tnHFIYgdr9I=
 github.com/metalsoft-io/metalcloud-sdk-go v0.0.0-20250501164748-63ea95a277c0 h1:vMXQwjmH/l2eBeY/7y+5Bn+wvTNLbBHO0WU+GrvdL0I=
 github.com/metalsoft-io/metalcloud-sdk-go v0.0.0-20250501164748-63ea95a277c0/go.mod h1:hiAan5sFB5IhIhhM1jczQ3hCM8K0mbZ9tnHFIYgdr9I=
+github.com/metalsoft-io/metalcloud-sdk-go v0.0.0-20250506053520-67003bf11f76 h1:D5uMotKtZr4a5QJ1jCF6x7LH285n0bzhOkANK/R70Ok=
+github.com/metalsoft-io/metalcloud-sdk-go v0.0.0-20250506053520-67003bf11f76/go.mod h1:hiAan5sFB5IhIhhM1jczQ3hCM8K0mbZ9tnHFIYgdr9I=
 github.com/pelletier/go-toml/v2 v2.2.4 h1:mye9XuhQ6gvn5h28+VilKrrPoQVanw5PMw/TB0t5Ec4=
 github.com/pelletier/go-toml/v2 v2.2.4/go.mod h1:2gIqNv+qfxSVS7cM2xJQKtLSTLUE9V8t9Stt+h56mCY=
 github.com/pkg/errors v0.9.1/go.mod h1:bwawxfHBFNV+L2hUp1rHADufV3IMtnDRdf1r5NINEl0=

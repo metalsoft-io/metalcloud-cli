@@ -144,17 +144,6 @@ var (
 		},
 	}
 
-	networkDeviceGetInventoryPortsCmd = &cobra.Command{
-		Use:          "get-inventory-ports network_device_id",
-		Short:        "Get all ports for network device from the inventory (cached).",
-		SilenceUsage: true,
-		Annotations:  map[string]string{system.REQUIRED_PERMISSION: system.PERMISSION_SWITCHES_READ},
-		Args:         cobra.ExactArgs(1),
-		RunE: func(cmd *cobra.Command, args []string) error {
-			return network_device.NetworkDeviceGetInventoryPorts(cmd.Context(), args[0])
-		},
-	}
-
 	networkDeviceSetPortStatusCmd = &cobra.Command{
 		Use:          "set-port-status network_device_id",
 		Short:        "Set port status for a network device.",
@@ -249,8 +238,6 @@ func init() {
 	networkDeviceCmd.AddCommand(networkDeviceGetCredentialsCmd)
 
 	networkDeviceCmd.AddCommand(networkDeviceGetPortsCmd)
-
-	networkDeviceCmd.AddCommand(networkDeviceGetInventoryPortsCmd)
 
 	networkDeviceCmd.AddCommand(networkDeviceSetPortStatusCmd)
 	networkDeviceSetPortStatusCmd.Flags().StringVar(&networkDeviceFlags.portId, "port-id", "", "ID of the port to change status.")
