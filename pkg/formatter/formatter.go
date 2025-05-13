@@ -253,23 +253,50 @@ func addField(fieldConfig RecordFieldConfig, fieldName string, fieldValue interf
 		(*names)[fieldConfig.Order-1] = title
 
 		format := strings.ToLower(viper.GetString(ConfigFormat))
-		displayValue := fieldValue
 
-		if format == "csv" && fieldValue == nil {
-			displayValue = ""
-		} else if fieldConfig.Transformer != nil && format != "csv" {
-			displayValue = fieldConfig.Transformer(fieldValue)
+		var displayStringValue string
+		var configTransformer text.Transformer // Use zero value (nil) by default
+
+		if format == "csv" {
+			// For CSV, do NOT use the registered transformer or put it in ColumnConfig.
+			// Handle nil values explicitly.
+			if fieldValue == nil || fmt.Sprint(fieldValue) == "<nil>" {
+				displayStringValue = ""
+			} else {
+				displayStringValue = fmt.Sprint(fieldValue)
+			}
+
+			// For CSV, add column config only if MaxWidth > 0 (transformer is always nil)
+			if fieldConfig.MaxWidth > 0 {
+				*configs = append(*configs, table.ColumnConfig{
+					Name:        title,
+					WidthMax:    fieldConfig.MaxWidth,
+					Transformer: nil, // Explicitly nil for CSV
+				})
+			}
+
+		} else {
+			// For other formats, apply the registered transformer and set ColumnConfig transformer
+			if fieldConfig.Transformer != nil {
+				displayStringValue = fieldConfig.Transformer(fieldValue)
+				configTransformer = text.Transformer(fieldConfig.Transformer)
+			} else if fieldValue != nil {
+				displayStringValue = fmt.Sprint(fieldValue)
+			} else {
+				displayStringValue = ""
+			}
+
+			// Add column config if a transformer or max width is specified for non-csv formats
+			if configTransformer != nil || fieldConfig.MaxWidth > 0 {
+				*configs = append(*configs, table.ColumnConfig{
+					Name:        title,
+					WidthMax:    fieldConfig.MaxWidth,
+					Transformer: configTransformer,
+				})
+			}
 		}
 
-		if (fieldConfig.Transformer != nil && format != "csv") || fieldConfig.MaxWidth > 0 {
-			*configs = append(*configs, table.ColumnConfig{
-				Name:        title,
-				WidthMax:    fieldConfig.MaxWidth,
-				Transformer: text.Transformer(fieldConfig.Transformer),
-			})
-		}
-
-		(*values)[fieldConfig.Order-1] = displayValue
+		(*values)[fieldConfig.Order-1] = displayStringValue
 	}
 }
 
