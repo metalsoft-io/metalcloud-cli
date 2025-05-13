@@ -251,6 +251,16 @@ func addField(fieldConfig RecordFieldConfig, fieldName string, fieldValue interf
 		}
 
 		(*names)[fieldConfig.Order-1] = title
+
+		format := strings.ToLower(viper.GetString(ConfigFormat))
+		displayValue := fieldValue
+
+		if format == "csv" && fieldValue == nil {
+			displayValue = ""
+		} else if fieldConfig.Transformer != nil {
+			displayValue = fieldConfig.Transformer(fieldValue)
+		}
+
 		if fieldConfig.Transformer != nil || fieldConfig.MaxWidth > 0 {
 			*configs = append(*configs, table.ColumnConfig{
 				Name:        title,
@@ -259,7 +269,7 @@ func addField(fieldConfig RecordFieldConfig, fieldName string, fieldValue interf
 			})
 		}
 
-		(*values)[fieldConfig.Order-1] = fieldValue
+		(*values)[fieldConfig.Order-1] = displayValue
 	}
 }
 
@@ -305,7 +315,7 @@ func extractValue(value reflect.Value) interface{} {
 	case reflect.Invalid:
 		return nil
 	default:
-		return value.String()
+		return fmt.Sprint(value.Interface())
 	}
 }
 
