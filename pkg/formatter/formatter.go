@@ -257,11 +257,11 @@ func addField(fieldConfig RecordFieldConfig, fieldName string, fieldValue interf
 
 		if format == "csv" && fieldValue == nil {
 			displayValue = ""
-		} else if fieldConfig.Transformer != nil {
+		} else if fieldConfig.Transformer != nil && format != "csv" {
 			displayValue = fieldConfig.Transformer(fieldValue)
 		}
 
-		if fieldConfig.Transformer != nil || fieldConfig.MaxWidth > 0 {
+		if (fieldConfig.Transformer != nil && format != "csv") || fieldConfig.MaxWidth > 0 {
 			*configs = append(*configs, table.ColumnConfig{
 				Name:        title,
 				WidthMax:    fieldConfig.MaxWidth,
