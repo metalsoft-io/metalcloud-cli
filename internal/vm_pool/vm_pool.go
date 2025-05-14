@@ -10,6 +10,7 @@ import (
 	"github.com/metalsoft-io/metalcloud-cli/pkg/formatter"
 	"github.com/metalsoft-io/metalcloud-cli/pkg/logger"
 	"github.com/metalsoft-io/metalcloud-cli/pkg/response_inspector"
+	"github.com/metalsoft-io/metalcloud-cli/pkg/utils"
 	sdk "github.com/metalsoft-io/metalcloud-sdk-go"
 )
 
@@ -55,7 +56,7 @@ func VMPoolList(ctx context.Context, filterType string) error {
 	request := client.VMPoolAPI.GetVMPools(ctx)
 
 	if filterType != "" {
-		request = request.FilterDriver([]string{filterType})
+		request = request.FilterDriver(utils.SplitFilterString(filterType))
 	}
 
 	vmPoolList, httpRes, err := request.SortBy([]string{"id:ASC"}).Execute()

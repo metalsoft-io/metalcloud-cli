@@ -44,7 +44,7 @@ func List(ctx context.Context) error {
 		return err
 	}
 
-	return formatter.PrintResult(roles, &rolePrintConfig)
+	return formatter.PrintResult(roles.Roles, &rolePrintConfig)
 }
 
 func Get(ctx context.Context, roleName string) error {

@@ -5,12 +5,12 @@ import (
 	"encoding/json"
 	"fmt"
 	"strconv"
-	"strings"
 
 	"github.com/metalsoft-io/metalcloud-cli/pkg/api"
 	"github.com/metalsoft-io/metalcloud-cli/pkg/formatter"
 	"github.com/metalsoft-io/metalcloud-cli/pkg/logger"
 	"github.com/metalsoft-io/metalcloud-cli/pkg/response_inspector"
+	"github.com/metalsoft-io/metalcloud-cli/pkg/utils"
 	sdk "github.com/metalsoft-io/metalcloud-sdk-go"
 )
 
@@ -56,7 +56,7 @@ func StorageList(ctx context.Context, filterTechnology string) error {
 	request := client.StorageAPI.GetStorages(ctx)
 
 	if filterTechnology != "" {
-		request = request.FilterTechnologies(strings.Split(filterTechnology, ","))
+		request = request.FilterTechnologies(utils.SplitFilterString(filterTechnology))
 	}
 
 	storageList, httpRes, err := request.SortBy([]string{"id:ASC"}).Execute()

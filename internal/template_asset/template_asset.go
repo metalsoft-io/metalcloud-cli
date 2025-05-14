@@ -10,6 +10,7 @@ import (
 	"github.com/metalsoft-io/metalcloud-cli/pkg/formatter"
 	"github.com/metalsoft-io/metalcloud-cli/pkg/logger"
 	"github.com/metalsoft-io/metalcloud-cli/pkg/response_inspector"
+	"github.com/metalsoft-io/metalcloud-cli/pkg/utils"
 	sdk "github.com/metalsoft-io/metalcloud-sdk-go"
 )
 
@@ -62,15 +63,15 @@ func TemplateAssetList(ctx context.Context, templateId string, usage string, mim
 
 	// Apply filters if provided
 	if templateId != "" {
-		request = request.FilterTemplateId([]string{"$eq:" + templateId})
+		request = request.FilterTemplateId(utils.SplitFilterString(templateId))
 	}
 
 	if usage != "" {
-		request = request.FilterUsage([]string{"$eq:" + usage})
+		request = request.FilterUsage(utils.SplitFilterString(usage))
 	}
 
 	if mimeType != "" {
-		request = request.FilterFileMimeType([]string{"$eq:" + mimeType})
+		request = request.FilterFileMimeType(utils.SplitFilterString(mimeType))
 	}
 
 	request = request.SortBy([]string{"id:ASC"})

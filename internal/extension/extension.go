@@ -10,6 +10,7 @@ import (
 	"github.com/metalsoft-io/metalcloud-cli/pkg/formatter"
 	"github.com/metalsoft-io/metalcloud-cli/pkg/logger"
 	"github.com/metalsoft-io/metalcloud-cli/pkg/response_inspector"
+	"github.com/metalsoft-io/metalcloud-cli/pkg/utils"
 	sdk "github.com/metalsoft-io/metalcloud-sdk-go"
 )
 
@@ -50,15 +51,15 @@ func ExtensionList(ctx context.Context, filterLabel string, filterName string, f
 
 	// Apply filters if provided
 	if filterLabel != "" {
-		request = request.FilterLabel([]string{"$eq:" + filterLabel})
+		request = request.FilterLabel(utils.SplitFilterString(filterLabel))
 	}
 
 	if filterName != "" {
-		request = request.FilterName([]string{"$eq:" + filterName})
+		request = request.FilterName(utils.SplitFilterString(filterName))
 	}
 
 	if filterStatus != "" {
-		request = request.FilterStatus([]string{"$eq:" + filterStatus})
+		request = request.FilterStatus(utils.SplitFilterString(filterStatus))
 	}
 
 	extensionList, httpRes, err := request.Execute()

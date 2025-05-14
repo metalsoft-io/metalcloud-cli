@@ -5,7 +5,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"strconv"
-	"strings"
 
 	"github.com/metalsoft-io/metalcloud-cli/pkg/api"
 	"github.com/metalsoft-io/metalcloud-cli/pkg/formatter"
@@ -60,7 +59,7 @@ func NetworkDeviceList(ctx context.Context, filterStatus string) error {
 	request := client.NetworkDeviceAPI.GetNetworkDevices(ctx)
 
 	if filterStatus != "" {
-		request = request.FilterStatus(strings.Split(filterStatus, ","))
+		request = request.FilterStatus(utils.SplitFilterString(filterStatus))
 	}
 
 	networkDeviceList, httpRes, err := request.SortBy([]string{"id:ASC"}).Execute()

@@ -11,6 +11,7 @@ import (
 	"github.com/metalsoft-io/metalcloud-cli/pkg/formatter"
 	"github.com/metalsoft-io/metalcloud-cli/pkg/logger"
 	"github.com/metalsoft-io/metalcloud-cli/pkg/response_inspector"
+	"github.com/metalsoft-io/metalcloud-cli/pkg/utils"
 	sdk "github.com/metalsoft-io/metalcloud-sdk-go"
 )
 
@@ -102,7 +103,7 @@ func FileShareList(ctx context.Context, infrastructureIdOrLabel string, filterSt
 	request := client.FileShareAPI.GetInfrastructureFileShares(ctx, infrastructureInfo.Id)
 
 	if filterStatus != "" {
-		request = request.FilterServiceStatus([]string{"$eq:" + filterStatus})
+		request = request.FilterServiceStatus(utils.SplitFilterString(filterStatus))
 	}
 
 	fileShareList, httpRes, err := request.Execute()

@@ -5,12 +5,12 @@ import (
 	"encoding/json"
 	"fmt"
 	"strconv"
-	"strings"
 
 	"github.com/metalsoft-io/metalcloud-cli/pkg/api"
 	"github.com/metalsoft-io/metalcloud-cli/pkg/formatter"
 	"github.com/metalsoft-io/metalcloud-cli/pkg/logger"
 	"github.com/metalsoft-io/metalcloud-cli/pkg/response_inspector"
+	"github.com/metalsoft-io/metalcloud-cli/pkg/utils"
 	sdk "github.com/metalsoft-io/metalcloud-sdk-go"
 )
 
@@ -89,11 +89,11 @@ func ServerList(ctx context.Context, showCredentials bool, filterStatus string, 
 	request := client.ServerAPI.GetServers(ctx)
 
 	if filterStatus != "" {
-		request = request.FilterServerStatus(strings.Split(filterStatus, ","))
+		request = request.FilterServerStatus(utils.SplitFilterString(filterStatus))
 	}
 
 	if filterType != "" {
-		request = request.FilterServerTypeId(strings.Split(filterType, ","))
+		request = request.FilterServerTypeId(utils.SplitFilterString(filterType))
 	}
 
 	serverList, httpRes, err := request.Execute()

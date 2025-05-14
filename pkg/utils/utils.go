@@ -69,3 +69,35 @@ func ReadConfigFromPipeOrFile(configSource string) ([]byte, error) {
 
 	return ReadConfigFromFile(configSource)
 }
+
+func SplitFilterString(filter string) []string {
+	parts := strings.Split(filter, ",")
+
+	for i, part := range parts {
+		parts[i] = strings.TrimSpace(part)
+
+		if strings.HasPrefix(part, "-") {
+			parts[i] = "$not:$eq:" + strings.TrimPrefix(part, "-")
+		} else {
+			parts[i] = "$eq:" + part
+		}
+	}
+
+	return parts
+}
+
+func ProcessFilterStringList(filter []string) []string {
+	parts := make([]string, len(filter))
+
+	for i, part := range filter {
+		parts[i] = strings.TrimSpace(part)
+
+		if strings.HasPrefix(part, "-") {
+			parts[i] = "$not:$eq:" + strings.TrimPrefix(part, "-")
+		} else {
+			parts[i] = "$eq:" + part
+		}
+	}
+
+	return parts
+}
