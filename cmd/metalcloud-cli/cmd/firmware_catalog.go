@@ -18,6 +18,7 @@ var (
 		vendor                  string
 		updateType              string
 		vendorUrl               string
+		vendorToken             string
 		vendorLocalCatalogPath  string
 		vendorLocalBinariesPath string
 		serverTypes             []string
@@ -142,6 +143,7 @@ localFirmwarePath: ./hp_downloads
 					Vendor:                  firmwareCatalogFlags.vendor,
 					UpdateType:              firmwareCatalogFlags.updateType,
 					VendorUrl:               firmwareCatalogFlags.vendorUrl,
+					VendorToken:             firmwareCatalogFlags.vendorToken,
 					ServerTypesFilter:       firmwareCatalogFlags.serverTypes,
 					VendorSystemsFilter:     firmwareCatalogFlags.vendorSystems,
 					VendorLocalCatalogPath:  firmwareCatalogFlags.vendorLocalCatalogPath,
@@ -209,6 +211,7 @@ func init() {
 	firmwareCatalogCreateCmd.Flags().StringVar(&firmwareCatalogFlags.vendor, "vendor", "", "Vendor type (e.g., 'dell', 'hp')")
 	firmwareCatalogCreateCmd.Flags().StringVar(&firmwareCatalogFlags.updateType, "update-type", "", "Update type (e.g., 'online', 'offline')")
 	firmwareCatalogCreateCmd.Flags().StringVar(&firmwareCatalogFlags.vendorUrl, "vendor-url", "", "URL of the online vendor catalog")
+	firmwareCatalogCreateCmd.Flags().StringVar(&firmwareCatalogFlags.vendorToken, "vendor-token", "", "Token for accessing the online vendor catalog")
 	firmwareCatalogCreateCmd.Flags().StringVar(&firmwareCatalogFlags.vendorLocalCatalogPath, "vendor-local-catalog-path", "", "Path to the local catalog file")
 	firmwareCatalogCreateCmd.Flags().StringVar(&firmwareCatalogFlags.vendorLocalBinariesPath, "vendor-local-binaries-path", "", "Path to the local binaries directory")
 	firmwareCatalogCreateCmd.Flags().StringSliceVar(&firmwareCatalogFlags.serverTypes, "server-types", []string{}, "List of supported Metalsoft server types (comma-separated)")

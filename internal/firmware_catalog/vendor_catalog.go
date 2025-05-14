@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"compress/gzip"
 	"context"
+	"encoding/base64"
 	"encoding/xml"
 	"fmt"
 	"io"
@@ -31,6 +32,8 @@ type VendorCatalog struct {
 	Binaries                []*sdk.FirmwareBinary
 	ServerTypesFilter       []string
 	VendorSystemsFilter     []string
+	VendorSystemsFilterEx   map[string]string
+	VendorToken             string
 	VendorLocalCatalogPath  string
 	VendorLocalBinariesPath string
 	DownloadBinaries        bool
@@ -65,6 +68,7 @@ func NewVendorCatalogFromCreateOptions(options FirmwareCatalogCreateOptions) (*V
 		Binaries:                []*sdk.FirmwareBinary{},
 		ServerTypesFilter:       options.ServerTypesFilter,
 		VendorSystemsFilter:     options.VendorSystemsFilter,
+		VendorToken:             options.VendorToken,
 		VendorLocalCatalogPath:  options.VendorLocalCatalogPath,
 		VendorLocalBinariesPath: options.VendorLocalBinariesPath,
 		DownloadBinaries:        options.DownloadBinaries,
@@ -82,7 +86,7 @@ func (vc *VendorCatalog) ProcessVendorCatalog(ctx context.Context) error {
 	if len(vc.ServerTypesFilter) > 0 {
 		// Lookup the system models for the requested server types
 		// and add them to the vendor systems filter
-		systemModels, err := vc.getFilteredSystemModels(ctx)
+		systemModels, systemModelsEx, err := vc.getFilteredSystemModels(ctx)
 		if err != nil {
 			return err
 		}
@@ -92,6 +96,7 @@ func (vc *VendorCatalog) ProcessVendorCatalog(ctx context.Context) error {
 		} else {
 			vc.VendorSystemsFilter = systemModels
 		}
+		vc.VendorSystemsFilterEx = systemModelsEx
 	}
 
 	switch sdk.FirmwareVendorType(vc.CatalogInfo.Vendor) {
@@ -242,14 +247,15 @@ func (vc *VendorCatalog) CreateMetalsoftCatalog(ctx context.Context) error {
 }
 
 // Returns a list of vendor models corresponding to the requested list of server types.
-func (vc *VendorCatalog) getFilteredSystemModels(ctx context.Context) ([]string, error) {
+func (vc *VendorCatalog) getFilteredSystemModels(ctx context.Context) ([]string, map[string]string, error) {
 	systemModels := []string{}
+	systemModelsEx := map[string]string{}
 
 	client := api.GetApiClient(ctx)
 
 	serverTypes, httpRes, err := client.ServerTypeAPI.GetServerTypes(ctx).Execute()
 	if err := response_inspector.InspectResponse(httpRes, err); err != nil {
-		return nil, err
+		return nil, nil, err
 	}
 
 	for _, serverType := range serverTypes.Data {
@@ -261,7 +267,7 @@ func (vc *VendorCatalog) getFilteredSystemModels(ctx context.Context) ([]string,
 		if slices.Contains(vc.ServerTypesFilter, serverTypeIdentifier) {
 			servers, httpRes, err := client.ServerAPI.GetServers(ctx).FilterServerTypeId([]string{fmt.Sprintf("%d", int(serverType.Id))}).Execute()
 			if err := response_inspector.InspectResponse(httpRes, err); err != nil {
-				return nil, err
+				return nil, nil, err
 			}
 
 			for _, server := range servers.Data {
@@ -276,11 +282,12 @@ func (vc *VendorCatalog) getFilteredSystemModels(ctx context.Context) ([]string,
 				}
 
 				systemModels = append(systemModels, *server.Model)
+				systemModelsEx[*server.Model] = *server.VendorSkuId // TODO: What if we have multiple serial numbers for the same model?
 			}
 		}
 	}
 
-	return systemModels, nil
+	return systemModels, systemModelsEx, nil
 }
 
 // Downloads a binary from the vendor catalog
@@ -393,6 +400,9 @@ func downloadGzipCatalog(url string, filePath string) error {
 	if err != nil {
 		return err
 	}
+	if resp.StatusCode != 200 {
+		return fmt.Errorf("Error downloading catalog: %v", resp.Status)
+	}
 	defer resp.Body.Close()
 
 	gzReader, err := gzip.NewReader(resp.Body)
@@ -407,6 +417,44 @@ func downloadGzipCatalog(url string, filePath string) error {
 	defer file.Close()
 
 	_, err = io.Copy(file, gzReader)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func downloadCatalog(url string, filePath string, authToken string) error {
+	req, err := http.NewRequest(http.MethodGet, url, nil)
+	if err != nil {
+		return err
+	}
+
+	req.Header.Set("User-Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/114.0.0.0 Safari/537.36")
+
+	if authToken != "" {
+		encodedData := base64.StdEncoding.EncodeToString([]byte(authToken + ":null"))
+		req.Header.Set("Authorization", "Basic "+encodedData)
+	}
+
+	client := http.DefaultClient
+
+	resp, err := client.Do(req)
+	if err != nil {
+		return err
+	}
+	if resp.StatusCode != 200 {
+		return fmt.Errorf("error downloading catalog: %v", resp.Status)
+	}
+	defer resp.Body.Close()
+
+	file, err := os.Create(filePath)
+	if err != nil {
+		return err
+	}
+	defer file.Close()
+
+	_, err = io.Copy(file, resp.Body)
 	if err != nil {
 		return err
 	}

@@ -93,6 +93,7 @@ type FirmwareCatalogCreateOptions struct {
 	Vendor                  string   `json:"vendor"`
 	UpdateType              string   `json:"update_type"`
 	VendorUrl               string   `json:"vendor_url,omitempty"`
+	VendorToken             string   `json:"vendor_token,omitempty"`
 	VendorLocalCatalogPath  string   `json:"vendor_local_catalog_path,omitempty"`
 	VendorLocalBinariesPath string   `json:"vendor_local_binaries_path,omitempty"`
 	ServerTypesFilter       []string `json:"server_types_filter,omitempty"`
