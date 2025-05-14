@@ -194,6 +194,10 @@ To build manually:
 
 `go build ./cmd/metalcloud-cli/`
 
+To build manually with FIPS compliant crypto libraries:
+
+`GOEXPERIMENT=boringcrypto go build ./cmd/metalcloud-cli/`
+
 The build process is automated by travis. Just push into the repository using the appropriate tag:
 
 Use `git tag` to get the last tag:

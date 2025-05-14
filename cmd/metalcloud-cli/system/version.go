@@ -49,3 +49,7 @@ func ValidateVersion(ctx context.Context) error {
 
 	return nil
 }
+
+func GetMinMaxVersion() (string, string) {
+	return fmt.Sprintf("%d.%d", minMajor, minMinor), fmt.Sprintf("%d.%d", maxMajor, maxMinor)
+}

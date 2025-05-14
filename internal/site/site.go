@@ -19,25 +19,30 @@ var sitePrintConfig = formatter.PrintConfig{
 			Title: "#",
 			Order: 1,
 		},
-		"Name": {
+		"Slug": {
+			Title:    "Label",
 			MaxWidth: 30,
 			Order:    2,
+		},
+		"Name": {
+			MaxWidth: 30,
+			Order:    3,
 		},
 		"Location": {
 			Hidden: true,
 			InnerFields: map[string]formatter.RecordFieldConfig{
 				"Address": {
-					Order: 3,
+					Order: 4,
 				},
 			},
 		},
 		"IsHidden": {
 			Title: "Hidden",
-			Order: 4,
+			Order: 5,
 		},
 		"IsInMaintenance": {
 			Title: "Maintenance",
-			Order: 5,
+			Order: 6,
 		},
 	},
 }

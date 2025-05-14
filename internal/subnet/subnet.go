@@ -156,18 +156,16 @@ func SubnetDelete(ctx context.Context, subnetId string) error {
 func SubnetConfigExample(ctx context.Context) error {
 	// Example create subnet configuration
 	subnetConfiguration := sdk.CreateSubnet{
-		Label:                         sdk.PtrString("example-subnet"),
-		Name:                          "example-subnet",
-		NetworkAddress:                "192.168.1.0",
-		PrefixLength:                  24,
-		IsPool:                        false,
-		ParentSubnetId:                0,
-		Gateway:                       "192.168.1.1",
-		VrfId:                         0,
-		AllocationDenylist:            []string{},
-		AllowedChildOverlapConditions: []string{},
-		Tags:                          map[string]interface{}{"tag1": "value1", "tag2": "value2"},
-		Metadata:                      map[string]interface{}{},
+		Label:                  sdk.PtrString("example-subnet"),
+		Name:                   sdk.PtrString("example-subnet"),
+		NetworkAddress:         sdk.PtrString("192.168.1.0"),
+		PrefixLength:           sdk.PtrFloat32(24),
+		IsPool:                 sdk.PtrBool(false),
+		ParentSubnetId:         sdk.PtrFloat32(0),
+		DefaultGateway:         sdk.PtrString("192.168.1.1"),
+		AllocationDenylist:     []string{},
+		ChildOverlapAllowRules: []string{},
+		Tags:                   map[string]interface{}{"tag1": "value1", "tag2": "value2"},
 	}
 
 	return formatter.PrintResult(subnetConfiguration, nil)

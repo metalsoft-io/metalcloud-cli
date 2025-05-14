@@ -15,16 +15,6 @@ var (
 		configSource     string
 		limit            string
 		page             string
-		// siteId           string
-		// driver           string
-		// technology       string
-		// storageType      string
-		// name             string
-		// managementHost   string
-		// username         string
-		// subnetType       string
-		// password         string
-		// options          map[string]interface{}
 	}{}
 
 	storageCmd = &cobra.Command{
@@ -101,17 +91,6 @@ var (
 		Args:         cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			return storage.StorageGetCredentials(cmd.Context(), args[0])
-		},
-	}
-
-	storageExecuteActionCmd = &cobra.Command{
-		Use:          "execute-action storage_id",
-		Short:        "Execute an action on a storage.",
-		SilenceUsage: true,
-		Annotations:  map[string]string{system.REQUIRED_PERMISSION: system.PERMISSION_STORAGE_WRITE},
-		Args:         cobra.ExactArgs(1),
-		RunE: func(cmd *cobra.Command, args []string) error {
-			return storage.StorageExecuteAction(cmd.Context(), args[0])
 		},
 	}
 
@@ -203,17 +182,6 @@ var (
 			return storage.StorageGetNetworkDeviceConfigurations(cmd.Context(), args[0])
 		},
 	}
-
-	storageGetIscsiBootServersCmd = &cobra.Command{
-		Use:          "iscsi-boot-servers storage_id",
-		Short:        "Get iSCSI boot servers for a storage.",
-		SilenceUsage: true,
-		Annotations:  map[string]string{system.REQUIRED_PERMISSION: system.PERMISSION_STORAGE_READ},
-		Args:         cobra.ExactArgs(1),
-		RunE: func(cmd *cobra.Command, args []string) error {
-			return storage.StorageGetIscsiBootServers(cmd.Context(), args[0])
-		},
-	}
 )
 
 func init() {
@@ -236,8 +204,6 @@ func init() {
 
 	storageCmd.AddCommand(storageGetCredentialsCmd)
 
-	storageCmd.AddCommand(storageExecuteActionCmd)
-
 	// Add commands for retrieving related resources
 	storageCmd.AddCommand(storageGetDrivesCmd)
 	storageGetDrivesCmd.Flags().StringVar(&storageFlags.limit, "limit", "", "Number of records per page")
@@ -252,6 +218,4 @@ func init() {
 	storageGetBucketsCmd.Flags().StringVar(&storageFlags.page, "page", "", "Page number")
 
 	storageCmd.AddCommand(storageGetNetworkDeviceConfigurationsCmd)
-
-	storageCmd.AddCommand(storageGetIscsiBootServersCmd)
 }

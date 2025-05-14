@@ -33,8 +33,13 @@ type PrintConfig struct {
 	FieldsConfig map[string]RecordFieldConfig
 }
 
+var (
+	disableColor = false
+)
+
 func PrintResult(result interface{}, printConfig *PrintConfig) error {
 	format := strings.ToLower(viper.GetString(ConfigFormat))
+	disableColor = false
 
 	switch format {
 	case "json":
@@ -54,8 +59,10 @@ func PrintResult(result interface{}, printConfig *PrintConfig) error {
 	case "text":
 		generateTable(result, printConfig).Render()
 	case "csv":
+		disableColor = true
 		generateTable(result, printConfig).RenderCSV()
 	case "md":
+		disableColor = true
 		generateTable(result, printConfig).RenderMarkdown()
 	default:
 		return fmt.Errorf("%s format not supported yet", format)
@@ -210,7 +217,15 @@ func getColumnsCount(fieldsConfig *map[string]RecordFieldConfig) (int, int) {
 }
 
 func populate(record interface{}, fieldsConfig *map[string]RecordFieldConfig, names *table.Row, values *table.Row, configs *[]table.ColumnConfig) {
-	if record == nil {
+	if record == nil || (reflect.ValueOf(record).Kind() == reflect.Ptr && reflect.ValueOf(record).IsNil()) {
+		for fieldName, fieldConfig := range *fieldsConfig {
+			addField(fieldConfig, fieldName, "", names, values, configs)
+
+			if len(fieldConfig.InnerFields) > 0 {
+				populate(nil, &fieldConfig.InnerFields, names, values, configs)
+			}
+		}
+
 		return
 	}
 
@@ -266,10 +281,14 @@ func addField(fieldConfig RecordFieldConfig, fieldName string, fieldValue interf
 
 func extractValue(value reflect.Value) interface{} {
 	if !value.IsValid() {
-		return nil
+		return ""
 	}
 
 	if value.Kind() == reflect.Pointer {
+		if value.IsNil() {
+			return ""
+		}
+
 		value = value.Elem()
 	}
 
@@ -302,15 +321,19 @@ func extractValue(value reflect.Value) interface{} {
 				return value.Interface().(sdk.NullableInt32).Get()
 			}
 		}
-		return nil
+		return ""
 	case reflect.Invalid:
-		return nil
+		return ""
 	default:
 		return fmt.Sprint(value.Interface())
 	}
 }
 
 func FormatStatusValue(value interface{}) string {
+	if disableColor {
+		return fmt.Sprint(value)
+	}
+
 	if _, ok := value.(string); ok {
 		var color text.Color
 		switch value {
@@ -353,6 +376,7 @@ func FormatStatusValue(value interface{}) string {
 		}
 		return color.Sprintf("%s", value)
 	}
+
 	return fmt.Sprint(value)
 }
 

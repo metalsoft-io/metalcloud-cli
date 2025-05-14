@@ -446,32 +446,6 @@ func NetworkDeviceGetDefaults(ctx context.Context, siteId string) error {
 	return formatter.PrintResult(defaults, nil)
 }
 
-func NetworkDeviceGetIscsiBootServers(ctx context.Context, networkDeviceId string) error {
-	logger.Get().Info().Msgf("Getting iSCSI boot servers for network device %s", networkDeviceId)
-
-	networkDeviceIdNumeric, err := getNetworkDeviceId(networkDeviceId)
-	if err != nil {
-		return err
-	}
-
-	client := api.GetApiClient(ctx)
-
-	httpRes, err := client.NetworkDeviceAPI.
-		GetIscsiBootServers(ctx, networkDeviceIdNumeric).
-		Execute()
-	if err := response_inspector.InspectResponse(httpRes, err); err != nil {
-		return err
-	}
-
-	// Parse response body to display iSCSI boot servers
-	iscsiBootServersMap, err := response_inspector.ParseResponseBody(httpRes)
-	if err != nil {
-		return err
-	}
-
-	return formatter.PrintResult(iscsiBootServersMap, nil)
-}
-
 func GetNetworkDeviceById(ctx context.Context, networkDeviceId string) (*sdk.NetworkDevice, error) {
 	networkDeviceIdNumeric, err := getNetworkDeviceId(networkDeviceId)
 	if err != nil {

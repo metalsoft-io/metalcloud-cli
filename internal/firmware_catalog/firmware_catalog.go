@@ -87,26 +87,45 @@ func FirmwareCatalogGet(ctx context.Context, firmwareCatalogId string) error {
 	return formatter.PrintResult(firmwareCatalog, &firmwareCatalogPrintConfig)
 }
 
-func FirmwareCatalogCreate(ctx context.Context, config []byte) error {
+type FirmwareCatalogCreateOptions struct {
+	Name                    string   `json:"name"`
+	Description             string   `json:"description,omitempty"`
+	Vendor                  string   `json:"vendor"`
+	UpdateType              string   `json:"update_type"`
+	VendorUrl               string   `json:"vendor_url,omitempty"`
+	VendorLocalCatalogPath  string   `json:"vendor_local_catalog_path,omitempty"`
+	VendorLocalBinariesPath string   `json:"vendor_local_binaries_path,omitempty"`
+	ServerTypesFilter       []string `json:"server_types_filter,omitempty"`
+	VendorSystemsFilter     []string `json:"vendor_systems_filter,omitempty"`
+	DownloadBinaries        bool     `json:"download_binaries,omitempty"`
+	UploadBinaries          bool     `json:"upload_binaries,omitempty"`
+	RepoBaseUrl             string   `json:"repo_base_url,omitempty"`
+	RepoSshHost             string   `json:"repo_ssh_host,omitempty"`
+	RepoSshUser             string   `json:"repo_ssh_user,omitempty"`
+	UserPrivateKeyPath      string   `json:"user_private_key_path,omitempty"`
+	KnownHostsPath          string   `json:"known_hosts_path,omitempty"`
+	IgnoreHostKeyCheck      bool     `json:"ignore_host_key_check,omitempty"`
+}
+
+func FirmwareCatalogCreate(ctx context.Context, firmwareCatalogOptions FirmwareCatalogCreateOptions) error {
 	logger.Get().Info().Msgf("Creating firmware catalog")
 
-	var firmwareCatalogConfig sdk.CreateFirmwareCatalog
-	err := json.Unmarshal(config, &firmwareCatalogConfig)
+	vendorCatalog, err := NewVendorCatalogFromCreateOptions(firmwareCatalogOptions)
 	if err != nil {
 		return err
 	}
 
-	client := api.GetApiClient(ctx)
-
-	firmwareCatalog, httpRes, err := client.FirmwareCatalogAPI.
-		CreateFirmwareCatalogs(ctx).
-		CreateFirmwareCatalog(firmwareCatalogConfig).
-		Execute()
-	if err := response_inspector.InspectResponse(httpRes, err); err != nil {
+	err = vendorCatalog.ProcessVendorCatalog(ctx)
+	if err != nil {
 		return err
 	}
 
-	return formatter.PrintResult(firmwareCatalog, &firmwareCatalogPrintConfig)
+	err = vendorCatalog.CreateMetalsoftCatalog(ctx)
+	if err != nil {
+		return err
+	}
+
+	return FirmwareCatalogGet(ctx, fmt.Sprintf("%d", int(vendorCatalog.CatalogInfo.Id)))
 }
 
 func FirmwareCatalogUpdate(ctx context.Context, firmwareCatalogId string, config []byte) error {
@@ -199,25 +218,6 @@ func FirmwareCatalogDelete(ctx context.Context, firmwareCatalogId string) error 
 
 	logger.Get().Info().Msgf("Firmware catalog '%s' deleted", firmwareCatalogId)
 	return nil
-}
-
-func FirmwareCatalogConfigExample(ctx context.Context) error {
-	// Example create firmware catalog configuration
-	firmwareCatalogConfiguration := sdk.CreateFirmwareCatalog{
-		Name:        "DELL Enterprise catalog",
-		Description: sdk.PtrString("The catalog contains the latest BIOS, firmware, drivers, and certain applications for both Microsoft Windows and Linux operating systems."),
-		Vendor:      "dell",
-		VendorId:    sdk.PtrString("48912fae-2b46-4b4c-bafe-2c709c7b0ad2"),
-		VendorUrl:   sdk.PtrString("https://downloads.dell.com/catalog/Catalog.gz"),
-		UpdateType:  "online",
-		VendorConfiguration: map[string]interface{}{
-			"update_frequency": "daily",
-		},
-		MetalsoftServerTypesSupported: []string{"M.4.8.2", "M.4.16.2"},
-		VendorServerTypesSupported:    []string{"R740", "R640"},
-	}
-
-	return formatter.PrintResult(firmwareCatalogConfiguration, nil)
 }
 
 func getFirmwareCatalogId(firmwareCatalogId string) (float32, error) {

@@ -146,25 +146,6 @@ func StorageGetCredentials(ctx context.Context, storageId string) error {
 	return formatter.PrintResult(credentials, nil)
 }
 
-func StorageExecuteAction(ctx context.Context, storageId string) error {
-	logger.Get().Info().Msgf("Executing action on storage %s", storageId)
-
-	storageIdNumeric, err := getStorageId(storageId)
-	if err != nil {
-		return err
-	}
-
-	client := api.GetApiClient(ctx)
-
-	httpRes, err := client.StorageAPI.ExecuteStorageAction(ctx, storageIdNumeric).Execute()
-	if err := response_inspector.InspectResponse(httpRes, err); err != nil {
-		return err
-	}
-
-	logger.Get().Info().Msgf("Action executed successfully on storage %s", storageId)
-	return nil
-}
-
 func StorageGetDrives(ctx context.Context, storageId string, limit float32, page float32) error {
 	logger.Get().Info().Msgf("Getting drives for storage %s", storageId)
 
@@ -268,24 +249,6 @@ func StorageGetNetworkDeviceConfigurations(ctx context.Context, storageId string
 	}
 
 	return formatter.PrintResult(configs, nil)
-}
-
-func StorageGetIscsiBootServers(ctx context.Context, storageId string) error {
-	logger.Get().Info().Msgf("Getting iSCSI boot servers for storage %s", storageId)
-
-	storageIdNumeric, err := getStorageId(storageId)
-	if err != nil {
-		return err
-	}
-
-	client := api.GetApiClient(ctx)
-
-	servers, httpRes, err := client.StorageAPI.GetStorageIscsiBootServers(ctx, storageIdNumeric).Execute()
-	if err := response_inspector.InspectResponse(httpRes, err); err != nil {
-		return err
-	}
-
-	return formatter.PrintResult(servers, nil)
 }
 
 func StorageConfigExample(ctx context.Context) error {

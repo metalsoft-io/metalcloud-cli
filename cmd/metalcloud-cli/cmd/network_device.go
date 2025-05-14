@@ -198,17 +198,6 @@ var (
 			return network_device.NetworkDeviceGetDefaults(cmd.Context(), args[0])
 		},
 	}
-
-	networkDeviceGetIscsiBootServersCmd = &cobra.Command{
-		Use:          "get-iscsi-boot-servers network_device_id",
-		Short:        "Get iSCSI boot servers connected through this network device.",
-		SilenceUsage: true,
-		Annotations:  map[string]string{system.REQUIRED_PERMISSION: system.PERMISSION_SWITCHES_READ},
-		Args:         cobra.ExactArgs(1),
-		RunE: func(cmd *cobra.Command, args []string) error {
-			return network_device.NetworkDeviceGetIscsiBootServers(cmd.Context(), args[0])
-		},
-	}
 )
 
 func init() {
@@ -251,6 +240,4 @@ func init() {
 	networkDeviceCmd.AddCommand(networkDeviceEnableSyslogCmd)
 
 	networkDeviceCmd.AddCommand(networkDeviceGetDefaultsCmd)
-
-	networkDeviceCmd.AddCommand(networkDeviceGetIscsiBootServersCmd)
 }

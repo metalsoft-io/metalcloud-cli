@@ -9,6 +9,8 @@ import (
 	"github.com/metalsoft-io/metalcloud-cli/cmd/metalcloud-cli/cmd"
 )
 
+var version string
+
 func main() {
 	sigChannel := make(chan os.Signal, 1)
 	signal.Notify(sigChannel, syscall.SIGINT, syscall.SIGTERM)
@@ -16,6 +18,8 @@ func main() {
 		<-sigChannel
 		os.Exit(-1)
 	}()
+
+	cmd.Version = version
 
 	err := cmd.Execute()
 	if err != nil {
