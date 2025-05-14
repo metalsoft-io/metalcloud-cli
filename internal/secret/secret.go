@@ -27,12 +27,6 @@ var secretPrintConfig = formatter.PrintConfig{
 			MaxWidth: 50,
 			Title:    "Value (encrypted)",
 			Order:    3,
-			Transformer: func(value interface{}) string {
-				if value == nil {
-					return ""
-				}
-				return fmt.Sprint(value)
-			},
 		},
 		"Usage": {
 			Title: "Usage Type",
