@@ -11,7 +11,7 @@ import (
 
 var (
 	storageFlags = struct {
-		filterTechnology string
+		filterTechnology []string
 		configSource     string
 		limit            string
 		page             string
@@ -189,7 +189,7 @@ func init() {
 
 	// Add existing commands
 	storageCmd.AddCommand(storageListCmd)
-	storageListCmd.Flags().StringVar(&storageFlags.filterTechnology, "filter-technology", "", "Filter the result by storage technology.")
+	storageListCmd.Flags().StringSliceVar(&storageFlags.filterTechnology, "filter-technology", nil, "Filter the result by storage technology.")
 
 	storageCmd.AddCommand(storageGetCmd)
 

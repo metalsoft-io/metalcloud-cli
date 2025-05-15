@@ -9,7 +9,7 @@ import (
 
 var (
 	networkDeviceFlags = struct {
-		filterStatus     string
+		filterStatus     []string
 		configSource     string
 		portId           string
 		portStatusAction string
@@ -204,7 +204,7 @@ func init() {
 	rootCmd.AddCommand(networkDeviceCmd)
 
 	networkDeviceCmd.AddCommand(networkDeviceListCmd)
-	networkDeviceListCmd.Flags().StringVar(&networkDeviceFlags.filterStatus, "filter-status", "active", "Filter the result by network device status.")
+	networkDeviceListCmd.Flags().StringSliceVar(&networkDeviceFlags.filterStatus, "filter-status", []string{"active"}, "Filter the result by network device status.")
 
 	networkDeviceCmd.AddCommand(networkDeviceGetCmd)
 

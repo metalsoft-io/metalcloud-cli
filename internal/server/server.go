@@ -81,19 +81,19 @@ type serversWithCredentials struct {
 	ServerCredentials sdk.ServerCredentials
 }
 
-func ServerList(ctx context.Context, showCredentials bool, filterStatus string, filterType string) error {
+func ServerList(ctx context.Context, showCredentials bool, filterStatus []string, filterType []string) error {
 	logger.Get().Info().Msgf("Listing all servers")
 
 	client := api.GetApiClient(ctx)
 
 	request := client.ServerAPI.GetServers(ctx)
 
-	if filterStatus != "" {
-		request = request.FilterServerStatus(utils.SplitFilterString(filterStatus))
+	if len(filterStatus) > 0 {
+		request = request.FilterServerStatus(utils.ProcessFilterStringSlice(filterStatus))
 	}
 
-	if filterType != "" {
-		request = request.FilterServerTypeId(utils.SplitFilterString(filterType))
+	if len(filterType) > 0 {
+		request = request.FilterServerTypeId(utils.ProcessFilterStringSlice(filterType))
 	}
 
 	serverList, httpRes, err := request.Execute()

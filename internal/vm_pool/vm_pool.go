@@ -48,15 +48,15 @@ var VMPoolPrintConfig = formatter.PrintConfig{
 	},
 }
 
-func VMPoolList(ctx context.Context, filterType string) error {
+func VMPoolList(ctx context.Context, filterType []string) error {
 	logger.Get().Info().Msgf("Listing all VM pools")
 
 	client := api.GetApiClient(ctx)
 
 	request := client.VMPoolAPI.GetVMPools(ctx)
 
-	if filterType != "" {
-		request = request.FilterDriver(utils.SplitFilterString(filterType))
+	if len(filterType) > 0 {
+		request = request.FilterDriver(utils.ProcessFilterStringSlice(filterType))
 	}
 
 	vmPoolList, httpRes, err := request.SortBy([]string{"id:ASC"}).Execute()

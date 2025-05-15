@@ -89,7 +89,7 @@ var driveHostsPrintConfig = formatter.PrintConfig{
 	},
 }
 
-func DriveList(ctx context.Context, infrastructureIdOrLabel string, filterStatus string) error {
+func DriveList(ctx context.Context, infrastructureIdOrLabel string, filterStatus []string) error {
 	logger.Get().Info().Msgf("Listing drives for infrastructure '%s'", infrastructureIdOrLabel)
 
 	// Get the infrastructure ID from ID or label
@@ -102,8 +102,8 @@ func DriveList(ctx context.Context, infrastructureIdOrLabel string, filterStatus
 
 	request := client.DriveAPI.GetInfrastructureDrives(ctx, infrastructureInfo.Id)
 
-	if filterStatus != "" {
-		request = request.FilterServiceStatus(utils.SplitFilterString(filterStatus))
+	if len(filterStatus) > 0 {
+		request = request.FilterServiceStatus(utils.ProcessFilterStringSlice(filterStatus))
 	}
 
 	driveList, httpRes, err := request.Execute()

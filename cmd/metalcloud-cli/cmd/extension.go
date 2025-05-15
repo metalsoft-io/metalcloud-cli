@@ -10,9 +10,9 @@ import (
 var (
 	extensionFlags = struct {
 		definitionSource string
-		filterLabel      string
-		filterName       string
-		filterStatus     string
+		filterLabel      []string
+		filterName       []string
+		filterStatus     []string
 	}{}
 
 	extensionCmd = &cobra.Command{
@@ -125,9 +125,9 @@ func init() {
 	rootCmd.AddCommand(extensionCmd)
 
 	extensionCmd.AddCommand(extensionListCmd)
-	extensionListCmd.Flags().StringVar(&extensionFlags.filterLabel, "filter-label", "", "Filter extensions by label")
-	extensionListCmd.Flags().StringVar(&extensionFlags.filterName, "filter-name", "", "Filter extensions by name")
-	extensionListCmd.Flags().StringVar(&extensionFlags.filterStatus, "filter-status", "", "Filter extensions by status (DRAFT, PUBLISHED, ARCHIVED)")
+	extensionListCmd.Flags().StringSliceVar(&extensionFlags.filterLabel, "filter-label", nil, "Filter extensions by label")
+	extensionListCmd.Flags().StringSliceVar(&extensionFlags.filterName, "filter-name", nil, "Filter extensions by name")
+	extensionListCmd.Flags().StringSliceVar(&extensionFlags.filterStatus, "filter-status", nil, "Filter extensions by status (DRAFT, PUBLISHED, ARCHIVED)")
 
 	extensionCmd.AddCommand(extensionGetCmd)
 

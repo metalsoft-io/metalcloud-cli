@@ -150,9 +150,9 @@ func ServerInstanceGroupCreate(ctx context.Context, infrastructureIdOrLabel stri
 	}
 
 	payload := sdk.ServerInstanceGroupCreate{
-		Label:         &label,
-		ServerTypeId:  sdk.PtrInt32(int32(serverType.Id)),
-		InstanceCount: sdk.PtrInt32(int32(serverInstanceCountNumerical)),
+		Label:               &label,
+		DefaultServerTypeId: int32(serverType.Id),
+		InstanceCount:       sdk.PtrInt32(int32(serverInstanceCountNumerical)),
 	}
 
 	if osTemplateId != "" {

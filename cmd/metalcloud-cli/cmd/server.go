@@ -11,8 +11,8 @@ import (
 var (
 	serverFlags = struct {
 		showCredentials bool
-		filterStatus    string
-		filterType      string
+		filterStatus    []string
+		filterType      []string
 		configSource    string
 		powerAction     string
 	}{}
@@ -357,8 +357,8 @@ func init() {
 	// Server commands
 	serverCmd.AddCommand(serverListCmd)
 	serverListCmd.Flags().BoolVar(&serverFlags.showCredentials, "show-credentials", false, "If set returns the server IPMI credentials.")
-	serverListCmd.Flags().StringVar(&serverFlags.filterStatus, "filter-status", "", "Filter the result by server status.")
-	serverListCmd.Flags().StringVar(&serverFlags.filterType, "filter-type", "", "Filter the result by server type.")
+	serverListCmd.Flags().StringSliceVar(&serverFlags.filterStatus, "filter-status", nil, "Filter the result by server status.")
+	serverListCmd.Flags().StringSliceVar(&serverFlags.filterType, "filter-type", nil, "Filter the result by server type.")
 
 	serverCmd.AddCommand(serverGetCmd)
 	serverGetCmd.Flags().BoolVar(&serverFlags.showCredentials, "show-credentials", false, "If set returns the server IPMI credentials.")

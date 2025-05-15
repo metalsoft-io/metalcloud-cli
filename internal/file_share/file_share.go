@@ -89,7 +89,7 @@ var fileShareHostsPrintConfig = formatter.PrintConfig{
 	},
 }
 
-func FileShareList(ctx context.Context, infrastructureIdOrLabel string, filterStatus string) error {
+func FileShareList(ctx context.Context, infrastructureIdOrLabel string, filterStatus []string) error {
 	logger.Get().Info().Msgf("Listing file shares for infrastructure '%s'", infrastructureIdOrLabel)
 
 	// Get the infrastructure ID from ID or label
@@ -102,8 +102,8 @@ func FileShareList(ctx context.Context, infrastructureIdOrLabel string, filterSt
 
 	request := client.FileShareAPI.GetInfrastructureFileShares(ctx, infrastructureInfo.Id)
 
-	if filterStatus != "" {
-		request = request.FilterServiceStatus(utils.SplitFilterString(filterStatus))
+	if len(filterStatus) > 0 {
+		request = request.FilterServiceStatus(utils.ProcessFilterStringSlice(filterStatus))
 	}
 
 	fileShareList, httpRes, err := request.Execute()

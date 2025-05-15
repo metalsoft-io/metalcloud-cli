@@ -66,19 +66,19 @@ func LogicalNetworkList(ctx context.Context, fabricIdOrLabel string, flags ListF
 	request := client.LogicalNetworkAPI.GetLogicalNetworks(ctx)
 
 	if len(flags.FilterId) > 0 {
-		request = request.FilterId(utils.ProcessFilterStringList(flags.FilterId))
+		request = request.FilterId(utils.ProcessFilterStringSlice(flags.FilterId))
 	}
 	if len(flags.FilterLabel) > 0 {
-		request = request.FilterLabel(utils.ProcessFilterStringList(flags.FilterLabel))
+		request = request.FilterLabel(utils.ProcessFilterStringSlice(flags.FilterLabel))
 	}
 	if len(flags.FilterFabricId) > 0 {
-		request = request.FilterFabricId(utils.ProcessFilterStringList(flags.FilterFabricId))
+		request = request.FilterFabricId(utils.ProcessFilterStringSlice(flags.FilterFabricId))
 	}
 	if len(flags.FilterInfrastructureId) > 0 {
-		request = request.FilterInfrastructureId(utils.ProcessFilterStringList(flags.FilterInfrastructureId))
+		request = request.FilterInfrastructureId(utils.ProcessFilterStringSlice(flags.FilterInfrastructureId))
 	}
 	if len(flags.FilterKind) > 0 {
-		request = request.FilterKind(utils.ProcessFilterStringList(flags.FilterKind))
+		request = request.FilterKind(utils.ProcessFilterStringSlice(flags.FilterKind))
 	}
 	if len(flags.SortBy) > 0 {
 		request = request.SortBy(flags.SortBy)

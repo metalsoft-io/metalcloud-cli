@@ -71,7 +71,7 @@ var bucketPrintConfig = formatter.PrintConfig{
 	},
 }
 
-func BucketList(ctx context.Context, infrastructureIdOrLabel string, filterStatus string) error {
+func BucketList(ctx context.Context, infrastructureIdOrLabel string, filterStatus []string) error {
 	logger.Get().Info().Msgf("Listing buckets for infrastructure '%s'", infrastructureIdOrLabel)
 
 	// Get the infrastructure ID from ID or label
@@ -84,8 +84,8 @@ func BucketList(ctx context.Context, infrastructureIdOrLabel string, filterStatu
 
 	request := client.BucketAPI.GetInfrastructureBuckets(ctx, infrastructureInfo.Id)
 
-	if filterStatus != "" {
-		request = request.FilterServiceStatus(utils.SplitFilterString(filterStatus))
+	if len(filterStatus) > 0 {
+		request = request.FilterServiceStatus(utils.ProcessFilterStringSlice(filterStatus))
 	}
 
 	bucketList, httpRes, err := request.Execute()

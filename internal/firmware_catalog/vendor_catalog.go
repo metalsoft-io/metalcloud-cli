@@ -401,7 +401,7 @@ func downloadGzipCatalog(url string, filePath string) error {
 		return err
 	}
 	if resp.StatusCode != 200 {
-		return fmt.Errorf("Error downloading catalog: %v", resp.Status)
+		return fmt.Errorf("error downloading catalog: %v", resp.Status)
 	}
 	defer resp.Body.Close()
 

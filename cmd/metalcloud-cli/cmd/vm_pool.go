@@ -11,7 +11,7 @@ import (
 
 var (
 	vmPoolFlags = struct {
-		filterType   string
+		filterType   []string
 		configSource string
 		limit        string
 		page         string
@@ -189,7 +189,7 @@ func init() {
 
 	// List command
 	vmPoolCmd.AddCommand(vmPoolListCmd)
-	vmPoolListCmd.Flags().StringVar(&vmPoolFlags.filterType, "filter-type", "", "Filter the result by VM pool type (e.g., vmware, hyperv, etc).")
+	vmPoolListCmd.Flags().StringSliceVar(&vmPoolFlags.filterType, "filter-type", nil, "Filter the result by VM pool type (e.g., vmware, hyperv, etc).")
 
 	// Get command
 	vmPoolCmd.AddCommand(vmPoolGetCmd)

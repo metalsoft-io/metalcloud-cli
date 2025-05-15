@@ -54,7 +54,7 @@ var templateAssetPrintConfig = formatter.PrintConfig{
 	},
 }
 
-func TemplateAssetList(ctx context.Context, templateId string, usage string, mimeType string) error {
+func TemplateAssetList(ctx context.Context, templateId []string, usage []string, mimeType []string) error {
 	logger.Get().Info().Msgf("Listing template assets")
 
 	client := api.GetApiClient(ctx)
@@ -62,16 +62,16 @@ func TemplateAssetList(ctx context.Context, templateId string, usage string, mim
 	request := client.TemplateAssetAPI.GetTemplateAssets(ctx)
 
 	// Apply filters if provided
-	if templateId != "" {
-		request = request.FilterTemplateId(utils.SplitFilterString(templateId))
+	if len(templateId) > 0 {
+		request = request.FilterTemplateId(utils.ProcessFilterStringSlice(templateId))
 	}
 
-	if usage != "" {
-		request = request.FilterUsage(utils.SplitFilterString(usage))
+	if len(usage) > 0 {
+		request = request.FilterUsage(utils.ProcessFilterStringSlice(usage))
 	}
 
-	if mimeType != "" {
-		request = request.FilterFileMimeType(utils.SplitFilterString(mimeType))
+	if len(mimeType) > 0 {
+		request = request.FilterFileMimeType(utils.ProcessFilterStringSlice(mimeType))
 	}
 
 	request = request.SortBy([]string{"id:ASC"})

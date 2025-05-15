@@ -10,9 +10,9 @@ import (
 var (
 	templateAssetFlags = struct {
 		configSource string
-		templateId   string
-		usage        string
-		mimeType     string
+		templateId   []string
+		usage        []string
+		mimeType     []string
 	}{}
 
 	templateAssetCmd = &cobra.Command{
@@ -110,9 +110,9 @@ func init() {
 
 	// List command with filter options
 	templateAssetCmd.AddCommand(templateAssetListCmd)
-	templateAssetListCmd.Flags().StringVar(&templateAssetFlags.templateId, "template-id", "", "Filter assets by template ID.")
-	templateAssetListCmd.Flags().StringVar(&templateAssetFlags.usage, "usage", "", "Filter assets by usage type (e.g., logo, icon, etc.).")
-	templateAssetListCmd.Flags().StringVar(&templateAssetFlags.mimeType, "mime-type", "", "Filter assets by file MIME type (e.g., image/png, image/jpeg, etc.).")
+	templateAssetListCmd.Flags().StringSliceVar(&templateAssetFlags.templateId, "template-id", nil, "Filter assets by template ID.")
+	templateAssetListCmd.Flags().StringSliceVar(&templateAssetFlags.usage, "usage", nil, "Filter assets by usage type (e.g., logo, icon, etc.).")
+	templateAssetListCmd.Flags().StringSliceVar(&templateAssetFlags.mimeType, "mime-type", nil, "Filter assets by file MIME type (e.g., image/png, image/jpeg, etc.).")
 
 	// Get command
 	templateAssetCmd.AddCommand(templateAssetGetCmd)

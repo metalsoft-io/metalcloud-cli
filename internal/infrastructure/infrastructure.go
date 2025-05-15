@@ -127,7 +127,7 @@ func InfrastructureCreate(ctx context.Context, siteId string, infrastructureLabe
 	createInfrastructure := sdk.InfrastructureCreate{
 		Label:  infrastructureLabel,
 		SiteId: float32(siteIdNumber),
-		Meta:   sdk.NewInfrastructureMeta(),
+		Meta:   nil,
 	}
 
 	client := api.GetApiClient(ctx)

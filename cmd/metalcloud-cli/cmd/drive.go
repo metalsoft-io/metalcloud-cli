@@ -10,7 +10,7 @@ import (
 var (
 	driveFlags = struct {
 		configSource string
-		filterStatus string
+		filterStatus []string
 	}{}
 
 	driveCmd = &cobra.Command{
@@ -153,7 +153,7 @@ func init() {
 	rootCmd.AddCommand(driveCmd)
 
 	driveCmd.AddCommand(driveListCmd)
-	driveListCmd.Flags().StringVar(&driveFlags.filterStatus, "filter-status", "", "Filter the result by drive status.")
+	driveListCmd.Flags().StringSliceVar(&driveFlags.filterStatus, "filter-status", nil, "Filter the result by drive status.")
 
 	driveCmd.AddCommand(driveGetCmd)
 

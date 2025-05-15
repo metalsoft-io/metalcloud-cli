@@ -51,15 +51,15 @@ var NetworkDevicePrintConfig = formatter.PrintConfig{
 	},
 }
 
-func NetworkDeviceList(ctx context.Context, filterStatus string) error {
+func NetworkDeviceList(ctx context.Context, filterStatus []string) error {
 	logger.Get().Info().Msgf("Listing all network devices")
 
 	client := api.GetApiClient(ctx)
 
 	request := client.NetworkDeviceAPI.GetNetworkDevices(ctx)
 
-	if filterStatus != "" {
-		request = request.FilterStatus(utils.SplitFilterString(filterStatus))
+	if len(filterStatus) > 0 {
+		request = request.FilterStatus(utils.ProcessFilterStringSlice(filterStatus))
 	}
 
 	networkDeviceList, httpRes, err := request.SortBy([]string{"id:ASC"}).Execute()

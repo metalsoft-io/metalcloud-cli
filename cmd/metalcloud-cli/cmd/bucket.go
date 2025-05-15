@@ -10,7 +10,7 @@ import (
 var (
 	bucketFlags = struct {
 		configSource string
-		filterStatus string
+		filterStatus []string
 	}{}
 
 	bucketCmd = &cobra.Command{
@@ -136,7 +136,7 @@ func init() {
 	rootCmd.AddCommand(bucketCmd)
 
 	bucketCmd.AddCommand(bucketListCmd)
-	bucketListCmd.Flags().StringVar(&bucketFlags.filterStatus, "filter-status", "", "Filter the result by bucket status.")
+	bucketListCmd.Flags().StringSliceVar(&bucketFlags.filterStatus, "filter-status", nil, "Filter the result by bucket status.")
 
 	bucketCmd.AddCommand(bucketGetCmd)
 

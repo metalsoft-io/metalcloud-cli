@@ -10,7 +10,7 @@ import (
 var (
 	fileShareFlags = struct {
 		configSource string
-		filterStatus string
+		filterStatus []string
 	}{}
 
 	fileShareCmd = &cobra.Command{
@@ -153,7 +153,7 @@ func init() {
 	rootCmd.AddCommand(fileShareCmd)
 
 	fileShareCmd.AddCommand(fileShareListCmd)
-	fileShareListCmd.Flags().StringVar(&fileShareFlags.filterStatus, "filter-status", "", "Filter the result by file share status.")
+	fileShareListCmd.Flags().StringSliceVar(&fileShareFlags.filterStatus, "filter-status", nil, "Filter the result by file share status.")
 
 	fileShareCmd.AddCommand(fileShareGetCmd)
 

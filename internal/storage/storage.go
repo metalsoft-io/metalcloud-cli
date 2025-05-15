@@ -48,15 +48,15 @@ var StoragePrintConfig = formatter.PrintConfig{
 	},
 }
 
-func StorageList(ctx context.Context, filterTechnology string) error {
+func StorageList(ctx context.Context, filterTechnology []string) error {
 	logger.Get().Info().Msgf("Listing all storages")
 
 	client := api.GetApiClient(ctx)
 
 	request := client.StorageAPI.GetStorages(ctx)
 
-	if filterTechnology != "" {
-		request = request.FilterTechnologies(utils.SplitFilterString(filterTechnology))
+	if len(filterTechnology) > 0 {
+		request = request.FilterTechnologies(utils.ProcessFilterStringSlice(filterTechnology))
 	}
 
 	storageList, httpRes, err := request.SortBy([]string{"id:ASC"}).Execute()

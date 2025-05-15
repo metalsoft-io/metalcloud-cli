@@ -43,23 +43,23 @@ var extensionPrintConfig = formatter.PrintConfig{
 	},
 }
 
-func ExtensionList(ctx context.Context, filterLabel string, filterName string, filterStatus string) error {
+func ExtensionList(ctx context.Context, filterLabel []string, filterName []string, filterStatus []string) error {
 	logger.Get().Info().Msgf("Listing extensions")
 
 	client := api.GetApiClient(ctx)
 	request := client.ExtensionAPI.GetExtensions(ctx).SortBy([]string{"id:ASC"})
 
 	// Apply filters if provided
-	if filterLabel != "" {
-		request = request.FilterLabel(utils.SplitFilterString(filterLabel))
+	if len(filterLabel) > 0 {
+		request = request.FilterLabel(utils.ProcessFilterStringSlice(filterLabel))
 	}
 
-	if filterName != "" {
-		request = request.FilterName(utils.SplitFilterString(filterName))
+	if len(filterName) > 0 {
+		request = request.FilterName(utils.ProcessFilterStringSlice(filterName))
 	}
 
-	if filterStatus != "" {
-		request = request.FilterStatus(utils.SplitFilterString(filterStatus))
+	if len(filterStatus) > 0 {
+		request = request.FilterStatus(utils.ProcessFilterStringSlice(filterStatus))
 	}
 
 	extensionList, httpRes, err := request.Execute()
