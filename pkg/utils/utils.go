@@ -74,12 +74,12 @@ func ProcessFilterStringSlice(filter []string) []string {
 	parts := make([]string, len(filter))
 
 	for i, part := range filter {
-		parts[i] = strings.TrimSpace(part)
+		part = strings.TrimSpace(part)
 
 		if strings.HasPrefix(part, "-") {
-			parts[i] = "$not:$eq:" + strings.TrimPrefix(part, "-")
+			parts[i] = "$or:$not:$eq:" + strings.TrimPrefix(part, "-")
 		} else {
-			parts[i] = "$eq:" + part
+			parts[i] = "$or:$eq:" + part
 		}
 	}
 

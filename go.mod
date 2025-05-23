@@ -6,7 +6,7 @@ toolchain go1.23.4
 
 require (
 	github.com/jedib0t/go-pretty/v6 v6.6.7
-	github.com/metalsoft-io/metalcloud-sdk-go v0.0.0-20250515150335-535b1899287d
+	github.com/metalsoft-io/metalcloud-sdk-go v0.0.0-20250523070837-c44054bc7e84
 	github.com/pkg/sftp v1.13.9
 	github.com/rs/zerolog v1.34.0
 	github.com/spf13/cobra v1.9.1
@@ -30,7 +30,7 @@ require (
 	github.com/sagikazarmark/locafero v0.9.0 // indirect
 	github.com/sourcegraph/conc v0.3.0 // indirect
 	github.com/spf13/afero v1.14.0 // indirect
-	github.com/spf13/cast v1.7.1 // indirect
+	github.com/spf13/cast v1.8.0 // indirect
 	github.com/spf13/pflag v1.0.6 // indirect
 	github.com/subosito/gotenv v1.6.0 // indirect
 	go.uber.org/multierr v1.11.0 // indirect

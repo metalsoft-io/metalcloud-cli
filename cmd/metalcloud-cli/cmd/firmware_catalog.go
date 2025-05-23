@@ -70,7 +70,7 @@ var (
 		Long:    `Create a new firmware catalog.`,
 		Example: `
 Dell example:
-metalcloud-cli firmware-catalog create --config-format yaml --raw-config .\example_dell.yaml --download-binaries --filter-server-types "M.32.32.2, M.32.64.2, M.40.32.1.v2" --repo-http-url http://176.223.226.61/repo/firmware/ --repo-ssh-path /home/repo/firmware --repo-ssh-port 22 --repo-ssh-user root --user-private-ssh-key-path ~/.ssh/id_rsa
+metalcloud-cli firmware-catalog create --config-source .\example_dell.yaml --download-binaries --filter-server-types "M.32.32.2, M.32.64.2, M.40.32.1.v2" --repo-http-url http://176.223.226.61/repo/firmware/ --repo-ssh-path /home/repo/firmware --repo-ssh-port 22 --repo-ssh-user root --user-private-ssh-key-path ~/.ssh/id_rsa
 
 example_dell.yaml:
 
@@ -82,7 +82,7 @@ localCatalogPath: ./ESXi_Catalog.xml
 localFirmwarePath: ./downloads
 
 Lenovo example:
-metalcloud-cli firmware-catalog create --config-format json --raw-config .\example_lenovo.json --filter-server-types "M.8.8.2.v5"
+metalcloud-cli firmware-catalog create --config-source .\example_lenovo.json --filter-server-types "M.8.8.2.v5"
 
 example_lenovo.json:
 
@@ -105,7 +105,7 @@ For Lenovo servers, we can filter by server type like for the other vendors, but
 The list of servers specified in the config serversList parameter takes precedence over the filter-server-types parameter, which will be ignored.
 
 HP example:
-metalcloud-cli firmware-catalog create --config-format yaml --raw-config .\example_hp_gen_11.yaml
+metalcloud-cli firmware-catalog create --config-source .\example_hp_gen_11.yaml
 
 example_hp_gen_11.yaml:
 

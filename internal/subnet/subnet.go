@@ -158,14 +158,14 @@ func SubnetConfigExample(ctx context.Context) error {
 	subnetConfiguration := sdk.CreateSubnet{
 		Label:                  sdk.PtrString("example-subnet"),
 		Name:                   sdk.PtrString("example-subnet"),
-		NetworkAddress:         sdk.PtrString("192.168.1.0"),
-		PrefixLength:           sdk.PtrFloat32(24),
-		IsPool:                 sdk.PtrBool(false),
-		ParentSubnetId:         sdk.PtrFloat32(0),
-		DefaultGateway:         sdk.PtrString("192.168.1.1"),
-		AllocationDenylist:     []string{},
+		NetworkAddress:         "192.168.1.0",
+		PrefixLength:           24,
+		IsPool:                 false,
+		ParentSubnetId:         sdk.PtrInt32(0),
+		DefaultGatewayAddress:  sdk.PtrString("192.168.1.1"),
+		AllocationDenylist:     []sdk.AddressRange{},
 		ChildOverlapAllowRules: []string{},
-		Tags:                   map[string]interface{}{"tag1": "value1", "tag2": "value2"},
+		Tags:                   &map[string]string{"tag1": "value1", "tag2": "value2"},
 	}
 
 	return formatter.PrintResult(subnetConfiguration, nil)

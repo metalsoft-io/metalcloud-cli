@@ -193,7 +193,11 @@ func FirmwareBaselineSearchExample(ctx context.Context) error {
 			OsTemplate: []string{"ubuntu-20.04"},
 			BaselineId: []string{"baseline-1"},
 		},
-		ServerComponentFilter: []string{"BIOS", "RAID"},
+		ServerComponentFilter: &sdk.SearchFirmwareBinaryServerComponentFilter{
+			DellComponentFilter: &sdk.DellComponentFilter{
+				ComponentId: "component-1",
+			},
+		},
 	}
 
 	return formatter.PrintResult(searchCriteria, nil)

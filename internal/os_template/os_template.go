@@ -2,7 +2,6 @@ package os_template
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
 	"strconv"
 
@@ -94,27 +93,45 @@ func OsTemplateGet(ctx context.Context, osTemplateId string) error {
 	return formatter.PrintResult(osTemplate, &osTemplatePrintConfig)
 }
 
-func OsTemplateCreate(ctx context.Context, config []byte) error {
+type OsTemplateCreateOptions struct {
+	Template       sdk.OSTemplateCreate      `json:"template"`
+	TemplateAssets []sdk.TemplateAssetCreate `json:"templateAssets"`
+}
+
+func OsTemplateCreate(ctx context.Context, osTemplateCreateOptions OsTemplateCreateOptions) error {
 	logger.Get().Info().Msgf("Creating OS template")
-
-	var osTemplateConfig sdk.OSTemplateCreate
-
-	err := json.Unmarshal(config, &osTemplateConfig)
-	if err != nil {
-		return err
-	}
 
 	client := api.GetApiClient(ctx)
 
-	osTemplate, httpRes, err := client.OSTemplateAPI.CreateOSTemplate(ctx).OSTemplateCreate(osTemplateConfig).Execute()
+	osTemplate, httpRes, err := client.OSTemplateAPI.CreateOSTemplate(ctx).OSTemplateCreate(osTemplateCreateOptions.Template).Execute()
 	if err := response_inspector.InspectResponse(httpRes, err); err != nil {
 		return err
+	}
+	logger.Get().Info().Msgf("Template %d created", osTemplate.Id)
+
+	if osTemplateCreateOptions.TemplateAssets != nil {
+		for _, asset := range osTemplateCreateOptions.TemplateAssets {
+			asset.TemplateId = osTemplate.Id
+
+			newAsset, httpRes, err := client.TemplateAssetAPI.CreateTemplateAsset(ctx).TemplateAssetCreate(asset).Execute()
+			if err := response_inspector.InspectResponse(httpRes, err); err != nil {
+				return err
+			}
+			logger.Get().Info().Msgf("Template asset %d created", newAsset.Id)
+		}
 	}
 
 	return formatter.PrintResult(osTemplate, &osTemplatePrintConfig)
 }
 
-func OsTemplateUpdate(ctx context.Context, osTemplateId string, config []byte) error {
+type OsTemplateUpdateOptions struct {
+	Template                *sdk.OSTemplateUpdate             `json:"template"`
+	NewTemplateAssets       []sdk.TemplateAssetCreate         `json:"newTemplateAssets"`
+	UpdatedTemplateAssets   map[int32]sdk.TemplateAssetCreate `json:"updatedTemplateAssets"`
+	DeletedTemplateAssetIds []int32                           `json:"deletedTemplateAssetIds"`
+}
+
+func OsTemplateUpdate(ctx context.Context, osTemplateId string, osTemplateUpdateOptions OsTemplateUpdateOptions) error {
 	logger.Get().Info().Msgf("Updating OS template %s", osTemplateId)
 
 	osTemplateIdNumeric, revision, err := getOsTemplateIdAndRevision(ctx, osTemplateId)
@@ -122,25 +139,59 @@ func OsTemplateUpdate(ctx context.Context, osTemplateId string, config []byte) e
 		return err
 	}
 
-	var osTemplateConfig sdk.OSTemplateUpdate
-
-	err = json.Unmarshal(config, &osTemplateConfig)
-	if err != nil {
-		return err
-	}
-
 	client := api.GetApiClient(ctx)
 
-	osTemplate, httpRes, err := client.OSTemplateAPI.
-		UpdateOSTemplate(ctx, osTemplateIdNumeric).
-		OSTemplateUpdate(osTemplateConfig).
-		IfMatch(revision).
-		Execute()
-	if err := response_inspector.InspectResponse(httpRes, err); err != nil {
-		return err
+	if osTemplateUpdateOptions.Template != nil {
+		_, httpRes, err := client.OSTemplateAPI.
+			UpdateOSTemplate(ctx, osTemplateIdNumeric).
+			OSTemplateUpdate(*osTemplateUpdateOptions.Template).
+			IfMatch(revision).
+			Execute()
+		if err := response_inspector.InspectResponse(httpRes, err); err != nil {
+			return err
+		}
 	}
 
-	return formatter.PrintResult(osTemplate, &osTemplatePrintConfig)
+	if osTemplateUpdateOptions.NewTemplateAssets != nil {
+		for _, asset := range osTemplateUpdateOptions.NewTemplateAssets {
+			asset.TemplateId = int32(osTemplateIdNumeric)
+
+			newAsset, httpRes, err := client.TemplateAssetAPI.CreateTemplateAsset(ctx).TemplateAssetCreate(asset).Execute()
+			if err := response_inspector.InspectResponse(httpRes, err); err != nil {
+				return err
+			}
+			logger.Get().Info().Msgf("Template asset %d created", newAsset.Id)
+		}
+	}
+
+	if osTemplateUpdateOptions.UpdatedTemplateAssets != nil {
+		for assetId, asset := range osTemplateUpdateOptions.UpdatedTemplateAssets {
+			asset.TemplateId = int32(osTemplateIdNumeric)
+
+			_, httpRes, err := client.TemplateAssetAPI.
+				UpdateTemplateAsset(ctx, float32(assetId)).
+				TemplateAssetCreate(asset).
+				Execute()
+			if err := response_inspector.InspectResponse(httpRes, err); err != nil {
+				return err
+			}
+			logger.Get().Info().Msgf("Template asset %d updated", assetId)
+		}
+	}
+
+	if osTemplateUpdateOptions.DeletedTemplateAssetIds != nil {
+		for _, assetId := range osTemplateUpdateOptions.DeletedTemplateAssetIds {
+			httpRes, err := client.TemplateAssetAPI.
+				DeleteTemplateAsset(ctx, float32(assetId)).
+				Execute()
+			if err := response_inspector.InspectResponse(httpRes, err); err != nil {
+				return err
+			}
+			logger.Get().Info().Msgf("Template asset %d deleted", assetId)
+		}
+	}
+
+	return nil
 }
 
 func OsTemplateDelete(ctx context.Context, osTemplateId string) error {
