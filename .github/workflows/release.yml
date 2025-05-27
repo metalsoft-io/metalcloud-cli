@@ -85,11 +85,10 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           GORELEASER_KEY: ${{ secrets.GORELEASER_KEY }}
           GOOS: windows
+          
+      #This is the certificate we use to authenticate to digicert, it is not the certificate we use to actually sign the exe.
       -
-        name: Setup client auth certificate
-        description: |
-          This is the certificate we use to authenticate to digicert, it is not the certificate we use to actually sign the exe.
-          This step decodes the base64 encoded client certificate and saves it to a file.
+        name: Setup client auth certificate          
         shell: bash
         run: |
           echo "${{ secrets.SM_CLIENT_CERT_FILE_B64 }}" | base64 --decode > /d/Certificate_pkcs12.p12
