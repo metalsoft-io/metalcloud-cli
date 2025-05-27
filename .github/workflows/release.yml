@@ -111,6 +111,8 @@ jobs:
         run: |
           for /f "tokens=1,2 delims=,:{} " %%A in (dist/windows/artifacts.json) do @if "%%~A"=="path" @if %%~xB==.exe signtool.exe sign /debug /sha1 ${{ secrets.SM_CODE_SIGNING_CERT_SHA1_HASH }} /tr http://timestamp.comodoca.com /td SHA256 /fd SHA256 "%%~B"
           for /f "tokens=1,2 delims=,:{} " %%A in (dist/windows/artifacts.json) do @if "%%~A"=="path" @if %%~xB==.exe signtool.exe verify /v /pa "%%~B"
+          echo %USERPROFILE%/.signingmanager/logs
+          type %USERPROFILE%\.signingmanager\logs\*.log
 
   release:
     runs-on: ubuntu-latest
