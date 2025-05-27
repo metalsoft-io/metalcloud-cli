@@ -85,7 +85,7 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           GORELEASER_KEY: ${{ secrets.GORELEASER_KEY }}
           GOOS: windows
-          
+
       #This is the certificate we use to authenticate to digicert, it is not the certificate we use to actually sign the exe.
       -
         name: Setup client auth certificate          
@@ -113,10 +113,11 @@ jobs:
           smctl.exe keypair ls
           C:\Windows\System32\certutil.exe -csp "DigiCert Signing Manager KSP" -key -user
           smksp_cert_sync.exe
+
+      # This checks the authentication to the signing manager (which is a service from digicert).
       -
         name: Run the SM healthcheck
         shell: cmd
-        disable: true # enable this if you want to run the healthcheck to check for cryptic errors with the signing manager
         run: |
           smctl.exe healthcheck --all
       -
@@ -125,12 +126,13 @@ jobs:
         run: |
           for /f "tokens=1,2 delims=,:{} " %%A in (dist/windows/artifacts.json) do @if "%%~A"=="path" @if %%~xB==.exe signtool.exe sign /debug /sha1 ${{ secrets.SM_CODE_SIGNING_CERT_SHA1_HASH }} /tr http://timestamp.digicert.com /td SHA256 /fd SHA256 "%%~B"
           for /f "tokens=1,2 delims=,:{} " %%A in (dist/windows/artifacts.json) do @if "%%~A"=="path" @if %%~xB==.exe signtool.exe verify /v /pa "%%~B"
-      - name: Show logs
-        shell: cmd
-        disable: true # enable this for further debugging of the very cryptic signing manager
-        run: |
-          echo %USERPROFILE%/.signingmanager/logs
-          type %USERPROFILE%\.signingmanager\logs\*.log
+    
+      # uncomment this for further debugging of the very cryptic signing manager
+      # - name: Show logs
+      #   shell: cmd
+      #   run: |
+      #     echo %USERPROFILE%/.signingmanager/logs
+      #     type %USERPROFILE%\.signingmanager\logs\*.log
 
   release:
     runs-on: ubuntu-latest
