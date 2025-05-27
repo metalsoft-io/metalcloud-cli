@@ -109,7 +109,7 @@ jobs:
         name: Run the SM healthcheck
         shell: cmd
         run: |
-          smctl.exe healthcheck --host %SM_HOST% --api-key %SM_API_KEY
+          smctl.exe healthcheck --all
       -
         name: Signing using Signtool
         shell: cmd
