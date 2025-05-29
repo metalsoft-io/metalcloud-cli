@@ -28,7 +28,7 @@ func ValidateVersion(ctx context.Context) error {
 		return nil
 	}
 
-	versionParts := strings.Split(version.Version, ".")
+	versionParts := strings.Split(strings.Trim(version.Version, "v "), ".")
 	if len(versionParts) < 2 {
 		return fmt.Errorf("invalid version: %s", version.Version)
 	}
