@@ -24,7 +24,7 @@ var (
 		Aliases:      []string{"ls"},
 		Short:        "List all extension instances in an infrastructure.",
 		SilenceUsage: true,
-		Annotations:  map[string]string{system.REQUIRED_PERMISSION: system.PERMISSION_INFRASTRUCTURES_READ},
+		Annotations:  map[string]string{system.REQUIRED_PERMISSION: system.PERMISSION_EXTENSION_INSTANCES_READ},
 		Args:         cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			return extension_instance.ExtensionInstanceList(cmd.Context(), args[0])
@@ -36,7 +36,7 @@ var (
 		Aliases:      []string{"show"},
 		Short:        "Get extension instance details.",
 		SilenceUsage: true,
-		Annotations:  map[string]string{system.REQUIRED_PERMISSION: system.PERMISSION_INFRASTRUCTURES_READ},
+		Annotations:  map[string]string{system.REQUIRED_PERMISSION: system.PERMISSION_EXTENSION_INSTANCES_READ},
 		Args:         cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			return extension_instance.ExtensionInstanceGet(cmd.Context(), args[0])
@@ -48,7 +48,7 @@ var (
 		Aliases:      []string{"new"},
 		Short:        "Create new extension instance in an infrastructure.",
 		SilenceUsage: true,
-		Annotations:  map[string]string{system.REQUIRED_PERMISSION: system.PERMISSION_INFRASTRUCTURES_WRITE},
+		Annotations:  map[string]string{system.REQUIRED_PERMISSION: system.PERMISSION_EXTENSION_INSTANCES_WRITE},
 		Args:         cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			config, err := utils.ReadConfigFromPipeOrFile(extensionInstanceFlags.configSource)
@@ -64,7 +64,7 @@ var (
 		Aliases:      []string{"edit"},
 		Short:        "Update extension instance configuration.",
 		SilenceUsage: true,
-		Annotations:  map[string]string{system.REQUIRED_PERMISSION: system.PERMISSION_INFRASTRUCTURES_WRITE},
+		Annotations:  map[string]string{system.REQUIRED_PERMISSION: system.PERMISSION_EXTENSION_INSTANCES_WRITE},
 		Args:         cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			config, err := utils.ReadConfigFromPipeOrFile(extensionInstanceFlags.configSource)
@@ -80,7 +80,7 @@ var (
 		Aliases:      []string{"rm"},
 		Short:        "Delete extension instance.",
 		SilenceUsage: true,
-		Annotations:  map[string]string{system.REQUIRED_PERMISSION: system.PERMISSION_INFRASTRUCTURES_WRITE},
+		Annotations:  map[string]string{system.REQUIRED_PERMISSION: system.PERMISSION_EXTENSION_INSTANCES_WRITE},
 		Args:         cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			return extension_instance.ExtensionInstanceDelete(cmd.Context(), args[0])

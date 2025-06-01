@@ -47,9 +47,9 @@ type VendorCatalog struct {
 }
 
 func NewVendorCatalogFromCreateOptions(options FirmwareCatalogCreateOptions) (*VendorCatalog, error) {
-	vendor := sdk.FirmwareVendorType(options.Vendor)
+	vendor := sdk.ServerFirmwareCatalogVendor(options.Vendor)
 	if !vendor.IsValid() {
-		return nil, fmt.Errorf("invalid vendor flag %s - valid options are: %v", options.Vendor, sdk.AllowedFirmwareVendorTypeEnumValues)
+		return nil, fmt.Errorf("invalid vendor flag %s - valid options are: %v", options.Vendor, sdk.AllowedServerFirmwareCatalogVendorEnumValues)
 	}
 
 	updateType := sdk.CatalogUpdateType(options.UpdateType)
@@ -99,12 +99,12 @@ func (vc *VendorCatalog) ProcessVendorCatalog(ctx context.Context) error {
 		vc.VendorSystemsFilterEx = systemModelsEx
 	}
 
-	switch sdk.FirmwareVendorType(vc.CatalogInfo.Vendor) {
-	case sdk.FIRMWAREVENDORTYPE_DELL:
+	switch sdk.ServerFirmwareCatalogVendor(vc.CatalogInfo.Vendor) {
+	case sdk.SERVERFIRMWARECATALOGVENDOR_DELL:
 		return vc.processDellCatalog(ctx)
-	case sdk.FIRMWAREVENDORTYPE_HP:
+	case sdk.SERVERFIRMWARECATALOGVENDOR_HP:
 		return vc.processHpeCatalog(ctx)
-	case sdk.FIRMWAREVENDORTYPE_LENOVO:
+	case sdk.SERVERFIRMWARECATALOGVENDOR_LENOVO:
 		return vc.processLenovoCatalog(ctx)
 	default:
 		return fmt.Errorf("unsupported vendor %s", vc.CatalogInfo.Vendor)
@@ -115,7 +115,7 @@ func (vc *VendorCatalog) CreateMetalsoftCatalog(ctx context.Context) error {
 	firmwareCatalogCreate := sdk.CreateFirmwareCatalog{
 		Name:                          vc.CatalogInfo.Name,
 		Description:                   vc.CatalogInfo.Description,
-		Vendor:                        sdk.FirmwareVendorType(vc.CatalogInfo.Vendor),
+		Vendor:                        sdk.ServerFirmwareCatalogVendor(vc.CatalogInfo.Vendor),
 		UpdateType:                    sdk.CatalogUpdateType(vc.CatalogInfo.UpdateType),
 		VendorUrl:                     vc.CatalogInfo.VendorUrl,
 		MetalsoftServerTypesSupported: vc.CatalogInfo.MetalsoftServerTypesSupported,

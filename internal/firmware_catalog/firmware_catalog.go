@@ -176,7 +176,7 @@ func FirmwareCatalogUpdate(ctx context.Context, firmwareCatalogId string, config
 
 		firmwareCatalogConfig.Name = fullCatalog.Name
 		firmwareCatalogConfig.Description = fullCatalog.Description
-		firmwareCatalogConfig.Vendor = sdk.FirmwareVendorType(fullCatalog.Vendor)
+		firmwareCatalogConfig.Vendor = sdk.ServerFirmwareCatalogVendor(fullCatalog.Vendor)
 		firmwareCatalogConfig.VendorId = fullCatalog.VendorId
 		firmwareCatalogConfig.VendorUrl = fullCatalog.VendorUrl
 		firmwareCatalogConfig.UpdateType = sdk.CatalogUpdateType(fullCatalog.UpdateType)

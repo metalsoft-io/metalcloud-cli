@@ -10,11 +10,12 @@ import (
 	"github.com/metalsoft-io/metalcloud-cli/pkg/response_inspector"
 )
 
-const allowDevelop = true
 const minMajor = 7
 const minMinor = 0
 const maxMajor = 7
 const maxMinor = 0
+
+var AllowDevelop bool
 
 func ValidateVersion(ctx context.Context) error {
 	client := api.GetApiClient(ctx)
@@ -24,7 +25,7 @@ func ValidateVersion(ctx context.Context) error {
 		return err
 	}
 
-	if allowDevelop && version.Version == "develop" {
+	if AllowDevelop && version.Version == "develop" {
 		return nil
 	}
 

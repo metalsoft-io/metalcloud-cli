@@ -34,7 +34,7 @@ var (
 		Aliases:      []string{"ls"},
 		Short:        "Lists server default credentials.",
 		SilenceUsage: true,
-		Annotations:  map[string]string{system.REQUIRED_PERMISSION: system.PERMISSION_SERVERS_READ},
+		Annotations:  map[string]string{system.REQUIRED_PERMISSION: system.PERMISSION_SERVER_DEFAULT_CREDENTIALS_READ},
 		RunE: func(cmd *cobra.Command, args []string) error {
 			return server_default_credentials.ServerDefaultCredentialsList(cmd.Context(), serverDefaultCredentialsFlags.pageFlag, serverDefaultCredentialsFlags.limitFlag)
 		},
@@ -44,7 +44,7 @@ var (
 		Use:          "get <credentials_id>",
 		Short:        "Get server default credentials information.",
 		SilenceUsage: true,
-		Annotations:  map[string]string{system.REQUIRED_PERMISSION: system.PERMISSION_SERVERS_READ},
+		Annotations:  map[string]string{system.REQUIRED_PERMISSION: system.PERMISSION_SERVER_DEFAULT_CREDENTIALS_READ},
 		Args:         cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			return server_default_credentials.ServerDefaultCredentialsGet(cmd.Context(), args[0])
@@ -56,7 +56,7 @@ var (
 		Aliases:      []string{"get-password", "password"},
 		Short:        "Get server default credentials unencrypted password.",
 		SilenceUsage: true,
-		Annotations:  map[string]string{system.REQUIRED_PERMISSION: system.PERMISSION_SERVERS_READ},
+		Annotations:  map[string]string{system.REQUIRED_PERMISSION: system.PERMISSION_SERVER_DEFAULT_CREDENTIALS_READ},
 		Args:         cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			return server_default_credentials.ServerDefaultCredentialsGetCredentials(cmd.Context(), args[0])
@@ -67,7 +67,7 @@ var (
 		Use:          "create",
 		Short:        "Create server default credentials.",
 		SilenceUsage: true,
-		Annotations:  map[string]string{system.REQUIRED_PERMISSION: system.PERMISSION_SERVERS_WRITE},
+		Annotations:  map[string]string{system.REQUIRED_PERMISSION: system.PERMISSION_SERVER_DEFAULT_CREDENTIALS_WRITE},
 		RunE: func(cmd *cobra.Command, args []string) error {
 			return server_default_credentials.ServerDefaultCredentialsCreate(
 				cmd.Context(),
@@ -90,7 +90,7 @@ var (
 		Aliases:      []string{"rm"},
 		Short:        "Delete server default credentials.",
 		SilenceUsage: true,
-		Annotations:  map[string]string{system.REQUIRED_PERMISSION: system.PERMISSION_SERVERS_WRITE},
+		Annotations:  map[string]string{system.REQUIRED_PERMISSION: system.PERMISSION_SERVER_DEFAULT_CREDENTIALS_WRITE},
 		Args:         cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			return server_default_credentials.ServerDefaultCredentialsDelete(cmd.Context(), args[0])

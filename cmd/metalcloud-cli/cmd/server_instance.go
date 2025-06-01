@@ -29,7 +29,7 @@ var (
 		Aliases:      []string{"ls"},
 		Short:        "List all server instance groups in an infrastructures.",
 		SilenceUsage: true,
-		Annotations:  map[string]string{system.REQUIRED_PERMISSION: system.PERMISSION_INFRASTRUCTURES_READ},
+		Annotations:  map[string]string{system.REQUIRED_PERMISSION: system.PERMISSION_SERVER_INSTANCE_GROUPS_READ},
 		Args:         cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			return server_instance.ServerInstanceGroupList(cmd.Context(), args[0])
@@ -41,7 +41,7 @@ var (
 		Aliases:      []string{"show"},
 		Short:        "Get server instance group details.",
 		SilenceUsage: true,
-		Annotations:  map[string]string{system.REQUIRED_PERMISSION: system.PERMISSION_INFRASTRUCTURES_READ},
+		Annotations:  map[string]string{system.REQUIRED_PERMISSION: system.PERMISSION_SERVER_INSTANCE_GROUPS_READ},
 		Args:         cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			return server_instance.ServerInstanceGroupGet(cmd.Context(), args[0])
@@ -53,7 +53,7 @@ var (
 		Aliases:      []string{"new"},
 		Short:        "Create new server instance group in an infrastructure.",
 		SilenceUsage: true,
-		Annotations:  map[string]string{system.REQUIRED_PERMISSION: system.PERMISSION_INFRASTRUCTURES_WRITE},
+		Annotations:  map[string]string{system.REQUIRED_PERMISSION: system.PERMISSION_SERVER_INSTANCE_GROUPS_WRITE},
 		Args:         cobra.RangeArgs(4, 5),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			os_template_id := ""
@@ -70,7 +70,7 @@ var (
 		Aliases:      []string{"edit"},
 		Short:        "Update server instance group configuration.",
 		SilenceUsage: true,
-		Annotations:  map[string]string{system.REQUIRED_PERMISSION: system.PERMISSION_INFRASTRUCTURES_WRITE},
+		Annotations:  map[string]string{system.REQUIRED_PERMISSION: system.PERMISSION_SERVER_INSTANCE_GROUPS_WRITE},
 		Args:         cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			return server_instance.ServerInstanceGroupUpdate(cmd.Context(), args[0], serverInstanceGroupFlags.label, serverInstanceGroupFlags.instanceCount, serverInstanceGroupFlags.osTemplateId)
@@ -82,7 +82,7 @@ var (
 		Aliases:      []string{"rm"},
 		Short:        "Update server instance group configuration.",
 		SilenceUsage: true,
-		Annotations:  map[string]string{system.REQUIRED_PERMISSION: system.PERMISSION_INFRASTRUCTURES_WRITE},
+		Annotations:  map[string]string{system.REQUIRED_PERMISSION: system.PERMISSION_SERVER_INSTANCE_GROUPS_WRITE},
 		Args:         cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			return server_instance.ServerInstanceGroupDelete(cmd.Context(), args[0])
@@ -94,7 +94,7 @@ var (
 		Aliases:      []string{"instances-list", "instances-ls"},
 		Short:        "List server instance group instances.",
 		SilenceUsage: true,
-		Annotations:  map[string]string{system.REQUIRED_PERMISSION: system.PERMISSION_INFRASTRUCTURES_READ},
+		Annotations:  map[string]string{system.REQUIRED_PERMISSION: system.PERMISSION_SERVER_INSTANCE_GROUPS_READ},
 		Args:         cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			return server_instance.ServerInstanceGroupInstances(cmd.Context(), args[0])
@@ -106,7 +106,7 @@ var (
 		Aliases:      []string{"net"},
 		Short:        "Server instance group network management.",
 		SilenceUsage: true,
-		Annotations:  map[string]string{system.REQUIRED_PERMISSION: system.PERMISSION_INFRASTRUCTURES_READ},
+		Annotations:  map[string]string{system.REQUIRED_PERMISSION: system.PERMISSION_SERVER_INSTANCE_GROUPS_READ},
 	}
 
 	serverInstanceGroupNetworkListCmd = &cobra.Command{
@@ -114,7 +114,7 @@ var (
 		Aliases:      []string{"ls"},
 		Short:        "List all network connections for a server instance group.",
 		SilenceUsage: true,
-		Annotations:  map[string]string{system.REQUIRED_PERMISSION: system.PERMISSION_INFRASTRUCTURES_READ},
+		Annotations:  map[string]string{system.REQUIRED_PERMISSION: system.PERMISSION_SERVER_INSTANCE_GROUPS_READ},
 		Args:         cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			return server_instance.ServerInstanceGroupNetworkList(cmd.Context(), args[0])
@@ -126,7 +126,7 @@ var (
 		Aliases:      []string{"show"},
 		Short:        "Get network connection details for a server instance group.",
 		SilenceUsage: true,
-		Annotations:  map[string]string{system.REQUIRED_PERMISSION: system.PERMISSION_INFRASTRUCTURES_READ},
+		Annotations:  map[string]string{system.REQUIRED_PERMISSION: system.PERMISSION_SERVER_INSTANCE_GROUPS_READ},
 		Args:         cobra.ExactArgs(2),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			return server_instance.ServerInstanceGroupNetworkGet(cmd.Context(), args[0], args[1])
@@ -138,7 +138,7 @@ var (
 		Aliases:      []string{"new", "add", "connect"},
 		Short:        "Connect a server instance group to a network.",
 		SilenceUsage: true,
-		Annotations:  map[string]string{system.REQUIRED_PERMISSION: system.PERMISSION_INFRASTRUCTURES_WRITE},
+		Annotations:  map[string]string{system.REQUIRED_PERMISSION: system.PERMISSION_SERVER_INSTANCE_GROUPS_WRITE},
 		Args:         cobra.RangeArgs(4, 5),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			redundancy := ""
@@ -154,7 +154,7 @@ var (
 		Aliases:      []string{"edit"},
 		Short:        "Update network connection for a server instance group.",
 		SilenceUsage: true,
-		Annotations:  map[string]string{system.REQUIRED_PERMISSION: system.PERMISSION_INFRASTRUCTURES_WRITE},
+		Annotations:  map[string]string{system.REQUIRED_PERMISSION: system.PERMISSION_SERVER_INSTANCE_GROUPS_WRITE},
 		Args:         cobra.ExactArgs(2),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			return server_instance.ServerInstanceGroupNetworkUpdate(cmd.Context(), args[0], args[1], serverInstanceGroupFlags.accessMode, serverInstanceGroupFlags.tagged, serverInstanceGroupFlags.redundancy)
@@ -166,7 +166,7 @@ var (
 		Aliases:      []string{"rm", "disconnect"},
 		Short:        "Delete network connection from a server instance group.",
 		SilenceUsage: true,
-		Annotations:  map[string]string{system.REQUIRED_PERMISSION: system.PERMISSION_INFRASTRUCTURES_WRITE},
+		Annotations:  map[string]string{system.REQUIRED_PERMISSION: system.PERMISSION_SERVER_INSTANCE_GROUPS_WRITE},
 		Args:         cobra.ExactArgs(2),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			return server_instance.ServerInstanceGroupNetworkDisconnect(cmd.Context(), args[0], args[1])

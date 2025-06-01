@@ -25,7 +25,7 @@ var (
 		Aliases:      []string{"ls"},
 		Short:        "List all file shares for an infrastructure.",
 		SilenceUsage: true,
-		Annotations:  map[string]string{system.REQUIRED_PERMISSION: system.PERMISSION_STORAGE_READ},
+		Annotations:  map[string]string{system.REQUIRED_PERMISSION: system.PERMISSION_FILE_SHARE_READ},
 		Args:         cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			return file_share.FileShareList(cmd.Context(), args[0], fileShareFlags.filterStatus)
@@ -37,7 +37,7 @@ var (
 		Aliases:      []string{"show"},
 		Short:        "Get file share details.",
 		SilenceUsage: true,
-		Annotations:  map[string]string{system.REQUIRED_PERMISSION: system.PERMISSION_STORAGE_READ},
+		Annotations:  map[string]string{system.REQUIRED_PERMISSION: system.PERMISSION_FILE_SHARE_READ},
 		Args:         cobra.ExactArgs(2),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			return file_share.FileShareGet(cmd.Context(), args[0], args[1])
@@ -49,7 +49,7 @@ var (
 		Aliases:      []string{"new"},
 		Short:        "Create a new file share.",
 		SilenceUsage: true,
-		Annotations:  map[string]string{system.REQUIRED_PERMISSION: system.PERMISSION_STORAGE_READ},
+		Annotations:  map[string]string{system.REQUIRED_PERMISSION: system.PERMISSION_FILE_SHARE_WRITE},
 		Args:         cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			config, err := utils.ReadConfigFromPipeOrFile(fileShareFlags.configSource)
@@ -66,7 +66,7 @@ var (
 		Aliases:      []string{"rm"},
 		Short:        "Delete a file share.",
 		SilenceUsage: true,
-		Annotations:  map[string]string{system.REQUIRED_PERMISSION: system.PERMISSION_STORAGE_READ},
+		Annotations:  map[string]string{system.REQUIRED_PERMISSION: system.PERMISSION_FILE_SHARE_WRITE},
 		Args:         cobra.ExactArgs(2),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			return file_share.FileShareDelete(cmd.Context(), args[0], args[1])
@@ -78,7 +78,7 @@ var (
 		Aliases:      []string{"config-update"},
 		Short:        "Update file share configuration.",
 		SilenceUsage: true,
-		Annotations:  map[string]string{system.REQUIRED_PERMISSION: system.PERMISSION_STORAGE_READ},
+		Annotations:  map[string]string{system.REQUIRED_PERMISSION: system.PERMISSION_FILE_SHARE_WRITE},
 		Args:         cobra.ExactArgs(2),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			config, err := utils.ReadConfigFromPipeOrFile(fileShareFlags.configSource)
@@ -95,7 +95,7 @@ var (
 		Aliases:      []string{"meta-update"},
 		Short:        "Update file share metadata.",
 		SilenceUsage: true,
-		Annotations:  map[string]string{system.REQUIRED_PERMISSION: system.PERMISSION_STORAGE_READ},
+		Annotations:  map[string]string{system.REQUIRED_PERMISSION: system.PERMISSION_FILE_SHARE_WRITE},
 		Args:         cobra.ExactArgs(2),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			config, err := utils.ReadConfigFromPipeOrFile(fileShareFlags.configSource)
@@ -112,7 +112,7 @@ var (
 		Aliases:      []string{"hosts"},
 		Short:        "Get hosts for a file share.",
 		SilenceUsage: true,
-		Annotations:  map[string]string{system.REQUIRED_PERMISSION: system.PERMISSION_STORAGE_READ},
+		Annotations:  map[string]string{system.REQUIRED_PERMISSION: system.PERMISSION_FILE_SHARE_READ},
 		Args:         cobra.ExactArgs(2),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			return file_share.FileShareGetHosts(cmd.Context(), args[0], args[1])
@@ -124,7 +124,7 @@ var (
 		Aliases:      []string{"hosts-update"},
 		Short:        "Update hosts for a file share.",
 		SilenceUsage: true,
-		Annotations:  map[string]string{system.REQUIRED_PERMISSION: system.PERMISSION_STORAGE_READ},
+		Annotations:  map[string]string{system.REQUIRED_PERMISSION: system.PERMISSION_FILE_SHARE_WRITE},
 		Args:         cobra.ExactArgs(2),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			config, err := utils.ReadConfigFromPipeOrFile(fileShareFlags.configSource)
@@ -141,7 +141,7 @@ var (
 		Aliases:      []string{"get-config-info"},
 		Short:        "Get configuration information for a file share.",
 		SilenceUsage: true,
-		Annotations:  map[string]string{system.REQUIRED_PERMISSION: system.PERMISSION_STORAGE_READ},
+		Annotations:  map[string]string{system.REQUIRED_PERMISSION: system.PERMISSION_FILE_SHARE_WRITE},
 		Args:         cobra.ExactArgs(2),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			return file_share.FileShareGetConfigInfo(cmd.Context(), args[0], args[1])

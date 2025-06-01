@@ -25,7 +25,7 @@ var (
 		Aliases:      []string{"ls"},
 		Short:        "List all buckets for an infrastructure.",
 		SilenceUsage: true,
-		Annotations:  map[string]string{system.REQUIRED_PERMISSION: system.PERMISSION_STORAGE_READ},
+		Annotations:  map[string]string{system.REQUIRED_PERMISSION: system.PERMISSION_BUCKETS_READ},
 		Args:         cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			return bucket.BucketList(cmd.Context(), args[0], bucketFlags.filterStatus)
@@ -37,7 +37,7 @@ var (
 		Aliases:      []string{"show"},
 		Short:        "Get bucket details.",
 		SilenceUsage: true,
-		Annotations:  map[string]string{system.REQUIRED_PERMISSION: system.PERMISSION_STORAGE_READ},
+		Annotations:  map[string]string{system.REQUIRED_PERMISSION: system.PERMISSION_BUCKETS_READ},
 		Args:         cobra.ExactArgs(2),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			return bucket.BucketGet(cmd.Context(), args[0], args[1])
@@ -49,7 +49,7 @@ var (
 		Aliases:      []string{"new"},
 		Short:        "Create a new bucket.",
 		SilenceUsage: true,
-		Annotations:  map[string]string{system.REQUIRED_PERMISSION: system.PERMISSION_STORAGE_WRITE},
+		Annotations:  map[string]string{system.REQUIRED_PERMISSION: system.PERMISSION_BUCKETS_WRITE},
 		Args:         cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			config, err := utils.ReadConfigFromPipeOrFile(bucketFlags.configSource)
@@ -66,7 +66,7 @@ var (
 		Aliases:      []string{"rm"},
 		Short:        "Delete a bucket.",
 		SilenceUsage: true,
-		Annotations:  map[string]string{system.REQUIRED_PERMISSION: system.PERMISSION_STORAGE_WRITE},
+		Annotations:  map[string]string{system.REQUIRED_PERMISSION: system.PERMISSION_BUCKETS_WRITE},
 		Args:         cobra.ExactArgs(2),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			return bucket.BucketDelete(cmd.Context(), args[0], args[1])
@@ -78,7 +78,7 @@ var (
 		Aliases:      []string{"config-update"},
 		Short:        "Update bucket configuration.",
 		SilenceUsage: true,
-		Annotations:  map[string]string{system.REQUIRED_PERMISSION: system.PERMISSION_STORAGE_WRITE},
+		Annotations:  map[string]string{system.REQUIRED_PERMISSION: system.PERMISSION_BUCKETS_WRITE},
 		Args:         cobra.ExactArgs(2),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			config, err := utils.ReadConfigFromPipeOrFile(bucketFlags.configSource)
@@ -95,7 +95,7 @@ var (
 		Aliases:      []string{"meta-update"},
 		Short:        "Update bucket metadata.",
 		SilenceUsage: true,
-		Annotations:  map[string]string{system.REQUIRED_PERMISSION: system.PERMISSION_STORAGE_WRITE},
+		Annotations:  map[string]string{system.REQUIRED_PERMISSION: system.PERMISSION_BUCKETS_WRITE},
 		Args:         cobra.ExactArgs(2),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			config, err := utils.ReadConfigFromPipeOrFile(bucketFlags.configSource)
@@ -112,7 +112,7 @@ var (
 		Aliases:      []string{"get-config-info"},
 		Short:        "Get configuration information for a bucket.",
 		SilenceUsage: true,
-		Annotations:  map[string]string{system.REQUIRED_PERMISSION: system.PERMISSION_STORAGE_READ},
+		Annotations:  map[string]string{system.REQUIRED_PERMISSION: system.PERMISSION_BUCKETS_READ},
 		Args:         cobra.ExactArgs(2),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			return bucket.BucketGetConfigInfo(cmd.Context(), args[0], args[1])
@@ -124,7 +124,7 @@ var (
 		Aliases:      []string{"credentials"},
 		Short:        "Get credentials for a bucket.",
 		SilenceUsage: true,
-		Annotations:  map[string]string{system.REQUIRED_PERMISSION: system.PERMISSION_STORAGE_READ},
+		Annotations:  map[string]string{system.REQUIRED_PERMISSION: system.PERMISSION_BUCKETS_READ},
 		Args:         cobra.ExactArgs(2),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			return bucket.BucketGetCredentials(cmd.Context(), args[0], args[1])

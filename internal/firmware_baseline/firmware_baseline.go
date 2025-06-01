@@ -186,7 +186,7 @@ func FirmwareBaselineSearch(ctx context.Context, searchCriteria []byte) error {
 func FirmwareBaselineSearchExample(ctx context.Context) error {
 	// Example search criteria
 	searchCriteria := sdk.SearchFirmwareBinary{
-		Vendor: sdk.FirmwareVendorType("DELL"),
+		Vendor: sdk.ServerFirmwareCatalogVendor("DELL"),
 		BaselineFilter: sdk.BaselineFilter{
 			Datacenter: []string{"datacenter-1"},
 			ServerType: []string{"dell_r740"},

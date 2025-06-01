@@ -28,7 +28,7 @@ var (
 		Aliases:      []string{"ls"},
 		Short:        "List all VM instance groups in an infrastructure.",
 		SilenceUsage: true,
-		Annotations:  map[string]string{system.REQUIRED_PERMISSION: system.PERMISSION_INFRASTRUCTURES_READ},
+		Annotations:  map[string]string{system.REQUIRED_PERMISSION: system.PERMISSION_VM_INSTANCE_GROUPS_READ},
 		Args:         cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			return vm_instance.VMInstanceGroupList(cmd.Context(), args[0])
@@ -40,7 +40,7 @@ var (
 		Aliases:      []string{"show"},
 		Short:        "Get VM instance group details.",
 		SilenceUsage: true,
-		Annotations:  map[string]string{system.REQUIRED_PERMISSION: system.PERMISSION_INFRASTRUCTURES_READ},
+		Annotations:  map[string]string{system.REQUIRED_PERMISSION: system.PERMISSION_VM_INSTANCE_GROUPS_READ},
 		Args:         cobra.ExactArgs(2),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			return vm_instance.VMInstanceGroupGet(cmd.Context(), args[0], args[1])
@@ -52,7 +52,7 @@ var (
 		Aliases:      []string{"new"},
 		Short:        "Create new VM instance group in an infrastructure.",
 		SilenceUsage: true,
-		Annotations:  map[string]string{system.REQUIRED_PERMISSION: system.PERMISSION_INFRASTRUCTURES_WRITE},
+		Annotations:  map[string]string{system.REQUIRED_PERMISSION: system.PERMISSION_VM_INSTANCE_GROUPS_WRITE},
 		Args:         cobra.RangeArgs(4, 5),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			osTemplateId := ""
@@ -68,7 +68,7 @@ var (
 		Aliases:      []string{"edit"},
 		Short:        "Update VM instance group configuration.",
 		SilenceUsage: true,
-		Annotations:  map[string]string{system.REQUIRED_PERMISSION: system.PERMISSION_INFRASTRUCTURES_WRITE},
+		Annotations:  map[string]string{system.REQUIRED_PERMISSION: system.PERMISSION_VM_INSTANCE_GROUPS_WRITE},
 		Args:         cobra.ExactArgs(2),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			customVariables, err := utils.ReadConfigFromPipeOrFile(vmInstanceGroupFlags.customVariablesSource)
@@ -86,7 +86,7 @@ var (
 		Aliases:      []string{"rm"},
 		Short:        "Delete VM instance group.",
 		SilenceUsage: true,
-		Annotations:  map[string]string{system.REQUIRED_PERMISSION: system.PERMISSION_INFRASTRUCTURES_WRITE},
+		Annotations:  map[string]string{system.REQUIRED_PERMISSION: system.PERMISSION_VM_INSTANCE_GROUPS_WRITE},
 		Args:         cobra.ExactArgs(2),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			return vm_instance.VMInstanceGroupDelete(cmd.Context(), args[0], args[1])
@@ -98,7 +98,7 @@ var (
 		Aliases:      []string{"instances-list", "instances-ls"},
 		Short:        "List VM instance group instances.",
 		SilenceUsage: true,
-		Annotations:  map[string]string{system.REQUIRED_PERMISSION: system.PERMISSION_INFRASTRUCTURES_READ},
+		Annotations:  map[string]string{system.REQUIRED_PERMISSION: system.PERMISSION_VM_INSTANCE_GROUPS_READ},
 		Args:         cobra.ExactArgs(2),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			return vm_instance.VMInstanceGroupInstances(cmd.Context(), args[0], args[1])

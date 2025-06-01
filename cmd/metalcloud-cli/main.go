@@ -7,9 +7,11 @@ import (
 	"syscall"
 
 	"github.com/metalsoft-io/metalcloud-cli/cmd/metalcloud-cli/cmd"
+	"github.com/metalsoft-io/metalcloud-cli/cmd/metalcloud-cli/system"
 )
 
 var version string
+var allowDevelop string
 
 func main() {
 	sigChannel := make(chan os.Signal, 1)
@@ -20,6 +22,7 @@ func main() {
 	}()
 
 	cmd.Version = version
+	system.AllowDevelop = allowDevelop == "true" || allowDevelop == "yes"
 
 	err := cmd.Execute()
 	if err != nil {
