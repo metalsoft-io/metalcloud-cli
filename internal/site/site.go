@@ -2,6 +2,7 @@ package site
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"strconv"
 
@@ -221,6 +222,95 @@ func SiteGetAgents(ctx context.Context, siteIdOrName string) error {
 						Order: 2,
 					},
 				},
+			},
+		},
+	})
+}
+
+func SiteGetConfig(ctx context.Context, siteIdOrName string) error {
+	logger.Get().Info().Msgf("Get site config for site '%s'", siteIdOrName)
+
+	siteInfo, err := GetSiteByIdOrLabel(ctx, siteIdOrName)
+	if err != nil {
+		return err
+	}
+
+	client := api.GetApiClient(ctx)
+
+	siteConfig, httpRes, err := client.SiteAPI.GetSiteConfig(ctx, float32(siteInfo.Id)).Execute()
+	if err := response_inspector.InspectResponse(httpRes, err); err != nil {
+		return err
+	}
+
+	return formatter.PrintResult(siteConfig, &formatter.PrintConfig{
+		FieldsConfig: map[string]formatter.RecordFieldConfig{
+			"Id": {
+				Title: "#",
+				Order: 1,
+			},
+			"SiteId": {
+				Title: "Site ID",
+				Order: 2,
+			},
+			"ServerRegistrationPolicy": {
+				Title: "Srv Reg Policy",
+				Order: 3,
+			},
+			"ServerRegistrationBiosProfile": {
+				Title: "BIOS Profile",
+				Order: 4,
+			},
+		},
+	})
+}
+
+func SiteUpdateConfig(ctx context.Context, siteIdOrName string, config []byte) error {
+	logger.Get().Info().Msgf("Update site config for site '%s'", siteIdOrName)
+
+	siteInfo, err := GetSiteByIdOrLabel(ctx, siteIdOrName)
+	if err != nil {
+		return err
+	}
+
+	client := api.GetApiClient(ctx)
+
+	// First get the current config to get the revision number
+	currentSite, httpRes, err := client.SiteAPI.GetSite(ctx, float32(siteInfo.Id)).Execute()
+	if err := response_inspector.InspectResponse(httpRes, err); err != nil {
+		return err
+	}
+
+	var configUpdate sdk.SiteConfigUpdate
+	err = json.Unmarshal(config, &configUpdate)
+	if err != nil {
+		return err
+	}
+
+	updatedConfig, httpRes, err := client.SiteAPI.UpdateSiteConfig(ctx, float32(siteInfo.Id)).
+		SiteConfigUpdate(configUpdate).
+		IfMatch(strconv.Itoa(int(currentSite.Revision))).
+		Execute()
+	if err := response_inspector.InspectResponse(httpRes, err); err != nil {
+		return err
+	}
+
+	return formatter.PrintResult(updatedConfig, &formatter.PrintConfig{
+		FieldsConfig: map[string]formatter.RecordFieldConfig{
+			"Id": {
+				Title: "#",
+				Order: 1,
+			},
+			"SiteId": {
+				Title: "Site ID",
+				Order: 2,
+			},
+			"ServerRegistrationPolicy": {
+				Title: "Srv Reg Policy",
+				Order: 3,
+			},
+			"ServerRegistrationBiosProfile": {
+				Title: "BIOS Profile",
+				Order: 4,
 			},
 		},
 	})
