@@ -197,14 +197,14 @@ func TestExtractValue(t *testing.T) {
 	if v, ok := extractValue(reflect.ValueOf(m)).([]string); !ok || len(v) != 1 {
 		t.Errorf("extractValue map failed")
 	}
-	if extractValue(reflect.ValueOf(dummy{})) != nil {
+	if extractValue(reflect.ValueOf(dummy{})) != "" {
 		t.Errorf("extractValue struct failed")
 	}
 	if extractValue(reflect.ValueOf(ptr)) != "abc" {
 		t.Errorf("extractValue pointer failed")
 	}
 	var invalid reflect.Value
-	if extractValue(invalid) != nil {
+	if extractValue(invalid) != "" {
 		t.Errorf("extractValue invalid failed")
 	}
 }

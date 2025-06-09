@@ -2,6 +2,7 @@ package site
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"strconv"
 
@@ -43,6 +44,82 @@ var sitePrintConfig = formatter.PrintConfig{
 		"IsInMaintenance": {
 			Title: "Maintenance",
 			Order: 6,
+		},
+	},
+}
+
+var siteConfigPrintConfig = formatter.PrintConfig{
+	FieldsConfig: map[string]formatter.RecordFieldConfig{
+		"DnsZoneId": {
+			Title: "DNS Zone ID",
+			Order: 1,
+		},
+		"DNSServers": {
+			Title:    "DNS Servers",
+			MaxWidth: 30,
+			Order:    2,
+		},
+		"NTPServers": {
+			Title:    "NTP Servers",
+			MaxWidth: 30,
+			Order:    3,
+		},
+		"Location": {
+			Hidden: true,
+			InnerFields: map[string]formatter.RecordFieldConfig{
+				"Address": {
+					Title: "Site Address",
+					Order: 4,
+				},
+			},
+		},
+		"Repo": {
+			Hidden: true,
+			InnerFields: map[string]formatter.RecordFieldConfig{
+				"RootUrl": {
+					Title: "Repository URL",
+					Order: 5,
+				},
+			},
+		},
+	},
+}
+
+var siteAgentsPrintConfig = formatter.PrintConfig{
+	FieldsConfig: map[string]formatter.RecordFieldConfig{
+		"SiteName": {
+			Title: "Site",
+			Order: 3,
+		},
+		"AgentType": {
+			Title: "Agent Type",
+			Order: 4,
+		},
+		"AgentVersion": {
+			Title: "Version",
+			Order: 5,
+		},
+		"AgentSeenIpAddress": {
+			Title: "IP",
+			Order: 6,
+		},
+		"AgentSeenTimestamp": {
+			Title:       "Last Seen",
+			Transformer: formatter.FormatDateTimeValue,
+			Order:       7,
+		},
+		"AgentConnectedInfo": {
+			Hidden: true,
+			InnerFields: map[string]formatter.RecordFieldConfig{
+				"AgentId": {
+					Title: "ID",
+					Order: 1,
+				},
+				"Hostname": {
+					Title: "Hostname",
+					Order: 2,
+				},
+			},
 		},
 	},
 }
@@ -186,42 +263,56 @@ func SiteGetAgents(ctx context.Context, siteIdOrName string) error {
 		return err
 	}
 
-	return formatter.PrintResult(agents, &formatter.PrintConfig{
-		FieldsConfig: map[string]formatter.RecordFieldConfig{
-			"SiteName": {
-				Title: "Site",
-				Order: 3,
-			},
-			"AgentType": {
-				Title: "Agent Type",
-				Order: 4,
-			},
-			"AgentVersion": {
-				Title: "Version",
-				Order: 5,
-			},
-			"AgentSeenIpAddress": {
-				Title: "IP",
-				Order: 6,
-			},
-			"AgentSeenTimestamp": {
-				Title:       "Last Seen",
-				Transformer: formatter.FormatDateTimeValue,
-				Order:       7,
-			},
-			"AgentConnectedInfo": {
-				Hidden: true,
-				InnerFields: map[string]formatter.RecordFieldConfig{
-					"AgentId": {
-						Title: "ID",
-						Order: 1,
-					},
-					"Hostname": {
-						Title: "Hostname",
-						Order: 2,
-					},
-				},
-			},
-		},
-	})
+	return formatter.PrintResult(agents, &siteAgentsPrintConfig)
+}
+
+func SiteGetConfig(ctx context.Context, siteIdOrName string) error {
+	logger.Get().Info().Msgf("Get site config for site '%s'", siteIdOrName)
+
+	siteInfo, err := GetSiteByIdOrLabel(ctx, siteIdOrName)
+	if err != nil {
+		return err
+	}
+
+	client := api.GetApiClient(ctx)
+
+	siteConfig, httpRes, err := client.SiteAPI.GetSiteConfig(ctx, float32(siteInfo.Id)).Execute()
+	if err := response_inspector.InspectResponse(httpRes, err); err != nil {
+		return err
+	}
+
+	return formatter.PrintResult(siteConfig, &siteConfigPrintConfig)
+}
+
+func SiteUpdateConfig(ctx context.Context, siteIdOrName string, config []byte) error {
+	logger.Get().Info().Msgf("Update site config for site '%s'", siteIdOrName)
+
+	siteInfo, err := GetSiteByIdOrLabel(ctx, siteIdOrName)
+	if err != nil {
+		return err
+	}
+
+	client := api.GetApiClient(ctx)
+
+	// First get the current config to get the revision number
+	currentSite, httpRes, err := client.SiteAPI.GetSite(ctx, float32(siteInfo.Id)).Execute()
+	if err := response_inspector.InspectResponse(httpRes, err); err != nil {
+		return err
+	}
+
+	var configUpdate sdk.SiteConfigUpdate
+	err = json.Unmarshal(config, &configUpdate)
+	if err != nil {
+		return err
+	}
+
+	updatedConfig, httpRes, err := client.SiteAPI.UpdateSiteConfig(ctx, float32(siteInfo.Id)).
+		SiteConfigUpdate(configUpdate).
+		IfMatch(strconv.Itoa(int(currentSite.Revision))).
+		Execute()
+	if err := response_inspector.InspectResponse(httpRes, err); err != nil {
+		return err
+	}
+
+	return formatter.PrintResult(updatedConfig, &siteConfigPrintConfig)
 }
