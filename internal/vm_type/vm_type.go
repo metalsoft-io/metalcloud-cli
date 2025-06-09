@@ -2,7 +2,6 @@ package vm_type
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
 	"strconv"
 
@@ -10,6 +9,7 @@ import (
 	"github.com/metalsoft-io/metalcloud-cli/pkg/formatter"
 	"github.com/metalsoft-io/metalcloud-cli/pkg/logger"
 	"github.com/metalsoft-io/metalcloud-cli/pkg/response_inspector"
+	"github.com/metalsoft-io/metalcloud-cli/pkg/utils"
 	sdk "github.com/metalsoft-io/metalcloud-sdk-go"
 )
 
@@ -104,8 +104,7 @@ func VMTypeCreate(ctx context.Context, config []byte) error {
 	client := api.GetApiClient(ctx)
 
 	var createVMType sdk.CreateVMType
-
-	err := json.Unmarshal(config, &createVMType)
+	err := utils.UnmarshalContent(config, &createVMType)
 	if err != nil {
 		return err
 	}
@@ -133,8 +132,7 @@ func VMTypeUpdate(ctx context.Context, vmTypeId string, config []byte) error {
 	client := api.GetApiClient(ctx)
 
 	var updateVMType sdk.UpdateVMType
-
-	err = json.Unmarshal(config, &updateVMType)
+	err = utils.UnmarshalContent(config, &updateVMType)
 	if err != nil {
 		return err
 	}

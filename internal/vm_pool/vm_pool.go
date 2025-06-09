@@ -2,7 +2,6 @@ package vm_pool
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
 	"strconv"
 
@@ -91,8 +90,7 @@ func VMPoolCreate(ctx context.Context, config []byte) error {
 	client := api.GetApiClient(ctx)
 
 	var createVMPool sdk.CreateVMPool
-
-	err := json.Unmarshal(config, &createVMPool)
+	err := utils.UnmarshalContent(config, &createVMPool)
 	if err != nil {
 		return err
 	}

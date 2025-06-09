@@ -2,13 +2,13 @@ package server
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
 
 	"github.com/metalsoft-io/metalcloud-cli/pkg/api"
 	"github.com/metalsoft-io/metalcloud-cli/pkg/formatter"
 	"github.com/metalsoft-io/metalcloud-cli/pkg/logger"
 	"github.com/metalsoft-io/metalcloud-cli/pkg/response_inspector"
+	"github.com/metalsoft-io/metalcloud-cli/pkg/utils"
 	sdk "github.com/metalsoft-io/metalcloud-sdk-go"
 )
 
@@ -114,7 +114,7 @@ func ServerFirmwareComponentUpdate(ctx context.Context, serverId string, compone
 	logger.Get().Info().Msgf("Updating firmware component '%s' for server '%s'", componentId, serverId)
 
 	var updateConfig sdk.UpdateServerComponent
-	err := json.Unmarshal(config, &updateConfig)
+	err := utils.UnmarshalContent(config, &updateConfig)
 	if err != nil {
 		return err
 	}
@@ -219,7 +219,7 @@ func ServerFirmwareComponentUpgrade(ctx context.Context, serverId string, compon
 	logger.Get().Info().Msgf("Upgrading firmware component '%s' for server '%s'", componentId, serverId)
 
 	var upgradeConfig sdk.FirmwareUpgrade
-	err := json.Unmarshal(config, &upgradeConfig)
+	err := utils.UnmarshalContent(config, &upgradeConfig)
 	if err != nil {
 		return err
 	}
@@ -265,7 +265,7 @@ func ServerFirmwareScheduleUpgrade(ctx context.Context, serverId string, config 
 	logger.Get().Info().Msgf("Scheduling firmware upgrade for server '%s'", serverId)
 
 	var scheduleConfig sdk.ScheduleFirmwareUpgrade
-	err := json.Unmarshal(config, &scheduleConfig)
+	err := utils.UnmarshalContent(config, &scheduleConfig)
 	if err != nil {
 		return err
 	}
@@ -311,7 +311,7 @@ func ServerFirmwareGenerateAudit(ctx context.Context, config []byte) error {
 	logger.Get().Info().Msgf("Generating firmware upgrade audit")
 
 	var auditConfig sdk.GenerateFirmwareUpgradeAudit
-	err := json.Unmarshal(config, &auditConfig)
+	err := utils.UnmarshalContent(config, &auditConfig)
 	if err != nil {
 		return err
 	}

@@ -2,7 +2,6 @@ package logical_network
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
 	"strconv"
 
@@ -262,7 +261,7 @@ func LogicalNetworkCreate(ctx context.Context, kind string, config []byte) error
 	var logicalNetworkConfig sdk.CreateLogicalNetworkRequest
 	if kind == string(sdk.LOGICALNETWORKKIND_VLAN) {
 		vlanLogicalNetwork := sdk.CreateVlanLogicalNetwork{}
-		err := json.Unmarshal(config, &vlanLogicalNetwork)
+		err := utils.UnmarshalContent(config, &vlanLogicalNetwork)
 		if err != nil {
 			return err
 		}
@@ -270,7 +269,7 @@ func LogicalNetworkCreate(ctx context.Context, kind string, config []byte) error
 		logicalNetworkConfig.CreateVlanLogicalNetwork = &vlanLogicalNetwork
 	} else if kind == string(sdk.LOGICALNETWORKKIND_VXLAN) {
 		vxlanLogicalNetwork := sdk.CreateVxlanLogicalNetwork{}
-		err := json.Unmarshal(config, &vxlanLogicalNetwork)
+		err := utils.UnmarshalContent(config, &vxlanLogicalNetwork)
 		if err != nil {
 			return err
 		}
@@ -304,7 +303,7 @@ func LogicalNetworkUpdate(ctx context.Context, logicalNetworkId string, config [
 	}
 
 	var logicalNetworkUpdate sdk.UpdateLogicalNetwork
-	err = json.Unmarshal(config, &logicalNetworkUpdate)
+	err = utils.UnmarshalContent(config, &logicalNetworkUpdate)
 	if err != nil {
 		return err
 	}

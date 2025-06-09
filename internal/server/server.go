@@ -2,7 +2,6 @@ package server
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
 	"strconv"
 
@@ -158,8 +157,7 @@ func ServerRegister(ctx context.Context, config []byte) error {
 	logger.Get().Info().Msgf("Registering server")
 
 	var serverConfig sdk.RegisterServer
-
-	err := json.Unmarshal(config, &serverConfig)
+	err := utils.UnmarshalContent(config, &serverConfig)
 	if err != nil {
 		return err
 	}
@@ -360,7 +358,7 @@ func ServerUpdate(ctx context.Context, serverId string, config []byte) error {
 	logger.Get().Info().Msgf("Updating server '%s'", serverId)
 
 	var updateConfig sdk.UpdateServer
-	err := json.Unmarshal(config, &updateConfig)
+	err := utils.UnmarshalContent(config, &updateConfig)
 	if err != nil {
 		return err
 	}

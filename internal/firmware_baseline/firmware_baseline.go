@@ -2,7 +2,6 @@ package firmware_baseline
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
 	"strconv"
 
@@ -10,6 +9,7 @@ import (
 	"github.com/metalsoft-io/metalcloud-cli/pkg/formatter"
 	"github.com/metalsoft-io/metalcloud-cli/pkg/logger"
 	"github.com/metalsoft-io/metalcloud-cli/pkg/response_inspector"
+	"github.com/metalsoft-io/metalcloud-cli/pkg/utils"
 	sdk "github.com/metalsoft-io/metalcloud-sdk-go"
 )
 
@@ -82,7 +82,7 @@ func FirmwareBaselineCreate(ctx context.Context, config []byte) error {
 	logger.Get().Info().Msgf("Creating firmware baseline")
 
 	var firmwareBaselineConfig sdk.CreateFirmwareBaseline
-	err := json.Unmarshal(config, &firmwareBaselineConfig)
+	err := utils.UnmarshalContent(config, &firmwareBaselineConfig)
 	if err != nil {
 		return err
 	}
@@ -109,7 +109,7 @@ func FirmwareBaselineUpdate(ctx context.Context, firmwareBaselineId string, conf
 	}
 
 	var firmwareBaselineConfig sdk.UpdateFirmwareBaseline
-	err = json.Unmarshal(config, &firmwareBaselineConfig)
+	err = utils.UnmarshalContent(config, &firmwareBaselineConfig)
 	if err != nil {
 		return err
 	}
@@ -165,7 +165,7 @@ func FirmwareBaselineSearch(ctx context.Context, searchCriteria []byte) error {
 	logger.Get().Info().Msgf("Searching firmware baselines")
 
 	var searchParams sdk.SearchFirmwareBinary
-	err := json.Unmarshal(searchCriteria, &searchParams)
+	err := utils.UnmarshalContent(searchCriteria, &searchParams)
 	if err != nil {
 		return err
 	}

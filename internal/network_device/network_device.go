@@ -2,7 +2,6 @@ package network_device
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
 	"strconv"
 
@@ -117,8 +116,7 @@ func NetworkDeviceCreate(ctx context.Context, config []byte) error {
 	logger.Get().Info().Msgf("Creating network device")
 
 	var networkDeviceConfig sdk.CreateNetworkDevice
-
-	err := json.Unmarshal(config, &networkDeviceConfig)
+	err := utils.UnmarshalContent(config, &networkDeviceConfig)
 	if err != nil {
 		return err
 	}
@@ -142,8 +140,7 @@ func NetworkDeviceUpdate(ctx context.Context, networkDeviceId string, config []b
 	}
 
 	var networkDeviceConfig sdk.UpdateNetworkDevice
-
-	err = json.Unmarshal(config, &networkDeviceConfig)
+	err = utils.UnmarshalContent(config, &networkDeviceConfig)
 	if err != nil {
 		return err
 	}

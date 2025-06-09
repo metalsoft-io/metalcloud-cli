@@ -2,7 +2,6 @@ package bucket
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
 	"strconv"
 
@@ -130,7 +129,7 @@ func BucketCreate(ctx context.Context, infrastructureIdOrLabel string, config []
 	}
 
 	var bucketConfig sdk.CreateBucket
-	err = json.Unmarshal(config, &bucketConfig)
+	err = utils.UnmarshalContent(config, &bucketConfig)
 	if err != nil {
 		return err
 	}
@@ -191,7 +190,7 @@ func BucketUpdateConfig(ctx context.Context, infrastructureIdOrLabel string, buc
 	}
 
 	var bucketConfigUpdate sdk.UpdateBucket
-	err = json.Unmarshal(config, &bucketConfigUpdate)
+	err = utils.UnmarshalContent(config, &bucketConfigUpdate)
 	if err != nil {
 		return err
 	}
@@ -225,7 +224,7 @@ func BucketUpdateMeta(ctx context.Context, infrastructureIdOrLabel string, bucke
 	}
 
 	var bucketMetaUpdate sdk.UpdateBucketMeta
-	err = json.Unmarshal(config, &bucketMetaUpdate)
+	err = utils.UnmarshalContent(config, &bucketMetaUpdate)
 	if err != nil {
 		return err
 	}

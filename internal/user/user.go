@@ -2,16 +2,14 @@ package user
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
 	"strconv"
-
-	"gopkg.in/yaml.v3"
 
 	"github.com/metalsoft-io/metalcloud-cli/pkg/api"
 	"github.com/metalsoft-io/metalcloud-cli/pkg/formatter"
 	"github.com/metalsoft-io/metalcloud-cli/pkg/logger"
 	"github.com/metalsoft-io/metalcloud-cli/pkg/response_inspector"
+	"github.com/metalsoft-io/metalcloud-cli/pkg/utils"
 	sdk "github.com/metalsoft-io/metalcloud-sdk-go"
 )
 
@@ -177,7 +175,7 @@ func Create(ctx context.Context, config []byte) error {
 	logger.Get().Info().Msgf("Creating user")
 
 	var userConfig sdk.CreateUser
-	err := json.Unmarshal(config, &userConfig)
+	err := utils.UnmarshalContent(config, &userConfig)
 	if err != nil {
 		return err
 	}
@@ -196,16 +194,10 @@ func Create(ctx context.Context, config []byte) error {
 func CreateBulk(ctx context.Context, config []byte) error {
 	logger.Get().Info().Msgf("Creating users in bulk")
 
-	// Try to parse as JSON first
 	var usersConfig []sdk.CreateUser
-	err := json.Unmarshal(config, &usersConfig)
-
-	// If JSON parsing fails, try YAML
+	err := utils.UnmarshalContent(config, &usersConfig)
 	if err != nil {
-		err = yaml.Unmarshal(config, &usersConfig)
-		if err != nil {
-			return fmt.Errorf("could not parse configuration as JSON or YAML: %s", err)
-		}
+		return err
 	}
 
 	if len(usersConfig) == 0 {
@@ -326,7 +318,7 @@ func UpdateLimits(ctx context.Context, userId string, config []byte) error {
 	}
 
 	var userLimitsConfig sdk.UserLimits
-	err = json.Unmarshal(config, &userLimitsConfig)
+	err = utils.UnmarshalContent(config, &userLimitsConfig)
 	if err != nil {
 		return err
 	}
@@ -351,7 +343,7 @@ func UpdateConfig(ctx context.Context, userId string, config []byte) error {
 	}
 
 	var userConfig sdk.UpdateUser
-	err = json.Unmarshal(config, &userConfig)
+	err = utils.UnmarshalContent(config, &userConfig)
 	if err != nil {
 		return err
 	}
@@ -526,7 +518,7 @@ func UpdatePermissions(ctx context.Context, userId string, config []byte) error 
 	}
 
 	var permissionsConfig sdk.UpdateUserPermissions
-	err = json.Unmarshal(config, &permissionsConfig)
+	err = utils.UnmarshalContent(config, &permissionsConfig)
 	if err != nil {
 		return err
 	}

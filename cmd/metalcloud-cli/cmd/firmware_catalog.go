@@ -1,13 +1,10 @@
 package cmd
 
 import (
-	"encoding/json"
-
 	"github.com/metalsoft-io/metalcloud-cli/cmd/metalcloud-cli/system"
 	"github.com/metalsoft-io/metalcloud-cli/internal/firmware_catalog"
 	"github.com/metalsoft-io/metalcloud-cli/pkg/utils"
 	"github.com/spf13/cobra"
-	"gopkg.in/yaml.v3"
 )
 
 var (
@@ -128,12 +125,9 @@ localFirmwarePath: ./hp_downloads
 					return err
 				}
 
-				err = json.Unmarshal(config, &firmwareCatalogOptions)
+				err = utils.UnmarshalContent(config, &firmwareCatalogOptions)
 				if err != nil {
-					err = yaml.Unmarshal(config, &firmwareCatalogOptions)
-					if err != nil {
-						return err
-					}
+					return err
 				}
 			} else {
 				// Otherwise build config from command line parameters

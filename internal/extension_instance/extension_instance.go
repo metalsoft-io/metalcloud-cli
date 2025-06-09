@@ -2,7 +2,6 @@ package extension_instance
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
 	"strconv"
 
@@ -11,6 +10,7 @@ import (
 	"github.com/metalsoft-io/metalcloud-cli/pkg/formatter"
 	"github.com/metalsoft-io/metalcloud-cli/pkg/logger"
 	"github.com/metalsoft-io/metalcloud-cli/pkg/response_inspector"
+	"github.com/metalsoft-io/metalcloud-cli/pkg/utils"
 	sdk "github.com/metalsoft-io/metalcloud-sdk-go"
 )
 
@@ -90,7 +90,7 @@ func ExtensionInstanceCreate(ctx context.Context, infrastructureIdOrLabel string
 	logger.Get().Info().Msgf("Create new extension instance in infrastructure %s", infrastructureIdOrLabel)
 
 	var payload sdk.CreateExtensionInstance
-	if err := json.Unmarshal(config, &payload); err != nil {
+	if err := utils.UnmarshalContent(config, &payload); err != nil {
 		return fmt.Errorf("invalid config: %w", err)
 	}
 
@@ -118,7 +118,7 @@ func ExtensionInstanceUpdate(ctx context.Context, extensionInstanceId string, co
 	}
 
 	var payload sdk.UpdateExtensionInstance
-	if err := json.Unmarshal(config, &payload); err != nil {
+	if err := utils.UnmarshalContent(config, &payload); err != nil {
 		return fmt.Errorf("invalid config: %w", err)
 	}
 

@@ -2,7 +2,6 @@ package logical_network_profile
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
 	"strconv"
 
@@ -239,13 +238,13 @@ func LogicalNetworkProfileCreate(ctx context.Context, config []byte, kind string
 	switch kind {
 	case string(sdk.LOGICALNETWORKKIND_VLAN):
 		var vlanReq sdk.CreateVlanLogicalNetworkProfile
-		if err := json.Unmarshal(config, &vlanReq); err != nil {
+		if err := utils.UnmarshalContent(config, &vlanReq); err != nil {
 			return err
 		}
 		req.CreateVlanLogicalNetworkProfile = &vlanReq
 	case string(sdk.LOGICALNETWORKKIND_VXLAN):
 		var vxlanReq sdk.CreateVxlanLogicalNetworkProfile
-		if err := json.Unmarshal(config, &vxlanReq); err != nil {
+		if err := utils.UnmarshalContent(config, &vxlanReq); err != nil {
 			return err
 		}
 		req.CreateVxlanLogicalNetworkProfile = &vxlanReq
@@ -274,7 +273,7 @@ func LogicalNetworkProfileUpdate(ctx context.Context, profileId string, config [
 	}
 
 	var req sdk.UpdateLogicalNetworkProfile
-	if err := json.Unmarshal(config, &req); err != nil {
+	if err := utils.UnmarshalContent(config, &req); err != nil {
 		return err
 	}
 

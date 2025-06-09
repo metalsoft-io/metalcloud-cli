@@ -2,7 +2,6 @@ package variable
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
 	"strconv"
 
@@ -10,6 +9,7 @@ import (
 	"github.com/metalsoft-io/metalcloud-cli/pkg/formatter"
 	"github.com/metalsoft-io/metalcloud-cli/pkg/logger"
 	"github.com/metalsoft-io/metalcloud-cli/pkg/response_inspector"
+	"github.com/metalsoft-io/metalcloud-cli/pkg/utils"
 	sdk "github.com/metalsoft-io/metalcloud-sdk-go"
 )
 
@@ -83,7 +83,7 @@ func VariableCreate(ctx context.Context, config []byte) error {
 	logger.Get().Info().Msgf("Creating variable")
 
 	var variableConfig sdk.CreateVariable
-	err := json.Unmarshal(config, &variableConfig)
+	err := utils.UnmarshalContent(config, &variableConfig)
 	if err != nil {
 		return err
 	}
@@ -110,7 +110,7 @@ func VariableUpdate(ctx context.Context, variableId string, config []byte) error
 	}
 
 	var variableConfig sdk.UpdateVariable
-	err = json.Unmarshal(config, &variableConfig)
+	err = utils.UnmarshalContent(config, &variableConfig)
 	if err != nil {
 		return err
 	}

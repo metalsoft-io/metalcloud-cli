@@ -2,7 +2,6 @@ package storage
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
 	"strconv"
 
@@ -91,8 +90,7 @@ func StorageCreate(ctx context.Context, config []byte) error {
 	client := api.GetApiClient(ctx)
 
 	var createStorage sdk.CreateStorage
-
-	err := json.Unmarshal(config, &createStorage)
+	err := utils.UnmarshalContent(config, &createStorage)
 	if err != nil {
 		return err
 	}

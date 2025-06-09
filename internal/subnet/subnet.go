@@ -2,7 +2,6 @@ package subnet
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
 	"strconv"
 
@@ -10,6 +9,7 @@ import (
 	"github.com/metalsoft-io/metalcloud-cli/pkg/formatter"
 	"github.com/metalsoft-io/metalcloud-cli/pkg/logger"
 	"github.com/metalsoft-io/metalcloud-cli/pkg/response_inspector"
+	"github.com/metalsoft-io/metalcloud-cli/pkg/utils"
 	sdk "github.com/metalsoft-io/metalcloud-sdk-go"
 )
 
@@ -86,8 +86,7 @@ func SubnetCreate(ctx context.Context, config []byte) error {
 	logger.Get().Info().Msgf("Creating subnet")
 
 	var subnetConfig sdk.CreateSubnet
-
-	err := json.Unmarshal(config, &subnetConfig)
+	err := utils.UnmarshalContent(config, &subnetConfig)
 	if err != nil {
 		return err
 	}
@@ -111,8 +110,7 @@ func SubnetUpdate(ctx context.Context, subnetId string, config []byte) error {
 	}
 
 	var subnetConfig sdk.UpdateSubnet
-
-	err = json.Unmarshal(config, &subnetConfig)
+	err = utils.UnmarshalContent(config, &subnetConfig)
 	if err != nil {
 		return err
 	}

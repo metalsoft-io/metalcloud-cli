@@ -2,7 +2,6 @@ package secret
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
 	"strconv"
 
@@ -10,6 +9,7 @@ import (
 	"github.com/metalsoft-io/metalcloud-cli/pkg/formatter"
 	"github.com/metalsoft-io/metalcloud-cli/pkg/logger"
 	"github.com/metalsoft-io/metalcloud-cli/pkg/response_inspector"
+	"github.com/metalsoft-io/metalcloud-cli/pkg/utils"
 	sdk "github.com/metalsoft-io/metalcloud-sdk-go"
 )
 
@@ -84,7 +84,7 @@ func SecretCreate(ctx context.Context, config []byte) error {
 	logger.Get().Info().Msgf("Creating secret")
 
 	var secretConfig sdk.CreateSecret
-	err := json.Unmarshal(config, &secretConfig)
+	err := utils.UnmarshalContent(config, &secretConfig)
 	if err != nil {
 		return err
 	}
@@ -111,7 +111,7 @@ func SecretUpdate(ctx context.Context, secretId string, config []byte) error {
 	}
 
 	var secretConfig sdk.UpdateSecret
-	err = json.Unmarshal(config, &secretConfig)
+	err = utils.UnmarshalContent(config, &secretConfig)
 	if err != nil {
 		return err
 	}
