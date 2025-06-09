@@ -48,6 +48,82 @@ var sitePrintConfig = formatter.PrintConfig{
 	},
 }
 
+var siteConfigPrintConfig = formatter.PrintConfig{
+	FieldsConfig: map[string]formatter.RecordFieldConfig{
+		"DnsZoneId": {
+			Title: "DNS Zone ID",
+			Order: 1,
+		},
+		"DNSServers": {
+			Title:    "DNS Servers",
+			MaxWidth: 30,
+			Order:    2,
+		},
+		"NTPServers": {
+			Title:    "NTP Servers",
+			MaxWidth: 30,
+			Order:    3,
+		},
+		"Location": {
+			Hidden: true,
+			InnerFields: map[string]formatter.RecordFieldConfig{
+				"Address": {
+					Title: "Site Address",
+					Order: 4,
+				},
+			},
+		},
+		"Repo": {
+			Hidden: true,
+			InnerFields: map[string]formatter.RecordFieldConfig{
+				"RootUrl": {
+					Title: "Repository URL",
+					Order: 5,
+				},
+			},
+		},
+	},
+}
+
+var siteAgentsPrintConfig = formatter.PrintConfig{
+	FieldsConfig: map[string]formatter.RecordFieldConfig{
+		"SiteName": {
+			Title: "Site",
+			Order: 3,
+		},
+		"AgentType": {
+			Title: "Agent Type",
+			Order: 4,
+		},
+		"AgentVersion": {
+			Title: "Version",
+			Order: 5,
+		},
+		"AgentSeenIpAddress": {
+			Title: "IP",
+			Order: 6,
+		},
+		"AgentSeenTimestamp": {
+			Title:       "Last Seen",
+			Transformer: formatter.FormatDateTimeValue,
+			Order:       7,
+		},
+		"AgentConnectedInfo": {
+			Hidden: true,
+			InnerFields: map[string]formatter.RecordFieldConfig{
+				"AgentId": {
+					Title: "ID",
+					Order: 1,
+				},
+				"Hostname": {
+					Title: "Hostname",
+					Order: 2,
+				},
+			},
+		},
+	},
+}
+
 func GetSiteByIdOrLabel(ctx context.Context, siteIdOrLabel string) (*sdk.Site, error) {
 	client := api.GetApiClient(ctx)
 
@@ -187,44 +263,7 @@ func SiteGetAgents(ctx context.Context, siteIdOrName string) error {
 		return err
 	}
 
-	return formatter.PrintResult(agents, &formatter.PrintConfig{
-		FieldsConfig: map[string]formatter.RecordFieldConfig{
-			"SiteName": {
-				Title: "Site",
-				Order: 3,
-			},
-			"AgentType": {
-				Title: "Agent Type",
-				Order: 4,
-			},
-			"AgentVersion": {
-				Title: "Version",
-				Order: 5,
-			},
-			"AgentSeenIpAddress": {
-				Title: "IP",
-				Order: 6,
-			},
-			"AgentSeenTimestamp": {
-				Title:       "Last Seen",
-				Transformer: formatter.FormatDateTimeValue,
-				Order:       7,
-			},
-			"AgentConnectedInfo": {
-				Hidden: true,
-				InnerFields: map[string]formatter.RecordFieldConfig{
-					"AgentId": {
-						Title: "ID",
-						Order: 1,
-					},
-					"Hostname": {
-						Title: "Hostname",
-						Order: 2,
-					},
-				},
-			},
-		},
-	})
+	return formatter.PrintResult(agents, &siteAgentsPrintConfig)
 }
 
 func SiteGetConfig(ctx context.Context, siteIdOrName string) error {
@@ -242,26 +281,7 @@ func SiteGetConfig(ctx context.Context, siteIdOrName string) error {
 		return err
 	}
 
-	return formatter.PrintResult(siteConfig, &formatter.PrintConfig{
-		FieldsConfig: map[string]formatter.RecordFieldConfig{
-			"Id": {
-				Title: "#",
-				Order: 1,
-			},
-			"SiteId": {
-				Title: "Site ID",
-				Order: 2,
-			},
-			"ServerRegistrationPolicy": {
-				Title: "Srv Reg Policy",
-				Order: 3,
-			},
-			"ServerRegistrationBiosProfile": {
-				Title: "BIOS Profile",
-				Order: 4,
-			},
-		},
-	})
+	return formatter.PrintResult(siteConfig, &siteConfigPrintConfig)
 }
 
 func SiteUpdateConfig(ctx context.Context, siteIdOrName string, config []byte) error {
@@ -294,24 +314,5 @@ func SiteUpdateConfig(ctx context.Context, siteIdOrName string, config []byte) e
 		return err
 	}
 
-	return formatter.PrintResult(updatedConfig, &formatter.PrintConfig{
-		FieldsConfig: map[string]formatter.RecordFieldConfig{
-			"Id": {
-				Title: "#",
-				Order: 1,
-			},
-			"SiteId": {
-				Title: "Site ID",
-				Order: 2,
-			},
-			"ServerRegistrationPolicy": {
-				Title: "Srv Reg Policy",
-				Order: 3,
-			},
-			"ServerRegistrationBiosProfile": {
-				Title: "BIOS Profile",
-				Order: 4,
-			},
-		},
-	})
+	return formatter.PrintResult(updatedConfig, &siteConfigPrintConfig)
 }
