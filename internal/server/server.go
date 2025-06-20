@@ -153,14 +153,8 @@ func ServerGet(ctx context.Context, serverId string, showCredentials bool) error
 	return formatter.PrintResult(serverInfo, &serverPrintConfig)
 }
 
-func ServerRegister(ctx context.Context, config []byte) error {
+func ServerRegister(ctx context.Context, serverConfig sdk.RegisterServer) error {
 	logger.Get().Info().Msgf("Registering server")
-
-	var serverConfig sdk.RegisterServer
-	err := utils.UnmarshalContent(config, &serverConfig)
-	if err != nil {
-		return err
-	}
 
 	client := api.GetApiClient(ctx)
 
