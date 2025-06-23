@@ -2,6 +2,7 @@ package site
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"strconv"
 
@@ -300,6 +301,7 @@ func SiteUpdateConfig(ctx context.Context, siteIdOrName string, config []byte) e
 	}
 
 	var configUpdate sdk.SiteConfigUpdate
+
 	err = utils.UnmarshalContent(config, &configUpdate)
 	if err != nil {
 		return err
