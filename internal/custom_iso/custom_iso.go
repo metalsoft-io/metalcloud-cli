@@ -2,7 +2,6 @@ package custom_iso
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
 	"strconv"
 
@@ -11,6 +10,7 @@ import (
 	"github.com/metalsoft-io/metalcloud-cli/pkg/formatter"
 	"github.com/metalsoft-io/metalcloud-cli/pkg/logger"
 	"github.com/metalsoft-io/metalcloud-cli/pkg/response_inspector"
+	"github.com/metalsoft-io/metalcloud-cli/pkg/utils"
 	sdk "github.com/metalsoft-io/metalcloud-sdk-go"
 )
 
@@ -80,7 +80,7 @@ func CustomIsoCreate(ctx context.Context, config []byte) error {
 	logger.Get().Info().Msgf("Creating custom ISO")
 
 	var customIsoConfig sdk.CreateCustomIso
-	err := json.Unmarshal(config, &customIsoConfig)
+	err := utils.UnmarshalContent(config, &customIsoConfig)
 	if err != nil {
 		return err
 	}
@@ -107,7 +107,7 @@ func CustomIsoUpdate(ctx context.Context, customIsoId string, config []byte) err
 	}
 
 	var customIsoConfig sdk.UpdateCustomIso
-	err = json.Unmarshal(config, &customIsoConfig)
+	err = utils.UnmarshalContent(config, &customIsoConfig)
 	if err != nil {
 		return err
 	}

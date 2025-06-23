@@ -126,12 +126,10 @@ func VMInstanceGroupCreate(ctx context.Context, infrastructureId string, vmTypeI
 	}
 
 	if osTemplateId != "" {
-		osTemplateIdNumerical, err := utils.GetFloat32FromString(osTemplateId)
+		payload.OsTemplateId, err = utils.GetFloat32FromString(osTemplateId)
 		if err != nil {
 			return err
 		}
-
-		payload.OsTemplateId = &osTemplateIdNumerical
 	}
 
 	client := api.GetApiClient(ctx)

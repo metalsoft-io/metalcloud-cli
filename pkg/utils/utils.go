@@ -1,11 +1,16 @@
 package utils
 
 import (
+	"encoding/json"
 	"fmt"
 	"os"
 	"regexp"
 	"strconv"
 	"strings"
+
+	"github.com/metalsoft-io/metalcloud-cli/pkg/formatter"
+	"github.com/spf13/viper"
+	"gopkg.in/yaml.v3"
 )
 
 func CreateSlug(input string) string {
@@ -68,6 +73,37 @@ func ReadConfigFromPipeOrFile(configSource string) ([]byte, error) {
 	}
 
 	return ReadConfigFromFile(configSource)
+}
+
+func UnmarshalContent(content []byte, destination any) error {
+	if len(content) == 0 {
+		return fmt.Errorf("no content to unmarshal")
+	}
+
+	format := strings.ToLower(viper.GetString(formatter.ConfigFormat))
+
+	switch format {
+	case "json":
+		err := json.Unmarshal(content, destination)
+		if err != nil {
+			return fmt.Errorf("failed to unmarshal content: %w", err)
+		}
+	case "yaml":
+		err := yaml.Unmarshal(content, destination)
+		if err != nil {
+			return fmt.Errorf("failed to unmarshal content: %w", err)
+		}
+	default:
+		err := json.Unmarshal(content, destination)
+		if err != nil {
+			err = yaml.Unmarshal(content, destination)
+			if err != nil {
+				return fmt.Errorf("failed to unmarshal content: %w", err)
+			}
+		}
+	}
+
+	return nil
 }
 
 func ProcessFilterStringSlice(filter []string) []string {

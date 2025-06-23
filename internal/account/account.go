@@ -2,7 +2,6 @@ package account
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
 	"strconv"
 
@@ -10,6 +9,7 @@ import (
 	"github.com/metalsoft-io/metalcloud-cli/pkg/formatter"
 	"github.com/metalsoft-io/metalcloud-cli/pkg/logger"
 	"github.com/metalsoft-io/metalcloud-cli/pkg/response_inspector"
+	"github.com/metalsoft-io/metalcloud-cli/pkg/utils"
 	sdk "github.com/metalsoft-io/metalcloud-sdk-go"
 )
 
@@ -103,7 +103,7 @@ func AccountCreate(ctx context.Context, config []byte) error {
 	logger.Get().Info().Msgf("Creating account")
 
 	var accountConfig sdk.CreateAccount
-	err := json.Unmarshal(config, &accountConfig)
+	err := utils.UnmarshalContent(config, &accountConfig)
 	if err != nil {
 		return err
 	}
@@ -127,7 +127,7 @@ func AccountUpdate(ctx context.Context, accountId string, config []byte) error {
 	}
 
 	var accountConfig sdk.UpdateAccount
-	err = json.Unmarshal(config, &accountConfig)
+	err = utils.UnmarshalContent(config, &accountConfig)
 	if err != nil {
 		return err
 	}

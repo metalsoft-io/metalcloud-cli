@@ -2,7 +2,6 @@ package vm
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
 	"strconv"
 
@@ -10,6 +9,7 @@ import (
 	"github.com/metalsoft-io/metalcloud-cli/pkg/formatter"
 	"github.com/metalsoft-io/metalcloud-cli/pkg/logger"
 	"github.com/metalsoft-io/metalcloud-cli/pkg/response_inspector"
+	"github.com/metalsoft-io/metalcloud-cli/pkg/utils"
 	sdk "github.com/metalsoft-io/metalcloud-sdk-go"
 )
 
@@ -160,7 +160,7 @@ func VMUpdate(ctx context.Context, vmId string, config []byte) error {
 	logger.Get().Info().Msgf("Updating VM '%s'", vmId)
 
 	var updateConfig sdk.UpdateVM
-	err := json.Unmarshal(config, &updateConfig)
+	err := utils.UnmarshalContent(config, &updateConfig)
 	if err != nil {
 		return err
 	}

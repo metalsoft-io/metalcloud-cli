@@ -2,7 +2,6 @@ package firmware_policy
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
 	"strconv"
 
@@ -10,6 +9,7 @@ import (
 	"github.com/metalsoft-io/metalcloud-cli/pkg/formatter"
 	"github.com/metalsoft-io/metalcloud-cli/pkg/logger"
 	"github.com/metalsoft-io/metalcloud-cli/pkg/response_inspector"
+	"github.com/metalsoft-io/metalcloud-cli/pkg/utils"
 	sdk "github.com/metalsoft-io/metalcloud-sdk-go"
 )
 
@@ -88,7 +88,7 @@ func FirmwarePolicyCreate(ctx context.Context, config []byte) error {
 	logger.Get().Info().Msgf("Creating firmware policy")
 
 	var firmwarePolicyConfig sdk.CreateServerFirmwareUpgradePolicy
-	err := json.Unmarshal(config, &firmwarePolicyConfig)
+	err := utils.UnmarshalContent(config, &firmwarePolicyConfig)
 	if err != nil {
 		return err
 	}
@@ -115,7 +115,7 @@ func FirmwarePolicyUpdate(ctx context.Context, firmwarePolicyId string, config [
 	}
 
 	var firmwarePolicyConfig sdk.UpdateServerFirmwareUpgradePolicy
-	err = json.Unmarshal(config, &firmwarePolicyConfig)
+	err = utils.UnmarshalContent(config, &firmwarePolicyConfig)
 	if err != nil {
 		return err
 	}
@@ -223,7 +223,7 @@ func UpdateGlobalFirmwareConfiguration(ctx context.Context, config []byte) error
 	logger.Get().Info().Msgf("Updating global firmware configuration")
 
 	var globalConfig sdk.UpdateGlobalFirmwareUpgradeConfiguration
-	err := json.Unmarshal(config, &globalConfig)
+	err := utils.UnmarshalContent(config, &globalConfig)
 	if err != nil {
 		return err
 	}

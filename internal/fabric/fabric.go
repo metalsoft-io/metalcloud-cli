@@ -2,7 +2,6 @@ package fabric
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
 
 	"github.com/metalsoft-io/metalcloud-cli/internal/network_device"
@@ -150,7 +149,7 @@ func FabricCreate(ctx context.Context, siteIdOrLabel string, fabricName string, 
 	switch fabricType {
 	case "ethernet":
 		ethernetConfig := sdk.EthernetFabric{}
-		err := json.Unmarshal(config, &ethernetConfig)
+		err := utils.UnmarshalContent(config, &ethernetConfig)
 		if err != nil {
 			return err
 		}
@@ -160,7 +159,7 @@ func FabricCreate(ctx context.Context, siteIdOrLabel string, fabricName string, 
 		}
 	case "fibre_channel":
 		fcConfig := sdk.FibreChannelFabric{}
-		err := json.Unmarshal(config, &fcConfig)
+		err := utils.UnmarshalContent(config, &fcConfig)
 		if err != nil {
 			return err
 		}
@@ -206,7 +205,7 @@ func FabricUpdate(ctx context.Context, fabricId string, fabricName string, descr
 	var fabricConfiguration sdk.NetworkFabricFabricConfiguration
 	if fabricInfo.FabricConfiguration.EthernetFabric != nil {
 		ethernetConfig := sdk.EthernetFabric{}
-		err := json.Unmarshal(config, &ethernetConfig)
+		err := utils.UnmarshalContent(config, &ethernetConfig)
 		if err != nil {
 			return err
 		}
@@ -216,7 +215,7 @@ func FabricUpdate(ctx context.Context, fabricId string, fabricName string, descr
 		}
 	} else if fabricInfo.FabricConfiguration.FibreChannelFabric != nil {
 		fcConfig := sdk.FibreChannelFabric{}
-		err := json.Unmarshal(config, &fcConfig)
+		err := utils.UnmarshalContent(config, &fcConfig)
 		if err != nil {
 			return err
 		}

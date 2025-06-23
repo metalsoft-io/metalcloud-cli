@@ -2,7 +2,6 @@ package file_share
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
 	"strconv"
 
@@ -148,7 +147,7 @@ func FileShareCreate(ctx context.Context, infrastructureIdOrLabel string, config
 	}
 
 	var fileShareConfig sdk.CreateFileShare
-	err = json.Unmarshal(config, &fileShareConfig)
+	err = utils.UnmarshalContent(config, &fileShareConfig)
 	if err != nil {
 		return err
 	}
@@ -209,7 +208,7 @@ func FileShareUpdateConfig(ctx context.Context, infrastructureIdOrLabel string, 
 	}
 
 	var fileShareConfigUpdate sdk.UpdateFileShare
-	err = json.Unmarshal(config, &fileShareConfigUpdate)
+	err = utils.UnmarshalContent(config, &fileShareConfigUpdate)
 	if err != nil {
 		return err
 	}
@@ -243,7 +242,7 @@ func FileShareUpdateMeta(ctx context.Context, infrastructureIdOrLabel string, fi
 	}
 
 	var fileShareMetaUpdate sdk.UpdateFileShareMeta
-	err = json.Unmarshal(config, &fileShareMetaUpdate)
+	err = utils.UnmarshalContent(config, &fileShareMetaUpdate)
 	if err != nil {
 		return err
 	}
@@ -302,7 +301,7 @@ func FileShareUpdateHosts(ctx context.Context, infrastructureIdOrLabel string, f
 	}
 
 	var hostsUpdate sdk.FileShareHostsModifyBulk
-	err = json.Unmarshal(config, &hostsUpdate)
+	err = utils.UnmarshalContent(config, &hostsUpdate)
 	if err != nil {
 		return err
 	}

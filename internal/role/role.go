@@ -2,12 +2,12 @@ package role
 
 import (
 	"context"
-	"encoding/json"
 
 	"github.com/metalsoft-io/metalcloud-cli/pkg/api"
 	"github.com/metalsoft-io/metalcloud-cli/pkg/formatter"
 	"github.com/metalsoft-io/metalcloud-cli/pkg/logger"
 	"github.com/metalsoft-io/metalcloud-cli/pkg/response_inspector"
+	"github.com/metalsoft-io/metalcloud-cli/pkg/utils"
 	sdk "github.com/metalsoft-io/metalcloud-sdk-go"
 )
 
@@ -64,7 +64,7 @@ func Create(ctx context.Context, config []byte) error {
 	logger.Get().Info().Msg("Creating role")
 
 	var createRole sdk.CreateRole
-	if err := json.Unmarshal(config, &createRole); err != nil {
+	if err := utils.UnmarshalContent(config, &createRole); err != nil {
 		return err
 	}
 
@@ -96,7 +96,7 @@ func Update(ctx context.Context, roleName string, config []byte) error {
 	logger.Get().Info().Msgf("Updating role '%s'", roleName)
 
 	var editRole sdk.EditRole
-	if err := json.Unmarshal(config, &editRole); err != nil {
+	if err := utils.UnmarshalContent(config, &editRole); err != nil {
 		return err
 	}
 

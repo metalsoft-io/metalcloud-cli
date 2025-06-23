@@ -1,13 +1,10 @@
 package cmd
 
 import (
-	"encoding/json"
-
 	"github.com/metalsoft-io/metalcloud-cli/cmd/metalcloud-cli/system"
 	"github.com/metalsoft-io/metalcloud-cli/internal/os_template"
 	"github.com/metalsoft-io/metalcloud-cli/pkg/utils"
 	"github.com/spf13/cobra"
-	"gopkg.in/yaml.v3"
 )
 
 var (
@@ -60,12 +57,9 @@ var (
 			}
 
 			var osTemplateCreateOptions os_template.OsTemplateCreateOptions
-			err = json.Unmarshal(config, &osTemplateCreateOptions)
+			err = utils.UnmarshalContent(config, &osTemplateCreateOptions)
 			if err != nil {
-				err = yaml.Unmarshal(config, &osTemplateCreateOptions)
-				if err != nil {
-					return err
-				}
+				return err
 			}
 
 			return os_template.OsTemplateCreate(cmd.Context(), osTemplateCreateOptions)
@@ -86,12 +80,9 @@ var (
 			}
 
 			var osTemplateUpdateOptions os_template.OsTemplateUpdateOptions
-			err = json.Unmarshal(config, &osTemplateUpdateOptions)
+			err = utils.UnmarshalContent(config, &osTemplateUpdateOptions)
 			if err != nil {
-				err = yaml.Unmarshal(config, &osTemplateUpdateOptions)
-				if err != nil {
-					return err
-				}
+				return err
 			}
 
 			return os_template.OsTemplateUpdate(cmd.Context(), args[0], osTemplateUpdateOptions)

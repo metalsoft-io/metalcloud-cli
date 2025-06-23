@@ -6,7 +6,7 @@ toolchain go1.23.4
 
 require (
 	github.com/jedib0t/go-pretty/v6 v6.6.7
-	github.com/metalsoft-io/metalcloud-sdk-go v0.0.0-20250609070700-b079fb37d04b
+	github.com/metalsoft-io/metalcloud-sdk-go v0.0.0-20250623135537-abec856bf796
 	github.com/pkg/sftp v1.13.9
 	github.com/rs/zerolog v1.34.0
 	github.com/spf13/cobra v1.9.1
@@ -18,7 +18,7 @@ require (
 
 require (
 	github.com/fsnotify/fsnotify v1.9.0 // indirect
-	github.com/go-viper/mapstructure/v2 v2.2.1 // indirect
+	github.com/go-viper/mapstructure/v2 v2.3.0 // indirect
 	github.com/inconshreveable/mousetrap v1.1.0 // indirect
 	github.com/kr/fs v0.1.0 // indirect
 	github.com/mattn/go-colorable v0.1.14 // indirect

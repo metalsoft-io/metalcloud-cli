@@ -2,7 +2,6 @@ package logical_network
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
 	"strconv"
 
@@ -17,34 +16,29 @@ import (
 
 var logicalNetworkPrintConfig = formatter.PrintConfig{
 	FieldsConfig: map[string]formatter.RecordFieldConfig{
-		"VlanLogicalNetwork": {
-			Hidden: true,
-			InnerFields: map[string]formatter.RecordFieldConfig{
-				"Id": {
-					Title: "#",
-					Order: 1,
-				},
-				"Label": {
-					MaxWidth: 30,
-					Order:    2,
-				},
-				"Name": {
-					MaxWidth: 30,
-					Order:    3,
-				},
-				"Kind": {
-					Title: "Kind",
-					Order: 4,
-				},
-				"FabricId": {
-					Title: "Fabric ID",
-					Order: 5,
-				},
-				"InfrastructureId": {
-					Title: "Infra ID",
-					Order: 6,
-				},
-			},
+		"Id": {
+			Title: "#",
+			Order: 1,
+		},
+		"Label": {
+			MaxWidth: 30,
+			Order:    2,
+		},
+		"Name": {
+			MaxWidth: 30,
+			Order:    3,
+		},
+		"Kind": {
+			Title: "Kind",
+			Order: 4,
+		},
+		"FabricId": {
+			Title: "Fabric ID",
+			Order: 5,
+		},
+		"InfrastructureId": {
+			Title: "Infra ID",
+			Order: 6,
 		},
 	},
 }
@@ -120,132 +114,125 @@ func LogicalNetworkGet(ctx context.Context, logicalNetworkId string) error {
 }
 
 func LogicalNetworkConfigExample(ctx context.Context, kind string) error {
-	logicalNetworkConfiguration := sdk.CreateLogicalNetworkRequest{}
+	logicalNetworkConfiguration := sdk.CreateLogicalNetwork{}
+
+	logicalNetworkConfiguration.Label = sdk.PtrString("example-logical-network")
+	logicalNetworkConfiguration.Name = sdk.PtrString("Example Logical Network")
+	logicalNetworkConfiguration.FabricId = 1
+	logicalNetworkConfiguration.InfrastructureId = *sdk.NewNullableInt32(sdk.PtrInt32(1))
 
 	if kind == string(sdk.LOGICALNETWORKKIND_VLAN) {
-		logicalNetworkConfiguration.CreateVlanLogicalNetwork = &sdk.CreateVlanLogicalNetwork{
-			Kind:             sdk.LOGICALNETWORKKIND_VLAN,
-			Label:            sdk.PtrString("example-logical-network"),
-			Name:             sdk.PtrString("Example Logical Network"),
-			FabricId:         1,
-			InfrastructureId: *sdk.NewNullableInt32(sdk.PtrInt32(1)),
-			Vlan: sdk.CreateVlanLogicalNetworkVlanProperties{
-				VlanAllocationStrategies: []sdk.CreateVlanAllocationStrategy{
-					{
-						CreateAutoVlanAllocationStrategy: &sdk.CreateAutoVlanAllocationStrategy{
-							Kind: sdk.ALLOCATIONSTRATEGYKIND_AUTO,
-							Scope: sdk.CreateResourceScope{
-								Kind:       sdk.RESOURCESCOPEKIND_FABRIC,
-								ResourceId: 1,
-							},
-							GranularityLevel: *sdk.NewNullableVlanAllocationGranularityLevel(sdk.VLANALLOCATIONGRANULARITYLEVEL_NETWORK_DEVICE.Ptr()),
+		logicalNetworkConfiguration.Kind = sdk.LOGICALNETWORKKIND_VLAN
+		logicalNetworkConfiguration.Vlan = &sdk.CreateLogicalNetworkVlanProperties{
+			VlanAllocationStrategies: []sdk.CreateVlanAllocationStrategy{
+				{
+					CreateAutoVlanAllocationStrategy: &sdk.CreateAutoVlanAllocationStrategy{
+						Kind: sdk.ALLOCATIONSTRATEGYKIND_AUTO,
+						Scope: sdk.CreateResourceScope{
+							Kind:       sdk.RESOURCESCOPEKIND_FABRIC,
+							ResourceId: 1,
 						},
+						GranularityLevel: *sdk.NewNullableVlanAllocationGranularityLevel(sdk.VLANALLOCATIONGRANULARITYLEVEL_NETWORK_DEVICE.Ptr()),
 					},
 				},
-			},
-			Ipv4: sdk.CreateVlanLogicalNetworkIpv4Properties{
-				SubnetAllocationStrategies: []sdk.CreateIpv4SubnetAllocationStrategy{
-					{
-						CreateAutoIpv4SubnetAllocationStrategy: &sdk.CreateAutoIpv4SubnetAllocationStrategy{
-							Kind: sdk.ALLOCATIONSTRATEGYKIND_AUTO,
-							Scope: sdk.CreateResourceScope{
-								Kind:       sdk.RESOURCESCOPEKIND_FABRIC,
-								ResourceId: 1,
-							},
-							PrefixLength:  24,
-							SubnetPoolIds: []int32{2, 3},
-						},
-					},
-				},
-			},
-			Ipv6: &sdk.CreateVlanLogicalNetworkIpv6Properties{
-				SubnetAllocationStrategies: []sdk.CreateIpv6SubnetAllocationStrategy{
-					{
-						CreateAutoIpv6SubnetAllocationStrategy: &sdk.CreateAutoIpv6SubnetAllocationStrategy{
-							Kind: sdk.ALLOCATIONSTRATEGYKIND_AUTO,
-							Scope: sdk.CreateResourceScope{
-								Kind:       sdk.RESOURCESCOPEKIND_FABRIC,
-								ResourceId: 1,
-							},
-							PrefixLength:  64,
-							SubnetPoolIds: []int32{2, 3},
-						},
-					},
-				},
-			},
-			RouteDomainId: *sdk.NewNullableInt32(sdk.PtrInt32(1)),
-			Annotations: &map[string]string{
-				"example": "example",
 			},
 		}
+		logicalNetworkConfiguration.Ipv4 = &sdk.CreateLogicalNetworkIpv4Properties{
+			SubnetAllocationStrategies: []sdk.CreateIpv4SubnetAllocationStrategy{
+				{
+					CreateAutoIpv4SubnetAllocationStrategy: &sdk.CreateAutoIpv4SubnetAllocationStrategy{
+						Kind: sdk.ALLOCATIONSTRATEGYKIND_AUTO,
+						Scope: sdk.CreateResourceScope{
+							Kind:       sdk.RESOURCESCOPEKIND_FABRIC,
+							ResourceId: 1,
+						},
+						PrefixLength:  24,
+						SubnetPoolIds: []int32{2, 3},
+					},
+				},
+			},
+		}
+		logicalNetworkConfiguration.Ipv6 = &sdk.CreateLogicalNetworkIpv6Properties{
+			SubnetAllocationStrategies: []sdk.CreateIpv6SubnetAllocationStrategy{
+				{
+					CreateAutoIpv6SubnetAllocationStrategy: &sdk.CreateAutoIpv6SubnetAllocationStrategy{
+						Kind: sdk.ALLOCATIONSTRATEGYKIND_AUTO,
+						Scope: sdk.CreateResourceScope{
+							Kind:       sdk.RESOURCESCOPEKIND_FABRIC,
+							ResourceId: 1,
+						},
+						PrefixLength:  64,
+						SubnetPoolIds: []int32{2, 3},
+					},
+				},
+			},
+		}
+		logicalNetworkConfiguration.RouteDomainId = *sdk.NewNullableInt32(sdk.PtrInt32(1))
+		logicalNetworkConfiguration.Annotations = &map[string]string{
+			"example": "example",
+		}
 	} else if kind == string(sdk.LOGICALNETWORKKIND_VXLAN) {
-		logicalNetworkConfiguration.CreateVxlanLogicalNetwork = &sdk.CreateVxlanLogicalNetwork{
-			Kind:             sdk.LOGICALNETWORKKIND_VXLAN,
-			Label:            sdk.PtrString("example-logical-network"),
-			Name:             sdk.PtrString("Example Logical Network"),
-			FabricId:         1,
-			InfrastructureId: *sdk.NewNullableInt32(sdk.PtrInt32(1)),
-			Vlan: sdk.CreateVxlanLogicalNetworkVlanProperties{
-				VlanAllocationStrategies: []sdk.CreateVlanAllocationStrategy{
-					{
-						CreateAutoVlanAllocationStrategy: &sdk.CreateAutoVlanAllocationStrategy{
-							Kind: sdk.ALLOCATIONSTRATEGYKIND_AUTO,
-							Scope: sdk.CreateResourceScope{
-								Kind:       sdk.RESOURCESCOPEKIND_FABRIC,
-								ResourceId: 1,
-							},
-							GranularityLevel: *sdk.NewNullableVlanAllocationGranularityLevel(sdk.VLANALLOCATIONGRANULARITYLEVEL_NETWORK_DEVICE.Ptr()),
+		logicalNetworkConfiguration.Kind = sdk.LOGICALNETWORKKIND_VXLAN
+		logicalNetworkConfiguration.Vlan = &sdk.CreateLogicalNetworkVlanProperties{
+			VlanAllocationStrategies: []sdk.CreateVlanAllocationStrategy{
+				{
+					CreateAutoVlanAllocationStrategy: &sdk.CreateAutoVlanAllocationStrategy{
+						Kind: sdk.ALLOCATIONSTRATEGYKIND_AUTO,
+						Scope: sdk.CreateResourceScope{
+							Kind:       sdk.RESOURCESCOPEKIND_FABRIC,
+							ResourceId: 1,
+						},
+						GranularityLevel: *sdk.NewNullableVlanAllocationGranularityLevel(sdk.VLANALLOCATIONGRANULARITYLEVEL_NETWORK_DEVICE.Ptr()),
+					},
+				},
+			},
+		}
+		logicalNetworkConfiguration.Vxlan = &sdk.CreateLogicalNetworkVxlanProperties{
+			VniAllocationStrategies: []sdk.CreateVniAllocationStrategy{
+				{
+					CreateAutoVniAllocationStrategy: &sdk.CreateAutoVniAllocationStrategy{
+						Kind: sdk.ALLOCATIONSTRATEGYKIND_AUTO,
+						Scope: sdk.CreateResourceScope{
+							Kind:       sdk.RESOURCESCOPEKIND_FABRIC,
+							ResourceId: 1,
 						},
 					},
 				},
 			},
-			Vxlan: sdk.CreateVxlanLogicalNetworkVxlanProperties{
-				VniAllocationStrategies: []sdk.CreateVniAllocationStrategy{
-					{
-						CreateAutoVniAllocationStrategy: &sdk.CreateAutoVniAllocationStrategy{
-							Kind: sdk.ALLOCATIONSTRATEGYKIND_AUTO,
-							Scope: sdk.CreateResourceScope{
-								Kind:       sdk.RESOURCESCOPEKIND_FABRIC,
-								ResourceId: 1,
-							},
+		}
+		logicalNetworkConfiguration.Ipv4 = &sdk.CreateLogicalNetworkIpv4Properties{
+			SubnetAllocationStrategies: []sdk.CreateIpv4SubnetAllocationStrategy{
+				{
+					CreateAutoIpv4SubnetAllocationStrategy: &sdk.CreateAutoIpv4SubnetAllocationStrategy{
+						Kind: sdk.ALLOCATIONSTRATEGYKIND_AUTO,
+						Scope: sdk.CreateResourceScope{
+							Kind:       sdk.RESOURCESCOPEKIND_FABRIC,
+							ResourceId: 1,
 						},
+						PrefixLength:  24,
+						SubnetPoolIds: []int32{2, 3},
 					},
 				},
 			},
-			Ipv4: sdk.CreateVxlanLogicalNetworkIpv4Properties{
-				SubnetAllocationStrategies: []sdk.CreateIpv4SubnetAllocationStrategy{
-					{
-						CreateAutoIpv4SubnetAllocationStrategy: &sdk.CreateAutoIpv4SubnetAllocationStrategy{
-							Kind: sdk.ALLOCATIONSTRATEGYKIND_AUTO,
-							Scope: sdk.CreateResourceScope{
-								Kind:       sdk.RESOURCESCOPEKIND_FABRIC,
-								ResourceId: 1,
-							},
-							PrefixLength:  24,
-							SubnetPoolIds: []int32{2, 3},
+		}
+		logicalNetworkConfiguration.Ipv6 = &sdk.CreateLogicalNetworkIpv6Properties{
+			SubnetAllocationStrategies: []sdk.CreateIpv6SubnetAllocationStrategy{
+				{
+					CreateAutoIpv6SubnetAllocationStrategy: &sdk.CreateAutoIpv6SubnetAllocationStrategy{
+						Kind: sdk.ALLOCATIONSTRATEGYKIND_AUTO,
+						Scope: sdk.CreateResourceScope{
+							Kind:       sdk.RESOURCESCOPEKIND_FABRIC,
+							ResourceId: 1,
 						},
+						PrefixLength:  64,
+						SubnetPoolIds: []int32{2, 3},
 					},
 				},
 			},
-			Ipv6: &sdk.CreateVxlanLogicalNetworkIpv6Properties{
-				SubnetAllocationStrategies: []sdk.CreateIpv6SubnetAllocationStrategy{
-					{
-						CreateAutoIpv6SubnetAllocationStrategy: &sdk.CreateAutoIpv6SubnetAllocationStrategy{
-							Kind: sdk.ALLOCATIONSTRATEGYKIND_AUTO,
-							Scope: sdk.CreateResourceScope{
-								Kind:       sdk.RESOURCESCOPEKIND_FABRIC,
-								ResourceId: 1,
-							},
-							PrefixLength:  64,
-							SubnetPoolIds: []int32{2, 3},
-						},
-					},
-				},
-			},
-			RouteDomainId: *sdk.NewNullableInt32(sdk.PtrInt32(1)),
-			Annotations: &map[string]string{
-				"example": "example",
-			},
+		}
+		logicalNetworkConfiguration.RouteDomainId = *sdk.NewNullableInt32(sdk.PtrInt32(1))
+		logicalNetworkConfiguration.Annotations = &map[string]string{
+			"example": "example",
 		}
 	} else {
 		err := fmt.Errorf("unsupported logical network kind '%s'", kind)
@@ -259,26 +246,9 @@ func LogicalNetworkConfigExample(ctx context.Context, kind string) error {
 func LogicalNetworkCreate(ctx context.Context, kind string, config []byte) error {
 	logger.Get().Info().Msgf("Creating logical network")
 
-	var logicalNetworkConfig sdk.CreateLogicalNetworkRequest
-	if kind == string(sdk.LOGICALNETWORKKIND_VLAN) {
-		vlanLogicalNetwork := sdk.CreateVlanLogicalNetwork{}
-		err := json.Unmarshal(config, &vlanLogicalNetwork)
-		if err != nil {
-			return err
-		}
-
-		logicalNetworkConfig.CreateVlanLogicalNetwork = &vlanLogicalNetwork
-	} else if kind == string(sdk.LOGICALNETWORKKIND_VXLAN) {
-		vxlanLogicalNetwork := sdk.CreateVxlanLogicalNetwork{}
-		err := json.Unmarshal(config, &vxlanLogicalNetwork)
-		if err != nil {
-			return err
-		}
-
-		logicalNetworkConfig.CreateVxlanLogicalNetwork = &vxlanLogicalNetwork
-	} else {
-		err := fmt.Errorf("unsupported logical network kind '%s'", kind)
-		logger.Get().Error().Err(err).Msg("")
+	var logicalNetworkConfig sdk.CreateLogicalNetwork
+	err := utils.UnmarshalContent(config, &logicalNetworkConfig)
+	if err != nil {
 		return err
 	}
 
@@ -286,7 +256,7 @@ func LogicalNetworkCreate(ctx context.Context, kind string, config []byte) error
 
 	logicalNetwork, httpRes, err := client.LogicalNetworkAPI.
 		CreateLogicalNetwork(ctx).
-		CreateLogicalNetworkRequest(logicalNetworkConfig).
+		CreateLogicalNetwork(logicalNetworkConfig).
 		Execute()
 	if err := response_inspector.InspectResponse(httpRes, err); err != nil {
 		return err
@@ -304,7 +274,7 @@ func LogicalNetworkUpdate(ctx context.Context, logicalNetworkId string, config [
 	}
 
 	var logicalNetworkUpdate sdk.UpdateLogicalNetwork
-	err = json.Unmarshal(config, &logicalNetworkUpdate)
+	err = utils.UnmarshalContent(config, &logicalNetworkUpdate)
 	if err != nil {
 		return err
 	}

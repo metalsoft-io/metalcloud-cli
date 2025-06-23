@@ -2,7 +2,6 @@ package template_asset
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
 	"strconv"
 
@@ -125,8 +124,7 @@ func TemplateAssetCreate(ctx context.Context, config []byte) error {
 	logger.Get().Info().Msgf("Creating template asset")
 
 	var templateAssetConfig sdk.TemplateAssetCreate
-
-	err := json.Unmarshal(config, &templateAssetConfig)
+	err := utils.UnmarshalContent(config, &templateAssetConfig)
 	if err != nil {
 		return err
 	}
@@ -150,8 +148,7 @@ func TemplateAssetUpdate(ctx context.Context, templateAssetId string, config []b
 	}
 
 	var templateAssetConfig sdk.TemplateAssetCreate
-
-	err = json.Unmarshal(config, &templateAssetConfig)
+	err = utils.UnmarshalContent(config, &templateAssetConfig)
 	if err != nil {
 		return err
 	}

@@ -2,7 +2,6 @@ package firmware_catalog
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
 	"strconv"
 
@@ -10,6 +9,7 @@ import (
 	"github.com/metalsoft-io/metalcloud-cli/pkg/formatter"
 	"github.com/metalsoft-io/metalcloud-cli/pkg/logger"
 	"github.com/metalsoft-io/metalcloud-cli/pkg/response_inspector"
+	"github.com/metalsoft-io/metalcloud-cli/pkg/utils"
 	sdk "github.com/metalsoft-io/metalcloud-sdk-go"
 )
 
@@ -132,7 +132,7 @@ func FirmwareCatalogCreate(ctx context.Context, firmwareCatalogOptions FirmwareC
 func FirmwareCatalogUpdate(ctx context.Context, firmwareCatalogId string, config []byte) error {
 	// First unmarshal into a more generic map to extract ID if needed
 	var rawConfig map[string]interface{}
-	if err := json.Unmarshal(config, &rawConfig); err != nil {
+	if err := utils.UnmarshalContent(config, &rawConfig); err != nil {
 		return err
 	}
 
@@ -161,12 +161,12 @@ func FirmwareCatalogUpdate(ctx context.Context, firmwareCatalogId string, config
 
 	// Try to unmarshal into the proper update structure
 	var firmwareCatalogConfig sdk.UpdateFirmwareCatalog
-	err = json.Unmarshal(config, &firmwareCatalogConfig)
+	err = utils.UnmarshalContent(config, &firmwareCatalogConfig)
 
 	// If unmarshaling into UpdateFirmwareCatalog fails, try with FirmwareCatalog
 	if err != nil || len(firmwareCatalogConfig.AdditionalProperties) > 0 {
 		var fullCatalog sdk.FirmwareCatalog
-		if err := json.Unmarshal(config, &fullCatalog); err != nil {
+		if err := utils.UnmarshalContent(config, &fullCatalog); err != nil {
 			// If both fail, return an error
 			return fmt.Errorf("firmware catalog config does not match the expected format")
 		}

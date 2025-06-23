@@ -2,7 +2,6 @@ package firmware_binary
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
 	"strconv"
 
@@ -10,6 +9,7 @@ import (
 	"github.com/metalsoft-io/metalcloud-cli/pkg/formatter"
 	"github.com/metalsoft-io/metalcloud-cli/pkg/logger"
 	"github.com/metalsoft-io/metalcloud-cli/pkg/response_inspector"
+	"github.com/metalsoft-io/metalcloud-cli/pkg/utils"
 	sdk "github.com/metalsoft-io/metalcloud-sdk-go"
 )
 
@@ -98,7 +98,7 @@ func FirmwareBinaryCreate(ctx context.Context, config []byte) error {
 	logger.Get().Info().Msgf("Creating firmware binary")
 
 	var firmwareBinaryConfig sdk.CreateFirmwareBinary
-	err := json.Unmarshal(config, &firmwareBinaryConfig)
+	err := utils.UnmarshalContent(config, &firmwareBinaryConfig)
 	if err != nil {
 		return err
 	}

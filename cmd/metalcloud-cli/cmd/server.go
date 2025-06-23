@@ -4,17 +4,25 @@ import (
 	"github.com/metalsoft-io/metalcloud-cli/cmd/metalcloud-cli/system"
 	"github.com/metalsoft-io/metalcloud-cli/internal/server"
 	"github.com/metalsoft-io/metalcloud-cli/pkg/utils"
+	sdk "github.com/metalsoft-io/metalcloud-sdk-go"
 	"github.com/spf13/cobra"
 )
 
 // Server commands
 var (
 	serverFlags = struct {
-		showCredentials bool
-		filterStatus    []string
-		filterType      []string
-		configSource    string
-		powerAction     string
+		showCredentials   bool
+		filterStatus      []string
+		filterType        []string
+		configSource      string
+		powerAction       string
+		siteId            int
+		managementAddress string
+		username          string
+		password          string
+		serialNumber      string
+		model             string
+		vendor            string
 	}{}
 
 	serverCmd = &cobra.Command{
@@ -52,18 +60,50 @@ var (
 	}
 
 	serverRegisterCmd = &cobra.Command{
-		Use:          "register",
-		Aliases:      []string{"new"},
-		Short:        "Register a server.",
+		Use:     "register",
+		Aliases: []string{"new"},
+		Short:   "Register a new server in MetalSoft.",
+		Long: `Register a new server in MetalSoft.
+
+You can provide the server configuration either via command-line flags or by specifying a configuration source using the --config-source flag. 
+The configuration source can be a path to a JSON file or 'pipe' to read from standard input.
+
+If --config-source is not provided, you must specify at least --site-id and --management-address, along with any other relevant server details such as --username, --password, --serial-number, --model, and --vendor.
+
+Examples:
+  metalcloud-cli server register --site-id 1 --management-address 10.0.0.1 --username admin --password secret
+  metalcloud-cli server register --config-source ./server.json
+  cat server.json | metalcloud-cli server register --config-source pipe
+`,
 		SilenceUsage: true,
 		Annotations:  map[string]string{system.REQUIRED_PERMISSION: system.PERMISSION_SERVERS_WRITE},
 		RunE: func(cmd *cobra.Command, args []string) error {
-			config, err := utils.ReadConfigFromPipeOrFile(serverFlags.configSource)
-			if err != nil {
-				return err
+			var serverConfig sdk.RegisterServer
+
+			// If config source is provided, use it
+			if serverFlags.configSource != "" {
+				config, err := utils.ReadConfigFromPipeOrFile(serverFlags.configSource)
+				if err != nil {
+					return err
+				}
+				err = utils.UnmarshalContent(config, &serverConfig)
+				if err != nil {
+					return err
+				}
+			} else {
+				// Otherwise build config from command line parameters
+				serverConfig = sdk.RegisterServer{
+					SiteId:            float32(serverFlags.siteId),
+					ManagementAddress: &serverFlags.managementAddress,
+					Username:          &serverFlags.username,
+					Password:          &serverFlags.password,
+					SerialNumber:      &serverFlags.serialNumber,
+					Model:             &serverFlags.model,
+					Vendor:            &serverFlags.vendor,
+				}
 			}
 
-			return server.ServerRegister(cmd.Context(), config)
+			return server.ServerRegister(cmd.Context(), serverConfig)
 		},
 	}
 
@@ -365,7 +405,15 @@ func init() {
 
 	serverCmd.AddCommand(serverRegisterCmd)
 	serverRegisterCmd.Flags().StringVar(&serverFlags.configSource, "config-source", "", "Source of the new server configuration. Can be 'pipe' or path to a JSON file.")
-	serverRegisterCmd.MarkFlagsOneRequired("config-source")
+	serverRegisterCmd.Flags().IntVar(&serverFlags.siteId, "site-id", 0, "Site ID")
+	serverRegisterCmd.Flags().StringVar(&serverFlags.managementAddress, "management-address", "", "Management address")
+	serverRegisterCmd.Flags().StringVar(&serverFlags.username, "username", "", "Username")
+	serverRegisterCmd.Flags().StringVar(&serverFlags.password, "password", "", "Password")
+	serverRegisterCmd.Flags().StringVar(&serverFlags.serialNumber, "serial-number", "", "Serial number")
+	serverRegisterCmd.Flags().StringVar(&serverFlags.model, "model", "", "Model")
+	serverRegisterCmd.Flags().StringVar(&serverFlags.vendor, "vendor", "", "Vendor")
+	serverRegisterCmd.MarkFlagsMutuallyExclusive("config-source", "site-id")
+	serverRegisterCmd.MarkFlagsRequiredTogether("site-id", "management-address")
 
 	serverCmd.AddCommand(serverReRegisterCmd)
 

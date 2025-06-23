@@ -2,7 +2,6 @@ package drive
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
 	"strconv"
 
@@ -148,7 +147,7 @@ func DriveCreate(ctx context.Context, infrastructureIdOrLabel string, config []b
 	}
 
 	var driveConfig sdk.CreateSharedDrive
-	err = json.Unmarshal(config, &driveConfig)
+	err = utils.UnmarshalContent(config, &driveConfig)
 	if err != nil {
 		return err
 	}
@@ -209,7 +208,7 @@ func DriveUpdateConfig(ctx context.Context, infrastructureIdOrLabel string, driv
 	}
 
 	var driveConfigUpdate sdk.UpdateSharedDrive
-	err = json.Unmarshal(config, &driveConfigUpdate)
+	err = utils.UnmarshalContent(config, &driveConfigUpdate)
 	if err != nil {
 		return err
 	}
@@ -243,7 +242,7 @@ func DriveUpdateMeta(ctx context.Context, infrastructureIdOrLabel string, driveI
 	}
 
 	var driveMetaUpdate sdk.UpdateSharedDriveMeta
-	err = json.Unmarshal(config, &driveMetaUpdate)
+	err = utils.UnmarshalContent(config, &driveMetaUpdate)
 	if err != nil {
 		return err
 	}
@@ -302,7 +301,7 @@ func DriveUpdateHosts(ctx context.Context, infrastructureIdOrLabel string, drive
 	}
 
 	var hostsUpdate sdk.SharedDriveHostsModifyBulk
-	err = json.Unmarshal(config, &hostsUpdate)
+	err = utils.UnmarshalContent(config, &hostsUpdate)
 	if err != nil {
 		return err
 	}

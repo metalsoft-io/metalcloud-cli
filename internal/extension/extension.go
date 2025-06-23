@@ -2,7 +2,6 @@ package extension
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
 	"strconv"
 
@@ -85,7 +84,7 @@ func ExtensionCreate(ctx context.Context, name string, kind string, description 
 	logger.Get().Info().Msgf("Create extension '%s'", name)
 
 	var definition sdk.ExtensionDefinition
-	err := json.Unmarshal(config, &definition)
+	err := utils.UnmarshalContent(config, &definition)
 	if err != nil {
 		return fmt.Errorf("invalid definition JSON: %v", err)
 	}
@@ -122,9 +121,9 @@ func ExtensionUpdate(ctx context.Context, extensionId string, name string, descr
 
 	var definition sdk.ExtensionDefinition
 	if len(config) > 0 {
-		err := json.Unmarshal(config, &definition)
+		err = utils.UnmarshalContent(config, &definition)
 		if err != nil {
-			return fmt.Errorf("invalid definition JSON: %v", err)
+			return err
 		}
 	} else {
 		definition = extension.Definition
