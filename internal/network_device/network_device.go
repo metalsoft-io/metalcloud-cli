@@ -162,7 +162,7 @@ func NetworkDeviceUpdate(ctx context.Context, networkDeviceId string, config []b
 func NetworkDeviceDelete(ctx context.Context, networkDeviceId string) error {
 	logger.Get().Info().Msgf("Deleting network device %s", networkDeviceId)
 
-	networkDeviceIdNumeric, err := getNetworkDeviceId(networkDeviceId)
+	networkDeviceIdNumeric, err := GetNetworkDeviceId(networkDeviceId)
 	if err != nil {
 		return err
 	}
@@ -205,7 +205,7 @@ func NetworkDeviceArchive(ctx context.Context, networkDeviceId string) error {
 func NetworkDeviceDiscover(ctx context.Context, networkDeviceId string) error {
 	logger.Get().Info().Msgf("Discovering network device %s", networkDeviceId)
 
-	networkDeviceIdNumeric, err := getNetworkDeviceId(networkDeviceId)
+	networkDeviceIdNumeric, err := GetNetworkDeviceId(networkDeviceId)
 	if err != nil {
 		return err
 	}
@@ -230,7 +230,7 @@ func NetworkDeviceDiscover(ctx context.Context, networkDeviceId string) error {
 func NetworkDeviceGetCredentials(ctx context.Context, networkDeviceId string) error {
 	logger.Get().Info().Msgf("Getting network device %s credentials", networkDeviceId)
 
-	networkDeviceIdNumeric, err := getNetworkDeviceId(networkDeviceId)
+	networkDeviceIdNumeric, err := GetNetworkDeviceId(networkDeviceId)
 	if err != nil {
 		return err
 	}
@@ -256,21 +256,17 @@ func NetworkDeviceGetCredentials(ctx context.Context, networkDeviceId string) er
 func NetworkDeviceGetPorts(ctx context.Context, networkDeviceId string) error {
 	logger.Get().Info().Msgf("Getting network device %s ports", networkDeviceId)
 
-	networkDeviceIdNumeric, err := getNetworkDeviceId(networkDeviceId)
+	networkDeviceIdNumeric, err := GetNetworkDeviceId(networkDeviceId)
 	if err != nil {
 		return err
 	}
 
-	client := api.GetApiClient(ctx)
-
-	portsInfo, httpRes, err := client.NetworkDeviceAPI.
-		GetNetworkDevicePorts(ctx, networkDeviceIdNumeric).
-		Execute()
-	if err := response_inspector.InspectResponse(httpRes, err); err != nil {
+	portsInfo, err := GetNetworkDevicePorts(ctx, networkDeviceIdNumeric)
+	if err != nil {
 		return err
 	}
 
-	return formatter.PrintResult(portsInfo.Data, &formatter.PrintConfig{
+	return formatter.PrintResult(portsInfo, &formatter.PrintConfig{
 		FieldsConfig: map[string]formatter.RecordFieldConfig{
 			"PortName": {
 				Title: "Name",
@@ -307,7 +303,7 @@ func NetworkDeviceGetPorts(ctx context.Context, networkDeviceId string) error {
 func NetworkDeviceSetPortStatus(ctx context.Context, networkDeviceId string, portId string, action string) error {
 	logger.Get().Info().Msgf("Setting port status for network device %s port %s to %s", networkDeviceId, portId, action)
 
-	networkDeviceIdNumeric, err := getNetworkDeviceId(networkDeviceId)
+	networkDeviceIdNumeric, err := GetNetworkDeviceId(networkDeviceId)
 	if err != nil {
 		return err
 	}
@@ -338,7 +334,7 @@ func NetworkDeviceSetPortStatus(ctx context.Context, networkDeviceId string, por
 func NetworkDeviceReset(ctx context.Context, networkDeviceId string) error {
 	logger.Get().Info().Msgf("Resetting network device %s", networkDeviceId)
 
-	networkDeviceIdNumeric, err := getNetworkDeviceId(networkDeviceId)
+	networkDeviceIdNumeric, err := GetNetworkDeviceId(networkDeviceId)
 	if err != nil {
 		return err
 	}
@@ -359,7 +355,7 @@ func NetworkDeviceReset(ctx context.Context, networkDeviceId string) error {
 func NetworkDeviceChangeStatus(ctx context.Context, networkDeviceId string, status string) error {
 	logger.Get().Info().Msgf("Changing network device %s status to %s", networkDeviceId, status)
 
-	networkDeviceIdNumeric, err := getNetworkDeviceId(networkDeviceId)
+	networkDeviceIdNumeric, err := GetNetworkDeviceId(networkDeviceId)
 	if err != nil {
 		return err
 	}
@@ -404,7 +400,7 @@ func NetworkDeviceChangeStatus(ctx context.Context, networkDeviceId string, stat
 func NetworkDeviceEnableSyslog(ctx context.Context, networkDeviceId string) error {
 	logger.Get().Info().Msgf("Enabling syslog for network device %s", networkDeviceId)
 
-	networkDeviceIdNumeric, err := getNetworkDeviceId(networkDeviceId)
+	networkDeviceIdNumeric, err := GetNetworkDeviceId(networkDeviceId)
 	if err != nil {
 		return err
 	}
@@ -443,7 +439,7 @@ func NetworkDeviceGetDefaults(ctx context.Context, siteId string) error {
 }
 
 func GetNetworkDeviceById(ctx context.Context, networkDeviceId string) (*sdk.NetworkDevice, error) {
-	networkDeviceIdNumeric, err := getNetworkDeviceId(networkDeviceId)
+	networkDeviceIdNumeric, err := GetNetworkDeviceId(networkDeviceId)
 	if err != nil {
 		return nil, err
 	}
@@ -458,7 +454,36 @@ func GetNetworkDeviceById(ctx context.Context, networkDeviceId string) (*sdk.Net
 	return networkDevice, nil
 }
 
-func getNetworkDeviceId(networkDeviceId string) (float32, error) {
+func GetNetworkDeviceByName(ctx context.Context, siteName string, networkDeviceName string) (*sdk.NetworkDevice, error) {
+	client := api.GetApiClient(ctx)
+
+	request := client.NetworkDeviceAPI.GetNetworkDevices(ctx)
+
+	request = request.FilterDatacenterName([]string{siteName})
+	request = request.FilterIdentifierString([]string{networkDeviceName})
+
+	networkDevice, httpRes, err := request.Execute()
+	if err := response_inspector.InspectResponse(httpRes, err); err != nil {
+		return nil, err
+	}
+
+	return &networkDevice.Data[0], nil
+}
+
+func GetNetworkDevicePorts(ctx context.Context, networkDeviceId float32) ([]sdk.NetworkDeviceInterfaceDto, error) {
+	client := api.GetApiClient(ctx)
+
+	portsInfo, httpRes, err := client.NetworkDeviceAPI.
+		GetNetworkDevicePorts(ctx, networkDeviceId).
+		Execute()
+	if err := response_inspector.InspectResponse(httpRes, err); err != nil {
+		return nil, err
+	}
+
+	return portsInfo.Data, nil
+}
+
+func GetNetworkDeviceId(networkDeviceId string) (float32, error) {
 	networkDeviceIdNumeric, err := strconv.ParseFloat(networkDeviceId, 32)
 	if err != nil {
 		err := fmt.Errorf("invalid network device ID: '%s'", networkDeviceId)
@@ -470,7 +495,7 @@ func getNetworkDeviceId(networkDeviceId string) (float32, error) {
 }
 
 func getNetworkDeviceIdAndRevision(ctx context.Context, networkDeviceId string) (float32, string, error) {
-	networkDeviceIdNumeric, err := getNetworkDeviceId(networkDeviceId)
+	networkDeviceIdNumeric, err := GetNetworkDeviceId(networkDeviceId)
 	if err != nil {
 		return 0, "", err
 	}
