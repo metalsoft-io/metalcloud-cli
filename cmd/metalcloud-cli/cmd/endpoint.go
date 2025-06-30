@@ -52,9 +52,22 @@ var (
 	}
 
 	endpointCreateCmd = &cobra.Command{
-		Use:          "create",
-		Aliases:      []string{"add", "new"},
-		Short:        "Create a new endpoint.",
+		Use:     "create",
+		Aliases: []string{"add", "new"},
+		Short:   "Create a new endpoint.",
+		Long: `Create a new endpoint in MetalSoft.
+
+You can specify the endpoint configuration either by providing individual flags (--site-id, --name, --label, --external-id) 
+or by supplying a configuration file or piped JSON/YAML using --config-source. 
+When using --config-source, the file or piped content must contain a valid endpoint configuration in JSON or YAML format.
+
+Examples:
+  metalcloud-cli endpoint create --site-id 1 --name "api-endpoint" --label "API Endpoint"
+  metalcloud-cli endpoint create --config-source ./endpoint.json
+  cat endpoint.yaml | metalcloud-cli endpoint create --config-source pipe
+
+Note: --site-id, --name, and --label are required unless --config-source is used. 
+Flags are mutually exclusive with --config-source.`,
 		SilenceUsage: true,
 		Annotations:  map[string]string{system.REQUIRED_PERMISSION: system.PERMISSION_SERVERS_WRITE},
 		RunE: func(cmd *cobra.Command, args []string) error {
@@ -86,9 +99,22 @@ var (
 	}
 
 	endpointUpdateCmd = &cobra.Command{
-		Use:          "update endpoint_id",
-		Aliases:      []string{"edit"},
-		Short:        "Update an existing endpoint.",
+		Use:     "update endpoint_id",
+		Aliases: []string{"edit"},
+		Short:   "Update an existing endpoint.",
+		Long: `Update an existing endpoint in MetalSoft.
+
+You can update the endpoint by specifying new values for its name, label, or external ID using flags, 
+or by providing a configuration file or piped JSON/YAML with --config-source. 
+When using --config-source, the file or piped content must contain the fields to update in JSON or YAML format.
+
+Examples:
+  metalcloud-cli endpoint update 123 --name "new-name"
+  metalcloud-cli endpoint update 123 --config-source ./update.json
+  cat update.yaml | metalcloud-cli endpoint update 123 --config-source pipe
+
+Note: Flags are mutually exclusive with --config-source. 
+Only the fields provided will be updated.`,
 		SilenceUsage: true,
 		Annotations:  map[string]string{system.REQUIRED_PERMISSION: system.PERMISSION_SERVERS_WRITE},
 		Args:         cobra.ExactArgs(1),
@@ -131,6 +157,18 @@ var (
 			return endpoint.EndpointDelete(cmd.Context(), args[0])
 		},
 	}
+
+	endpointInterfaceListCmd = &cobra.Command{
+		Use:          "interfaces endpoint_id",
+		Aliases:      []string{"ifaces", "ifs"},
+		Short:        "List interfaces of an endpoint.",
+		SilenceUsage: true,
+		Annotations:  map[string]string{system.REQUIRED_PERMISSION: system.PERMISSION_SERVERS_READ},
+		Args:         cobra.ExactArgs(1),
+		RunE: func(cmd *cobra.Command, args []string) error {
+			return endpoint.EndpointInterfaceList(cmd.Context(), args[0])
+		},
+	}
 )
 
 func init() {
@@ -164,4 +202,6 @@ func init() {
 	endpointUpdateCmd.MarkFlagsMutuallyExclusive("config-source", "external-id")
 
 	endpointCmd.AddCommand(endpointDeleteCmd)
+
+	endpointCmd.AddCommand(endpointInterfaceListCmd)
 }

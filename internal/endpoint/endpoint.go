@@ -13,6 +13,15 @@ import (
 	sdk "github.com/metalsoft-io/metalcloud-sdk-go"
 )
 
+type EndpointInterfaceDetails struct {
+	Id                         *float32
+	MacAddress                 *string
+	NetworkDeviceId            *float32
+	NetworkDeviceInterfaceId   *float32
+	NetworkDeviceName          *string
+	NetworkDeviceInterfaceName *string
+}
+
 var endpointPrintConfig = formatter.PrintConfig{
 	FieldsConfig: map[string]formatter.RecordFieldConfig{
 		"Id": {
@@ -34,6 +43,27 @@ var endpointPrintConfig = formatter.PrintConfig{
 		"ExternalId": {
 			Title: "External Id",
 			Order: 5,
+		},
+	},
+}
+
+var endpointInterfacePrintConfig = formatter.PrintConfig{
+	FieldsConfig: map[string]formatter.RecordFieldConfig{
+		"Id": {
+			Title: "#",
+			Order: 1,
+		},
+		"MacAddress": {
+			Title: "MAC Address",
+			Order: 2,
+		},
+		"NetworkDeviceName": {
+			Title: "Switch",
+			Order: 3,
+		},
+		"NetworkDeviceInterfaceName": {
+			Title: "Switch Port",
+			Order: 4,
 		},
 	},
 }
@@ -87,6 +117,10 @@ func EndpointCreate(ctx context.Context, endpointConfig sdk.CreateEndpoint) erro
 	endpointInfo, httpRes, err := client.EndpointAPI.CreateEndpoint(ctx).CreateEndpoint(endpointConfig).Execute()
 	if err := response_inspector.InspectResponse(httpRes, err); err != nil {
 		return err
+	}
+
+	if endpointConfig.EndpointInterfaces != nil && len(endpointConfig.EndpointInterfaces) > 0 {
+
 	}
 
 	return formatter.PrintResult(endpointInfo, &endpointPrintConfig)
@@ -145,6 +179,37 @@ func EndpointDelete(ctx context.Context, endpointId string) error {
 	logger.Get().Info().Msgf("Endpoint '%s' deleted successfully", endpointId)
 
 	return nil
+}
+
+func EndpointInterfaceList(ctx context.Context, endpointId string) error {
+	logger.Get().Info().Msgf("Listing interfaces for endpoint '%s'", endpointId)
+
+	endpointIdNumeric, err := GetEndpointId(endpointId)
+	if err != nil {
+		return err
+	}
+
+	client := api.GetApiClient(ctx)
+
+	endpointInterfaces, httpRes, err := client.EndpointAPI.GetEndpointInterfaces(ctx, endpointIdNumeric).Execute()
+	if err := response_inspector.InspectResponse(httpRes, err); err != nil {
+		return err
+	}
+
+	endpointInterfacesList := make([]EndpointInterfaceDetails, 0, len(endpointInterfaces.Data))
+	for _, iface := range endpointInterfaces.Data {
+		endpointInterface := EndpointInterfaceDetails{
+			Id:                         &iface.Id,
+			MacAddress:                 iface.MacAddress,
+			NetworkDeviceId:            &iface.NetworkDeviceId,
+			NetworkDeviceInterfaceId:   &iface.NetworkDeviceInterfaceId,
+			NetworkDeviceInterfaceName: &iface.NetworkDeviceInterfaceName,
+		}
+
+		endpointInterfacesList = append(endpointInterfacesList, endpointInterface)
+	}
+
+	return formatter.PrintResult(endpointInterfacesList, &endpointInterfacePrintConfig)
 }
 
 func GetEndpointId(endpointId string) (int32, error) {
