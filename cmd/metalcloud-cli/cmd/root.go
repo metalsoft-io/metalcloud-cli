@@ -85,14 +85,22 @@ func rootPersistentPreRun(cmd *cobra.Command, args []string) error {
 		viper.GetBool(system.ConfigInsecure),
 	)
 
-	// Validate the version of the CLI
-	err = system.ValidateVersion(ctx)
-	if err != nil {
-		return err
+	// Skip version validation for version command since it may fail with develop versions
+	if cmd.Name() != "version" {
+		// Validate the version of the CLI
+		err = system.ValidateVersion(ctx)
+		if err != nil {
+			return err
+		}
 	}
 
 	userId, userPermissions, err := system.GetUserPermissions(ctx)
 	if err != nil {
+		// For version command, don't fail if we can't get permissions
+		if cmd.Name() == "version" {
+			cmd.SetContext(ctx)
+			return nil
+		}
 		return err
 	}
 
