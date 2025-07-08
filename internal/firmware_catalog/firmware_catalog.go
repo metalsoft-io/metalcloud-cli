@@ -116,10 +116,14 @@ func FirmwareCatalogCreate(ctx context.Context, firmwareCatalogOptions FirmwareC
 		return err
 	}
 
+	logger.Get().Debug().Msgf("Processing firmware catalog")
+
 	err = vendorCatalog.ProcessVendorCatalog(ctx)
 	if err != nil {
 		return err
 	}
+
+	logger.Get().Debug().Msgf("Creating MetalSoft firmware catalog")
 
 	err = vendorCatalog.CreateMetalsoftCatalog(ctx)
 	if err != nil {

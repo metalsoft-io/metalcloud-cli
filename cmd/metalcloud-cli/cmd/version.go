@@ -27,6 +27,9 @@ var (
 			fmt.Printf("Maximum Metalsoft Version: %s\n", maxVersion)
 
 			fmt.Printf("Metalsoft Endpoint: %s\n", viper.GetString(system.ConfigEndpoint))
+			if viper.GetBool(system.ConfigInsecure) {
+				fmt.Printf("Insecure Mode: %t\n", viper.GetBool(system.ConfigInsecure))
+			}
 
 			fmt.Printf("Log File: %s\n", viper.GetString(logger.ConfigLogFile))
 			fmt.Printf("Log Verbosity: %s\n", viper.GetString(logger.ConfigVerbosity))
@@ -53,9 +56,6 @@ var (
 			// Environment variables
 			fmt.Printf("\nEnvironment Variables:\n")
 			envVars := []string{
-				"METALCLOUD_INSECURE_SKIP_VERIFY",
-				"METALCLOUD_ENDPOINT",
-				"METALCLOUD_USER_EMAIL",
 				"HTTP_PROXY",
 				"HTTPS_PROXY",
 				"NO_PROXY",
