@@ -44,6 +44,17 @@ var (
 		},
 	}
 
+	osTemplateExampleCreateCmd = &cobra.Command{
+		Use:          "example-create",
+		Aliases:      []string{""},
+		Short:        "Example of input to the OS template create command.",
+		SilenceUsage: true,
+		Annotations:  map[string]string{system.REQUIRED_PERMISSION: system.PERMISSION_TEMPLATES_WRITE},
+		RunE: func(cmd *cobra.Command, args []string) error {
+			return os_template.OsTemplateExampleCreate(cmd.Context())
+		},
+	}
+
 	osTemplateCreateCmd = &cobra.Command{
 		Use:          "create",
 		Aliases:      []string{"new"},
@@ -131,6 +142,8 @@ func init() {
 
 	osTemplateCmd.AddCommand(osTemplateListCmd)
 	osTemplateCmd.AddCommand(osTemplateGetCmd)
+
+	osTemplateCmd.AddCommand(osTemplateExampleCreateCmd)
 
 	osTemplateCmd.AddCommand(osTemplateCreateCmd)
 	osTemplateCreateCmd.Flags().StringVar(&osTemplateFlags.configSource, "config-source", "", "Source of the new OS template configuration. Can be 'pipe' or path to a JSON file.")

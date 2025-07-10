@@ -98,6 +98,84 @@ type OsTemplateCreateOptions struct {
 	TemplateAssets []sdk.TemplateAssetCreate `json:"templateAssets"`
 }
 
+func OsTemplateExampleCreate(ctx context.Context) error {
+	osTemplateCreateOptions := OsTemplateCreateOptions{
+		Template: sdk.OSTemplateCreate{
+			Name:        "OS Template Name",
+			Label:       sdk.PtrString("os-template-label - optional"),
+			Description: sdk.PtrString("OS template description. - optional"),
+			Device: sdk.OSTemplateDevice{
+				Type:         "server",
+				BootMode:     "uefi",
+				Architecture: "x86_64",
+			},
+			Install: sdk.OSTemplateInstall{
+				Method:      "oob",
+				DriveType:   "local_drive",
+				ReadyMethod: "wait_for_power_off",
+				OnieStrings: []string{
+					"tempor officia elit proident",
+					"magna v",
+				},
+			},
+			ImageBuild: sdk.OSTemplateImageBuild{
+				Required: true,
+				Provider: sdk.PtrString("xorriso - optional"),
+			},
+			Os: sdk.OSTemplateOs{
+				Name:    "Ubuntu",
+				Version: "22.04",
+				Credential: sdk.OSTemplateOsCredential{
+					Username:     "root",
+					PasswordType: "plain",
+					Password:     sdk.PtrString("rqi|password - optional"),
+				},
+				SshPort: sdk.PtrInt32(22),
+			},
+			Visibility: sdk.PtrString("public"),
+			Tags: []string{
+				"tag1",
+				"tag2",
+			},
+		},
+		TemplateAssets: []sdk.TemplateAssetCreate{
+			{
+				TemplateId: 0, // This will be set after the template is created
+				Usage:      "build_source_image",
+				File: sdk.TemplateAssetFile{
+					Name:             "name.iso",
+					MimeType:         "application/octet-stream",
+					TemplatingEngine: false,
+					Url:              sdk.PtrString("http://my.repo.com/test.iso"),
+					Path:             "/name.iso",
+				},
+				Tags: []string{
+					"tag1",
+					"tag2",
+				},
+			},
+			{
+				TemplateId: 0, // This will be set after the template is created
+				Usage:      "build_component",
+				File: sdk.TemplateAssetFile{
+					Name:             "name.xml",
+					MimeType:         "text/plain",
+					Checksum:         sdk.PtrString("checksum - optional"),
+					ContentBase64:    sdk.PtrString("contentBase64 - optional"),
+					TemplatingEngine: true,
+					Path:             "/name.xml",
+				},
+				Tags: []string{
+					"tag1",
+					"tag2",
+				},
+			},
+		},
+	}
+
+	return formatter.PrintResult(osTemplateCreateOptions, nil)
+}
+
 func OsTemplateCreate(ctx context.Context, osTemplateCreateOptions OsTemplateCreateOptions) error {
 	logger.Get().Info().Msgf("Creating OS template")
 
