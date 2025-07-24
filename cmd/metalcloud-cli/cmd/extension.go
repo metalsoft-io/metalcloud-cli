@@ -13,6 +13,8 @@ var (
 		filterLabel      []string
 		filterName       []string
 		filterStatus     []string
+		filterKind       []string
+		filterPublic     string
 	}{}
 
 	extensionCmd = &cobra.Command{
@@ -34,6 +36,8 @@ var (
 				extensionFlags.filterLabel,
 				extensionFlags.filterName,
 				extensionFlags.filterStatus,
+				extensionFlags.filterKind,
+				extensionFlags.filterPublic,
 			)
 		},
 	}
@@ -127,7 +131,9 @@ func init() {
 	extensionCmd.AddCommand(extensionListCmd)
 	extensionListCmd.Flags().StringSliceVar(&extensionFlags.filterLabel, "filter-label", nil, "Filter extensions by label")
 	extensionListCmd.Flags().StringSliceVar(&extensionFlags.filterName, "filter-name", nil, "Filter extensions by name")
-	extensionListCmd.Flags().StringSliceVar(&extensionFlags.filterStatus, "filter-status", nil, "Filter extensions by status (DRAFT, PUBLISHED, ARCHIVED)")
+	extensionListCmd.Flags().StringSliceVar(&extensionFlags.filterStatus, "filter-status", nil, "Filter extensions by status (draft, active, archived)")
+	extensionListCmd.Flags().StringSliceVar(&extensionFlags.filterKind, "filter-kind", nil, "Filter extensions by kind (application, workflow, action)")
+	extensionListCmd.Flags().StringVar(&extensionFlags.filterPublic, "filter-public", "", "Filter extensions by public status (true/false)")
 
 	extensionCmd.AddCommand(extensionGetCmd)
 

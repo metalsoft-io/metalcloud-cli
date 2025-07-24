@@ -12,6 +12,9 @@ var (
 		configSource string
 		deviceType   string
 		visibility   string
+		repoUrl      string
+		repoUsername string
+		repoPassword string
 	}{}
 
 	osTemplateCmd = &cobra.Command{
@@ -135,6 +138,29 @@ var (
 			return os_template.OsTemplateGetAssets(cmd.Context(), args[0])
 		},
 	}
+
+	osTemplateListRepoCmd = &cobra.Command{
+		Use:          "list-repo",
+		Aliases:      []string{"ls-repo"},
+		Short:        "List available OS templates from the repository.",
+		SilenceUsage: true,
+		Annotations:  map[string]string{system.REQUIRED_PERMISSION: system.PERMISSION_TEMPLATES_READ},
+		RunE: func(cmd *cobra.Command, args []string) error {
+			return os_template.OsTemplateListRepo(cmd.Context(), osTemplateFlags.repoUrl, osTemplateFlags.repoUsername, osTemplateFlags.repoPassword)
+		},
+	}
+
+	osTemplateCreateFromRepoCmd = &cobra.Command{
+		Use:          "create-from-repo",
+		Aliases:      []string{"add-from-repo", "clone-from-repo"},
+		Short:        "Creates OS templates from the specified repository OS template.",
+		SilenceUsage: true,
+		Annotations:  map[string]string{system.REQUIRED_PERMISSION: system.PERMISSION_TEMPLATES_WRITE},
+		Args:         cobra.ExactArgs(1),
+		RunE: func(cmd *cobra.Command, args []string) error {
+			return os_template.OsTemplateCreateFromRepo(cmd.Context(), args[0], osTemplateFlags.repoUrl, osTemplateFlags.repoUsername, osTemplateFlags.repoPassword)
+		},
+	}
 )
 
 func init() {
@@ -156,4 +182,17 @@ func init() {
 	osTemplateCmd.AddCommand(osTemplateDeleteCmd)
 	osTemplateCmd.AddCommand(osTemplateGetCredentialsCmd)
 	osTemplateCmd.AddCommand(osTemplateGetAssetsCmd)
+
+	osTemplateCmd.AddCommand(osTemplateListRepoCmd)
+	osTemplateListRepoCmd.Flags().StringVar(&osTemplateFlags.repoUrl, "repo-url", "", "Private repo to use.")
+	osTemplateListRepoCmd.Flags().StringVar(&osTemplateFlags.repoUsername, "repo-username", "", "Private repo username.")
+	osTemplateListRepoCmd.Flags().StringVar(&osTemplateFlags.repoPassword, "repo-password", "", "Private repo password.")
+	osTemplateListRepoCmd.MarkFlagsRequiredTogether("repo-username", "repo-password")
+
+	osTemplateCmd.AddCommand(osTemplateCreateFromRepoCmd)
+	osTemplateCreateFromRepoCmd.Flags().StringVar(&osTemplateFlags.configSource, "template-path", "", "OS template path in the repo.")
+	osTemplateCreateFromRepoCmd.Flags().StringVar(&osTemplateFlags.repoUrl, "repo-url", "", "Private repo to use.")
+	osTemplateCreateFromRepoCmd.Flags().StringVar(&osTemplateFlags.repoUsername, "repo-username", "", "Private repo username.")
+	osTemplateCreateFromRepoCmd.Flags().StringVar(&osTemplateFlags.repoPassword, "repo-password", "", "Private repo password.")
+	osTemplateCreateFromRepoCmd.MarkFlagsRequiredTogether("repo-username", "repo-password")
 }

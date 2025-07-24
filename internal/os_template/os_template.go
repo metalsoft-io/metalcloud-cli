@@ -10,6 +10,7 @@ import (
 	"github.com/metalsoft-io/metalcloud-cli/pkg/logger"
 	"github.com/metalsoft-io/metalcloud-cli/pkg/response_inspector"
 	sdk "github.com/metalsoft-io/metalcloud-sdk-go"
+	"golang.org/x/exp/slices"
 )
 
 var osTemplatePrintConfig = formatter.PrintConfig{
@@ -366,6 +367,98 @@ func OsTemplateGetAssets(ctx context.Context, osTemplateId string) error {
 			},
 		},
 	})
+}
+
+func OsTemplateListRepo(ctx context.Context, repoUrl string, repoUsername string, repoPassword string) error {
+	logger.Get().Info().Msgf("Listing all OS templates from repository")
+
+	tree, err := cloneOsTemplateRepository(ctx, repoUrl, repoUsername, repoPassword)
+	if err != nil {
+		return fmt.Errorf("failed to clone OS template repository: %w", err)
+	}
+
+	// This map stores all files for a template and will be used to check if their information is correct
+	repoMap := make(map[string]RepositoryTemplateInfo)
+	for templatePrefix, repoTemplate := range getRepositoryTemplateAssets(tree) {
+		err = processTemplateContent(&repoTemplate)
+		if err != nil {
+			// Ignore OS template with errors - they may be using old format
+			logger.Get().Warn().Msgf("Ignoring template %s - error processing its content: %v", templatePrefix, err)
+			continue
+		}
+
+		repoMap[templatePrefix] = repoTemplate
+	}
+
+	// Convert the map to slice for printing
+	repoTemplatesSlice := make([]RepositoryTemplateInfo, 0, len(repoMap))
+	for _, repoTemplate := range repoMap {
+		repoTemplatesSlice = append(repoTemplatesSlice, repoTemplate)
+	}
+
+	// Order the templates by SourcePath
+	slices.SortStableFunc(repoTemplatesSlice, func(a, b RepositoryTemplateInfo) int {
+		if a.SourcePath < b.SourcePath {
+			return -1
+		} else if a.SourcePath > b.SourcePath {
+			return 1
+		}
+		return 0
+	})
+
+	return formatter.PrintResult(repoTemplatesSlice, &formatter.PrintConfig{
+		FieldsConfig: map[string]formatter.RecordFieldConfig{
+			"SourcePath": {
+				Title: "Path",
+				Order: 1,
+			},
+			"OsTemplate": {
+				Hidden: true,
+				InnerFields: map[string]formatter.RecordFieldConfig{
+					"Template": {
+						Hidden: true,
+						InnerFields: map[string]formatter.RecordFieldConfig{
+							"Name": {
+								Title: "Name",
+								Order: 2,
+							},
+							"Label": {
+								Title: "Label",
+								Order: 3,
+							},
+							"Visibility": {
+								Title: "Visibility",
+								Order: 4,
+							},
+						},
+					},
+				},
+			},
+		},
+	})
+}
+
+func OsTemplateCreateFromRepo(ctx context.Context, sourceTemplate string, repoUrl string, repoUsername string, repoPassword string) error {
+	logger.Get().Info().Msgf("Creating OS template %s from repository", sourceTemplate)
+
+	tree, err := cloneOsTemplateRepository(ctx, repoUrl, repoUsername, repoPassword)
+	if err != nil {
+		return fmt.Errorf("failed to clone OS template repository: %w", err)
+	}
+
+	repoMap := getRepositoryTemplateAssets(tree)
+
+	template, ok := repoMap[sourceTemplate]
+	if !ok {
+		return fmt.Errorf("template %s not found in repository", sourceTemplate)
+	}
+
+	err = processTemplateContent(&template)
+	if err != nil {
+		return fmt.Errorf("error processing template content: %w", err)
+	}
+
+	return OsTemplateCreate(ctx, template.OsTemplate)
 }
 
 func GetOsTemplateByIdOrLabel(ctx context.Context, osTemplateIdOrLabel string) (*sdk.OSTemplate, error) {

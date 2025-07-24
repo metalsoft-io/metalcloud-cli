@@ -101,18 +101,14 @@ var (
 func init() {
 	rootCmd.AddCommand(serverDefaultCredentialsCmd)
 
-	// Server Default Credentials commands
 	serverDefaultCredentialsCmd.AddCommand(serverDefaultCredentialsListCmd)
-	serverDefaultCredentialsCmd.AddCommand(serverDefaultCredentialsGetCmd)
-	serverDefaultCredentialsCmd.AddCommand(serverDefaultCredentialsGetCredentialsCmd)
-	serverDefaultCredentialsCmd.AddCommand(serverDefaultCredentialsCreateCmd)
-	serverDefaultCredentialsCmd.AddCommand(serverDefaultCredentialsDeleteCmd)
-
-	// Add flags for list command
 	serverDefaultCredentialsListCmd.Flags().IntVar(&serverDefaultCredentialsFlags.pageFlag, "page", 0, "Page number")
 	serverDefaultCredentialsListCmd.Flags().IntVar(&serverDefaultCredentialsFlags.limitFlag, "limit", 0, "Number of records per page (max 100)")
 
-	// Add flags for create command
+	serverDefaultCredentialsCmd.AddCommand(serverDefaultCredentialsGetCmd)
+	serverDefaultCredentialsCmd.AddCommand(serverDefaultCredentialsGetCredentialsCmd)
+
+	serverDefaultCredentialsCmd.AddCommand(serverDefaultCredentialsCreateCmd)
 	serverDefaultCredentialsCreateCmd.Flags().Float32Var(&serverDefaultCredentialsFlags.siteIdFlag, "site-id", 0, "Site ID")
 	serverDefaultCredentialsCreateCmd.Flags().StringVar(&serverDefaultCredentialsFlags.serverSerialNumberFlag, "serial", "", "Server serial number")
 	serverDefaultCredentialsCreateCmd.Flags().StringVar(&serverDefaultCredentialsFlags.serverMacAddressFlag, "mac", "", "Server MAC address")
@@ -123,11 +119,11 @@ func init() {
 	serverDefaultCredentialsCreateCmd.Flags().StringVar(&serverDefaultCredentialsFlags.rackPositionUpperFlag, "rack-position-upper", "", "Default rack position upper unit")
 	serverDefaultCredentialsCreateCmd.Flags().StringVar(&serverDefaultCredentialsFlags.inventoryIdFlag, "inventory-id", "", "Default inventory ID")
 	serverDefaultCredentialsCreateCmd.Flags().StringVar(&serverDefaultCredentialsFlags.uuidFlag, "uuid", "", "Default UUID")
-
-	// Required flags
 	serverDefaultCredentialsCreateCmd.MarkFlagRequired("site-id")
 	serverDefaultCredentialsCreateCmd.MarkFlagRequired("serial")
 	serverDefaultCredentialsCreateCmd.MarkFlagRequired("mac")
 	serverDefaultCredentialsCreateCmd.MarkFlagRequired("username")
 	serverDefaultCredentialsCreateCmd.MarkFlagRequired("password")
+
+	serverDefaultCredentialsCmd.AddCommand(serverDefaultCredentialsDeleteCmd)
 }
