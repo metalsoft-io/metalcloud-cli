@@ -426,9 +426,26 @@ func OsTemplateListRepo(ctx context.Context, repoUrl string, repoUsername string
 								Title: "Label",
 								Order: 3,
 							},
+							"Device": {
+								Hidden: true,
+								InnerFields: map[string]formatter.RecordFieldConfig{
+									"Type": {
+										Title: "Device Type",
+										Order: 4,
+									},
+									"Architecture": {
+										Title: "Architecture",
+										Order: 5,
+									},
+									"BootMode": {
+										Title: "Boot Mode",
+										Order: 6,
+									},
+								},
+							},
 							"Visibility": {
 								Title: "Visibility",
-								Order: 4,
+								Order: 7,
 							},
 						},
 					},
