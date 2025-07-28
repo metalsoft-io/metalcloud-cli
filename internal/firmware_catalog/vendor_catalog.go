@@ -168,7 +168,7 @@ func (vc *VendorCatalog) CreateMetalsoftCatalog(ctx context.Context) error {
 		}
 		defer sshClient.Close()
 
-		sftpClient, err := sftp.NewClient(sshClient)
+		sftpClient, err = sftp.NewClient(sshClient)
 		if err != nil {
 			return err
 		}
@@ -386,6 +386,8 @@ func (vc *VendorCatalog) uploadBinaryToRepository(sftpClient *sftp.Client, binar
 		return err
 	}
 	defer srcFile.Close()
+
+	logger.Get().Debug().Msgf("Uploading binary %s to remote path %s", binaryPath, remotePath)
 
 	err = sftpClient.MkdirAll(path.Dir(remotePath))
 	if err != nil {
