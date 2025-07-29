@@ -86,13 +86,8 @@ func ExtensionInstanceGet(ctx context.Context, extensionInstanceId string) error
 	return formatter.PrintResult(instance, &extensionInstancePrintConfig)
 }
 
-func ExtensionInstanceCreate(ctx context.Context, infrastructureIdOrLabel string, config []byte) error {
+func ExtensionInstanceCreate(ctx context.Context, infrastructureIdOrLabel string, payload sdk.CreateExtensionInstance) error {
 	logger.Get().Info().Msgf("Create new extension instance in infrastructure %s", infrastructureIdOrLabel)
-
-	var payload sdk.CreateExtensionInstance
-	if err := utils.UnmarshalContent(config, &payload); err != nil {
-		return fmt.Errorf("invalid config: %w", err)
-	}
 
 	infra, err := infrastructure.GetInfrastructureByIdOrLabel(ctx, infrastructureIdOrLabel)
 	if err != nil {

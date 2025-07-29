@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"slices"
 	"strconv"
+	"strings"
 
 	"github.com/metalsoft-io/metalcloud-cli/pkg/api"
 	"github.com/metalsoft-io/metalcloud-cli/pkg/formatter"
@@ -12,6 +13,7 @@ import (
 	"github.com/metalsoft-io/metalcloud-cli/pkg/response_inspector"
 	"github.com/metalsoft-io/metalcloud-cli/pkg/utils"
 	sdk "github.com/metalsoft-io/metalcloud-sdk-go"
+	"github.com/spf13/viper"
 )
 
 var extensionPrintConfig = formatter.PrintConfig{
@@ -114,7 +116,44 @@ func ExtensionGet(ctx context.Context, extensionId string) error {
 		return err
 	}
 
-	return formatter.PrintResult(*extension, &extensionPrintConfig)
+	if strings.ToLower(viper.GetString(formatter.ConfigFormat)) == "text" {
+		// If the output format is text, print the basic information followed by the inputs
+		err := formatter.PrintResult(*extension, &extensionPrintConfig)
+		if err != nil {
+			return err
+		}
+
+		if len(extension.Definition.Inputs) > 0 {
+			err := formatter.PrintResult(extension.Definition.Inputs, &formatter.PrintConfig{
+				FieldsConfig: map[string]formatter.RecordFieldConfig{
+					"Label": {
+						Title: "Input Label",
+						Order: 1,
+					},
+					"Name": {
+						Title: "Input Name",
+						Order: 2,
+					},
+					"InputType": {
+						Title: "Input Type",
+						Order: 3,
+					},
+					"DefaultValue": {
+						Title: "Default Value",
+						Order: 4,
+					},
+				},
+			})
+			if err != nil {
+				return fmt.Errorf("failed to print inputs: %w", err)
+			}
+		}
+
+		return nil
+	} else {
+		return formatter.PrintResult(*extension, &extensionPrintConfig)
+
+	}
 }
 
 func ExtensionCreate(ctx context.Context, name string, kind string, description string, config []byte) error {
