@@ -15,6 +15,9 @@ var (
 		repoUrl      string
 		repoUsername string
 		repoPassword string
+		name         string
+		label        string
+		sourceIso    string
 	}{}
 
 	osTemplateCmd = &cobra.Command{
@@ -151,14 +154,34 @@ var (
 	}
 
 	osTemplateCreateFromRepoCmd = &cobra.Command{
-		Use:          "create-from-repo",
-		Aliases:      []string{"add-from-repo", "clone-from-repo"},
-		Short:        "Creates OS templates from the specified repository OS template.",
+		Use:     "create-from-repo os_template_path",
+		Aliases: []string{"add-from-repo", "clone-from-repo"},
+		Short:   "Create a new OS template from a repository template.",
+		Long: `Create a new OS template by cloning an existing template from a repository.
+
+This command downloads and creates a local OS template based on a template
+available in a remote repository. You can optionally customize the name,
+label, and source ISO image during the creation process.
+
+The os_template_path argument specifies the path to the template within
+the repository. Use the 'list-repo' command to see available templates.
+
+For private repositories, provide authentication credentials using the
+--repo-username and --repo-password flags.`,
 		SilenceUsage: true,
 		Annotations:  map[string]string{system.REQUIRED_PERMISSION: system.PERMISSION_TEMPLATES_WRITE},
 		Args:         cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
-			return os_template.OsTemplateCreateFromRepo(cmd.Context(), args[0], osTemplateFlags.repoUrl, osTemplateFlags.repoUsername, osTemplateFlags.repoPassword)
+			return os_template.OsTemplateCreateFromRepo(
+				cmd.Context(),
+				args[0],
+				osTemplateFlags.repoUrl,
+				osTemplateFlags.repoUsername,
+				osTemplateFlags.repoPassword,
+				osTemplateFlags.name,
+				osTemplateFlags.label,
+				osTemplateFlags.sourceIso,
+			)
 		},
 	}
 )
@@ -190,9 +213,11 @@ func init() {
 	osTemplateListRepoCmd.MarkFlagsRequiredTogether("repo-username", "repo-password")
 
 	osTemplateCmd.AddCommand(osTemplateCreateFromRepoCmd)
-	osTemplateCreateFromRepoCmd.Flags().StringVar(&osTemplateFlags.configSource, "template-path", "", "OS template path in the repo.")
 	osTemplateCreateFromRepoCmd.Flags().StringVar(&osTemplateFlags.repoUrl, "repo-url", "", "Private repo to use.")
 	osTemplateCreateFromRepoCmd.Flags().StringVar(&osTemplateFlags.repoUsername, "repo-username", "", "Private repo username.")
 	osTemplateCreateFromRepoCmd.Flags().StringVar(&osTemplateFlags.repoPassword, "repo-password", "", "Private repo password.")
+	osTemplateCreateFromRepoCmd.Flags().StringVar(&osTemplateFlags.name, "name", "", "Name of the OS template.")
+	osTemplateCreateFromRepoCmd.Flags().StringVar(&osTemplateFlags.label, "label", "", "Label of the OS template.")
+	osTemplateCreateFromRepoCmd.Flags().StringVar(&osTemplateFlags.sourceIso, "source-iso", "", "The source ISO image path.")
 	osTemplateCreateFromRepoCmd.MarkFlagsRequiredTogether("repo-username", "repo-password")
 }

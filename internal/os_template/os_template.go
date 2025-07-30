@@ -455,7 +455,7 @@ func OsTemplateListRepo(ctx context.Context, repoUrl string, repoUsername string
 	})
 }
 
-func OsTemplateCreateFromRepo(ctx context.Context, sourceTemplate string, repoUrl string, repoUsername string, repoPassword string) error {
+func OsTemplateCreateFromRepo(ctx context.Context, sourceTemplate string, repoUrl string, repoUsername string, repoPassword string, name string, label string, sourceIso string) error {
 	logger.Get().Info().Msgf("Creating OS template %s from repository", sourceTemplate)
 
 	tree, err := cloneOsTemplateRepository(ctx, repoUrl, repoUsername, repoPassword)
@@ -473,6 +473,20 @@ func OsTemplateCreateFromRepo(ctx context.Context, sourceTemplate string, repoUr
 	err = processTemplateContent(&template)
 	if err != nil {
 		return fmt.Errorf("error processing template content: %w", err)
+	}
+
+	if name != "" {
+		template.OsTemplate.Template.Name = name
+	}
+	if label != "" {
+		template.OsTemplate.Template.Label = sdk.PtrString(label)
+	}
+	if sourceIso != "" {
+		for _, a := range template.OsTemplate.TemplateAssets {
+			if a.Usage == "build_source_image" {
+				a.File.Url = sdk.PtrString(sourceIso)
+			}
+		}
 	}
 
 	return OsTemplateCreate(ctx, template.OsTemplate)
