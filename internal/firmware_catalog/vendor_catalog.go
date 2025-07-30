@@ -18,6 +18,7 @@ import (
 	"strings"
 
 	"github.com/metalsoft-io/metalcloud-cli/pkg/api"
+	"github.com/metalsoft-io/metalcloud-cli/pkg/logger"
 	"github.com/metalsoft-io/metalcloud-cli/pkg/response_inspector"
 	sdk "github.com/metalsoft-io/metalcloud-sdk-go"
 	"github.com/pkg/sftp"
@@ -167,7 +168,7 @@ func (vc *VendorCatalog) CreateMetalsoftCatalog(ctx context.Context) error {
 		}
 		defer sshClient.Close()
 
-		sftpClient, err := sftp.NewClient(sshClient)
+		sftpClient, err = sftp.NewClient(sshClient)
 		if err != nil {
 			return err
 		}
@@ -190,6 +191,10 @@ func (vc *VendorCatalog) CreateMetalsoftCatalog(ctx context.Context) error {
 			localPath, err = vc.downloadBinary(binary)
 			if err != nil {
 				return err
+			}
+			if localPath == "" {
+				logger.Get().Warn().Msgf("Binary %s not found at vendor URL %s - skipping", *binary.ExternalId, binary.VendorDownloadUrl)
+				continue
 			}
 		} else {
 			if vc.VendorLocalBinariesPath != "" {
@@ -232,6 +237,13 @@ func (vc *VendorCatalog) CreateMetalsoftCatalog(ctx context.Context) error {
 			VendorReleaseTimestamp: binary.VendorReleaseTimestamp,
 			Vendor:                 binary.Vendor,
 		}
+
+		if len(binaryCreate.Name) > 255 {
+			binaryCreate.Name = binaryCreate.Name[:255]
+			logger.Get().Warn().Msgf("Binary name %s exceeded 255 characters, truncating to %s", binary.Name, binaryCreate.Name)
+		}
+
+		logger.Get().Debug().Msgf("Creating firmware binary for catalog %d: %v", int(firmwareCatalog.Id), binaryCreate)
 
 		newBinary, httpRes, err := client.FirmwareBinaryAPI.CreateFirmwareBinary(ctx).
 			CreateFirmwareBinary(binaryCreate).
@@ -299,9 +311,26 @@ func (vc *VendorCatalog) downloadBinary(binary *sdk.FirmwareBinary) (string, err
 	var err error
 	localPath := ""
 	if vc.VendorLocalBinariesPath != "" {
+		// Check if the local path exists
+		if _, err := os.Stat(vc.VendorLocalBinariesPath); os.IsNotExist(err) {
+			// Create the directory if it doesn't exist
+			logger.Get().Debug().Msgf("Vendor local binaries path %s does not exist, creating it", vc.VendorLocalBinariesPath)
+
+			err = os.MkdirAll(vc.VendorLocalBinariesPath, 0755)
+			if err != nil {
+				return "", fmt.Errorf("failed to create vendor local binaries path: %v", err)
+			}
+		}
+
 		localPath, err = filepath.Abs(filepath.Join(vc.VendorLocalBinariesPath, *binary.ExternalId))
 		if err != nil {
 			return "", fmt.Errorf("error getting download binary absolute path: %v", err)
+		}
+
+		// Ensure the directory exists
+		err = os.MkdirAll(filepath.Dir(localPath), 0755)
+		if err != nil {
+			return "", fmt.Errorf("failed to create directory for binary: %v", err)
 		}
 	} else {
 		// Create a temporary file to download the binary
@@ -315,6 +344,8 @@ func (vc *VendorCatalog) downloadBinary(binary *sdk.FirmwareBinary) (string, err
 		localPath = tempFile.Name()
 	}
 
+	logger.Get().Debug().Msgf("Downloading binary %s from %s to %s", *binary.ExternalId, binary.VendorDownloadUrl, localPath)
+
 	// Download binary from vendor
 	resp, err := http.Get(binary.VendorDownloadUrl)
 	if err != nil {
@@ -323,11 +354,15 @@ func (vc *VendorCatalog) downloadBinary(binary *sdk.FirmwareBinary) (string, err
 	defer resp.Body.Close()
 
 	if resp.StatusCode != http.StatusOK {
+		if resp.StatusCode == http.StatusNotFound {
+			return "", nil // If the binary is not found, we can skip it
+		}
+
 		return "", fmt.Errorf("received non-OK response when downloading binary: %d", resp.StatusCode)
 	}
 
 	// Create the file
-	outFile, err := os.OpenFile(localPath, os.O_WRONLY|os.O_CREATE|os.O_TRUNC, 0644)
+	outFile, err := os.OpenFile(localPath, os.O_RDWR|os.O_CREATE|os.O_TRUNC, 0644)
 	if err != nil {
 		return "", fmt.Errorf("failed to open output file: %v", err)
 	}
@@ -351,6 +386,8 @@ func (vc *VendorCatalog) uploadBinaryToRepository(sftpClient *sftp.Client, binar
 		return err
 	}
 	defer srcFile.Close()
+
+	logger.Get().Debug().Msgf("Uploading binary %s to remote path %s", binaryPath, remotePath)
 
 	err = sftpClient.MkdirAll(path.Dir(remotePath))
 	if err != nil {
@@ -541,12 +578,6 @@ func cleanXML(data []byte) []byte {
 	if strings.HasPrefix(content, "<?xml version=\"1.0\" encoding=\"utf-16\"?>") {
 		content = strings.Replace(content, "<?xml version=\"1.0\" encoding=\"utf-16\"?>",
 			"<?xml version=\"1.0\" encoding=\"utf-8\"?>", 1)
-	}
-
-	// Remove incomplete tags
-	if strings.Contains(content, "]]></Display>") {
-		re := regexp.MustCompile(`Model[^<]*]]></Display>`)
-		content = re.ReplaceAllString(content, "")
 	}
 
 	return []byte(content)

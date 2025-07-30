@@ -2,6 +2,7 @@ package cmd
 
 import (
 	"fmt"
+	"net/url"
 	"os"
 	"slices"
 	"strings"
@@ -77,6 +78,22 @@ func rootPersistentPreRun(cmd *cobra.Command, args []string) error {
 		return err
 	}
 
+	endpoint := viper.GetString(system.ConfigEndpoint)
+
+	if endpoint == "" {
+		return fmt.Errorf("API endpoint is required. Use --endpoint or set %s environment variable", system.ConfigEndpoint)
+	}
+
+	// Validate the endpoint is proper URL
+	u, err := url.Parse(endpoint)
+	if err != nil || u.Scheme == "" || u.Host == "" {
+		return fmt.Errorf("invalid API endpoint URL: %s", endpoint)
+	}
+
+	if viper.GetString(system.ConfigApiKey) == "" {
+		return fmt.Errorf("API key is required. Use --api-key or set %s environment variable", system.ConfigApiKey)
+	}
+
 	// Create API client
 	ctx := api.SetApiClient(cmd.Context(),
 		viper.GetString(system.ConfigEndpoint),
@@ -85,14 +102,22 @@ func rootPersistentPreRun(cmd *cobra.Command, args []string) error {
 		viper.GetBool(system.ConfigInsecure),
 	)
 
-	// Validate the version of the CLI
-	err = system.ValidateVersion(ctx)
-	if err != nil {
-		return err
+	// Skip version validation for version command since it may fail with develop versions
+	if cmd.Name() != "version" {
+		// Validate the version of the CLI
+		err = system.ValidateVersion(ctx)
+		if err != nil {
+			return err
+		}
 	}
 
 	userId, userPermissions, err := system.GetUserPermissions(ctx)
 	if err != nil {
+		// For version command, don't fail if we can't get permissions
+		if cmd.Name() == "version" {
+			cmd.SetContext(ctx)
+			return nil
+		}
 		return err
 	}
 

@@ -107,7 +107,6 @@ func NetworkDeviceConfigExample(ctx context.Context) error {
 	networkDeviceConfiguration.LoopbackAddress.Set(sdk.PtrString("127.0.0.1"))
 	networkDeviceConfiguration.VtepAddress.Set(nil)
 	networkDeviceConfiguration.Asn.Set(sdk.PtrFloat32(65000))
-	networkDeviceConfiguration.DefaultMtu.Set(sdk.PtrFloat32(1500))
 
 	return formatter.PrintResult(networkDeviceConfiguration, nil)
 }

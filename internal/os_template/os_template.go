@@ -10,6 +10,7 @@ import (
 	"github.com/metalsoft-io/metalcloud-cli/pkg/logger"
 	"github.com/metalsoft-io/metalcloud-cli/pkg/response_inspector"
 	sdk "github.com/metalsoft-io/metalcloud-sdk-go"
+	"golang.org/x/exp/slices"
 )
 
 var osTemplatePrintConfig = formatter.PrintConfig{
@@ -96,6 +97,84 @@ func OsTemplateGet(ctx context.Context, osTemplateId string) error {
 type OsTemplateCreateOptions struct {
 	Template       sdk.OSTemplateCreate      `json:"template"`
 	TemplateAssets []sdk.TemplateAssetCreate `json:"templateAssets"`
+}
+
+func OsTemplateExampleCreate(ctx context.Context) error {
+	osTemplateCreateOptions := OsTemplateCreateOptions{
+		Template: sdk.OSTemplateCreate{
+			Name:        "OS Template Name",
+			Label:       sdk.PtrString("os-template-label - optional"),
+			Description: sdk.PtrString("OS template description. - optional"),
+			Device: sdk.OSTemplateDevice{
+				Type:         "server",
+				BootMode:     "uefi",
+				Architecture: "x86_64",
+			},
+			Install: sdk.OSTemplateInstall{
+				Method:      "oob",
+				DriveType:   "local_drive",
+				ReadyMethod: "wait_for_power_off",
+				OnieStrings: []string{
+					"tempor officia elit proident",
+					"magna v",
+				},
+			},
+			ImageBuild: sdk.OSTemplateImageBuild{
+				Required: true,
+				Provider: sdk.PtrString("xorriso - optional"),
+			},
+			Os: sdk.OSTemplateOs{
+				Name:    "Ubuntu",
+				Version: "22.04",
+				Credential: sdk.OSTemplateOsCredential{
+					Username:     "root",
+					PasswordType: "plain",
+					Password:     sdk.PtrString("rqi|password - optional"),
+				},
+				SshPort: sdk.PtrInt32(22),
+			},
+			Visibility: sdk.PtrString("public"),
+			Tags: []string{
+				"tag1",
+				"tag2",
+			},
+		},
+		TemplateAssets: []sdk.TemplateAssetCreate{
+			{
+				TemplateId: 0, // This will be set after the template is created
+				Usage:      "build_source_image",
+				File: sdk.TemplateAssetFile{
+					Name:             "name.iso",
+					MimeType:         "application/octet-stream",
+					TemplatingEngine: false,
+					Url:              sdk.PtrString("http://my.repo.com/test.iso"),
+					Path:             "/name.iso",
+				},
+				Tags: []string{
+					"tag1",
+					"tag2",
+				},
+			},
+			{
+				TemplateId: 0, // This will be set after the template is created
+				Usage:      "build_component",
+				File: sdk.TemplateAssetFile{
+					Name:             "name.xml",
+					MimeType:         "text/plain",
+					Checksum:         sdk.PtrString("checksum - optional"),
+					ContentBase64:    sdk.PtrString("contentBase64 - optional"),
+					TemplatingEngine: true,
+					Path:             "/name.xml",
+				},
+				Tags: []string{
+					"tag1",
+					"tag2",
+				},
+			},
+		},
+	}
+
+	return formatter.PrintResult(osTemplateCreateOptions, nil)
 }
 
 func OsTemplateCreate(ctx context.Context, osTemplateCreateOptions OsTemplateCreateOptions) error {
@@ -288,6 +367,129 @@ func OsTemplateGetAssets(ctx context.Context, osTemplateId string) error {
 			},
 		},
 	})
+}
+
+func OsTemplateListRepo(ctx context.Context, repoUrl string, repoUsername string, repoPassword string) error {
+	logger.Get().Info().Msgf("Listing all OS templates from repository")
+
+	tree, err := cloneOsTemplateRepository(ctx, repoUrl, repoUsername, repoPassword)
+	if err != nil {
+		return fmt.Errorf("failed to clone OS template repository: %w", err)
+	}
+
+	// This map stores all files for a template and will be used to check if their information is correct
+	repoMap := make(map[string]RepositoryTemplateInfo)
+	for templatePrefix, repoTemplate := range getRepositoryTemplateAssets(tree) {
+		err = processTemplateContent(&repoTemplate)
+		if err != nil {
+			// Ignore OS template with errors - they may be using old format
+			logger.Get().Warn().Msgf("Ignoring template %s - error processing its content: %v", templatePrefix, err)
+			continue
+		}
+
+		repoMap[templatePrefix] = repoTemplate
+	}
+
+	// Convert the map to slice for printing
+	repoTemplatesSlice := make([]RepositoryTemplateInfo, 0, len(repoMap))
+	for _, repoTemplate := range repoMap {
+		repoTemplatesSlice = append(repoTemplatesSlice, repoTemplate)
+	}
+
+	// Order the templates by SourcePath
+	slices.SortStableFunc(repoTemplatesSlice, func(a, b RepositoryTemplateInfo) int {
+		if a.SourcePath < b.SourcePath {
+			return -1
+		} else if a.SourcePath > b.SourcePath {
+			return 1
+		}
+		return 0
+	})
+
+	return formatter.PrintResult(repoTemplatesSlice, &formatter.PrintConfig{
+		FieldsConfig: map[string]formatter.RecordFieldConfig{
+			"SourcePath": {
+				Title: "Path",
+				Order: 1,
+			},
+			"OsTemplate": {
+				Hidden: true,
+				InnerFields: map[string]formatter.RecordFieldConfig{
+					"Template": {
+						Hidden: true,
+						InnerFields: map[string]formatter.RecordFieldConfig{
+							"Name": {
+								Title: "Name",
+								Order: 2,
+							},
+							"Label": {
+								Title: "Label",
+								Order: 3,
+							},
+							"Device": {
+								Hidden: true,
+								InnerFields: map[string]formatter.RecordFieldConfig{
+									"Type": {
+										Title: "Device Type",
+										Order: 4,
+									},
+									"Architecture": {
+										Title: "Architecture",
+										Order: 5,
+									},
+									"BootMode": {
+										Title: "Boot Mode",
+										Order: 6,
+									},
+								},
+							},
+							"Visibility": {
+								Title: "Visibility",
+								Order: 7,
+							},
+						},
+					},
+				},
+			},
+		},
+	})
+}
+
+func OsTemplateCreateFromRepo(ctx context.Context, sourceTemplate string, repoUrl string, repoUsername string, repoPassword string, name string, label string, sourceIso string) error {
+	logger.Get().Info().Msgf("Creating OS template %s from repository", sourceTemplate)
+
+	tree, err := cloneOsTemplateRepository(ctx, repoUrl, repoUsername, repoPassword)
+	if err != nil {
+		return fmt.Errorf("failed to clone OS template repository: %w", err)
+	}
+
+	repoMap := getRepositoryTemplateAssets(tree)
+
+	template, ok := repoMap[sourceTemplate]
+	if !ok {
+		return fmt.Errorf("template %s not found in repository", sourceTemplate)
+	}
+
+	err = processTemplateContent(&template)
+	if err != nil {
+		return fmt.Errorf("error processing template content: %w", err)
+	}
+
+	if name != "" {
+		template.OsTemplate.Template.Name = name
+	}
+	if label != "" {
+		template.OsTemplate.Template.Label = sdk.PtrString(label)
+	}
+	if sourceIso != "" {
+		for _, a := range template.OsTemplate.TemplateAssets {
+			if a.Usage == "build_source_image" {
+				a.File.Url = sdk.PtrString(sourceIso)
+			}
+		}
+	}
+
+	return OsTemplateCreate(ctx, template.OsTemplate)
 }
 
 func GetOsTemplateByIdOrLabel(ctx context.Context, osTemplateIdOrLabel string) (*sdk.OSTemplate, error) {

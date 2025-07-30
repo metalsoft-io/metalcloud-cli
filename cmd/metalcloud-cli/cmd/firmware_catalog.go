@@ -67,19 +67,10 @@ var (
 		Long:    `Create a new firmware catalog.`,
 		Example: `
 Dell example:
-metalcloud-cli firmware-catalog create --config-source .\example_dell.yaml --download-binaries --filter-server-types "M.32.32.2, M.32.64.2, M.40.32.1.v2" --repo-http-url http://176.223.226.61/repo/firmware/ --repo-ssh-path /home/repo/firmware --repo-ssh-port 22 --repo-ssh-user root --user-private-ssh-key-path ~/.ssh/id_rsa
-
-example_dell.yaml:
-
-name: test-dell
-description: test
-vendor: dell
-catalogUrl: https://downloads.dell.com/FOLDER04655306M/1/ESXi_Catalog.xml.gz
-localCatalogPath: ./ESXi_Catalog.xml
-localFirmwarePath: ./downloads
+metalcloud-cli firmware-catalog create --name "catalog name" --description "catalog description" --vendor dell --vendor-url https://downloads.dell.com/FOLDER06417267M/1/ESXi_Catalog.xml.gz --vendor-systems "R640" --server-types "M.24.64.2, M.32.64.2" --download-binaries --vendor-local-binaries-path ./downloads --repo-base-url http://repo.mycloud.com/dell --user-private-key-path ~/.ssh/id_rsa --known-hosts-path ~/.ssh/known_hosts --update-type offline
 
 Lenovo example:
-metalcloud-cli firmware-catalog create --config-source .\example_lenovo.json --filter-server-types "M.8.8.2.v5"
+metalcloud-cli firmware-catalog create --config-source .\example_lenovo.json
 
 example_lenovo.json:
 
@@ -95,11 +86,11 @@ example_lenovo.json:
 			"machineType": "7Y51",
 			"serialNumber": "J10227CF"
 		}
-	]
+	],
+	"server-types": "M.8.8.2.v5"
 }
 
 For Lenovo servers, we can filter by server type like for the other vendors, but we can also specify a list of servers to filter by machine type and serial number.
-The list of servers specified in the config serversList parameter takes precedence over the filter-server-types parameter, which will be ignored.
 
 HP example:
 metalcloud-cli firmware-catalog create --config-source .\example_hp_gen_11.yaml

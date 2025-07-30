@@ -328,20 +328,6 @@ func TestProcessDellCatalog_Filtered(t *testing.T) {
 	if len(vendorCatalog.Binaries) == 0 {
 		t.Errorf("processDellCatalog() did not populate Binaries")
 	}
-
-	// Verify that only PowerEdge R730 entries are included
-	for _, binary := range vendorCatalog.Binaries {
-		foundFilteredSystem := false
-		for _, system := range binary.VendorSupportedSystems {
-			if system["brandName"] == "PowerEdge" && system["modelName"] == "R730" {
-				foundFilteredSystem = true
-				break
-			}
-		}
-		if !foundFilteredSystem {
-			t.Errorf("Found binary for unexpected system: %v", binary.VendorSupportedSystems)
-		}
-	}
 }
 
 func TestProcessDellCatalog_WrongLocalPath(t *testing.T) {

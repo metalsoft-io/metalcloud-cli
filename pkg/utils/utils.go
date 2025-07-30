@@ -109,13 +109,23 @@ func UnmarshalContent(content []byte, destination any) error {
 func ProcessFilterStringSlice(filter []string) []string {
 	parts := make([]string, len(filter))
 
+	if len(filter) == 1 {
+		parts[0] = strings.TrimSpace(filter[0])
+		return parts
+	}
+
 	for i, part := range filter {
 		part = strings.TrimSpace(part)
 
+		prefix := ""
+		if i > 0 {
+			prefix = "$or:"
+		}
+
 		if strings.HasPrefix(part, "-") {
-			parts[i] = "$or:$not:$eq:" + strings.TrimPrefix(part, "-")
+			parts[i] = prefix + "$not:$eq:" + strings.TrimPrefix(part, "-")
 		} else {
-			parts[i] = "$or:$eq:" + part
+			parts[i] = prefix + "$eq:" + part
 		}
 	}
 

@@ -24,9 +24,25 @@ func main() {
 	cmd.Version = version
 	system.AllowDevelop = allowDevelop == "true" || allowDevelop == "yes"
 
+	// Print proxy environment variables
+	envVars := []string{
+		"HTTP_PROXY",
+		"HTTPS_PROXY",
+		"NO_PROXY",
+		"http_proxy",
+		"https_proxy",
+		"no_proxy",
+	}
+
+	for _, envVar := range envVars {
+		value := os.Getenv(envVar)
+		if value != "" {
+			fmt.Fprintf(os.Stderr, "%s=%s\n", envVar, value)
+		}
+	}
+
 	err := cmd.Execute()
 	if err != nil {
-		fmt.Fprintf(os.Stderr, "Error: %s\n", err)
 		os.Exit(-1)
 	}
 }

@@ -3,7 +3,9 @@ package extension
 import (
 	"context"
 	"fmt"
+	"slices"
 	"strconv"
+	"strings"
 
 	"github.com/metalsoft-io/metalcloud-cli/pkg/api"
 	"github.com/metalsoft-io/metalcloud-cli/pkg/formatter"
@@ -11,6 +13,7 @@ import (
 	"github.com/metalsoft-io/metalcloud-cli/pkg/response_inspector"
 	"github.com/metalsoft-io/metalcloud-cli/pkg/utils"
 	sdk "github.com/metalsoft-io/metalcloud-sdk-go"
+	"github.com/spf13/viper"
 )
 
 var extensionPrintConfig = formatter.PrintConfig{
@@ -42,7 +45,7 @@ var extensionPrintConfig = formatter.PrintConfig{
 	},
 }
 
-func ExtensionList(ctx context.Context, filterLabel []string, filterName []string, filterStatus []string) error {
+func ExtensionList(ctx context.Context, filterLabel []string, filterName []string, filterStatus []string, filterKind []string, filterPublic string) error {
 	logger.Get().Info().Msgf("Listing extensions")
 
 	client := api.GetApiClient(ctx)
@@ -61,12 +64,48 @@ func ExtensionList(ctx context.Context, filterLabel []string, filterName []strin
 		request = request.FilterStatus(utils.ProcessFilterStringSlice(filterStatus))
 	}
 
-	extensionList, httpRes, err := request.Execute()
-	if err := response_inspector.InspectResponse(httpRes, err); err != nil {
-		return err
+	// if len(filterKind) > 0 {
+	// 	request = request.FilterKind(utils.ProcessFilterStringSlice(filterKind))
+	// }
+
+	if filterPublic != "" {
+		request = request.FilterIsPublic([]string{filterPublic})
 	}
 
-	return formatter.PrintResult(extensionList.Data, &extensionPrintConfig)
+	extensions := make([]sdk.ExtensionInfo, 0)
+
+	page := float32(1)
+
+	// Loop through all pages and collect extensions list
+	for {
+		request = request.Page(page)
+
+		extensionList, httpRes, err := request.Execute()
+		if err := response_inspector.InspectResponse(httpRes, err); err != nil {
+			return err
+		}
+
+		extensions = append(extensions, extensionList.Data...)
+
+		if *extensionList.Meta.TotalPages <= *extensionList.Meta.CurrentPage {
+			break // No more pages to process
+		}
+
+		page++
+	}
+
+	// Workaround until the API supports this filter - filter out the extensions by kind, if needed
+	if len(filterKind) > 0 {
+		filteredExtensions := make([]sdk.ExtensionInfo, 0)
+		for _, ext := range extensions {
+			if slices.Contains(filterKind, *ext.Kind) {
+				filteredExtensions = append(filteredExtensions, ext)
+			}
+		}
+		extensions = filteredExtensions
+	}
+
+	return formatter.PrintResult(extensions, &extensionPrintConfig)
 }
 
 func ExtensionGet(ctx context.Context, extensionId string) error {
@@ -77,7 +116,44 @@ func ExtensionGet(ctx context.Context, extensionId string) error {
 		return err
 	}
 
-	return formatter.PrintResult(*extension, &extensionPrintConfig)
+	if strings.ToLower(viper.GetString(formatter.ConfigFormat)) == "text" {
+		// If the output format is text, print the basic information followed by the inputs
+		err := formatter.PrintResult(*extension, &extensionPrintConfig)
+		if err != nil {
+			return err
+		}
+
+		if len(extension.Definition.Inputs) > 0 {
+			err := formatter.PrintResult(extension.Definition.Inputs, &formatter.PrintConfig{
+				FieldsConfig: map[string]formatter.RecordFieldConfig{
+					"Label": {
+						Title: "Input Label",
+						Order: 1,
+					},
+					"Name": {
+						Title: "Input Name",
+						Order: 2,
+					},
+					"InputType": {
+						Title: "Input Type",
+						Order: 3,
+					},
+					"DefaultValue": {
+						Title: "Default Value",
+						Order: 4,
+					},
+				},
+			})
+			if err != nil {
+				return fmt.Errorf("failed to print inputs: %w", err)
+			}
+		}
+
+		return nil
+	} else {
+		return formatter.PrintResult(*extension, &extensionPrintConfig)
+
+	}
 }
 
 func ExtensionCreate(ctx context.Context, name string, kind string, description string, config []byte) error {
@@ -209,6 +285,8 @@ func GetExtensionByIdOrLabel(ctx context.Context, extensionIdOrLabel string) (*s
 	extensionIdFloat, err := strconv.ParseFloat(extensionIdOrLabel, 32)
 	if err == nil {
 		extensionInfo, httpRes, err := client.ExtensionAPI.GetExtension(ctx, float32(extensionIdFloat)).Execute()
+		logger.Get().Info().Msgf("Extension '%s' get by ID:\n err: %v\n httpRes: %v\n StatusCode: %v", extensionIdOrLabel, err, httpRes, httpRes.StatusCode)
+
 		if err == nil && httpRes != nil && httpRes.StatusCode == 200 {
 			return extensionInfo, nil
 		}
@@ -217,7 +295,7 @@ func GetExtensionByIdOrLabel(ctx context.Context, extensionIdOrLabel string) (*s
 
 	// Try to get by label
 	extensions, httpRes, err := client.ExtensionAPI.GetExtensions(ctx).
-		FilterLabel([]string{"$eq:" + extensionIdOrLabel}).
+		FilterLabel([]string{extensionIdOrLabel}).
 		Execute()
 	if err = response_inspector.InspectResponse(httpRes, err); err != nil {
 		return nil, err

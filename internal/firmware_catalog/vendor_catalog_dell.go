@@ -176,11 +176,11 @@ func (vc *VendorCatalog) processDellCatalog(ctx context.Context) error {
 		for _, brand := range component.SupportedSystems.Brands {
 			for _, model := range brand.Models {
 				systemInfo := map[string]interface{}{
-					"brandName":   brand.Display,
-					"brandPrefix": brand.Prefix,
-					"id":          model.SystemID,
-					"idType":      model.SystemIDType,
-					"modelName":   model.Display,
+					"id": model.SystemID,
+					// "idType":      model.SystemIDType,
+					// "brandName":   brand.Display,
+					// "brandPrefix": brand.Prefix,
+					// "modelName":   model.Display,
 				}
 
 				supportedSystems = append(supportedSystems, systemInfo)
@@ -206,8 +206,8 @@ func (vc *VendorCatalog) processDellCatalog(ctx context.Context) error {
 		supportedDevices := []map[string]interface{}{}
 		for _, device := range component.SupportedDevices.Devices {
 			deviceInfo := map[string]interface{}{
-				"id":   device.ComponentID,
-				"name": device.Display,
+				"id":    device.ComponentID,
+				"model": device.Display,
 			}
 
 			supportedDevices = append(supportedDevices, deviceInfo)
