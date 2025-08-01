@@ -58,13 +58,11 @@ func NewVendorCatalogFromCreateOptions(options FirmwareCatalogCreateOptions) (*V
 		return nil, fmt.Errorf("invalid update type flag %s - valid options are: %v", options.UpdateType, sdk.AllowedCatalogUpdateTypeEnumValues)
 	}
 
-	return &VendorCatalog{
+	vendorCatalog := VendorCatalog{
 		CatalogInfo: sdk.FirmwareCatalog{
-			Name:        options.Name,
-			Description: sdk.PtrString(options.Description),
-			Vendor:      options.Vendor,
-			UpdateType:  options.UpdateType,
-			VendorUrl:   sdk.PtrString(options.VendorUrl),
+			Name:       options.Name,
+			Vendor:     options.Vendor,
+			UpdateType: options.UpdateType,
 		},
 		Binaries:                []*sdk.FirmwareBinary{},
 		ServerTypesFilter:       options.ServerTypesFilter,
@@ -80,7 +78,17 @@ func NewVendorCatalogFromCreateOptions(options FirmwareCatalogCreateOptions) (*V
 		UserPrivateKeyPath:      options.UserPrivateKeyPath,
 		KnownHostsPath:          options.KnownHostsPath,
 		IgnoreHostKeyCheck:      options.IgnoreHostKeyCheck,
-	}, nil
+	}
+
+	if options.VendorUrl != "" {
+		vendorCatalog.CatalogInfo.VendorUrl = sdk.PtrString(options.VendorUrl)
+	}
+
+	if options.Description != "" {
+		vendorCatalog.CatalogInfo.Description = sdk.PtrString(options.Description)
+	}
+
+	return &vendorCatalog, nil
 }
 
 func (vc *VendorCatalog) ProcessVendorCatalog(ctx context.Context) error {

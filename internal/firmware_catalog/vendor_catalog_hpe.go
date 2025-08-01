@@ -109,9 +109,11 @@ func (vc *VendorCatalog) processHpeCatalog(ctx context.Context) error {
 				includedBinary = true
 
 				supportedDevices = append(supportedDevices, map[string]interface{}{
-					"DeviceClass":            packageInfo.DeviceClass,
-					"Target":                 target,
-					"MinimumVersionRequired": packageInfo.MinimumActiveVersion,
+					"id":    target,
+					"model": target,
+					// "DeviceClass":            packageInfo.DeviceClass,
+					// "Target":                 target,
+					// "MinimumVersionRequired": packageInfo.MinimumActiveVersion,
 				})
 			}
 		}
