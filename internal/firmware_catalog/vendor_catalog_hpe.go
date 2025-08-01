@@ -81,7 +81,7 @@ func (vc *VendorCatalog) processHpeCatalog(ctx context.Context) error {
 		}
 	}
 
-	jsonFile, err := os.Open(vc.VendorLocalCatalogPath)
+	jsonFile, err := os.Open(localPath)
 	if err != nil {
 		return err
 	}
