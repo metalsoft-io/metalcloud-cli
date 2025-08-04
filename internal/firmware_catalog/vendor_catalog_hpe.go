@@ -11,6 +11,7 @@ import (
 	"slices"
 	"strings"
 
+	"github.com/metalsoft-io/metalcloud-cli/pkg/logger"
 	sdk "github.com/metalsoft-io/metalcloud-sdk-go"
 )
 
@@ -65,7 +66,7 @@ func (vc *VendorCatalog) processHpeCatalog(ctx context.Context) error {
 
 	if localPath == "" {
 		// Create a temporary file to download the catalog
-		tempFile, err := os.CreateTemp("", "dell_catalog_*.xml")
+		tempFile, err := os.CreateTemp("", "hp_catalog_*.json")
 		if err != nil {
 			return fmt.Errorf("failed to create temp file: %v", err)
 		}
@@ -90,15 +91,26 @@ func (vc *VendorCatalog) processHpeCatalog(ctx context.Context) error {
 	byteValue, _ := io.ReadAll(jsonFile)
 
 	var packages map[string]hpCatalogTemplate
-	json.Unmarshal(byteValue, &packages)
+	err = json.Unmarshal(byteValue, &packages)
+	if err != nil {
+		return fmt.Errorf("failed to parse catalog: %v", err)
+	}
+
+	logger.Get().Debug().Msgf("Parsed %d packages from the catalog", len(packages))
+	logger.Get().Debug().Msgf("Download path: %s", downloadPath)
+	logger.Get().Debug().Msgf("Local path: %s", localPath)
+	logger.Get().Debug().Msgf("Vendor systems filter: %v", vc.VendorSystemsFilter)
 
 	for packageKey, packageInfo := range packages {
 		// We only check for components that are of type firmware
 		if !strings.HasSuffix(packageKey, "fwpkg") {
+			logger.Get().Debug().Msgf("Skipping package %s - Type is not Firmware", packageKey)
 			continue
 		}
 
+		// Skip if device class is empty or null, or if there are no devices
 		if packageInfo.DeviceClass == "" || packageInfo.DeviceClass == "null" || packageInfo.Target == nil || len(packageInfo.Target) == 0 {
+			logger.Get().Debug().Msgf("Skipping package %s - no DeviceClass, Device or Target", packageKey)
 			continue
 		}
 
@@ -109,8 +121,8 @@ func (vc *VendorCatalog) processHpeCatalog(ctx context.Context) error {
 				includedBinary = true
 
 				supportedDevices = append(supportedDevices, map[string]interface{}{
-					"id":    target,
-					"model": target,
+					"id":    target, //.Target,
+					"model": target, //.DeviceName,
 					// "DeviceClass":            packageInfo.DeviceClass,
 					// "Target":                 target,
 					// "MinimumVersionRequired": packageInfo.MinimumActiveVersion,
@@ -119,11 +131,17 @@ func (vc *VendorCatalog) processHpeCatalog(ctx context.Context) error {
 		}
 
 		if !includedBinary {
+			logger.Get().Debug().Msgf("Skipping package %s - targets %v not included in the vendor systems filter", packageKey, packageInfo.Target)
 			continue
 		}
 
-		downloadUrl.Path = path.Join(downloadPath, packageKey)
-		packageDownloadUrl := downloadUrl.String()
+		packageDownloadUrl := ""
+		if downloadPath != "" {
+			downloadUrl.Path = path.Join(downloadPath, packageKey)
+			packageDownloadUrl = downloadUrl.String()
+		} else {
+			packageDownloadUrl = "https://not-supported.local/" + packageKey
+		}
 
 		firmwareBinary := sdk.FirmwareBinary{
 			ExternalId:             sdk.PtrString(packageKey),

@@ -93,12 +93,17 @@ func NewVendorCatalogFromCreateOptions(options FirmwareCatalogCreateOptions) (*V
 
 func (vc *VendorCatalog) ProcessVendorCatalog(ctx context.Context) error {
 	if len(vc.ServerTypesFilter) > 0 {
+		logger.Get().Debug().Msgf("Server types filter provided: %v", vc.ServerTypesFilter)
+
 		// Lookup the system models for the requested server types
 		// and add them to the vendor systems filter
 		systemModels, systemModelsEx, err := vc.getFilteredSystemModels(ctx)
 		if err != nil {
 			return err
 		}
+
+		logger.Get().Debug().Msgf("Filtered system models: %v", systemModels)
+		logger.Get().Debug().Msgf("Filtered system models with serial numbers: %v", systemModelsEx)
 
 		if len(vc.VendorSystemsFilter) > 0 {
 			vc.VendorSystemsFilter = append(vc.VendorSystemsFilter, systemModels...)
