@@ -15,9 +15,13 @@ builds:
       # For more info refer to: https://golang.org/doc/install/source#environment
       # Defaults are darwin and linux.
   ldflags:
-    - -X "github.com/metalsoft-io/metalcloud-cli/internal/configuration.Version={{ .Tag }}"
-    - -X "github.com/metalsoft-io/metalcloud-cli/internal/configuration.Commit={{ .ShortCommit }}"
-    - -X "github.com/metalsoft-io/metalcloud-cli/internal/configuration.Date={{ .Date }}"
+    - -s -w
+    - -X main.version={{.Version}}
+    - -X main.commit={{.Commit}}
+    - -X main.date={{.Date}}
+    #- -X "github.com/metalsoft-io/metalcloud-cli/internal/configuration.Version={{ .Tag }}"
+    #- -X "github.com/metalsoft-io/metalcloud-cli/internal/configuration.Commit={{ .ShortCommit }}"
+    #- -X "github.com/metalsoft-io/metalcloud-cli/internal/configuration.Date={{ .Date }}"
   goos:
     - linux
     - darwin
@@ -77,7 +81,7 @@ brews:
 
     # Folder inside the repository to put the formula.
     # Default is the root folder.
-    folder: Formula
+    #folder: Formula
 
     # Caveats for the user of your binary.
     # Default is empty.
@@ -214,7 +218,7 @@ nfpms:
 
     # Package epoch.
     # Defaults to empty.
-    epoch: 1
+    #epoch: 1
 
     # Empty folders that should be created and managed by the packager
     # implementation.
