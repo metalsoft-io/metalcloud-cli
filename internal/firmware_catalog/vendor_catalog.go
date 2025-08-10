@@ -41,6 +41,7 @@ type VendorCatalog struct {
 	UploadBinaries          bool
 	RepoBaseUrl             string
 	RepoSshHost             string
+	RepoSshPath             string
 	RepoSshUser             string
 	UserPrivateKeyPath      string
 	KnownHostsPath          string
@@ -74,6 +75,7 @@ func NewVendorCatalogFromCreateOptions(options FirmwareCatalogCreateOptions) (*V
 		UploadBinaries:          options.UploadBinaries,
 		RepoBaseUrl:             options.RepoBaseUrl,
 		RepoSshHost:             options.RepoSshHost,
+		RepoSshPath:             options.RepoSshPath,
 		RepoSshUser:             options.RepoSshUser,
 		UserPrivateKeyPath:      options.UserPrivateKeyPath,
 		KnownHostsPath:          options.KnownHostsPath,
@@ -228,7 +230,12 @@ func (vc *VendorCatalog) CreateMetalsoftCatalog(ctx context.Context) error {
 
 		// Upload the binary to the repository if needed
 		if vc.UploadBinaries {
-			err = vc.uploadBinaryToRepository(sftpClient, localPath, *binary.ExternalId)
+			remotePath := *binary.ExternalId
+			if vc.RepoSshPath != "" {
+				remotePath = path.Join(vc.RepoSshPath, *binary.ExternalId)
+			}
+
+			err = vc.uploadBinaryToRepository(sftpClient, localPath, remotePath)
 			if err != nil {
 				return fmt.Errorf("error uploading binary to repository: %v", err)
 			}

@@ -24,6 +24,7 @@ var (
 		uploadBinaries          bool
 		repoBaseUrl             string
 		repoSshHost             string
+		repoSshPath             string
 		repoSshUser             string
 		userPrivateKeyPath      string
 		knownHostsPath          string
@@ -137,6 +138,7 @@ localFirmwarePath: ./hp_downloads
 					UploadBinaries:          firmwareCatalogFlags.uploadBinaries,
 					RepoBaseUrl:             firmwareCatalogFlags.repoBaseUrl,
 					RepoSshHost:             firmwareCatalogFlags.repoSshHost,
+					RepoSshPath:             firmwareCatalogFlags.repoSshPath,
 					RepoSshUser:             firmwareCatalogFlags.repoSshUser,
 					UserPrivateKeyPath:      firmwareCatalogFlags.userPrivateKeyPath,
 					KnownHostsPath:          firmwareCatalogFlags.knownHostsPath,
@@ -205,6 +207,7 @@ func init() {
 	firmwareCatalogCreateCmd.Flags().BoolVar(&firmwareCatalogFlags.uploadBinaries, "upload-binaries", false, "Upload binaries to the offline repository")
 	firmwareCatalogCreateCmd.Flags().StringVar(&firmwareCatalogFlags.repoBaseUrl, "repo-base-url", "", "Base URL of the offline repository")
 	firmwareCatalogCreateCmd.Flags().StringVar(&firmwareCatalogFlags.repoSshHost, "repo-ssh-host", "", "SSH host with port of the offline repository")
+	firmwareCatalogCreateCmd.Flags().StringVar(&firmwareCatalogFlags.repoSshPath, "repo-ssh-path", "", "The path to the target folder in the SSH repository")
 	firmwareCatalogCreateCmd.Flags().StringVar(&firmwareCatalogFlags.repoSshUser, "repo-ssh-user", "", "SSH user for the offline repository")
 	firmwareCatalogCreateCmd.Flags().StringVar(&firmwareCatalogFlags.userPrivateKeyPath, "user-private-key-path", "~/.ssh/id_rsa", "Path to the user's private SSH key")
 	firmwareCatalogCreateCmd.Flags().StringVar(&firmwareCatalogFlags.knownHostsPath, "known-hosts-path", "~/.ssh/known_hosts", "Path to the known hosts file for SSH connections")

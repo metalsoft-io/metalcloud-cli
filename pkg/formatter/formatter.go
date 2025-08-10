@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"os"
+	"strconv"
 	"strings"
 	"time"
 
@@ -13,6 +14,8 @@ import (
 	"github.com/jedib0t/go-pretty/v6/text"
 	sdk "github.com/metalsoft-io/metalcloud-sdk-go"
 	"github.com/spf13/viper"
+	"golang.org/x/text/language"
+	"golang.org/x/text/message"
 	"gopkg.in/yaml.v3"
 )
 
@@ -408,6 +411,55 @@ func FormatDateTimeValue(value interface{}) string {
 
 	if tm, ok := value.(time.Time); ok {
 		return tm.Local().Format(time.RFC822)
+	}
+
+	return fmt.Sprint(value)
+}
+
+func FormatIntegerValue(value interface{}) string {
+	if value == nil {
+		return ""
+	}
+
+	var num int64
+	var found bool
+
+	if i, ok := value.(int64); ok {
+		num = i
+		found = true
+	} else if i, ok := value.(uint64); ok {
+		num = int64(i)
+		found = true
+	} else if i, ok := value.(int); ok {
+		num = int64(i)
+		found = true
+	} else if i, ok := value.(uint); ok {
+		num = int64(i)
+		found = true
+	} else if i, ok := value.(int32); ok {
+		num = int64(i)
+		found = true
+	} else if i, ok := value.(uint32); ok {
+		num = int64(i)
+		found = true
+	} else if stringValue, ok := value.(string); ok {
+		i, err := strconv.ParseInt(stringValue, 10, 64)
+		if err == nil {
+			num = i
+			found = true
+		} else {
+			f, err := strconv.ParseFloat(stringValue, 64)
+			if err == nil {
+				num = int64(f)
+				found = true
+			}
+		}
+	}
+
+	if found {
+		// Format with thousand separators
+		p := message.NewPrinter(language.English)
+		return p.Sprintf("%d", num)
 	}
 
 	return fmt.Sprint(value)

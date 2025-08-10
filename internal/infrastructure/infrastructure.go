@@ -6,12 +6,14 @@ import (
 	"fmt"
 	"strconv"
 	"strings"
+	"time"
 
 	"github.com/metalsoft-io/metalcloud-cli/pkg/api"
 	"github.com/metalsoft-io/metalcloud-cli/pkg/formatter"
 	"github.com/metalsoft-io/metalcloud-cli/pkg/logger"
 	"github.com/metalsoft-io/metalcloud-cli/pkg/response_inspector"
 	sdk "github.com/metalsoft-io/metalcloud-sdk-go"
+	"github.com/spf13/viper"
 )
 
 var infrastructurePrintConfig = formatter.PrintConfig{
@@ -552,6 +554,165 @@ func InfrastructureGetAllStatistics(ctx context.Context) error {
 						Order: 6,
 					},
 				},
+			},
+		},
+	})
+}
+
+func InfrastructureGetUtilization(ctx context.Context, userId int, startTime time.Time, endTime time.Time, siteIds []int, infrastructureIds []int) error {
+	logger.Get().Info().Msgf("Getting utilization report for user %d from %s to %s", userId, startTime.Format(time.RFC3339), endTime.Format(time.RFC3339))
+
+	client := api.GetApiClient(ctx)
+
+	request := sdk.GetResourceUtilizationDetailed{
+		UserIdOwner:    float32(userId),
+		StartTimestamp: startTime.Format(time.RFC3339),
+		EndTimestamp:   endTime.Format(time.RFC3339),
+	}
+
+	if len(siteIds) > 0 {
+		request.SiteIds = make([]float32, 0, len(siteIds))
+		for _, siteId := range siteIds {
+			siteIdFloat := float32(siteId)
+			request.SiteIds = append(request.SiteIds, siteIdFloat)
+		}
+	}
+
+	if len(infrastructureIds) > 0 {
+		request.InfrastructureIds = make([]float32, 0, len(infrastructureIds))
+		for _, infrastructureId := range infrastructureIds {
+			infrastructureIdFloat := float32(infrastructureId)
+			request.InfrastructureIds = append(request.InfrastructureIds, infrastructureIdFloat)
+		}
+	}
+
+	utilization, httpRes, err := client.InfrastructureAPI.
+		GetInfrastructureResourceUtilizationDetailed(ctx).
+		GetResourceUtilizationDetailed(request).
+		Execute()
+	if err := response_inspector.InspectResponse(httpRes, err); err != nil {
+		return err
+	}
+
+	if strings.ToLower(viper.GetString(formatter.ConfigFormat)) == "json" {
+		// Do not change the output format if JSON is requested
+		return formatter.PrintResult(utilization, nil)
+	}
+
+	reportData := []struct {
+		InfrastructureId            interface{}
+		InfrastructureLabel         interface{}
+		InfrastructureServiceStatus interface{}
+		InstanceId                  interface{}
+		InstanceLabel               interface{}
+		Measurement                 interface{}
+		MeasurementUnit             interface{}
+		ServerTypeId                interface{}
+	}{}
+
+	logger.Get().Debug().Msgf("Processing utilization for %d infrastructures", len(utilization.Infrastructures))
+
+	for _, inf := range utilization.Infrastructures {
+		logger.Get().Debug().Msgf("Processing utilization for infrastructure %v", inf)
+		infrastructure, ok := inf.(map[string]interface{})
+		if !ok {
+			logger.Get().Warn().Msgf("Infrastructure item is not a map: %v", inf)
+			continue
+		}
+
+		infrastructureId := infrastructure["infrastructureId"]
+		infrastructureLabel := infrastructure["infrastructureLabel"]
+		infrastructureServiceStatus := infrastructure["infrastructureServiceStatus"]
+
+		// Add infrastructure-level data
+		reportData = append(reportData, struct {
+			InfrastructureId            interface{}
+			InfrastructureLabel         interface{}
+			InfrastructureServiceStatus interface{}
+			InstanceId                  interface{}
+			InstanceLabel               interface{}
+			Measurement                 interface{}
+			MeasurementUnit             interface{}
+			ServerTypeId                interface{}
+		}{
+			InfrastructureId:            infrastructureId,
+			InfrastructureLabel:         infrastructureLabel,
+			InfrastructureServiceStatus: infrastructureServiceStatus,
+			InstanceId:                  nil,
+			InstanceLabel:               nil,
+			Measurement:                 nil,
+			MeasurementUnit:             nil,
+			ServerTypeId:                nil,
+		})
+
+		// Get detailed report for this infrastructure
+		infrastructureIdStr := fmt.Sprintf("%v", infrastructureId)
+		if infraDetails, infraExists := utilization.DetailedReport[infrastructureIdStr].(map[string]interface{}); infraExists {
+			// Process instances for this infrastructure
+			if instances, instancesExist := infraDetails["instance"].([]interface{}); instancesExist {
+				for _, inst := range instances {
+					if instance, ok := inst.(map[string]interface{}); ok {
+						reportData = append(reportData, struct {
+							InfrastructureId            interface{}
+							InfrastructureLabel         interface{}
+							InfrastructureServiceStatus interface{}
+							InstanceId                  interface{}
+							InstanceLabel               interface{}
+							Measurement                 interface{}
+							MeasurementUnit             interface{}
+							ServerTypeId                interface{}
+						}{
+							InfrastructureId:            infrastructureId,
+							InfrastructureLabel:         infrastructureLabel,
+							InfrastructureServiceStatus: infrastructureServiceStatus,
+							InstanceId:                  instance["id"],
+							InstanceLabel:               instance["label"],
+							Measurement:                 instance["measurementPeriod"],
+							MeasurementUnit:             instance["measurementUnit"],
+							ServerTypeId:                instance["serverTypeId"],
+						})
+					}
+				}
+			}
+		}
+	}
+
+	logger.Get().Debug().Msgf("Utilization report data: %v", reportData)
+
+	return formatter.PrintResult(reportData, &formatter.PrintConfig{
+		FieldsConfig: map[string]formatter.RecordFieldConfig{
+			"InfrastructureId": {
+				Title: "Infra ID",
+				Order: 1,
+			},
+			"InfrastructureLabel": {
+				Title: "Infra Label",
+				Order: 2,
+			},
+			"InfrastructureServiceStatus": {
+				Title: "Infra Status",
+				Order: 3,
+			},
+			"InstanceId": {
+				Title: "Instance ID",
+				Order: 4,
+			},
+			"InstanceLabel": {
+				Title: "Instance Label",
+				Order: 5,
+			},
+			"Measurement": {
+				Title:       "Measurement",
+				Order:       6,
+				Transformer: formatter.FormatIntegerValue,
+			},
+			"MeasurementUnit": {
+				Title: "Unit",
+				Order: 7,
+			},
+			"ServerTypeId": {
+				Title: "Server Type",
+				Order: 8,
 			},
 		},
 	})

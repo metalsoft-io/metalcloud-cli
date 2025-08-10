@@ -102,6 +102,7 @@ type FirmwareCatalogCreateOptions struct {
 	UploadBinaries          bool     `json:"upload_binaries,omitempty"`
 	RepoBaseUrl             string   `json:"repo_base_url,omitempty"`
 	RepoSshHost             string   `json:"repo_ssh_host,omitempty"`
+	RepoSshPath             string   `json:"repo_ssh_path,omitempty"`
 	RepoSshUser             string   `json:"repo_ssh_user,omitempty"`
 	UserPrivateKeyPath      string   `json:"user_private_key_path,omitempty"`
 	KnownHostsPath          string   `json:"known_hosts_path,omitempty"`

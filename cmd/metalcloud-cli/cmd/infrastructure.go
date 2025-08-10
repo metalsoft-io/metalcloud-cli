@@ -1,6 +1,8 @@
 package cmd
 
 import (
+	"time"
+
 	"github.com/metalsoft-io/metalcloud-cli/cmd/metalcloud-cli/system"
 	"github.com/metalsoft-io/metalcloud-cli/internal/infrastructure"
 	"github.com/spf13/cobra"
@@ -17,6 +19,11 @@ var (
 		attemptHardShutdown bool
 		softShutdownTimeout int
 		forceShutdown       bool
+		userId              int
+		startTime           time.Time
+		endTime             time.Time
+		siteIds             []int
+		infrastructureIds   []int
 	}{}
 
 	infrastructureCmd = &cobra.Command{
@@ -208,6 +215,44 @@ var (
 			return infrastructure.InfrastructureGetAllStatistics(cmd.Context())
 		},
 	}
+
+	infrastructureUtilizationCmd = &cobra.Command{
+		Use:     "utilization",
+		Aliases: []string{"get-utilization"},
+		Short:   "Get resource utilization report for infrastructures.",
+		Long: `Get detailed utilization report for infrastructure resources within a specified time range. 
+The report provides insights into resource usage patterns and capacity planning for infrastructures.
+
+Required flags:
+  --user-id       ID of the user to include in the report
+  --start-time    Start time for the report (RFC3339 or date format)
+  --end-time      End time for the report (RFC3339 or date format)
+
+Optional flags:
+  --site-id            Site IDs to include in the report (can be specified multiple times)
+  --infrastructure-id  Infrastructure IDs to include in the report (can be specified multiple times)
+
+Examples:
+  # Get utilization report for user 123 for the last 7 days
+  metalcloud-cli infrastructure utilization --user-id 123 --start-time 2025-08-01 --end-time 2025-08-08
+
+  # Get utilization for specific sites and infrastructures
+  metalcloud-cli infrastructure utilization --user-id 123 --start-time 2025-08-01T00:00:00Z --end-time 2025-08-08T23:59:59Z --site-id 1 --site-id 2 --infrastructure-id 100 --infrastructure-id 101
+
+  # Get utilization for all infrastructures of a user in specific sites
+  metalcloud-cli infrastructure utilization --user-id 123 --start-time 2025-08-01 --end-time 2025-08-08 --site-id 1 --site-id 3`,
+		SilenceUsage: true,
+		Annotations:  map[string]string{system.REQUIRED_PERMISSION: system.PERMISSION_INFRASTRUCTURES_READ},
+		RunE: func(cmd *cobra.Command, args []string) error {
+			return infrastructure.InfrastructureGetUtilization(
+				cmd.Context(),
+				infrastructureFlags.userId,
+				infrastructureFlags.startTime,
+				infrastructureFlags.endTime,
+				infrastructureFlags.siteIds,
+				infrastructureFlags.infrastructureIds)
+		},
+	}
 )
 
 func init() {
@@ -249,4 +294,14 @@ func init() {
 	infrastructureCmd.AddCommand(infrastructureGetConfigInfoCmd)
 
 	infrastructureCmd.AddCommand(infrastructureGetAllStatisticsCmd)
+
+	infrastructureCmd.AddCommand(infrastructureUtilizationCmd)
+	infrastructureUtilizationCmd.Flags().IntVar(&infrastructureFlags.userId, "user-id", 0, "ID of the user to include in the report.")
+	infrastructureUtilizationCmd.Flags().TimeVar(&infrastructureFlags.startTime, "start-time", time.Now().Add(-time.Duration(time.Now().Day())), []string{time.RFC3339, time.DateOnly}, "Start time for the report.")
+	infrastructureUtilizationCmd.Flags().TimeVar(&infrastructureFlags.endTime, "end-time", time.Now(), []string{time.RFC3339, time.DateOnly}, "End time for the report.")
+	infrastructureUtilizationCmd.Flags().IntSliceVar(&infrastructureFlags.siteIds, "site-id", []int{}, "Site IDs to include in the report.")
+	infrastructureUtilizationCmd.Flags().IntSliceVar(&infrastructureFlags.infrastructureIds, "infrastructure-id", []int{}, "Infrastructure IDs to include in the report.")
+	infrastructureUtilizationCmd.MarkFlagRequired("user-id")
+	infrastructureUtilizationCmd.MarkFlagRequired("start-time")
+	infrastructureUtilizationCmd.MarkFlagRequired("end-time")
 }
