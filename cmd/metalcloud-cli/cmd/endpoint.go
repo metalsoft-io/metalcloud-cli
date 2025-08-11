@@ -27,9 +27,23 @@ var (
 	}
 
 	endpointListCmd = &cobra.Command{
-		Use:          "list",
-		Aliases:      []string{"ls"},
-		Short:        "List all endpoints.",
+		Use:     "list",
+		Aliases: []string{"ls"},
+		Short:   "List endpoints",
+		Long: `List all endpoints in MetalSoft with optional filtering.
+
+This command displays a table of all endpoints available in the system. You can filter the results 
+by site or external ID to narrow down the output.
+
+Flags:
+  --filter-site strings           Filter results by site name(s). Can be specified multiple times.
+  --filter-external-id strings    Filter results by external ID(s). Can be specified multiple times.
+
+Examples:
+  metalcloud-cli endpoint list
+  metalcloud-cli endpoint ls --filter-site "site1" --filter-site "site2"
+  metalcloud-cli endpoint list --filter-external-id "ext-001"
+  metalcloud-cli endpoint list --filter-site "production" --filter-external-id "api-endpoint"`,
 		SilenceUsage: true,
 		Annotations:  map[string]string{system.REQUIRED_PERMISSION: system.PERMISSION_SERVERS_READ},
 		RunE: func(cmd *cobra.Command, args []string) error {
@@ -40,9 +54,21 @@ var (
 	}
 
 	endpointGetCmd = &cobra.Command{
-		Use:          "get endpoint_id",
-		Aliases:      []string{"show"},
-		Short:        "Get endpoint info.",
+		Use:     "get endpoint_id",
+		Aliases: []string{"show"},
+		Short:   "Display detailed information about a specific endpoint",
+		Long: `Display detailed information about a specific endpoint in MetalSoft.
+
+This command retrieves and displays comprehensive information about a single endpoint, 
+including its configuration, status, and associated details.
+
+Arguments:
+  endpoint_id    The unique identifier of the endpoint to retrieve (required)
+
+Examples:
+  metalcloud-cli endpoint get 123
+  metalcloud-cli endpoint show 456
+  metalcloud-cli ep get endpoint-uuid-123`,
 		SilenceUsage: true,
 		Annotations:  map[string]string{system.REQUIRED_PERMISSION: system.PERMISSION_SERVERS_READ},
 		Args:         cobra.ExactArgs(1),
@@ -54,20 +80,31 @@ var (
 	endpointCreateCmd = &cobra.Command{
 		Use:     "create",
 		Aliases: []string{"add", "new"},
-		Short:   "Create a new endpoint.",
+		Short:   "Create a new endpoint",
 		Long: `Create a new endpoint in MetalSoft.
 
 You can specify the endpoint configuration either by providing individual flags (--site-id, --name, --label, --external-id) 
 or by supplying a configuration file or piped JSON/YAML using --config-source. 
 When using --config-source, the file or piped content must contain a valid endpoint configuration in JSON or YAML format.
 
+Required flags (when not using --config-source):
+  --site-id     Site ID where the endpoint will be created
+  --name        Name of the endpoint
+  --label       Label of the endpoint
+
+Optional flags:
+  --external-id string       External ID of the endpoint
+  --config-source string     Source of configuration (file path or 'pipe')
+
+Flag dependencies:
+  - When using --config-source, all other flags are ignored
+  - When not using --config-source, --site-id, --name, and --label are required together
+
 Examples:
   metalcloud-cli endpoint create --site-id 1 --name "api-endpoint" --label "API Endpoint"
+  metalcloud-cli endpoint create --site-id 1 --name "api-endpoint" --label "API Endpoint" --external-id "ext-001"
   metalcloud-cli endpoint create --config-source ./endpoint.json
-  cat endpoint.yaml | metalcloud-cli endpoint create --config-source pipe
-
-Note: --site-id, --name, and --label are required unless --config-source is used. 
-Flags are mutually exclusive with --config-source.`,
+  cat endpoint.yaml | metalcloud-cli endpoint create --config-source pipe`,
 		SilenceUsage: true,
 		Annotations:  map[string]string{system.REQUIRED_PERMISSION: system.PERMISSION_SERVERS_WRITE},
 		RunE: func(cmd *cobra.Command, args []string) error {
@@ -101,20 +138,32 @@ Flags are mutually exclusive with --config-source.`,
 	endpointUpdateCmd = &cobra.Command{
 		Use:     "update endpoint_id",
 		Aliases: []string{"edit"},
-		Short:   "Update an existing endpoint.",
+		Short:   "Update an existing endpoint",
 		Long: `Update an existing endpoint in MetalSoft.
 
 You can update the endpoint by specifying new values for its name, label, or external ID using flags, 
 or by providing a configuration file or piped JSON/YAML with --config-source. 
 When using --config-source, the file or piped content must contain the fields to update in JSON or YAML format.
 
+Arguments:
+  endpoint_id    The unique identifier of the endpoint to update (required)
+
+Optional flags:
+  --name string              New name for the endpoint
+  --label string             New label for the endpoint
+  --external-id string       New external ID for the endpoint
+  --config-source string     Source of configuration (file path or 'pipe')
+
+Flag dependencies:
+  - Flags are mutually exclusive with --config-source
+  - At least one flag must be provided to update the endpoint
+  - Only the fields provided will be updated
+
 Examples:
   metalcloud-cli endpoint update 123 --name "new-name"
+  metalcloud-cli endpoint update 123 --label "New Label" --external-id "new-ext-001"
   metalcloud-cli endpoint update 123 --config-source ./update.json
-  cat update.yaml | metalcloud-cli endpoint update 123 --config-source pipe
-
-Note: Flags are mutually exclusive with --config-source. 
-Only the fields provided will be updated.`,
+  cat update.yaml | metalcloud-cli endpoint update 123 --config-source pipe`,
 		SilenceUsage: true,
 		Annotations:  map[string]string{system.REQUIRED_PERMISSION: system.PERMISSION_SERVERS_WRITE},
 		Args:         cobra.ExactArgs(1),
@@ -147,9 +196,22 @@ Only the fields provided will be updated.`,
 	}
 
 	endpointDeleteCmd = &cobra.Command{
-		Use:          "delete endpoint_id",
-		Aliases:      []string{"rm", "del"},
-		Short:        "Delete an endpoint.",
+		Use:     "delete endpoint_id",
+		Aliases: []string{"rm", "del"},
+		Short:   "Delete an endpoint",
+		Long: `Delete an endpoint from MetalSoft.
+
+This command permanently removes an endpoint from the system. This action cannot be undone.
+
+Arguments:
+  endpoint_id    The unique identifier of the endpoint to delete (required)
+
+Examples:
+  metalcloud-cli endpoint delete 123
+  metalcloud-cli endpoint rm 456
+  metalcloud-cli ep del endpoint-uuid-123
+
+Warning: This operation is irreversible. Make sure you have the correct endpoint ID before proceeding.`,
 		SilenceUsage: true,
 		Annotations:  map[string]string{system.REQUIRED_PERMISSION: system.PERMISSION_SERVERS_WRITE},
 		Args:         cobra.ExactArgs(1),
@@ -159,9 +221,21 @@ Only the fields provided will be updated.`,
 	}
 
 	endpointInterfaceListCmd = &cobra.Command{
-		Use:          "interfaces endpoint_id",
-		Aliases:      []string{"ifaces", "ifs"},
-		Short:        "List interfaces of an endpoint.",
+		Use:     "interfaces endpoint_id",
+		Aliases: []string{"ifaces", "ifs"},
+		Short:   "List interfaces of an endpoint",
+		Long: `List all network interfaces of a specific endpoint in MetalSoft.
+
+This command displays detailed information about all network interfaces associated 
+with the specified endpoint, including their configuration and status.
+
+Arguments:
+  endpoint_id    The unique identifier of the endpoint whose interfaces to list (required)
+
+Examples:
+  metalcloud-cli endpoint interfaces 123
+  metalcloud-cli endpoint ifaces 456
+  metalcloud-cli ep ifs endpoint-uuid-123`,
 		SilenceUsage: true,
 		Annotations:  map[string]string{system.REQUIRED_PERMISSION: system.PERMISSION_SERVERS_READ},
 		Args:         cobra.ExactArgs(1),

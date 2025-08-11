@@ -151,5 +151,11 @@ func hideUnavailableCommands(cmd *cobra.Command, userPermissionKeys []string) {
 }
 
 func Execute() error {
+	// If you want to generate markdown documentation, uncomment the following lines
+	// err := doc.GenMarkdownTree(rootCmd, "./docs")
+	// if err != nil {
+	// 	panic(err)
+	// }
+
 	return rootCmd.Execute()
 }

@@ -15,9 +15,37 @@ var (
 	Version string
 
 	versionCmd = &cobra.Command{
-		Use:          "version",
-		Aliases:      []string{"ver"},
-		Short:        "Get CLI version details.",
+		Use:     "version",
+		Aliases: []string{"ver"},
+		Short:   "Display CLI version, configuration details, and environment information",
+		Long: `Display comprehensive version and configuration information for the Metalcloud CLI.
+
+This command shows:
+- CLI version information and compatible Metalsoft version range
+- Current configuration settings (endpoint, security mode, logging)
+- User authentication details (when authenticated)
+- Relevant environment variables (proxy settings)
+
+The command uses the current configuration from:
+- Configuration file (if present)
+- Environment variables
+- Command-line flags from previous commands
+
+No additional flags are supported by this command. All information is gathered
+from the current CLI configuration and environment.
+
+Examples:
+  # Display basic version information
+  metalcloud-cli version
+
+  # Use short alias
+  metalcloud-cli ver
+
+  # View version info with different verbosity (set globally)
+  metalcloud-cli --verbosity debug version
+
+  # Check version with specific endpoint configuration
+  metalcloud-cli --endpoint https://my.metalcloud.com version`,
 		SilenceUsage: true,
 		RunE: func(cmd *cobra.Command, args []string) error {
 			fmt.Printf("CLI Version: %s\n", Version)
