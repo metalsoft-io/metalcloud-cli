@@ -606,17 +606,12 @@ func InfrastructureGetUtilization(ctx context.Context, userId int, startTime tim
 
 	logger.Get().Debug().Msgf("Processing utilization for %d infrastructures", len(utilization.Infrastructures))
 
-	for _, inf := range utilization.Infrastructures {
-		logger.Get().Debug().Msgf("Processing utilization for infrastructure %v", inf)
-		infrastructure, ok := inf.(map[string]interface{})
-		if !ok {
-			logger.Get().Warn().Msgf("Infrastructure item is not a map: %v", inf)
-			continue
-		}
+	for _, infrastructure := range utilization.Infrastructures {
+		logger.Get().Debug().Msgf("Processing utilization for infrastructure %v", infrastructure)
 
-		infrastructureId := infrastructure["infrastructureId"]
-		infrastructureLabel := infrastructure["infrastructureLabel"]
-		infrastructureServiceStatus := infrastructure["infrastructureServiceStatus"]
+		infrastructureId := infrastructure.InfrastructureId
+		infrastructureLabel := infrastructure.InfrastructureLabel
+		infrastructureServiceStatus := infrastructure.InfrastructureServiceStatus
 
 		// Add infrastructure-level data
 		reportData = append(reportData, utilReportRecord{
@@ -627,114 +622,98 @@ func InfrastructureGetUtilization(ctx context.Context, userId int, startTime tim
 
 		// Get detailed report for this infrastructure
 		infrastructureIdStr := fmt.Sprintf("%v", infrastructureId)
-		if infraDetails, infraExists := utilization.DetailedReport[infrastructureIdStr].(map[string]interface{}); infraExists {
+		if infraDetails, infraExists := (*utilization.DetailedReport)[infrastructureIdStr]; infraExists {
 			// Process dataList for this infrastructure
 			if showInstances {
-				if dataList, dataExist := infraDetails["instance"].([]interface{}); dataExist {
-					for _, data := range dataList {
-						if item, ok := data.(map[string]interface{}); ok {
-							reportData = append(reportData, utilReportRecord{
-								InfrastructureId:            infrastructureId,
-								InfrastructureLabel:         infrastructureLabel,
-								InfrastructureServiceStatus: infrastructureServiceStatus,
-								//
-								Kind:              "Instance",
-								Id:                item["id"],
-								Label:             item["label"],
-								StartTime:         item["startTimestamp"],
-								EndTime:           item["endTimestamp"],
-								MeasurementPeriod: item["measurementPeriod"],
-								MeasurementUnit:   item["measurementUnit"],
-								Quantity:          item["quantity"],
-								//
-								ServerTypeId:               item["serverTypeId"],
-								ServerId:                   item["serverId"],
-								ServerTypeName:             item["serverTypeName"],
-								OperatingSystemType:        item["operatingSystemType"],
-								OperatingSystemVersion:     item["operatingSystemVersion"],
-								OperatingSystemDisplayName: item["operatingSystemDisplayName"],
-								OperatingSystemTemplateId:  item["operatingSystemTemplateId"],
-								OriginalStartTimestamp:     item["originalStartTimestamp"],
-							})
-						}
-					}
+				for _, item := range infraDetails.Instance {
+					reportData = append(reportData, utilReportRecord{
+						InfrastructureId:            infrastructureId,
+						InfrastructureLabel:         infrastructureLabel,
+						InfrastructureServiceStatus: infrastructureServiceStatus,
+						//
+						Kind:              "Instance",
+						Id:                item.Id,
+						Label:             item.Label,
+						StartTime:         item.StartTimestamp,
+						EndTime:           item.EndTimestamp,
+						MeasurementPeriod: item.MeasurementPeriod,
+						MeasurementUnit:   item.MeasurementUnit,
+						Quantity:          item.Quantity,
+						//
+						ServerTypeId:               item.ServerTypeId,
+						ServerId:                   item.ServerId,
+						ServerTypeName:             item.ServerTypeName,
+						OperatingSystemType:        item.OperatingSystemType,
+						OperatingSystemVersion:     item.OperatingSystemVersion,
+						OperatingSystemDisplayName: item.OperatingSystemDisplayName,
+						OperatingSystemTemplateId:  item.OperatingSystemTemplateId,
+						OriginalStartTimestamp:     item.OriginalStartTimestamp,
+					})
 				}
 			}
 
 			if showDrives {
-				if dataList, dataExist := infraDetails["drive"].([]interface{}); dataExist {
-					for _, data := range dataList {
-						if item, ok := data.(map[string]interface{}); ok {
-							reportData = append(reportData, utilReportRecord{
-								InfrastructureId:            infrastructureId,
-								InfrastructureLabel:         infrastructureLabel,
-								InfrastructureServiceStatus: infrastructureServiceStatus,
-								//
-								Kind:              "Drive",
-								Id:                item["id"],
-								Label:             item["label"],
-								StartTime:         item["startTimestamp"],
-								EndTime:           item["endTimestamp"],
-								MeasurementPeriod: item["measurementPeriod"],
-								MeasurementUnit:   item["measurementUnit"],
-								Quantity:          item["quantity"],
-								//
-								DriveSizeMbytes:  item["driveSizeMbytes"],
-								DriveStorageType: item["driveStorageType"],
-							})
-						}
-					}
+				for _, item := range infraDetails.Drive {
+					reportData = append(reportData, utilReportRecord{
+						InfrastructureId:            infrastructureId,
+						InfrastructureLabel:         infrastructureLabel,
+						InfrastructureServiceStatus: infrastructureServiceStatus,
+						//
+						Kind:              "Drive",
+						Id:                item.Id,
+						Label:             item.Label,
+						StartTime:         item.StartTimestamp,
+						EndTime:           item.EndTimestamp,
+						MeasurementPeriod: item.MeasurementPeriod,
+						MeasurementUnit:   item.MeasurementUnit,
+						Quantity:          item.Quantity,
+						//
+						DriveSizeMbytes:  item.DriveSizeMbytes,
+						DriveStorageType: item.DriveStorageType,
+					})
 				}
 
-				if dataList, dataExist := infraDetails["sharedDrive"].([]interface{}); dataExist {
-					for _, data := range dataList {
-						if item, ok := data.(map[string]interface{}); ok {
-							reportData = append(reportData, utilReportRecord{
-								InfrastructureId:            infrastructureId,
-								InfrastructureLabel:         infrastructureLabel,
-								InfrastructureServiceStatus: infrastructureServiceStatus,
-								//
-								Kind:              "Shared Drive",
-								Id:                item["id"],
-								Label:             item["label"],
-								StartTime:         item["startTimestamp"],
-								EndTime:           item["endTimestamp"],
-								MeasurementPeriod: item["measurementPeriod"],
-								MeasurementUnit:   item["measurementUnit"],
-								Quantity:          item["quantity"],
-								//
-								DriveSizeMbytes:  item["sharedDriveSizeMbytes"],
-								DriveStorageType: item["sharedDriveStorageType"],
-							})
-						}
-					}
+				for _, item := range infraDetails.SharedDrive {
+					reportData = append(reportData, utilReportRecord{
+						InfrastructureId:            infrastructureId,
+						InfrastructureLabel:         infrastructureLabel,
+						InfrastructureServiceStatus: infrastructureServiceStatus,
+						//
+						Kind:              "Shared Drive",
+						Id:                item.Id,
+						Label:             item.Label,
+						StartTime:         item.StartTimestamp,
+						EndTime:           item.EndTimestamp,
+						MeasurementPeriod: item.MeasurementPeriod,
+						MeasurementUnit:   item.MeasurementUnit,
+						Quantity:          item.Quantity,
+						//
+						DriveSizeMbytes:  item.SharedDriveSizeMbytes,
+						DriveStorageType: item.SharedDriveStorageType,
+					})
 				}
 			}
 
 			if showSubnets {
-				if dataList, dataExist := infraDetails["subnet"].([]interface{}); dataExist {
-					for _, data := range dataList {
-						if item, ok := data.(map[string]interface{}); ok {
-							reportData = append(reportData, utilReportRecord{
-								InfrastructureId:            infrastructureId,
-								InfrastructureLabel:         infrastructureLabel,
-								InfrastructureServiceStatus: infrastructureServiceStatus,
-								//
-								Kind:              "Subnet",
-								Id:                item["id"],
-								Label:             item["label"],
-								StartTime:         item["startTimestamp"],
-								EndTime:           item["endTimestamp"],
-								MeasurementPeriod: item["measurementPeriod"],
-								MeasurementUnit:   item["measurementUnit"],
-								Quantity:          item["quantity"],
-								//
-								SubnetIpCount:    item["subnetIpCount"],
-								SubnetPrefixSize: item["subnetPrefixSize"],
-								SubnetType:       item["subnetType"],
-							})
-						}
-					}
+				for _, item := range infraDetails.Subnet {
+					reportData = append(reportData, utilReportRecord{
+						InfrastructureId:            infrastructureId,
+						InfrastructureLabel:         infrastructureLabel,
+						InfrastructureServiceStatus: infrastructureServiceStatus,
+						//
+						Kind:              "Subnet",
+						Id:                item.Id,
+						Label:             item.Label,
+						StartTime:         item.StartTimestamp,
+						EndTime:           item.EndTimestamp,
+						MeasurementPeriod: item.MeasurementPeriod,
+						MeasurementUnit:   item.MeasurementUnit,
+						Quantity:          item.Quantity,
+						//
+						SubnetIpCount:    item.SubnetIpCount,
+						SubnetPrefixSize: item.SubnetPrefixSize,
+						SubnetType:       item.SubnetType,
+					})
 				}
 			}
 		}
