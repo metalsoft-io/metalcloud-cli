@@ -15,6 +15,10 @@ Required flags:
 Optional flags:
   --site-id            Site IDs to include in the report (can be specified multiple times)
   --infrastructure-id  Infrastructure IDs to include in the report (can be specified multiple times)
+  --show-all           Show all utilizations
+  --show-instances     Show instance utilizations
+  --show-drives        Show drive utilizations
+  --show-subnets       Show subnet utilizations
 
 Examples:
   # Get utilization report for user 123 for the last 7 days
@@ -33,11 +37,15 @@ metalcloud-cli infrastructure utilization [flags]
 ### Options
 
 ```
-      --end-time time            End time for the report.
+      --end-time time            End time for the report. (default 2025-08-11T22:19:41.731745129+03:00)
   -h, --help                     help for utilization
       --infrastructure-id ints   Infrastructure IDs to include in the report.
+      --show-all                 If set, will display all utilizations.
+      --show-drives              If set, will display drive utilizations.
+      --show-instances           If set, will display instance utilizations.
+      --show-subnets             If set, will display subnet utilizations.
       --site-id ints             Site IDs to include in the report.
-      --start-time time          Start time for the report.
+      --start-time time          Start time for the report. (default 2025-08-11T22:19:41.731710594+03:00)
       --user-id int              ID of the user to include in the report.
 ```
 
