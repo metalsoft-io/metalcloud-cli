@@ -80,17 +80,17 @@ func rootPersistentPreRun(cmd *cobra.Command, args []string) error {
 
 	endpoint := viper.GetString(system.ConfigEndpoint)
 
-	if endpoint == "" {
+	if cmd.Name() != "version" && endpoint == "" {
 		return fmt.Errorf("API endpoint is required. Use --endpoint or set %s environment variable", system.ConfigEndpoint)
 	}
 
 	// Validate the endpoint is proper URL
 	u, err := url.Parse(endpoint)
-	if err != nil || u.Scheme == "" || u.Host == "" {
+	if cmd.Name() != "version" && (err != nil || u.Scheme == "" || u.Host == "") {
 		return fmt.Errorf("invalid API endpoint URL: %s", endpoint)
 	}
 
-	if viper.GetString(system.ConfigApiKey) == "" {
+	if cmd.Name() != "version" && viper.GetString(system.ConfigApiKey) == "" {
 		return fmt.Errorf("API key is required. Use --api-key or set %s environment variable", system.ConfigApiKey)
 	}
 
