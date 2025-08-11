@@ -19,11 +19,18 @@ var (
 		attemptHardShutdown bool
 		softShutdownTimeout int
 		forceShutdown       bool
-		userId              int
-		startTime           time.Time
-		endTime             time.Time
-		siteIds             []int
-		infrastructureIds   []int
+	}{}
+
+	infrastructureUtilFlags = struct {
+		userId            int
+		startTime         time.Time
+		endTime           time.Time
+		siteIds           []int
+		infrastructureIds []int
+		showAll           bool
+		showInstances     bool
+		showSubnets       bool
+		showDrives        bool
 	}{}
 
 	infrastructureCmd = &cobra.Command{
@@ -538,6 +545,10 @@ Required flags:
 Optional flags:
   --site-id            Site IDs to include in the report (can be specified multiple times)
   --infrastructure-id  Infrastructure IDs to include in the report (can be specified multiple times)
+  --show-all           Show all utilizations
+  --show-instances     Show instance utilizations
+  --show-drives        Show drive utilizations
+  --show-subnets       Show subnet utilizations
 
 Examples:
   # Get utilization report for user 123 for the last 7 days
@@ -549,15 +560,18 @@ Examples:
   # Get utilization for all infrastructures of a user in specific sites
   metalcloud-cli infrastructure utilization --user-id 123 --start-time 2025-08-01 --end-time 2025-08-08 --site-id 1 --site-id 3`,
 		SilenceUsage: true,
-		Annotations:  map[string]string{system.REQUIRED_PERMISSION: system.PERMISSION_INFRASTRUCTURES_READ},
+		Annotations:  map[string]string{system.REQUIRED_PERMISSION: system.PERMISSION_UTILIZATION_REPORTS_READ},
 		RunE: func(cmd *cobra.Command, args []string) error {
 			return infrastructure.InfrastructureGetUtilization(
 				cmd.Context(),
-				infrastructureFlags.userId,
-				infrastructureFlags.startTime,
-				infrastructureFlags.endTime,
-				infrastructureFlags.siteIds,
-				infrastructureFlags.infrastructureIds)
+				infrastructureUtilFlags.userId,
+				infrastructureUtilFlags.startTime,
+				infrastructureUtilFlags.endTime,
+				infrastructureUtilFlags.siteIds,
+				infrastructureUtilFlags.infrastructureIds,
+				infrastructureUtilFlags.showAll || infrastructureUtilFlags.showInstances,
+				infrastructureUtilFlags.showAll || infrastructureUtilFlags.showDrives,
+				infrastructureUtilFlags.showAll || infrastructureUtilFlags.showSubnets)
 		},
 	}
 )
@@ -603,11 +617,15 @@ func init() {
 	infrastructureCmd.AddCommand(infrastructureGetAllStatisticsCmd)
 
 	infrastructureCmd.AddCommand(infrastructureUtilizationCmd)
-	infrastructureUtilizationCmd.Flags().IntVar(&infrastructureFlags.userId, "user-id", 0, "ID of the user to include in the report.")
-	infrastructureUtilizationCmd.Flags().TimeVar(&infrastructureFlags.startTime, "start-time", time.Now().Add(-time.Duration(time.Now().Day())), []string{time.RFC3339, time.DateOnly}, "Start time for the report.")
-	infrastructureUtilizationCmd.Flags().TimeVar(&infrastructureFlags.endTime, "end-time", time.Now(), []string{time.RFC3339, time.DateOnly}, "End time for the report.")
-	infrastructureUtilizationCmd.Flags().IntSliceVar(&infrastructureFlags.siteIds, "site-id", []int{}, "Site IDs to include in the report.")
-	infrastructureUtilizationCmd.Flags().IntSliceVar(&infrastructureFlags.infrastructureIds, "infrastructure-id", []int{}, "Infrastructure IDs to include in the report.")
+	infrastructureUtilizationCmd.Flags().IntVar(&infrastructureUtilFlags.userId, "user-id", 0, "ID of the user to include in the report.")
+	infrastructureUtilizationCmd.Flags().TimeVar(&infrastructureUtilFlags.startTime, "start-time", time.Now().Add(-time.Duration(time.Now().Day())), []string{time.RFC3339, time.DateOnly}, "Start time for the report.")
+	infrastructureUtilizationCmd.Flags().TimeVar(&infrastructureUtilFlags.endTime, "end-time", time.Now(), []string{time.RFC3339, time.DateOnly}, "End time for the report.")
+	infrastructureUtilizationCmd.Flags().IntSliceVar(&infrastructureUtilFlags.siteIds, "site-id", []int{}, "Site IDs to include in the report.")
+	infrastructureUtilizationCmd.Flags().IntSliceVar(&infrastructureUtilFlags.infrastructureIds, "infrastructure-id", []int{}, "Infrastructure IDs to include in the report.")
+	infrastructureUtilizationCmd.Flags().BoolVar(&infrastructureUtilFlags.showAll, "show-all", false, "If set, will display all utilizations.")
+	infrastructureUtilizationCmd.Flags().BoolVar(&infrastructureUtilFlags.showInstances, "show-instances", false, "If set, will display instance utilizations.")
+	infrastructureUtilizationCmd.Flags().BoolVar(&infrastructureUtilFlags.showDrives, "show-drives", false, "If set, will display drive utilizations.")
+	infrastructureUtilizationCmd.Flags().BoolVar(&infrastructureUtilFlags.showSubnets, "show-subnets", false, "If set, will display subnet utilizations.")
 	infrastructureUtilizationCmd.MarkFlagRequired("user-id")
 	infrastructureUtilizationCmd.MarkFlagRequired("start-time")
 	infrastructureUtilizationCmd.MarkFlagRequired("end-time")
