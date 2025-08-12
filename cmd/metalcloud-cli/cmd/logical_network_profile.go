@@ -22,14 +22,58 @@ var (
 	logicalNetworkProfileCmd = &cobra.Command{
 		Use:     "logical-network-profile [command]",
 		Aliases: []string{"lnp", "network-profile"},
-		Short:   "Logical network profile management",
-		Long:    `Logical network profile management commands.`,
+		Short:   "Manage logical network profiles for network configuration templates",
+		Long: `Manage logical network profiles which define network configuration templates
+that can be applied to infrastructure deployments. These profiles contain
+network settings, routing rules, and connectivity configurations.
+
+Available commands:
+  list          List all logical network profiles with filtering options
+  get           Get detailed information about a specific profile
+  create        Create a new logical network profile from configuration
+  update        Update an existing logical network profile
+  delete        Delete a logical network profile
+  config-example Get example configuration for a specific profile kind
+
+Examples:
+  metalcloud-cli logical-network-profile list
+  metalcloud-cli lnp get 12345
+  metalcloud-cli network-profile create --config-source profile.json`,
 	}
 
 	logicalNetworkProfileListCmd = &cobra.Command{
-		Use:          "list",
-		Aliases:      []string{"ls"},
-		Short:        "List all logical network profiles.",
+		Use:     "list",
+		Aliases: []string{"ls"},
+		Short:   "List logical network profiles with optional filtering",
+		Long: `List all logical network profiles in the system with optional filtering capabilities.
+
+This command displays a tabular view of logical network profiles including their
+ID, name, kind, label, fabric ID, and other metadata. Use the filter flags to
+narrow down results based on specific criteria.
+
+Flags:
+  --filter-id          Filter profiles by one or more profile IDs
+  --filter-label       Filter profiles by label pattern matching
+  --filter-kind        Filter profiles by profile kind (e.g., 'cisco', 'juniper')
+  --filter-name        Filter profiles by name pattern matching
+  --filter-fabric-id   Filter profiles by associated fabric ID
+  --sort-by            Sort results by specified fields with direction
+
+Examples:
+  # List all logical network profiles
+  metalcloud-cli logical-network-profile list
+
+  # Filter by profile kind
+  metalcloud-cli lnp list --filter-kind cisco
+
+  # Filter by multiple criteria
+  metalcloud-cli network-profile list --filter-kind cisco --filter-label "prod"
+
+  # Sort by name in descending order
+  metalcloud-cli lnp ls --sort-by name:DESC
+
+  # Filter by fabric ID and sort by ID
+  metalcloud-cli lnp list --filter-fabric-id 100 --sort-by id:ASC`,
 		SilenceUsage: true,
 		Annotations:  map[string]string{system.REQUIRED_PERMISSION: system.PERMISSION_NETWORK_PROFILES_READ},
 		Args:         cobra.NoArgs,
@@ -46,9 +90,27 @@ var (
 	}
 
 	logicalNetworkProfileGetCmd = &cobra.Command{
-		Use:          "get logical_network_profile_id",
-		Aliases:      []string{"show"},
-		Short:        "Get logical network profile details.",
+		Use:     "get logical_network_profile_id",
+		Aliases: []string{"show"},
+		Short:   "Get detailed information about a logical network profile",
+		Long: `Get comprehensive details about a specific logical network profile.
+
+This command displays detailed information about a logical network profile including
+its configuration, metadata, associated fabric information, and deployment settings.
+The profile ID can be obtained from the list command.
+
+Required Arguments:
+  logical_network_profile_id    The unique identifier of the profile to retrieve
+
+Examples:
+  # Get details for profile ID 12345
+  metalcloud-cli logical-network-profile get 12345
+
+  # Get profile details using short alias
+  metalcloud-cli lnp show 12345
+
+  # Get profile details for piping to other commands
+  metalcloud-cli network-profile get 12345 --output json`,
 		SilenceUsage: true,
 		Annotations:  map[string]string{system.REQUIRED_PERMISSION: system.PERMISSION_NETWORK_PROFILES_READ},
 		Args:         cobra.ExactArgs(1),
@@ -58,9 +120,27 @@ var (
 	}
 
 	logicalNetworkProfileConfigExampleCmd = &cobra.Command{
-		Use:          "config-example kind",
-		Aliases:      []string{"example"},
-		Short:        "Get example of logical network profile configuration.",
+		Use:     "config-example kind",
+		Aliases: []string{"example"},
+		Short:   "Get example configuration for a specific profile kind",
+		Long: `Get an example configuration template for creating logical network profiles.
+
+This command displays a sample configuration in JSON format that can be used
+as a starting point for creating new logical network profiles. The configuration
+includes all required and optional fields with example values.
+
+Required Arguments:
+  kind    The profile kind to generate an example for (e.g., 'cisco', 'juniper', 'arista')
+
+Examples:
+  # Get example configuration for Cisco profiles
+  metalcloud-cli logical-network-profile config-example cisco
+
+  # Get example and save to file
+  metalcloud-cli lnp example juniper > profile-template.json
+
+  # Get example using alias
+  metalcloud-cli network-profile example arista`,
 		SilenceUsage: true,
 		Annotations:  map[string]string{system.REQUIRED_PERMISSION: system.PERMISSION_NETWORK_PROFILES_READ},
 		Args:         cobra.ExactArgs(1),
@@ -70,9 +150,37 @@ var (
 	}
 
 	logicalNetworkProfileCreateCmd = &cobra.Command{
-		Use:          "create kind",
-		Aliases:      []string{"new"},
-		Short:        "Create a new logical network profile.",
+		Use:     "create kind",
+		Aliases: []string{"new"},
+		Short:   "Create a new logical network profile from configuration",
+		Long: `Create a new logical network profile from a JSON configuration.
+
+This command creates a new logical network profile based on the specified kind
+and configuration provided via file or stdin. The configuration must match the
+schema for the specified profile kind.
+
+Required Arguments:
+  kind    The type of profile to create (e.g., 'cisco', 'juniper', 'arista')
+
+Required Flags:
+  --config-source    Source of configuration data (required)
+                     - 'pipe' to read from stdin
+                     - path to JSON file containing profile configuration
+
+Examples:
+  # Create profile from JSON file
+  metalcloud-cli logical-network-profile create cisco --config-source profile.json
+
+  # Create profile from stdin
+  cat profile.json | metalcloud-cli lnp create juniper --config-source pipe
+
+  # Create profile using alias
+  metalcloud-cli network-profile new arista --config-source ./configs/arista-profile.json
+
+  # Get example configuration first, then create
+  metalcloud-cli lnp example cisco > cisco-profile.json
+  # Edit cisco-profile.json with your settings
+  metalcloud-cli lnp create cisco --config-source cisco-profile.json`,
 		SilenceUsage: true,
 		Annotations:  map[string]string{system.REQUIRED_PERMISSION: system.PERMISSION_NETWORK_PROFILES_READ},
 		Args:         cobra.ExactArgs(1),
@@ -87,9 +195,37 @@ var (
 	}
 
 	logicalNetworkProfileUpdateCmd = &cobra.Command{
-		Use:          "update logical_network_profile_id",
-		Aliases:      []string{"edit"},
-		Short:        "Update a logical network profile.",
+		Use:     "update logical_network_profile_id",
+		Aliases: []string{"edit"},
+		Short:   "Update an existing logical network profile",
+		Long: `Update an existing logical network profile with new configuration.
+
+This command modifies an existing logical network profile by applying the provided
+configuration changes. The profile ID must be valid and the configuration must
+match the schema for the profile's kind.
+
+Required Arguments:
+  logical_network_profile_id    The unique identifier of the profile to update
+
+Required Flags:
+  --config-source    Source of configuration data (required)
+                     - 'pipe' to read from stdin
+                     - path to JSON file containing updated profile configuration
+
+Examples:
+  # Update profile from JSON file
+  metalcloud-cli logical-network-profile update 12345 --config-source updated-profile.json
+
+  # Update profile from stdin
+  cat updated-config.json | metalcloud-cli lnp update 12345 --config-source pipe
+
+  # Update profile using alias
+  metalcloud-cli network-profile edit 12345 --config-source ./configs/new-settings.json
+
+  # Get current profile, modify, then update
+  metalcloud-cli lnp get 12345 --output json > current-profile.json
+  # Edit current-profile.json with your changes
+  metalcloud-cli lnp update 12345 --config-source current-profile.json`,
 		SilenceUsage: true,
 		Annotations:  map[string]string{system.REQUIRED_PERMISSION: system.PERMISSION_NETWORK_PROFILES_READ},
 		Args:         cobra.ExactArgs(1),
@@ -103,9 +239,30 @@ var (
 	}
 
 	logicalNetworkProfileDeleteCmd = &cobra.Command{
-		Use:          "delete logical_network_profile_id",
-		Aliases:      []string{"rm"},
-		Short:        "Delete a logical network profile.",
+		Use:     "delete logical_network_profile_id",
+		Aliases: []string{"rm"},
+		Short:   "Delete a logical network profile",
+		Long: `Delete a logical network profile from the system.
+
+This command permanently removes a logical network profile and all its associated
+configuration. The profile must not be in use by any active deployments before
+it can be deleted.
+
+Required Arguments:
+  logical_network_profile_id    The unique identifier of the profile to delete
+
+Examples:
+  # Delete profile by ID
+  metalcloud-cli logical-network-profile delete 12345
+
+  # Delete profile using short alias
+  metalcloud-cli lnp rm 12345
+
+  # Delete profile using alias
+  metalcloud-cli network-profile delete 12345
+
+Warning: This operation is irreversible. Ensure the profile is not in use
+by any active infrastructure deployments before deletion.`,
 		SilenceUsage: true,
 		Annotations:  map[string]string{system.REQUIRED_PERMISSION: system.PERMISSION_NETWORK_PROFILES_READ},
 		Args:         cobra.ExactArgs(1),

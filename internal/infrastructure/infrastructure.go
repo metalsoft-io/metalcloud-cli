@@ -6,12 +6,14 @@ import (
 	"fmt"
 	"strconv"
 	"strings"
+	"time"
 
 	"github.com/metalsoft-io/metalcloud-cli/pkg/api"
 	"github.com/metalsoft-io/metalcloud-cli/pkg/formatter"
 	"github.com/metalsoft-io/metalcloud-cli/pkg/logger"
 	"github.com/metalsoft-io/metalcloud-cli/pkg/response_inspector"
 	sdk "github.com/metalsoft-io/metalcloud-sdk-go"
+	"github.com/spf13/viper"
 )
 
 var infrastructurePrintConfig = formatter.PrintConfig{
@@ -555,4 +557,378 @@ func InfrastructureGetAllStatistics(ctx context.Context) error {
 			},
 		},
 	})
+}
+
+/* cspell:disable */
+
+func InfrastructureGetUtilization(ctx context.Context, userId int, startTime time.Time, endTime time.Time, siteIds []int, infrastructureIds []int,
+	showInstances, showDrives, showSubnets bool) error {
+	logger.Get().Info().Msgf("Getting utilization report for user %d from %s to %s", userId, startTime.Format(time.RFC3339), endTime.Format(time.RFC3339))
+
+	client := api.GetApiClient(ctx)
+
+	request := sdk.GetResourceUtilizationDetailed{
+		UserIdOwner:    float32(userId),
+		StartTimestamp: startTime.Format(time.RFC3339),
+		EndTimestamp:   endTime.Format(time.RFC3339),
+	}
+
+	if len(siteIds) > 0 {
+		request.SiteIds = make([]float32, 0, len(siteIds))
+		for _, siteId := range siteIds {
+			siteIdFloat := float32(siteId)
+			request.SiteIds = append(request.SiteIds, siteIdFloat)
+		}
+	}
+
+	if len(infrastructureIds) > 0 {
+		request.InfrastructureIds = make([]float32, 0, len(infrastructureIds))
+		for _, infrastructureId := range infrastructureIds {
+			infrastructureIdFloat := float32(infrastructureId)
+			request.InfrastructureIds = append(request.InfrastructureIds, infrastructureIdFloat)
+		}
+	}
+
+	utilization, httpRes, err := client.InfrastructureAPI.
+		GetInfrastructureResourceUtilizationDetailed(ctx).
+		GetResourceUtilizationDetailed(request).
+		Execute()
+	if err := response_inspector.InspectResponse(httpRes, err); err != nil {
+		return err
+	}
+
+	if strings.ToLower(viper.GetString(formatter.ConfigFormat)) == "json" {
+		// Do not change the output format if JSON is requested
+		return formatter.PrintResult(utilization, nil)
+	}
+
+	reportData := []utilReportRecord{}
+
+	logger.Get().Debug().Msgf("Processing utilization for %d infrastructures", len(utilization.Infrastructures))
+
+	for _, infrastructure := range utilization.Infrastructures {
+		logger.Get().Debug().Msgf("Processing utilization for infrastructure %v", infrastructure)
+
+		infrastructureId := infrastructure.InfrastructureId
+		infrastructureLabel := infrastructure.InfrastructureLabel
+		infrastructureServiceStatus := infrastructure.InfrastructureServiceStatus
+
+		// Add infrastructure-level data
+		reportData = append(reportData, utilReportRecord{
+			InfrastructureId:            infrastructureId,
+			InfrastructureLabel:         infrastructureLabel,
+			InfrastructureServiceStatus: infrastructureServiceStatus,
+		})
+
+		// Get detailed report for this infrastructure
+		infrastructureIdStr := fmt.Sprintf("%v", infrastructureId)
+		if infraDetails, infraExists := (*utilization.DetailedReport)[infrastructureIdStr]; infraExists {
+			// Process dataList for this infrastructure
+			if showInstances {
+				for _, item := range infraDetails.Instance {
+					reportData = append(reportData, utilReportRecord{
+						InfrastructureId:            infrastructureId,
+						InfrastructureLabel:         infrastructureLabel,
+						InfrastructureServiceStatus: infrastructureServiceStatus,
+						//
+						Kind:              "Instance",
+						Id:                item.Id,
+						Label:             item.Label,
+						StartTime:         item.StartTimestamp,
+						EndTime:           item.EndTimestamp,
+						MeasurementPeriod: item.MeasurementPeriod,
+						MeasurementUnit:   item.MeasurementUnit,
+						Quantity:          item.Quantity,
+						//
+						ServerTypeId:               item.ServerTypeId,
+						ServerId:                   item.ServerId,
+						ServerTypeName:             item.ServerTypeName,
+						OperatingSystemType:        item.OperatingSystemType,
+						OperatingSystemVersion:     item.OperatingSystemVersion,
+						OperatingSystemDisplayName: item.OperatingSystemDisplayName,
+						OperatingSystemTemplateId:  item.OperatingSystemTemplateId,
+						OriginalStartTimestamp:     item.OriginalStartTimestamp,
+					})
+				}
+			}
+
+			if showDrives {
+				for _, item := range infraDetails.Drive {
+					reportData = append(reportData, utilReportRecord{
+						InfrastructureId:            infrastructureId,
+						InfrastructureLabel:         infrastructureLabel,
+						InfrastructureServiceStatus: infrastructureServiceStatus,
+						//
+						Kind:              "Drive",
+						Id:                item.Id,
+						Label:             item.Label,
+						StartTime:         item.StartTimestamp,
+						EndTime:           item.EndTimestamp,
+						MeasurementPeriod: item.MeasurementPeriod,
+						MeasurementUnit:   item.MeasurementUnit,
+						Quantity:          item.Quantity,
+						//
+						DriveSizeMbytes:  item.DriveSizeMbytes,
+						DriveStorageType: item.DriveStorageType,
+					})
+				}
+
+				for _, item := range infraDetails.SharedDrive {
+					reportData = append(reportData, utilReportRecord{
+						InfrastructureId:            infrastructureId,
+						InfrastructureLabel:         infrastructureLabel,
+						InfrastructureServiceStatus: infrastructureServiceStatus,
+						//
+						Kind:              "Shared Drive",
+						Id:                item.Id,
+						Label:             item.Label,
+						StartTime:         item.StartTimestamp,
+						EndTime:           item.EndTimestamp,
+						MeasurementPeriod: item.MeasurementPeriod,
+						MeasurementUnit:   item.MeasurementUnit,
+						Quantity:          item.Quantity,
+						//
+						DriveSizeMbytes:  item.SharedDriveSizeMbytes,
+						DriveStorageType: item.SharedDriveStorageType,
+					})
+				}
+			}
+
+			if showSubnets {
+				for _, item := range infraDetails.Subnet {
+					reportData = append(reportData, utilReportRecord{
+						InfrastructureId:            infrastructureId,
+						InfrastructureLabel:         infrastructureLabel,
+						InfrastructureServiceStatus: infrastructureServiceStatus,
+						//
+						Kind:              "Subnet",
+						Id:                item.Id,
+						Label:             item.Label,
+						StartTime:         item.StartTimestamp,
+						EndTime:           item.EndTimestamp,
+						MeasurementPeriod: item.MeasurementPeriod,
+						MeasurementUnit:   item.MeasurementUnit,
+						Quantity:          item.Quantity,
+						//
+						SubnetIpCount:    item.SubnetIpCount,
+						SubnetPrefixSize: item.SubnetPrefixSize,
+						SubnetType:       item.SubnetType,
+					})
+				}
+			}
+		}
+	}
+
+	logger.Get().Debug().Msgf("Utilization report data: %v", reportData)
+
+	return formatter.PrintResult(reportData, utilReportRecordPrintConfig(showInstances, showDrives, showSubnets))
+}
+
+type utilReportRecord = struct {
+	InfrastructureId            interface{}
+	InfrastructureLabel         interface{}
+	InfrastructureServiceStatus interface{}
+	Kind                        interface{}
+	StartTime                   interface{}
+	EndTime                     interface{}
+	Id                          interface{}
+	Label                       interface{}
+	MeasurementPeriod           interface{}
+	MeasurementUnit             interface{}
+	Quantity                    interface{}
+
+	//INSTANCE
+	ServerTypeId               interface{}
+	ServerId                   interface{}
+	ServerTypeName             interface{}
+	OperatingSystemType        interface{}
+	OperatingSystemVersion     interface{}
+	OperatingSystemDisplayName interface{}
+	OperatingSystemTemplateId  interface{}
+	OriginalStartTimestamp     interface{}
+	//(SHARED) DRIVE
+	DriveSizeMbytes  interface{}
+	DriveStorageType interface{}
+	//SharedDriveSizeMbytes  interface{}
+	//SharedDriveStorageType interface{}
+	//SUBNET
+	SubnetIpCount    interface{}
+	SubnetPrefixSize interface{}
+	SubnetType       interface{}
+}
+
+func utilReportRecordPrintConfig(showInstances, showDrives, showSubnets bool) *formatter.PrintConfig {
+	printConfig := formatter.PrintConfig{
+		FieldsConfig: map[string]formatter.RecordFieldConfig{
+			"InfrastructureId": {
+				Title: "Infra ID",
+				Order: 1,
+			},
+			"InfrastructureLabel": {
+				Title: "Infra Label",
+				Order: 2,
+			},
+			"InfrastructureServiceStatus": {
+				Title: "Infra Status",
+				Order: 3,
+			},
+		},
+	}
+
+	var orderIndex = len(printConfig.FieldsConfig)
+	if showInstances || showDrives || showSubnets {
+		orderIndex++
+		printConfig.FieldsConfig["Kind"] = formatter.RecordFieldConfig{
+			Title: "Kind",
+			Order: orderIndex,
+		}
+
+		orderIndex++
+		printConfig.FieldsConfig["Id"] = formatter.RecordFieldConfig{
+			Title: "ID",
+			Order: orderIndex,
+		}
+
+		orderIndex++
+		printConfig.FieldsConfig["Label"] = formatter.RecordFieldConfig{
+			Title: "Label",
+			Order: orderIndex,
+		}
+
+		orderIndex++
+		printConfig.FieldsConfig["StartTime"] = formatter.RecordFieldConfig{
+			Title: "Start Time",
+			Order: orderIndex,
+			//Transformer: formatter.FormatDateTimeValue,
+		}
+
+		orderIndex++
+		printConfig.FieldsConfig["EndTime"] = formatter.RecordFieldConfig{
+			Title: "End Time",
+			Order: orderIndex,
+			//Transformer: formatter.FormatDateTimeValue,
+		}
+
+		orderIndex++
+		printConfig.FieldsConfig["MeasurementPeriod"] = formatter.RecordFieldConfig{
+			Title:       "Measurement",
+			Order:       orderIndex,
+			Transformer: formatter.FormatIntegerValue,
+		}
+
+		orderIndex++
+		printConfig.FieldsConfig["MeasurementUnit"] = formatter.RecordFieldConfig{
+			Title: "Unit",
+			Order: orderIndex,
+		}
+
+		orderIndex++
+		printConfig.FieldsConfig["Quantity"] = formatter.RecordFieldConfig{
+			Title:       "Quantity",
+			Order:       orderIndex,
+			Transformer: formatter.FormatIntegerValue,
+		}
+	}
+
+	if showInstances {
+		//INSTANCE:
+		orderIndex++
+		printConfig.FieldsConfig["ServerTypeId"] = formatter.RecordFieldConfig{
+			Title: "Server Type ID",
+			Order: orderIndex,
+		}
+
+		orderIndex++
+		printConfig.FieldsConfig["ServerId"] = formatter.RecordFieldConfig{
+			Title: "Server ID",
+			Order: orderIndex,
+		}
+
+		orderIndex++
+		printConfig.FieldsConfig["ServerTypeName"] = formatter.RecordFieldConfig{
+			Title: "Server Type Name",
+			Order: orderIndex,
+		}
+
+		orderIndex++
+		printConfig.FieldsConfig["OperatingSystemType"] = formatter.RecordFieldConfig{
+			Title: "OS Type",
+			Order: orderIndex,
+		}
+
+		orderIndex++
+		printConfig.FieldsConfig["OperatingSystemVersion"] = formatter.RecordFieldConfig{
+			Title: "OS Version",
+			Order: orderIndex,
+		}
+
+		orderIndex++
+		printConfig.FieldsConfig["OperatingSystemDisplayName"] = formatter.RecordFieldConfig{
+			Title: "OS Display Name",
+			Order: orderIndex,
+		}
+
+		orderIndex++
+		printConfig.FieldsConfig["OperatingSystemTemplateId"] = formatter.RecordFieldConfig{
+			Title: "OS Template ID",
+			Order: orderIndex,
+		}
+
+		orderIndex++
+		printConfig.FieldsConfig["OriginalStartTimestamp"] = formatter.RecordFieldConfig{
+			Title: "Original Start TS",
+			Order: orderIndex,
+		}
+	}
+
+	if showDrives {
+		//DRIVE:
+		orderIndex++
+		printConfig.FieldsConfig["DriveSizeMbytes"] = formatter.RecordFieldConfig{
+			Title: "Drive Size Mbytes",
+			Order: orderIndex,
+		}
+
+		orderIndex++
+		printConfig.FieldsConfig["DriveStorageType"] = formatter.RecordFieldConfig{
+			Title: "Drive Storage Type",
+			Order: orderIndex,
+		}
+
+		//SHARED DRIVE:
+		/*
+			orderIndex++
+			printConfig.FieldsConfig["SharedDriveSizeMbytes"] = formatter.RecordFieldConfig{
+				Title: "Shared Drive Size Mbytes",
+				Order: orderIndex,
+			}
+
+			orderIndex++
+			printConfig.FieldsConfig["SharedDriveStorageType"] = formatter.RecordFieldConfig{
+				Title: "Shared Drive Storage Type",
+				Order: orderIndex,
+			}
+		*/
+	}
+
+	//SUBNETS:
+	if showSubnets {
+		orderIndex++
+		printConfig.FieldsConfig["SubnetIpCount"] = formatter.RecordFieldConfig{
+			Title: "Subnet Ip Count",
+			Order: orderIndex,
+		}
+		orderIndex++
+		printConfig.FieldsConfig["SubnetPrefixSize"] = formatter.RecordFieldConfig{
+			Title: "Subnet Prefix Size",
+			Order: orderIndex,
+		}
+		orderIndex++
+		printConfig.FieldsConfig["SubnetType"] = formatter.RecordFieldConfig{
+			Title: "Subnet Type",
+			Order: orderIndex,
+		}
+	}
+
+	return &printConfig
 }
