@@ -80,17 +80,22 @@ func rootPersistentPreRun(cmd *cobra.Command, args []string) error {
 
 	endpoint := viper.GetString(system.ConfigEndpoint)
 
-	if cmd.Name() != "version" && endpoint == "" {
+	// Commands that don't require endpoint or API key
+	skipValidation := cmd.Name() == "version" || cmd.Name() == "completion" ||
+		cmd.Name() == "__complete" || cmd.Name() == "__completeNoDesc" ||
+		(cmd.Parent() != nil && cmd.Parent().Name() == "completion")
+
+	if !skipValidation && endpoint == "" {
 		return fmt.Errorf("API endpoint is required. Use --endpoint or set %s environment variable", system.ConfigEndpoint)
 	}
 
 	// Validate the endpoint is proper URL
 	u, err := url.Parse(endpoint)
-	if cmd.Name() != "version" && (err != nil || u.Scheme == "" || u.Host == "") {
+	if !skipValidation && (err != nil || u.Scheme == "" || u.Host == "") {
 		return fmt.Errorf("invalid API endpoint URL: %s", endpoint)
 	}
 
-	if cmd.Name() != "version" && viper.GetString(system.ConfigApiKey) == "" {
+	if !skipValidation && viper.GetString(system.ConfigApiKey) == "" {
 		return fmt.Errorf("API key is required. Use --api-key or set %s environment variable", system.ConfigApiKey)
 	}
 
@@ -102,8 +107,8 @@ func rootPersistentPreRun(cmd *cobra.Command, args []string) error {
 		viper.GetBool(system.ConfigInsecure),
 	)
 
-	// Skip version validation for version command since it may fail with develop versions
-	if cmd.Name() != "version" {
+	// Skip version validation for version and completion commands since they may fail with develop versions
+	if !skipValidation {
 		// Validate the version of the CLI
 		err = system.ValidateVersion(ctx)
 		if err != nil {
@@ -113,8 +118,8 @@ func rootPersistentPreRun(cmd *cobra.Command, args []string) error {
 
 	userId, userPermissions, err := system.GetUserPermissions(ctx)
 	if err != nil {
-		// For version command, don't fail if we can't get permissions
-		if cmd.Name() == "version" {
+		// For version and completion commands, don't fail if we can't get permissions
+		if skipValidation {
 			cmd.SetContext(ctx)
 			return nil
 		}
