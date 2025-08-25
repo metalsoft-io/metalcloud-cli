@@ -13,10 +13,10 @@ device configuration.
 
 Examples:
   # Display example configuration
-  metalcloud-cli network-device config-example
+  metalcloud-cli network-device config-example -f json
 
   # Save example to file
-  metalcloud-cli network-device config-example > device-config.json
+  metalcloud-cli network-device config-example -f json > device-config.json
 
 ```
 metalcloud-cli network-device config-example [flags]

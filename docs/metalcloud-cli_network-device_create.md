@@ -13,6 +13,32 @@ Required Flags:
   --config-source   Source of configuration data (required)
                    Values: 'pipe' for stdin input, or path to JSON file
 
+Use the 'config-example' command to generate an example configuration:
+
+  {
+    "siteId": 1,
+    "driver": "sonic_enterprise",
+    "identifierString": "example",
+    "serialNumber": "1234567890",
+    "chassisIdentifier": "example",
+    "chassisRackId": 1,
+    "position": "leaf",
+    "isGateway": false,
+    "isStorageSwitch": false,
+    "isBorderDevice": false,
+    "managementMAC": "AA:BB:CC:DD:EE:FF",
+    "managementAddress": "1.1.1.1",
+    "managementAddressGateway": "1.1.1.1",
+    "managementAddressMask": "255.255.255.0",
+    "loopbackAddress": "127.0.0.1",
+    "vtepAddress": null,
+    "asn": 65000,
+    "managementPort": 22,
+    "username": "admin",
+    "managementPassword": "password",
+    "syslogEnabled": true
+  }
+
 Examples:
   # Create device from JSON file
   metalcloud-cli network-device create --config-source device-config.json
