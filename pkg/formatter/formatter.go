@@ -464,3 +464,67 @@ func FormatIntegerValue(value interface{}) string {
 
 	return fmt.Sprint(value)
 }
+
+func FormatBooleanValue(value interface{}) string {
+	if value == nil {
+		return ""
+	}
+
+	var result bool
+	var found bool
+
+	if b, ok := value.(bool); ok {
+		result = b
+		found = true
+	} else if i, ok := value.(float64); ok {
+		result = i != 0
+		found = true
+	} else if i, ok := value.(float32); ok {
+		result = i != 0
+		found = true
+	} else if i, ok := value.(int64); ok {
+		result = i != 0
+		found = true
+	} else if i, ok := value.(uint64); ok {
+		result = i != 0
+		found = true
+	} else if i, ok := value.(int); ok {
+		result = i != 0
+		found = true
+	} else if i, ok := value.(uint); ok {
+		result = i != 0
+		found = true
+	} else if i, ok := value.(int32); ok {
+		result = i != 0
+		found = true
+	} else if i, ok := value.(uint32); ok {
+		result = i != 0
+		found = true
+	} else if stringValue, ok := value.(string); ok {
+		if strings.ToLower(stringValue) == "true" || stringValue == "1" {
+			result = true
+			found = true
+		} else if strings.ToLower(stringValue) == "false" || stringValue == "0" {
+			result = false
+			found = true
+		} else {
+			i, err := strconv.ParseInt(stringValue, 10, 64)
+			if err == nil {
+				result = i != 0
+				found = true
+			} else {
+				f, err := strconv.ParseFloat(stringValue, 64)
+				if err == nil {
+					result = int64(f) != 0
+					found = true
+				}
+			}
+		}
+	}
+
+	if found {
+		return fmt.Sprintf("%t", result)
+	}
+
+	return fmt.Sprint(value)
+}

@@ -12,6 +12,7 @@ import (
 	"github.com/metalsoft-io/metalcloud-cli/pkg/formatter"
 	"github.com/metalsoft-io/metalcloud-cli/pkg/logger"
 	"github.com/spf13/cobra"
+	"github.com/spf13/cobra/doc"
 	"github.com/spf13/viper"
 )
 
@@ -42,6 +43,10 @@ func init() {
 	rootCmd.PersistentFlags().StringP(formatter.ConfigFormat, "f", "text", "Output format. Supported values are 'text','csv','md','json','yaml'.")
 	rootCmd.PersistentFlags().BoolP(system.ConfigDebug, "d", false, "Set to enable debug logging")
 	rootCmd.PersistentFlags().BoolP(system.ConfigInsecure, "i", false, "Set to allow insecure transport")
+
+	// Add hidden flag to enable development mode
+	rootCmd.PersistentFlags().BoolVarP(&system.AllowDevelop, "allow_develop", "x", false, "Allow development mode")
+	rootCmd.PersistentFlags().MarkHidden("allow_develop")
 
 	err := viper.BindPFlags(rootCmd.PersistentFlags())
 	if err != nil {
@@ -156,12 +161,14 @@ func hideUnavailableCommands(cmd *cobra.Command, userPermissionKeys []string) {
 }
 
 func Execute() error {
-	// If you want to generate markdown documentation, uncomment the following lines
-	// rootCmd.DisableAutoGenTag = true
-	// err := doc.GenMarkdownTree(rootCmd, "./docs")
-	// if err != nil {
-	// 	panic(err)
-	// }
-
 	return rootCmd.Execute()
+}
+
+func GenerateDocs() error {
+	rootCmd.DisableAutoGenTag = true
+	err := doc.GenMarkdownTree(rootCmd, "./docs")
+	if err != nil {
+		return err
+	}
+	return nil
 }

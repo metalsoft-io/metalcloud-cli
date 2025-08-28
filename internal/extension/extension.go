@@ -236,6 +236,104 @@ func ExtensionUpdate(ctx context.Context, extensionId string, name string, descr
 	return formatter.PrintResult(updatedExtension, &extensionPrintConfig)
 }
 
+func ExtensionListRepo(ctx context.Context, repoUrl string, repoUsername string, repoPassword string) error {
+	logger.Get().Info().Msgf("Listing extensions from repository")
+
+	tree, err := cloneExtensionRepository(ctx, repoUrl, repoUsername, repoPassword)
+	if err != nil {
+		return fmt.Errorf("failed to clone OS template repository: %w", err)
+	}
+
+	// This map stores all files for an extension and will be used to check if their information is correct
+	repoMap := make(map[string]RepositoryExtensionInfo)
+	for templatePrefix, repoTemplate := range getRepositoryExtensions(tree) {
+		err = processExtensionContent(&repoTemplate)
+		if err != nil {
+			// Ignore extension with errors - they may be using old format
+			logger.Get().Warn().Msgf("Ignoring extension %s - error processing its content: %v", templatePrefix, err)
+			continue
+		}
+
+		repoMap[templatePrefix] = repoTemplate
+	}
+
+	// Convert the map to slice for printing
+	repoExtensionsSlice := make([]RepositoryExtensionInfo, 0, len(repoMap))
+	for _, repoExtension := range repoMap {
+		repoExtensionsSlice = append(repoExtensionsSlice, repoExtension)
+	}
+
+	// Order the extensions by SourcePath
+	slices.SortStableFunc(repoExtensionsSlice, func(a, b RepositoryExtensionInfo) int {
+		if a.SourcePath < b.SourcePath {
+			return -1
+		} else if a.SourcePath > b.SourcePath {
+			return 1
+		}
+		return 0
+	})
+
+	return formatter.PrintResult(repoExtensionsSlice, &formatter.PrintConfig{
+		FieldsConfig: map[string]formatter.RecordFieldConfig{
+			"SourcePath": {
+				Title: "Path",
+				Order: 1,
+			},
+			"Extension": {
+				Hidden: true,
+				InnerFields: map[string]formatter.RecordFieldConfig{
+					"Name": {
+						Order: 2,
+					},
+					"Label": {
+						Order: 3,
+					},
+					"Kind": {
+						Order: 4,
+					},
+				},
+			},
+		},
+	})
+}
+
+func ExtensionCreateFromRepo(ctx context.Context, extensionPath string, repoUrl string, repoUsername string, repoPassword string, name string, label string) error {
+	logger.Get().Info().Msgf("Creating extension from repository path '%s'", extensionPath)
+
+	tree, err := cloneExtensionRepository(ctx, repoUrl, repoUsername, repoPassword)
+	if err != nil {
+		return fmt.Errorf("failed to clone extension repository: %w", err)
+	}
+
+	repoMap := getRepositoryExtensions(tree)
+
+	extension, ok := repoMap[extensionPath]
+	if !ok {
+		return fmt.Errorf("extension %s not found in repository", extensionPath)
+	}
+
+	err = processExtensionContent(&extension)
+	if err != nil {
+		return fmt.Errorf("error processing extension content: %w", err)
+	}
+
+	if name != "" {
+		extension.Extension.Name = name
+	}
+	if label != "" {
+		extension.Extension.Label = sdk.PtrString(label)
+	}
+
+	client := api.GetApiClient(ctx)
+
+	extensionInfo, httpRes, err := client.ExtensionAPI.CreateExtension(ctx).CreateExtension(extension.Extension).Execute()
+	if err := response_inspector.InspectResponse(httpRes, err); err != nil {
+		return err
+	}
+
+	return formatter.PrintResult(extensionInfo, &extensionPrintConfig)
+}
+
 func ExtensionPublish(ctx context.Context, extensionId string) error {
 	logger.Get().Info().Msgf("Publishing extension '%s'", extensionId)
 

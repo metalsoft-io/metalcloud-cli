@@ -27,16 +27,19 @@ var cleanupPolicyPrintConfig = formatter.PrintConfig{
 			Order:    2,
 		},
 		"CleanupDrivesForOobEnabledServer": {
-			Title: "Cleanup Drives",
-			Order: 3,
+			Title:       "Cleanup Drives",
+			Transformer: formatter.FormatBooleanValue,
+			Order:       3,
 		},
 		"RecreateRaid": {
-			Title: "Recreate RAID",
-			Order: 4,
+			Title:       "Recreate RAID",
+			Transformer: formatter.FormatBooleanValue,
+			Order:       4,
 		},
 		"DisableEmbeddedNics": {
-			Title: "Disable Emb. NICs",
-			Order: 5,
+			Title:       "Disable Emb. NICs",
+			Transformer: formatter.FormatBooleanValue,
+			Order:       5,
 		},
 		"RaidOneDrive": {
 			Title: "RAID 1 Drive",
