@@ -482,9 +482,9 @@ func OsTemplateCreateFromRepo(ctx context.Context, sourceTemplate string, repoUr
 		template.OsTemplate.Template.Label = sdk.PtrString(label)
 	}
 	if sourceIso != "" {
-		for _, a := range template.OsTemplate.TemplateAssets {
+		for i, a := range template.OsTemplate.TemplateAssets {
 			if a.Usage == "build_source_image" {
-				a.File.Url = sdk.PtrString(sourceIso)
+				template.OsTemplate.TemplateAssets[i].File.Url = sdk.PtrString(sourceIso)
 			}
 		}
 	}

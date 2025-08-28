@@ -41,6 +41,16 @@ func main() {
 		}
 	}
 
+	if len(os.Args) > 1 && os.Args[1] == "docs" {
+		err := cmd.GenerateDocs()
+		if err != nil {
+			fmt.Fprintf(os.Stderr, "failed to generate docs: %v\n", err)
+			os.Exit(-1)
+		}
+		fmt.Printf("Successfully generated docs\n")
+		return
+	}
+
 	err := cmd.Execute()
 	if err != nil {
 		os.Exit(-1)

@@ -15,6 +15,11 @@ var (
 		filterStatus     []string
 		filterKind       []string
 		filterPublic     string
+		repoUrl          string
+		repoUsername     string
+		repoPassword     string
+		name             string
+		label            string
 	}{}
 
 	extensionCmd = &cobra.Command{
@@ -32,12 +37,14 @@ Extension lifecycle includes draft, active, and archived states. Only published 
 become active and available for use across the platform.
 
 Available Commands:
-  list     List and filter extensions
-  get      Retrieve detailed extension information
-  create   Create new extension from definition
-  update   Modify existing extension properties
-  publish  Activate draft extension for platform use
-  archive  Deactivate published extension
+  list                List and filter extensions
+  get                 Retrieve detailed extension information
+  create              Create new extension from definition
+  update              Modify existing extension properties
+  publish             Activate draft extension for platform use
+  archive             Deactivate published extension
+  list-repo           List extensions available in a remote repository
+  create-from-repo    Create extension by cloning from a repository
 
 Examples:
   metalcloud extension list --filter-kind workflow --filter-status active
@@ -246,6 +253,97 @@ Examples:
 		},
 	}
 
+	extensionListRepoCmd = &cobra.Command{
+		Use:     "list-repo",
+		Aliases: []string{"ls-repo"},
+		Short:   "List available extensions from a remote repository",
+		Long: `List all available extensions from a remote repository.
+
+This command retrieves and displays extensions available in a remote repository,
+showing their basic information and configuration.
+
+Optional flags:
+  --repo-url        URL of the repository to list extensions from
+                   Defaults to the official MetalSoft extension repository
+  --repo-username   Username for private repository authentication
+  --repo-password   Password for private repository authentication
+
+Flag dependencies:
+  - If accessing a private repository, both --repo-username and --repo-password
+    are required together
+
+Examples:
+  # List extensions from default public repository
+  metalcloud extension list-repo
+  
+  # List extensions from a custom repository
+  metalcloud extension list-repo --repo-url https://example.com/extensions
+  
+  # List extensions from private repository
+  metalcloud extension list-repo --repo-url https://private.com/extensions \
+    --repo-username user --repo-password pass`,
+		SilenceUsage: true,
+		Annotations:  map[string]string{system.REQUIRED_PERMISSION: system.PERMISSION_EXTENSIONS_READ},
+		RunE: func(cmd *cobra.Command, args []string) error {
+			return extension.ExtensionListRepo(cmd.Context(), extensionFlags.repoUrl, extensionFlags.repoUsername, extensionFlags.repoPassword)
+		},
+	}
+
+	extensionCreateFromRepoCmd = &cobra.Command{
+		Use:     "create-from-repo <extension_path>",
+		Aliases: []string{"add-from-repo", "clone-from-repo"},
+		Short:   "Create a new extension by cloning from a repository",
+		Long: `Create a new extension by cloning an existing extension from a repository.
+
+This command downloads and creates a local extension based on an extension
+available in a remote repository. You can optionally customize the name
+and label during the creation process.
+
+Required arguments:
+  extension_path    Path to the extension within the repository
+                   Use 'list-repo' command to see available extensions
+
+Optional flags:
+  --repo-url        URL of the repository to clone from
+                   Defaults to the official MetalSoft extension repository
+  --repo-username   Username for private repository authentication  
+  --repo-password   Password for private repository authentication
+  --name           Custom name for the new extension (overrides original)
+  --label          Custom label for the new extension (overrides original)
+
+Flag dependencies:
+  - If accessing a private repository, both --repo-username and --repo-password
+    are required together
+
+Examples:
+  # Clone extension from default public repository
+  metalcloud extension create-from-repo workflows/deployment/basic-deployment
+  
+  # Clone with custom name and label
+  metalcloud extension create-from-repo workflows/cleanup/resource-cleanup \
+    --name "My Resource Cleanup" --label "my-resource-cleanup"
+  
+  # Clone from private repository
+  metalcloud extension create-from-repo actions/monitoring/health-check \
+    --repo-url https://private.com/extensions \
+    --repo-username user --repo-password pass \
+    --name "Custom Health Check"`,
+		SilenceUsage: true,
+		Annotations:  map[string]string{system.REQUIRED_PERMISSION: system.PERMISSION_EXTENSIONS_WRITE},
+		Args:         cobra.ExactArgs(1),
+		RunE: func(cmd *cobra.Command, args []string) error {
+			return extension.ExtensionCreateFromRepo(
+				cmd.Context(),
+				args[0],
+				extensionFlags.repoUrl,
+				extensionFlags.repoUsername,
+				extensionFlags.repoPassword,
+				extensionFlags.name,
+				extensionFlags.label,
+			)
+		},
+	}
+
 	extensionPublishCmd = &cobra.Command{
 		Use:   "publish extension_id_or_label",
 		Short: "Activate draft extension for platform use",
@@ -335,6 +433,20 @@ func init() {
 
 	extensionCmd.AddCommand(extensionUpdateCmd)
 	extensionUpdateCmd.Flags().StringVar(&extensionFlags.definitionSource, "definition-source", "", "Source of the updated extension definition. Can be 'pipe' or path to a JSON file.")
+
+	extensionCmd.AddCommand(extensionListRepoCmd)
+	extensionListRepoCmd.Flags().StringVar(&extensionFlags.repoUrl, "repo-url", "", "Private repo to use.")
+	extensionListRepoCmd.Flags().StringVar(&extensionFlags.repoUsername, "repo-username", "", "Private repo username.")
+	extensionListRepoCmd.Flags().StringVar(&extensionFlags.repoPassword, "repo-password", "", "Private repo password.")
+	extensionListRepoCmd.MarkFlagsRequiredTogether("repo-username", "repo-password")
+
+	extensionCmd.AddCommand(extensionCreateFromRepoCmd)
+	extensionCreateFromRepoCmd.Flags().StringVar(&extensionFlags.repoUrl, "repo-url", "", "Private repo to use.")
+	extensionCreateFromRepoCmd.Flags().StringVar(&extensionFlags.repoUsername, "repo-username", "", "Private repo username.")
+	extensionCreateFromRepoCmd.Flags().StringVar(&extensionFlags.repoPassword, "repo-password", "", "Private repo password.")
+	extensionCreateFromRepoCmd.Flags().StringVar(&extensionFlags.name, "name", "", "Name of the extension.")
+	extensionCreateFromRepoCmd.Flags().StringVar(&extensionFlags.label, "label", "", "Label of the extension.")
+	extensionCreateFromRepoCmd.MarkFlagsRequiredTogether("repo-username", "repo-password")
 
 	extensionCmd.AddCommand(extensionPublishCmd)
 	extensionCmd.AddCommand(extensionArchiveCmd)
