@@ -165,6 +165,20 @@ func ExtensionCreate(ctx context.Context, name string, kind string, description 
 		return fmt.Errorf("invalid definition JSON: %v", err)
 	}
 
+	for i, a := range definition.OnAssetChange {
+		for j, t := range a.Tasks {
+			if t.Options.ExtensionTaskAnsible != nil {
+				definition.OnAssetChange[i].Tasks[j].Options.ExtensionTaskAnsible.TaskType = nil
+			}
+			if t.Options.ExtensionTaskSsh != nil {
+				definition.OnAssetChange[i].Tasks[j].Options.ExtensionTaskSsh.TaskType = nil
+			}
+			if t.Options.ExtensionTaskWebhook != nil {
+				definition.OnAssetChange[i].Tasks[j].Options.ExtensionTaskWebhook.TaskType = nil
+			}
+		}
+	}
+
 	label := "" // Optional
 	createExtension := sdk.CreateExtension{
 		Name:        name,
@@ -315,6 +329,20 @@ func ExtensionCreateFromRepo(ctx context.Context, extensionPath string, repoUrl 
 	err = processExtensionContent(&extension)
 	if err != nil {
 		return fmt.Errorf("error processing extension content: %w", err)
+	}
+
+	for i, a := range extension.Extension.Definition.OnAssetChange {
+		for j, t := range a.Tasks {
+			if t.Options.ExtensionTaskAnsible != nil {
+				extension.Extension.Definition.OnAssetChange[i].Tasks[j].Options.ExtensionTaskAnsible.TaskType = nil
+			}
+			if t.Options.ExtensionTaskSsh != nil {
+				extension.Extension.Definition.OnAssetChange[i].Tasks[j].Options.ExtensionTaskSsh.TaskType = nil
+			}
+			if t.Options.ExtensionTaskWebhook != nil {
+				extension.Extension.Definition.OnAssetChange[i].Tasks[j].Options.ExtensionTaskWebhook.TaskType = nil
+			}
+		}
 	}
 
 	if name != "" {
