@@ -18,15 +18,15 @@ const maxMinor = 0
 var AllowDevelop bool
 
 func ValidateVersion(ctx context.Context) error {
+	if AllowDevelop {
+		return nil
+	}
+
 	client := api.GetApiClient(ctx)
 
 	version, httpRes, err := client.SystemAPI.GetVersion(ctx).Execute()
 	if err := response_inspector.InspectResponse(httpRes, err); err != nil {
 		return err
-	}
-
-	if AllowDevelop && version.Version == "develop" {
-		return nil
 	}
 
 	versionParts := strings.Split(strings.Trim(version.Version, "v "), ".")
