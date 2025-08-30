@@ -17,8 +17,9 @@ import (
 var logicalNetworkPrintConfig = formatter.PrintConfig{
 	FieldsConfig: map[string]formatter.RecordFieldConfig{
 		"Id": {
-			Title: "#",
-			Order: 1,
+			Title:       "#",
+			Transformer: formatter.FormatIdValue,
+			Order:       1,
 		},
 		"Label": {
 			MaxWidth: 30,
@@ -33,12 +34,14 @@ var logicalNetworkPrintConfig = formatter.PrintConfig{
 			Order: 4,
 		},
 		"FabricId": {
-			Title: "Fabric ID",
-			Order: 5,
+			Title:       "Fabric ID",
+			Transformer: formatter.FormatIdValue,
+			Order:       5,
 		},
 		"InfrastructureId": {
-			Title: "Infra ID",
-			Order: 6,
+			Title:       "Infra ID",
+			Transformer: formatter.FormatIdValue,
+			Order:       6,
 		},
 	},
 }
@@ -50,10 +53,12 @@ type ListFlags struct {
 	FilterInfrastructureId []string
 	FilterKind             []string
 	SortBy                 []string
+	Page                   int
+	Limit                  int
 }
 
 func LogicalNetworkList(ctx context.Context, fabricIdOrLabel string, flags ListFlags) error {
-	logger.Get().Info().Msgf("Listing logical networks")
+	logger.Get().Info().Msgf("Listing logical networks with filters: %+v", flags)
 
 	client := api.GetApiClient(ctx)
 
@@ -69,6 +74,9 @@ func LogicalNetworkList(ctx context.Context, fabricIdOrLabel string, flags ListF
 		request = request.FilterFabricId(utils.ProcessFilterStringSlice(flags.FilterFabricId))
 	}
 	if len(flags.FilterInfrastructureId) > 0 {
+		if flags.FilterInfrastructureId[0] == "null" {
+			flags.FilterInfrastructureId[0] = "$null"
+		}
 		request = request.FilterInfrastructureId(utils.ProcessFilterStringSlice(flags.FilterInfrastructureId))
 	}
 	if len(flags.FilterKind) > 0 {
@@ -76,6 +84,12 @@ func LogicalNetworkList(ctx context.Context, fabricIdOrLabel string, flags ListF
 	}
 	if len(flags.SortBy) > 0 {
 		request = request.SortBy(flags.SortBy)
+	}
+	if flags.Page > 0 {
+		request = request.Page(float32(flags.Page))
+	}
+	if flags.Limit > 0 {
+		request = request.Limit(float32(flags.Limit))
 	}
 
 	if fabricIdOrLabel != "" {
