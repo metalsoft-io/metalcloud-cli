@@ -16,9 +16,11 @@ Flags:
   --filter-id                Filter results by logical network ID(s) (can be used multiple times)
   --filter-label             Filter results by logical network label(s) (can be used multiple times) 
   --filter-fabric-id         Filter results by fabric ID(s) (can be used multiple times)
-  --filter-infrastructure-id Filter results by infrastructure ID(s) (can be used multiple times)
+  --filter-infrastructure-id Filter results by infrastructure ID(s) (can be used multiple times). Use 'null' to filter public logical networks
   --filter-kind              Filter results by network kind(s) like 'vlan', 'vxlan' (can be used multiple times)
   --sort-by                  Sort results by field(s) with direction (e.g., id:ASC, name:DESC)
+  --page                     Page number to retrieve (default: 1)
+  --limit                    Number of records per page (default: 20, max: 100)
 
 Examples:
   # List all logical networks
@@ -36,8 +38,11 @@ Examples:
   # Sort by name descending
   metalcloud-cli logical-network list --sort-by name:DESC
 
-  # Combine fabric filter with additional filters
-  metalcloud-cli logical-network list fabric-1 --filter-kind vxlan --sort-by id:ASC
+  # Paginate results (get page 2 with 50 records per page)
+  metalcloud-cli logical-network list --page 2 --limit 50
+
+  # Combine fabric filter with additional filters and pagination
+  metalcloud-cli logical-network list fabric-1 --filter-kind vxlan --sort-by id:ASC --page 1 --limit 10
 
 ```
 metalcloud-cli logical-network list [fabric_id_or_label] [flags]
@@ -48,10 +53,12 @@ metalcloud-cli logical-network list [fabric_id_or_label] [flags]
 ```
       --filter-fabric-id strings           Filter by fabric ID.
       --filter-id strings                  Filter by logical network ID.
-      --filter-infrastructure-id strings   Filter by infrastructure ID.
+      --filter-infrastructure-id strings   Filter by infrastructure ID. Use 'null' to filter public logical networks.
       --filter-kind strings                Filter by logical network kind.
       --filter-label strings               Filter by logical network label.
   -h, --help                               help for list
+      --limit int                          Number of records per page (default: 20, max: 100). (default 20)
+      --page int                           Page number to retrieve (default: 1). (default 1)
       --sort-by strings                    Sort by fields (e.g., id:ASC, name:DESC).
 ```
 
