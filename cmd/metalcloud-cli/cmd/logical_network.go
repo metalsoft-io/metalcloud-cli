@@ -16,6 +16,8 @@ var (
 		filterInfrastructureId []string
 		filterKind             []string
 		sortBy                 []string
+		page                   int
+		limit                  int
 	}{}
 
 	logicalNetworkCmd = &cobra.Command{
@@ -63,9 +65,11 @@ Flags:
   --filter-id                Filter results by logical network ID(s) (can be used multiple times)
   --filter-label             Filter results by logical network label(s) (can be used multiple times) 
   --filter-fabric-id         Filter results by fabric ID(s) (can be used multiple times)
-  --filter-infrastructure-id Filter results by infrastructure ID(s) (can be used multiple times)
+  --filter-infrastructure-id Filter results by infrastructure ID(s) (can be used multiple times). Use 'null' to filter public logical networks
   --filter-kind              Filter results by network kind(s) like 'vlan', 'vxlan' (can be used multiple times)
   --sort-by                  Sort results by field(s) with direction (e.g., id:ASC, name:DESC)
+  --page                     Page number to retrieve (default: 1)
+  --limit                    Number of records per page (default: 20, max: 100)
 
 Examples:
   # List all logical networks
@@ -83,8 +87,11 @@ Examples:
   # Sort by name descending
   metalcloud-cli logical-network list --sort-by name:DESC
 
-  # Combine fabric filter with additional filters
-  metalcloud-cli logical-network list fabric-1 --filter-kind vxlan --sort-by id:ASC`,
+  # Paginate results (get page 2 with 50 records per page)
+  metalcloud-cli logical-network list --page 2 --limit 50
+
+  # Combine fabric filter with additional filters and pagination
+  metalcloud-cli logical-network list fabric-1 --filter-kind vxlan --sort-by id:ASC --page 1 --limit 10`,
 		SilenceUsage: true,
 		Annotations:  map[string]string{system.REQUIRED_PERMISSION: system.PERMISSION_NETWORK_PROFILES_READ},
 		Args:         cobra.MaximumNArgs(1),
@@ -101,6 +108,8 @@ Examples:
 				FilterInfrastructureId: logicalNetworkFlags.filterInfrastructureId,
 				FilterKind:             logicalNetworkFlags.filterKind,
 				SortBy:                 logicalNetworkFlags.sortBy,
+				Page:                   logicalNetworkFlags.page,
+				Limit:                  logicalNetworkFlags.limit,
 			})
 		},
 	}
@@ -312,9 +321,11 @@ func init() {
 	logicalNetworkListCmd.Flags().StringSliceVar(&logicalNetworkFlags.filterId, "filter-id", nil, "Filter by logical network ID.")
 	logicalNetworkListCmd.Flags().StringSliceVar(&logicalNetworkFlags.filterLabel, "filter-label", nil, "Filter by logical network label.")
 	logicalNetworkListCmd.Flags().StringSliceVar(&logicalNetworkFlags.filterFabricId, "filter-fabric-id", nil, "Filter by fabric ID.")
-	logicalNetworkListCmd.Flags().StringSliceVar(&logicalNetworkFlags.filterInfrastructureId, "filter-infrastructure-id", nil, "Filter by infrastructure ID.")
+	logicalNetworkListCmd.Flags().StringSliceVar(&logicalNetworkFlags.filterInfrastructureId, "filter-infrastructure-id", nil, "Filter by infrastructure ID. Use 'null' to filter public logical networks.")
 	logicalNetworkListCmd.Flags().StringSliceVar(&logicalNetworkFlags.filterKind, "filter-kind", nil, "Filter by logical network kind.")
 	logicalNetworkListCmd.Flags().StringSliceVar(&logicalNetworkFlags.sortBy, "sort-by", nil, "Sort by fields (e.g., id:ASC, name:DESC).")
+	logicalNetworkListCmd.Flags().IntVar(&logicalNetworkFlags.page, "page", 1, "Page number to retrieve (default: 1).")
+	logicalNetworkListCmd.Flags().IntVar(&logicalNetworkFlags.limit, "limit", 20, "Number of records per page (default: 20, max: 100).")
 
 	logicalNetworkCmd.AddCommand(logicalNetworkGetCmd)
 

@@ -319,10 +319,17 @@ func extractValue(value reflect.Value) interface{} {
 		}
 		return result
 	case reflect.Struct:
-		if reflect.TypeOf(value) == reflect.TypeOf(sdk.NullableInt32{}) {
-			if value.Interface().(sdk.NullableInt32).IsSet() {
-				return value.Interface().(sdk.NullableInt32).Get()
+		if i, ok := value.Interface().(sdk.NullableInt32); ok {
+			if !i.IsSet() || i.Get() == nil {
+				return ""
 			}
+			return *i.Get()
+		}
+		if i, ok := value.Interface().(sdk.NullableFloat32); ok {
+			if !i.IsSet() || i.Get() == nil {
+				return ""
+			}
+			return *i.Get()
 		}
 		return ""
 	case reflect.Invalid:
@@ -416,7 +423,7 @@ func FormatDateTimeValue(value interface{}) string {
 	return fmt.Sprint(value)
 }
 
-func FormatIntegerValue(value interface{}) string {
+func formatIntegerValueWithFormat(value interface{}, formatAsId bool) string {
 	if value == nil {
 		return ""
 	}
@@ -457,12 +464,24 @@ func FormatIntegerValue(value interface{}) string {
 	}
 
 	if found {
-		// Format with thousand separators
-		p := message.NewPrinter(language.English)
-		return p.Sprintf("%d", num)
+		if !formatAsId {
+			// Format with thousand separators
+			p := message.NewPrinter(language.English)
+			return p.Sprintf("%d", num)
+		}
+		// Format as ID without thousand separators
+		return fmt.Sprintf("%d", num)
 	}
 
 	return fmt.Sprint(value)
+}
+
+func FormatIntegerValue(value interface{}) string {
+	return formatIntegerValueWithFormat(value, false)
+}
+
+func FormatIdValue(value interface{}) string {
+	return formatIntegerValueWithFormat(value, true)
 }
 
 func FormatBooleanValue(value interface{}) string {
