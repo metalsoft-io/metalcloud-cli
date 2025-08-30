@@ -220,7 +220,7 @@ Examples:
 
 					payload.InputVariables[i] = sdk.ExtensionVariable{
 						Label: parts[0],
-						Value: parts[1],
+						Value: sdk.ExtensionVariableValue{String: sdk.PtrString(parts[1])},
 					}
 				}
 			}
