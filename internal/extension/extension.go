@@ -124,7 +124,7 @@ func ExtensionGet(ctx context.Context, extensionId string) error {
 		}
 
 		if len(extension.Definition.Inputs) > 0 {
-			err := formatter.PrintResult(extension.Definition.Inputs, &formatter.PrintConfig{
+			err := formatter.PrintResult(toExtensionInputs(extension.Definition.Inputs), &formatter.PrintConfig{
 				FieldsConfig: map[string]formatter.RecordFieldConfig{
 					"Label": {
 						Title: "Input Label",
@@ -152,8 +152,72 @@ func ExtensionGet(ctx context.Context, extensionId string) error {
 		return nil
 	} else {
 		return formatter.PrintResult(*extension, &extensionPrintConfig)
-
 	}
+}
+
+func toExtensionInputs(dataItems []sdk.ExtensionDefinitionInputsDataItem) []extensionInput {
+	result := []extensionInput{}
+
+	for _, dataItem := range dataItems {
+		result = append(result, toExtensionInput(dataItem))
+	}
+
+	return result
+}
+
+func valueOf(defaultValue *sdk.ExtensionInputStringDefaultValue) any {
+	if defaultValue != nil {
+		if defaultValue.Bool != nil {
+			return *defaultValue.Bool
+		}
+		if defaultValue.Int32 != nil {
+			return *defaultValue.Int32
+		}
+		if defaultValue.String != nil {
+			return *defaultValue.String
+		}
+	}
+	return nil
+}
+
+type extensionInput struct {
+	Label        string
+	Name         string
+	InputType    sdk.ExtensionInputType
+	DefaultValue any
+}
+
+func toExtensionInput(dataItem sdk.ExtensionDefinitionInputsDataItem) extensionInput {
+	var extensionInput extensionInput
+
+	if dataItem.ExtensionInputBoolean != nil {
+		extensionInput.Label = dataItem.ExtensionInputBoolean.Label
+		extensionInput.Name = dataItem.ExtensionInputBoolean.Name
+		extensionInput.InputType = dataItem.ExtensionInputBoolean.InputType
+		extensionInput.DefaultValue = valueOf(dataItem.ExtensionInputBoolean.DefaultValue)
+	} else if dataItem.ExtensionInputInteger != nil {
+		extensionInput.Label = dataItem.ExtensionInputInteger.Label
+		extensionInput.Name = dataItem.ExtensionInputInteger.Name
+		extensionInput.InputType = dataItem.ExtensionInputInteger.InputType
+		extensionInput.DefaultValue = valueOf(dataItem.ExtensionInputInteger.DefaultValue)
+	} else if dataItem.ExtensionInputString != nil {
+		extensionInput.Label = dataItem.ExtensionInputString.Label
+		extensionInput.Name = dataItem.ExtensionInputString.Name
+		extensionInput.InputType = dataItem.ExtensionInputString.InputType
+		extensionInput.DefaultValue = valueOf(dataItem.ExtensionInputString.DefaultValue)
+	} else if dataItem.ExtensionInputServerType != nil {
+		extensionInput.Label = dataItem.ExtensionInputServerType.Label
+		extensionInput.Name = dataItem.ExtensionInputServerType.Name
+		extensionInput.InputType = dataItem.ExtensionInputServerType.InputType
+		extensionInput.DefaultValue = valueOf(dataItem.ExtensionInputServerType.DefaultValue)
+	} else if dataItem.ExtensionInputOsTemplate != nil {
+		extensionInput.Label = dataItem.ExtensionInputOsTemplate.Label
+		extensionInput.Name = dataItem.ExtensionInputOsTemplate.Name
+		extensionInput.InputType = dataItem.ExtensionInputOsTemplate.InputType
+		extensionInput.DefaultValue = valueOf(dataItem.ExtensionInputOsTemplate.DefaultValue)
+	}
+
+	return extensionInput
 }
 
 func ExtensionCreate(ctx context.Context, name string, kind string, description string, config []byte) error {
@@ -388,6 +452,11 @@ func GetExtensionByIdOrLabel(ctx context.Context, extensionIdOrLabel string) (*s
 		if err == nil && httpRes != nil && httpRes.StatusCode == 200 {
 			return extensionInfo, nil
 		}
+		/* RM: IMO
+		if err != nil && httpRes != nil && httpRes.StatusCode != 400 {
+			return nil, err
+		}
+		*/
 		// If not found by ID, continue to search by label
 	}
 
