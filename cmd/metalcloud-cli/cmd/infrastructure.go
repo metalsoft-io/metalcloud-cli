@@ -562,11 +562,17 @@ Examples:
 		SilenceUsage: true,
 		Annotations:  map[string]string{system.REQUIRED_PERMISSION: system.PERMISSION_UTILIZATION_REPORTS_READ},
 		RunE: func(cmd *cobra.Command, args []string) error {
+			startTimeUTC := infrastructureUtilFlags.startTime.UTC()
+			endTimeUTC := infrastructureUtilFlags.endTime.UTC()
+			// Log the converted values here:
+			// log.Printf("Converted start time from: %s, to start time UTC: %s", infrastructureUtilFlags.startTime, startTimeUTC);
+			// log.Printf("Converted start time from: %s, to start time UTC: %s", infrastructureUtilFlags.endTime, endTimeUTC);
+					
 			return infrastructure.InfrastructureGetUtilization(
 				cmd.Context(),
 				infrastructureUtilFlags.userId,
-				infrastructureUtilFlags.startTime,
-				infrastructureUtilFlags.endTime,
+				startTimeUTC,
+				endTimeUTC,
 				infrastructureUtilFlags.siteIds,
 				infrastructureUtilFlags.infrastructureIds,
 				infrastructureUtilFlags.showAll || infrastructureUtilFlags.showInstances,
