@@ -440,6 +440,27 @@ func ExtensionArchive(ctx context.Context, extensionId string) error {
 	return nil
 }
 
+func ExtensionMakePublic(ctx context.Context, extensionId string) error {
+	logger.Get().Info().Msgf("Making extension '%s' public", extensionId)
+
+	extension, err := GetExtensionByIdOrLabel(ctx, extensionId)
+	if err != nil {
+		return err
+	}
+
+	client := api.GetApiClient(ctx)
+
+	httpRes, err := client.ExtensionAPI.MakePublicExtension(ctx, extension.Id).
+		IfMatch(fmt.Sprintf("%.0f", extension.Revision)).
+		Execute()
+	if err := response_inspector.InspectResponse(httpRes, err); err != nil {
+		return err
+	}
+
+	logger.Get().Info().Msgf("Extension '%s' is now public", extensionId)
+	return nil
+}
+
 func GetExtensionByIdOrLabel(ctx context.Context, extensionIdOrLabel string) (*sdk.Extension, error) {
 	client := api.GetApiClient(ctx)
 

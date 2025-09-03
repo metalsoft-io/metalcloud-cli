@@ -21,6 +21,7 @@ Available Commands:
   update              Modify existing extension properties
   publish             Activate draft extension for platform use
   archive             Deactivate published extension
+  make-public         Make extension publicly available to all users
   list-repo           List extensions available in a remote repository
   create-from-repo    Create extension by cloning from a repository
 
@@ -29,6 +30,7 @@ Examples:
   metalcloud extension create my-workflow workflow "Custom deployment workflow" --definition-source definition.json
   metalcloud extension update ext123 "Updated Name" "New description"
   metalcloud extension publish ext123
+  metalcloud extension make-public ext123
 
 ### Options
 
@@ -58,6 +60,7 @@ Examples:
 * [metalcloud-cli extension get](metalcloud-cli_extension_get.md)	 - Retrieve detailed information about a specific extension
 * [metalcloud-cli extension list](metalcloud-cli_extension_list.md)	 - List and filter platform extensions
 * [metalcloud-cli extension list-repo](metalcloud-cli_extension_list-repo.md)	 - List available extensions from a remote repository
+* [metalcloud-cli extension make-public](metalcloud-cli_extension_make-public.md)	 - Make extension publicly available to all users
 * [metalcloud-cli extension publish](metalcloud-cli_extension_publish.md)	 - Activate draft extension for platform use
 * [metalcloud-cli extension update](metalcloud-cli_extension_update.md)	 - Modify existing extension properties and definition
 

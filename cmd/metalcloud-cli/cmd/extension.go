@@ -43,6 +43,7 @@ Available Commands:
   update              Modify existing extension properties
   publish             Activate draft extension for platform use
   archive             Deactivate published extension
+  make-public         Make extension publicly available to all users
   list-repo           List extensions available in a remote repository
   create-from-repo    Create extension by cloning from a repository
 
@@ -50,7 +51,8 @@ Examples:
   metalcloud extension list --filter-kind workflow --filter-status active
   metalcloud extension create my-workflow workflow "Custom deployment workflow" --definition-source definition.json
   metalcloud extension update ext123 "Updated Name" "New description"
-  metalcloud extension publish ext123`,
+  metalcloud extension publish ext123
+  metalcloud extension make-public ext123`,
 	}
 
 	extensionListCmd = &cobra.Command{
@@ -413,6 +415,37 @@ Examples:
 			return extension.ExtensionArchive(cmd.Context(), args[0])
 		},
 	}
+
+	extensionMakePublicCmd = &cobra.Command{
+		Use:   "make-public extension_id_or_label",
+		Short: "Make extension publicly available to all users",
+		Long: `Make an extension publicly available to all users in the organization.
+
+This command changes the visibility of an extension from private (accessible only
+to the owner) to public (accessible to all users with appropriate permissions).
+Public extensions can be discovered and used by other users within the organization.
+
+Arguments:
+  extension_id_or_label    The unique ID or label of the extension to make public
+
+Requirements:
+- Extension must exist and be accessible
+- User must be the owner of the extension or have admin privileges
+- User must have write permissions for extensions
+
+Examples:
+  # Make extension public by ID
+  metalcloud extension make-public 12345
+  
+  # Make extension public by label
+  metalcloud extension make-public my-workflow-v1`,
+		SilenceUsage: true,
+		Annotations:  map[string]string{system.REQUIRED_PERMISSION: system.PERMISSION_EXTENSIONS_WRITE},
+		Args:         cobra.ExactArgs(1),
+		RunE: func(cmd *cobra.Command, args []string) error {
+			return extension.ExtensionMakePublic(cmd.Context(), args[0])
+		},
+	}
 )
 
 func init() {
@@ -450,4 +483,5 @@ func init() {
 
 	extensionCmd.AddCommand(extensionPublishCmd)
 	extensionCmd.AddCommand(extensionArchiveCmd)
+	extensionCmd.AddCommand(extensionMakePublicCmd)
 }
