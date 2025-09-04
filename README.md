@@ -16,6 +16,12 @@ brew tap metalsoft-io/homebrew-repo
 brew install metalcloud-cli
 ```
 
+In case you need to refresh the local homebrew cache after a new version of the CLI is released:
+
+```bash
+brew update
+```
+
 To install on any CentOS/Redhat Linux distribution:
 
 ```bash
@@ -182,23 +188,61 @@ If the user has admin permissions, additional commands will be available.
 
 ## Debugging information
 
-To enable debugging information in the output add the `-d` flag to the command.
+To enable debugging information in the output/CLI add the `-d` flag to the command, this will print out the raw requests being made and it's usefull to identify API communication issues.
+
+To run the CLI in VS Code in debug mode add the following configuration in `launch.json`:
+
+```json
+{
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "name": "Launch metalcloud-cli",
+            "type": "go",
+            "request": "launch",
+            "mode": "debug",
+            "program": "${workspaceFolder}/cmd/metalcloud-cli",
+            "buildFlags": "-ldflags='-X main.version=v7.0.0 -X main.allowDevelop=true'",
+            "args": ["extension", "get", "24", "-d"],
+            "showLog": false,
+            "dlvFlags": ["--check-go-version=false"],
+            "env": {
+                "METALCLOUD_API_KEY": "<your key>",
+                "METALCLOUD_ENDPOINT": "https://metal.mycompany.com"
+            }
+        }
+    ]
+}
+```
 
 ## Building the CLI
 
 To run the unit tests:
 
-`go test ./...`
+```bash
+go test ./...
+```
 
 To build manually:
 
-`go build ./cmd/metalcloud-cli/`
+```bash
+go build ./cmd/metalcloud-cli/
+```
 
 To build manually with FIPS compliant crypto libraries:
 
-`GOEXPERIMENT=boringcrypto go build ./cmd/metalcloud-cli/`
+```bash
+GOEXPERIMENT=boringcrypto go build ./cmd/metalcloud-cli/
+```
 
-The build process is automated by travis. Just push into the repository using the appropriate tag:
+To build for development add the following flags:
+
+```bash
+go build -ldflags="-X main.version=v7.0.0 -X main.allowDevelop=true" ./cmd/metalcloud-cli`
+```
+
+The build process is automated by travis. Just push into the repository using the appropriate tag and the binaries will be created
+for Windows/Linux/Mac and also pushed to the [Homebrew Private Repo](https://github.com/metalsoft-io/homebrew-repo).
 
 Use `git tag` to get the last tag:
 
