@@ -66,6 +66,12 @@ func NetworkDeviceList(ctx context.Context, filterStatus []string) error {
 		return err
 	}
 
+	for i := range networkDeviceList.Data {
+		if len(networkDeviceList.Data[i].ManagementPassword) > 0 {
+			networkDeviceList.Data[i].ManagementPassword = "******"
+		}
+	}
+
 	return formatter.PrintResult(networkDeviceList, &NetworkDevicePrintConfig)
 }
 
@@ -75,6 +81,10 @@ func NetworkDeviceGet(ctx context.Context, networkDeviceId string) error {
 	networkDevice, err := GetNetworkDeviceById(ctx, networkDeviceId)
 	if err != nil {
 		return err
+	}
+
+	if len(networkDevice.ManagementPassword) > 0 {
+		networkDevice.ManagementPassword = "******"
 	}
 
 	return formatter.PrintResult(networkDevice, &NetworkDevicePrintConfig)
@@ -168,14 +178,14 @@ func NetworkDeviceDelete(ctx context.Context, networkDeviceId string) error {
 
 	client := api.GetApiClient(ctx)
 
-	httpRes, err := client.NetworkDeviceAPI.
+	result, httpRes, err := client.NetworkDeviceAPI.
 		DeleteNetworkDevice(ctx, networkDeviceIdNumeric).
 		Execute()
 	if err := response_inspector.InspectResponse(httpRes, err); err != nil {
 		return err
 	}
 
-	logger.Get().Info().Msgf("Network device %s deleted", networkDeviceId)
+	logger.Get().Info().Msgf("Network device %s deleting in progress. Job ID %d", networkDeviceId, result.JobId)
 	return nil
 }
 
@@ -189,7 +199,7 @@ func NetworkDeviceArchive(ctx context.Context, networkDeviceId string) error {
 
 	client := api.GetApiClient(ctx)
 
-	httpRes, err := client.NetworkDeviceAPI.
+	result, httpRes, err := client.NetworkDeviceAPI.
 		ArchiveNetworkDevice(ctx, networkDeviceIdNumeric).
 		IfMatch(revision).
 		Execute()
@@ -197,7 +207,7 @@ func NetworkDeviceArchive(ctx context.Context, networkDeviceId string) error {
 		return err
 	}
 
-	logger.Get().Info().Msgf("Network device %s archived", networkDeviceId)
+	logger.Get().Info().Msgf("Network device %s archiving in progress. Job ID %d", networkDeviceId, result.JobId)
 	return nil
 }
 
