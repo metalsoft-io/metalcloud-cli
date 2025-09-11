@@ -13,12 +13,10 @@ Public extensions can be discovered and used by other users within the organizat
 Arguments:
   extension_id_or_label    The unique ID or label of the extension to make public
 
-Required permissions:
-  - extensions:write
-
-Dependencies:
-  - Extension must exist and be accessible
-  - User must be the owner of the extension or have admin privileges
+Requirements:
+- Extension must exist and be accessible
+- User must be the owner of the extension or have admin privileges
+- User must have write permissions for extensions
 
 Examples:
   # Make extension public by ID
@@ -53,3 +51,4 @@ metalcloud-cli extension make-public extension_id_or_label [flags]
 ### SEE ALSO
 
 * [metalcloud-cli extension](metalcloud-cli_extension.md)	 - Manage platform extensions for workflows, applications, and actions
+
