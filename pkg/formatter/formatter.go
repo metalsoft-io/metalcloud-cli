@@ -240,7 +240,7 @@ func populate(record interface{}, fieldsConfig *map[string]RecordFieldConfig, na
 	if recordValue.Kind() != reflect.Struct {
 		// Add headers even if the record is not a valid value
 		for fieldName, fieldConfig := range *fieldsConfig {
-			addField(fieldConfig, fieldName, nil, names, values, configs)
+			addField(fieldConfig, fieldName, "", names, values, configs)
 		}
 		return
 	}
@@ -276,6 +276,10 @@ func addField(fieldConfig RecordFieldConfig, fieldName string, fieldValue interf
 				WidthMax:    fieldConfig.MaxWidth,
 				Transformer: text.Transformer(fieldConfig.Transformer),
 			})
+		}
+
+		if fieldValue == "<nil>" {
+			fieldValue = ""
 		}
 
 		(*values)[fieldConfig.Order-1] = fieldValue

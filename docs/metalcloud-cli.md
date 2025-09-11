@@ -25,6 +25,7 @@ This CLI requires the correct version of the CLI to be used with the MetalCloud 
 ### SEE ALSO
 
 * [metalcloud-cli account](metalcloud-cli_account.md)	 - Manage user accounts and account-related operations
+* [metalcloud-cli auth](metalcloud-cli_auth.md)	 - Manage authentication settings
 * [metalcloud-cli bucket](metalcloud-cli_bucket.md)	 - Manage S3-compatible object storage buckets
 * [metalcloud-cli custom-iso](metalcloud-cli_custom-iso.md)	 - Manage custom ISO images for server provisioning
 * [metalcloud-cli dns-zone](metalcloud-cli_dns-zone.md)	 - DNS Zone management
