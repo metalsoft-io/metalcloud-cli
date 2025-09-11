@@ -444,7 +444,87 @@ func NetworkDeviceGetDefaults(ctx context.Context, siteId string) error {
 		return err
 	}
 
-	return formatter.PrintResult(defaults, nil)
+	return formatter.PrintResult(defaults, &formatter.PrintConfig{
+		FieldsConfig: map[string]formatter.RecordFieldConfig{
+			"Id": {
+				Title: "#",
+				Order: 1,
+			},
+			"DatacenterName": {
+				Title: "Site",
+				Order: 2,
+			},
+			"SerialNumber": {
+				Title: "Serial",
+				Order: 3,
+			},
+			"ManagementMacAddress": {
+				Title: "MAC",
+				Order: 4,
+			},
+			"Position": {
+				Title: "Position",
+				Order: 5,
+			},
+			"IdentifierString": {
+				Title: "Identifier",
+				Order: 6,
+			},
+			"Asn": {
+				Title: "ASN",
+				Order: 7,
+			},
+		},
+	})
+}
+
+func NetworkDeviceAddDefaults(ctx context.Context, config []byte) error {
+	logger.Get().Info().Msgf("Adding network device defaults")
+
+	var networkDeviceDefaults sdk.CreateNetworkDeviceDefaults
+	err := utils.UnmarshalContent(config, &networkDeviceDefaults)
+	if err != nil {
+		return err
+	}
+
+	client := api.GetApiClient(ctx)
+
+	httpRes, err := client.NetworkDeviceAPI.
+		AddNetworkDeviceDefaults(ctx).
+		CreateNetworkDeviceDefaults(networkDeviceDefaults).
+		Execute()
+	if err := response_inspector.InspectResponse(httpRes, err); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func NetworkDeviceExampleDefaults(ctx context.Context) error {
+	networkDeviceDefaults := sdk.CreateNetworkDeviceDefaults{
+		DatacenterName:            "site1",
+		SerialNumber:              sdk.PtrString("1234"),
+		ManagementMacAddress:      "AA:BB:CC:DD:EE:FF",
+		Position:                  sdk.PtrString("leaf"),
+		IdentifierString:          sdk.PtrString("1234"),
+		Asn:                       sdk.PtrFloat32(65000),
+		SkipInitialConfiguration:  sdk.PtrFloat32(0),
+		CustomVariables:           map[string]interface{}{"var1": "value1", "var2": "value2"},
+		MlagDomainId:              sdk.PtrFloat32(1),
+		LoopbackAddressIpv4:       sdk.PtrString("1.2.3.4"),
+		LoopbackAddressIpv6:       sdk.PtrString("0:0:0:0:0:0:0:1"),
+		VtepAddressIpv4:           sdk.PtrString("1.2.3.4"),
+		VtepAddressIpv6:           sdk.PtrString("0:0:0:0:0:0:0:1"),
+		OrderIndex:                sdk.PtrFloat32(1),
+		OsTemplateId:              sdk.PtrFloat32(10),
+		MlagPartnerHostname:       sdk.PtrString("partner.example.com"),
+		IsPartOfMlagPair:          sdk.PtrFloat32(1),
+		MlagSystemMac:             sdk.PtrString("AA:BB:CC:DD:EE:FF"),
+		MlagPeerLinkPortChannelId: sdk.PtrFloat32(1),
+		MlagPartnerVlanId:         sdk.PtrFloat32(100),
+	}
+
+	return formatter.PrintResult(networkDeviceDefaults, nil)
 }
 
 func GetNetworkDeviceById(ctx context.Context, networkDeviceId string) (*sdk.NetworkDevice, error) {

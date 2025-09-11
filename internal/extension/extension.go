@@ -35,12 +35,17 @@ var extensionPrintConfig = formatter.PrintConfig{
 			Transformer: formatter.FormatStatusValue,
 			Order:       4,
 		},
+		"IsPublic": {
+			Title:       "Public",
+			Transformer: formatter.FormatBooleanValue,
+			Order:       5,
+		},
 		"Kind": {
-			Order: 5,
+			Order: 6,
 		},
 		"Description": {
 			MaxWidth: 50,
-			Order:    6,
+			Order:    7,
 		},
 	},
 }
