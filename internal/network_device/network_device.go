@@ -106,7 +106,7 @@ func NetworkDeviceConfigExample(ctx context.Context) error {
 	networkDeviceConfiguration.ManagementAddress.Set(sdk.PtrString("1.1.1.1"))
 	networkDeviceConfiguration.ManagementPort.Set(sdk.PtrInt32(22))
 	networkDeviceConfiguration.Username.Set(sdk.PtrString("admin"))
-	networkDeviceConfiguration.ManagementPassword.Set(sdk.PtrString("password"))
+	networkDeviceConfiguration.ManagementPassword = "password"
 
 	networkDeviceConfiguration.SyslogEnabled.Set(sdk.PtrBool(true))
 
@@ -507,21 +507,21 @@ func NetworkDeviceExampleDefaults(ctx context.Context) error {
 		ManagementMacAddress:      "AA:BB:CC:DD:EE:FF",
 		Position:                  sdk.PtrString("leaf"),
 		IdentifierString:          sdk.PtrString("1234"),
-		Asn:                       sdk.PtrFloat32(65000),
-		SkipInitialConfiguration:  sdk.PtrFloat32(0),
+		Asn:                       sdk.PtrInt32(65000),
+		SkipInitialConfiguration:  sdk.PtrBool(false),
 		CustomVariables:           map[string]interface{}{"var1": "value1", "var2": "value2"},
-		MlagDomainId:              sdk.PtrFloat32(1),
+		MlagDomainId:              sdk.PtrInt32(1),
 		LoopbackAddressIpv4:       sdk.PtrString("1.2.3.4"),
 		LoopbackAddressIpv6:       sdk.PtrString("0:0:0:0:0:0:0:1"),
 		VtepAddressIpv4:           sdk.PtrString("1.2.3.4"),
 		VtepAddressIpv6:           sdk.PtrString("0:0:0:0:0:0:0:1"),
-		OrderIndex:                sdk.PtrFloat32(1),
-		OsTemplateId:              sdk.PtrFloat32(10),
+		OrderIndex:                sdk.PtrInt32(1),
+		OsTemplateId:              sdk.PtrInt32(10),
 		MlagPartnerHostname:       sdk.PtrString("partner.example.com"),
-		IsPartOfMlagPair:          sdk.PtrFloat32(1),
+		IsPartOfMlagPair:          sdk.PtrBool(true),
 		MlagSystemMac:             sdk.PtrString("AA:BB:CC:DD:EE:FF"),
-		MlagPeerLinkPortChannelId: sdk.PtrFloat32(1),
-		MlagPartnerVlanId:         sdk.PtrFloat32(100),
+		MlagPeerLinkPortChannelId: sdk.PtrInt32(1),
+		MlagPartnerVlanId:         sdk.PtrInt32(100),
 	}
 
 	return formatter.PrintResult(networkDeviceDefaults, nil)

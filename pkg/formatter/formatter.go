@@ -64,9 +64,11 @@ func PrintResult(result interface{}, printConfig *PrintConfig) error {
 	case "csv":
 		disableColor = true
 		generateTable(result, printConfig).RenderCSV()
+		disableColor = false
 	case "md":
 		disableColor = true
 		generateTable(result, printConfig).RenderMarkdown()
+		disableColor = false
 	default:
 		return fmt.Errorf("%s format not supported yet", format)
 	}
