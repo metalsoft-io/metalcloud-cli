@@ -1,6 +1,39 @@
 ## metalcloud-cli network-device add-defaults
 
-Add network device default configuration settings
+Add network device default configuration
+
+### Synopsis
+
+Add network device default configuration that will be applied to new
+devices when they are added to sites. These defaults provide consistent
+baseline configurations across your infrastructure.
+
+Default configurations can include:
+- Management network settings and credentials
+- Standard VLAN configurations
+- Security policies and access controls
+- Monitoring and logging settings
+- Device-specific operational parameters
+- Network topology preferences
+
+The configuration is provided via JSON file or pipe input and will be merged
+with existing defaults, allowing for incremental updates.
+
+Required Flags:
+  --config-source   Source of default configuration data (required)
+                   Values: 'pipe' for stdin input, or path to JSON file
+
+Use the 'example-defaults' command to see the configuration format:
+
+Examples:
+  # Add defaults from JSON file
+  metalcloud-cli network-device add-defaults --config-source defaults.json
+
+  # Add defaults from pipe input
+  cat site-defaults.json | metalcloud-cli network-device add-defaults --config-source pipe
+
+  # Update specific default settings
+  echo '{"syslogEnabled": true, "managementPort": 22}' | metalcloud-cli nd add-defaults --config-source pipe
 
 ```
 metalcloud-cli network-device add-defaults [flags]

@@ -91,7 +91,10 @@ func rootPersistentPreRun(cmd *cobra.Command, args []string) error {
 		(cmd.Parent() != nil && cmd.Parent().Name() == "completion")
 
 	if !skipValidation && endpoint == "" {
-		return fmt.Errorf("API endpoint is required. Use --endpoint or set %s environment variable", system.ConfigEndpoint)
+		return fmt.Errorf("API endpoint is required. Use --%s flag or set %s_%s environment variable",
+			system.ConfigEndpoint,
+			strings.ToUpper(system.ConfigPrefix),
+			strings.ToUpper(system.ConfigEndpoint))
 	}
 
 	// Validate the endpoint is proper URL
@@ -101,7 +104,10 @@ func rootPersistentPreRun(cmd *cobra.Command, args []string) error {
 	}
 
 	if !skipValidation && viper.GetString(system.ConfigApiKey) == "" {
-		return fmt.Errorf("API key is required. Use --api-key or set %s environment variable", system.ConfigApiKey)
+		return fmt.Errorf("API key is required. Use --%s flag or set %s_%s environment variable",
+			system.ConfigApiKey,
+			strings.ToUpper(system.ConfigPrefix),
+			strings.ToUpper(system.ConfigApiKey))
 	}
 
 	// Create API client

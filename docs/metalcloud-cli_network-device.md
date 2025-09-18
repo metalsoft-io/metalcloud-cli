@@ -32,7 +32,7 @@ monitor network devices.
 ### SEE ALSO
 
 * [metalcloud-cli](metalcloud-cli.md)	 - MetalCloud CLI
-* [metalcloud-cli network-device add-defaults](metalcloud-cli_network-device_add-defaults.md)	 - Add network device default configuration settings
+* [metalcloud-cli network-device add-defaults](metalcloud-cli_network-device_add-defaults.md)	 - Add network device default configuration
 * [metalcloud-cli network-device archive](metalcloud-cli_network-device_archive.md)	 - Archive a network device (soft delete with history preservation)
 * [metalcloud-cli network-device change-status](metalcloud-cli_network-device_change-status.md)	 - Change the operational status of a network device
 * [metalcloud-cli network-device config-example](metalcloud-cli_network-device_config-example.md)	 - Generate example configuration template for network devices
