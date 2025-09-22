@@ -618,6 +618,7 @@ func InfrastructureGetUtilization(ctx context.Context, userId int, startTime tim
 			InfrastructureId:            infrastructureId,
 			InfrastructureLabel:         infrastructureLabel,
 			InfrastructureServiceStatus: infrastructureServiceStatus,
+			Tags:                        infrastructure.Tags,
 		})
 
 		// Get detailed report for this infrastructure
@@ -630,6 +631,7 @@ func InfrastructureGetUtilization(ctx context.Context, userId int, startTime tim
 						InfrastructureId:            infrastructureId,
 						InfrastructureLabel:         infrastructureLabel,
 						InfrastructureServiceStatus: infrastructureServiceStatus,
+						Tags:                        item.Tags,
 						//
 						Kind:              "Instance",
 						Id:                item.Id,
@@ -658,6 +660,7 @@ func InfrastructureGetUtilization(ctx context.Context, userId int, startTime tim
 						InfrastructureId:            infrastructureId,
 						InfrastructureLabel:         infrastructureLabel,
 						InfrastructureServiceStatus: infrastructureServiceStatus,
+						Tags:                        item.Tags,
 						//
 						Kind:              "Drive",
 						Id:                item.Id,
@@ -678,6 +681,7 @@ func InfrastructureGetUtilization(ctx context.Context, userId int, startTime tim
 						InfrastructureId:            infrastructureId,
 						InfrastructureLabel:         infrastructureLabel,
 						InfrastructureServiceStatus: infrastructureServiceStatus,
+						Tags:                        item.Tags,
 						//
 						Kind:              "Shared Drive",
 						Id:                item.Id,
@@ -700,6 +704,7 @@ func InfrastructureGetUtilization(ctx context.Context, userId int, startTime tim
 						InfrastructureId:            infrastructureId,
 						InfrastructureLabel:         infrastructureLabel,
 						InfrastructureServiceStatus: infrastructureServiceStatus,
+						Tags:                        item.AdditionalProperties["tags"],
 						//
 						Kind:              "Subnet",
 						Id:                item.Id,
@@ -736,6 +741,7 @@ type utilReportRecord = struct {
 	MeasurementPeriod           interface{}
 	MeasurementUnit             interface{}
 	Quantity                    interface{}
+	Tags                        interface{}
 
 	//INSTANCE
 	ServerTypeId               interface{}
@@ -928,6 +934,12 @@ func utilReportRecordPrintConfig(showInstances, showDrives, showSubnets bool) *f
 			Title: "Subnet Type",
 			Order: orderIndex,
 		}
+	}
+
+	orderIndex++
+	printConfig.FieldsConfig["Tags"] = formatter.RecordFieldConfig{
+		Title: "Tags",
+		Order: orderIndex,
 	}
 
 	return &printConfig
