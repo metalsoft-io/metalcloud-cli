@@ -124,6 +124,11 @@ func FirmwareCatalogCreate(ctx context.Context, firmwareCatalogOptions FirmwareC
 		return err
 	}
 
+	if len(vendorCatalog.Binaries) == 0 {
+		logger.Get().Warn().Msg("No binaries found in the catalog")
+		return fmt.Errorf("no binaries found in the catalog")
+	}
+
 	logger.Get().Debug().Msgf("Creating MetalSoft firmware catalog")
 
 	err = vendorCatalog.CreateMetalsoftCatalog(ctx)
