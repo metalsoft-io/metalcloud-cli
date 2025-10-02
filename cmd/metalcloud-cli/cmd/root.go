@@ -17,7 +17,8 @@ import (
 )
 
 var (
-	cfgFile string
+	cfgFile     string
+	showVersion bool
 
 	rootCmd = &cobra.Command{
 		Use:   "metalcloud-cli",
@@ -25,6 +26,12 @@ var (
 		Long: `A CLI for interacting with MetalSoft instance.
 
 This CLI requires the correct version of the CLI to be used with the MetalCloud instance of compatible version.`,
+		RunE: func(cmd *cobra.Command, args []string) error {
+			if showVersion {
+				return runVersionCmd(cmd, args)
+			}
+			return cmd.Help()
+		},
 		PersistentPreRunE:  rootPersistentPreRun,
 		PersistentPostRunE: rootPersistentPostRun,
 	}
@@ -34,6 +41,7 @@ func init() {
 	cobra.OnInitialize(initConfig)
 
 	rootCmd.PersistentFlags().StringVarP(&cfgFile, "config", "c", "", "Config file path")
+	rootCmd.Flags().BoolVar(&showVersion, "version", false, "Display version information")
 
 	// Add the global persistent flags
 	rootCmd.PersistentFlags().StringP(system.ConfigEndpoint, "e", "", "MetalCloud API endpoint")
@@ -81,6 +89,11 @@ func rootPersistentPreRun(cmd *cobra.Command, args []string) error {
 	err := logger.Init()
 	if err != nil {
 		return err
+	}
+
+	// Skip validation when --version flag is used
+	if showVersion {
+		return nil
 	}
 
 	endpoint := viper.GetString(system.ConfigEndpoint)
