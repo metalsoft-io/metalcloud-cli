@@ -598,8 +598,26 @@ func InfrastructureGetUtilization(ctx context.Context, userId int, startTime tim
 	}
 
 	if strings.ToLower(viper.GetString(formatter.ConfigFormat)) == "json" {
-		// Do not change the output format if JSON is requested
-		return formatter.PrintResult(utilization, nil)
+		// Normalize JSON: expand tags into arrays instead of JSON-encoded strings
+		infrastructuresMap := map[string]interface{}{}
+		for _, infra := range utilization.Infrastructures {
+			key := fmt.Sprintf("%v", infra.InfrastructureId)
+			infrastructuresMap[key] = map[string]interface{}{
+				"infrastructureId":            infra.InfrastructureId,
+				"infrastructureLabel":         infra.InfrastructureLabel,
+				"infrastructureServiceStatus": infra.InfrastructureServiceStatus,
+				"tags":                        normalizeTagsToSlice(infra.Tags),
+			}
+		}
+
+		normalized := map[string]interface{}{
+			"startTimestamp":  startTime.Format(time.RFC3339),
+			"endTimestamp":    endTime.Format(time.RFC3339),
+			"detailedReport":  utilization.DetailedReport,
+			"infrastructures": infrastructuresMap,
+		}
+
+		return formatter.PrintResult(normalized, nil)
 	}
 
 	reportData := []utilReportRecord{}
@@ -618,7 +636,7 @@ func InfrastructureGetUtilization(ctx context.Context, userId int, startTime tim
 			InfrastructureId:            infrastructureId,
 			InfrastructureLabel:         infrastructureLabel,
 			InfrastructureServiceStatus: infrastructureServiceStatus,
-			Tags:                        infrastructure.Tags,
+			Tags:                        formatter.FormatStringListValue(infrastructure.Tags),
 		})
 
 		// Get detailed report for this infrastructure
@@ -631,7 +649,7 @@ func InfrastructureGetUtilization(ctx context.Context, userId int, startTime tim
 						InfrastructureId:            infrastructureId,
 						InfrastructureLabel:         infrastructureLabel,
 						InfrastructureServiceStatus: infrastructureServiceStatus,
-						Tags:                        item.Tags,
+						Tags:                        formatter.FormatStringListValue(item.Tags),
 						//
 						Kind:              "Instance",
 						Id:                item.Id,
@@ -660,7 +678,7 @@ func InfrastructureGetUtilization(ctx context.Context, userId int, startTime tim
 						InfrastructureId:            infrastructureId,
 						InfrastructureLabel:         infrastructureLabel,
 						InfrastructureServiceStatus: infrastructureServiceStatus,
-						Tags:                        item.Tags,
+						Tags:                        formatter.FormatStringListValue(item.Tags),
 						//
 						Kind:              "Drive",
 						Id:                item.Id,
@@ -681,7 +699,7 @@ func InfrastructureGetUtilization(ctx context.Context, userId int, startTime tim
 						InfrastructureId:            infrastructureId,
 						InfrastructureLabel:         infrastructureLabel,
 						InfrastructureServiceStatus: infrastructureServiceStatus,
-						Tags:                        item.Tags,
+						Tags:                        formatter.FormatStringListValue(item.Tags),
 						//
 						Kind:              "Shared Drive",
 						Id:                item.Id,
@@ -704,7 +722,7 @@ func InfrastructureGetUtilization(ctx context.Context, userId int, startTime tim
 						InfrastructureId:            infrastructureId,
 						InfrastructureLabel:         infrastructureLabel,
 						InfrastructureServiceStatus: infrastructureServiceStatus,
-						Tags:                        item.AdditionalProperties["tags"],
+						Tags:                        formatter.FormatStringListValue(item.AdditionalProperties["tags"]),
 						//
 						Kind:              "Subnet",
 						Id:                item.Id,
@@ -938,9 +956,52 @@ func utilReportRecordPrintConfig(showInstances, showDrives, showSubnets bool) *f
 
 	orderIndex++
 	printConfig.FieldsConfig["Tags"] = formatter.RecordFieldConfig{
-		Title: "Tags",
-		Order: orderIndex,
+		Title:       "Tags",
+		Order:       orderIndex,
+		Transformer: formatter.FormatStringListValue,
 	}
 
 	return &printConfig
+}
+
+// normalizeTagsToSlice converts various tag representations into a []string suitable for JSON output.
+// It supports:
+// - string containing JSON array (e.g., "[\"a\",\"b\"]")
+// - string containing a single value
+// - []string
+// - []interface{}
+// - *string
+func normalizeTagsToSlice(tags interface{}) []string {
+	switch t := tags.(type) {
+	case nil:
+		return []string{}
+	case *string:
+		if t == nil || *t == "" {
+			return []string{}
+		}
+		var arr []string
+		if json.Unmarshal([]byte(*t), &arr) == nil {
+			return arr
+		}
+		return []string{*t}
+	case string:
+		if t == "" {
+			return []string{}
+		}
+		var arr []string
+		if json.Unmarshal([]byte(t), &arr) == nil {
+			return arr
+		}
+		return []string{t}
+	case []string:
+		return t
+	case []interface{}:
+		res := make([]string, 0, len(t))
+		for _, v := range t {
+			res = append(res, fmt.Sprint(v))
+		}
+		return res
+	default:
+		return []string{fmt.Sprint(t)}
+	}
 }

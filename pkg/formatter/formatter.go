@@ -275,6 +275,7 @@ func addField(fieldConfig RecordFieldConfig, fieldName string, fieldValue interf
 		if fieldConfig.Transformer != nil || fieldConfig.MaxWidth > 0 {
 			*configs = append(*configs, table.ColumnConfig{
 				Name:        title,
+				Number:      fieldConfig.Order, // bind by index so header casing doesn't break transformer
 				WidthMax:    fieldConfig.MaxWidth,
 				Transformer: text.Transformer(fieldConfig.Transformer),
 			})
@@ -291,6 +292,14 @@ func addField(fieldConfig RecordFieldConfig, fieldName string, fieldValue interf
 func extractValue(value reflect.Value) interface{} {
 	if !value.IsValid() {
 		return ""
+	}
+
+	// Unwrap interface values to access the underlying dynamic value
+	if value.Kind() == reflect.Interface {
+		if value.IsNil() {
+			return ""
+		}
+		value = value.Elem()
 	}
 
 	if value.Kind() == reflect.Pointer {
@@ -321,7 +330,7 @@ func extractValue(value reflect.Value) interface{} {
 	case reflect.Map:
 		var result []string
 		for _, key := range value.MapKeys() {
-			result = append(result, fmt.Sprintf("%s: %s", key.String(), extractValue(value.MapIndex(key))))
+			result = append(result, fmt.Sprintf("%s: %v", key.String(), extractValue(value.MapIndex(key))))
 		}
 		return result
 	case reflect.Struct:
@@ -552,4 +561,74 @@ func FormatBooleanValue(value interface{}) string {
 	}
 
 	return fmt.Sprint(value)
+}
+
+// FormatStringListValue converts various list-like values (e.g., []string, []interface{})
+// into a human-friendly comma-separated string. Falls back to fmt.Sprint for scalars.
+func FormatStringListValue(value interface{}) string {
+	if value == nil {
+		return ""
+	}
+
+	// Handle pointer-to-string values
+	if ps, ok := value.(*string); ok {
+		if ps == nil {
+			return ""
+		}
+		s := *ps
+		trimmed := strings.TrimSpace(s)
+		if strings.HasPrefix(trimmed, "[") && strings.HasSuffix(trimmed, "]") {
+			var arrStr []string
+			if err := json.Unmarshal([]byte(trimmed), &arrStr); err == nil {
+				return strings.Join(arrStr, ", ")
+			}
+
+			var arrAny []interface{}
+			if err := json.Unmarshal([]byte(trimmed), &arrAny); err == nil {
+				parts := make([]string, 0, len(arrAny))
+				for _, it := range arrAny {
+					parts = append(parts, fmt.Sprint(it))
+				}
+				return strings.Join(parts, ", ")
+			}
+		}
+		return s
+	}
+
+	switch v := value.(type) {
+	case []string:
+		return strings.Join(v, ", ")
+	case []interface{}:
+		parts := make([]string, 0, len(v))
+		for _, item := range v {
+			switch s := item.(type) {
+			case string:
+				parts = append(parts, s)
+			default:
+				parts = append(parts, fmt.Sprint(s))
+			}
+		}
+		return strings.Join(parts, ", ")
+	case string:
+		// If the string looks like a JSON array (e.g., "[\"tag\"]"), parse and render cleanly
+		trimmed := strings.TrimSpace(v)
+		if strings.HasPrefix(trimmed, "[") && strings.HasSuffix(trimmed, "]") {
+			var arrStr []string
+			if err := json.Unmarshal([]byte(trimmed), &arrStr); err == nil {
+				return strings.Join(arrStr, ", ")
+			}
+
+			var arrAny []interface{}
+			if err := json.Unmarshal([]byte(trimmed), &arrAny); err == nil {
+				parts := make([]string, 0, len(arrAny))
+				for _, it := range arrAny {
+					parts = append(parts, fmt.Sprint(it))
+				}
+				return strings.Join(parts, ", ")
+			}
+		}
+		return v
+	default:
+		return fmt.Sprint(v)
+	}
 }
