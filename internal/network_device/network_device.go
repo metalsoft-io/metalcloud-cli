@@ -361,48 +361,25 @@ func NetworkDeviceReset(ctx context.Context, networkDeviceId string) error {
 	return nil
 }
 
-func NetworkDeviceChangeStatus(ctx context.Context, networkDeviceId string, status string) error {
-	logger.Get().Info().Msgf("Changing network device %s status to %s", networkDeviceId, status)
+func NetworkDeviceSetFailed(ctx context.Context, networkDeviceId string) error {
+	logger.Get().Info().Msgf("Changing network device %s status to failed", networkDeviceId)
 
-	networkDeviceIdNumeric, err := GetNetworkDeviceId(networkDeviceId)
+	networkDeviceIdNumeric, eTag, err := getNetworkDeviceIdAndRevision(ctx, networkDeviceId)
 	if err != nil {
 		return err
 	}
 
-	// Validate status
-	validStatuses := map[string]bool{
-		"new":              true,
-		"available":        true,
-		"allocated":        true,
-		"installing":       true,
-		"active":           true,
-		"error":            true,
-		"removing":         true,
-		"removed":          true,
-		"resetting":        true,
-		"needs_attention":  true,
-		"under_diagnostic": true,
-	}
-
-	if !validStatuses[status] {
-		return fmt.Errorf("invalid status: '%s'", status)
-	}
-
 	client := api.GetApiClient(ctx)
 
-	statusObj := sdk.NetworkDeviceStatus{
-		Status: status,
-	}
-
-	httpRes, err := client.NetworkDeviceAPI.
-		ChangeNetworkDeviceStatus(ctx, networkDeviceIdNumeric).
-		NetworkDeviceStatus(statusObj).
+	_, httpRes, err := client.NetworkDeviceAPI.
+		SetNetworkDeviceAsFailed(ctx, networkDeviceIdNumeric).
+		IfMatch(eTag).
 		Execute()
 	if err := response_inspector.InspectResponse(httpRes, err); err != nil {
 		return err
 	}
 
-	logger.Get().Info().Msgf("Network device %s status changed to %s", networkDeviceId, status)
+	logger.Get().Info().Msgf("Network device %s status changed to failed", networkDeviceId)
 	return nil
 }
 

@@ -399,37 +399,15 @@ Examples:
 		},
 	}
 
-	networkDeviceChangeStatusCmd = &cobra.Command{
-		Use:   "change-status <network_device_id> <status>",
-		Short: "Change the operational status of a network device",
-		Long: `Change the operational status of a network device in the management system.
-This affects how the system treats the device for operations and monitoring.
-
-Arguments:
-  network_device_id   The unique identifier of the network device
-  status             New operational status for the device
-                     Values: active, inactive, maintenance, error
-
-Status descriptions:
-  active       - Device is operational and available for use
-  inactive     - Device is present but not operational
-  maintenance  - Device is under maintenance, avoid new allocations
-  error        - Device has issues and requires attention
-
-Examples:
-  # Put device in maintenance mode
-  metalcloud-cli network-device change-status 12345 maintenance
-
-  # Activate device after maintenance
-  metalcloud-cli network-device change-status 12345 active
-
-  # Mark device as having errors
-  metalcloud-cli switch change-status 12345 error`,
+	networkDeviceSetAsFailedCmd = &cobra.Command{
+		Use:          "set-failed <network_device_id>",
+		Short:        "Set the network device as failed",
+		Long:         `Change the operational status of a network device to failed.`,
 		SilenceUsage: true,
 		Annotations:  map[string]string{system.REQUIRED_PERMISSION: system.PERMISSION_SWITCHES_WRITE},
-		Args:         cobra.ExactArgs(2),
+		Args:         cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
-			return network_device.NetworkDeviceChangeStatus(cmd.Context(), args[0], args[1])
+			return network_device.NetworkDeviceSetFailed(cmd.Context(), args[0])
 		},
 	}
 
@@ -584,7 +562,7 @@ func init() {
 
 	networkDeviceCmd.AddCommand(networkDeviceResetCmd)
 
-	networkDeviceCmd.AddCommand(networkDeviceChangeStatusCmd)
+	networkDeviceCmd.AddCommand(networkDeviceSetAsFailedCmd)
 
 	networkDeviceCmd.AddCommand(networkDeviceEnableSyslogCmd)
 
