@@ -47,62 +47,66 @@ Examples:
   # Check version with specific endpoint configuration
   metalcloud-cli --endpoint https://my.metalcloud.com version`,
 		SilenceUsage: true,
-		RunE: func(cmd *cobra.Command, args []string) error {
-			fmt.Printf("CLI Version: %s\n", Version)
-
-			minVersion, maxVersion := system.GetMinMaxVersion()
-			fmt.Printf("Minimum Metalsoft Version: %s\n", minVersion)
-			fmt.Printf("Maximum Metalsoft Version: %s\n", maxVersion)
-
-			fmt.Printf("Metalsoft Endpoint: %s\n", viper.GetString(system.ConfigEndpoint))
-			if viper.GetBool(system.ConfigInsecure) {
-				fmt.Printf("Insecure Mode: %t\n", viper.GetBool(system.ConfigInsecure))
-			}
-
-			fmt.Printf("Log File: %s\n", viper.GetString(logger.ConfigLogFile))
-			fmt.Printf("Log Verbosity: %s\n", viper.GetString(logger.ConfigVerbosity))
-
-			fmt.Printf("Debug Mode: %t\n", viper.GetBool(system.ConfigDebug))
-
-			// Try to get user access level if API client is available
-			if cmd.Context() != nil && api.GetApiClient(cmd.Context()) != nil {
-				if user, _, err := api.GetApiClient(cmd.Context()).AuthenticationAPI.GetCurrentUser(cmd.Context()).Execute(); err == nil {
-					email := ""
-					if user.Email != "" {
-						email = fmt.Sprintf(", Email: %s", user.Email)
-					}
-
-					accessLevel := "Unknown"
-					if user.AccessLevel != "" {
-						accessLevel = user.AccessLevel
-					}
-
-					fmt.Printf("User ID: %d%s, Access Level: %s\n", int(user.Id), email, accessLevel)
-				}
-			}
-
-			// Environment variables
-			fmt.Printf("\nEnvironment Variables:\n")
-			envVars := []string{
-				"HTTP_PROXY",
-				"HTTPS_PROXY",
-				"NO_PROXY",
-				"http_proxy",
-				"https_proxy",
-				"no_proxy",
-			}
-
-			for _, envVar := range envVars {
-				value := os.Getenv(envVar)
-				if value != "" {
-					fmt.Printf("%s=%s\n", envVar, value)
-				}
-			}
-
-			return nil
-		},
+		RunE:         runVersionCmd,
 	}
 )
+
+func runVersionCmd(cmd *cobra.Command, args []string) error {
+	fmt.Printf("CLI Version: %s\n", Version)
+
+	minVersion, maxVersion := system.GetMinMaxVersion()
+	fmt.Printf("Minimum Metalsoft Version: %s\n", minVersion)
+	fmt.Printf("Maximum Metalsoft Version: %s\n", maxVersion)
+
+	fmt.Printf("Metalsoft Endpoint: %s\n", viper.GetString(system.ConfigEndpoint))
+	if viper.GetBool(system.ConfigInsecure) {
+		fmt.Printf("Insecure Mode: %t\n", viper.GetBool(system.ConfigInsecure))
+	}
+
+	fmt.Printf("Log File: %s\n", viper.GetString(logger.ConfigLogFile))
+	fmt.Printf("Log Verbosity: %s\n", viper.GetString(logger.ConfigVerbosity))
+
+	fmt.Printf("Debug Mode: %t\n", viper.GetBool(system.ConfigDebug))
+
+	// Try to get user access level if API client is available
+	if cmd.Context() != nil {
+		if apiClient, err := api.GetApiClientE(cmd.Context()); err == nil && apiClient != nil {
+			if user, _, err := apiClient.AuthenticationAPI.GetCurrentUser(cmd.Context()).Execute(); err == nil {
+				email := ""
+				if user.Email != "" {
+					email = fmt.Sprintf(", Email: %s", user.Email)
+				}
+
+				accessLevel := "Unknown"
+				if user.AccessLevel != "" {
+					accessLevel = user.AccessLevel
+				}
+
+				fmt.Printf("User ID: %d%s, Access Level: %s\n", int(user.Id), email, accessLevel)
+			}
+		}
+	}
+
+	// Environment variables
+	fmt.Printf("\nEnvironment Variables:\n")
+	envVars := []string{
+		"HTTP_PROXY",
+		"HTTPS_PROXY",
+		"NO_PROXY",
+		"http_proxy",
+		"https_proxy",
+		"no_proxy",
+	}
+
+	for _, envVar := range envVars {
+		value := os.Getenv(envVar)
+		if value != "" {
+			fmt.Printf("%s=%s\n", envVar, value)
+		}
+	}
+
+	return nil
+}
 
 func init() {
 	rootCmd.AddCommand(versionCmd)
