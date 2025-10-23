@@ -91,15 +91,10 @@ func rootPersistentPreRun(cmd *cobra.Command, args []string) error {
 		return err
 	}
 
-	// Skip validation when --version flag is used
-	if showVersion {
-		return nil
-	}
-
 	endpoint := viper.GetString(system.ConfigEndpoint)
 
 	// Commands that don't require endpoint or API key
-	skipValidation := cmd.Name() == "version" || cmd.Name() == "completion" ||
+	skipValidation := cmd.Name() == "version" || showVersion || cmd.Name() == "completion" ||
 		cmd.Name() == "__complete" || cmd.Name() == "__completeNoDesc" ||
 		(cmd.Parent() != nil && cmd.Parent().Name() == "completion")
 
