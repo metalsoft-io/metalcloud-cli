@@ -8,6 +8,10 @@ A CLI for interacting with MetalSoft instance.
 
 This CLI requires the correct version of the CLI to be used with the MetalCloud instance of compatible version.
 
+```
+metalcloud-cli [flags]
+```
+
 ### Options
 
 ```
@@ -20,6 +24,7 @@ This CLI requires the correct version of the CLI to be used with the MetalCloud 
   -i, --insecure_skip_verify   Set to allow insecure transport
   -l, --log_file string        Log file path
   -v, --verbosity string       Log level verbosity (default "INFO")
+      --version                Display version information
 ```
 
 ### SEE ALSO
