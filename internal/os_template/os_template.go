@@ -273,6 +273,41 @@ func OsTemplateUpdate(ctx context.Context, osTemplateId string, osTemplateUpdate
 	return nil
 }
 
+func OsTemplateSetStatus(ctx context.Context, osTemplateId string, newStatus string) error {
+	logger.Get().Info().Msgf("Set OS template %s status to %s", osTemplateId, newStatus)
+
+	osTemplate, err := GetOsTemplateByIdOrLabel(ctx, osTemplateId)
+	if err != nil {
+		return err
+	}
+
+	osTemplateUpdates := sdk.OSTemplateUpdate{
+		Name:        osTemplate.Name,
+		Description: osTemplate.Description,
+		Label:       osTemplate.Label,
+		Device:      osTemplate.Device,
+		Install:     osTemplate.Install,
+		ImageBuild:  *osTemplate.ImageBuild,
+		Os:          osTemplate.Os,
+		Visibility:  &osTemplate.Visibility,
+		Tags:        osTemplate.Tags,
+		Status:      sdk.PtrString(newStatus),
+	}
+
+	client := api.GetApiClient(ctx)
+
+	_, httpRes, err := client.OSTemplateAPI.
+		UpdateOSTemplate(ctx, float32(osTemplate.Id)).
+		OSTemplateUpdate(osTemplateUpdates).
+		IfMatch(strconv.Itoa(int(osTemplate.Revision))).
+		Execute()
+	if err := response_inspector.InspectResponse(httpRes, err); err != nil {
+		return err
+	}
+
+	return nil
+}
+
 func OsTemplateDelete(ctx context.Context, osTemplateId string) error {
 	logger.Get().Info().Msgf("Deleting OS template %s", osTemplateId)
 

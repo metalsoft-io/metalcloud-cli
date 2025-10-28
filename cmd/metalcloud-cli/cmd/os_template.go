@@ -18,6 +18,7 @@ var (
 		name         string
 		label        string
 		sourceIso    string
+		status       string
 	}{}
 
 	osTemplateCmd = &cobra.Command{
@@ -223,6 +224,36 @@ Examples:
 		},
 	}
 
+	osTemplateSetStatusCmd = &cobra.Command{
+		Use:     "set-status <os_template_id> <status>",
+		Aliases: []string{"status"},
+		Short:   "Set the status of an OS template",
+		Long: `Set the status of an OS template.
+
+This command updates the status of an existing OS template. Valid status values
+include: ready, active, used, archived.
+
+Required arguments:
+  os_template_id    The numeric ID of the template to update
+  status           The new status value (ready, active, used, archived)
+
+Examples:
+  # Set template status to active
+  metalcloud-cli os-template set-status 123 active
+  
+  # Archive a template
+  metalcloud-cli os-template set-status 456 archived
+  
+  # Set template to ready status using alias
+  metalcloud-cli templates status 789 ready`,
+		SilenceUsage: true,
+		Annotations:  map[string]string{system.REQUIRED_PERMISSION: system.PERMISSION_TEMPLATES_WRITE},
+		Args:         cobra.ExactArgs(2),
+		RunE: func(cmd *cobra.Command, args []string) error {
+			return os_template.OsTemplateSetStatus(cmd.Context(), args[0], args[1])
+		},
+	}
+
 	osTemplateDeleteCmd = &cobra.Command{
 		Use:     "delete <os_template_id>",
 		Aliases: []string{"rm"},
@@ -420,6 +451,7 @@ func init() {
 	osTemplateUpdateCmd.Flags().StringVar(&osTemplateFlags.configSource, "config-source", "", "Source of the OS template configuration updates. Can be 'pipe' or path to a JSON file.")
 	osTemplateUpdateCmd.MarkFlagsOneRequired("config-source")
 
+	osTemplateCmd.AddCommand(osTemplateSetStatusCmd)
 	osTemplateCmd.AddCommand(osTemplateDeleteCmd)
 	osTemplateCmd.AddCommand(osTemplateGetCredentialsCmd)
 	osTemplateCmd.AddCommand(osTemplateGetAssetsCmd)

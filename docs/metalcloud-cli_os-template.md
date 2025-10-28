@@ -53,5 +53,6 @@ Available commands:
 * [metalcloud-cli os-template get-credentials](metalcloud-cli_os-template_get-credentials.md)	 - Show default credentials for an OS template
 * [metalcloud-cli os-template list](metalcloud-cli_os-template_list.md)	 - List all available OS templates
 * [metalcloud-cli os-template list-repo](metalcloud-cli_os-template_list-repo.md)	 - List available OS templates from a remote repository
+* [metalcloud-cli os-template set-status](metalcloud-cli_os-template_set-status.md)	 - Set the status of an OS template
 * [metalcloud-cli os-template update](metalcloud-cli_os-template_update.md)	 - Update an existing OS template
 
