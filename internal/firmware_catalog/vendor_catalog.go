@@ -291,10 +291,7 @@ func (vc *VendorCatalog) getFilteredSystemModels(ctx context.Context) ([]string,
 	}
 
 	for _, serverType := range serverTypes.Data {
-		serverTypeIdentifier := serverType.Name
-		if serverType.Label != nil {
-			serverTypeIdentifier = *serverType.Label
-		}
+		serverTypeIdentifier := serverType.Label
 
 		if slices.Contains(vc.ServerTypesFilter, serverTypeIdentifier) {
 			servers, httpRes, err := client.ServerAPI.GetServers(ctx).FilterServerTypeId([]string{fmt.Sprintf("%d", int(serverType.Id))}).Execute()

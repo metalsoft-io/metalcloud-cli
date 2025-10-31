@@ -92,12 +92,12 @@ func DNSZoneGet(ctx context.Context, dnsZoneId string) error {
 	return formatter.PrintResult(dnsZone, &dnsZonePrintConfig)
 }
 
-func DNSZoneCreate(ctx context.Context, zoneConfig sdk.CreateDnsZoneDto) error {
+func DNSZoneCreate(ctx context.Context, zoneConfig sdk.CreateDnsZone) error {
 	logger.Get().Info().Msgf("Creating DNS zone")
 
 	client := api.GetApiClient(ctx)
 
-	dnsZone, httpRes, err := client.DNSZoneAPI.CreateDNSZone(ctx).CreateDnsZoneDto(zoneConfig).Execute()
+	dnsZone, httpRes, err := client.DNSZoneAPI.CreateDNSZone(ctx).CreateDnsZone(zoneConfig).Execute()
 	if err := response_inspector.InspectResponse(httpRes, err); err != nil {
 		return err
 	}
@@ -108,7 +108,7 @@ func DNSZoneCreate(ctx context.Context, zoneConfig sdk.CreateDnsZoneDto) error {
 func DNSZoneUpdate(ctx context.Context, dnsZoneId string, config []byte) error {
 	logger.Get().Info().Msgf("Updating DNS zone '%s'", dnsZoneId)
 
-	var updateConfig sdk.UpdateDnsZoneDto
+	var updateConfig sdk.UpdateDnsZone
 	err := utils.UnmarshalContent(config, &updateConfig)
 	if err != nil {
 		return err
@@ -121,7 +121,7 @@ func DNSZoneUpdate(ctx context.Context, dnsZoneId string, config []byte) error {
 
 	client := api.GetApiClient(ctx)
 
-	dnsZone, httpRes, err := client.DNSZoneAPI.UpdateDNSZone(ctx, dnsZoneIdNumeric).UpdateDnsZoneDto(updateConfig).Execute()
+	dnsZone, httpRes, err := client.DNSZoneAPI.UpdateDNSZone(ctx, dnsZoneIdNumeric).UpdateDnsZone(updateConfig).Execute()
 	if err := response_inspector.InspectResponse(httpRes, err); err != nil {
 		return err
 	}
