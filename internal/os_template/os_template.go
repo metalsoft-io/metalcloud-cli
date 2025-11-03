@@ -75,9 +75,26 @@ func OsTemplateList(ctx context.Context) error {
 
 	client := api.GetApiClient(ctx)
 
-	osTemplateList, httpRes, err := client.OSTemplateAPI.GetOSTemplates(ctx).Execute()
-	if err := response_inspector.InspectResponse(httpRes, err); err != nil {
-		return err
+	request := client.OSTemplateAPI.GetOSTemplates(ctx).SortBy([]string{"id:ASC"}).Limit(100)
+
+	osTemplateList := []sdk.OSTemplate{}
+
+	page := float32(1)
+	for {
+		request = request.Page(page)
+
+		result, httpRes, err := request.Execute()
+		if err := response_inspector.InspectResponse(httpRes, err); err != nil {
+			return err
+		}
+
+		osTemplateList = append(osTemplateList, result.Data...)
+
+		if *result.Meta.TotalPages <= *result.Meta.CurrentPage {
+			break // No more pages to process
+		}
+
+		page++
 	}
 
 	return formatter.PrintResult(osTemplateList, &osTemplatePrintConfig)
