@@ -255,7 +255,7 @@ func StorageConfigExample(ctx context.Context) error {
 		SiteId:              1,
 		Driver:              "netapp",
 		Technologies:        []string{"block"},
-		Type:                "type",
+		Type:                sdk.PtrString("type"),
 		Name:                "name",
 		IscsiHost:           sdk.PtrString("iscsiHost"),
 		IscsiPort:           sdk.PtrFloat32(234),
