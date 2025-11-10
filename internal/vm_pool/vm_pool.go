@@ -277,6 +277,28 @@ func VMPoolConfigExample(ctx context.Context) error {
 	return formatter.PrintResult(vmPoolConfig, nil)
 }
 
+func VMPoolImportVMs(ctx context.Context, vmPoolId string, importVMs sdk.VMPoolImportVMs) error {
+	logger.Get().Info().Msgf("Importing VMs into VM pool %s", vmPoolId)
+
+	vmPoolIdNumeric, err := getVMPoolId(vmPoolId)
+	if err != nil {
+		return err
+	}
+
+	client := api.GetApiClient(ctx)
+
+	httpRes, err := client.VMPoolAPI.ImportVMPoolVMs(ctx, vmPoolIdNumeric).
+		VMPoolImportVMs(importVMs).
+		Execute()
+
+	if err := response_inspector.InspectResponse(httpRes, err); err != nil {
+		return err
+	}
+
+	logger.Get().Info().Msgf("VMs imported successfully into VM pool %s", vmPoolId)
+	return nil
+}
+
 func getVMPoolId(vmPoolId string) (float32, error) {
 	vmPoolIdNumeric, err := strconv.ParseFloat(vmPoolId, 32)
 	if err != nil {
