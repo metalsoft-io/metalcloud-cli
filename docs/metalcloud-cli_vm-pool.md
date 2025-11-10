@@ -45,6 +45,7 @@ to ongoing monitoring and resource inspection.
 * [metalcloud-cli vm-pool credentials](metalcloud-cli_vm-pool_credentials.md)	 - Retrieve authentication credentials for a VM pool
 * [metalcloud-cli vm-pool delete](metalcloud-cli_vm-pool_delete.md)	 - Delete a VM pool permanently
 * [metalcloud-cli vm-pool get](metalcloud-cli_vm-pool_get.md)	 - Get detailed information about a specific VM pool
+* [metalcloud-cli vm-pool import-vms](metalcloud-cli_vm-pool_import-vms.md)	 - Import VMs from the hypervisor into a VM pool
 * [metalcloud-cli vm-pool list](metalcloud-cli_vm-pool_list.md)	 - List all VM pools with optional filtering
 * [metalcloud-cli vm-pool vms](metalcloud-cli_vm-pool_vms.md)	 - List virtual machines in a VM pool with pagination
 

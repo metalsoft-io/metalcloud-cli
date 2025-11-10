@@ -1,20 +1,25 @@
 package cmd
 
 import (
+	"fmt"
 	"strconv"
+	"strings"
 
 	"github.com/metalsoft-io/metalcloud-cli/cmd/metalcloud-cli/system"
 	"github.com/metalsoft-io/metalcloud-cli/internal/vm_pool"
 	"github.com/metalsoft-io/metalcloud-cli/pkg/utils"
+	sdk "github.com/metalsoft-io/metalcloud-sdk-go"
 	"github.com/spf13/cobra"
 )
 
 var (
 	vmPoolFlags = struct {
-		filterType   []string
-		configSource string
-		limit        string
-		page         string
+		filterType       []string
+		configSource     string
+		limit            string
+		page             string
+		infrastructureId string
+		vmNames          string
 	}{}
 
 	vmPoolCmd = &cobra.Command{
@@ -397,6 +402,81 @@ EXAMPLES:
 			return vm_pool.VMPoolGetClusterHostInterfaces(cmd.Context(), args[0], args[1])
 		},
 	}
+
+	vmPoolImportVMsCmd = &cobra.Command{
+		Use:   "import-vms vm_pool_id",
+		Short: "Import VMs from the hypervisor into a VM pool",
+		Long: `Import virtual machines from the hypervisor management system into a VM pool.
+
+This command imports VMs that exist in the hypervisor (e.g., VMware vCenter, Hyper-V)
+but are not yet registered in the MetalCloud VM pool. The import configuration can be
+specified either via a configuration file/pipe or by using flags.
+
+ARGUMENTS:
+  vm_pool_id       The numeric ID of the VM pool
+
+CONFIGURATION VIA FLAGS:
+  --vm-names            Comma-separated list of VM names to import
+  --infrastructure-id   Infrastructure ID to associate with the imported VMs
+
+CONFIGURATION VIA FILE/PIPE:
+  --config-source      Source of the import configuration
+                       Values: 'pipe' for stdin input, or path to JSON file
+
+NOTE: Either use --config-source OR both --infrastructure-id and --vm-names flags.
+
+CONFIGURATION FILE FIELDS:
+  - vmNames            Array of VM names to import from the hypervisor
+  - infrastructureId   Infrastructure ID to associate with the imported VMs
+
+EXAMPLES:
+  # Import VMs using flags
+  metalcloud-cli vm-pool import-vms 123 --infrastructure-id 456 --vm-names "vm-prod-01,vm-prod-02,vm-test-01"
+
+  # Import VMs using configuration from file
+  metalcloud-cli vm-pool import-vms 123 --config-source import-config.json
+
+  # Import VMs using piped configuration
+  echo '{"infrastructureId": 456, "vmNames": ["vm-123", "vm-456"]}' | metalcloud-cli vm-pool import-vms 123 --config-source pipe`,
+		SilenceUsage: true,
+		Annotations:  map[string]string{system.REQUIRED_PERMISSION: system.PERMISSION_VM_POOLS_WRITE},
+		Args:         cobra.ExactArgs(1),
+		RunE: func(cmd *cobra.Command, args []string) error {
+			var importVMs sdk.VMPoolImportVMs
+			if vmPoolFlags.configSource != "" {
+				config, err := utils.ReadConfigFromPipeOrFile(vmPoolFlags.configSource)
+				if err != nil {
+					return err
+				}
+
+				err = utils.UnmarshalContent(config, &importVMs)
+				if err != nil {
+					return err
+				}
+			} else {
+				// Parse CSV list of VM names
+				vmNamesList := strings.Split(vmPoolFlags.vmNames, ",")
+				for i, name := range vmNamesList {
+					vmNamesList[i] = strings.TrimSpace(name)
+				}
+
+				importVMs = sdk.VMPoolImportVMs{
+					VmNames: vmNamesList,
+				}
+
+				if vmPoolFlags.infrastructureId != "" {
+					infraId, err := strconv.ParseFloat(vmPoolFlags.infrastructureId, 32)
+					if err != nil {
+						return fmt.Errorf("invalid infrastructure ID: '%s'", vmPoolFlags.infrastructureId)
+					}
+
+					importVMs.InfrastructureId = sdk.PtrFloat32(float32(infraId))
+				}
+			}
+
+			return vm_pool.VMPoolImportVMs(cmd.Context(), args[0], importVMs)
+		},
+	}
 )
 
 func init() {
@@ -440,4 +520,13 @@ func init() {
 
 	// Get cluster host interfaces command
 	vmPoolCmd.AddCommand(vmPoolGetClusterHostInterfacesCmd)
+
+	// Import VMs command
+	vmPoolCmd.AddCommand(vmPoolImportVMsCmd)
+	vmPoolImportVMsCmd.Flags().StringVar(&vmPoolFlags.configSource, "config-source", "", "Source of the import configuration. Can be 'pipe' or path to a JSON file.")
+	vmPoolImportVMsCmd.Flags().StringVar(&vmPoolFlags.infrastructureId, "infrastructure-id", "", "Infrastructure ID to associate with the imported VMs")
+	vmPoolImportVMsCmd.Flags().StringVar(&vmPoolFlags.vmNames, "vm-names", "", "Comma-separated list of VM names to import")
+	vmPoolImportVMsCmd.MarkFlagsOneRequired("config-source", "vm-names")
+	vmPoolImportVMsCmd.MarkFlagsMutuallyExclusive("config-source", "vm-names")
+	vmPoolImportVMsCmd.MarkFlagsMutuallyExclusive("config-source", "infrastructure-id")
 }
