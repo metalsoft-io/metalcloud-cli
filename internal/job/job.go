@@ -13,28 +13,23 @@ import (
 
 var jobPrintConfig = formatter.PrintConfig{
 	FieldsConfig: map[string]formatter.RecordFieldConfig{
-		"Job": {
-			Hidden: true,
-			InnerFields: map[string]formatter.RecordFieldConfig{
-				"JobId": {
-					Title: "#",
-					Order: 1,
-				},
-				"Status": {
-					Order: 2,
-				},
-				"FunctionName": {
-					Order: 3,
-				},
-				"CreatedTimestamp": {
-					Title: "Created",
-					Order: 4,
-				},
-				"JobGroupId": {
-					Title: "Group",
-					Order: 5,
-				},
-			},
+		"JobId": {
+			Title: "#",
+			Order: 1,
+		},
+		"Status": {
+			Order: 2,
+		},
+		"FunctionName": {
+			Order: 3,
+		},
+		"CreatedTimestamp": {
+			Title: "Created",
+			Order: 4,
+		},
+		"JobGroupId": {
+			Title: "Group",
+			Order: 5,
 		},
 	},
 }
