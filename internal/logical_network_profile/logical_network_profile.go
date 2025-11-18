@@ -108,7 +108,7 @@ func LogicalNetworkProfileConfigExample(ctx context.Context, kind string) error 
 	case string(sdk.LOGICALNETWORKKIND_VLAN):
 		example.Kind = sdk.LOGICALNETWORKKIND_VLAN
 		example.Vlan = &sdk.CreateLogicalNetworkVlanProperties{
-			VlanAllocationStrategies: []sdk.CreateVlanAllocationStrategy{
+			VlanAllocationStrategies: []sdk.CreateVlanAllocationStrategy1{
 				{
 					CreateAutoVlanAllocationStrategy: &sdk.CreateAutoVlanAllocationStrategy{
 						Kind: sdk.ALLOCATIONSTRATEGYKIND_AUTO,
@@ -122,7 +122,7 @@ func LogicalNetworkProfileConfigExample(ctx context.Context, kind string) error 
 			},
 		}
 		example.Ipv4 = &sdk.CreateLogicalNetworkIpv4Properties{
-			SubnetAllocationStrategies: []sdk.CreateIpv4SubnetAllocationStrategy{
+			SubnetAllocationStrategies: []sdk.CreateIpv4SubnetAllocationStrategy1{
 				{
 					CreateAutoIpv4SubnetAllocationStrategy: &sdk.CreateAutoIpv4SubnetAllocationStrategy{
 						Kind: sdk.ALLOCATIONSTRATEGYKIND_AUTO,
@@ -137,7 +137,7 @@ func LogicalNetworkProfileConfigExample(ctx context.Context, kind string) error 
 			},
 		}
 		example.Ipv6 = &sdk.CreateLogicalNetworkIpv6Properties{
-			SubnetAllocationStrategies: []sdk.CreateIpv6SubnetAllocationStrategy{
+			SubnetAllocationStrategies: []sdk.CreateIpv6SubnetAllocationStrategy1{
 				{
 					CreateAutoIpv6SubnetAllocationStrategy: &sdk.CreateAutoIpv6SubnetAllocationStrategy{
 						Kind: sdk.ALLOCATIONSTRATEGYKIND_AUTO,
@@ -155,7 +155,7 @@ func LogicalNetworkProfileConfigExample(ctx context.Context, kind string) error 
 	case string(sdk.LOGICALNETWORKKIND_VXLAN):
 		example.Kind = sdk.LOGICALNETWORKKIND_VXLAN
 		example.Vlan = &sdk.CreateLogicalNetworkVlanProperties{
-			VlanAllocationStrategies: []sdk.CreateVlanAllocationStrategy{
+			VlanAllocationStrategies: []sdk.CreateVlanAllocationStrategy1{
 				{
 					CreateAutoVlanAllocationStrategy: &sdk.CreateAutoVlanAllocationStrategy{
 						Kind: sdk.ALLOCATIONSTRATEGYKIND_AUTO,
@@ -169,7 +169,7 @@ func LogicalNetworkProfileConfigExample(ctx context.Context, kind string) error 
 			},
 		}
 		example.Vxlan = &sdk.CreateLogicalNetworkVxlanProperties{
-			VniAllocationStrategies: []sdk.CreateVniAllocationStrategy{
+			VniAllocationStrategies: []sdk.CreateVniAllocationStrategy1{
 				{
 					CreateAutoVniAllocationStrategy: &sdk.CreateAutoVniAllocationStrategy{
 						Kind: sdk.ALLOCATIONSTRATEGYKIND_AUTO,
@@ -182,7 +182,7 @@ func LogicalNetworkProfileConfigExample(ctx context.Context, kind string) error 
 			},
 		}
 		example.Ipv4 = &sdk.CreateLogicalNetworkIpv4Properties{
-			SubnetAllocationStrategies: []sdk.CreateIpv4SubnetAllocationStrategy{
+			SubnetAllocationStrategies: []sdk.CreateIpv4SubnetAllocationStrategy1{
 				{
 					CreateAutoIpv4SubnetAllocationStrategy: &sdk.CreateAutoIpv4SubnetAllocationStrategy{
 						Kind: sdk.ALLOCATIONSTRATEGYKIND_AUTO,
@@ -197,7 +197,7 @@ func LogicalNetworkProfileConfigExample(ctx context.Context, kind string) error 
 			},
 		}
 		example.Ipv6 = &sdk.CreateLogicalNetworkIpv6Properties{
-			SubnetAllocationStrategies: []sdk.CreateIpv6SubnetAllocationStrategy{
+			SubnetAllocationStrategies: []sdk.CreateIpv6SubnetAllocationStrategy1{
 				{
 					CreateAutoIpv6SubnetAllocationStrategy: &sdk.CreateAutoIpv6SubnetAllocationStrategy{
 						Kind: sdk.ALLOCATIONSTRATEGYKIND_AUTO,
