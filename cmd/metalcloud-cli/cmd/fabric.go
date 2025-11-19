@@ -130,7 +130,7 @@ must be provided through the --config-source flag, which can be a JSON file or p
 Arguments:
   site_id_or_label       The ID or label of the site where the fabric will be created
   fabric_name           The name for the new fabric
-  fabric_type           The type of fabric to create (e.g., "spine-leaf", "collapsed-core")
+  fabric_type           The type of fabric to create (e.g., "ethernet", "infiniband")
   fabric_description    Optional description for the fabric (defaults to fabric_name if not provided)
 
 Required Flags:
@@ -139,15 +139,15 @@ Required Flags:
 
 Examples:
   # Create fabric with configuration from file
-  metalcloud fabric create site1 my-fabric spine-leaf "Production fabric" --config-source fabric-config.json
+  metalcloud fabric create site1 my-fabric ethernet "Production fabric" --config-source fabric-config.json
   
   # Create fabric with piped configuration
-  cat fabric-config.json | metalcloud fabric create site1 my-fabric spine-leaf --config-source pipe
+  cat fabric-config.json | metalcloud fabric create site1 my-fabric ethernet --config-source pipe
   
   # Get example config and create fabric
-  metalcloud fabric config-example spine-leaf > config.json
+  metalcloud fabric config-example ethernet > config.json
   # Edit config.json as needed
-  metalcloud fabric create site1 my-fabric spine-leaf --config-source config.json`,
+  metalcloud fabric create site1 my-fabric ethernet --config-source config.json`,
 		SilenceUsage: true,
 		Annotations:  map[string]string{system.REQUIRED_PERMISSION: system.PERMISSION_NETWORK_FABRICS_WRITE},
 		Args:         cobra.RangeArgs(3, 4),

@@ -35,23 +35,9 @@ var fabricPrintConfig = formatter.PrintConfig{
 			Transformer: formatter.FormatStatusValue,
 			Order:       5,
 		},
-		"FabricConfiguration": {
-			Hidden: true,
-			InnerFields: map[string]formatter.RecordFieldConfig{
-				"EthernetFabric": {
-					Hidden: true,
-					InnerFields: map[string]formatter.RecordFieldConfig{
-						"FabricType": {
-							Title: "Type",
-							Order: 6,
-						},
-						"DefaultVlan": {
-							Title: "Default VLAN",
-							Order: 7,
-						},
-					},
-				},
-			},
+		"FabricConfiguration.EthernetFabric.FabricType|FabricConfiguration.InfinibandFabric.FabricType|FabricConfiguration.FibreChannelFabric.FabricType": {
+			Title: "Type",
+			Order: 6,
 		},
 	},
 }
@@ -91,6 +77,7 @@ func FabricConfigExample(ctx context.Context, fabricType string) error {
 			ZeroTouchEnabled:                 sdk.PtrBool(false),
 			DefaultVlan:                      sdk.PtrInt32(10),
 			DefaultNetworkProfileId:          sdk.PtrInt32(101),
+			ServerOnlyOperationEnabled:       sdk.PtrBool(false),
 			NumberOfSpinesNextToLeafSwitches: sdk.PtrInt32(2),
 			LeafSwitchesHaveMlagPairs:        sdk.PtrBool(false),
 			ExtraInternalIPsPerSubnet:        sdk.PtrInt32(2),
@@ -108,21 +95,38 @@ func FabricConfigExample(ctx context.Context, fabricType string) error {
 		fabricConfiguration = sdk.NetworkFabricFabricConfiguration{
 			EthernetFabric: &ethernetConfig,
 		}
+	case "infiniband":
+		infinibandConfig := sdk.InfinibandFabric{
+			FabricType:                 sdk.FABRICTYPE_INFINIBAND,
+			SyslogMonitoringEnabled:    sdk.PtrBool(true),
+			GnmiMonitoringEnabled:      sdk.PtrBool(false),
+			ZeroTouchEnabled:           sdk.PtrBool(false),
+			DefaultNetworkProfileId:    sdk.PtrInt32(101),
+			ServerOnlyOperationEnabled: sdk.PtrBool(false),
+			PkeyRanges:                 []string{"200-2100"},
+			PreventPKeyCleanup:         []string{"1000-1100"},
+			ReservedPkeys:              []string{"1-100"},
+		}
+
+		fabricConfiguration = sdk.NetworkFabricFabricConfiguration{
+			InfinibandFabric: &infinibandConfig,
+		}
 	case "fibre_channel":
 		fcConfig := sdk.FibreChannelFabric{
-			FabricType:               sdk.FABRICTYPE_FIBRE_CHANNEL,
-			SyslogMonitoringEnabled:  sdk.PtrBool(true),
-			GnmiMonitoringEnabled:    sdk.PtrBool(false),
-			ZeroTouchEnabled:         sdk.PtrBool(false),
-			DefaultNetworkProfileId:  sdk.PtrInt32(101),
-			TopologyType:             sdk.FABRICTOPOLOGYTYPE_MESH,
-			InteropMode:              sdk.PtrString("full"),
-			Mtu:                      sdk.PtrFloat32(1200),
-			VsanId:                   sdk.PtrInt32(1),
-			ZoningConfiguration:      map[string]interface{}{"zone1": []string{"wwn1", "wwn2"}},
-			QosConfiguration:         map[string]interface{}{"qos1": "low"},
-			TrunkingConfiguration:    map[string]interface{}{"trunk1": []string{"wwn1", "wwn2"}},
-			PortChannelConfiguration: map[string]interface{}{"port1": []string{"wwn1", "wwn2"}},
+			FabricType:                 sdk.FABRICTYPE_FIBRE_CHANNEL,
+			SyslogMonitoringEnabled:    sdk.PtrBool(true),
+			GnmiMonitoringEnabled:      sdk.PtrBool(false),
+			ZeroTouchEnabled:           sdk.PtrBool(false),
+			DefaultNetworkProfileId:    sdk.PtrInt32(101),
+			ServerOnlyOperationEnabled: sdk.PtrBool(false),
+			TopologyType:               sdk.FABRICTOPOLOGYTYPE_MESH,
+			InteropMode:                sdk.PtrString("full"),
+			Mtu:                        sdk.PtrFloat32(1200),
+			VsanId:                     sdk.PtrInt32(1),
+			ZoningConfiguration:        map[string]interface{}{"zone1": []string{"wwn1", "wwn2"}},
+			QosConfiguration:           map[string]interface{}{"qos1": "low"},
+			TrunkingConfiguration:      map[string]interface{}{"trunk1": []string{"wwn1", "wwn2"}},
+			PortChannelConfiguration:   map[string]interface{}{"port1": []string{"wwn1", "wwn2"}},
 		}
 
 		fabricConfiguration = sdk.NetworkFabricFabricConfiguration{
@@ -156,6 +160,16 @@ func FabricCreate(ctx context.Context, siteIdOrLabel string, fabricName string, 
 
 		fabricConfiguration = sdk.NetworkFabricFabricConfiguration{
 			EthernetFabric: &ethernetConfig,
+		}
+	case "infiniband":
+		infinibandConfig := sdk.InfinibandFabric{}
+		err := utils.UnmarshalContent(config, &infinibandConfig)
+		if err != nil {
+			return err
+		}
+
+		fabricConfiguration = sdk.NetworkFabricFabricConfiguration{
+			InfinibandFabric: &infinibandConfig,
 		}
 	case "fibre_channel":
 		fcConfig := sdk.FibreChannelFabric{}
@@ -212,6 +226,16 @@ func FabricUpdate(ctx context.Context, fabricId string, fabricName string, descr
 
 		fabricConfiguration = sdk.NetworkFabricFabricConfiguration{
 			EthernetFabric: &ethernetConfig,
+		}
+	} else if fabricInfo.FabricConfiguration.InfinibandFabric != nil {
+		infinibandConfig := sdk.InfinibandFabric{}
+		err := utils.UnmarshalContent(config, &infinibandConfig)
+		if err != nil {
+			return err
+		}
+
+		fabricConfiguration = sdk.NetworkFabricFabricConfiguration{
+			InfinibandFabric: &infinibandConfig,
 		}
 	} else if fabricInfo.FabricConfiguration.FibreChannelFabric != nil {
 		fcConfig := sdk.FibreChannelFabric{}
