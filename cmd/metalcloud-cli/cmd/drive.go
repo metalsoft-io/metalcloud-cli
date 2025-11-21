@@ -15,7 +15,7 @@ var (
 
 	driveCmd = &cobra.Command{
 		Use:     "drive [command]",
-		Aliases: []string{"drives", "disk"},
+		Aliases: []string{"drives", "disk", "block-storage-volume"},
 		Short:   "Manage drives within infrastructures",
 		Long: `Manage drives within infrastructures including creation, configuration, metadata updates, and host assignments.
 

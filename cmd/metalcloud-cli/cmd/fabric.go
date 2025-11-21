@@ -4,12 +4,22 @@ import (
 	"github.com/metalsoft-io/metalcloud-cli/cmd/metalcloud-cli/system"
 	"github.com/metalsoft-io/metalcloud-cli/internal/fabric"
 	"github.com/metalsoft-io/metalcloud-cli/pkg/utils"
+	sdk "github.com/metalsoft-io/metalcloud-sdk-go"
 	"github.com/spf13/cobra"
 )
 
 var (
 	fabricFlags = struct {
-		configSource string
+		configSource         string
+		networkDeviceA       string
+		interfaceA           string
+		networkDeviceB       string
+		interfaceB           string
+		linkType             string
+		mlagPair             bool
+		bgpNumbering         string
+		bgpLinkConfiguration string
+		customVariables      []string
 	}{}
 
 	fabricCmd = &cobra.Command{
@@ -27,10 +37,14 @@ Available Commands:
   create         Create a new fabric
   update         Update fabric configuration
   activate       Activate a fabric
+  deploy         Deploy a fabric
   config-example Show configuration example
   get-devices    List fabric devices
   add-device     Add devices to fabric
-  remove-device  Remove device from fabric`,
+  remove-device  Remove device from fabric
+  get-links      List fabric links
+  add-link       Add fabric link
+  remove-link    Remove fabric link`,
 	}
 
 	fabricListCmd = &cobra.Command{
@@ -250,6 +264,30 @@ Examples:
 		},
 	}
 
+	fabricDeployCmd = &cobra.Command{
+		Use:   "deploy fabric_id",
+		Short: "Deploy a fabric",
+		Long: `Deploy a network fabric underlay.
+
+This command deploys fabric underlay using the configured links and templates.
+
+Arguments:
+  fabric_id    The ID or label of the fabric to deploy
+
+Examples:
+  # Deploy fabric by ID
+  metalcloud fabric deploy 12345
+  
+  # Deploy fabric by label
+  metalcloud fabric deploy my-fabric-label`,
+		SilenceUsage: true,
+		Annotations:  map[string]string{system.REQUIRED_PERMISSION: system.PERMISSION_NETWORK_FABRICS_WRITE},
+		Args:         cobra.ExactArgs(1),
+		RunE: func(cmd *cobra.Command, args []string) error {
+			return fabric.FabricDeploy(cmd.Context(), args[0])
+		},
+	}
+
 	fabricDevicesGetCmd = &cobra.Command{
 		Use:     "get-devices fabric_id",
 		Aliases: []string{"show-devices"},
@@ -339,6 +377,138 @@ Examples:
 			return fabric.FabricDevicesRemove(cmd.Context(), args[0], args[1])
 		},
 	}
+
+	fabricLinksGetCmd = &cobra.Command{
+		Use:     "get-links fabric_id",
+		Aliases: []string{"show-links", "list-links"},
+		Short:   "List links in a fabric",
+		Long: `List all network fabric links in a specific fabric.
+
+This command displays a table showing all links that are part of the specified fabric,
+including their link information, status, and connection details.
+
+Arguments:
+  fabric_id    The ID or label of the fabric to list links for
+
+Examples:
+  # List links in fabric by ID
+  metalcloud fabric get-links 12345
+  
+  # List links in fabric by label
+  metalcloud fabric get-links my-fabric-label
+  
+  # Using alias
+  metalcloud fabric list-links 12345`,
+		SilenceUsage: true,
+		Annotations:  map[string]string{system.REQUIRED_PERMISSION: system.PERMISSION_NETWORK_FABRICS_READ},
+		Args:         cobra.ExactArgs(1),
+		RunE: func(cmd *cobra.Command, args []string) error {
+			return fabric.FabricLinksGet(cmd.Context(), args[0])
+		},
+	}
+
+	fabricLinkAddCmd = &cobra.Command{
+		Use:     "add-link fabric_id",
+		Aliases: []string{"create-link"},
+		Short:   "Add a network fabric link",
+		Long: `Add a new network fabric link to an existing fabric.
+
+This command creates a new link in the fabric using the configuration provided through
+the --config-source flag. The configuration must be a JSON file or piped input containing
+the link details such as source and destination network devices and interfaces.
+
+Arguments:
+  fabric_id     The ID or label of the fabric to add the link to
+
+Required Flags when using raw configuration:
+  --config-source string   Source of the link configuration. Can be 'pipe' for piped input
+                          or path to a JSON file containing the link configuration
+
+Required Flags when using individual flags:
+  --networkDeviceA string  Identifier string of network device A
+  --InterfaceA     string  Name of the interface A
+  --networkDeviceB string  Identifier string of network device B
+  --InterfaceB     string  Name of the interface B
+  --linkType       string  Link type: point-to-point, broadcast
+
+Optional Flags when using individual flags:
+  --mlagPair             boolean
+  --bgpNumbering         string   inherited, numbered, unnumbered
+  --bgpLinkConfiguration string   disabled, active, passive
+  --customVariables
+
+Examples:
+  # Add link with configuration from file
+  metalcloud fabric add-link my-fabric --config-source link-config.json
+  
+  # Add link with piped configuration
+  cat link-config.json | metalcloud fabric add-link 12345 --config-source pipe
+  
+  # Using alias
+  metalcloud fabric create-link my-fabric --config-source link.json`,
+		SilenceUsage: true,
+		Annotations:  map[string]string{system.REQUIRED_PERMISSION: system.PERMISSION_NETWORK_FABRICS_WRITE},
+		Args:         cobra.ExactArgs(1),
+		RunE: func(cmd *cobra.Command, args []string) error {
+			if fabricFlags.configSource != "" {
+				// Create the link using raw source format
+				config, err := utils.ReadConfigFromPipeOrFile(fabricFlags.configSource)
+				if err != nil {
+					return err
+				}
+
+				var createLink sdk.CreateNetworkFabricLink
+				err = utils.UnmarshalContent(config, &createLink)
+				if err != nil {
+					return err
+				}
+
+				return fabric.FabricLinkAdd(cmd.Context(), args[0], createLink)
+			}
+
+			// Create the link using flags
+			return fabric.FabricLinkAddEx(cmd.Context(), args[0],
+				fabricFlags.networkDeviceA,
+				fabricFlags.interfaceA,
+				fabricFlags.networkDeviceB,
+				fabricFlags.interfaceB,
+				fabricFlags.linkType,
+				fabricFlags.mlagPair,
+				fabricFlags.bgpNumbering,
+				fabricFlags.bgpLinkConfiguration,
+				fabricFlags.customVariables,
+			)
+		},
+	}
+
+	fabricLinkRemoveCmd = &cobra.Command{
+		Use:     "remove-link fabric_id link_id",
+		Aliases: []string{"delete-link"},
+		Short:   "Remove a network fabric link",
+		Long: `Remove a network fabric link from an existing fabric.
+
+This command removes a link from the fabric, disconnecting the associated network devices.
+
+Arguments:
+  fabric_id    The ID or label of the fabric to remove the link from
+  link_id      The ID of the link to remove from the fabric
+
+Examples:
+  # Remove link from fabric by IDs
+  metalcloud fabric remove-link 12345 67890
+  
+  # Remove link using fabric label
+  metalcloud fabric remove-link my-fabric 67890
+  
+  # Using alias
+  metalcloud fabric delete-link my-fabric 67890`,
+		SilenceUsage: true,
+		Annotations:  map[string]string{system.REQUIRED_PERMISSION: system.PERMISSION_NETWORK_FABRICS_WRITE},
+		Args:         cobra.ExactArgs(2),
+		RunE: func(cmd *cobra.Command, args []string) error {
+			return fabric.FabricLinkRemove(cmd.Context(), args[0], args[1])
+		},
+	}
 )
 
 func init() {
@@ -359,8 +529,27 @@ func init() {
 	fabricUpdateCmd.MarkFlagsOneRequired("config-source")
 
 	fabricCmd.AddCommand(fabricActivateCmd)
+	fabricCmd.AddCommand(fabricDeployCmd)
 
 	fabricCmd.AddCommand(fabricDevicesGetCmd)
 	fabricCmd.AddCommand(fabricDevicesAddCmd)
 	fabricCmd.AddCommand(fabricDevicesRemoveCmd)
+
+	fabricCmd.AddCommand(fabricLinksGetCmd)
+
+	fabricCmd.AddCommand(fabricLinkAddCmd)
+	fabricLinkAddCmd.Flags().StringVar(&fabricFlags.configSource, "config-source", "", "Source of the link configuration. Can be 'pipe' or path to a JSON file.")
+	fabricLinkAddCmd.Flags().StringVar(&fabricFlags.networkDeviceA, "network-device-a", "", "Identifier of the network device A")
+	fabricLinkAddCmd.Flags().StringVar(&fabricFlags.interfaceA, "interface-a", "", "Name of the interface A")
+	fabricLinkAddCmd.Flags().StringVar(&fabricFlags.networkDeviceB, "network-device-b", "", "Identifier of the network device B")
+	fabricLinkAddCmd.Flags().StringVar(&fabricFlags.interfaceB, "interface-b", "", "Name of the interface B")
+	fabricLinkAddCmd.Flags().StringVar(&fabricFlags.linkType, "link-type", "", "Type of the link")
+	fabricLinkAddCmd.Flags().BoolVar(&fabricFlags.mlagPair, "mlag-pair", false, "Set to true if the link on part of MLAG pair")
+	fabricLinkAddCmd.Flags().StringVar(&fabricFlags.bgpNumbering, "bgp-numbering", "inherited", "BGP numbering")
+	fabricLinkAddCmd.Flags().StringVar(&fabricFlags.bgpLinkConfiguration, "bgp-link-configuration", "disabled", "BGP configuration")
+	fabricLinkAddCmd.Flags().StringArrayVar(&fabricFlags.customVariables, "custom-variable", []string{}, "Custom variable")
+	fabricLinkAddCmd.MarkFlagsOneRequired("config-source", "network-device-a")
+	fabricLinkAddCmd.MarkFlagsRequiredTogether("network-device-a", "interface-a", "network-device-b", "interface-b", "link-type")
+
+	fabricCmd.AddCommand(fabricLinkRemoveCmd)
 }

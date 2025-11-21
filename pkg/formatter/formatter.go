@@ -40,6 +40,18 @@ var (
 	disableColor = false
 )
 
+// IsNativeFormat returns true if the configured output format is a native
+// data serialization format (JSON or YAML) rather than a tabular format
+// (text, csv, md). This is useful for determining whether to bypass certain
+// processing steps that are only relevant for table-based output.
+//
+// Returns:
+//   - true if the format is "json" or "yaml"
+//   - false otherwise (e.g., "text", "csv", "md", or any other value)
+func IsNativeFormat() bool {
+	return strings.ToLower(viper.GetString(ConfigFormat)) == "json" || strings.ToLower(viper.GetString(ConfigFormat)) == "yaml"
+}
+
 func PrintResult(result interface{}, printConfig *PrintConfig) error {
 	format := strings.ToLower(viper.GetString(ConfigFormat))
 	disableColor = false

@@ -299,6 +299,27 @@ func FabricActivate(ctx context.Context, fabricId string) error {
 	return formatter.PrintResult(fabricInfo, &fabricPrintConfig)
 }
 
+func FabricDeploy(ctx context.Context, fabricId string) error {
+	logger.Get().Info().Msgf("Deploy fabric '%s'", fabricId)
+
+	fabricIdNumeric, err := utils.GetFloat32FromString(fabricId)
+	if err != nil {
+		return err
+	}
+
+	client := api.GetApiClient(ctx)
+
+	jobInfo, httpRes, err := client.NetworkFabricAPI.
+		DeployNetworkFabric(ctx, fabricIdNumeric).
+		NetworkFabricDeployOptions(*sdk.NewNetworkFabricDeployOptions(false)).
+		Execute()
+	if err := response_inspector.InspectResponse(httpRes, err); err != nil {
+		return err
+	}
+
+	return formatter.PrintResult(jobInfo, nil)
+}
+
 func FabricDevicesGet(ctx context.Context, fabricId string) error {
 	logger.Get().Info().Msgf("Get fabric '%s' devices", fabricId)
 
