@@ -5,18 +5,20 @@ Generate example configuration template for network device configuration templat
 ### Synopsis
 
 Generate an example JSON configuration template that can be used to create
-or update network device configuration templates. This template includes all available
-configuration options with example values and documentation.
+or update network device configuration templates. This template includes all available configuration
+options with example values and documentation.
+
+Preparation and configuration fields need to be base64 encoded when submitted.
 
 The generated template can be saved to a file and modified as needed for actual
-device configuration.
+template configuration.
 
 Examples:
   # Display example configuration
   metalcloud-cli network-device-configuration-template config-example -f json
 
   # Save example to file
-  metalcloud-cli network-device-configuration-template config-example -f json > device-config.json
+  metalcloud-cli network-device-configuration-template config-example -f json > template.json
 
 ```
 metalcloud-cli network-device-configuration-template config-example [flags]
@@ -43,5 +45,5 @@ metalcloud-cli network-device-configuration-template config-example [flags]
 
 ### SEE ALSO
 
-* [metalcloud-cli network-device-configuration-template](metalcloud-cli_network-device-configuration-template.md)	 - Manage network device configuration templates
+* [metalcloud-cli network-device-configuration-template](metalcloud-cli_network-device-configuration-template.md)	 - Manage network devices configuration templates
 

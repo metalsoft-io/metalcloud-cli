@@ -1,12 +1,18 @@
 ## metalcloud-cli network-device-configuration-template
 
-Manage network device configuration templates
+Manage network devices configuration templates
 
 ### Synopsis
 
-Network device configuration template commands
+Network device configuration template commands.
 
 Network device configuration templates are used to deploy configurations to network devices
+Available commands:
+  list                List all available Network device configuration templates
+  get                 Show detailed information about a specific template
+  create              Create a new Network device configuration template from JSON configuration
+  update              Update an existing Network device configuration template
+  delete              Delete a Network device configuration template
 
 ### Options
 
@@ -30,9 +36,9 @@ Network device configuration templates are used to deploy configurations to netw
 ### SEE ALSO
 
 * [metalcloud-cli](metalcloud-cli.md)	 - MetalCloud CLI
-* [metalcloud-cli network-device-configuration-template config-example](metalcloud-cli_network-device-configuration-template_config-example.md)	 - Generate example configuration template for network device configuration templates
-* [metalcloud-cli network-device-configuration-template create](metalcloud-cli_network-device-configuration-template_create.md)	 - Create a new network device configuration template
-* [metalcloud-cli network-device-configuration-template delete](metalcloud-cli_network-device-configuration-template_delete.md)	 - Delete a network device configuration template
+* [metalcloud-cli network-device-configuration-template config-example](metalcloud-cli_network-device-configuration-template_config-example.md)	 - Generate example configuration template for network device configuration template
+* [metalcloud-cli network-device-configuration-template create](metalcloud-cli_network-device-configuration-template_create.md)	 - Create a new network device configuration template with specified configuration
+* [metalcloud-cli network-device-configuration-template delete](metalcloud-cli_network-device-configuration-template_delete.md)	 - Delete a network device configuration template from the system
 * [metalcloud-cli network-device-configuration-template get](metalcloud-cli_network-device-configuration-template_get.md)	 - Get detailed information about a specific network device configuration template
 * [metalcloud-cli network-device-configuration-template list](metalcloud-cli_network-device-configuration-template_list.md)	 - List network device configuration templates with optional filtering
 * [metalcloud-cli network-device-configuration-template update](metalcloud-cli_network-device-configuration-template_update.md)	 - Update configuration of an existing network device configuration template

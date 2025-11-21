@@ -8,16 +8,15 @@ List all network device configuration templates with optional filtering.
 
 This command displays all network device configuration templates that are registered in the system.
 You can filter the results by library label to focus on specific groups of templates.
-
 Flags:
-  --filter-library-label   Filter devices by library label (example: ["maintenance"])
+  --filter-library-label   Filter templates by library label
 
 Examples:
-  # List all active network device configuration templates (default)
+  # List all network device configuration templates (default)
   metalcloud-cli network-device-configuration-template list
 
-  # List templates with library label maintenance
-  metalcloud-cli network-device-configuration-template list --filter-library-label maintenance
+  # List templates with a specific library label
+  metalcloud-cli network-device-configuration-template list --filter-library-label example-label
 
 ```
 metalcloud-cli network-device-configuration-template list [flags]
@@ -26,8 +25,9 @@ metalcloud-cli network-device-configuration-template list [flags]
 ### Options
 
 ```
-      --filter-library-label strings   Filter the result by network device configuration template library label. (example [maintenance])
-  -h, --help                    help for list
+      --filter-id strings              Filter by template ID.
+      --filter-library-label strings   Filter by template library label.
+  -h, --help                           help for list
 ```
 
 ### Options inherited from parent commands
@@ -45,5 +45,5 @@ metalcloud-cli network-device-configuration-template list [flags]
 
 ### SEE ALSO
 
-* [metalcloud-cli network-device-configuration-template](metalcloud-cli_network-device-configuration-template.md)	 - Manage network device configuration templates
+* [metalcloud-cli network-device-configuration-template](metalcloud-cli_network-device-configuration-template.md)	 - Manage network devices configuration templates
 

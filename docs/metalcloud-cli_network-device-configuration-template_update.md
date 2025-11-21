@@ -23,7 +23,7 @@ Examples:
   cat updates.json | metalcloud-cli network-device-configuration-template update 12345 --config-source pipe
 
   # Update specific field
-  echo '{"libraryLabel":"someLabel"}' | metalcloud-cli ndct update 12345 --config-source pipe
+  echo '{"networkDevicePosition":"all"}' | metalcloud-cli ndct update 12345 --config-source pipe
 
 ```
 metalcloud-cli network-device-configuration-template update <network_device_configuration_template_id> [flags]
@@ -51,5 +51,5 @@ metalcloud-cli network-device-configuration-template update <network_device_conf
 
 ### SEE ALSO
 
-* [metalcloud-cli network-device-configuration-template](metalcloud-cli_network-device-configuration-template.md)	 - Manage network device configuration templates
+* [metalcloud-cli network-device-configuration-template](metalcloud-cli_network-device-configuration-template.md)	 - Manage network devices configuration templates
 

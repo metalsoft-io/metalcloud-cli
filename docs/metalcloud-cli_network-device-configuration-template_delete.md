@@ -4,7 +4,7 @@ Delete a network device configuration template from the system
 
 ### Synopsis
 
-Delete a network device configuration template from the system
+Delete a network device configuration template from the system.
 
 Arguments:
   network_device_configuration_template_id   The unique identifier of the network device configuration template to delete
@@ -41,5 +41,5 @@ metalcloud-cli network-device-configuration-template delete <network_device_conf
 
 ### SEE ALSO
 
-* [metalcloud-cli network-device-configuration-template](metalcloud-cli_network-device-configuration-template.md)	 - Manage network device configuration templates
+* [metalcloud-cli network-device-configuration-template](metalcloud-cli_network-device-configuration-template.md)	 - Manage network devices configuration templates
 

@@ -3,7 +3,8 @@
 Get detailed information about a specific network device configuration template
 
 ### Synopsis
-Display detailed information about a specific network device configuration template
+
+Display detailed information about a specific network device configuration template.
 
 Arguments:
   network_device_configuration_template_id   The unique identifier of the network device configuration template
@@ -11,9 +12,8 @@ Arguments:
 Examples:
   # Get details for network device configuration template with ID 12345
   metalcloud-cli network-device-configuration-template get 12345
-
   # Using alias
-  metalcloud-cli ndct show 12345
+  metalcloud-cli network-device-configuration-template show 12345
 
 ```
 metalcloud-cli network-device-configuration-template get <network_device_configuration_template_id> [flags]
@@ -40,5 +40,5 @@ metalcloud-cli network-device-configuration-template get <network_device_configu
 
 ### SEE ALSO
 
-* [metalcloud-cli network-device-configuration-template](metalcloud-cli_network-device-configuration-template.md)	 - Manage network device configuration templates
+* [metalcloud-cli network-device-configuration-template](metalcloud-cli_network-device-configuration-template.md)	 - Manage network devices configuration templates
 
