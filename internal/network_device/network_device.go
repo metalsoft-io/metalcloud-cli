@@ -211,12 +211,8 @@ func NetworkDeviceDiscover(ctx context.Context, networkDeviceId string) error {
 
 	client := api.GetApiClient(ctx)
 
-	// Empty body for discover call
-	body := map[string]interface{}{}
-
 	httpRes, err := client.NetworkDeviceAPI.
 		DiscoverNetworkDevice(ctx, networkDeviceIdNumeric).
-		Body(body).
 		Execute()
 	if err := response_inspector.InspectResponse(httpRes, err); err != nil {
 		return err
