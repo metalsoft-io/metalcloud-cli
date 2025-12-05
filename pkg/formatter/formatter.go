@@ -40,6 +40,18 @@ var (
 	disableColor = false
 )
 
+// IsNativeFormat returns true if the configured output format is a native
+// data serialization format (JSON or YAML) rather than a tabular format
+// (text, csv, md). This is useful for determining whether to bypass certain
+// processing steps that are only relevant for table-based output.
+//
+// Returns:
+//   - true if the format is "json" or "yaml"
+//   - false otherwise (e.g., "text", "csv", "md", or any other value)
+func IsNativeFormat() bool {
+	return strings.ToLower(viper.GetString(ConfigFormat)) == "json" || strings.ToLower(viper.GetString(ConfigFormat)) == "yaml"
+}
+
 func PrintResult(result interface{}, printConfig *PrintConfig) error {
 	format := strings.ToLower(viper.GetString(ConfigFormat))
 	disableColor = false
@@ -247,20 +259,45 @@ func populate(record interface{}, fieldsConfig *map[string]RecordFieldConfig, na
 		return
 	}
 
-	fieldType := recordValue.Type()
+	for fieldName, fieldConfig := range *fieldsConfig {
+		var field reflect.Value
 
-	for i := 0; i < recordValue.NumField(); i++ {
-		field := fieldType.Field(i)
+		for _, altFieldName := range strings.Split(fieldName, "|") {
+			field = locateField(altFieldName, recordValue)
+			if field.IsValid() {
+				break
+			}
+		}
 
-		fieldConfig, ok := (*fieldsConfig)[field.Name]
-		if ok {
-			addField(fieldConfig, field.Name, extractValue(recordValue.Field(i)), names, values, configs)
+		if field.IsValid() {
+			addField(fieldConfig, fieldName, extractValue(field), names, values, configs)
 
 			if len(fieldConfig.InnerFields) > 0 {
-				populate(recordValue.Field(i).Interface(), &fieldConfig.InnerFields, names, values, configs)
+				populate(field.Interface(), &fieldConfig.InnerFields, names, values, configs)
+			}
+		} else {
+			addField(fieldConfig, fieldName, "", names, values, configs)
+		}
+	}
+}
+
+func locateField(fieldName string, recordValue reflect.Value) reflect.Value {
+	field := recordValue
+
+	for _, namePart := range strings.Split(fieldName, ".") {
+		field = field.FieldByName(namePart)
+		if !field.IsValid() {
+			break
+		}
+		if field.Kind() == reflect.Ptr {
+			field = field.Elem()
+			if !field.IsValid() {
+				break
 			}
 		}
 	}
+
+	return field
 }
 
 func addField(fieldConfig RecordFieldConfig, fieldName string, fieldValue interface{}, names *table.Row, values *table.Row, configs *[]table.ColumnConfig) {

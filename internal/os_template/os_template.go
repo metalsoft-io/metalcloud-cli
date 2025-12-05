@@ -541,6 +541,8 @@ func OsTemplateCreateFromRepo(ctx context.Context, sourceTemplate string, repoUr
 		}
 	}
 
+	template.OsTemplate.Template.Visibility = sdk.PtrString("private")
+
 	return OsTemplateCreate(ctx, template.OsTemplate)
 }
 

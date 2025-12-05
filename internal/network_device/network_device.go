@@ -66,12 +66,6 @@ func NetworkDeviceList(ctx context.Context, filterStatus []string) error {
 		return err
 	}
 
-	for i := range networkDeviceList.Data {
-		if len(networkDeviceList.Data[i].ManagementPassword) > 0 {
-			networkDeviceList.Data[i].ManagementPassword = "******"
-		}
-	}
-
 	return formatter.PrintResult(networkDeviceList, &NetworkDevicePrintConfig)
 }
 
@@ -81,10 +75,6 @@ func NetworkDeviceGet(ctx context.Context, networkDeviceId string) error {
 	networkDevice, err := GetNetworkDeviceById(ctx, networkDeviceId)
 	if err != nil {
 		return err
-	}
-
-	if len(networkDevice.ManagementPassword) > 0 {
-		networkDevice.ManagementPassword = "******"
 	}
 
 	return formatter.PrintResult(networkDevice, &NetworkDevicePrintConfig)
@@ -221,12 +211,8 @@ func NetworkDeviceDiscover(ctx context.Context, networkDeviceId string) error {
 
 	client := api.GetApiClient(ctx)
 
-	// Empty body for discover call
-	body := map[string]interface{}{}
-
 	httpRes, err := client.NetworkDeviceAPI.
 		DiscoverNetworkDevice(ctx, networkDeviceIdNumeric).
-		Body(body).
 		Execute()
 	if err := response_inspector.InspectResponse(httpRes, err); err != nil {
 		return err
@@ -246,7 +232,7 @@ func NetworkDeviceGetCredentials(ctx context.Context, networkDeviceId string) er
 
 	client := api.GetApiClient(ctx)
 
-	httpRes, err := client.NetworkDeviceAPI.
+	_, httpRes, err := client.NetworkDeviceAPI.
 		GetNetworkDeviceCredentials(ctx, networkDeviceIdNumeric).
 		Execute()
 	if err := response_inspector.InspectResponse(httpRes, err); err != nil {
@@ -536,7 +522,7 @@ func GetNetworkDeviceByName(ctx context.Context, siteName string, networkDeviceN
 	return &networkDevice.Data[0], nil
 }
 
-func GetNetworkDevicePorts(ctx context.Context, networkDeviceId float32) ([]sdk.NetworkDeviceInterfaceDto, error) {
+func GetNetworkDevicePorts(ctx context.Context, networkDeviceId float32) ([]sdk.NetworkDeviceInterface, error) {
 	client := api.GetApiClient(ctx)
 
 	portsInfo, httpRes, err := client.NetworkDeviceAPI.

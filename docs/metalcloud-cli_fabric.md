@@ -15,10 +15,14 @@ Available Commands:
   create         Create a new fabric
   update         Update fabric configuration
   activate       Activate a fabric
+  deploy         Deploy a fabric
   config-example Show configuration example
   get-devices    List fabric devices
   add-device     Add devices to fabric
   remove-device  Remove device from fabric
+  get-links      List fabric links
+  add-link       Add fabric link
+  remove-link    Remove fabric link
 
 ### Options
 
@@ -44,11 +48,15 @@ Available Commands:
 * [metalcloud-cli](metalcloud-cli.md)	 - MetalCloud CLI
 * [metalcloud-cli fabric activate](metalcloud-cli_fabric_activate.md)	 - Activate a fabric
 * [metalcloud-cli fabric add-device](metalcloud-cli_fabric_add-device.md)	 - Add network device(s) to a fabric
+* [metalcloud-cli fabric add-link](metalcloud-cli_fabric_add-link.md)	 - Add a network fabric link
 * [metalcloud-cli fabric config-example](metalcloud-cli_fabric_config-example.md)	 - Show example fabric configuration
 * [metalcloud-cli fabric create](metalcloud-cli_fabric_create.md)	 - Create a new fabric
+* [metalcloud-cli fabric deploy](metalcloud-cli_fabric_deploy.md)	 - Deploy a fabric
 * [metalcloud-cli fabric get](metalcloud-cli_fabric_get.md)	 - Get detailed fabric information
 * [metalcloud-cli fabric get-devices](metalcloud-cli_fabric_get-devices.md)	 - List devices in a fabric
+* [metalcloud-cli fabric get-links](metalcloud-cli_fabric_get-links.md)	 - List links in a fabric
 * [metalcloud-cli fabric list](metalcloud-cli_fabric_list.md)	 - List all network fabrics
 * [metalcloud-cli fabric remove-device](metalcloud-cli_fabric_remove-device.md)	 - Remove network device from a fabric
+* [metalcloud-cli fabric remove-link](metalcloud-cli_fabric_remove-link.md)	 - Remove a network fabric link
 * [metalcloud-cli fabric update](metalcloud-cli_fabric_update.md)	 - Update fabric configuration
 

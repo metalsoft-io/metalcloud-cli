@@ -138,7 +138,7 @@ Examples:
 		SilenceUsage: true,
 		Annotations:  map[string]string{system.REQUIRED_PERMISSION: system.PERMISSION_GLOBAL_CONFIGURATIONS_WRITE},
 		RunE: func(cmd *cobra.Command, args []string) error {
-			var zoneConfig sdk.CreateDnsZoneDto
+			var zoneConfig sdk.CreateDnsZone
 
 			// If config source is provided, use it
 			if dnsZoneFlags.configSource != "" {
@@ -152,7 +152,7 @@ Examples:
 				}
 			} else {
 				// Otherwise build config from command line parameters
-				zoneConfig = sdk.CreateDnsZoneDto{
+				zoneConfig = sdk.CreateDnsZone{
 					ZoneName:    dnsZoneFlags.zoneName,
 					IsDefault:   dnsZoneFlags.isDefault,
 					NameServers: dnsZoneFlags.nameServers,

@@ -128,6 +128,8 @@ const (
 	PERMISSION_EMAIL_TEMPLATES_WRITE                              = "email_templates_write"
 	PERMISSION_NETWORK_ENDPOINT_GROUP_WITH_LOGICAL_NETWORKS_READ  = "network_endpoint_group_with_logical_networks_read"
 	PERMISSION_NETWORK_ENDPOINT_GROUP_WITH_LOGICAL_NETWORKS_WRITE = "network_endpoint_group_with_logical_networks_write"
+	PERMISSION_NETWORK_DEVICE_CONFIGURATION_TEMPLATES_READ        = "network_device_configuration_templates_read"
+	PERMISSION_NETWORK_DEVICE_CONFIGURATION_TEMPLATES_WRITE       = "network_device_configuration_templates_write"
 	PERMISSION_IMPERSONATE                                        = "impersonate"
 )
 

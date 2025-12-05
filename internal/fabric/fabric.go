@@ -35,23 +35,9 @@ var fabricPrintConfig = formatter.PrintConfig{
 			Transformer: formatter.FormatStatusValue,
 			Order:       5,
 		},
-		"FabricConfiguration": {
-			Hidden: true,
-			InnerFields: map[string]formatter.RecordFieldConfig{
-				"EthernetFabric": {
-					Hidden: true,
-					InnerFields: map[string]formatter.RecordFieldConfig{
-						"FabricType": {
-							Title: "Type",
-							Order: 6,
-						},
-						"DefaultVlan": {
-							Title: "Default VLAN",
-							Order: 7,
-						},
-					},
-				},
-			},
+		"FabricConfiguration.EthernetFabric.FabricType|FabricConfiguration.InfinibandFabric.FabricType|FabricConfiguration.FibreChannelFabric.FabricType": {
+			Title: "Type",
+			Order: 6,
 		},
 	},
 }
@@ -91,6 +77,7 @@ func FabricConfigExample(ctx context.Context, fabricType string) error {
 			ZeroTouchEnabled:                 sdk.PtrBool(false),
 			DefaultVlan:                      sdk.PtrInt32(10),
 			DefaultNetworkProfileId:          sdk.PtrInt32(101),
+			ServerOnlyOperationEnabled:       sdk.PtrBool(false),
 			NumberOfSpinesNextToLeafSwitches: sdk.PtrInt32(2),
 			LeafSwitchesHaveMlagPairs:        sdk.PtrBool(false),
 			ExtraInternalIPsPerSubnet:        sdk.PtrInt32(2),
@@ -108,21 +95,38 @@ func FabricConfigExample(ctx context.Context, fabricType string) error {
 		fabricConfiguration = sdk.NetworkFabricFabricConfiguration{
 			EthernetFabric: &ethernetConfig,
 		}
+	case "infiniband":
+		infinibandConfig := sdk.InfinibandFabric{
+			FabricType:                 sdk.FABRICTYPE_INFINIBAND,
+			SyslogMonitoringEnabled:    sdk.PtrBool(true),
+			GnmiMonitoringEnabled:      sdk.PtrBool(false),
+			ZeroTouchEnabled:           sdk.PtrBool(false),
+			DefaultNetworkProfileId:    sdk.PtrInt32(101),
+			ServerOnlyOperationEnabled: sdk.PtrBool(false),
+			PkeyRanges:                 []string{"200-2100"},
+			PreventPKeyCleanup:         []string{"1000-1100"},
+			ReservedPkeys:              []string{"1-100"},
+		}
+
+		fabricConfiguration = sdk.NetworkFabricFabricConfiguration{
+			InfinibandFabric: &infinibandConfig,
+		}
 	case "fibre_channel":
 		fcConfig := sdk.FibreChannelFabric{
-			FabricType:               sdk.FABRICTYPE_FIBRE_CHANNEL,
-			SyslogMonitoringEnabled:  sdk.PtrBool(true),
-			GnmiMonitoringEnabled:    sdk.PtrBool(false),
-			ZeroTouchEnabled:         sdk.PtrBool(false),
-			DefaultNetworkProfileId:  sdk.PtrInt32(101),
-			TopologyType:             sdk.FABRICTOPOLOGYTYPE_MESH,
-			InteropMode:              sdk.PtrString("full"),
-			Mtu:                      sdk.PtrFloat32(1200),
-			VsanId:                   sdk.PtrInt32(1),
-			ZoningConfiguration:      map[string]interface{}{"zone1": []string{"wwn1", "wwn2"}},
-			QosConfiguration:         map[string]interface{}{"qos1": "low"},
-			TrunkingConfiguration:    map[string]interface{}{"trunk1": []string{"wwn1", "wwn2"}},
-			PortChannelConfiguration: map[string]interface{}{"port1": []string{"wwn1", "wwn2"}},
+			FabricType:                 sdk.FABRICTYPE_FIBRE_CHANNEL,
+			SyslogMonitoringEnabled:    sdk.PtrBool(true),
+			GnmiMonitoringEnabled:      sdk.PtrBool(false),
+			ZeroTouchEnabled:           sdk.PtrBool(false),
+			DefaultNetworkProfileId:    sdk.PtrInt32(101),
+			ServerOnlyOperationEnabled: sdk.PtrBool(false),
+			TopologyType:               sdk.FABRICTOPOLOGYTYPE_MESH,
+			InteropMode:                sdk.PtrString("full"),
+			Mtu:                        sdk.PtrFloat32(1200),
+			VsanId:                     sdk.PtrInt32(1),
+			ZoningConfiguration:        map[string]interface{}{"zone1": []string{"wwn1", "wwn2"}},
+			QosConfiguration:           map[string]interface{}{"qos1": "low"},
+			TrunkingConfiguration:      map[string]interface{}{"trunk1": []string{"wwn1", "wwn2"}},
+			PortChannelConfiguration:   map[string]interface{}{"port1": []string{"wwn1", "wwn2"}},
 		}
 
 		fabricConfiguration = sdk.NetworkFabricFabricConfiguration{
@@ -157,6 +161,16 @@ func FabricCreate(ctx context.Context, siteIdOrLabel string, fabricName string, 
 		fabricConfiguration = sdk.NetworkFabricFabricConfiguration{
 			EthernetFabric: &ethernetConfig,
 		}
+	case "infiniband":
+		infinibandConfig := sdk.InfinibandFabric{}
+		err := utils.UnmarshalContent(config, &infinibandConfig)
+		if err != nil {
+			return err
+		}
+
+		fabricConfiguration = sdk.NetworkFabricFabricConfiguration{
+			InfinibandFabric: &infinibandConfig,
+		}
 	case "fibre_channel":
 		fcConfig := sdk.FibreChannelFabric{}
 		err := utils.UnmarshalContent(config, &fcConfig)
@@ -176,7 +190,7 @@ func FabricCreate(ctx context.Context, siteIdOrLabel string, fabricName string, 
 	createFabric := sdk.CreateNetworkFabric{
 		Name:                fabricName,
 		Description:         sdk.PtrString(description),
-		SiteId:              sdk.PtrFloat32(float32(site.Id)),
+		SiteId:              sdk.PtrInt32(site.Id),
 		FabricConfiguration: fabricConfiguration,
 	}
 
@@ -212,6 +226,16 @@ func FabricUpdate(ctx context.Context, fabricId string, fabricName string, descr
 
 		fabricConfiguration = sdk.NetworkFabricFabricConfiguration{
 			EthernetFabric: &ethernetConfig,
+		}
+	} else if fabricInfo.FabricConfiguration.InfinibandFabric != nil {
+		infinibandConfig := sdk.InfinibandFabric{}
+		err := utils.UnmarshalContent(config, &infinibandConfig)
+		if err != nil {
+			return err
+		}
+
+		fabricConfiguration = sdk.NetworkFabricFabricConfiguration{
+			InfinibandFabric: &infinibandConfig,
 		}
 	} else if fabricInfo.FabricConfiguration.FibreChannelFabric != nil {
 		fcConfig := sdk.FibreChannelFabric{}
@@ -275,6 +299,27 @@ func FabricActivate(ctx context.Context, fabricId string) error {
 	return formatter.PrintResult(fabricInfo, &fabricPrintConfig)
 }
 
+func FabricDeploy(ctx context.Context, fabricId string) error {
+	logger.Get().Info().Msgf("Deploy fabric '%s'", fabricId)
+
+	fabricIdNumeric, err := utils.GetFloat32FromString(fabricId)
+	if err != nil {
+		return err
+	}
+
+	client := api.GetApiClient(ctx)
+
+	jobInfo, httpRes, err := client.NetworkFabricAPI.
+		DeployNetworkFabric(ctx, fabricIdNumeric).
+		NetworkFabricDeployOptions(*sdk.NewNetworkFabricDeployOptions(false)).
+		Execute()
+	if err := response_inspector.InspectResponse(httpRes, err); err != nil {
+		return err
+	}
+
+	return formatter.PrintResult(jobInfo, nil)
+}
+
 func FabricDevicesGet(ctx context.Context, fabricId string) error {
 	logger.Get().Info().Msgf("Get fabric '%s' devices", fabricId)
 
@@ -313,7 +358,7 @@ func FabricDevicesAdd(ctx context.Context, fabricId string, deviceIds []string) 
 			return err
 		}
 
-		if *fabricInfo.SiteId != device.SiteId {
+		if *fabricInfo.SiteId != int32(device.SiteId) {
 			err := fmt.Errorf("device '%s' is not in the same site as fabric '%s'", deviceId, fabricId)
 			logger.Get().Error().Err(err).Msg("")
 			return err

@@ -55,7 +55,7 @@ func VMPoolList(ctx context.Context, filterType []string) error {
 	request := client.VMPoolAPI.GetVMPools(ctx)
 
 	if len(filterType) > 0 {
-		request = request.FilterDriver(utils.ProcessFilterStringSlice(filterType))
+		request = request.FilterType(utils.ProcessFilterStringSlice(filterType))
 	}
 
 	vmPoolList, httpRes, err := request.SortBy([]string{"id:ASC"}).Execute()
