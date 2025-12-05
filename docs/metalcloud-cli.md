@@ -62,6 +62,7 @@ metalcloud-cli [flags]
 * [metalcloud-cli server-default-credentials](metalcloud-cli_server-default-credentials.md)	 - Manage server default credentials and authentication settings
 * [metalcloud-cli server-instance](metalcloud-cli_server-instance.md)	 - Manage individual server instances
 * [metalcloud-cli server-instance-group](metalcloud-cli_server-instance-group.md)	 - Manage server instance groups within infrastructures
+* [metalcloud-cli server-registration-profile](metalcloud-cli_server-registration-profile.md)	 - Manage server registration profiles
 * [metalcloud-cli server-type](metalcloud-cli_server-type.md)	 - Manage server types and hardware configurations
 * [metalcloud-cli site](metalcloud-cli_site.md)	 - Manage sites (datacenters) and their configurations
 * [metalcloud-cli storage](metalcloud-cli_storage.md)	 - Manage storage pools and related resources

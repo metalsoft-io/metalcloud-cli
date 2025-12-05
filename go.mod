@@ -6,15 +6,15 @@ toolchain go1.25.3
 
 require (
 	github.com/go-git/go-billy/v5 v5.6.2
-	github.com/go-git/go-git/v5 v5.16.3
-	github.com/jedib0t/go-pretty/v6 v6.7.3
+	github.com/go-git/go-git/v5 v5.16.4
+	github.com/jedib0t/go-pretty/v6 v6.7.5
 	github.com/metalsoft-io/metalcloud-sdk-go v0.0.0-20251111140921-c9dd7409e201
 	github.com/pkg/sftp v1.13.10
 	github.com/rs/zerolog v1.34.0
-	github.com/spf13/cobra v1.10.1
+	github.com/spf13/cobra v1.10.2
 	github.com/spf13/viper v1.21.0
 	golang.org/x/crypto v0.45.0
-	golang.org/x/exp v0.0.0-20251113190631-e25ba8c21ef6
+	golang.org/x/exp v0.0.0-20251125195548-87e1e737ad39
 	golang.org/x/text v0.31.0
 	gopkg.in/yaml.v3 v3.0.1
 )
