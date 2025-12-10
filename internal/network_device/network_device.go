@@ -106,7 +106,7 @@ func NetworkDeviceConfigExample(ctx context.Context) error {
 	networkDeviceConfiguration.ChassisIdentifier.Set(sdk.PtrString("example"))
 	networkDeviceConfiguration.LoopbackAddress.Set(sdk.PtrString("127.0.0.1"))
 	networkDeviceConfiguration.VtepAddress.Set(nil)
-	networkDeviceConfiguration.Asn.Set(sdk.PtrFloat32(65000))
+	networkDeviceConfiguration.Asn.Set(sdk.PtrInt64(65000))
 
 	return formatter.PrintResult(networkDeviceConfiguration, nil)
 }
@@ -470,7 +470,7 @@ func NetworkDeviceExampleDefaults(ctx context.Context) error {
 		ManagementMacAddress:      "AA:BB:CC:DD:EE:FF",
 		Position:                  sdk.PtrString("leaf"),
 		IdentifierString:          sdk.PtrString("1234"),
-		Asn:                       sdk.PtrInt32(65000),
+		Asn:                       sdk.PtrInt64(65000),
 		SkipInitialConfiguration:  sdk.PtrBool(false),
 		CustomVariables:           map[string]interface{}{"var1": "value1", "var2": "value2"},
 		MlagDomainId:              sdk.PtrInt32(1),

@@ -8,7 +8,7 @@ require (
 	github.com/go-git/go-billy/v5 v5.6.2
 	github.com/go-git/go-git/v5 v5.16.4
 	github.com/jedib0t/go-pretty/v6 v6.7.5
-	github.com/metalsoft-io/metalcloud-sdk-go v0.0.0-20251205181713-b3cb72ab3c54
+	github.com/metalsoft-io/metalcloud-sdk-go v0.0.0-20251209162311-d1b5809d8b06
 	github.com/pkg/sftp v1.13.10
 	github.com/rs/zerolog v1.34.0
 	github.com/spf13/cobra v1.10.2
