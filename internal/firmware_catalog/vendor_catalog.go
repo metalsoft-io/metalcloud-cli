@@ -97,22 +97,33 @@ func (vc *VendorCatalog) ProcessVendorCatalog(ctx context.Context) error {
 	if len(vc.ServerTypesFilter) > 0 {
 		logger.Get().Debug().Msgf("Server types filter provided: %v", vc.ServerTypesFilter)
 
+		vc.CatalogInfo.MetalsoftServerTypesSupported = vc.ServerTypesFilter
+
 		// Lookup the system models for the requested server types
 		// and add them to the vendor systems filter
 		systemModels, systemModelsEx, err := vc.getFilteredSystemModels(ctx)
 		if err != nil {
-			return err
-		}
-
-		logger.Get().Debug().Msgf("Filtered system models: %v", systemModels)
-		logger.Get().Debug().Msgf("Filtered system models with serial numbers: %v", systemModelsEx)
-
-		if len(vc.VendorSystemsFilter) > 0 {
-			vc.VendorSystemsFilter = append(vc.VendorSystemsFilter, systemModels...)
+			// For Supermicro, skip server validation errors since firmware applies to motherboard models not vendor SKUs, and we don't use the VendorSystemsFilter anyway
+			if sdk.ServerFirmwareCatalogVendor(vc.CatalogInfo.Vendor) == sdk.SERVERFIRMWARECATALOGVENDOR_SUPERMICRO {
+				logger.Get().Warn().Msgf("Unable to validate server types: %v. Continuing without validation (Supermicro doesn't require vendor model mapping).", err)
+			} else {
+				return fmt.Errorf("failed to lookup system models for server types: %w", err)
+			}
 		} else {
-			vc.VendorSystemsFilter = systemModels
+			logger.Get().Debug().Msgf("Filtered system models: %v", systemModels)
+			logger.Get().Debug().Msgf("Filtered system models with serial numbers: %v", systemModelsEx)
+
+			if len(vc.VendorSystemsFilter) > 0 {
+				vc.VendorSystemsFilter = append(vc.VendorSystemsFilter, systemModels...)
+			} else {
+				vc.VendorSystemsFilter = systemModels
+			}
+			vc.VendorSystemsFilterEx = systemModelsEx
+
+			if len(systemModels) > 0 {
+				vc.CatalogInfo.VendorServerTypesSupported = systemModels
+			}
 		}
-		vc.VendorSystemsFilterEx = systemModelsEx
 	}
 
 	switch sdk.ServerFirmwareCatalogVendor(vc.CatalogInfo.Vendor) {
@@ -122,6 +133,8 @@ func (vc *VendorCatalog) ProcessVendorCatalog(ctx context.Context) error {
 		return vc.processHpeCatalog(ctx)
 	case sdk.SERVERFIRMWARECATALOGVENDOR_LENOVO:
 		return vc.processLenovoCatalog(ctx)
+	case sdk.SERVERFIRMWARECATALOGVENDOR_SUPERMICRO:
+		return vc.processSupermicroCatalog(ctx)
 	default:
 		return fmt.Errorf("unsupported vendor %s", vc.CatalogInfo.Vendor)
 	}
@@ -213,8 +226,12 @@ func (vc *VendorCatalog) CreateMetalsoftCatalog(ctx context.Context) error {
 			}
 		} else {
 			if vc.VendorLocalBinariesPath != "" {
-				// Use the local path provided
-				localPath, err = filepath.Abs(filepath.Join(vc.VendorLocalBinariesPath, *binary.ExternalId))
+				// For Supermicro, the ExternalId is the extracted .bin file name in .extracted/ directory
+				if vc.CatalogInfo.Vendor == string(sdk.SERVERFIRMWARECATALOGVENDOR_SUPERMICRO) {
+					localPath, err = filepath.Abs(filepath.Join(vc.VendorLocalBinariesPath, ".extracted", *binary.ExternalId))
+				} else {
+					localPath, err = filepath.Abs(filepath.Join(vc.VendorLocalBinariesPath, *binary.ExternalId))
+				}
 				if err != nil {
 					return fmt.Errorf("error getting download binary absolute path: %v", err)
 				}

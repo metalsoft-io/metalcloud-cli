@@ -153,8 +153,8 @@ func FirmwareBaselineConfigExample(ctx context.Context) error {
 	firmwareBaselineConfiguration := sdk.CreateFirmwareBaseline{
 		Name:        "example-firmware-baseline",
 		Description: sdk.PtrString("Example firmware baseline for production servers"),
-		Level:       "PRODUCTION",
-		LevelFilter: []string{"dell_r740", "dell_r640"},
+		Level:       sdk.BASELINELEVELTYPE_DATACENTER,
+		LevelFilter: []string{"datacenter-1", "datacenter-2"},
 		Catalog:     []string{"catalog-1", "catalog-2"},
 	}
 
@@ -186,7 +186,7 @@ func FirmwareBaselineSearch(ctx context.Context, searchCriteria []byte) error {
 func FirmwareBaselineSearchExample(ctx context.Context) error {
 	// Example search criteria
 	searchCriteria := sdk.SearchFirmwareBinary{
-		Vendor: sdk.ServerFirmwareCatalogVendor("DELL"),
+		Vendor: sdk.SERVERFIRMWARECATALOGVENDOR_DELL,
 		BaselineFilter: sdk.BaselineFilter{
 			Datacenter: []string{"datacenter-1"},
 			ServerType: []string{"dell_r740"},
