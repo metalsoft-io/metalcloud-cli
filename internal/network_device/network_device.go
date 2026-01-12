@@ -449,6 +449,9 @@ func NetworkDeviceAddDefaults(ctx context.Context, config []byte) error {
 	if err != nil {
 		return err
 	}
+	if networkDeviceDefaults.ManagementMacAddress == "" {
+		return fmt.Errorf("invalid content - please make sure the correct format is specified")
+	}
 
 	client := api.GetApiClient(ctx)
 
