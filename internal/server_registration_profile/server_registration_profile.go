@@ -157,10 +157,8 @@ func RegistrationProfileCreate(ctx context.Context, name string, settings sdk.Se
 func RegistrationProfileUpdate(ctx context.Context, registrationProfileId string, name string, settings sdk.ServerRegistrationProfileUpdateSettings) error {
 	logger.Get().Info().Msgf("Updating server registration profile '%s'", registrationProfileId)
 
-	registrationProfileIdNumber, err := strconv.ParseFloat(registrationProfileId, 32)
+	registrationProfileIdNumber, revision, err := getRegistrationProfileIdAndRevision(ctx, registrationProfileId)
 	if err != nil {
-		err := fmt.Errorf("invalid server registration profile ID: '%s'", registrationProfileId)
-		logger.Get().Error().Err(err).Msg("")
 		return err
 	}
 
@@ -177,6 +175,7 @@ func RegistrationProfileUpdate(ctx context.Context, registrationProfileId string
 	registrationProfile, httpRes, err := client.ServerRegistrationProfileAPI.
 		UpdateServerRegistrationProfile(ctx, float32(registrationProfileIdNumber)).
 		ServerRegistrationProfileUpdate(updateRequest).
+		IfMatch(revision).
 		Execute()
 	if err := response_inspector.InspectResponse(httpRes, err); err != nil {
 		return err
@@ -188,20 +187,39 @@ func RegistrationProfileUpdate(ctx context.Context, registrationProfileId string
 func RegistrationProfileDelete(ctx context.Context, registrationProfileId string) error {
 	logger.Get().Info().Msgf("Deleting server registration profile '%s'", registrationProfileId)
 
-	registrationProfileIdNumber, err := strconv.ParseFloat(registrationProfileId, 32)
+	registrationProfileIdNumber, revision, err := getRegistrationProfileIdAndRevision(ctx, registrationProfileId)
 	if err != nil {
-		err := fmt.Errorf("invalid server registration profile ID: '%s'", registrationProfileId)
-		logger.Get().Error().Err(err).Msg("")
 		return err
 	}
 
 	client := api.GetApiClient(ctx)
 
-	httpRes, err := client.ServerRegistrationProfileAPI.DeleteServerRegistrationProfile(ctx, float32(registrationProfileIdNumber)).Execute()
+	httpRes, err := client.ServerRegistrationProfileAPI.
+		DeleteServerRegistrationProfile(ctx, float32(registrationProfileIdNumber)).
+		IfMatch(revision).
+		Execute()
 	if err := response_inspector.InspectResponse(httpRes, err); err != nil {
 		return err
 	}
 
 	logger.Get().Info().Msgf("Server registration profile '%s' deleted successfully", registrationProfileId)
 	return nil
+}
+
+func getRegistrationProfileIdAndRevision(ctx context.Context, registrationProfileId string) (float32, string, error) {
+	registrationProfileIdNumeric, err := strconv.ParseFloat(registrationProfileId, 32)
+	if err != nil {
+		err := fmt.Errorf("invalid registration profile ID: '%s'", registrationProfileId)
+		logger.Get().Error().Err(err).Msg("")
+		return 0, "", err
+	}
+
+	client := api.GetApiClient(ctx)
+
+	registrationProfile, httpRes, err := client.ServerRegistrationProfileAPI.GetServerRegistrationProfileInfo(ctx, float32(registrationProfileIdNumeric)).Execute()
+	if err := response_inspector.InspectResponse(httpRes, err); err != nil {
+		return 0, "", err
+	}
+
+	return float32(registrationProfileIdNumeric), registrationProfile.Revision, nil
 }
