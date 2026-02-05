@@ -92,7 +92,7 @@ func (vc *VendorCatalog) processSupermicroCatalog(ctx context.Context) error {
 
 		// Supermicro doesn't provide direct download URLs, use placeholder
 		// The actual cache download URL will be set during upload process
-		binaryDownloadUrl := "NotAvailableForSupermicro"
+		binaryDownloadUrl := "https://www.supermicro.com/firmware/not-available"
 
 		// Create supported devices list with id and model
 		// id is used as the unique identifier for the device
