@@ -474,7 +474,6 @@ func NetworkDeviceExampleDefaults(ctx context.Context) error {
 		Position:                  sdk.PtrString("leaf"),
 		IdentifierString:          sdk.PtrString("1234"),
 		Asn:                       sdk.PtrInt64(65000),
-		SkipInitialConfiguration:  sdk.PtrBool(false),
 		CustomVariables:           map[string]interface{}{"var1": "value1", "var2": "value2"},
 		MlagDomainId:              sdk.PtrInt32(1),
 		LoopbackAddressIpv4:       sdk.PtrString("1.2.3.4"),

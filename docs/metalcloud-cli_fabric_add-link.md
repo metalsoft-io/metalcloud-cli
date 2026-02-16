@@ -25,7 +25,6 @@ Required Flags when using individual flags:
   --linkType       string  Link type: point-to-point, broadcast
 
 Optional Flags when using individual flags:
-  --mlagPair             boolean
   --bgpNumbering         string   inherited, numbered, unnumbered
   --bgpLinkConfiguration string   disabled, active, passive
   --customVariables

@@ -117,7 +117,6 @@ Use the 'config-example' command to generate an example configuration:
     "networkDeviceDriver": "cisco_aci51",
     "networkDevicePosition": "all",
     "remoteNetworkDevicePosition": "all",
-    "mlagPair": 0,
     "bgpNumbering": "numbered",
     "bgpLinkConfiguration": "disabled",
     "executionType": "cli",

@@ -108,14 +108,6 @@ func FabricConfigExample(ctx context.Context, fabricType string) error {
 			SyslogMonitoringEnabled:    sdk.PtrBool(true),
 			GnmiMonitoringEnabled:      sdk.PtrBool(false),
 			ServerOnlyOperationEnabled: sdk.PtrBool(false),
-			TopologyType:               sdk.FABRICTOPOLOGYTYPE_MESH,
-			InteropMode:                sdk.PtrString("full"),
-			Mtu:                        sdk.PtrFloat32(1200),
-			VsanId:                     sdk.PtrInt32(1),
-			ZoningConfiguration:        map[string]interface{}{"zone1": []string{"wwn1", "wwn2"}},
-			QosConfiguration:           map[string]interface{}{"qos1": "low"},
-			TrunkingConfiguration:      map[string]interface{}{"trunk1": []string{"wwn1", "wwn2"}},
-			PortChannelConfiguration:   map[string]interface{}{"port1": []string{"wwn1", "wwn2"}},
 		}
 
 		fabricConfiguration = sdk.NetworkFabricFabricConfiguration{

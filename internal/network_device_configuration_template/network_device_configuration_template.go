@@ -36,21 +36,17 @@ var NetworkDeviceConfigurationTemplatePrintConfig = formatter.PrintConfig{
 			Title: "Remote Network Device Position",
 			Order: 5,
 		},
-		"MlagPair": {
-			Title: "Mlag Pair",
-			Order: 6,
-		},
 		"BgpNumbering": {
 			Title: "BGP Numbering",
-			Order: 7,
+			Order: 6,
 		},
 		"BgpLinkConfiguration": {
 			Title: "BGP Link Configuration",
-			Order: 8,
+			Order: 7,
 		},
 		"LibraryLabel": {
 			Title: "Library Label",
-			Order: 9,
+			Order: 8,
 		},
 	},
 }
@@ -83,7 +79,6 @@ func NetworkDeviceConfigurationTemplateConfigExample(ctx context.Context) error 
 		NetworkDeviceDriver:         "junos",
 		NetworkDevicePosition:       "all",
 		RemoteNetworkDevicePosition: "all",
-		MlagPair:                    1,
 		BgpNumbering:                "numbered",
 		BgpLinkConfiguration:        "active",
 		ExecutionType:               "cli",

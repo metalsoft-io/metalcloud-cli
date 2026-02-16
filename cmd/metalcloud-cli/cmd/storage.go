@@ -355,31 +355,6 @@ Examples:
 			return storage.StorageGetBuckets(cmd.Context(), args[0], limit, page)
 		},
 	}
-
-	storageGetNetworkDeviceConfigurationsCmd = &cobra.Command{
-		Use:   "network-configs storage_id",
-		Short: "List network device configurations for a storage pool",
-		Long: `List network device configurations for a specific storage pool.
-
-This command retrieves network device configurations associated with a storage pool,
-showing network settings, device mappings, and connectivity information.
-
-Arguments:
-  storage_id    The numeric ID of the storage pool
-
-Examples:
-  # List network configurations for storage pool 123
-  metalcloud storage network-configs 123
-
-  # Save network configurations to file
-  metalcloud storage network-configs 456 > network-configs.json`,
-		SilenceUsage: true,
-		Annotations:  map[string]string{system.REQUIRED_PERMISSION: system.PERMISSION_STORAGE_READ},
-		Args:         cobra.ExactArgs(1),
-		RunE: func(cmd *cobra.Command, args []string) error {
-			return storage.StorageGetNetworkDeviceConfigurations(cmd.Context(), args[0])
-		},
-	}
 )
 
 func init() {
@@ -414,6 +389,4 @@ func init() {
 	storageCmd.AddCommand(storageGetBucketsCmd)
 	storageGetBucketsCmd.Flags().StringVar(&storageFlags.limit, "limit", "", "Number of records per page")
 	storageGetBucketsCmd.Flags().StringVar(&storageFlags.page, "page", "", "Page number")
-
-	storageCmd.AddCommand(storageGetNetworkDeviceConfigurationsCmd)
 }

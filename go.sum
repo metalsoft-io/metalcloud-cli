@@ -77,8 +77,8 @@ github.com/mattn/go-isatty v0.0.20 h1:xfD0iDuEKnDkl03q4limB+vH+GxLEtL/jb4xVJSWWE
 github.com/mattn/go-isatty v0.0.20/go.mod h1:W+V8PltTTMOvKvAeJH7IuucS94S2C6jfK/D7dTCTo3Y=
 github.com/mattn/go-runewidth v0.0.19 h1:v++JhqYnZuu5jSKrk9RbgF5v4CGUjqRfBm05byFGLdw=
 github.com/mattn/go-runewidth v0.0.19/go.mod h1:XBkDxAl56ILZc9knddidhrOlY5R/pDhgLpndooCuJAs=
-github.com/metalsoft-io/metalcloud-sdk-go v0.0.0-20260128060129-7b600bd1a101 h1:fZVwYl91CqtIFhJMajgsDlReyDkxCY7Bp0dJKCvloOQ=
-github.com/metalsoft-io/metalcloud-sdk-go v0.0.0-20260128060129-7b600bd1a101/go.mod h1:luwiQmvkCP8x+75tkJm9Xre+Dg6lj9adi6EFlKV2GN0=
+github.com/metalsoft-io/metalcloud-sdk-go v0.0.0-20260216100453-bcfbd2dff148 h1:iwODLHlb4LdGAJCj27SjIbgQBCjndHLyI1G+B9KJn7A=
+github.com/metalsoft-io/metalcloud-sdk-go v0.0.0-20260216100453-bcfbd2dff148/go.mod h1:luwiQmvkCP8x+75tkJm9Xre+Dg6lj9adi6EFlKV2GN0=
 github.com/onsi/gomega v1.34.1 h1:EUMJIKUjM8sKjYbtxQI9A4z2o+rruxnzNvpknOXie6k=
 github.com/onsi/gomega v1.34.1/go.mod h1:kU1QgUvBDLXBJq618Xvm2LUX6rSAfRaFRTcdOeDLwwY=
 github.com/pelletier/go-toml/v2 v2.2.4 h1:mye9XuhQ6gvn5h28+VilKrrPoQVanw5PMw/TB0t5Ec4=

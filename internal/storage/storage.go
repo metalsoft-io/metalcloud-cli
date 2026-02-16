@@ -231,24 +231,6 @@ func StorageGetBuckets(ctx context.Context, storageId string, limit float32, pag
 	return formatter.PrintResult(buckets, nil)
 }
 
-func StorageGetNetworkDeviceConfigurations(ctx context.Context, storageId string) error {
-	logger.Get().Info().Msgf("Getting network device configurations for storage %s", storageId)
-
-	storageIdNumeric, err := getStorageId(storageId)
-	if err != nil {
-		return err
-	}
-
-	client := api.GetApiClient(ctx)
-
-	configs, httpRes, err := client.StorageAPI.GetStorageNetworkDeviceConfigurations(ctx, storageIdNumeric).Execute()
-	if err := response_inspector.InspectResponse(httpRes, err); err != nil {
-		return err
-	}
-
-	return formatter.PrintResult(configs, nil)
-}
-
 func StorageConfigExample(ctx context.Context) error {
 	storageConfiguration := sdk.CreateStorage{
 		UserId:              sdk.PtrFloat32(1),

@@ -16,7 +16,6 @@ var (
 		networkDeviceB       string
 		interfaceB           string
 		linkType             string
-		mlagPair             bool
 		bgpNumbering         string
 		bgpLinkConfiguration string
 		customVariables      []string
@@ -432,7 +431,6 @@ Required Flags when using individual flags:
   --linkType       string  Link type: point-to-point, broadcast
 
 Optional Flags when using individual flags:
-  --mlagPair             boolean
   --bgpNumbering         string   inherited, numbered, unnumbered
   --bgpLinkConfiguration string   disabled, active, passive
   --customVariables
@@ -473,7 +471,6 @@ Examples:
 				fabricFlags.networkDeviceB,
 				fabricFlags.interfaceB,
 				fabricFlags.linkType,
-				fabricFlags.mlagPair,
 				fabricFlags.bgpNumbering,
 				fabricFlags.bgpLinkConfiguration,
 				fabricFlags.customVariables,
@@ -544,7 +541,6 @@ func init() {
 	fabricLinkAddCmd.Flags().StringVar(&fabricFlags.networkDeviceB, "network-device-b", "", "Identifier of the network device B")
 	fabricLinkAddCmd.Flags().StringVar(&fabricFlags.interfaceB, "interface-b", "", "Name of the interface B")
 	fabricLinkAddCmd.Flags().StringVar(&fabricFlags.linkType, "link-type", "", "Type of the link")
-	fabricLinkAddCmd.Flags().BoolVar(&fabricFlags.mlagPair, "mlag-pair", false, "Set to true if the link on part of MLAG pair")
 	fabricLinkAddCmd.Flags().StringVar(&fabricFlags.bgpNumbering, "bgp-numbering", "inherited", "BGP numbering")
 	fabricLinkAddCmd.Flags().StringVar(&fabricFlags.bgpLinkConfiguration, "bgp-link-configuration", "disabled", "BGP configuration")
 	fabricLinkAddCmd.Flags().StringArrayVar(&fabricFlags.customVariables, "custom-variable", []string{}, "Custom variable")

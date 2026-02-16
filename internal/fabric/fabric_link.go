@@ -43,26 +43,22 @@ var fabricLinkPrintConfig = formatter.PrintConfig{
 			Title: "Type",
 			Order: 7,
 		},
-		"MlagPair": {
-			Title: "Mlag Pair",
-			Order: 8,
-		},
 		"BgpNumbering": {
 			Title: "Bgp Numbering",
-			Order: 9,
+			Order: 8,
 		},
 		"BgpLinkConfiguration": {
 			Title: "Bgp Config",
-			Order: 10,
+			Order: 9,
 		},
 		"CustomVariables": {
 			Title: "Custom Variables",
-			Order: 11,
+			Order: 10,
 		},
 		"Status": {
 			Title:       "Status",
 			Transformer: formatter.FormatStatusValue,
-			Order:       12,
+			Order:       11,
 		},
 	},
 }
@@ -83,7 +79,6 @@ type NetworkFabricLinkFlat struct {
 	NetworkDeviceBInterfaceName string
 	NetworkDeviceBInterfaceRef  string
 	LinkType                    string
-	MlagPair                    bool
 	BgpNumbering                string
 	BgpLinkConfiguration        string
 	CustomVariables             map[string]interface{}
@@ -138,9 +133,6 @@ func FabricLinksGet(ctx context.Context, fabricId string) error {
 			NetworkDeviceBInterfaceName: fabricInterfacesMap[l.NetworkDeviceBInterfaceId].InterfaceName,
 			NetworkDeviceBInterfaceRef:  fabricInterfacesMap[l.NetworkDeviceBInterfaceId].InterfaceRef,
 			LinkType:                    l.LinkType,
-			MlagPair:                    l.MlagPair != 0,
-			BgpNumbering:                l.BgpNumbering,
-			BgpLinkConfiguration:        l.BgpLinkConfiguration,
 			CustomVariables:             l.CustomVariables,
 			Status:                      l.Status,
 		})
@@ -223,7 +215,6 @@ func FabricLinkAddEx(ctx context.Context, fabricId string,
 	networkDeviceB string,
 	interfaceB string,
 	linkType string,
-	mlagPair bool,
 	bgpNumbering string,
 	bgpLinkConfiguration string,
 	customVariables []string,
@@ -234,10 +225,8 @@ func FabricLinkAddEx(ctx context.Context, fabricId string,
 	}
 
 	createLink := sdk.CreateNetworkFabricLink{
-		LinkType:             linkType,
-		BgpNumbering:         bgpNumbering,
-		BgpLinkConfiguration: bgpLinkConfiguration,
-		CustomVariables:      map[string]interface{}{},
+		LinkType:        linkType,
+		CustomVariables: map[string]interface{}{},
 	}
 
 	// Lookup referenced devices and interfaces
@@ -283,11 +272,6 @@ func FabricLinkAddEx(ctx context.Context, fabricId string,
 
 	if createLink.NetworkDeviceAInterfaceId == 0 || createLink.NetworkDeviceBInterfaceId == 0 {
 		return fmt.Errorf("could not find match for the specified device and interface in the fabric")
-	}
-
-	// Add remaining properties
-	if mlagPair {
-		createLink.MlagPair = 1
 	}
 
 	for _, cv := range customVariables {
