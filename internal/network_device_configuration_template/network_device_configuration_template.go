@@ -56,7 +56,7 @@ func NetworkDeviceConfigurationTemplateList(ctx context.Context, filterId []stri
 
 	client := api.GetApiClient(ctx)
 
-	request := client.NetworkDeviceConfigurationTemplateAPI.GetNetworkDeviceConfigurationTemplates(ctx)
+	request := client.NetworkDeviceBGPConfigurationTemplateAPI.GetNetworkDeviceBGPConfigurationTemplates(ctx)
 
 	if len(filterId) > 0 {
 		request = request.FilterId(utils.ProcessFilterStringSlice(filterId))
@@ -74,7 +74,7 @@ func NetworkDeviceConfigurationTemplateList(ctx context.Context, filterId []stri
 }
 
 func NetworkDeviceConfigurationTemplateConfigExample(ctx context.Context) error {
-	networkDeviceConfiguration := sdk.CreateNetworkDeviceConfigurationTemplate{
+	networkDeviceConfiguration := sdk.CreateNetworkDeviceBGPConfigurationTemplate{
 		NetworkType:                 "underlay",
 		NetworkDeviceDriver:         "junos",
 		NetworkDevicePosition:       "all",
@@ -100,7 +100,9 @@ func NetworkDeviceConfigurationTemplateGet(ctx context.Context, networkDeviceCon
 
 	client := api.GetApiClient(ctx)
 
-	networkDeviceConfigurationTemplate, httpRes, err := client.NetworkDeviceConfigurationTemplateAPI.GetNetworkDeviceConfigurationTemplate(ctx, networkDeviceConfigurationTemplateIdNumeric).Execute()
+	networkDeviceConfigurationTemplate, httpRes, err := client.NetworkDeviceBGPConfigurationTemplateAPI.
+		GetNetworkDeviceBGPConfigurationTemplate(ctx, networkDeviceConfigurationTemplateIdNumeric).
+		Execute()
 	if err := response_inspector.InspectResponse(httpRes, err); err != nil {
 		return err
 	}
@@ -110,7 +112,7 @@ func NetworkDeviceConfigurationTemplateGet(ctx context.Context, networkDeviceCon
 func NetworkDeviceConfigurationTemplateCreate(ctx context.Context, config []byte) error {
 	logger.Get().Info().Msgf("Creating network device configuration template")
 
-	var networkDeviceConfigurationTemplateConfig sdk.CreateNetworkDeviceConfigurationTemplate
+	var networkDeviceConfigurationTemplateConfig sdk.CreateNetworkDeviceBGPConfigurationTemplate
 	err := utils.UnmarshalContent(config, &networkDeviceConfigurationTemplateConfig)
 	if err != nil {
 		return err
@@ -118,7 +120,10 @@ func NetworkDeviceConfigurationTemplateCreate(ctx context.Context, config []byte
 
 	client := api.GetApiClient(ctx)
 
-	networkDeviceConfigurationTemplateInfo, httpRes, err := client.NetworkDeviceConfigurationTemplateAPI.CreateNetworkDeviceConfigurationTemplate(ctx).CreateNetworkDeviceConfigurationTemplate(networkDeviceConfigurationTemplateConfig).Execute()
+	networkDeviceConfigurationTemplateInfo, httpRes, err := client.NetworkDeviceBGPConfigurationTemplateAPI.
+		CreateNetworkDeviceBGPConfigurationTemplate(ctx).
+		CreateNetworkDeviceBGPConfigurationTemplate(networkDeviceConfigurationTemplateConfig).
+		Execute()
 	if err := response_inspector.InspectResponse(httpRes, err); err != nil {
 		return err
 	}
@@ -134,7 +139,7 @@ func NetworkDeviceConfigurationTemplateUpdate(ctx context.Context, networkDevice
 		return err
 	}
 
-	var networkDeviceConfigurationTemplateConfig sdk.UpdateNetworkDeviceConfigurationTemplate
+	var networkDeviceConfigurationTemplateConfig sdk.UpdateNetworkDeviceBGPConfigurationTemplate
 	err = utils.UnmarshalContent(config, &networkDeviceConfigurationTemplateConfig)
 	if err != nil {
 		return err
@@ -142,9 +147,9 @@ func NetworkDeviceConfigurationTemplateUpdate(ctx context.Context, networkDevice
 
 	client := api.GetApiClient(ctx)
 
-	networkDeviceConfigurationTemplateInfo, httpRes, err := client.NetworkDeviceConfigurationTemplateAPI.
-		UpdateNetworkDeviceConfigurationTemplate(ctx, networkDeviceConfigurationTemplateIdNumeric).
-		UpdateNetworkDeviceConfigurationTemplate(networkDeviceConfigurationTemplateConfig).
+	networkDeviceConfigurationTemplateInfo, httpRes, err := client.NetworkDeviceBGPConfigurationTemplateAPI.
+		UpdateNetworkDeviceBGPConfigurationTemplate(ctx, networkDeviceConfigurationTemplateIdNumeric).
+		UpdateNetworkDeviceBGPConfigurationTemplate(networkDeviceConfigurationTemplateConfig).
 		Execute()
 	if err := response_inspector.InspectResponse(httpRes, err); err != nil {
 		return err
@@ -163,8 +168,8 @@ func NetworkDeviceConfigurationTemplateDelete(ctx context.Context, networkDevice
 
 	client := api.GetApiClient(ctx)
 
-	httpRes, err := client.NetworkDeviceConfigurationTemplateAPI.
-		DeleteNetworkDeviceConfigurationTemplate(ctx, networkDeviceConfigurationTemplateIdNumeric).
+	httpRes, err := client.NetworkDeviceBGPConfigurationTemplateAPI.
+		DeleteNetworkDeviceBGPConfigurationTemplate(ctx, networkDeviceConfigurationTemplateIdNumeric).
 		Execute()
 	if err := response_inspector.InspectResponse(httpRes, err); err != nil {
 		return err

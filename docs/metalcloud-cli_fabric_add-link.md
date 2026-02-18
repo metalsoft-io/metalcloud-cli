@@ -54,7 +54,6 @@ metalcloud-cli fabric add-link fabric_id [flags]
       --interface-a string              Name of the interface A
       --interface-b string              Name of the interface B
       --link-type string                Type of the link
-      --mlag-pair                       Set to true if the link on part of MLAG pair
       --network-device-a string         Identifier of the network device A
       --network-device-b string         Identifier of the network device B
 ```

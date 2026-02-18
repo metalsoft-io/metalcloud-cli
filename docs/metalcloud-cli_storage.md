@@ -55,5 +55,4 @@ Use "metalcloud storage [command] --help" for more information about a command.
 * [metalcloud-cli storage file-shares](metalcloud-cli_storage_file-shares.md)	 - List file shares in a storage pool
 * [metalcloud-cli storage get](metalcloud-cli_storage_get.md)	 - Get detailed information about a specific storage pool
 * [metalcloud-cli storage list](metalcloud-cli_storage_list.md)	 - List all storage pools
-* [metalcloud-cli storage network-configs](metalcloud-cli_storage_network-configs.md)	 - List network device configurations for a storage pool
 
