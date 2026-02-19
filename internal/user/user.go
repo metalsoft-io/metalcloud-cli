@@ -73,12 +73,13 @@ var userSshKeysPrintConfig = formatter.PrintConfig{
 			Title: "#",
 			Order: 1,
 		},
-		"Name": {
-			Title: "Name",
-			Order: 2,
+		"SshKey": {
+			Title:    "SSH Key",
+			MaxWidth: 50,
+			Order:    2,
 		},
-		"Fingerprint": {
-			Title: "Fingerprint",
+		"Status": {
+			Title: "Status",
 			Order: 3,
 		},
 		"CreatedTimestamp": {

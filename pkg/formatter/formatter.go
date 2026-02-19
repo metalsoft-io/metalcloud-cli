@@ -371,6 +371,9 @@ func extractValue(value reflect.Value) interface{} {
 		}
 		return result
 	case reflect.Struct:
+		if t, ok := value.Interface().(time.Time); ok {
+			return t
+		}
 		if i, ok := value.Interface().(sdk.NullableInt32); ok {
 			if !i.IsSet() || i.Get() == nil {
 				return ""
