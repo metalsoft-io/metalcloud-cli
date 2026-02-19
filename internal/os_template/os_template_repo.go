@@ -6,6 +6,9 @@ import (
 	"crypto/sha256"
 	"encoding/base64"
 	"fmt"
+	"io/fs"
+	"os"
+	"path/filepath"
 	"strings"
 
 	"github.com/go-git/go-git/v5/plumbing/object"
@@ -105,6 +108,79 @@ func getRepositoryTemplateAssets(tree *object.Tree) map[string]RepositoryTemplat
 	})
 
 	return repoMap
+}
+
+func isLocalDirectory(path string) bool {
+	info, err := os.Stat(path)
+	if err != nil {
+		return false
+	}
+	return info.IsDir()
+}
+
+func getLocalRepositoryTemplateAssets(dirPath string) (map[string]RepositoryTemplateInfo, error) {
+	repoMap := make(map[string]RepositoryTemplateInfo)
+
+	err := filepath.WalkDir(dirPath, func(path string, d fs.DirEntry, err error) error {
+		if err != nil {
+			return err
+		}
+
+		if d.IsDir() {
+			return nil
+		}
+
+		relPath, err := filepath.Rel(dirPath, path)
+		if err != nil {
+			return err
+		}
+
+		// Normalize to forward slashes for consistency
+		relPath = filepath.ToSlash(relPath)
+
+		// Only process files at depth 3 (vendor/os/version/filename)
+		if strings.Count(relPath, "/") != 3 {
+			return nil
+		}
+
+		parts := strings.Split(relPath, "/")
+		templatePrefix := strings.Join(parts[:3], "/")
+
+		if parts[3] == readMeFileName {
+			return nil
+		}
+
+		if _, ok := repoMap[templatePrefix]; !ok {
+			repoMap[templatePrefix] = RepositoryTemplateInfo{
+				Assets: make(map[string]RepositoryTemplateAsset),
+			}
+		}
+
+		template := repoMap[templatePrefix]
+
+		fileContent, err := os.ReadFile(path)
+		if err != nil {
+			return err
+		}
+
+		if parts[3] == templateFileName {
+			template.SourcePath = templatePrefix
+			template.SourceContent = string(fileContent)
+		} else {
+			template.Assets[parts[3]] = RepositoryTemplateAsset{
+				ContentBase64: base64.StdEncoding.EncodeToString(fileContent),
+			}
+		}
+
+		repoMap[templatePrefix] = template
+		return nil
+	})
+
+	if err != nil {
+		return nil, fmt.Errorf("failed to walk local directory %s: %w", dirPath, err)
+	}
+
+	return repoMap, nil
 }
 
 func processTemplateContent(repoTemplate *RepositoryTemplateInfo) error {

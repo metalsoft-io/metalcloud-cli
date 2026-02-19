@@ -424,15 +424,26 @@ func OsTemplateGetAssets(ctx context.Context, osTemplateId string) error {
 func OsTemplateListRepo(ctx context.Context, repoUrl string, repoUsername string, repoPassword string) error {
 	logger.Get().Info().Msgf("Listing all OS templates from repository")
 
-	tree, err := cloneOsTemplateRepository(ctx, repoUrl, repoUsername, repoPassword)
-	if err != nil {
-		return fmt.Errorf("failed to clone OS template repository: %w", err)
+	var repoAssets map[string]RepositoryTemplateInfo
+
+	if isLocalDirectory(repoUrl) {
+		var err error
+		repoAssets, err = getLocalRepositoryTemplateAssets(repoUrl)
+		if err != nil {
+			return fmt.Errorf("failed to read local OS template directory: %w", err)
+		}
+	} else {
+		tree, err := cloneOsTemplateRepository(ctx, repoUrl, repoUsername, repoPassword)
+		if err != nil {
+			return fmt.Errorf("failed to clone OS template repository: %w", err)
+		}
+		repoAssets = getRepositoryTemplateAssets(tree)
 	}
 
 	// This map stores all files for a template and will be used to check if their information is correct
 	repoMap := make(map[string]RepositoryTemplateInfo)
-	for templatePrefix, repoTemplate := range getRepositoryTemplateAssets(tree) {
-		err = processTemplateContent(&repoTemplate)
+	for templatePrefix, repoTemplate := range repoAssets {
+		err := processTemplateContent(&repoTemplate)
 		if err != nil {
 			// Ignore OS template with errors - they may be using old format
 			logger.Get().Warn().Msgf("Ignoring template %s - error processing its content: %v", templatePrefix, err)
@@ -510,20 +521,28 @@ func OsTemplateListRepo(ctx context.Context, repoUrl string, repoUsername string
 func OsTemplateCreateFromRepo(ctx context.Context, sourceTemplate string, repoUrl string, repoUsername string, repoPassword string, name string, label string, sourceIso string) error {
 	logger.Get().Info().Msgf("Creating OS template %s from repository", sourceTemplate)
 
-	tree, err := cloneOsTemplateRepository(ctx, repoUrl, repoUsername, repoPassword)
-	if err != nil {
-		return fmt.Errorf("failed to clone OS template repository: %w", err)
-	}
+	var repoMap map[string]RepositoryTemplateInfo
 
-	repoMap := getRepositoryTemplateAssets(tree)
+	if isLocalDirectory(repoUrl) {
+		var err error
+		repoMap, err = getLocalRepositoryTemplateAssets(repoUrl)
+		if err != nil {
+			return fmt.Errorf("failed to read local OS template directory: %w", err)
+		}
+	} else {
+		tree, err := cloneOsTemplateRepository(ctx, repoUrl, repoUsername, repoPassword)
+		if err != nil {
+			return fmt.Errorf("failed to clone OS template repository: %w", err)
+		}
+		repoMap = getRepositoryTemplateAssets(tree)
+	}
 
 	template, ok := repoMap[sourceTemplate]
 	if !ok {
 		return fmt.Errorf("template %s not found in repository", sourceTemplate)
 	}
 
-	err = processTemplateContent(&template)
-	if err != nil {
+	if err := processTemplateContent(&template); err != nil {
 		return fmt.Errorf("error processing template content: %w", err)
 	}
 
