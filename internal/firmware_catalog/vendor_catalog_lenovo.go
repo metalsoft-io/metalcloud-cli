@@ -47,8 +47,19 @@ type lenovoCatalog struct {
 }
 
 func (vc *VendorCatalog) processLenovoCatalog(ctx context.Context) error {
+	// If VendorSystemsFilterEx is empty but VendorSystemsFilter has entries,
+	// populate from the basic filter with empty serial numbers as fallback.
+	// This handles the case where --vendor-systems is provided without --server-types,
+	// or when no matching servers are found in the MetalSoft inventory.
+	if len(vc.VendorSystemsFilterEx) == 0 && len(vc.VendorSystemsFilter) > 0 {
+		vc.VendorSystemsFilterEx = make(map[string]string, len(vc.VendorSystemsFilter))
+		for _, system := range vc.VendorSystemsFilter {
+			vc.VendorSystemsFilterEx[system] = ""
+		}
+	}
+
 	if len(vc.VendorSystemsFilterEx) == 0 {
-		return fmt.Errorf("no vendor systems filter provided")
+		return fmt.Errorf("no vendor systems filter provided - use --vendor-systems or --server-types flag")
 	}
 
 	for serverType, serverSerialNumber := range vc.VendorSystemsFilterEx {
@@ -133,13 +144,19 @@ func (vc *VendorCatalog) processLenovoCatalog(ctx context.Context) error {
 
 // Search the lenovo support site for the server firmware update information. A JSON response is returned and is saved in the local catalog path folder from the raw config file.
 func (vc *VendorCatalog) readLenovoCatalog(machineType string, serialNumber string) (*lenovoCatalog, error) {
-	if machineType == "" || serialNumber == "" {
-		return nil, fmt.Errorf("machine type and serial number must be specified when searching for a lenovo catalog")
+	if machineType == "" {
+		return nil, fmt.Errorf("machine type must be specified when searching for a lenovo catalog")
 	}
 
 	catalog := lenovoCatalog{}
 
-	localCatalogPath := filepath.Join(vc.VendorLocalCatalogPath, fmt.Sprintf("lenovo_%s_%s.json", machineType, serialNumber))
+	var catalogFileName string
+	if serialNumber != "" {
+		catalogFileName = fmt.Sprintf("lenovo_%s_%s.json", machineType, serialNumber)
+	} else {
+		catalogFileName = fmt.Sprintf("lenovo_%s.json", machineType)
+	}
+	localCatalogPath := filepath.Join(vc.VendorLocalCatalogPath, catalogFileName)
 
 	fileExists := false
 	info, err := os.Stat(localCatalogPath)
@@ -178,8 +195,10 @@ func (vc *VendorCatalog) readLenovoCatalog(machineType string, serialNumber stri
 
 func downloadLenovoFirmwareUpdates(machineType string, serialNumber string) (string, error) {
 	targetInfos := map[string]string{
-		"MachineType":  machineType,
-		"SerialNumber": serialNumber,
+		"MachineType": machineType,
+	}
+	if serialNumber != "" {
+		targetInfos["SerialNumber"] = serialNumber
 	}
 
 	searchParams := map[string]interface{}{
