@@ -76,14 +76,8 @@ func CustomIsoGet(ctx context.Context, customIsoId string) error {
 	return formatter.PrintResult(customIso, &customIsoPrintConfig)
 }
 
-func CustomIsoCreate(ctx context.Context, config []byte) error {
+func CustomIsoCreate(ctx context.Context, customIsoConfig sdk.CreateCustomIso) error {
 	logger.Get().Info().Msgf("Creating custom ISO")
-
-	var customIsoConfig sdk.CreateCustomIso
-	err := utils.UnmarshalContent(config, &customIsoConfig)
-	if err != nil {
-		return err
-	}
 
 	client := api.GetApiClient(ctx)
 

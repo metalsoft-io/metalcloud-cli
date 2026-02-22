@@ -4,12 +4,16 @@ import (
 	"github.com/metalsoft-io/metalcloud-cli/cmd/metalcloud-cli/system"
 	"github.com/metalsoft-io/metalcloud-cli/internal/custom_iso"
 	"github.com/metalsoft-io/metalcloud-cli/pkg/utils"
+	sdk "github.com/metalsoft-io/metalcloud-sdk-go"
 	"github.com/spf13/cobra"
 )
 
 var (
 	customIsoFlags = struct {
 		configSource string
+		label        string
+		accessUrl    string
+		name         string
 	}{}
 
 	customIsoCmd = &cobra.Command{
@@ -127,40 +131,63 @@ Examples:
 		Use:     "create",
 		Aliases: []string{"new"},
 		Short:   "Create a new custom ISO from configuration",
-		Long: `Create a new custom ISO image using a JSON configuration file or piped input.
+		Long: `Create a new custom ISO image using command-line flags or a JSON configuration file.
 
-The configuration must include all required fields such as name, description,
-and ISO source. Use the config-example command to see the expected format.
+You can provide the custom ISO configuration either via command-line flags or by
+specifying a configuration source using the --config-source flag. The configuration
+source can be a path to a JSON file or 'pipe' to read from standard input.
 
-Required flags:
-  --config-source   Source of the configuration (required)
-                    Can be 'pipe' to read from stdin or path to a JSON file
+If --config-source is not provided, you must specify at least --label and --access-url.
+
+Required Flags (when not using --config-source):
+  --label             Label for the custom ISO
+  --access-url        URL where the ISO file can be accessed
+
+Optional Flags:
+  --config-source     Source of configuration (JSON file path or 'pipe')
+  --name              Display name for the custom ISO
 
 Required permissions:
   - custom_iso:write
 
-Dependencies:
-  - Valid JSON configuration matching the expected schema
-  - Accessible ISO source if specified in configuration
-
 Examples:
+  # Create using command line flags
+  metalcloud-cli custom-iso create --label my-iso --access-url http://example.com/my.iso
+
+  # Create with optional name
+  metalcloud-cli custom-iso create --label my-iso --access-url http://example.com/my.iso --name "My Custom ISO"
+
   # Create custom ISO from a JSON file
   metalcloud-cli custom-iso create --config-source config.json
-  
+
   # Create custom ISO from piped JSON
-  cat config.json | metalcloud-cli custom-iso create --config-source pipe
-  
-  # Create using shorter alias
-  metalcloud-cli iso new --config-source my-iso-config.json`,
+  cat config.json | metalcloud-cli custom-iso create --config-source pipe`,
 		SilenceUsage: true,
 		Annotations:  map[string]string{system.REQUIRED_PERMISSION: system.PERMISSION_CUSTOM_ISO_WRITE},
 		RunE: func(cmd *cobra.Command, args []string) error {
-			config, err := utils.ReadConfigFromPipeOrFile(customIsoFlags.configSource)
-			if err != nil {
-				return err
+			var customIsoConfig sdk.CreateCustomIso
+
+			if customIsoFlags.configSource != "" {
+				config, err := utils.ReadConfigFromPipeOrFile(customIsoFlags.configSource)
+				if err != nil {
+					return err
+				}
+				err = utils.UnmarshalContent(config, &customIsoConfig)
+				if err != nil {
+					return err
+				}
+			} else {
+				customIsoConfig = sdk.CreateCustomIso{
+					Label:     customIsoFlags.label,
+					AccessUrl: customIsoFlags.accessUrl,
+				}
+
+				if customIsoFlags.name != "" {
+					customIsoConfig.Name = sdk.PtrString(customIsoFlags.name)
+				}
 			}
 
-			return custom_iso.CustomIsoCreate(cmd.Context(), config)
+			return custom_iso.CustomIsoCreate(cmd.Context(), customIsoConfig)
 		},
 	}
 
@@ -321,7 +348,12 @@ func init() {
 
 	customIsoCmd.AddCommand(customIsoCreateCmd)
 	customIsoCreateCmd.Flags().StringVar(&customIsoFlags.configSource, "config-source", "", "Source of the new custom ISO configuration. Can be 'pipe' or path to a JSON file.")
-	customIsoCreateCmd.MarkFlagsOneRequired("config-source")
+	customIsoCreateCmd.Flags().StringVar(&customIsoFlags.label, "label", "", "Label for the custom ISO")
+	customIsoCreateCmd.Flags().StringVar(&customIsoFlags.accessUrl, "access-url", "", "URL where the ISO file can be accessed")
+	customIsoCreateCmd.Flags().StringVar(&customIsoFlags.name, "name", "", "Display name for the custom ISO")
+	customIsoCreateCmd.MarkFlagsOneRequired("config-source", "label")
+	customIsoCreateCmd.MarkFlagsMutuallyExclusive("config-source", "label")
+	customIsoCreateCmd.MarkFlagsRequiredTogether("label", "access-url")
 
 	customIsoCmd.AddCommand(customIsoUpdateCmd)
 	customIsoUpdateCmd.Flags().StringVar(&customIsoFlags.configSource, "config-source", "", "Source of the custom ISO configuration updates. Can be 'pipe' or path to a JSON file.")
