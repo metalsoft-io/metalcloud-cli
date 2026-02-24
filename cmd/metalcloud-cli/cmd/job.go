@@ -20,6 +20,10 @@ var (
 		sortBy           []string
 	}{}
 
+	retryFlags = struct {
+		retryEvenIfSuccessful bool
+	}{}
+
 	jobCmd = &cobra.Command{
 		Use:   "job [command]",
 		Short: "Manage MetalCloud jobs and job execution",
@@ -31,6 +35,9 @@ These commands allow you to list, view, and monitor job execution status and det
 Available Commands:
   list    List jobs with optional filtering and sorting
   get     Get detailed information about a specific job
+  skip    Skip a pending or running job
+  retry   Retry a failed job
+  kill    Kill a running job
 
 Use "metalcloud-cli job [command] --help" for more information about a command.`,
 	}
@@ -133,6 +140,86 @@ Permissions:
 		Args:         cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			return job.JobGet(cmd.Context(), args[0])
+		},
+	}
+
+	jobSkipCmd = &cobra.Command{
+		Use:   "skip job_id",
+		Short: "Skip a specific job",
+		Long: `Skip a pending or running job by its ID.
+
+This command signals the system to skip the specified job, preventing it from
+executing or stopping its current execution.
+
+Arguments:
+  job_id (required)    The numeric ID of the job to skip.
+
+Examples:
+  metalcloud-cli job skip 12345
+
+Permissions:
+  Requires job queue write permissions to execute this command.`,
+		SilenceUsage: true,
+		Annotations:  map[string]string{system.REQUIRED_PERMISSION: system.PERMISSION_JOB_QUEUE_WRITE},
+		Args:         cobra.ExactArgs(1),
+		RunE: func(cmd *cobra.Command, args []string) error {
+			return job.JobSkip(cmd.Context(), args[0])
+		},
+	}
+
+	jobRetryCmd = &cobra.Command{
+		Use:   "retry job_id",
+		Short: "Retry a specific job",
+		Long: `Retry a failed job by its ID.
+
+This command re-queues the specified job for execution. By default it only retries
+jobs that have failed. Use --retry-even-if-successful to retry a job regardless
+of its previous outcome.
+
+Arguments:
+  job_id (required)    The numeric ID of the job to retry.
+
+Flags:
+  --retry-even-if-successful    Retry the job even if it previously succeeded.
+
+Examples:
+  # Retry a failed job
+  metalcloud-cli job retry 12345
+
+  # Retry a job regardless of its previous status
+  metalcloud-cli job retry 12345 --retry-even-if-successful
+
+Permissions:
+  Requires job queue write permissions to execute this command.`,
+		SilenceUsage: true,
+		Annotations:  map[string]string{system.REQUIRED_PERMISSION: system.PERMISSION_JOB_QUEUE_WRITE},
+		Args:         cobra.ExactArgs(1),
+		RunE: func(cmd *cobra.Command, args []string) error {
+			return job.JobRetry(cmd.Context(), args[0], retryFlags.retryEvenIfSuccessful)
+		},
+	}
+
+	jobKillCmd = &cobra.Command{
+		Use:   "kill job_id",
+		Short: "Kill a running job",
+		Long: `Kill a running job by its ID.
+
+This command issues a kill command for the specified job, terminating its
+execution immediately.
+
+Arguments:
+  job_id (required)    The numeric ID of the job to kill.
+
+Examples:
+  metalcloud-cli job kill 12345
+
+Permissions:
+  Requires job queue write permissions to execute this command.`,
+		SilenceUsage: true,
+		Annotations:  map[string]string{system.REQUIRED_PERMISSION: system.PERMISSION_JOB_QUEUE_WRITE},
+		Args:         cobra.ExactArgs(1),
+		RunE: func(cmd *cobra.Command, args []string) error {
+			return job.JobKill(cmd.Context(), args[0])
 		},
 	}
 )
@@ -265,6 +352,13 @@ func init() {
 	jobListCmd.Flags().StringSliceVar(&jobFlags.sortBy, "sort-by", nil, "Sort by fields (e.g., jobId:ASC, status:DESC).")
 
 	jobCmd.AddCommand(jobGetCmd)
+
+	jobCmd.AddCommand(jobSkipCmd)
+
+	jobCmd.AddCommand(jobRetryCmd)
+	jobRetryCmd.Flags().BoolVar(&retryFlags.retryEvenIfSuccessful, "retry-even-if-successful", false, "Retry even if the job was successful.")
+
+	jobCmd.AddCommand(jobKillCmd)
 
 	// Job group commands
 	rootCmd.AddCommand(jobGroupCmd)
