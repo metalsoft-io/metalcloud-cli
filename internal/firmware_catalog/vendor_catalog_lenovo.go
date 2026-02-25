@@ -43,7 +43,10 @@ type lenovoSoftwareUpdate struct {
 }
 
 type lenovoCatalog struct {
-	Data []*lenovoSoftwareUpdate `json:"Data"`
+	ResultCode     *int                   `json:"ResultCode"`
+	Message        *string                `json:"Message"`
+	Data           []*lenovoSoftwareUpdate `json:"Data"`
+	FixIdsNotFound []string               `json:"FixIdsNotFound"`
 }
 
 func (vc *VendorCatalog) processLenovoCatalog(ctx context.Context) error {
@@ -68,10 +71,24 @@ func (vc *VendorCatalog) processLenovoCatalog(ctx context.Context) error {
 			return err
 		}
 
+		if catalog.ResultCode != nil && *catalog.ResultCode != 0 {
+			message := "unknown error"
+			if catalog.Message != nil {
+				message = *catalog.Message
+			}
+			return fmt.Errorf("lenovo catalog API returned error for machine type %s: code=%d, message=%s", serverType, *catalog.ResultCode, message)
+		}
+
+		logger.Get().Debug().Msgf("Lenovo catalog for machine type %s: %d software updates found", serverType, len(catalog.Data))
+
+		skippedComponent := 0
+		skippedNoFixUrl := 0
 		for _, softwareUpdate := range catalog.Data {
 			if softwareUpdate.ComponentID != lenovoSoftwareUpdateComponentXcc &&
 				softwareUpdate.ComponentID != lenovoSoftwareUpdateComponentUefi &&
 				softwareUpdate.ComponentID != lenovoSoftwareUpdateComponentLxpm {
+				logger.Get().Debug().Msgf("Skipping software update %s with unsupported component ID: %s", softwareUpdate.FixID, softwareUpdate.ComponentID)
+				skippedComponent++
 				continue
 			}
 
@@ -95,6 +112,7 @@ func (vc *VendorCatalog) processLenovoCatalog(ctx context.Context) error {
 
 			if downloadUrl == "" {
 				logger.Get().Warn().Msgf("no firmware fix was found for software update %s", softwareUpdate.FixID)
+				skippedNoFixUrl++
 				continue
 			}
 
@@ -137,6 +155,9 @@ func (vc *VendorCatalog) processLenovoCatalog(ctx context.Context) error {
 
 			vc.Binaries = append(vc.Binaries, &firmwareBinary)
 		}
+
+		logger.Get().Info().Msgf("Lenovo catalog for machine type %s: %d binaries added, %d skipped (unsupported component), %d skipped (no download URL)",
+			serverType, len(catalog.Data)-skippedComponent-skippedNoFixUrl, skippedComponent, skippedNoFixUrl)
 	}
 
 	return nil
@@ -239,6 +260,10 @@ func downloadLenovoFirmwareUpdates(machineType string, serialNumber string) (str
 	responseBody, err := io.ReadAll(resp.Body)
 	if err != nil {
 		return "", err
+	}
+
+	if resp.StatusCode != http.StatusOK {
+		return "", fmt.Errorf("lenovo catalog API returned HTTP %d for machine type %s: %s", resp.StatusCode, machineType, string(responseBody))
 	}
 
 	return string(responseBody), nil

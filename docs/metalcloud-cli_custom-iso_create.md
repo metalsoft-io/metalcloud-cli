@@ -4,31 +4,37 @@ Create a new custom ISO from configuration
 
 ### Synopsis
 
-Create a new custom ISO image using a JSON configuration file or piped input.
+Create a new custom ISO image using command-line flags or a JSON configuration file.
 
-The configuration must include all required fields such as name, description,
-and ISO source. Use the config-example command to see the expected format.
+You can provide the custom ISO configuration either via command-line flags or by
+specifying a configuration source using the --config-source flag. The configuration
+source can be a path to a JSON file or 'pipe' to read from standard input.
 
-Required flags:
-  --config-source   Source of the configuration (required)
-                    Can be 'pipe' to read from stdin or path to a JSON file
+If --config-source is not provided, you must specify at least --label and --access-url.
+
+Required Flags (when not using --config-source):
+  --label             Label for the custom ISO
+  --access-url        URL where the ISO file can be accessed
+
+Optional Flags:
+  --config-source     Source of configuration (JSON file path or 'pipe')
+  --name              Display name for the custom ISO
 
 Required permissions:
   - custom_iso:write
 
-Dependencies:
-  - Valid JSON configuration matching the expected schema
-  - Accessible ISO source if specified in configuration
-
 Examples:
+  # Create using command line flags
+  metalcloud-cli custom-iso create --label my-iso --access-url http://example.com/my.iso
+
+  # Create with optional name
+  metalcloud-cli custom-iso create --label my-iso --access-url http://example.com/my.iso --name "My Custom ISO"
+
   # Create custom ISO from a JSON file
   metalcloud-cli custom-iso create --config-source config.json
-  
+
   # Create custom ISO from piped JSON
   cat config.json | metalcloud-cli custom-iso create --config-source pipe
-  
-  # Create using shorter alias
-  metalcloud-cli iso new --config-source my-iso-config.json
 
 ```
 metalcloud-cli custom-iso create [flags]
@@ -37,8 +43,11 @@ metalcloud-cli custom-iso create [flags]
 ### Options
 
 ```
+      --access-url string      URL where the ISO file can be accessed
       --config-source string   Source of the new custom ISO configuration. Can be 'pipe' or path to a JSON file.
   -h, --help                   help for create
+      --label string           Label for the custom ISO
+      --name string            Display name for the custom ISO
 ```
 
 ### Options inherited from parent commands
