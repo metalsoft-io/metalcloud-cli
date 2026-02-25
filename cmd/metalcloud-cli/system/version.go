@@ -13,7 +13,7 @@ import (
 const minMajor = 7
 const minMinor = 0
 const maxMajor = 7
-const maxMinor = 1
+const maxMinor = 2
 
 var AllowDevelop bool
 
