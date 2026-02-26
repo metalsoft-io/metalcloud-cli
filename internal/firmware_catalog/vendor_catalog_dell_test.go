@@ -330,6 +330,38 @@ func TestProcessDellCatalog_Filtered(t *testing.T) {
 	}
 }
 
+func TestProcessDellCatalog_FilteredByModelOnly(t *testing.T) {
+	ctx := context.Background()
+
+	// Create a temporary mock catalog file
+	mockCatalogPath, err := setupMockCatalogFile()
+	if err != nil {
+		t.Fatalf("Failed to create mock catalog file: %v", err)
+	}
+	defer os.Remove(mockCatalogPath)
+
+	// Filter using just the model name "R430" instead of "PowerEdge R430"
+	vendorCatalog := &VendorCatalog{
+		VendorLocalCatalogPath: mockCatalogPath,
+		VendorSystemsFilter:    []string{"R430"},
+	}
+
+	err = vendorCatalog.processDellCatalog(ctx)
+
+	if err != nil {
+		t.Errorf("processDellCatalog() returned an error: %v", err)
+	}
+
+	if len(vendorCatalog.Binaries) == 0 {
+		t.Errorf("processDellCatalog() should find binaries when filtering by model name only")
+	}
+
+	// Verify the correct binary was matched (the first SoftwareComponent which supports R430)
+	if len(vendorCatalog.Binaries) != 1 {
+		t.Errorf("processDellCatalog() expected 1 binary, got %d", len(vendorCatalog.Binaries))
+	}
+}
+
 func TestProcessDellCatalog_WrongLocalPath(t *testing.T) {
 	ctx := context.Background()
 

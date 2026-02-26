@@ -187,7 +187,9 @@ func (vc *VendorCatalog) processDellCatalog(ctx context.Context) error {
 
 				if !includedBinary {
 					systemName := brand.Display + " " + model.Display
-					if len(vc.VendorSystemsFilter) == 0 || slices.Contains(vc.VendorSystemsFilter, systemName) {
+					if len(vc.VendorSystemsFilter) == 0 ||
+					slices.Contains(vc.VendorSystemsFilter, systemName) ||
+					slices.Contains(vc.VendorSystemsFilter, model.Display) {
 						includedBinary = true
 					}
 				}
