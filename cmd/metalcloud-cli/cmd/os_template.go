@@ -19,6 +19,7 @@ var (
 		label        string
 		sourceIso    string
 		status       string
+		outputPath   string
 	}{}
 
 	osTemplateCmd = &cobra.Command{
@@ -41,6 +42,8 @@ Available commands:
   get-assets          List all assets associated with a template
   list-repo           List templates available in a remote repository
   create-from-repo    Create a template by cloning from a repository
+  export              Export a template and its assets to a zip archive
+  import              Import a template from a zip archive
   example-create      Show example JSON for creating templates`,
 	}
 
@@ -377,6 +380,77 @@ Examples:
 		},
 	}
 
+	osTemplateExportCmd = &cobra.Command{
+		Use:     "export <os_template_id>",
+		Aliases: []string{"export-to-archive"},
+		Short:   "Export an OS template and its assets to a zip archive",
+		Long: `Export an OS template and all its assets to a zip archive file.
+
+This command fetches a template by ID and packs its configuration and content
+assets into a portable zip archive. URL-based assets (such as ISO links)
+are preserved as references without downloading the actual files.
+
+The archive contains:
+  - template.yaml: Template configuration in YAML format
+  - assets/: Directory containing decoded asset file contents
+
+Required arguments:
+  os_template_id    The numeric ID of the template to export
+
+Optional flags:
+  --output          Output file path (default: <template-name-slug>.zip)
+
+Examples:
+  # Export template with ID 123
+  metalcloud-cli os-template export 123
+
+  # Export to a specific file
+  metalcloud-cli os-template export 123 --output my-template.zip`,
+		SilenceUsage: true,
+		Annotations:  map[string]string{system.REQUIRED_PERMISSION: system.PERMISSION_TEMPLATES_READ},
+		Args:         cobra.ExactArgs(1),
+		RunE: func(cmd *cobra.Command, args []string) error {
+			return os_template.OsTemplateExport(cmd.Context(), args[0], osTemplateFlags.outputPath)
+		},
+	}
+
+	osTemplateImportCmd = &cobra.Command{
+		Use:     "import <archive_path>",
+		Aliases: []string{"import-from-archive"},
+		Short:   "Import an OS template from a zip archive",
+		Long: `Import an OS template from a zip archive file.
+
+This command reads a previously exported zip archive and creates a new
+OS template with all its assets. The new template is always created with
+private visibility.
+
+The archive should contain:
+  - template.yaml: Template configuration in YAML format
+  - assets/: Directory containing asset file contents
+
+Required arguments:
+  archive_path      Path to the zip archive file
+
+Required flags:
+  --name            Name for the new template
+
+Optional flags:
+  --label           Label for the new template (default: slug of name)
+
+Examples:
+  # Import a template
+  metalcloud-cli os-template import my-template.zip --name "My Imported Template"
+
+  # Import with custom label
+  metalcloud-cli os-template import my-template.zip --name "My Template" --label "my-template-v2"`,
+		SilenceUsage: true,
+		Annotations:  map[string]string{system.REQUIRED_PERMISSION: system.PERMISSION_TEMPLATES_WRITE},
+		Args:         cobra.ExactArgs(1),
+		RunE: func(cmd *cobra.Command, args []string) error {
+			return os_template.OsTemplateImport(cmd.Context(), args[0], osTemplateFlags.name, osTemplateFlags.label)
+		},
+	}
+
 	osTemplateCreateFromRepoCmd = &cobra.Command{
 		Use:     "create-from-repo <os_template_path>",
 		Aliases: []string{"add-from-repo", "clone-from-repo"},
@@ -461,6 +535,14 @@ func init() {
 	osTemplateListRepoCmd.Flags().StringVar(&osTemplateFlags.repoUsername, "repo-username", "", "Private repo username.")
 	osTemplateListRepoCmd.Flags().StringVar(&osTemplateFlags.repoPassword, "repo-password", "", "Private repo password.")
 	osTemplateListRepoCmd.MarkFlagsRequiredTogether("repo-username", "repo-password")
+
+	osTemplateCmd.AddCommand(osTemplateExportCmd)
+	osTemplateExportCmd.Flags().StringVar(&osTemplateFlags.outputPath, "output", "", "Output file path for the exported archive.")
+
+	osTemplateCmd.AddCommand(osTemplateImportCmd)
+	osTemplateImportCmd.Flags().StringVar(&osTemplateFlags.name, "name", "", "Name of the new OS template.")
+	osTemplateImportCmd.Flags().StringVar(&osTemplateFlags.label, "label", "", "Label of the new OS template.")
+	osTemplateImportCmd.MarkFlagsOneRequired("name")
 
 	osTemplateCmd.AddCommand(osTemplateCreateFromRepoCmd)
 	osTemplateCreateFromRepoCmd.Flags().StringVar(&osTemplateFlags.repoUrl, "repo-url", "", "Private repo to use.")
