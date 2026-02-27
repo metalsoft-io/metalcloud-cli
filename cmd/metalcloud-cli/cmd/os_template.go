@@ -42,6 +42,7 @@ Available commands:
   get-assets          List all assets associated with a template
   list-repo           List templates available in a remote repository
   create-from-repo    Create a template by cloning from a repository
+  clone               Clone an existing template
   export              Export a template and its assets to a zip archive
   import              Import a template from a zip archive
   example-create      Show example JSON for creating templates`,
@@ -380,6 +381,40 @@ Examples:
 		},
 	}
 
+	osTemplateCloneCmd = &cobra.Command{
+		Use:     "clone <os_template_id>",
+		Aliases: []string{"copy"},
+		Short:   "Clone an existing OS template",
+		Long: `Clone an existing OS template to create a new copy.
+
+This command creates a new OS template that is an exact copy of an existing one,
+including all its assets. The cloned template is always created with private
+visibility. Name and label can be optionally overridden.
+
+Required arguments:
+  os_template_id    The numeric ID of the template to clone
+
+Optional flags:
+  --name            Name for the cloned template (default: "<original-name> (clone)")
+  --label           Label for the cloned template (default: slug of name)
+
+Examples:
+  # Clone template with ID 123
+  metalcloud-cli os-template clone 123
+
+  # Clone with custom name
+  metalcloud-cli os-template clone 123 --name "My Custom Ubuntu"
+
+  # Clone with custom name and label
+  metalcloud-cli os-template clone 123 --name "My Custom Ubuntu" --label "my-custom-ubuntu"`,
+		SilenceUsage: true,
+		Annotations:  map[string]string{system.REQUIRED_PERMISSION: system.PERMISSION_TEMPLATES_WRITE},
+		Args:         cobra.ExactArgs(1),
+		RunE: func(cmd *cobra.Command, args []string) error {
+			return os_template.OsTemplateClone(cmd.Context(), args[0], osTemplateFlags.name, osTemplateFlags.label)
+		},
+	}
+
 	osTemplateExportCmd = &cobra.Command{
 		Use:     "export <os_template_id>",
 		Aliases: []string{"export-to-archive"},
@@ -535,6 +570,10 @@ func init() {
 	osTemplateListRepoCmd.Flags().StringVar(&osTemplateFlags.repoUsername, "repo-username", "", "Private repo username.")
 	osTemplateListRepoCmd.Flags().StringVar(&osTemplateFlags.repoPassword, "repo-password", "", "Private repo password.")
 	osTemplateListRepoCmd.MarkFlagsRequiredTogether("repo-username", "repo-password")
+
+	osTemplateCmd.AddCommand(osTemplateCloneCmd)
+	osTemplateCloneCmd.Flags().StringVar(&osTemplateFlags.name, "name", "", "Name of the cloned OS template.")
+	osTemplateCloneCmd.Flags().StringVar(&osTemplateFlags.label, "label", "", "Label of the cloned OS template.")
 
 	osTemplateCmd.AddCommand(osTemplateExportCmd)
 	osTemplateExportCmd.Flags().StringVar(&osTemplateFlags.outputPath, "output", "", "Output file path for the exported archive.")
