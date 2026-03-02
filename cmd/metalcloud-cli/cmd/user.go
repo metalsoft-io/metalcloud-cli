@@ -32,6 +32,7 @@ var (
 		accessLevel            string
 		emailVerified          bool
 		createWithAccount      bool
+		twoFAToken             string
 	}{}
 
 	userCmd = &cobra.Command{
@@ -648,6 +649,97 @@ Examples:
 			return user.UpdatePermissions(cmd.Context(), args[0], config)
 		},
 	}
+
+	userApiKeyGetCmd = &cobra.Command{
+		Use:   "api-key",
+		Short: "Get the current user's API key",
+		Long: `Retrieve the API key for the currently authenticated user.
+
+Examples:
+  metalcloud-cli user api-key`,
+		SilenceUsage: true,
+		Annotations:  map[string]string{system.REQUIRED_PERMISSION: system.PERMISSION_USERS_READ},
+		Args:         cobra.NoArgs,
+		RunE: func(cmd *cobra.Command, args []string) error {
+			return user.GetApiKey(cmd.Context())
+		},
+	}
+
+	userApiKeyRegenerateCmd = &cobra.Command{
+		Use:   "api-key-regenerate",
+		Short: "Regenerate the current user's API key",
+		Long: `Regenerate the API key for the currently authenticated user.
+
+WARNING: This will invalidate your current API key. You will need to update
+any scripts or configurations that use the old key.
+
+Examples:
+  metalcloud-cli user api-key-regenerate`,
+		SilenceUsage: true,
+		Annotations:  map[string]string{system.REQUIRED_PERMISSION: system.PERMISSION_USERS_WRITE},
+		Args:         cobra.NoArgs,
+		RunE: func(cmd *cobra.Command, args []string) error {
+			return user.RegenerateApiKey(cmd.Context())
+		},
+	}
+
+	user2FAEnableCmd = &cobra.Command{
+		Use:   "2fa-enable",
+		Short: "Enable two-factor authentication",
+		Long: `Enable two-factor authentication for the current user.
+
+You must first generate a 2FA secret using 'user 2fa-generate-secret', configure
+your authenticator app, then provide the TOTP token to verify and enable 2FA.
+
+Required Flags:
+  --token string    The TOTP code from your authenticator app
+
+Examples:
+  # First generate the secret
+  metalcloud-cli user 2fa-generate-secret
+
+  # Then enable 2FA with the token from your authenticator app
+  metalcloud-cli user 2fa-enable --token 123456`,
+		SilenceUsage: true,
+		Annotations:  map[string]string{system.REQUIRED_PERMISSION: system.PERMISSION_USERS_WRITE},
+		Args:         cobra.NoArgs,
+		RunE: func(cmd *cobra.Command, args []string) error {
+			return user.Enable2FA(cmd.Context(), userFlags.twoFAToken)
+		},
+	}
+
+	user2FADisableCmd = &cobra.Command{
+		Use:   "2fa-disable",
+		Short: "Disable two-factor authentication",
+		Long: `Disable two-factor authentication for the current user.
+
+Examples:
+  metalcloud-cli user 2fa-disable`,
+		SilenceUsage: true,
+		Annotations:  map[string]string{system.REQUIRED_PERMISSION: system.PERMISSION_USERS_WRITE},
+		Args:         cobra.NoArgs,
+		RunE: func(cmd *cobra.Command, args []string) error {
+			return user.Disable2FA(cmd.Context())
+		},
+	}
+
+	user2FAGenerateSecretCmd = &cobra.Command{
+		Use:   "2fa-generate-secret",
+		Short: "Generate a new 2FA secret for setting up an authenticator app",
+		Long: `Generate a new two-factor authentication secret and QR code.
+
+Use the generated secret or QR code to configure your authenticator app (e.g., Google
+Authenticator, Authy), then call 'user 2fa-enable --token <code>' to activate 2FA.
+
+Examples:
+  metalcloud-cli user 2fa-generate-secret`,
+		SilenceUsage: true,
+		Annotations:  map[string]string{system.REQUIRED_PERMISSION: system.PERMISSION_USERS_READ},
+		Args:         cobra.NoArgs,
+		RunE: func(cmd *cobra.Command, args []string) error {
+			return user.GenerateUser2FASecret(cmd.Context())
+		},
+	}
 )
 
 func init() {
@@ -727,4 +819,15 @@ func init() {
 	userCmd.AddCommand(userPermissionsUpdateCmd)
 	userPermissionsUpdateCmd.Flags().StringVar(&userFlags.configSource, "config-source", "", "Source of the user permissions configuration. Can be 'pipe' or path to a JSON file.")
 	userPermissionsUpdateCmd.MarkFlagsOneRequired("config-source")
+
+	// Self-service: API key
+	userCmd.AddCommand(userApiKeyGetCmd)
+	userCmd.AddCommand(userApiKeyRegenerateCmd)
+
+	// Self-service: 2FA
+	userCmd.AddCommand(user2FAEnableCmd)
+	user2FAEnableCmd.Flags().StringVar(&userFlags.twoFAToken, "token", "", "The TOTP code from your authenticator app.")
+	user2FAEnableCmd.MarkFlagRequired("token")
+	userCmd.AddCommand(user2FADisableCmd)
+	userCmd.AddCommand(user2FAGenerateSecretCmd)
 }

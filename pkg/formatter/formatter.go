@@ -52,6 +52,11 @@ func IsNativeFormat() bool {
 	return strings.ToLower(viper.GetString(ConfigFormat)) == "json" || strings.ToLower(viper.GetString(ConfigFormat)) == "yaml"
 }
 
+func IsTextFormat() bool {
+	f := strings.ToLower(viper.GetString(ConfigFormat))
+	return f == "" || f == "text"
+}
+
 func PrintResult(result interface{}, printConfig *PrintConfig) error {
 	format := strings.ToLower(viper.GetString(ConfigFormat))
 	disableColor = false
