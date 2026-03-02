@@ -33,11 +33,14 @@ Jobs in MetalCloud represent asynchronous operations that are executed by the sy
 These commands allow you to list, view, and monitor job execution status and details.
 
 Available Commands:
-  list    List jobs with optional filtering and sorting
-  get     Get detailed information about a specific job
-  skip    Skip a pending or running job
-  retry   Retry a failed job
-  kill    Kill a running job
+  list           List jobs with optional filtering and sorting
+  get            Get detailed information about a specific job
+  skip           Skip a pending or running job
+  retry          Retry a failed job
+  kill           Kill a running job
+  exceptions     Get exceptions for a specific job
+  statistics     Get job queue statistics
+  list-archived  List archived jobs
 
 Use "metalcloud-cli job [command] --help" for more information about a command.`,
 	}
@@ -222,6 +225,88 @@ Permissions:
 			return job.JobKill(cmd.Context(), args[0])
 		},
 	}
+
+	jobExceptionsCmd = &cobra.Command{
+		Use:   "exceptions job_id",
+		Short: "Get exceptions for a specific job",
+		Long: `Get the list of exceptions thrown during execution of a specific job.
+
+This command shows all errors and exceptions that occurred while the job was running,
+which is useful for debugging failed or errored jobs.
+
+Arguments:
+  job_id (required)    The numeric ID of the job.
+
+Examples:
+  metalcloud-cli job exceptions 12345`,
+		SilenceUsage: true,
+		Annotations:  map[string]string{system.REQUIRED_PERMISSION: system.PERMISSION_JOB_QUEUE_READ},
+		Args:         cobra.ExactArgs(1),
+		RunE: func(cmd *cobra.Command, args []string) error {
+			return job.JobExceptions(cmd.Context(), args[0])
+		},
+	}
+
+	jobStatisticsCmd = &cobra.Command{
+		Use:     "statistics",
+		Aliases: []string{"stats"},
+		Short:   "Get job queue statistics",
+		Long: `Get statistics about the job queue including counts by status and total archived jobs.
+
+Examples:
+  metalcloud-cli job statistics
+  metalcloud-cli job stats`,
+		SilenceUsage: true,
+		Annotations:  map[string]string{system.REQUIRED_PERMISSION: system.PERMISSION_JOB_QUEUE_READ},
+		Args:         cobra.NoArgs,
+		RunE: func(cmd *cobra.Command, args []string) error {
+			return job.JobStatistics(cmd.Context())
+		},
+	}
+
+	jobArchiveFlags = struct {
+		filterJobId      []string
+		filterStatus     []string
+		filterJobGroupId []string
+		sortBy           []string
+	}{}
+
+	jobListArchivedCmd = &cobra.Command{
+		Use:     "list-archived",
+		Aliases: []string{"archived", "archive"},
+		Short:   "List archived jobs",
+		Long: `List jobs from the archive with optional filtering and sorting.
+
+Archived jobs are completed jobs that have been moved to long-term storage.
+This command supports the same filtering options as the regular job list.
+
+Flags:
+  --filter-job-id strings        Filter by job ID
+  --filter-status strings        Filter by status
+  --filter-job-group-id strings  Filter by job group ID
+  --sort-by strings              Sort by fields (e.g., jobId:DESC)
+
+Examples:
+  # List all archived jobs
+  metalcloud-cli job list-archived
+
+  # List archived jobs filtered by status
+  metalcloud-cli job list-archived --filter-status completed
+
+  # List archived jobs sorted by job ID
+  metalcloud-cli job list-archived --sort-by jobId:DESC`,
+		SilenceUsage: true,
+		Annotations:  map[string]string{system.REQUIRED_PERMISSION: system.PERMISSION_JOB_QUEUE_READ},
+		Args:         cobra.NoArgs,
+		RunE: func(cmd *cobra.Command, args []string) error {
+			return job.JobListArchived(cmd.Context(), job.ArchiveListFlags{
+				FilterJobId:      jobArchiveFlags.filterJobId,
+				FilterStatus:     jobArchiveFlags.filterStatus,
+				FilterJobGroupId: jobArchiveFlags.filterJobGroupId,
+				SortBy:           jobArchiveFlags.sortBy,
+			})
+		},
+	}
 )
 
 var (
@@ -359,6 +444,16 @@ func init() {
 	jobRetryCmd.Flags().BoolVar(&retryFlags.retryEvenIfSuccessful, "retry-even-if-successful", false, "Retry even if the job was successful.")
 
 	jobCmd.AddCommand(jobKillCmd)
+
+	jobCmd.AddCommand(jobExceptionsCmd)
+
+	jobCmd.AddCommand(jobStatisticsCmd)
+
+	jobCmd.AddCommand(jobListArchivedCmd)
+	jobListArchivedCmd.Flags().StringSliceVar(&jobArchiveFlags.filterJobId, "filter-job-id", nil, "Filter by job ID.")
+	jobListArchivedCmd.Flags().StringSliceVar(&jobArchiveFlags.filterStatus, "filter-status", nil, "Filter by job status.")
+	jobListArchivedCmd.Flags().StringSliceVar(&jobArchiveFlags.filterJobGroupId, "filter-job-group-id", nil, "Filter by job group ID.")
+	jobListArchivedCmd.Flags().StringSliceVar(&jobArchiveFlags.sortBy, "sort-by", nil, "Sort by fields (e.g., jobId:ASC, status:DESC).")
 
 	// Job group commands
 	rootCmd.AddCommand(jobGroupCmd)
