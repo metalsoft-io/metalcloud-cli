@@ -43,7 +43,8 @@ func GetApiKey(ctx context.Context) error {
 		return err
 	}
 
-	return formatter.PrintResult(apiKey, &apiKeyPrintConfig)
+	fmt.Println(apiKey.ApiKey)
+	return nil
 }
 
 func RegenerateApiKey(ctx context.Context) error {
