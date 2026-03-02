@@ -17,6 +17,7 @@ Available Commands:
   update       Update infrastructure configuration and metadata
   delete       Delete an infrastructure and all its resources
   deploy       Deploy infrastructure changes to physical resources
+  cancel-deploy Cancel an ongoing infrastructure deployment
   revert       Revert infrastructure to the last deployed state
   users        Manage user access to infrastructures
   statistics   View infrastructure deployment and job statistics
@@ -48,6 +49,7 @@ Use "metalcloud-cli infrastructure [command] --help" for more information about 
 * [metalcloud-cli](metalcloud-cli.md)	 - MetalCloud CLI
 * [metalcloud-cli infrastructure add-user](metalcloud-cli_infrastructure_add-user.md)	 - Add a user to an infrastructure with access permissions
 * [metalcloud-cli infrastructure all-statistics](metalcloud-cli_infrastructure_all-statistics.md)	 - Get deployment statistics for all infrastructures
+* [metalcloud-cli infrastructure cancel-deploy](metalcloud-cli_infrastructure_cancel-deploy.md)	 - Cancel an ongoing infrastructure deployment
 * [metalcloud-cli infrastructure config-info](metalcloud-cli_infrastructure_config-info.md)	 - Get configuration information for an infrastructure
 * [metalcloud-cli infrastructure create](metalcloud-cli_infrastructure_create.md)	 - Create a new infrastructure in a specific site
 * [metalcloud-cli infrastructure delete](metalcloud-cli_infrastructure_delete.md)	 - Delete an infrastructure and all its resources

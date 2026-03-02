@@ -153,9 +153,10 @@ func FirmwareBaselineConfigExample(ctx context.Context) error {
 	firmwareBaselineConfiguration := sdk.CreateFirmwareBaseline{
 		Name:        "example-firmware-baseline",
 		Description: sdk.PtrString("Example firmware baseline for production servers"),
-		Level:       sdk.BASELINELEVELTYPE_DATACENTER,
-		LevelFilter: []string{"datacenter-1", "datacenter-2"},
-		Catalog:     []string{"catalog-1", "catalog-2"},
+		MinimumVersions: []sdk.FirmwareMinimumVersion{
+			sdk.FirmwareMinimumVersion{ComponentName: "BMC", MinimumVersion: "1.0"},
+		},
+		Catalog: []string{"catalog-1", "catalog-2"},
 	}
 
 	return formatter.PrintResult(firmwareBaselineConfiguration, nil)
@@ -186,13 +187,8 @@ func FirmwareBaselineSearch(ctx context.Context, searchCriteria []byte) error {
 func FirmwareBaselineSearchExample(ctx context.Context) error {
 	// Example search criteria
 	searchCriteria := sdk.SearchFirmwareBinary{
-		Vendor: sdk.SERVERFIRMWARECATALOGVENDOR_DELL,
-		BaselineFilter: sdk.BaselineFilter{
-			Datacenter: []string{"datacenter-1"},
-			ServerType: []string{"dell_r740"},
-			OsTemplate: []string{"ubuntu-20.04"},
-			BaselineId: []string{"baseline-1"},
-		},
+		Vendor:      sdk.SERVERFIRMWARECATALOGVENDOR_DELL,
+		BaselineIds: []string{"baseline-1"},
 		ServerComponentFilter: &sdk.SearchFirmwareBinaryServerComponentFilter{
 			DellComponentFilter: &sdk.DellComponentFilter{
 				ComponentId: "component-1",

@@ -20,6 +20,7 @@ Available Commands:
   get-hosts     Show hosts assigned to a drive
   update-hosts  Update host assignments for a drive
   config-info   Get configuration information for a drive
+  snapshot      Manage drive snapshots (list, create, delete, restore)
 
 Examples:
   # List all drives in an infrastructure
@@ -59,6 +60,7 @@ Examples:
 * [metalcloud-cli drive get](metalcloud-cli_drive_get.md)	 - Get detailed information about a specific drive
 * [metalcloud-cli drive get-hosts](metalcloud-cli_drive_get-hosts.md)	 - Show hosts assigned to a drive
 * [metalcloud-cli drive list](metalcloud-cli_drive_list.md)	 - List all drives within an infrastructure
+* [metalcloud-cli drive snapshot](metalcloud-cli_drive_snapshot.md)	 - Manage drive snapshots
 * [metalcloud-cli drive update-config](metalcloud-cli_drive_update-config.md)	 - Update drive configuration settings
 * [metalcloud-cli drive update-hosts](metalcloud-cli_drive_update-hosts.md)	 - Update host assignments for a drive
 * [metalcloud-cli drive update-meta](metalcloud-cli_drive_update-meta.md)	 - Update drive metadata

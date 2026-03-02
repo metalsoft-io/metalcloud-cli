@@ -20,6 +20,9 @@ Available commands:
   get-assets          List all assets associated with a template
   list-repo           List templates available in a remote repository
   create-from-repo    Create a template by cloning from a repository
+  clone               Clone an existing template
+  export              Export a template and its assets to a zip archive
+  import              Import a template from a zip archive
   example-create      Show example JSON for creating templates
 
 ### Options
@@ -44,13 +47,16 @@ Available commands:
 ### SEE ALSO
 
 * [metalcloud-cli](metalcloud-cli.md)	 - MetalCloud CLI
+* [metalcloud-cli os-template clone](metalcloud-cli_os-template_clone.md)	 - Clone an existing OS template
 * [metalcloud-cli os-template create](metalcloud-cli_os-template_create.md)	 - Create a new OS template from JSON configuration
 * [metalcloud-cli os-template create-from-repo](metalcloud-cli_os-template_create-from-repo.md)	 - Create a new OS template by cloning from a repository
 * [metalcloud-cli os-template delete](metalcloud-cli_os-template_delete.md)	 - Delete an OS template
 * [metalcloud-cli os-template example-create](metalcloud-cli_os-template_example-create.md)	 - Show example JSON for creating OS templates
+* [metalcloud-cli os-template export](metalcloud-cli_os-template_export.md)	 - Export an OS template and its assets to a zip archive
 * [metalcloud-cli os-template get](metalcloud-cli_os-template_get.md)	 - Show detailed information about a specific OS template
 * [metalcloud-cli os-template get-assets](metalcloud-cli_os-template_get-assets.md)	 - List all assets associated with an OS template
 * [metalcloud-cli os-template get-credentials](metalcloud-cli_os-template_get-credentials.md)	 - Show default credentials for an OS template
+* [metalcloud-cli os-template import](metalcloud-cli_os-template_import.md)	 - Import an OS template from a zip archive
 * [metalcloud-cli os-template list](metalcloud-cli_os-template_list.md)	 - List all available OS templates
 * [metalcloud-cli os-template list-repo](metalcloud-cli_os-template_list-repo.md)	 - List available OS templates from a remote repository
 * [metalcloud-cli os-template set-status](metalcloud-cli_os-template_set-status.md)	 - Set the status of an OS template

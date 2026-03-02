@@ -97,8 +97,6 @@ func (vc *VendorCatalog) ProcessVendorCatalog(ctx context.Context) error {
 	if len(vc.ServerTypesFilter) > 0 {
 		logger.Get().Debug().Msgf("Server types filter provided: %v", vc.ServerTypesFilter)
 
-		vc.CatalogInfo.MetalsoftServerTypesSupported = vc.ServerTypesFilter
-
 		// Lookup the system models for the requested server types
 		// and add them to the vendor systems filter
 		systemModels, systemModelsEx, err := vc.getFilteredSystemModels(ctx)
@@ -142,15 +140,15 @@ func (vc *VendorCatalog) ProcessVendorCatalog(ctx context.Context) error {
 
 func (vc *VendorCatalog) CreateMetalsoftCatalog(ctx context.Context) error {
 	firmwareCatalogCreate := sdk.CreateFirmwareCatalog{
-		Name:                          vc.CatalogInfo.Name,
-		Description:                   vc.CatalogInfo.Description,
-		Vendor:                        sdk.ServerFirmwareCatalogVendor(vc.CatalogInfo.Vendor),
-		UpdateType:                    sdk.CatalogUpdateType(vc.CatalogInfo.UpdateType),
-		VendorUrl:                     vc.CatalogInfo.VendorUrl,
-		MetalsoftServerTypesSupported: vc.CatalogInfo.MetalsoftServerTypesSupported,
-		VendorServerTypesSupported:    vc.CatalogInfo.VendorServerTypesSupported,
-		VendorId:                      vc.CatalogInfo.VendorId,
-		VendorReleaseTimestamp:        vc.CatalogInfo.VendorReleaseTimestamp,
+		Name:                       vc.CatalogInfo.Name,
+		Description:                vc.CatalogInfo.Description,
+		Vendor:                     sdk.ServerFirmwareCatalogVendor(vc.CatalogInfo.Vendor),
+		UpdateType:                 sdk.CatalogUpdateType(vc.CatalogInfo.UpdateType),
+		VendorUrl:                  vc.CatalogInfo.VendorUrl,
+		VendorId:                   vc.CatalogInfo.VendorId,
+		VendorConfiguration:        vc.CatalogInfo.VendorConfiguration,
+		VendorServerTypesSupported: vc.CatalogInfo.VendorServerTypesSupported,
+		VendorReleaseTimestamp:     vc.CatalogInfo.VendorReleaseTimestamp,
 	}
 
 	client := api.GetApiClient(ctx)

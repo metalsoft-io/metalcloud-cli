@@ -19,6 +19,7 @@ Available Commands:
   get-hosts      Get hosts configured for a file share
   update-hosts   Update hosts configuration for a file share
   config-info    Get configuration information for a file share
+  snapshot       Manage file share snapshots (list, create, delete, restore)
 
 Examples:
   # List all file shares for an infrastructure
@@ -58,6 +59,7 @@ Examples:
 * [metalcloud-cli file-share get](metalcloud-cli_file-share_get.md)	 - Get detailed information about a specific file share
 * [metalcloud-cli file-share get-hosts](metalcloud-cli_file-share_get-hosts.md)	 - Get hosts configured for a file share
 * [metalcloud-cli file-share list](metalcloud-cli_file-share_list.md)	 - List all file shares for an infrastructure
+* [metalcloud-cli file-share snapshot](metalcloud-cli_file-share_snapshot.md)	 - Manage file share snapshots
 * [metalcloud-cli file-share update-config](metalcloud-cli_file-share_update-config.md)	 - Update file share configuration
 * [metalcloud-cli file-share update-hosts](metalcloud-cli_file-share_update-hosts.md)	 - Update hosts configuration for a file share
 * [metalcloud-cli file-share update-meta](metalcloud-cli_file-share_update-meta.md)	 - Update file share metadata

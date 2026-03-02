@@ -191,8 +191,8 @@ func FirmwareCatalogUpdate(ctx context.Context, firmwareCatalogId string, config
 		firmwareCatalogConfig.VendorUrl = fullCatalog.VendorUrl
 		firmwareCatalogConfig.UpdateType = sdk.CatalogUpdateType(fullCatalog.UpdateType)
 		firmwareCatalogConfig.VendorConfiguration = fullCatalog.VendorConfiguration
-		firmwareCatalogConfig.MetalsoftServerTypesSupported = fullCatalog.MetalsoftServerTypesSupported
 		firmwareCatalogConfig.VendorServerTypesSupported = fullCatalog.VendorServerTypesSupported
+		firmwareCatalogConfig.VendorReleaseTimestamp = fullCatalog.VendorReleaseTimestamp
 
 		logger.Get().Info().Msg("Converted FirmwareCatalog to UpdateFirmwareCatalog format")
 	}
