@@ -29,58 +29,41 @@ func setupTestContext(serverURL string) context.Context {
 	return ctx
 }
 
-const subnetIpsLinksArrayResponse = `{
+const subnetIpsResponse = `{
 	"data": [
 		{
 			"id": 1,
 			"name": "ip-1",
 			"address": "10.0.0.1",
-			"ipVersion": "IPv4",
+			"ipVersion": "ipv4",
 			"subnetId": 1,
-			"links": []
+			"annotations": {},
+			"createdAt": "2024-01-01T00:00:00Z",
+			"updatedAt": "2024-01-01T00:00:00Z",
+			"revision": 1,
+			"tags": {}
 		}
-	]
+	],
+	"meta": {"itemsPerPage": 10}
 }`
 
-const subnetIpsLinksMapResponse = `{
-	"data": [
-		{
-			"id": 1,
-			"name": "ip-1",
-			"address": "10.0.0.1",
-			"ipVersion": "IPv4",
-			"subnetId": 1,
-			"links": {"self": "http://example.com/api/v2/subnets/1/ips/1"}
-		}
-	]
-}`
-
-const subnetIpRangesLinksArrayResponse = `{
+const subnetIpRangesResponse = `{
 	"data": [
 		{
 			"id": 1,
 			"name": "range-1",
 			"startAddress": "10.0.0.1",
 			"endAddress": "10.0.0.254",
-			"ipVersion": "IPv4",
+			"ipVersion": "ipv4",
 			"subnetId": 1,
-			"links": []
+			"annotations": {},
+			"createdAt": "2024-01-01T00:00:00Z",
+			"updatedAt": "2024-01-01T00:00:00Z",
+			"revision": 1,
+			"tags": {}
 		}
-	]
-}`
-
-const subnetIpRangesLinksMapResponse = `{
-	"data": [
-		{
-			"id": 1,
-			"name": "range-1",
-			"startAddress": "10.0.0.1",
-			"endAddress": "10.0.0.254",
-			"ipVersion": "IPv4",
-			"subnetId": 1,
-			"links": {"self": "http://example.com/api/v2/subnets/1/ip-ranges/1"}
-		}
-	]
+	],
+	"meta": {"itemsPerPage": 10}
 }`
 
 func newSubnetMockServer(ipsBody, ipRangesBody string) *httptest.Server {
@@ -98,50 +81,22 @@ func newSubnetMockServer(ipsBody, ipRangesBody string) *httptest.Server {
 	}))
 }
 
-func TestSubnetIps_LinksAsArray(t *testing.T) {
-	t.Run("LinksAsArray", func(t *testing.T) {
-		ts := newSubnetMockServer(subnetIpsLinksArrayResponse, subnetIpRangesLinksArrayResponse)
-		defer ts.Close()
+func TestSubnetIps(t *testing.T) {
+	ts := newSubnetMockServer(subnetIpsResponse, subnetIpRangesResponse)
+	defer ts.Close()
 
-		ctx := setupTestContext(ts.URL)
-		if err := SubnetIps(ctx, "1"); err != nil {
-			t.Errorf("expected nil error, got: %v", err)
-		}
-	})
+	ctx := setupTestContext(ts.URL)
+	if err := SubnetIps(ctx, "1"); err != nil {
+		t.Errorf("expected nil error, got: %v", err)
+	}
 }
 
-func TestSubnetIps_LinksAsMap(t *testing.T) {
-	t.Run("LinksAsMap", func(t *testing.T) {
-		ts := newSubnetMockServer(subnetIpsLinksMapResponse, subnetIpRangesLinksMapResponse)
-		defer ts.Close()
+func TestSubnetIpRanges(t *testing.T) {
+	ts := newSubnetMockServer(subnetIpsResponse, subnetIpRangesResponse)
+	defer ts.Close()
 
-		ctx := setupTestContext(ts.URL)
-		if err := SubnetIps(ctx, "1"); err != nil {
-			t.Errorf("expected nil error, got: %v", err)
-		}
-	})
-}
-
-func TestSubnetIpRanges_LinksAsArray(t *testing.T) {
-	t.Run("LinksAsArray", func(t *testing.T) {
-		ts := newSubnetMockServer(subnetIpsLinksArrayResponse, subnetIpRangesLinksArrayResponse)
-		defer ts.Close()
-
-		ctx := setupTestContext(ts.URL)
-		if err := SubnetIpRanges(ctx, "1"); err != nil {
-			t.Errorf("expected nil error, got: %v", err)
-		}
-	})
-}
-
-func TestSubnetIpRanges_LinksAsMap(t *testing.T) {
-	t.Run("LinksAsMap", func(t *testing.T) {
-		ts := newSubnetMockServer(subnetIpsLinksMapResponse, subnetIpRangesLinksMapResponse)
-		defer ts.Close()
-
-		ctx := setupTestContext(ts.URL)
-		if err := SubnetIpRanges(ctx, "1"); err != nil {
-			t.Errorf("expected nil error, got: %v", err)
-		}
-	})
+	ctx := setupTestContext(ts.URL)
+	if err := SubnetIpRanges(ctx, "1"); err != nil {
+		t.Errorf("expected nil error, got: %v", err)
+	}
 }

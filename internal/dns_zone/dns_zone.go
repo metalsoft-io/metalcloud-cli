@@ -2,9 +2,7 @@ package dns_zone
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
-	"io"
 	"strconv"
 	"strings"
 
@@ -187,21 +185,6 @@ var dnsRecordSetPrintConfig = formatter.PrintConfig{
 	},
 }
 
-type dnsRecordSetRaw struct {
-	Id       float32     `json:"id"`
-	Name     string      `json:"name"`
-	Type     string      `json:"type"`
-	Records  []string    `json:"records"`
-	Ttl      float32     `json:"ttl"`
-	Status   string      `json:"status"`
-	ZoneName string      `json:"zoneName"`
-	Links    interface{} `json:"links,omitempty"`
-}
-
-type dnsRecordSetListRaw struct {
-	Data []dnsRecordSetRaw `json:"data"`
-}
-
 func DNSZoneRecords(ctx context.Context, dnsZoneId string) error {
 	logger.Get().Info().Msgf("Getting DNS record sets for zone '%s'", dnsZoneId)
 
@@ -212,27 +195,12 @@ func DNSZoneRecords(ctx context.Context, dnsZoneId string) error {
 
 	client := api.GetApiClient(ctx)
 
-	_, httpRes, sdkErr := client.DNSZoneAPI.ListDNSRecordSetsByZoneId(ctx, id).Execute()
-
-	if httpRes != nil && httpRes.StatusCode >= 400 {
-		if err := response_inspector.InspectResponse(httpRes, sdkErr); err != nil {
-			return err
-		}
-	} else if httpRes == nil {
-		return sdkErr
+	result, httpRes, err := client.DNSZoneAPI.ListDNSRecordSetsByZoneId(ctx, id).Execute()
+	if err := response_inspector.InspectResponse(httpRes, err); err != nil {
+		return err
 	}
 
-	body, err := io.ReadAll(httpRes.Body)
-	if err != nil {
-		return fmt.Errorf("failed to read response body: %w", err)
-	}
-
-	var raw dnsRecordSetListRaw
-	if err := json.Unmarshal(body, &raw); err != nil {
-		return fmt.Errorf("failed to parse DNS record sets: %w", err)
-	}
-
-	return formatter.PrintResult(raw.Data, &dnsRecordSetPrintConfig)
+	return formatter.PrintResult(result, &dnsRecordSetPrintConfig)
 }
 
 func GetDNSZoneId(dnsZoneId string) (float32, error) {

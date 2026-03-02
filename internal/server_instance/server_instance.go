@@ -2,7 +2,6 @@ package server_instance
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
 	"io"
 	"strconv"
@@ -15,23 +14,6 @@ import (
 	"github.com/metalsoft-io/metalcloud-cli/pkg/utils"
 	sdk "github.com/metalsoft-io/metalcloud-sdk-go"
 )
-
-// serverInstanceRaw works around the SDK bug where Links is typed as
-// map[string]interface{} but the API may return an array.
-type serverInstanceRaw struct {
-	Id               float32     `json:"id"`
-	Label            string      `json:"label"`
-	InfrastructureId float32     `json:"infrastructureId"`
-	GroupId          float32     `json:"groupId"`
-	ServiceStatus    string      `json:"serviceStatus"`
-	CreatedTimestamp string      `json:"createdTimestamp"`
-	UpdatedTimestamp string      `json:"updatedTimestamp"`
-	Links            interface{} `json:"links,omitempty"`
-}
-
-type serverInstanceListRaw struct {
-	Data []serverInstanceRaw `json:"data"`
-}
 
 var serverInstancePrintConfig = formatter.PrintConfig{
 	FieldsConfig: map[string]formatter.RecordFieldConfig{
@@ -79,27 +61,12 @@ func ServerInstanceList(ctx context.Context, infraId string) error {
 
 	client := api.GetApiClient(ctx)
 
-	_, httpRes, sdkErr := client.ServerInstanceAPI.GetInfrastructureServerInstances(ctx, int32(id)).Execute()
-
-	if httpRes != nil && httpRes.StatusCode >= 400 {
-		if err := response_inspector.InspectResponse(httpRes, sdkErr); err != nil {
-			return err
-		}
-	} else if httpRes == nil {
-		return sdkErr
+	result, httpRes, err := client.ServerInstanceAPI.GetInfrastructureServerInstances(ctx, int32(id)).Execute()
+	if err := response_inspector.InspectResponse(httpRes, err); err != nil {
+		return err
 	}
 
-	body, err := io.ReadAll(httpRes.Body)
-	if err != nil {
-		return fmt.Errorf("failed to read response body: %w", err)
-	}
-
-	var raw serverInstanceListRaw
-	if err := json.Unmarshal(body, &raw); err != nil {
-		return fmt.Errorf("failed to parse server instances: %w", err)
-	}
-
-	return formatter.PrintResult(raw.Data, &serverInstancePrintConfig)
+	return formatter.PrintResult(result, &serverInstancePrintConfig)
 }
 
 func ServerInstanceGet(ctx context.Context, serverInstanceId string) error {

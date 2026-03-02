@@ -36,15 +36,20 @@ func TestServerInstanceList(t *testing.T) {
 					"data": [
 						{
 							"id": 1,
+							"revision": 1,
 							"label": "si-1",
 							"infrastructureId": 123,
 							"groupId": 10,
 							"serviceStatus": "active",
+							"isVmInstance": 0,
+							"isEndpointInstance": 0,
 							"createdTimestamp": "2024-01-01T00:00:00Z",
 							"updatedTimestamp": "2024-01-01T00:00:00Z",
+							"meta": {},
 							"links": []
 						}
-					]
+					],
+					"meta": {"itemsPerPage": 10}
 				}`))
 				return
 			}
@@ -68,15 +73,20 @@ func TestServerInstanceList(t *testing.T) {
 					"data": [
 						{
 							"id": 1,
+							"revision": 1,
 							"label": "si-1",
 							"infrastructureId": 123,
 							"groupId": 10,
 							"serviceStatus": "active",
+							"isVmInstance": 0,
+							"isEndpointInstance": 0,
 							"createdTimestamp": "2024-01-01T00:00:00Z",
 							"updatedTimestamp": "2024-01-01T00:00:00Z",
-							"links": {"self": "http://example.com/server-instances/1"}
+							"meta": {},
+							"links": [{"rel": "self", "href": "http://example.com/server-instances/1"}]
 						}
-					]
+					],
+					"meta": {"itemsPerPage": 10}
 				}`))
 				return
 			}

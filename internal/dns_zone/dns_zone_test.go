@@ -39,9 +39,16 @@ const dnsRecordsLinksArrayResponse = `{
 			"ttl": 300,
 			"status": "active",
 			"zoneName": "example.com",
+			"siteId": 1,
+			"infrastructureId": 1,
+			"zoneId": 1,
+			"revision": 1,
+			"createdBy": 1,
+			"createdAt": "2024-01-01T00:00:00Z",
 			"links": []
 		}
-	]
+	],
+	"meta": {"itemsPerPage": 10}
 }`
 
 const dnsRecordsLinksMapResponse = `{
@@ -54,9 +61,16 @@ const dnsRecordsLinksMapResponse = `{
 			"ttl": 300,
 			"status": "active",
 			"zoneName": "example.com",
-			"links": {"self": "http://example.com/api/v2/dns-zones/1/recordsets/1"}
+			"siteId": 1,
+			"infrastructureId": 1,
+			"zoneId": 1,
+			"revision": 1,
+			"createdBy": 1,
+			"createdAt": "2024-01-01T00:00:00Z",
+			"links": [{"rel": "self", "href": "http://example.com/api/v2/dns-zones/1/recordsets/1"}]
 		}
-	]
+	],
+	"meta": {"itemsPerPage": 10}
 }`
 
 func newDNSZoneMockServer(body string, statusCode int) *httptest.Server {
