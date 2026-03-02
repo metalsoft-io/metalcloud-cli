@@ -32,6 +32,7 @@ Available Commands:
   get-hosts      Get hosts configured for a file share
   update-hosts   Update hosts configuration for a file share
   config-info    Get configuration information for a file share
+  snapshot       Manage file share snapshots (list, create, delete, restore)
 
 Examples:
   # List all file shares for an infrastructure
@@ -348,6 +349,125 @@ Examples:
 		},
 	}
 
+	fileShareSnapshotCmd = &cobra.Command{
+		Use:   "snapshot [command]",
+		Short: "Manage file share snapshots",
+		Long: `Manage snapshots for file shares within infrastructures.
+
+Snapshots allow you to capture and restore the state of a file share at a specific point in time.
+
+Available Commands:
+  list          List all snapshots for a file share
+  create        Create a new snapshot for a file share
+  delete        Delete a snapshot by name
+  restore       Restore a file share to a specific snapshot
+
+Examples:
+  # List snapshots for a file share
+  metalcloud-cli file-share snapshot list my-infrastructure 12345
+
+  # Create a snapshot
+  metalcloud-cli file-share snapshot create my-infrastructure 12345
+
+  # Delete a snapshot by name
+  metalcloud-cli file-share snapshot delete my-infrastructure 12345 --name my-snapshot
+
+  # Restore a file share to a snapshot
+  metalcloud-cli file-share snapshot restore my-infrastructure 12345 --name my-snapshot`,
+	}
+
+	fileShareSnapshotFlags = struct {
+		snapshotName string
+	}{}
+
+	fileShareSnapshotListCmd = &cobra.Command{
+		Use:   "list infrastructure_id_or_label file_share_id",
+		Short: "List all snapshots for a file share",
+		Long: `List all snapshots for a specific file share within an infrastructure.
+
+Arguments:
+  infrastructure_id_or_label    The ID or label of the infrastructure
+  file_share_id                The unique identifier of the file share
+
+Examples:
+  # List snapshots for a file share
+  metalcloud-cli file-share snapshot list my-infrastructure 12345`,
+		SilenceUsage: true,
+		Annotations:  map[string]string{system.REQUIRED_PERMISSION: system.PERMISSION_FILE_SHARE_READ},
+		Args:         cobra.ExactArgs(2),
+		RunE: func(cmd *cobra.Command, args []string) error {
+			return file_share.FileShareSnapshotList(cmd.Context(), args[0], args[1])
+		},
+	}
+
+	fileShareSnapshotCreateCmd = &cobra.Command{
+		Use:   "create infrastructure_id_or_label file_share_id",
+		Short: "Create a new snapshot for a file share",
+		Long: `Create a new snapshot for a specific file share within an infrastructure.
+
+This captures the current state of the file share as a point-in-time snapshot.
+
+Arguments:
+  infrastructure_id_or_label    The ID or label of the infrastructure
+  file_share_id                The unique identifier of the file share
+
+Examples:
+  # Create a snapshot for a file share
+  metalcloud-cli file-share snapshot create my-infrastructure 12345`,
+		SilenceUsage: true,
+		Annotations:  map[string]string{system.REQUIRED_PERMISSION: system.PERMISSION_FILE_SHARE_WRITE},
+		Args:         cobra.ExactArgs(2),
+		RunE: func(cmd *cobra.Command, args []string) error {
+			return file_share.FileShareSnapshotCreate(cmd.Context(), args[0], args[1])
+		},
+	}
+
+	fileShareSnapshotDeleteCmd = &cobra.Command{
+		Use:   "delete infrastructure_id_or_label file_share_id",
+		Short: "Delete a snapshot by name",
+		Long: `Delete a specific snapshot by name for a file share within an infrastructure.
+
+Arguments:
+  infrastructure_id_or_label    The ID or label of the infrastructure
+  file_share_id                The unique identifier of the file share
+
+Required Flags:
+  --name string                 The name of the snapshot to delete
+
+Examples:
+  # Delete a snapshot by name
+  metalcloud-cli file-share snapshot delete my-infrastructure 12345 --name my-snapshot`,
+		SilenceUsage: true,
+		Annotations:  map[string]string{system.REQUIRED_PERMISSION: system.PERMISSION_FILE_SHARE_WRITE},
+		Args:         cobra.ExactArgs(2),
+		RunE: func(cmd *cobra.Command, args []string) error {
+			return file_share.FileShareSnapshotDelete(cmd.Context(), args[0], args[1], fileShareSnapshotFlags.snapshotName)
+		},
+	}
+
+	fileShareSnapshotRestoreCmd = &cobra.Command{
+		Use:   "restore infrastructure_id_or_label file_share_id",
+		Short: "Restore a file share to a specific snapshot",
+		Long: `Restore a file share to the state captured by a specific snapshot.
+
+Arguments:
+  infrastructure_id_or_label    The ID or label of the infrastructure
+  file_share_id                The unique identifier of the file share
+
+Required Flags:
+  --name string                 The name of the snapshot to restore to
+
+Examples:
+  # Restore a file share to a snapshot
+  metalcloud-cli file-share snapshot restore my-infrastructure 12345 --name my-snapshot`,
+		SilenceUsage: true,
+		Annotations:  map[string]string{system.REQUIRED_PERMISSION: system.PERMISSION_FILE_SHARE_WRITE},
+		Args:         cobra.ExactArgs(2),
+		RunE: func(cmd *cobra.Command, args []string) error {
+			return file_share.FileShareSnapshotRestore(cmd.Context(), args[0], args[1], fileShareSnapshotFlags.snapshotName)
+		},
+	}
+
 	fileShareGetConfigInfoCmd = &cobra.Command{
 		Use:     "config-info infrastructure_id_or_label file_share_id",
 		Aliases: []string{"get-config-info"},
@@ -407,4 +527,16 @@ func init() {
 	fileShareUpdateHostsCmd.MarkFlagsOneRequired("config-source")
 
 	fileShareCmd.AddCommand(fileShareGetConfigInfoCmd)
+
+	fileShareCmd.AddCommand(fileShareSnapshotCmd)
+	fileShareSnapshotCmd.AddCommand(fileShareSnapshotListCmd)
+	fileShareSnapshotCmd.AddCommand(fileShareSnapshotCreateCmd)
+
+	fileShareSnapshotCmd.AddCommand(fileShareSnapshotDeleteCmd)
+	fileShareSnapshotDeleteCmd.Flags().StringVar(&fileShareSnapshotFlags.snapshotName, "name", "", "Name of the snapshot to delete.")
+	fileShareSnapshotDeleteCmd.MarkFlagsOneRequired("name")
+
+	fileShareSnapshotCmd.AddCommand(fileShareSnapshotRestoreCmd)
+	fileShareSnapshotRestoreCmd.Flags().StringVar(&fileShareSnapshotFlags.snapshotName, "name", "", "Name of the snapshot to restore to.")
+	fileShareSnapshotRestoreCmd.MarkFlagsOneRequired("name")
 }
