@@ -435,8 +435,149 @@ instance group but can have individual characteristics and status.
 
 Available commands include:
 - get: View detailed information about a specific server instance
+- power: Set power state (on, off, reset, soft)
+- power-status: Get current power status
+- credentials: Get instance login credentials
+- reinstall-os: Schedule OS reinstall at next deploy
+- config: View instance configuration
 
 Use "metalcloud-cli server-instance [command] --help" for detailed information about each command.`,
+	}
+
+	serverInstancePowerCmd = &cobra.Command{
+		Use:   "power <server_instance_id> <on|off|reset|soft>",
+		Short: "Set power state of a server instance",
+		Long: `Set the power state of a server instance.
+
+This command sends a power command to a server instance via the orchestration layer.
+For direct BMC/IPMI power control, use the 'server power' command instead.
+
+Valid power actions:
+  on    - Power on the server instance
+  off   - Power off the server instance
+  reset - Hard reset the server instance
+  soft  - Graceful shutdown of the server instance
+
+Arguments:
+  server_instance_id  The numeric ID of the server instance
+  action              Power action to perform (on, off, reset, soft)
+
+Examples:
+  # Power on server instance 5678
+  metalcloud-cli server-instance power 5678 on
+
+  # Gracefully shutdown server instance
+  metalcloud-cli server-instance power 5678 soft
+
+  # Hard reset server instance
+  metalcloud-cli inst power 5678 reset`,
+		SilenceUsage: true,
+		Annotations:  map[string]string{system.REQUIRED_PERMISSION: system.PERMISSION_SERVER_INSTANCES_WRITE},
+		Args:         cobra.ExactArgs(2),
+		RunE: func(cmd *cobra.Command, args []string) error {
+			return server_instance.ServerInstancePower(cmd.Context(), args[0], args[1])
+		},
+	}
+
+	serverInstancePowerStatusCmd = &cobra.Command{
+		Use:     "power-status <server_instance_id>",
+		Aliases: []string{"power-state"},
+		Short:   "Get power status of a server instance",
+		Long: `Get the current power status of a server instance.
+
+Arguments:
+  server_instance_id  The numeric ID of the server instance
+
+Examples:
+  # Get power status of server instance 5678
+  metalcloud-cli server-instance power-status 5678
+
+  # Using alias
+  metalcloud-cli inst power-state 5678`,
+		SilenceUsage: true,
+		Annotations:  map[string]string{system.REQUIRED_PERMISSION: system.PERMISSION_SERVER_INSTANCES_READ},
+		Args:         cobra.ExactArgs(1),
+		RunE: func(cmd *cobra.Command, args []string) error {
+			return server_instance.ServerInstancePowerStatus(cmd.Context(), args[0])
+		},
+	}
+
+	serverInstanceCredentialsCmd = &cobra.Command{
+		Use:     "credentials <server_instance_id>",
+		Aliases: []string{"creds"},
+		Short:   "Get login credentials for a server instance",
+		Long: `Get the login credentials for a server instance.
+
+This command retrieves the initial credentials configured for a server instance,
+including username, password, and SSH public key if available.
+
+Arguments:
+  server_instance_id  The numeric ID of the server instance
+
+Examples:
+  # Get credentials for server instance 5678
+  metalcloud-cli server-instance credentials 5678
+
+  # Using alias
+  metalcloud-cli inst creds 5678`,
+		SilenceUsage: true,
+		Annotations:  map[string]string{system.REQUIRED_PERMISSION: system.PERMISSION_SERVER_INSTANCES_READ},
+		Args:         cobra.ExactArgs(1),
+		RunE: func(cmd *cobra.Command, args []string) error {
+			return server_instance.ServerInstanceCredentials(cmd.Context(), args[0])
+		},
+	}
+
+	serverInstanceReinstallOSCmd = &cobra.Command{
+		Use:     "reinstall-os <server_instance_id>",
+		Aliases: []string{"reinstall"},
+		Short:   "Schedule OS reinstall for a server instance",
+		Long: `Schedule an OS reinstallation for a server instance.
+
+This command marks the server instance for OS reinstallation. The reinstall
+will take effect at the next infrastructure deploy.
+
+Arguments:
+  server_instance_id  The numeric ID of the server instance
+
+Examples:
+  # Schedule OS reinstall for server instance 5678
+  metalcloud-cli server-instance reinstall-os 5678
+
+  # Using alias
+  metalcloud-cli inst reinstall 5678`,
+		SilenceUsage: true,
+		Annotations:  map[string]string{system.REQUIRED_PERMISSION: system.PERMISSION_SERVER_INSTANCES_WRITE},
+		Args:         cobra.ExactArgs(1),
+		RunE: func(cmd *cobra.Command, args []string) error {
+			return server_instance.ServerInstanceReinstallOS(cmd.Context(), args[0])
+		},
+	}
+
+	serverInstanceConfigCmd = &cobra.Command{
+		Use:     "config <server_instance_id>",
+		Aliases: []string{"get-config"},
+		Short:   "Get configuration of a server instance",
+		Long: `Get the current configuration of a server instance.
+
+This command retrieves the configuration details of a server instance including
+server type, OS template, hostname, deploy status, and other settings.
+
+Arguments:
+  server_instance_id  The numeric ID of the server instance
+
+Examples:
+  # Get configuration of server instance 5678
+  metalcloud-cli server-instance config 5678
+
+  # Using alias
+  metalcloud-cli inst get-config 5678`,
+		SilenceUsage: true,
+		Annotations:  map[string]string{system.REQUIRED_PERMISSION: system.PERMISSION_SERVER_INSTANCES_READ},
+		Args:         cobra.ExactArgs(1),
+		RunE: func(cmd *cobra.Command, args []string) error {
+			return server_instance.ServerInstanceConfig(cmd.Context(), args[0])
+		},
 	}
 
 	serverInstanceGetCmd = &cobra.Command{
@@ -508,4 +649,11 @@ func init() {
 	rootCmd.AddCommand(serverInstanceCmd)
 
 	serverInstanceCmd.AddCommand(serverInstanceGetCmd)
+
+	serverInstanceCmd.AddCommand(serverInstancePowerCmd)
+	serverInstanceCmd.AddCommand(serverInstancePowerStatusCmd)
+
+	serverInstanceCmd.AddCommand(serverInstanceCredentialsCmd)
+	serverInstanceCmd.AddCommand(serverInstanceReinstallOSCmd)
+	serverInstanceCmd.AddCommand(serverInstanceConfigCmd)
 }
