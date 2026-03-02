@@ -78,7 +78,7 @@ var jobStatisticsPrintConfig = formatter.PrintConfig{
 	},
 }
 
-// jobExceptionRaw is a local type that accepts links as interface{} to work
+// TODO: jobExceptionRaw is a local type that accepts links as interface{} to work
 // around an SDK bug where links is typed as map[string]interface{} but the
 // API returns an array.
 type jobExceptionRaw struct {
@@ -86,7 +86,7 @@ type jobExceptionRaw struct {
 	ArchiveId        *int32      `json:"archiveId,omitempty"`
 	JobId            *int32      `json:"jobId,omitempty"`
 	Exception        interface{} `json:"exception,omitempty"`
-	CreatedTimestamp  string      `json:"createdTimestamp"`
+	CreatedTimestamp string      `json:"createdTimestamp"`
 	Links            interface{} `json:"links,omitempty"`
 }
 

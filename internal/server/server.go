@@ -15,7 +15,7 @@ import (
 	sdk "github.com/metalsoft-io/metalcloud-sdk-go"
 )
 
-// serverRaw works around the SDK bug where Server.ServerMetricsMetadata
+// TODO: serverRaw works around the SDK bug where Server.ServerMetricsMetadata
 // is typed as a struct but the API may return an array.
 type serverRaw struct {
 	ServerId          float32     `json:"serverId"`
@@ -139,7 +139,7 @@ func ServerList(ctx context.Context, showCredentials bool, filterStatus []string
 
 	if showCredentials {
 		type serverRawWithCredentials struct {
-			ServerInfo        serverRaw            `json:"serverInfo"`
+			ServerInfo        serverRaw             `json:"serverInfo"`
 			ServerCredentials sdk.ServerCredentials `json:"serverCredentials"`
 		}
 

@@ -15,19 +15,19 @@ import (
 	sdk "github.com/metalsoft-io/metalcloud-sdk-go"
 )
 
-// cronJobRaw works around the SDK bug where CronJob.Links is typed as
+// TODO: cronJobRaw works around the SDK bug where CronJob.Links is typed as
 // map[string]interface{} but the API may return an array.
 type cronJobRaw struct {
-	Id                float32                  `json:"id"`
-	Label             string                   `json:"label"`
-	Description       *string                  `json:"description,omitempty"`
-	FunctionName      string                   `json:"functionName"`
-	Params            interface{}              `json:"params,omitempty"`
-	Schedule          string                   `json:"schedule"`
-	WaitForCompletion float32                  `json:"waitForCompletion"`
-	LifetimeSeconds   float32                  `json:"lifetimeSeconds"`
-	Disabled          float32                  `json:"disabled"`
-	Links             interface{}              `json:"links,omitempty"`
+	Id                float32     `json:"id"`
+	Label             string      `json:"label"`
+	Description       *string     `json:"description,omitempty"`
+	FunctionName      string      `json:"functionName"`
+	Params            interface{} `json:"params,omitempty"`
+	Schedule          string      `json:"schedule"`
+	WaitForCompletion float32     `json:"waitForCompletion"`
+	LifetimeSeconds   float32     `json:"lifetimeSeconds"`
+	Disabled          float32     `json:"disabled"`
+	Links             interface{} `json:"links,omitempty"`
 }
 
 type cronJobListRaw struct {

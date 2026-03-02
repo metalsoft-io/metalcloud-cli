@@ -15,21 +15,21 @@ import (
 	"github.com/metalsoft-io/metalcloud-cli/pkg/utils"
 )
 
-// vmInstanceRaw works around the SDK bug where VMInstance.Links is typed as
+// TODO: vmInstanceRaw works around the SDK bug where VMInstance.Links is typed as
 // map[string]interface{} but the API may return an array.
 type vmInstanceRaw struct {
-	Id                float32     `json:"id"`
-	Label             string      `json:"label"`
-	InfrastructureId  float32     `json:"infrastructureId"`
-	GroupId           float32     `json:"groupId"`
-	ServiceStatus     string      `json:"serviceStatus"`
-	TypeId            float32     `json:"typeId"`
-	DiskSizeGB        float32     `json:"diskSizeGB"`
-	RamGB             float32     `json:"ramGB"`
-	CpuCores          float32     `json:"cpuCores"`
-	CreatedTimestamp   string      `json:"createdTimestamp"`
-	UpdatedTimestamp   string      `json:"updatedTimestamp"`
-	Links             interface{} `json:"links,omitempty"`
+	Id               float32     `json:"id"`
+	Label            string      `json:"label"`
+	InfrastructureId float32     `json:"infrastructureId"`
+	GroupId          float32     `json:"groupId"`
+	ServiceStatus    string      `json:"serviceStatus"`
+	TypeId           float32     `json:"typeId"`
+	DiskSizeGB       float32     `json:"diskSizeGB"`
+	RamGB            float32     `json:"ramGB"`
+	CpuCores         float32     `json:"cpuCores"`
+	CreatedTimestamp string      `json:"createdTimestamp"`
+	UpdatedTimestamp string      `json:"updatedTimestamp"`
+	Links            interface{} `json:"links,omitempty"`
 }
 
 type vmInstanceListRaw struct {
