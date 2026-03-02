@@ -252,6 +252,27 @@ func InfrastructureRevert(ctx context.Context, infrastructureIdOrLabel string) e
 	return nil
 }
 
+func InfrastructureCancelDeploy(ctx context.Context, infrastructureIdOrLabel string) error {
+	logger.Get().Info().Msgf("Cancel deploy for infrastructure '%s'", infrastructureIdOrLabel)
+
+	infrastructureInfo, err := GetInfrastructureByIdOrLabel(ctx, infrastructureIdOrLabel)
+	if err != nil {
+		return err
+	}
+
+	client := api.GetApiClient(ctx)
+
+	infrastructureInfo, httpRes, err := client.InfrastructureAPI.
+		CancelDeployInfrastructure(ctx, infrastructureInfo.Id).
+		Execute()
+	if err := response_inspector.InspectResponse(httpRes, err); err != nil {
+		return err
+	}
+
+	fmt.Printf("Deployment cancelled for infrastructure %v\n", infrastructureInfo.Id)
+	return formatter.PrintResult(infrastructureInfo, &infrastructurePrintConfig)
+}
+
 func GetInfrastructureByIdOrLabel(ctx context.Context, infrastructureIdOrLabel string) (*sdk.Infrastructure, error) {
 	client := api.GetApiClient(ctx)
 
