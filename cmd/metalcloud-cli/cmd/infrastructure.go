@@ -50,6 +50,7 @@ Available Commands:
   update       Update infrastructure configuration and metadata
   delete       Delete an infrastructure and all its resources
   deploy       Deploy infrastructure changes to physical resources
+  cancel-deploy Cancel an ongoing infrastructure deployment
   revert       Revert infrastructure to the last deployed state
   users        Manage user access to infrastructures
   statistics   View infrastructure deployment and job statistics
@@ -312,6 +313,35 @@ Examples:
 		Args:         cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			return infrastructure.InfrastructureRevert(cmd.Context(), args[0])
+		},
+	}
+
+	infrastructureCancelDeployCmd = &cobra.Command{
+		Use:     "cancel-deploy infrastructure_id_or_label",
+		Aliases: []string{"cancel"},
+		Short:   "Cancel an ongoing infrastructure deployment",
+		Long: `Cancel an ongoing deployment for the specified infrastructure.
+
+This command stops a deployment that is currently in progress, allowing you to
+make changes or fix issues before redeploying.
+
+Arguments:
+  infrastructure_id_or_label  The ID (numeric) or label (string) of the infrastructure
+
+Examples:
+  # Cancel deployment by infrastructure ID
+  metalcloud-cli infrastructure cancel-deploy 123
+
+  # Cancel deployment by label
+  metalcloud-cli infrastructure cancel-deploy "web-cluster"
+
+  # Using the alias
+  metalcloud-cli infrastructure cancel my-infrastructure`,
+		SilenceUsage: true,
+		Annotations:  map[string]string{system.REQUIRED_PERMISSION: system.PERMISSION_INFRASTRUCTURES_WRITE},
+		Args:         cobra.ExactArgs(1),
+		RunE: func(cmd *cobra.Command, args []string) error {
+			return infrastructure.InfrastructureCancelDeploy(cmd.Context(), args[0])
 		},
 	}
 
@@ -607,6 +637,8 @@ func init() {
 	infrastructureDeployCmd.Flags().BoolVar(&infrastructureFlags.forceShutdown, "force-shutdown", false, "If set, deploy will force shutdown of all servers in the infrastructure.")
 
 	infrastructureCmd.AddCommand(infrastructureRevertCmd)
+
+	infrastructureCmd.AddCommand(infrastructureCancelDeployCmd)
 
 	infrastructureCmd.AddCommand(infrastructureGetUsersCmd)
 
