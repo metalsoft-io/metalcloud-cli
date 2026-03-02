@@ -536,6 +536,17 @@ Examples:
 		},
 	}
 
+	serverIdentifyCmd = &cobra.Command{
+		Use:          "identify server_id",
+		Short:        "Identify a server by blinking its chassis LED",
+		SilenceUsage: true,
+		Annotations:  map[string]string{system.REQUIRED_PERMISSION: system.PERMISSION_SERVERS_WRITE},
+		Args:         cobra.ExactArgs(1),
+		RunE: func(cmd *cobra.Command, args []string) error {
+			return server.ServerIdentify(cmd.Context(), args[0])
+		},
+	}
+
 	// New Firmware Management Commands
 	serverFirmwareCmd = &cobra.Command{
 		Use:     "firmware [command]",
@@ -895,6 +906,8 @@ func init() {
 	serverCmd.AddCommand(serverRemoteConsoleInfoCmd)
 
 	serverCmd.AddCommand(serverCapabilitiesCmd)
+
+	serverCmd.AddCommand(serverIdentifyCmd)
 
 	// Firmware commands
 	serverCmd.AddCommand(serverFirmwareCmd)

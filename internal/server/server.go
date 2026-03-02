@@ -2,7 +2,9 @@ package server
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
+	"io"
 	"strconv"
 
 	"github.com/metalsoft-io/metalcloud-cli/pkg/api"
@@ -12,6 +14,26 @@ import (
 	"github.com/metalsoft-io/metalcloud-cli/pkg/utils"
 	sdk "github.com/metalsoft-io/metalcloud-sdk-go"
 )
+
+// serverRaw works around the SDK bug where Server.ServerMetricsMetadata
+// is typed as a struct but the API may return an array.
+type serverRaw struct {
+	ServerId          float32     `json:"serverId"`
+	SiteId            float32     `json:"siteId"`
+	ServerTypeId      float32     `json:"serverTypeId"`
+	ServerUUID        string      `json:"serverUUID"`
+	SerialNumber      string      `json:"serialNumber"`
+	ManagementAddress string      `json:"managementAddress"`
+	Vendor            string      `json:"vendor"`
+	Model             string      `json:"model"`
+	ServerStatus      string      `json:"serverStatus"`
+	Revision          float32     `json:"revision"`
+	Links             interface{} `json:"links,omitempty"`
+}
+
+type serverListRaw struct {
+	Data []serverRaw `json:"data"`
+}
 
 var serverPrintConfig = formatter.PrintConfig{
 	FieldsConfig: map[string]formatter.RecordFieldConfig{
@@ -95,21 +117,41 @@ func ServerList(ctx context.Context, showCredentials bool, filterStatus []string
 		request = request.FilterServerTypeId(utils.ProcessFilterStringSlice(filterType))
 	}
 
-	serverList, httpRes, err := request.Execute()
-	if err := response_inspector.InspectResponse(httpRes, err); err != nil {
-		return err
+	_, httpRes, sdkErr := request.Execute()
+
+	if httpRes != nil && httpRes.StatusCode >= 400 {
+		if err := response_inspector.InspectResponse(httpRes, sdkErr); err != nil {
+			return err
+		}
+	} else if httpRes == nil {
+		return sdkErr
+	}
+
+	body, err := io.ReadAll(httpRes.Body)
+	if err != nil {
+		return fmt.Errorf("failed to read response body: %w", err)
+	}
+
+	var raw serverListRaw
+	if err := json.Unmarshal(body, &raw); err != nil {
+		return fmt.Errorf("failed to parse servers: %w", err)
 	}
 
 	if showCredentials {
-		data := make([]serversWithCredentials, 0, len(serverList.Data))
+		type serverRawWithCredentials struct {
+			ServerInfo        serverRaw            `json:"serverInfo"`
+			ServerCredentials sdk.ServerCredentials `json:"serverCredentials"`
+		}
 
-		for _, server := range serverList.Data {
+		data := make([]serverRawWithCredentials, 0, len(raw.Data))
+
+		for _, server := range raw.Data {
 			serverCredentials, httpRes, err := client.ServerAPI.GetServerCredentials(ctx, server.ServerId).Execute()
 			if err := response_inspector.InspectResponse(httpRes, err); err != nil {
 				return err
 			}
 
-			data = append(data, serversWithCredentials{
+			data = append(data, serverRawWithCredentials{
 				ServerInfo:        server,
 				ServerCredentials: *serverCredentials,
 			})
@@ -118,7 +160,7 @@ func ServerList(ctx context.Context, showCredentials bool, filterStatus []string
 		return formatter.PrintResult(data, &serverWithCredentialsPrintConfig)
 	}
 
-	return formatter.PrintResult(serverList, &serverPrintConfig)
+	return formatter.PrintResult(raw.Data, &serverPrintConfig)
 }
 
 func ServerGet(ctx context.Context, serverId string, showCredentials bool) error {
@@ -534,6 +576,25 @@ func ServerCapabilities(ctx context.Context, serverId string) error {
 			},
 		},
 	})
+}
+
+func ServerIdentify(ctx context.Context, serverId string) error {
+	logger.Get().Info().Msgf("Identifying server '%s'", serverId)
+
+	id, err := GetServerId(serverId)
+	if err != nil {
+		return err
+	}
+
+	client := api.GetApiClient(ctx)
+
+	httpRes, err := client.ServerAPI.IdentifyServer(ctx, id).Execute()
+	if err := response_inspector.InspectResponse(httpRes, err); err != nil {
+		return err
+	}
+
+	fmt.Println("Server identification initiated (chassis LED blinking).")
+	return nil
 }
 
 func GetServerId(serverId string) (float32, error) {

@@ -2,8 +2,11 @@ package site
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
+	"io"
 	"strconv"
+	"strings"
 
 	"github.com/metalsoft-io/metalcloud-cli/pkg/api"
 	"github.com/metalsoft-io/metalcloud-cli/pkg/formatter"
@@ -281,6 +284,47 @@ func SiteGetConfig(ctx context.Context, siteIdOrName string) error {
 	}
 
 	return formatter.PrintResult(siteConfig, &siteConfigPrintConfig)
+}
+
+func SiteOneLiner(ctx context.Context, siteIdOrLabel string, onelinerConfig sdk.GenerateSiteControllerOneliner) error {
+	logger.Get().Info().Msgf("Getting site controller one-liner for '%s'", siteIdOrLabel)
+
+	site, err := GetSiteByIdOrLabel(ctx, siteIdOrLabel)
+	if err != nil {
+		return err
+	}
+
+	client := api.GetApiClient(ctx)
+
+	_, httpRes, sdkErr := client.SiteAPI.GetSiteControllerOneLiner(ctx, float32(site.Id)).
+		GenerateSiteControllerOneliner(onelinerConfig).
+		Execute()
+
+	if httpRes != nil && httpRes.StatusCode >= 400 {
+		if err := response_inspector.InspectResponse(httpRes, sdkErr); err != nil {
+			return err
+		}
+	} else if httpRes == nil {
+		return sdkErr
+	}
+
+	body, err := io.ReadAll(httpRes.Body)
+	if err != nil {
+		return fmt.Errorf("failed to read response body: %w", err)
+	}
+
+	// Try JSON first (command field), fall back to plain text
+	var result struct {
+		Command string `json:"command"`
+	}
+	if err := json.Unmarshal(body, &result); err == nil && result.Command != "" {
+		fmt.Println(result.Command)
+	} else {
+		output := strings.TrimRight(string(body), "\n\r")
+		fmt.Println(output)
+	}
+
+	return nil
 }
 
 func SiteUpdateConfig(ctx context.Context, siteIdOrName string, config []byte) error {

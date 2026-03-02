@@ -2,8 +2,11 @@ package vm_instance
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
+	"io"
 	"net/http"
+	"strconv"
 
 	"github.com/metalsoft-io/metalcloud-cli/pkg/api"
 	"github.com/metalsoft-io/metalcloud-cli/pkg/formatter"
@@ -11,6 +14,27 @@ import (
 	"github.com/metalsoft-io/metalcloud-cli/pkg/response_inspector"
 	"github.com/metalsoft-io/metalcloud-cli/pkg/utils"
 )
+
+// vmInstanceRaw works around the SDK bug where VMInstance.Links is typed as
+// map[string]interface{} but the API may return an array.
+type vmInstanceRaw struct {
+	Id                float32     `json:"id"`
+	Label             string      `json:"label"`
+	InfrastructureId  float32     `json:"infrastructureId"`
+	GroupId           float32     `json:"groupId"`
+	ServiceStatus     string      `json:"serviceStatus"`
+	TypeId            float32     `json:"typeId"`
+	DiskSizeGB        float32     `json:"diskSizeGB"`
+	RamGB             float32     `json:"ramGB"`
+	CpuCores          float32     `json:"cpuCores"`
+	CreatedTimestamp   string      `json:"createdTimestamp"`
+	UpdatedTimestamp   string      `json:"updatedTimestamp"`
+	Links             interface{} `json:"links,omitempty"`
+}
+
+type vmInstanceListRaw struct {
+	Data []vmInstanceRaw `json:"data"`
+}
 
 var vmInstancePrintConfig = formatter.PrintConfig{
 	FieldsConfig: map[string]formatter.RecordFieldConfig{
@@ -98,13 +122,28 @@ func VMInstanceList(ctx context.Context, infrastructureId string) error {
 
 	client := api.GetApiClient(ctx)
 
-	vmInstancesList, httpRes, err := client.VMInstanceAPI.GetInfrastructureVMInstances(
+	_, httpRes, sdkErr := client.VMInstanceAPI.GetInfrastructureVMInstances(
 		ctx, infraIdNumerical).Execute()
-	if err := response_inspector.InspectResponse(httpRes, err); err != nil {
-		return err
+
+	if httpRes != nil && httpRes.StatusCode >= 400 {
+		if err := response_inspector.InspectResponse(httpRes, sdkErr); err != nil {
+			return err
+		}
+	} else if httpRes == nil {
+		return sdkErr
 	}
 
-	return formatter.PrintResult(vmInstancesList.Data, &vmInstancePrintConfig)
+	body, err := io.ReadAll(httpRes.Body)
+	if err != nil {
+		return fmt.Errorf("failed to read response body: %w", err)
+	}
+
+	var raw vmInstanceListRaw
+	if err := json.Unmarshal(body, &raw); err != nil {
+		return fmt.Errorf("failed to parse VM instances: %w", err)
+	}
+
+	return formatter.PrintResult(raw.Data, &vmInstancePrintConfig)
 }
 
 func VMInstanceGetConfig(ctx context.Context, infrastructureId string, vmInstanceId string) error {
@@ -191,5 +230,38 @@ func VMInstanceGetPowerStatus(ctx context.Context, infrastructureId string, vmIn
 	}
 
 	logger.Get().Info().Msgf("VM instance %s power status: %s", vmInstanceId, powerStatus)
+	return nil
+}
+
+func VMInstanceGetCredentials(ctx context.Context, infraIdStr string, vmInstanceIdStr string) error {
+	logger.Get().Info().Msgf("Getting credentials for VM instance '%s' in infrastructure '%s'", vmInstanceIdStr, infraIdStr)
+
+	infraId, err := strconv.ParseInt(infraIdStr, 10, 32)
+	if err != nil {
+		return fmt.Errorf("invalid infrastructure ID '%s': %w", infraIdStr, err)
+	}
+
+	vmInstanceId, err := strconv.ParseInt(vmInstanceIdStr, 10, 32)
+	if err != nil {
+		return fmt.Errorf("invalid VM instance ID '%s': %w", vmInstanceIdStr, err)
+	}
+
+	client := api.GetApiClient(ctx)
+
+	creds, httpRes, err := client.VMInstanceAPI.GetVMInstanceCredentials(ctx, int32(infraId), int32(vmInstanceId)).Execute()
+	if err := response_inspector.InspectResponse(httpRes, err); err != nil {
+		return err
+	}
+
+	if creds.Username != nil {
+		fmt.Printf("Username: %s\n", *creds.Username)
+	}
+	if creds.InitialPassword != nil {
+		fmt.Printf("Password: %s\n", *creds.InitialPassword)
+	}
+	if creds.PublicSshKey != nil && *creds.PublicSshKey != "" {
+		fmt.Printf("SSH Key:  %s\n", *creds.PublicSshKey)
+	}
+
 	return nil
 }

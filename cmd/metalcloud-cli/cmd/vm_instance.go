@@ -443,6 +443,18 @@ EXAMPLES:
 		},
 	}
 
+	vmInstanceCredentialsCmd = &cobra.Command{
+		Use:          "credentials infrastructure_id vm_instance_id",
+		Aliases:      []string{"creds"},
+		Short:        "Get login credentials for a VM instance",
+		SilenceUsage: true,
+		Annotations:  map[string]string{system.REQUIRED_PERMISSION: system.PERMISSION_VM_INSTANCES_READ},
+		Args:         cobra.ExactArgs(2),
+		RunE: func(cmd *cobra.Command, args []string) error {
+			return vm_instance.VMInstanceGetCredentials(cmd.Context(), args[0], args[1])
+		},
+	}
+
 	vmInstancePowerStatusCmd = &cobra.Command{
 		Use:   "power-status infrastructure_id vm_instance_id",
 		Short: "Get VM instance power status",
@@ -507,4 +519,6 @@ func init() {
 	vmInstanceCmd.AddCommand(vmInstanceRebootCmd)
 
 	vmInstanceCmd.AddCommand(vmInstancePowerStatusCmd)
+
+	vmInstanceCmd.AddCommand(vmInstanceCredentialsCmd)
 }

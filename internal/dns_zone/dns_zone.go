@@ -2,8 +2,11 @@ package dns_zone
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
+	"io"
 	"strconv"
+	"strings"
 
 	"github.com/metalsoft-io/metalcloud-cli/pkg/api"
 	"github.com/metalsoft-io/metalcloud-cli/pkg/formatter"
@@ -146,6 +149,90 @@ func DNSZoneDelete(ctx context.Context, dnsZoneId string) error {
 
 	logger.Get().Info().Msgf("DNS zone '%s' deleted successfully", dnsZoneId)
 	return nil
+}
+
+var dnsRecordSetPrintConfig = formatter.PrintConfig{
+	FieldsConfig: map[string]formatter.RecordFieldConfig{
+		"Id": {
+			Title: "#",
+			Order: 1,
+		},
+		"Name": {
+			Order: 2,
+		},
+		"Type": {
+			Order: 3,
+		},
+		"Records": {
+			Order: 4,
+			Transformer: func(v interface{}) string {
+				if records, ok := v.([]string); ok {
+					return strings.Join(records, ", ")
+				}
+				return fmt.Sprintf("%v", v)
+			},
+		},
+		"Ttl": {
+			Title: "TTL",
+			Order: 5,
+		},
+		"Status": {
+			Order:       6,
+			Transformer: formatter.FormatStatusValue,
+		},
+		"ZoneName": {
+			Title: "Zone",
+			Order: 7,
+		},
+	},
+}
+
+type dnsRecordSetRaw struct {
+	Id       float32     `json:"id"`
+	Name     string      `json:"name"`
+	Type     string      `json:"type"`
+	Records  []string    `json:"records"`
+	Ttl      float32     `json:"ttl"`
+	Status   string      `json:"status"`
+	ZoneName string      `json:"zoneName"`
+	Links    interface{} `json:"links,omitempty"`
+}
+
+type dnsRecordSetListRaw struct {
+	Data []dnsRecordSetRaw `json:"data"`
+}
+
+func DNSZoneRecords(ctx context.Context, dnsZoneId string) error {
+	logger.Get().Info().Msgf("Getting DNS record sets for zone '%s'", dnsZoneId)
+
+	id, err := GetDNSZoneId(dnsZoneId)
+	if err != nil {
+		return err
+	}
+
+	client := api.GetApiClient(ctx)
+
+	_, httpRes, sdkErr := client.DNSZoneAPI.ListDNSRecordSetsByZoneId(ctx, id).Execute()
+
+	if httpRes != nil && httpRes.StatusCode >= 400 {
+		if err := response_inspector.InspectResponse(httpRes, sdkErr); err != nil {
+			return err
+		}
+	} else if httpRes == nil {
+		return sdkErr
+	}
+
+	body, err := io.ReadAll(httpRes.Body)
+	if err != nil {
+		return fmt.Errorf("failed to read response body: %w", err)
+	}
+
+	var raw dnsRecordSetListRaw
+	if err := json.Unmarshal(body, &raw); err != nil {
+		return fmt.Errorf("failed to parse DNS record sets: %w", err)
+	}
+
+	return formatter.PrintResult(raw.Data, &dnsRecordSetPrintConfig)
 }
 
 func GetDNSZoneId(dnsZoneId string) (float32, error) {

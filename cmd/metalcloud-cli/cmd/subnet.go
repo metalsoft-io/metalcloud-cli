@@ -203,6 +203,28 @@ Examples:
 		},
 	}
 
+	subnetIpsCmd = &cobra.Command{
+		Use:          "ips subnet_id",
+		Short:        "List allocated IPs in a subnet",
+		SilenceUsage: true,
+		Annotations:  map[string]string{system.REQUIRED_PERMISSION: system.PERMISSION_SUBNETS_READ},
+		Args:         cobra.ExactArgs(1),
+		RunE: func(cmd *cobra.Command, args []string) error {
+			return subnet.SubnetIps(cmd.Context(), args[0])
+		},
+	}
+
+	subnetIpRangesCmd = &cobra.Command{
+		Use:          "ip-ranges subnet_id",
+		Short:        "List IP ranges in a subnet",
+		SilenceUsage: true,
+		Annotations:  map[string]string{system.REQUIRED_PERMISSION: system.PERMISSION_SUBNETS_READ},
+		Args:         cobra.ExactArgs(1),
+		RunE: func(cmd *cobra.Command, args []string) error {
+			return subnet.SubnetIpRanges(cmd.Context(), args[0])
+		},
+	}
+
 	subnetDeleteCmd = &cobra.Command{
 		Use:     "delete subnet_id",
 		Aliases: []string{"rm"},
@@ -247,4 +269,7 @@ func init() {
 	subnetUpdateCmd.MarkFlagsOneRequired("config-source")
 
 	subnetCmd.AddCommand(subnetDeleteCmd)
+
+	subnetCmd.AddCommand(subnetIpsCmd)
+	subnetCmd.AddCommand(subnetIpRangesCmd)
 }

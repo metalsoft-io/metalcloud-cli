@@ -1,15 +1,31 @@
 package cmd
 
 import (
+	"context"
+	"net/url"
+
 	"github.com/metalsoft-io/metalcloud-cli/cmd/metalcloud-cli/system"
 	"github.com/metalsoft-io/metalcloud-cli/internal/site"
+	"github.com/metalsoft-io/metalcloud-cli/pkg/api"
 	"github.com/metalsoft-io/metalcloud-cli/pkg/utils"
+	sdk "github.com/metalsoft-io/metalcloud-sdk-go"
 	"github.com/spf13/cobra"
+	"github.com/spf13/viper"
 )
 
 var (
 	siteFlags = struct {
 		configSource string
+	}{}
+
+	siteOneLinerFlags = struct {
+		registry    string
+		gitHubTag   string
+		sslHostname string
+		imagesTag   string
+		tunnelSecret string
+		usePodman   bool
+		inbandMode  bool
 	}{}
 
 	siteCmd = &cobra.Command{
@@ -285,6 +301,57 @@ Examples:
 		},
 	}
 
+	siteOneLinerCmd = &cobra.Command{
+		Use:          "one-liner site_id_or_label",
+		Aliases:      []string{"oneliner", "install-script"},
+		Short:        "Get the site controller agent install script",
+		SilenceUsage: true,
+		Annotations:  map[string]string{system.REQUIRED_PERMISSION: system.PERMISSION_SITES_READ},
+		Args:         cobra.ExactArgs(1),
+		PreRunE: func(cmd *cobra.Command, args []string) error {
+			// Resolve --registry default
+			if !cmd.Flags().Changed("registry") {
+				siteOneLinerFlags.registry = "registry.metalsoft.dev"
+			}
+
+			// Resolve --github-tag default
+			if !cmd.Flags().Changed("github-tag") {
+				siteOneLinerFlags.gitHubTag = "main"
+			}
+
+			// Resolve --ssl-hostname default from the endpoint URL
+			if !cmd.Flags().Changed("ssl-hostname") {
+				endpoint := viper.GetString(system.ConfigEndpoint)
+				if u, err := url.Parse(endpoint); err == nil && u.Hostname() != "" {
+					siteOneLinerFlags.sslHostname = u.Hostname()
+				}
+			}
+
+			// Resolve --images-tag default from the system version API
+			if !cmd.Flags().Changed("images-tag") {
+				client := api.GetApiClient(cmd.Context())
+				version, _, err := client.SystemAPI.GetVersion(cmd.Context()).Execute()
+				if err == nil && version.Version != "" {
+					siteOneLinerFlags.imagesTag = version.Version
+				}
+			}
+
+			return nil
+		},
+		RunE: func(cmd *cobra.Command, args []string) error {
+			config := sdk.GenerateSiteControllerOneliner{
+				Registry:       siteOneLinerFlags.registry,
+				GitHubTag:      siteOneLinerFlags.gitHubTag,
+				SslHostname:    siteOneLinerFlags.sslHostname,
+				ImagesTag:      siteOneLinerFlags.imagesTag,
+				MsTunnelSecret: siteOneLinerFlags.tunnelSecret,
+				UsePodman:      siteOneLinerFlags.usePodman,
+				InbandMode:     siteOneLinerFlags.inbandMode,
+			}
+			return site.SiteOneLiner(cmd.Context(), args[0], config)
+		},
+	}
+
 	siteUpdateConfigCmd = &cobra.Command{
 		Use:     "update-config site_id_or_name",
 		Aliases: []string{"edit-config"},
@@ -350,6 +417,46 @@ func init() {
 	siteCmd.AddCommand(siteGetAgentsCmd)
 
 	siteCmd.AddCommand(siteGetConfigCmd)
+
+	siteCmd.AddCommand(siteOneLinerCmd)
+	siteOneLinerCmd.Flags().StringVar(&siteOneLinerFlags.registry, "registry", "", "Container registry URL \x1b[33m(default: registry.metalsoft.dev)\x1b[0m")
+	siteOneLinerCmd.Flags().StringVar(&siteOneLinerFlags.gitHubTag, "github-tag", "", "GitHub tag for deploy-agents.sh script \x1b[33m(default: main)\x1b[0m")
+	siteOneLinerCmd.Flags().StringVar(&siteOneLinerFlags.sslHostname, "ssl-hostname", "", "SSL hostname")
+
+	// Resolve defaults from config for help text display
+	v := viper.New()
+	v.SetConfigName(system.ConfigName)
+	v.SetConfigType(system.ConfigType)
+	v.AddConfigPath(system.ConfigPath1)
+	v.AddConfigPath(system.ConfigPath2)
+	v.AddConfigPath(system.ConfigPath3)
+	v.SetEnvPrefix(system.ConfigPrefix)
+	v.AutomaticEnv()
+	v.ReadInConfig() //nolint:errcheck
+
+	if endpoint := v.GetString(system.ConfigEndpoint); endpoint != "" {
+		if u, err := url.Parse(endpoint); err == nil && u.Hostname() != "" {
+			siteOneLinerCmd.Flags().Lookup("ssl-hostname").Usage = "SSL hostname \x1b[33m(default: " + u.Hostname() + ")\x1b[0m"
+		}
+	}
+
+	siteOneLinerCmd.Flags().StringVar(&siteOneLinerFlags.imagesTag, "images-tag", "", "Docker images tag version \x1b[33m(default: auto-detected from system version)\x1b[0m")
+	siteOneLinerCmd.Flags().StringVar(&siteOneLinerFlags.tunnelSecret, "tunnel-secret", "", "MS Tunnel secret for secure connections (required)")
+
+	if apiKey := v.GetString("api_key"); apiKey != "" {
+		if endpoint := v.GetString(system.ConfigEndpoint); endpoint != "" {
+			ctx := api.SetApiClient(context.Background(), endpoint, apiKey, false, v.GetBool("insecure_skip_verify"))
+			if client, err := api.GetApiClientE(ctx); err == nil {
+				version, _, err := client.SystemAPI.GetVersion(ctx).Execute()
+				if err == nil && version != nil && version.Version != "" {
+					siteOneLinerCmd.Flags().Lookup("images-tag").Usage = "Docker images tag version \x1b[33m(default: " + version.Version + ")\x1b[0m"
+				}
+			}
+		}
+	}
+	siteOneLinerCmd.Flags().BoolVar(&siteOneLinerFlags.usePodman, "use-podman", false, "Use Podman instead of Docker")
+	siteOneLinerCmd.Flags().BoolVar(&siteOneLinerFlags.inbandMode, "inband-mode", false, "Install in inband mode")
+	siteOneLinerCmd.MarkFlagRequired("tunnel-secret")
 
 	siteCmd.AddCommand(siteUpdateConfigCmd)
 	siteUpdateConfigCmd.Flags().StringVar(&siteFlags.configSource, "config-source", "", "Source of the site configuration. Can be 'pipe' for stdin or path to a JSON file (required).")

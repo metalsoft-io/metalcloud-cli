@@ -2,7 +2,9 @@ package subnet
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
+	"io"
 	"strconv"
 
 	"github.com/metalsoft-io/metalcloud-cli/pkg/api"
@@ -167,6 +169,154 @@ func SubnetConfigExample(ctx context.Context) error {
 	}
 
 	return formatter.PrintResult(subnetConfiguration, nil)
+}
+
+var subnetIpPrintConfig = formatter.PrintConfig{
+	FieldsConfig: map[string]formatter.RecordFieldConfig{
+		"Id": {
+			Title: "#",
+			Order: 1,
+		},
+		"Name": {
+			Order: 2,
+		},
+		"Address": {
+			Order: 3,
+		},
+		"IpVersion": {
+			Title: "IP Version",
+			Order: 4,
+		},
+		"SubnetId": {
+			Title: "Subnet",
+			Order: 5,
+		},
+	},
+}
+
+var subnetIpRangePrintConfig = formatter.PrintConfig{
+	FieldsConfig: map[string]formatter.RecordFieldConfig{
+		"Id": {
+			Title: "#",
+			Order: 1,
+		},
+		"Name": {
+			Order: 2,
+		},
+		"StartAddress": {
+			Title: "Start",
+			Order: 3,
+		},
+		"EndAddress": {
+			Title: "End",
+			Order: 4,
+		},
+		"IpVersion": {
+			Title: "IP Version",
+			Order: 5,
+		},
+		"SubnetId": {
+			Title: "Subnet",
+			Order: 6,
+		},
+	},
+}
+
+// subnetIpRaw works around the SDK bug where Links is typed as
+// map[string]interface{} but the API may return an array.
+type subnetIpRaw struct {
+	Id        float32     `json:"id"`
+	Name      string      `json:"name"`
+	Address   string      `json:"address"`
+	IpVersion string      `json:"ipVersion"`
+	SubnetId  float32     `json:"subnetId"`
+	Links     interface{} `json:"links,omitempty"`
+}
+
+type subnetIpListRaw struct {
+	Data []subnetIpRaw `json:"data"`
+}
+
+// subnetIpRangeRaw works around the SDK bug where Links is typed as
+// map[string]interface{} but the API may return an array.
+type subnetIpRangeRaw struct {
+	Id           float32     `json:"id"`
+	Name         string      `json:"name"`
+	StartAddress string      `json:"startAddress"`
+	EndAddress   string      `json:"endAddress"`
+	IpVersion    string      `json:"ipVersion"`
+	SubnetId     float32     `json:"subnetId"`
+	Links        interface{} `json:"links,omitempty"`
+}
+
+type subnetIpRangeListRaw struct {
+	Data []subnetIpRangeRaw `json:"data"`
+}
+
+func SubnetIps(ctx context.Context, subnetId string) error {
+	logger.Get().Info().Msgf("Getting IPs for subnet '%s'", subnetId)
+
+	id, err := getSubnetId(subnetId)
+	if err != nil {
+		return err
+	}
+
+	client := api.GetApiClient(ctx)
+
+	_, httpRes, sdkErr := client.SubnetAPI.GetSubnetIps(ctx, id).Execute()
+
+	if httpRes != nil && httpRes.StatusCode >= 400 {
+		if err := response_inspector.InspectResponse(httpRes, sdkErr); err != nil {
+			return err
+		}
+	} else if httpRes == nil {
+		return sdkErr
+	}
+
+	body, err := io.ReadAll(httpRes.Body)
+	if err != nil {
+		return fmt.Errorf("failed to read response body: %w", err)
+	}
+
+	var raw subnetIpListRaw
+	if err := json.Unmarshal(body, &raw); err != nil {
+		return fmt.Errorf("failed to parse subnet IPs: %w", err)
+	}
+
+	return formatter.PrintResult(raw.Data, &subnetIpPrintConfig)
+}
+
+func SubnetIpRanges(ctx context.Context, subnetId string) error {
+	logger.Get().Info().Msgf("Getting IP ranges for subnet '%s'", subnetId)
+
+	id, err := getSubnetId(subnetId)
+	if err != nil {
+		return err
+	}
+
+	client := api.GetApiClient(ctx)
+
+	_, httpRes, sdkErr := client.SubnetAPI.GetSubnetIpRanges(ctx, id).Execute()
+
+	if httpRes != nil && httpRes.StatusCode >= 400 {
+		if err := response_inspector.InspectResponse(httpRes, sdkErr); err != nil {
+			return err
+		}
+	} else if httpRes == nil {
+		return sdkErr
+	}
+
+	body, err := io.ReadAll(httpRes.Body)
+	if err != nil {
+		return fmt.Errorf("failed to read response body: %w", err)
+	}
+
+	var raw subnetIpRangeListRaw
+	if err := json.Unmarshal(body, &raw); err != nil {
+		return fmt.Errorf("failed to parse subnet IP ranges: %w", err)
+	}
+
+	return formatter.PrintResult(raw.Data, &subnetIpRangePrintConfig)
 }
 
 func getSubnetId(subnetId string) (float32, error) {
