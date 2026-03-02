@@ -169,6 +169,93 @@ func SubnetConfigExample(ctx context.Context) error {
 	return formatter.PrintResult(subnetConfiguration, nil)
 }
 
+var subnetIpPrintConfig = formatter.PrintConfig{
+	FieldsConfig: map[string]formatter.RecordFieldConfig{
+		"Id": {
+			Title: "#",
+			Order: 1,
+		},
+		"Name": {
+			Order: 2,
+		},
+		"Address": {
+			Order: 3,
+		},
+		"IpVersion": {
+			Title: "IP Version",
+			Order: 4,
+		},
+		"SubnetId": {
+			Title: "Subnet",
+			Order: 5,
+		},
+	},
+}
+
+var subnetIpRangePrintConfig = formatter.PrintConfig{
+	FieldsConfig: map[string]formatter.RecordFieldConfig{
+		"Id": {
+			Title: "#",
+			Order: 1,
+		},
+		"Name": {
+			Order: 2,
+		},
+		"StartAddress": {
+			Title: "Start",
+			Order: 3,
+		},
+		"EndAddress": {
+			Title: "End",
+			Order: 4,
+		},
+		"IpVersion": {
+			Title: "IP Version",
+			Order: 5,
+		},
+		"SubnetId": {
+			Title: "Subnet",
+			Order: 6,
+		},
+	},
+}
+
+func SubnetIps(ctx context.Context, subnetId string) error {
+	logger.Get().Info().Msgf("Getting IPs for subnet '%s'", subnetId)
+
+	id, err := getSubnetId(subnetId)
+	if err != nil {
+		return err
+	}
+
+	client := api.GetApiClient(ctx)
+
+	result, httpRes, err := client.SubnetAPI.GetSubnetIps(ctx, id).Execute()
+	if err := response_inspector.InspectResponse(httpRes, err); err != nil {
+		return err
+	}
+
+	return formatter.PrintResult(result, &subnetIpPrintConfig)
+}
+
+func SubnetIpRanges(ctx context.Context, subnetId string) error {
+	logger.Get().Info().Msgf("Getting IP ranges for subnet '%s'", subnetId)
+
+	id, err := getSubnetId(subnetId)
+	if err != nil {
+		return err
+	}
+
+	client := api.GetApiClient(ctx)
+
+	result, httpRes, err := client.SubnetAPI.GetSubnetIpRanges(ctx, id).Execute()
+	if err := response_inspector.InspectResponse(httpRes, err); err != nil {
+		return err
+	}
+
+	return formatter.PrintResult(result, &subnetIpRangePrintConfig)
+}
+
 func getSubnetId(subnetId string) (float32, error) {
 	subnetIdNumeric, err := strconv.ParseFloat(subnetId, 32)
 	if err != nil {

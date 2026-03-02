@@ -51,6 +51,24 @@ var serverInstancePrintConfig = formatter.PrintConfig{
 	},
 }
 
+func ServerInstanceList(ctx context.Context, infraId string) error {
+	logger.Get().Info().Msgf("Listing server instances for infrastructure '%s'", infraId)
+
+	id, err := strconv.ParseInt(infraId, 10, 32)
+	if err != nil {
+		return fmt.Errorf("invalid infrastructure ID '%s': %w", infraId, err)
+	}
+
+	client := api.GetApiClient(ctx)
+
+	result, httpRes, err := client.ServerInstanceAPI.GetInfrastructureServerInstances(ctx, int32(id)).Execute()
+	if err := response_inspector.InspectResponse(httpRes, err); err != nil {
+		return err
+	}
+
+	return formatter.PrintResult(result, &serverInstancePrintConfig)
+}
+
 func ServerInstanceGet(ctx context.Context, serverInstanceId string) error {
 	logger.Get().Info().Msgf("Get server instance details for %s", serverInstanceId)
 

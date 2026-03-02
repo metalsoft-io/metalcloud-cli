@@ -580,6 +580,18 @@ Examples:
 		},
 	}
 
+	serverInstanceListCmd = &cobra.Command{
+		Use:          "list infrastructure_id",
+		Aliases:      []string{"ls"},
+		Short:        "List all server instances in an infrastructure",
+		SilenceUsage: true,
+		Annotations:  map[string]string{system.REQUIRED_PERMISSION: system.PERMISSION_SERVER_INSTANCES_READ},
+		Args:         cobra.ExactArgs(1),
+		RunE: func(cmd *cobra.Command, args []string) error {
+			return server_instance.ServerInstanceList(cmd.Context(), args[0])
+		},
+	}
+
 	serverInstanceGetCmd = &cobra.Command{
 		Use:     "get server_instance_id",
 		Aliases: []string{"show"},
@@ -649,6 +661,8 @@ func init() {
 	rootCmd.AddCommand(serverInstanceCmd)
 
 	serverInstanceCmd.AddCommand(serverInstanceGetCmd)
+
+	serverInstanceCmd.AddCommand(serverInstanceListCmd)
 
 	serverInstanceCmd.AddCommand(serverInstancePowerCmd)
 	serverInstanceCmd.AddCommand(serverInstancePowerStatusCmd)

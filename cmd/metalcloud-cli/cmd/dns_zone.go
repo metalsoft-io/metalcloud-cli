@@ -213,6 +213,18 @@ Examples:
 		},
 	}
 
+	dnsZoneRecordsCmd = &cobra.Command{
+		Use:          "records zone_id",
+		Aliases:      []string{"record-sets"},
+		Short:        "List DNS record sets in a zone",
+		SilenceUsage: true,
+		Annotations:  map[string]string{system.REQUIRED_PERMISSION: system.PERMISSION_GLOBAL_CONFIGURATIONS_READ},
+		Args:         cobra.ExactArgs(1),
+		RunE: func(cmd *cobra.Command, args []string) error {
+			return dns_zone.DNSZoneRecords(cmd.Context(), args[0])
+		},
+	}
+
 	dnsZoneDeleteCmd = &cobra.Command{
 		Use:     "delete dns_zone_id",
 		Aliases: []string{"rm", "remove"},
@@ -269,4 +281,6 @@ func init() {
 	dnsZoneUpdateCmd.MarkFlagsOneRequired("config-source")
 
 	dnsZoneCmd.AddCommand(dnsZoneDeleteCmd)
+
+	dnsZoneCmd.AddCommand(dnsZoneRecordsCmd)
 }
