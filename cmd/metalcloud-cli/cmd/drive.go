@@ -33,6 +33,7 @@ Available Commands:
   get-hosts     Show hosts assigned to a drive
   update-hosts  Update host assignments for a drive
   config-info   Get configuration information for a drive
+  snapshot      Manage drive snapshots (list, create, delete, restore)
 
 Examples:
   # List all drives in an infrastructure
@@ -315,6 +316,131 @@ Examples:
 		},
 	}
 
+	driveSnapshotCmd = &cobra.Command{
+		Use:   "snapshot [command]",
+		Short: "Manage drive snapshots",
+		Long: `Manage snapshots for drives within infrastructures.
+
+Snapshots allow you to capture and restore the state of a drive at a specific point in time.
+
+Available Commands:
+  list          List all snapshots for a drive
+  create        Create a new snapshot for a drive
+  delete        Delete a snapshot by name
+  restore       Restore a drive to a specific snapshot
+
+Examples:
+  # List snapshots for a drive
+  metalcloud-cli drive snapshot list my-infrastructure 12345
+
+  # Create a snapshot
+  metalcloud-cli drive snapshot create my-infrastructure 12345
+
+  # Delete a snapshot by name
+  metalcloud-cli drive snapshot delete my-infrastructure 12345 --name my-snapshot
+
+  # Restore a drive to a snapshot
+  metalcloud-cli drive snapshot restore my-infrastructure 12345 --name my-snapshot`,
+	}
+
+	driveSnapshotFlags = struct {
+		snapshotName string
+	}{}
+
+	driveSnapshotListCmd = &cobra.Command{
+		Use:   "list infrastructure_id_or_label drive_id",
+		Short: "List all snapshots for a drive",
+		Long: `List all snapshots for a specific drive within an infrastructure.
+
+Arguments:
+  infrastructure_id_or_label    The ID or label of the infrastructure
+  drive_id                     The unique identifier of the drive
+
+Examples:
+  # List snapshots for a drive
+  metalcloud-cli drive snapshot list my-infrastructure 12345
+
+  # List snapshots using infrastructure ID
+  metalcloud-cli drive snapshot list 1001 67890`,
+		SilenceUsage: true,
+		Annotations:  map[string]string{system.REQUIRED_PERMISSION: system.PERMISSION_DRIVES_READ},
+		Args:         cobra.ExactArgs(2),
+		RunE: func(cmd *cobra.Command, args []string) error {
+			return drive.DriveSnapshotList(cmd.Context(), args[0], args[1])
+		},
+	}
+
+	driveSnapshotCreateCmd = &cobra.Command{
+		Use:   "create infrastructure_id_or_label drive_id",
+		Short: "Create a new snapshot for a drive",
+		Long: `Create a new snapshot for a specific drive within an infrastructure.
+
+This captures the current state of the drive as a point-in-time snapshot.
+
+Arguments:
+  infrastructure_id_or_label    The ID or label of the infrastructure
+  drive_id                     The unique identifier of the drive
+
+Examples:
+  # Create a snapshot for a drive
+  metalcloud-cli drive snapshot create my-infrastructure 12345
+
+  # Create a snapshot using infrastructure ID
+  metalcloud-cli drive snapshot create 1001 67890`,
+		SilenceUsage: true,
+		Annotations:  map[string]string{system.REQUIRED_PERMISSION: system.PERMISSION_DRIVES_WRITE},
+		Args:         cobra.ExactArgs(2),
+		RunE: func(cmd *cobra.Command, args []string) error {
+			return drive.DriveSnapshotCreate(cmd.Context(), args[0], args[1])
+		},
+	}
+
+	driveSnapshotDeleteCmd = &cobra.Command{
+		Use:   "delete infrastructure_id_or_label drive_id",
+		Short: "Delete a snapshot by name",
+		Long: `Delete a specific snapshot by name for a drive within an infrastructure.
+
+Arguments:
+  infrastructure_id_or_label    The ID or label of the infrastructure
+  drive_id                     The unique identifier of the drive
+
+Required Flags:
+  --name string                 The name of the snapshot to delete
+
+Examples:
+  # Delete a snapshot by name
+  metalcloud-cli drive snapshot delete my-infrastructure 12345 --name my-snapshot`,
+		SilenceUsage: true,
+		Annotations:  map[string]string{system.REQUIRED_PERMISSION: system.PERMISSION_DRIVES_WRITE},
+		Args:         cobra.ExactArgs(2),
+		RunE: func(cmd *cobra.Command, args []string) error {
+			return drive.DriveSnapshotDelete(cmd.Context(), args[0], args[1], driveSnapshotFlags.snapshotName)
+		},
+	}
+
+	driveSnapshotRestoreCmd = &cobra.Command{
+		Use:   "restore infrastructure_id_or_label drive_id",
+		Short: "Restore a drive to a specific snapshot",
+		Long: `Restore a drive to the state captured by a specific snapshot.
+
+Arguments:
+  infrastructure_id_or_label    The ID or label of the infrastructure
+  drive_id                     The unique identifier of the drive
+
+Required Flags:
+  --name string                 The name of the snapshot to restore to
+
+Examples:
+  # Restore a drive to a snapshot
+  metalcloud-cli drive snapshot restore my-infrastructure 12345 --name my-snapshot`,
+		SilenceUsage: true,
+		Annotations:  map[string]string{system.REQUIRED_PERMISSION: system.PERMISSION_DRIVES_WRITE},
+		Args:         cobra.ExactArgs(2),
+		RunE: func(cmd *cobra.Command, args []string) error {
+			return drive.DriveSnapshotRestore(cmd.Context(), args[0], args[1], driveSnapshotFlags.snapshotName)
+		},
+	}
+
 	driveGetConfigInfoCmd = &cobra.Command{
 		Use:     "config-info infrastructure_id_or_label drive_id",
 		Aliases: []string{"get-config-info"},
@@ -372,4 +498,16 @@ func init() {
 	driveUpdateHostsCmd.MarkFlagsOneRequired("config-source")
 
 	driveCmd.AddCommand(driveGetConfigInfoCmd)
+
+	driveCmd.AddCommand(driveSnapshotCmd)
+	driveSnapshotCmd.AddCommand(driveSnapshotListCmd)
+	driveSnapshotCmd.AddCommand(driveSnapshotCreateCmd)
+
+	driveSnapshotCmd.AddCommand(driveSnapshotDeleteCmd)
+	driveSnapshotDeleteCmd.Flags().StringVar(&driveSnapshotFlags.snapshotName, "name", "", "Name of the snapshot to delete.")
+	driveSnapshotDeleteCmd.MarkFlagsOneRequired("name")
+
+	driveSnapshotCmd.AddCommand(driveSnapshotRestoreCmd)
+	driveSnapshotRestoreCmd.Flags().StringVar(&driveSnapshotFlags.snapshotName, "name", "", "Name of the snapshot to restore to.")
+	driveSnapshotRestoreCmd.MarkFlagsOneRequired("name")
 }
