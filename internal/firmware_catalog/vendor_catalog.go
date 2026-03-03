@@ -240,7 +240,7 @@ func (vc *VendorCatalog) CreateMetalsoftCatalog(ctx context.Context) error {
 		if repoUrl != nil {
 			binary.CacheDownloadUrl = sdk.PtrString(repoUrl.JoinPath(*binary.ExternalId).String())
 		} else {
-			binary.CacheDownloadUrl = sdk.PtrString(*binary.ExternalId)
+			binary.CacheDownloadUrl = nil
 		}
 
 		// Upload the binary to the repository if needed
