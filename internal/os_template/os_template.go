@@ -298,13 +298,18 @@ func OsTemplateSetStatus(ctx context.Context, osTemplateId string, newStatus str
 		return err
 	}
 
+	var imageBuild sdk.OSTemplateImageBuild
+	if osTemplate.ImageBuild != nil {
+		imageBuild = *osTemplate.ImageBuild
+	}
+
 	osTemplateUpdates := sdk.OSTemplateUpdate{
 		Name:        osTemplate.Name,
 		Description: osTemplate.Description,
 		Label:       osTemplate.Label,
 		Device:      osTemplate.Device,
 		Install:     osTemplate.Install,
-		ImageBuild:  *osTemplate.ImageBuild,
+		ImageBuild:  imageBuild,
 		Os:          osTemplate.Os,
 		Visibility:  &osTemplate.Visibility,
 		Tags:        osTemplate.Tags,
