@@ -15,8 +15,8 @@ var (
 	}{}
 
 	networkDeviceConfigurationTemplateCmd = &cobra.Command{
-		Use:     "network-device-configuration-template [command]",
-		Aliases: []string{"nd-config-template", "ndct"},
+		Use:     "device-template [command]",
+		Aliases: []string{"dt"},
 		Short:   "Manage network devices configuration templates",
 		Long: `Network device configuration template commands.
 
@@ -42,10 +42,10 @@ Flags:
 
 Examples:
   # List all network device configuration templates (default)
-  metalcloud-cli network-device-configuration-template list
+  metalcloud-cli network-configuration device-template list
 
   # List templates with a specific library label
-  metalcloud-cli network-device-configuration-template list --filter-library-label example-label`,
+  metalcloud-cli network-configuration device-template list --filter-library-label example-label`,
 		SilenceUsage: true,
 		Annotations:  map[string]string{system.REQUIRED_PERMISSION: system.PERMISSION_NETWORK_DEVICE_CONFIGURATION_TEMPLATES_READ},
 		RunE: func(cmd *cobra.Command, args []string) error {
@@ -64,9 +64,9 @@ Arguments:
 
 Examples:
   # Get details for network device configuration template with ID 12345
-  metalcloud-cli network-device-configuration-template get 12345
+  metalcloud-cli network-configuration device-template get 12345
   # Using alias
-  metalcloud-cli network-device-configuration-template show 12345`,
+  metalcloud-cli network-configuration device-template show 12345`,
 		SilenceUsage: true,
 		Annotations:  map[string]string{system.REQUIRED_PERMISSION: system.PERMISSION_NETWORK_DEVICE_CONFIGURATION_TEMPLATES_READ},
 		Args:         cobra.ExactArgs(1),
@@ -89,10 +89,10 @@ template configuration.
 
 Examples:
   # Display example configuration
-  metalcloud-cli network-device-configuration-template config-example -f json
+  metalcloud-cli network-configuration device-template config-example -f json
 
   # Save example to file
-  metalcloud-cli network-device-configuration-template config-example -f json > template.json`,
+  metalcloud-cli network-configuration device-template config-example -f json > template.json`,
 		SilenceUsage: true,
 		Annotations:  map[string]string{system.REQUIRED_PERMISSION: system.PERMISSION_NETWORK_DEVICE_CONFIGURATION_TEMPLATES_READ},
 		RunE: func(cmd *cobra.Command, args []string) error {
@@ -129,13 +129,13 @@ Note: Preparation and configuration fields need to be base64 encoded when submit
 
 Examples:
   # Create template from JSON file
-  metalcloud-cli network-device-configuration-template create --config-source template.json
+  metalcloud-cli network-configuration device-template create --config-source template.json
 
   # Create template from pipe input
-  cat template.json | metalcloud-cli network-device-configuration-template create --config-source pipe
+  cat template.json | metalcloud-cli network-configuration device-template create --config-source pipe
 
   # Create template with inline JSON
-  echo '{"networkDevicePosition":"all","remoteNetworkDevicePosition":"all"}' | metalcloud-cli ndct create --config-source pipe`,
+  echo '{"networkDevicePosition":"all","remoteNetworkDevicePosition":"all"}' | metalcloud-cli nc dt create --config-source pipe`,
 		SilenceUsage: true,
 		Annotations:  map[string]string{system.REQUIRED_PERMISSION: system.PERMISSION_NETWORK_DEVICE_CONFIGURATION_TEMPLATES_WRITE},
 		RunE: func(cmd *cobra.Command, args []string) error {
@@ -165,13 +165,13 @@ Required Flags:
 
 Examples:
   # Update template from JSON file
-  metalcloud-cli network-device-configuration-template update 12345 --config-source updates.json
+  metalcloud-cli network-configuration device-template update 12345 --config-source updates.json
 
   # Update template from pipe input
-  cat updates.json | metalcloud-cli network-device-configuration-template update 12345 --config-source pipe
+  cat updates.json | metalcloud-cli network-configuration device-template update 12345 --config-source pipe
 
   # Update specific field
-  echo '{"networkDevicePosition":"all"}' | metalcloud-cli ndct update 12345 --config-source pipe`,
+  echo '{"networkDevicePosition":"all"}' | metalcloud-cli nc dt update 12345 --config-source pipe`,
 		SilenceUsage: true,
 		Annotations:  map[string]string{system.REQUIRED_PERMISSION: system.PERMISSION_NETWORK_DEVICE_CONFIGURATION_TEMPLATES_WRITE},
 		Args:         cobra.ExactArgs(1),
@@ -196,10 +196,10 @@ Arguments:
 
 Examples:
   # Delete network device configuration template
-  metalcloud-cli network-device-configuration-template delete 12345
+  metalcloud-cli network-configuration device-template delete 12345
 
   # Using alias
-  metalcloud-cli ndct rm 12345`,
+  metalcloud-cli nc dt rm 12345`,
 		SilenceUsage: true,
 		Annotations:  map[string]string{system.REQUIRED_PERMISSION: system.PERMISSION_NETWORK_DEVICE_CONFIGURATION_TEMPLATES_WRITE},
 		Args:         cobra.ExactArgs(1),
@@ -210,7 +210,7 @@ Examples:
 )
 
 func init() {
-	rootCmd.AddCommand(networkDeviceConfigurationTemplateCmd)
+	networkConfigurationCmd.AddCommand(networkDeviceConfigurationTemplateCmd)
 
 	networkDeviceConfigurationTemplateCmd.AddCommand(networkDeviceConfigurationTemplateListCmd)
 	networkDeviceConfigurationTemplateListCmd.Flags().StringSliceVar(&networkDeviceConfigurationTemplateFlags.filterId, "filter-id", nil, "Filter by template ID.")
