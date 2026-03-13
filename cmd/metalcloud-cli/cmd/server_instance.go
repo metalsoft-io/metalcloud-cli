@@ -435,8 +435,7 @@ instance group but can have individual characteristics and status.
 
 Available commands include:
 - get: View detailed information about a specific server instance
-- power: Set power state (on, off, reset, soft)
-- power-status: Get current power status
+- power: Set power state (on, off, reset, soft, status)
 - credentials: Get instance login credentials
 - reinstall-os: Schedule OS reinstall at next deploy
 - config: View instance configuration
@@ -445,7 +444,7 @@ Use "metalcloud-cli server-instance [command] --help" for detailed information a
 	}
 
 	serverInstancePowerCmd = &cobra.Command{
-		Use:   "power <server_instance_id> <on|off|reset|soft>",
+		Use:   "power <server_instance_id> <on|off|reset|soft|status>",
 		Short: "Set power state of a server instance",
 		Long: `Set the power state of a server instance.
 
@@ -453,14 +452,18 @@ This command sends a power command to a server instance via the orchestration la
 For direct BMC/IPMI power control, use the 'server power' command instead.
 
 Valid power actions:
-  on    - Power on the server instance
-  off   - Power off the server instance
-  reset - Hard reset the server instance
-  soft  - Graceful shutdown of the server instance
+  on     - Power on the server instance
+  off    - Power off the server instance
+  reset  - Hard reset the server instance
+  soft   - Graceful shutdown of the server instance
+  status - Get the current power status of the server instance
 
 Arguments:
   server_instance_id  The numeric ID of the server instance
-  action              Power action to perform (on, off, reset, soft)
+  action              Power action to perform (on, off, reset, soft, status)
+
+Subcommands:
+  status              Get the current power status of a server instance
 
 Examples:
   # Power on server instance 5678
@@ -470,17 +473,23 @@ Examples:
   metalcloud-cli server-instance power 5678 soft
 
   # Hard reset server instance
-  metalcloud-cli inst power 5678 reset`,
+  metalcloud-cli inst power 5678 reset
+
+  # Get power status
+  metalcloud-cli server-instance power 5678 status`,
 		SilenceUsage: true,
 		Annotations:  map[string]string{system.REQUIRED_PERMISSION: system.PERMISSION_SERVER_INSTANCES_WRITE},
 		Args:         cobra.ExactArgs(2),
 		RunE: func(cmd *cobra.Command, args []string) error {
+			if args[1] == "status" {
+				return server_instance.ServerInstancePowerStatus(cmd.Context(), args[0])
+			}
 			return server_instance.ServerInstancePower(cmd.Context(), args[0], args[1])
 		},
 	}
 
 	serverInstancePowerStatusCmd = &cobra.Command{
-		Use:     "power-status <server_instance_id>",
+		Use:     "status <server_instance_id>",
 		Aliases: []string{"power-state"},
 		Short:   "Get power status of a server instance",
 		Long: `Get the current power status of a server instance.
@@ -490,10 +499,10 @@ Arguments:
 
 Examples:
   # Get power status of server instance 5678
-  metalcloud-cli server-instance power-status 5678
+  metalcloud-cli server-instance power status 5678
 
   # Using alias
-  metalcloud-cli inst power-state 5678`,
+  metalcloud-cli inst power power-state 5678`,
 		SilenceUsage: true,
 		Annotations:  map[string]string{system.REQUIRED_PERMISSION: system.PERMISSION_SERVER_INSTANCES_READ},
 		Args:         cobra.ExactArgs(1),
@@ -665,7 +674,7 @@ func init() {
 	serverInstanceCmd.AddCommand(serverInstanceListCmd)
 
 	serverInstanceCmd.AddCommand(serverInstancePowerCmd)
-	serverInstanceCmd.AddCommand(serverInstancePowerStatusCmd)
+	serverInstancePowerCmd.AddCommand(serverInstancePowerStatusCmd)
 
 	serverInstanceCmd.AddCommand(serverInstanceCredentialsCmd)
 	serverInstanceCmd.AddCommand(serverInstanceReinstallOSCmd)

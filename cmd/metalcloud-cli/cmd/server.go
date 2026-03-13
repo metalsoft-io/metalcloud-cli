@@ -15,7 +15,7 @@ var (
 		filterStatus      []string
 		filterType        []string
 		configSource      string
-		powerAction       string
+
 		siteId            int
 		managementAddress string
 		username          string
@@ -37,7 +37,7 @@ managed individually or in bulk operations.
 
 Available command categories:
   - Basic operations: list, get, register, update, delete
-  - Power management: power, power-status  
+  - Power management: power (on, off, reset, cycle, soft, status)
   - Maintenance: re-register, factory-reset, archive
   - Security: update-ipmi-credentials, enable-snmp, enable-syslog
   - Remote access: vnc-info, console-info
@@ -291,18 +291,16 @@ Examples:
 	}
 
 	serverPowerCmd = &cobra.Command{
-		Use:   "power server_id",
+		Use:   "power <server_id> <on|off|reset|cycle|soft|status>",
 		Short: "Control server power state",
 		Long: `Control server power state.
 
 This command allows you to control the power state of a server by sending
 power management commands to the server's BMC/IPMI interface.
 
-Required Arguments:
+Arguments:
   server_id              The ID of the server to control
-
-Required Flags:
-  --action              Power action to perform
+  action                 Power action to perform (on, off, reset, cycle, soft, status)
 
 Valid Actions:
   on                    Power on the server
@@ -310,33 +308,43 @@ Valid Actions:
   reset                 Hard reset the server
   cycle                 Power cycle the server (off then on)
   soft                  Soft power off the server (graceful shutdown)
+  status                Get the current power status of the server
+
+Subcommands:
+  status                Get the current power status of a server
 
 Examples:
   # Power on server
-  metalcloud-cli server power 123 --action on
+  metalcloud-cli server power 123 on
 
   # Hard power off server
-  metalcloud-cli server power 123 --action off
+  metalcloud-cli server power 123 off
 
   # Reset server
-  metalcloud-cli server power 123 --action reset
+  metalcloud-cli server power 123 reset
 
   # Power cycle server
-  metalcloud-cli server power 123 --action cycle
+  metalcloud-cli server power 123 cycle
 
   # Soft power off (graceful shutdown)
-  metalcloud-cli server power 123 --action soft
+  metalcloud-cli server power 123 soft
+
+  # Get power status
+  metalcloud-cli server power 123 status
 `,
 		SilenceUsage: true,
 		Annotations:  map[string]string{system.REQUIRED_PERMISSION: system.PERMISSION_SERVERS_WRITE},
-		Args:         cobra.ExactArgs(1),
+		Args:         cobra.ExactArgs(2),
 		RunE: func(cmd *cobra.Command, args []string) error {
-			return server.ServerPower(cmd.Context(), args[0], serverFlags.powerAction)
+			if args[1] == "status" {
+				return server.ServerPowerStatus(cmd.Context(), args[0])
+			}
+			return server.ServerPower(cmd.Context(), args[0], args[1])
 		},
 	}
 
 	serverPowerStatusCmd = &cobra.Command{
-		Use:   "power-status server_id",
+		Use:   "status server_id",
 		Short: "Get server power status",
 		Long: `Get the current power status of a server.
 
@@ -348,7 +356,7 @@ Required Arguments:
 
 Examples:
   # Get power status for server with ID 123
-  metalcloud-cli server power-status 123
+  metalcloud-cli server power status 123
 `,
 		SilenceUsage: true,
 		Annotations:  map[string]string{system.REQUIRED_PERMISSION: system.PERMISSION_SERVERS_READ},
@@ -886,10 +894,7 @@ func init() {
 	serverCmd.AddCommand(serverDeleteCmd)
 
 	serverCmd.AddCommand(serverPowerCmd)
-	serverPowerCmd.Flags().StringVar(&serverFlags.powerAction, "action", "", "Power action: on, off, reset, cycle, soft")
-	serverPowerCmd.MarkFlagsOneRequired("action")
-
-	serverCmd.AddCommand(serverPowerStatusCmd)
+	serverPowerCmd.AddCommand(serverPowerStatusCmd)
 
 	serverCmd.AddCommand(serverUpdateCmd)
 	serverUpdateCmd.Flags().StringVar(&serverFlags.configSource, "config-source", "", "Source of the server update configuration. Can be 'pipe' or path to a JSON file.")
