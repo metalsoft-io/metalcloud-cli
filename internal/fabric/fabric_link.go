@@ -120,18 +120,18 @@ func FabricLinksGet(ctx context.Context, fabricId string) error {
 		flatLinks = append(flatLinks, NetworkFabricLinkFlat{
 			Id:                          l.Id,
 			NetworkFabricId:             l.NetworkFabricId,
-			NetworkDeviceAId:            fabricInterfacesMap[l.NetworkDeviceAInterfaceId].NetworkDeviceId,
-			NetworkDeviceAName:          fabricInterfacesMap[l.NetworkDeviceAInterfaceId].NetworkDeviceName,
-			NetworkDeviceARef:           fabricInterfacesMap[l.NetworkDeviceAInterfaceId].NetworkDeviceRef,
-			NetworkDeviceAInterfaceId:   l.NetworkDeviceAInterfaceId,
-			NetworkDeviceAInterfaceName: fabricInterfacesMap[l.NetworkDeviceAInterfaceId].InterfaceName,
-			NetworkDeviceAInterfaceRef:  fabricInterfacesMap[l.NetworkDeviceAInterfaceId].InterfaceRef,
-			NetworkDeviceBId:            fabricInterfacesMap[l.NetworkDeviceBInterfaceId].NetworkDeviceId,
-			NetworkDeviceBName:          fabricInterfacesMap[l.NetworkDeviceBInterfaceId].NetworkDeviceName,
-			NetworkDeviceBRef:           fabricInterfacesMap[l.NetworkDeviceBInterfaceId].NetworkDeviceRef,
-			NetworkDeviceBInterfaceId:   l.NetworkDeviceBInterfaceId,
-			NetworkDeviceBInterfaceName: fabricInterfacesMap[l.NetworkDeviceBInterfaceId].InterfaceName,
-			NetworkDeviceBInterfaceRef:  fabricInterfacesMap[l.NetworkDeviceBInterfaceId].InterfaceRef,
+			NetworkDeviceAId:            fabricInterfacesMap[*l.NetworkDeviceAInterfaceId].NetworkDeviceId,
+			NetworkDeviceAName:          fabricInterfacesMap[*l.NetworkDeviceAInterfaceId].NetworkDeviceName,
+			NetworkDeviceARef:           fabricInterfacesMap[*l.NetworkDeviceAInterfaceId].NetworkDeviceRef,
+			NetworkDeviceAInterfaceId:   *l.NetworkDeviceAInterfaceId,
+			NetworkDeviceAInterfaceName: fabricInterfacesMap[*l.NetworkDeviceAInterfaceId].InterfaceName,
+			NetworkDeviceAInterfaceRef:  fabricInterfacesMap[*l.NetworkDeviceAInterfaceId].InterfaceRef,
+			NetworkDeviceBId:            fabricInterfacesMap[*l.NetworkDeviceBInterfaceId].NetworkDeviceId,
+			NetworkDeviceBName:          fabricInterfacesMap[*l.NetworkDeviceBInterfaceId].NetworkDeviceName,
+			NetworkDeviceBRef:           fabricInterfacesMap[*l.NetworkDeviceBInterfaceId].NetworkDeviceRef,
+			NetworkDeviceBInterfaceId:   *l.NetworkDeviceBInterfaceId,
+			NetworkDeviceBInterfaceName: fabricInterfacesMap[*l.NetworkDeviceBInterfaceId].InterfaceName,
+			NetworkDeviceBInterfaceRef:  fabricInterfacesMap[*l.NetworkDeviceBInterfaceId].InterfaceRef,
 			LinkType:                    l.LinkType,
 			CustomVariables:             l.CustomVariables,
 			Status:                      l.Status,
@@ -261,16 +261,19 @@ func FabricLinkAddEx(ctx context.Context, fabricId string,
 
 		for _, p := range ports.Data {
 			if deviceIdentifier == networkDeviceA && strings.ToLower(p.InterfaceName) == interfaceA {
-				createLink.NetworkDeviceAInterfaceId = p.InterfaceId
+				createLink.NetworkDeviceAInterfaceId = &p.InterfaceId
 			}
 
 			if deviceIdentifier == networkDeviceB && strings.ToLower(p.InterfaceName) == interfaceB {
-				createLink.NetworkDeviceBInterfaceId = p.InterfaceId
+				createLink.NetworkDeviceBInterfaceId = &p.InterfaceId
 			}
 		}
 	}
 
-	if createLink.NetworkDeviceAInterfaceId == 0 || createLink.NetworkDeviceBInterfaceId == 0 {
+	if createLink.NetworkDeviceAInterfaceId == nil ||
+		*createLink.NetworkDeviceAInterfaceId == 0 ||
+		createLink.NetworkDeviceBInterfaceId == nil ||
+		*createLink.NetworkDeviceBInterfaceId == 0 {
 		return fmt.Errorf("could not find match for the specified device and interface in the fabric")
 	}
 

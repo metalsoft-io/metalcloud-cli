@@ -10,14 +10,18 @@ This command sends a power command to a server instance via the orchestration la
 For direct BMC/IPMI power control, use the 'server power' command instead.
 
 Valid power actions:
-  on    - Power on the server instance
-  off   - Power off the server instance
-  reset - Hard reset the server instance
-  soft  - Graceful shutdown of the server instance
+  on     - Power on the server instance
+  off    - Power off the server instance
+  reset  - Hard reset the server instance
+  soft   - Graceful shutdown of the server instance
+  status - Get the current power status of the server instance
 
 Arguments:
   server_instance_id  The numeric ID of the server instance
-  action              Power action to perform (on, off, reset, soft)
+  action              Power action to perform (on, off, reset, soft, status)
+
+Subcommands:
+  status              Get the current power status of a server instance
 
 Examples:
   # Power on server instance 5678
@@ -29,8 +33,11 @@ Examples:
   # Hard reset server instance
   metalcloud-cli inst power 5678 reset
 
+  # Get power status
+  metalcloud-cli server-instance power 5678 status
+
 ```
-metalcloud-cli server-instance power <server_instance_id> <on|off|reset|soft> [flags]
+metalcloud-cli server-instance power <server_instance_id> <on|off|reset|soft|status> [flags]
 ```
 
 ### Options
@@ -55,4 +62,5 @@ metalcloud-cli server-instance power <server_instance_id> <on|off|reset|soft> [f
 ### SEE ALSO
 
 * [metalcloud-cli server-instance](metalcloud-cli_server-instance.md)	 - Manage individual server instances
+* [metalcloud-cli server-instance power status](metalcloud-cli_server-instance_power_status.md)	 - Get power status of a server instance
 

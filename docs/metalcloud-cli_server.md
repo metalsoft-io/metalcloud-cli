@@ -12,7 +12,7 @@ managed individually or in bulk operations.
 
 Available command categories:
   - Basic operations: list, get, register, update, delete
-  - Power management: power, power-status  
+  - Power management: power (on, off, reset, cycle, soft, status)
   - Maintenance: re-register, factory-reset, archive
   - Security: update-ipmi-credentials, enable-snmp, enable-syslog
   - Remote access: vnc-info, console-info
@@ -53,9 +53,9 @@ Use "metalcloud-cli server [command] --help" for detailed information about each
 * [metalcloud-cli server factory-reset](metalcloud-cli_server_factory-reset.md)	 - Reset a server to factory defaults
 * [metalcloud-cli server firmware](metalcloud-cli_server_firmware.md)	 - Server firmware management
 * [metalcloud-cli server get](metalcloud-cli_server_get.md)	 - Get detailed server information
+* [metalcloud-cli server identify](metalcloud-cli_server_identify.md)	 - Identify a server by blinking its chassis LED
 * [metalcloud-cli server list](metalcloud-cli_server_list.md)	 - List servers
 * [metalcloud-cli server power](metalcloud-cli_server_power.md)	 - Control server power state
-* [metalcloud-cli server power-status](metalcloud-cli_server_power-status.md)	 - Get server power status
 * [metalcloud-cli server re-register](metalcloud-cli_server_re-register.md)	 - Re-register an existing server
 * [metalcloud-cli server register](metalcloud-cli_server_register.md)	 - Register a new server in MetalSoft
 * [metalcloud-cli server update](metalcloud-cli_server_update.md)	 - Update server information

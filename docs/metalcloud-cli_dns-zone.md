@@ -44,5 +44,6 @@ Use "metalcloud-cli dns-zone [command] --help" for detailed information about ea
 * [metalcloud-cli dns-zone delete](metalcloud-cli_dns-zone_delete.md)	 - Delete a DNS zone
 * [metalcloud-cli dns-zone get](metalcloud-cli_dns-zone_get.md)	 - Get detailed DNS zone information
 * [metalcloud-cli dns-zone list](metalcloud-cli_dns-zone_list.md)	 - List DNS zones
+* [metalcloud-cli dns-zone records](metalcloud-cli_dns-zone_records.md)	 - List DNS record sets in a zone
 * [metalcloud-cli dns-zone update](metalcloud-cli_dns-zone_update.md)	 - Update DNS zone information
 

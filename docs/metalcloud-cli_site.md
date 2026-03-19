@@ -61,6 +61,7 @@ Examples:
 * [metalcloud-cli site get](metalcloud-cli_site_get.md)	 - Retrieve detailed information about a specific site
 * [metalcloud-cli site get-config](metalcloud-cli_site_get-config.md)	 - Retrieve the configuration settings for a site
 * [metalcloud-cli site list](metalcloud-cli_site_list.md)	 - List all sites with their basic information
+* [metalcloud-cli site one-liner](metalcloud-cli_site_one-liner.md)	 - Get the site controller agent install script
 * [metalcloud-cli site update](metalcloud-cli_site_update.md)	 - Update site properties like label/name
 * [metalcloud-cli site update-config](metalcloud-cli_site_update-config.md)	 - Update site configuration using JSON input
 

@@ -47,6 +47,7 @@ Examples:
 
 * [metalcloud-cli](metalcloud-cli.md)	 - MetalCloud CLI
 * [metalcloud-cli vm-instance config](metalcloud-cli_vm-instance_config.md)	 - Get VM instance configuration
+* [metalcloud-cli vm-instance credentials](metalcloud-cli_vm-instance_credentials.md)	 - Get login credentials for a VM instance
 * [metalcloud-cli vm-instance get](metalcloud-cli_vm-instance_get.md)	 - Get detailed information about a specific VM instance
 * [metalcloud-cli vm-instance list](metalcloud-cli_vm-instance_list.md)	 - List all VM instances in an infrastructure
 * [metalcloud-cli vm-instance power-status](metalcloud-cli_vm-instance_power-status.md)	 - Get VM instance power status

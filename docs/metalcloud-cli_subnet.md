@@ -38,6 +38,8 @@ Available commands allow you to list, create, update, delete subnets and view co
 * [metalcloud-cli subnet create](metalcloud-cli_subnet_create.md)	 - Create a new subnet
 * [metalcloud-cli subnet delete](metalcloud-cli_subnet_delete.md)	 - Delete a subnet
 * [metalcloud-cli subnet get](metalcloud-cli_subnet_get.md)	 - Get detailed information about a specific subnet
+* [metalcloud-cli subnet ip-ranges](metalcloud-cli_subnet_ip-ranges.md)	 - List IP ranges in a subnet
+* [metalcloud-cli subnet ips](metalcloud-cli_subnet_ips.md)	 - List allocated IPs in a subnet
 * [metalcloud-cli subnet list](metalcloud-cli_subnet_list.md)	 - List all subnets and IP pools
 * [metalcloud-cli subnet update](metalcloud-cli_subnet_update.md)	 - Update an existing subnet
 
