@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"strconv"
+	"strings"
 
 	"github.com/metalsoft-io/metalcloud-cli/pkg/api"
 	"github.com/metalsoft-io/metalcloud-cli/pkg/formatter"
@@ -12,6 +13,44 @@ import (
 	"github.com/metalsoft-io/metalcloud-cli/pkg/utils"
 	sdk "github.com/metalsoft-io/metalcloud-sdk-go"
 )
+
+var (
+	ValidDeviceTemplateActions      = []string{"add-global-config", "remove-global-config", "add-neighbor", "remove-neighbor"}
+	ValidDeviceTemplateNetworkTypes = []string{"underlay", "overlay"}
+	ValidNetworkDeviceDrivers       = []string{"cisco_aci51", "nvidia_ufm", "nexus9000", "cumulus42", "arista_eos", "dell_s4048", "hp5800", "hp5900", "hp5950", "dummy", "junos", "os_10", "sonic_enterprise", "vmware_vds", "cumulus_linux", "brocade", "nvidia_dpu", "dell_s4000", "dell_s6010", "junos18"}
+	ValidNetworkDevicePositions     = []string{"all", "tor", "north", "spine", "leaf", "other"}
+	ValidBgpNumberings              = []string{"numbered", "unnumbered"}
+	ValidBgpLinkConfigurations      = []string{"disabled", "active", "passive"}
+)
+
+type ConfigFieldGuideEntry struct {
+	Field          string `json:"field" yaml:"field"`
+	Required       string `json:"required" yaml:"required"`
+	AcceptedValues string `json:"acceptedValues" yaml:"acceptedValues"`
+	Example        string `json:"example" yaml:"example"`
+}
+
+var configFieldGuidePrintConfig = formatter.PrintConfig{
+	FieldsConfig: map[string]formatter.RecordFieldConfig{
+		"Field": {
+			Title: "Field",
+			Order: 1,
+		},
+		"Required": {
+			Title: "Required",
+			Order: 2,
+		},
+		"AcceptedValues": {
+			Title:    "Accepted Values",
+			MaxWidth: 55,
+			Order:    3,
+		},
+		"Example": {
+			Title: "Example",
+			Order: 4,
+		},
+	},
+}
 
 var NetworkDeviceConfigurationTemplatePrintConfig = formatter.PrintConfig{
 	FieldsConfig: map[string]formatter.RecordFieldConfig{
@@ -74,20 +113,48 @@ func NetworkDeviceConfigurationTemplateList(ctx context.Context, filterId []stri
 }
 
 func NetworkDeviceConfigurationTemplateConfigExample(ctx context.Context) error {
-	networkDeviceConfiguration := sdk.CreateNetworkDeviceBGPConfigurationTemplate{
-		NetworkType:                 "underlay",
-		NetworkDeviceDriver:         "junos",
-		NetworkDevicePosition:       "all",
-		RemoteNetworkDevicePosition: "all",
-		BgpNumbering:                "numbered",
-		BgpLinkConfiguration:        "active",
-		ExecutionType:               "cli",
-		LibraryLabel:                "string",
-		Preparation:                 sdk.PtrString("string"),
-		Configuration:               "string",
+	if formatter.IsNativeFormat() {
+		type templateExample struct {
+			Action                      string `json:"action" yaml:"action"`
+			NetworkType                 string `json:"networkType" yaml:"networkType"`
+			NetworkDeviceDriver         string `json:"networkDeviceDriver" yaml:"networkDeviceDriver"`
+			NetworkDevicePosition       string `json:"networkDevicePosition" yaml:"networkDevicePosition"`
+			RemoteNetworkDevicePosition string `json:"remoteNetworkDevicePosition" yaml:"remoteNetworkDevicePosition"`
+			BgpNumbering                string `json:"bgpNumbering" yaml:"bgpNumbering"`
+			BgpLinkConfiguration        string `json:"bgpLinkConfiguration" yaml:"bgpLinkConfiguration"`
+			ExecutionType               string `json:"executionType" yaml:"executionType"`
+			LibraryLabel                string `json:"libraryLabel" yaml:"libraryLabel"`
+			Preparation                 string `json:"preparation,omitempty" yaml:"preparation,omitempty"`
+			Configuration               string `json:"configuration" yaml:"configuration"`
+		}
+		return formatter.PrintResult(templateExample{
+			Action:                      strings.Join(ValidDeviceTemplateActions, "|"),
+			NetworkType:                 strings.Join(ValidDeviceTemplateNetworkTypes, "|"),
+			NetworkDeviceDriver:         strings.Join(ValidNetworkDeviceDrivers, "|"),
+			NetworkDevicePosition:       strings.Join(ValidNetworkDevicePositions, "|"),
+			RemoteNetworkDevicePosition: strings.Join(ValidNetworkDevicePositions, "|"),
+			BgpNumbering:                strings.Join(ValidBgpNumberings, "|"),
+			BgpLinkConfiguration:        strings.Join(ValidBgpLinkConfigurations, "|"),
+			ExecutionType:               "cli",
+			LibraryLabel:                "<string>",
+			Configuration:               "<base64 encoded commands>",
+		}, nil)
 	}
 
-	return formatter.PrintResult(networkDeviceConfiguration, nil)
+	entries := []ConfigFieldGuideEntry{
+		{Field: "action", Required: "yes", AcceptedValues: strings.Join(ValidDeviceTemplateActions, ", "), Example: ValidDeviceTemplateActions[0]},
+		{Field: "networkType", Required: "yes", AcceptedValues: strings.Join(ValidDeviceTemplateNetworkTypes, ", "), Example: ValidDeviceTemplateNetworkTypes[0]},
+		{Field: "networkDeviceDriver", Required: "yes", AcceptedValues: strings.Join(ValidNetworkDeviceDrivers, ", "), Example: "junos"},
+		{Field: "networkDevicePosition", Required: "yes", AcceptedValues: strings.Join(ValidNetworkDevicePositions, ", "), Example: ValidNetworkDevicePositions[0]},
+		{Field: "remoteNetworkDevicePosition", Required: "yes", AcceptedValues: strings.Join(ValidNetworkDevicePositions, ", "), Example: ValidNetworkDevicePositions[0]},
+		{Field: "bgpNumbering", Required: "yes", AcceptedValues: strings.Join(ValidBgpNumberings, ", "), Example: ValidBgpNumberings[0]},
+		{Field: "bgpLinkConfiguration", Required: "yes", AcceptedValues: strings.Join(ValidBgpLinkConfigurations, ", "), Example: ValidBgpLinkConfigurations[1]},
+		{Field: "executionType", Required: "yes", AcceptedValues: "cli", Example: "cli"},
+		{Field: "libraryLabel", Required: "yes", AcceptedValues: "any string", Example: "my-template"},
+		{Field: "preparation", Required: "no", AcceptedValues: "base64 encoded commands", Example: ""},
+		{Field: "configuration", Required: "yes", AcceptedValues: "base64 encoded commands", Example: ""},
+	}
+	return formatter.PrintResult(entries, &configFieldGuidePrintConfig)
 }
 
 func NetworkDeviceConfigurationTemplateGet(ctx context.Context, networkDeviceConfigurationTemplateId string) error {

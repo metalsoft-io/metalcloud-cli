@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"strconv"
+	"strings"
 
 	"github.com/metalsoft-io/metalcloud-cli/pkg/api"
 	"github.com/metalsoft-io/metalcloud-cli/pkg/formatter"
@@ -12,6 +13,41 @@ import (
 	"github.com/metalsoft-io/metalcloud-cli/pkg/utils"
 	sdk "github.com/metalsoft-io/metalcloud-sdk-go"
 )
+
+var (
+	ValidLinkAggregationTemplateActions = []string{"create", "delete", "add-member", "remove-member"}
+	ValidAggregationTypes               = []string{"lag", "mlag", "mlag-peer-link"}
+	ValidNetworkDeviceDrivers           = []string{"cisco_aci51", "nvidia_ufm", "nexus9000", "cumulus42", "arista_eos", "dell_s4048", "hp5800", "hp5900", "hp5950", "dummy", "junos", "os_10", "sonic_enterprise", "vmware_vds", "cumulus_linux", "brocade", "nvidia_dpu", "dell_s4000", "dell_s6010", "junos18"}
+)
+
+type configFieldGuideEntry struct {
+	Field          string `json:"field" yaml:"field"`
+	Required       string `json:"required" yaml:"required"`
+	AcceptedValues string `json:"acceptedValues" yaml:"acceptedValues"`
+	Example        string `json:"example" yaml:"example"`
+}
+
+var configFieldGuidePrintConfig = formatter.PrintConfig{
+	FieldsConfig: map[string]formatter.RecordFieldConfig{
+		"Field": {
+			Title: "Field",
+			Order: 1,
+		},
+		"Required": {
+			Title: "Required",
+			Order: 2,
+		},
+		"AcceptedValues": {
+			Title:    "Accepted Values",
+			MaxWidth: 55,
+			Order:    3,
+		},
+		"Example": {
+			Title: "Example",
+			Order: 4,
+		},
+	},
+}
 
 var NetworkDeviceLinkAggregationConfigurationTemplatePrintConfig = formatter.PrintConfig{
 	FieldsConfig: map[string]formatter.RecordFieldConfig{
@@ -65,17 +101,36 @@ func NetworkDeviceLinkAggregationConfigurationTemplateList(ctx context.Context, 
 }
 
 func NetworkDeviceLinkAggregationConfigurationTemplateConfigExample(ctx context.Context) error {
-	networkDeviceLinkAggregationConfiguration := sdk.CreateNetworkDeviceLinkAggregationConfigurationTemplate{
-		Action:              "create",
-		AggregationType:     "lacp",
-		NetworkDeviceDriver: "junos",
-		ExecutionType:       "cli",
-		LibraryLabel:        "string",
-		Preparation:         sdk.PtrString("string"),
-		Configuration:       "string",
+	if formatter.IsNativeFormat() {
+		type templateExample struct {
+			Action              string `json:"action" yaml:"action"`
+			AggregationType     string `json:"aggregationType" yaml:"aggregationType"`
+			NetworkDeviceDriver string `json:"networkDeviceDriver" yaml:"networkDeviceDriver"`
+			ExecutionType       string `json:"executionType" yaml:"executionType"`
+			LibraryLabel        string `json:"libraryLabel" yaml:"libraryLabel"`
+			Preparation         string `json:"preparation,omitempty" yaml:"preparation,omitempty"`
+			Configuration       string `json:"configuration" yaml:"configuration"`
+		}
+		return formatter.PrintResult(templateExample{
+			Action:              strings.Join(ValidLinkAggregationTemplateActions, "|"),
+			AggregationType:     strings.Join(ValidAggregationTypes, "|"),
+			NetworkDeviceDriver: strings.Join(ValidNetworkDeviceDrivers, "|"),
+			ExecutionType:       "cli",
+			LibraryLabel:        "<string>",
+			Configuration:       "<base64 encoded commands>",
+		}, nil)
 	}
 
-	return formatter.PrintResult(networkDeviceLinkAggregationConfiguration, nil)
+	entries := []configFieldGuideEntry{
+		{Field: "action", Required: "yes", AcceptedValues: strings.Join(ValidLinkAggregationTemplateActions, ", "), Example: ValidLinkAggregationTemplateActions[0]},
+		{Field: "aggregationType", Required: "yes", AcceptedValues: strings.Join(ValidAggregationTypes, ", "), Example: ValidAggregationTypes[0]},
+		{Field: "networkDeviceDriver", Required: "yes", AcceptedValues: strings.Join(ValidNetworkDeviceDrivers, ", "), Example: "junos"},
+		{Field: "executionType", Required: "yes", AcceptedValues: "cli", Example: "cli"},
+		{Field: "libraryLabel", Required: "yes", AcceptedValues: "any string", Example: "my-template"},
+		{Field: "preparation", Required: "no", AcceptedValues: "base64 encoded commands", Example: ""},
+		{Field: "configuration", Required: "yes", AcceptedValues: "base64 encoded commands", Example: ""},
+	}
+	return formatter.PrintResult(entries, &configFieldGuidePrintConfig)
 }
 
 func NetworkDeviceLinkAggregationConfigurationTemplateGet(ctx context.Context, networkDeviceLinkAggregationConfigurationTemplateId string) error {

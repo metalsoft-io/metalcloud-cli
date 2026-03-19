@@ -1,6 +1,9 @@
 package cmd
 
 import (
+	"fmt"
+	"strings"
+
 	"github.com/metalsoft-io/metalcloud-cli/cmd/metalcloud-cli/system"
 	"github.com/metalsoft-io/metalcloud-cli/internal/network_device_link_aggregation_configuration_template"
 	"github.com/metalsoft-io/metalcloud-cli/pkg/utils"
@@ -78,21 +81,6 @@ Examples:
 	networkDeviceLinkAggregationConfigurationTemplateConfigExampleCmd = &cobra.Command{
 		Use:   "config-example",
 		Short: "Generate example configuration template for network device link aggregation configuration template",
-		Long: `Generate an example JSON configuration template that can be used to create
-or update network device link aggregation configuration templates. This template includes all available configuration
-options with example values and documentation.
-
-Preparation and configuration fields need to be base64 encoded when submitted.
-
-The generated template can be saved to a file and modified as needed for actual
-template configuration.
-
-Examples:
-  # Display example configuration
-  metalcloud-cli network-configuration link-aggregation-template config-example -f json
-
-  # Save example to file
-  metalcloud-cli network-configuration link-aggregation-template config-example -f json > template.json`,
 		SilenceUsage: true,
 		Annotations:  map[string]string{system.REQUIRED_PERMISSION: system.PERMISSION_NETWORK_DEVICE_LINK_AGGREGATION_CONFIGURATION_TEMPLATES_READ},
 		RunE: func(cmd *cobra.Command, args []string) error {
@@ -114,7 +102,7 @@ Use the 'config-example' command to generate an example configuration:
 
   {
     "action": "create",
-    "aggregationType": "lacp",
+    "aggregationType": "lag",
     "networkDeviceDriver": "junos",
     "executionType": "cli",
     "libraryLabel": "string",
@@ -132,7 +120,7 @@ Examples:
   cat template.json | metalcloud-cli network-configuration link-aggregation-template create --config-source pipe
 
   # Create template with inline JSON
-  echo '{"action":"create","aggregationType":"lacp","networkDeviceDriver":"junos","executionType":"cli","libraryLabel":"label","configuration":"string"}' | metalcloud-cli nc lat create --config-source pipe`,
+  echo '{"action":"create","aggregationType":"lag","networkDeviceDriver":"junos","executionType":"cli","libraryLabel":"label","configuration":"string"}' | metalcloud-cli nc lat create --config-source pipe`,
 		SilenceUsage: true,
 		Annotations:  map[string]string{system.REQUIRED_PERMISSION: system.PERMISSION_NETWORK_DEVICE_LINK_AGGREGATION_CONFIGURATION_TEMPLATES_WRITE},
 		RunE: func(cmd *cobra.Command, args []string) error {
@@ -207,6 +195,27 @@ Examples:
 )
 
 func init() {
+	networkDeviceLinkAggregationConfigurationTemplateConfigExampleCmd.Long = fmt.Sprintf(`Generate an example JSON configuration template that can be used to create
+or update network device link aggregation configuration templates.
+
+Preparation and configuration fields need to be base64 encoded when submitted.
+
+Accepted field values:
+  action:              %s
+  aggregationType:     %s
+  networkDeviceDriver: %s
+
+Examples:
+  # Display example configuration
+  metalcloud-cli network-configuration link-aggregation-template config-example -f json
+
+  # Save example to file
+  metalcloud-cli network-configuration link-aggregation-template config-example -f json > template.json`,
+		strings.Join(network_device_link_aggregation_configuration_template.ValidLinkAggregationTemplateActions, ", "),
+		strings.Join(network_device_link_aggregation_configuration_template.ValidAggregationTypes, ", "),
+		strings.Join(network_device_link_aggregation_configuration_template.ValidNetworkDeviceDrivers, ", "),
+	)
+
 	networkConfigurationCmd.AddCommand(networkDeviceLinkAggregationConfigurationTemplateCmd)
 
 	networkDeviceLinkAggregationConfigurationTemplateCmd.AddCommand(networkDeviceLinkAggregationConfigurationTemplateListCmd)
