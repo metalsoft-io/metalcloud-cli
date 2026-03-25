@@ -62,7 +62,7 @@ creation date, and last login timestamp. Users can be filtered by various criter
 can be sorted and searched through.
 
 Filters:
-  --archived              Include archived users in the results (default: false)
+  --archived              Return only archived users
   --filter-id             Filter by specific user ID
   --filter-display-name   Filter by user display name (partial matches)
   --filter-email          Filter by email address (partial matches)
@@ -767,7 +767,7 @@ func init() {
 	rootCmd.AddCommand(userCmd)
 
 	userCmd.AddCommand(userListCmd)
-	userListCmd.Flags().BoolVar(&userFlags.archived, "archived", false, "Include archived users in the list.")
+	userListCmd.Flags().BoolVar(&userFlags.archived, "archived", false, "Return only archived users.")
 	userListCmd.Flags().StringVar(&userFlags.filterId, "filter-id", "", "Filter by user ID.")
 	userListCmd.Flags().StringVar(&userFlags.filterDisplayName, "filter-display-name", "", "Filter by display name.")
 	userListCmd.Flags().StringVar(&userFlags.filterEmail, "filter-email", "", "Filter by email.")

@@ -120,11 +120,12 @@ func List(ctx context.Context, archived bool, filterId, filterDisplayName, filte
 
 	client := api.GetApiClient(ctx)
 
-	request := client.UsersAPI.GetUsers(ctx)
-
-	if !archived {
-		request = request.FilterArchived([]string{"false"})
+	archivedFilter := "0"
+	if archived {
+		archivedFilter = "1"
 	}
+
+	request := client.UsersAPI.GetUsers(ctx).FilterArchived([]string{archivedFilter})
 	if filterId != "" {
 		request = request.FilterId([]string{filterId})
 	}
