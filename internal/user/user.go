@@ -1,8 +1,12 @@
 package user
 
 import (
+	"bytes"
 	"context"
+	"encoding/json"
 	"fmt"
+	"io"
+	"net/http"
 	"strconv"
 
 	"github.com/metalsoft-io/metalcloud-cli/pkg/api"
@@ -533,6 +537,74 @@ func UpdatePermissions(ctx context.Context, userId string, config []byte) error 
 
 	logger.Get().Info().Msgf("Permissions updated for user '%s'", userId)
 	return formatter.PrintResult(permissions, &userPermissionsPrintConfig)
+}
+
+func SetPassword(ctx context.Context, userId string, password string) error {
+	logger.Get().Info().Msgf("Setting password for user '%s'", userId)
+
+	userIdNumber, revision, err := getUserIdAndRevision(ctx, userId)
+	if err != nil {
+		return err
+	}
+
+	client := api.GetApiClient(ctx)
+	cfg := client.GetConfig()
+
+	if len(cfg.Servers) == 0 {
+		return fmt.Errorf("no API server configured")
+	}
+	baseURL := cfg.Servers[0].URL
+
+	body, err := json.Marshal(map[string]string{"password": password})
+	if err != nil {
+		return fmt.Errorf("failed to marshal request body: %w", err)
+	}
+
+	url := fmt.Sprintf("%s/api/v2/users/%v/actions/set-password", baseURL, userIdNumber)
+	req, err := http.NewRequestWithContext(ctx, http.MethodPost, url, bytes.NewReader(body))
+	if err != nil {
+		return fmt.Errorf("failed to create request: %w", err)
+	}
+
+	req.Header.Set("Content-Type", "application/json")
+	req.Header.Set("Accept", "application/json")
+	req.Header.Set("If-Match", revision)
+
+	if token, ok := ctx.Value(sdk.ContextAccessToken).(string); ok {
+		req.Header.Set("Authorization", "Bearer "+token)
+	}
+
+	httpClient := cfg.HTTPClient
+	if httpClient == nil {
+		httpClient = http.DefaultClient
+	}
+
+	httpRes, err := httpClient.Do(req)
+	if err != nil {
+		return fmt.Errorf("request failed: %w", err)
+	}
+	defer func() {
+		io.Copy(io.Discard, httpRes.Body) //nolint:errcheck
+		httpRes.Body.Close()
+	}()
+
+	respBody, err := io.ReadAll(httpRes.Body)
+	if err != nil {
+		return fmt.Errorf("failed to read response: %w", err)
+	}
+	httpRes.Body = io.NopCloser(bytes.NewBuffer(respBody))
+
+	if err := response_inspector.InspectResponse(httpRes, nil); err != nil {
+		return err
+	}
+
+	var userInfo sdk.User
+	if err := json.Unmarshal(respBody, &userInfo); err != nil {
+		return fmt.Errorf("failed to parse response: %w", err)
+	}
+
+	logger.Get().Info().Msgf("Password set for user '%s'", userId)
+	return formatter.PrintResult(userInfo, &userPrintConfig)
 }
 
 func getUserId(userId string) (float32, error) {

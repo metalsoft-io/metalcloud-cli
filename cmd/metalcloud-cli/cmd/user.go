@@ -723,6 +723,27 @@ Examples:
 		},
 	}
 
+	userSetPasswordCmd = &cobra.Command{
+		Use:   "set-password user_id",
+		Short: "Set the password for a user (admin only)",
+		Long: `Set the password for a specific user account as an administrator.
+
+Arguments:
+  user_id                 The numeric ID of the user whose password to set
+
+Required Flags:
+  --password              The new password to set for the user
+
+Examples:
+  metalcloud-cli user set-password 12345 --password newSecret123`,
+		SilenceUsage: true,
+		Annotations:  map[string]string{system.REQUIRED_PERMISSION: system.PERMISSION_USERS_WRITE},
+		Args:         cobra.ExactArgs(1),
+		RunE: func(cmd *cobra.Command, args []string) error {
+			return user.SetPassword(cmd.Context(), args[0], userFlags.password)
+		},
+	}
+
 	user2FAGenerateSecretCmd = &cobra.Command{
 		Use:   "2fa-generate-secret",
 		Short: "Generate a new 2FA secret for setting up an authenticator app",
@@ -819,6 +840,11 @@ func init() {
 	userCmd.AddCommand(userPermissionsUpdateCmd)
 	userPermissionsUpdateCmd.Flags().StringVar(&userFlags.configSource, "config-source", "", "Source of the user permissions configuration. Can be 'pipe' or path to a JSON file.")
 	userPermissionsUpdateCmd.MarkFlagsOneRequired("config-source")
+
+	// Set password
+	userCmd.AddCommand(userSetPasswordCmd)
+	userSetPasswordCmd.Flags().StringVar(&userFlags.password, "password", "", "The new password to set for the user.")
+	userSetPasswordCmd.MarkFlagRequired("password")
 
 	// Self-service: API key
 	userCmd.AddCommand(userApiKeyGetCmd)
