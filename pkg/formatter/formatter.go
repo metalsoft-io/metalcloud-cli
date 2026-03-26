@@ -282,6 +282,9 @@ func populate(record interface{}, fieldsConfig *map[string]RecordFieldConfig, na
 			}
 		} else {
 			addField(fieldConfig, fieldName, "", names, values, configs)
+			if len(fieldConfig.InnerFields) > 0 {
+				populate(nil, &fieldConfig.InnerFields, names, values, configs)
+			}
 		}
 	}
 }

@@ -35,6 +35,7 @@ var sitePrintConfig = formatter.PrintConfig{
 			Hidden: true,
 			InnerFields: map[string]formatter.RecordFieldConfig{
 				"Address": {
+					Title: "Address",
 					Order: 4,
 				},
 			},
