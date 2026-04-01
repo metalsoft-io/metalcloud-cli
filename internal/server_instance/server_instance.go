@@ -3,7 +3,6 @@ package server_instance
 import (
 	"context"
 	"fmt"
-	"io"
 	"strconv"
 	"strings"
 
@@ -137,26 +136,18 @@ func ServerInstancePowerStatus(ctx context.Context, serverInstanceId string) err
 
 	client := api.GetApiClient(ctx)
 
-	httpRes, err := client.ServerInstanceAPI.
+	result, httpRes, err := client.ServerInstanceAPI.
 		GetPowerFromServerInstance(ctx, instanceId).
 		Execute()
 	if err := response_inspector.InspectResponse(httpRes, err); err != nil {
 		return err
 	}
 
-	if httpRes != nil && httpRes.Body != nil {
-		defer httpRes.Body.Close()
-		body, err := io.ReadAll(httpRes.Body)
-		if err != nil {
-			return fmt.Errorf("failed to read power status response: %w", err)
-		}
-
-		status := strings.Trim(strings.TrimSpace(string(body)), "\"")
-		if status != "" {
-			fmt.Printf("Power status for server instance %s: %s\n", serverInstanceId, status)
-		} else {
-			fmt.Printf("Power status check initiated for server instance %s\n", serverInstanceId)
-		}
+	status := strings.Trim(strings.TrimSpace(result), "\"")
+	if status != "" {
+		fmt.Printf("Power status for server instance %s: %s\n", serverInstanceId, status)
+	} else {
+		fmt.Printf("Power status check initiated for server instance %s\n", serverInstanceId)
 	}
 
 	return nil

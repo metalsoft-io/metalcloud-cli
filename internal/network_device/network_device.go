@@ -168,14 +168,14 @@ func NetworkDeviceDelete(ctx context.Context, networkDeviceId string) error {
 
 	client := api.GetApiClient(ctx)
 
-	result, httpRes, err := client.NetworkDeviceAPI.
+	httpRes, err := client.NetworkDeviceAPI.
 		DeleteNetworkDevice(ctx, networkDeviceIdNumeric).
 		Execute()
 	if err := response_inspector.InspectResponse(httpRes, err); err != nil {
 		return err
 	}
 
-	logger.Get().Info().Msgf("Network device %s deleting in progress. Job ID %d", networkDeviceId, result.JobId)
+	logger.Get().Info().Msgf("Network device %s deleting in progress.", networkDeviceId)
 	return nil
 }
 
@@ -189,7 +189,7 @@ func NetworkDeviceArchive(ctx context.Context, networkDeviceId string) error {
 
 	client := api.GetApiClient(ctx)
 
-	result, httpRes, err := client.NetworkDeviceAPI.
+	httpRes, err := client.NetworkDeviceAPI.
 		ArchiveNetworkDevice(ctx, networkDeviceIdNumeric).
 		IfMatch(revision).
 		Execute()
@@ -197,7 +197,7 @@ func NetworkDeviceArchive(ctx context.Context, networkDeviceId string) error {
 		return err
 	}
 
-	logger.Get().Info().Msgf("Network device %s archiving in progress. Job ID %d", networkDeviceId, result.JobId)
+	logger.Get().Info().Msgf("Network device %s archiving in progress.", networkDeviceId)
 	return nil
 }
 

@@ -83,13 +83,13 @@ func Delete(ctx context.Context, roleName string) error {
 
 	client := api.GetApiClient(ctx)
 
-	role, httpRes, err := client.SecurityAPI.DeleteRole(ctx, roleName).Execute()
+	httpRes, err := client.SecurityAPI.DeleteRole(ctx, roleName).Execute()
 	if err := response_inspector.InspectResponse(httpRes, err); err != nil {
 		return err
 	}
 
 	logger.Get().Info().Msgf("Role '%s' deleted", roleName)
-	return formatter.PrintResult(role, &rolePrintConfig)
+	return nil
 }
 
 func Update(ctx context.Context, roleName string, config []byte) error {

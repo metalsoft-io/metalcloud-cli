@@ -53,6 +53,7 @@ the user ID as a parameter. Use 'metalcloud-cli user list' to find user IDs.
 * [metalcloud-cli user list](metalcloud-cli_user_list.md)	 - List users with filtering and search options
 * [metalcloud-cli user permissions](metalcloud-cli_user_permissions.md)	 - Display permissions for a specific user
 * [metalcloud-cli user permissions-update](metalcloud-cli_user_permissions-update.md)	 - Update permissions for a specific user
+* [metalcloud-cli user set-password](metalcloud-cli_user_set-password.md)	 - Set the password for a user (admin only)
 * [metalcloud-cli user ssh-key-add](metalcloud-cli_user_ssh-key-add.md)	 - Add an SSH key to a user account
 * [metalcloud-cli user ssh-key-delete](metalcloud-cli_user_ssh-key-delete.md)	 - Delete an SSH key from a user account
 * [metalcloud-cli user ssh-keys](metalcloud-cli_user_ssh-keys.md)	 - Display SSH keys for a specific user

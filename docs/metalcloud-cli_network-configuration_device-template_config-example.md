@@ -5,13 +5,18 @@ Generate example configuration template for network device configuration templat
 ### Synopsis
 
 Generate an example JSON configuration template that can be used to create
-or update network device configuration templates. This template includes all available configuration
-options with example values and documentation.
+or update network device configuration templates.
 
 Preparation and configuration fields need to be base64 encoded when submitted.
 
-The generated template can be saved to a file and modified as needed for actual
-template configuration.
+Accepted field values:
+  action:               add-global-config, remove-global-config, add-neighbor, remove-neighbor
+  networkType:          underlay, overlay
+  networkDeviceDriver:  cisco_aci51, nvidia_ufm, nexus9000, cumulus42, arista_eos, dell_s4048, hp5800, hp5900, hp5950, dummy, junos, os_10, sonic_enterprise, vmware_vds, cumulus_linux, brocade, nvidia_dpu, dell_s4000, dell_s6010, junos18
+  networkDevicePosition / remoteNetworkDevicePosition:
+                        all, tor, north, spine, leaf, other
+  bgpNumbering:         numbered, unnumbered
+  bgpLinkConfiguration: disabled, active, passive
 
 Examples:
   # Display example configuration

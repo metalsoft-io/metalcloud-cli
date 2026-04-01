@@ -146,7 +146,7 @@ func CronJobCreate(ctx context.Context, configBytes []byte) error {
 
 	client := api.GetApiClient(ctx)
 
-	httpRes, err := client.JobAPI.CreateCronJob(ctx).CreateCronJob(cronJobConfig).Execute()
+	_, httpRes, err := client.JobAPI.CreateCronJob(ctx).CreateCronJob(cronJobConfig).Execute()
 	if err := response_inspector.InspectResponse(httpRes, err); err != nil {
 		return err
 	}

@@ -6,11 +6,11 @@ toolchain go1.25.3
 
 require (
 	github.com/go-git/go-billy/v5 v5.8.0
-	github.com/go-git/go-git/v5 v5.17.0
+	github.com/go-git/go-git/v5 v5.17.2
 	github.com/jedib0t/go-pretty/v6 v6.7.8
-	github.com/metalsoft-io/metalcloud-sdk-go v0.0.0-20260319081142-24fd14841ce1
+	github.com/metalsoft-io/metalcloud-sdk-go v0.0.0-20260401151704-bab47fc944d8
 	github.com/pkg/sftp v1.13.10
-	github.com/rs/zerolog v1.34.0
+	github.com/rs/zerolog v1.35.0
 	github.com/spf13/cobra v1.10.2
 	github.com/spf13/viper v1.21.0
 	golang.org/x/crypto v0.49.0
@@ -40,7 +40,7 @@ require (
 	github.com/mattn/go-colorable v0.1.14 // indirect
 	github.com/mattn/go-isatty v0.0.20 // indirect
 	github.com/mattn/go-runewidth v0.0.21 // indirect
-	github.com/pelletier/go-toml/v2 v2.2.4 // indirect
+	github.com/pelletier/go-toml/v2 v2.3.0 // indirect
 	github.com/pjbgf/sha1cd v0.5.0 // indirect
 	github.com/russross/blackfriday/v2 v2.1.0 // indirect
 	github.com/sagikazarmark/locafero v0.12.0 // indirect

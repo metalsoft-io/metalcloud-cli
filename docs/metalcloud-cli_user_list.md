@@ -11,7 +11,7 @@ creation date, and last login timestamp. Users can be filtered by various criter
 can be sorted and searched through.
 
 Filters:
-  --archived              Include archived users in the results (default: false)
+  --archived              Return only archived users
   --filter-id             Filter by specific user ID
   --filter-display-name   Filter by user display name (partial matches)
   --filter-email          Filter by email address (partial matches)
@@ -37,7 +37,7 @@ metalcloud-cli user list [flags]
 ### Options
 
 ```
-      --archived                          Include archived users in the list.
+      --archived                          Return only archived users.
       --filter-account-id string          Filter by account ID.
       --filter-display-name string        Filter by display name.
       --filter-email string               Filter by email.

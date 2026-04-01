@@ -14,7 +14,7 @@ Use the 'config-example' command to generate an example configuration:
 
   {
     "action": "create",
-    "aggregationType": "lacp",
+    "aggregationType": "lag",
     "networkDeviceDriver": "junos",
     "executionType": "cli",
     "libraryLabel": "string",
@@ -32,7 +32,7 @@ Examples:
   cat template.json | metalcloud-cli network-configuration link-aggregation-template create --config-source pipe
 
   # Create template with inline JSON
-  echo '{"action":"create","aggregationType":"lacp","networkDeviceDriver":"junos","executionType":"cli","libraryLabel":"label","configuration":"string"}' | metalcloud-cli nc lat create --config-source pipe
+  echo '{"action":"create","aggregationType":"lag","networkDeviceDriver":"junos","executionType":"cli","libraryLabel":"label","configuration":"string"}' | metalcloud-cli nc lat create --config-source pipe
 
 ```
 metalcloud-cli network-configuration link-aggregation-template create [flags]

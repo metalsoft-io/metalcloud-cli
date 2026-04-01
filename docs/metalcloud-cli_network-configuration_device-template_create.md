@@ -13,8 +13,9 @@ Required Flags:
 Use the 'config-example' command to generate an example configuration:
 
   {
+    "action": "add-global-config",
     "networkType": "underlay",
-    "networkDeviceDriver": "cisco_aci51",
+    "networkDeviceDriver": "junos",
     "networkDevicePosition": "all",
     "remoteNetworkDevicePosition": "all",
     "bgpNumbering": "numbered",
