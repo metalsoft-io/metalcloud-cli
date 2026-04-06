@@ -13,30 +13,26 @@ import (
 
 var eventPrintConfig = formatter.PrintConfig{
 	FieldsConfig: map[string]formatter.RecordFieldConfig{
-		"Event": {
-			Hidden: true,
-			InnerFields: map[string]formatter.RecordFieldConfig{
-				"Id": {
-					Title: "#",
-					Order: 1,
-				},
-				"Type": {
-					Order: 2,
-				},
-				"Severity": {
-					Order: 3,
-				},
-				"Visibility": {
-					Order: 4,
-				},
-				"CreatedAt": {
-					Title: "Created",
-					Order: 5,
-				},
-				"Title": {
-					Order: 6,
-				},
-			},
+		"Id": {
+			Title: "#",
+			Order: 1,
+		},
+		"Type": {
+			Order: 2,
+		},
+		"Severity": {
+			Order: 3,
+		},
+		"Visibility": {
+			Order: 4,
+		},
+		"OccurredTimestamp": {
+			Title:       "Time",
+			Transformer: formatter.FormatDateTimeValue,
+			Order:       5,
+		},
+		"Title": {
+			Order: 6,
 		},
 	},
 }
