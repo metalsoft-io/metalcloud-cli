@@ -112,6 +112,15 @@ func (vc *VendorCatalog) ProcessVendorCatalog(ctx context.Context) error {
 			logger.Get().Debug().Msgf("Filtered system models with serial numbers: %v", systemModelsEx)
 
 			if len(vc.VendorSystemsFilter) > 0 {
+				// Preserve user-provided VendorSystemsFilter entries in the extended map
+				// before merging with API results. This ensures that explicitly provided
+				// vendor system types (e.g., machine types like "7Y51") are not lost when
+				// the server API does not return model information for matching servers.
+				for _, system := range vc.VendorSystemsFilter {
+					if _, exists := systemModelsEx[system]; !exists {
+						systemModelsEx[system] = ""
+					}
+				}
 				vc.VendorSystemsFilter = append(vc.VendorSystemsFilter, systemModels...)
 			} else {
 				vc.VendorSystemsFilter = systemModels
@@ -315,7 +324,15 @@ func (vc *VendorCatalog) getFilteredSystemModels(ctx context.Context) ([]string,
 			}
 
 			for _, server := range servers.Data {
-				if server.Vendor == nil || server.Model == nil {
+				if server.Vendor == nil {
+					continue
+				}
+				if server.Model == nil || *server.Model == "" {
+					serialInfo := "unknown"
+					if server.VendorSkuId != nil {
+						serialInfo = *server.VendorSkuId
+					}
+					logger.Get().Warn().Msgf("Server with serial number %s (server type %s) has no machine type (model) set - skipping for vendor system model lookup", serialInfo, serverTypeIdentifier)
 					continue
 				}
 				if strings.ToLower(*server.Vendor) != vc.CatalogInfo.Vendor {
