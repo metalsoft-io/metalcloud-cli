@@ -129,7 +129,7 @@ func rootPersistentPreRun(cmd *cobra.Command, args []string) error {
 	// Skip version validation for version and completion commands since they may fail with develop versions
 	if !skipValidation {
 		// Validate the version of the CLI
-		err = system.ValidateVersion(ctx)
+		err = system.ValidateVersion(ctx, Version)
 		if err != nil {
 			return err
 		}

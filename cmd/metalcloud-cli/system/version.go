@@ -17,7 +17,7 @@ const maxMinor = 3
 
 var AllowDevelop bool
 
-func ValidateVersion(ctx context.Context) error {
+func ValidateVersion(ctx context.Context, cliVersion string) error {
 	if AllowDevelop {
 		return nil
 	}
@@ -31,21 +31,21 @@ func ValidateVersion(ctx context.Context) error {
 
 	versionParts := strings.Split(strings.Trim(version.Version, "v "), ".")
 	if len(versionParts) < 2 {
-		return fmt.Errorf("invalid version: %s", version.Version)
+		return fmt.Errorf("invalid version: %s (CLI version: %s)", version.Version, cliVersion)
 	}
 
 	major, err := strconv.Atoi(versionParts[0])
 	if err != nil {
-		return fmt.Errorf("invalid version: %s", version.Version)
+		return fmt.Errorf("invalid version: %s (CLI version: %s)", version.Version, cliVersion)
 	}
 
 	minor, err := strconv.Atoi(versionParts[1])
 	if err != nil {
-		return fmt.Errorf("invalid version: %s", version.Version)
+		return fmt.Errorf("invalid version: %s (CLI version: %s)", version.Version, cliVersion)
 	}
 
 	if major < minMajor || major > maxMajor || (major == minMajor && minor < minMinor) || (major == maxMajor && minor > maxMinor) {
-		return fmt.Errorf("incompatible version: %s", version.Version)
+		return fmt.Errorf("incompatible version: server is %s, CLI version is %s (compatible range: %d.%d - %d.%d)", version.Version, cliVersion, minMajor, minMinor, maxMajor, maxMinor)
 	}
 
 	return nil
