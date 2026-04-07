@@ -466,6 +466,32 @@ func NetworkDeviceAddDefaults(ctx context.Context, config []byte) error {
 	return nil
 }
 
+func NetworkDeviceDeleteDefaults(ctx context.Context, siteId string, defaultsId string) error {
+	logger.Get().Info().Msgf("Deleting network device defaults %s for site %s", defaultsId, siteId)
+
+	siteIdNumeric, err := utils.GetFloat32FromString(siteId)
+	if err != nil {
+		return err
+	}
+
+	defaultsIdNumeric, err := utils.GetFloat32FromString(defaultsId)
+	if err != nil {
+		return err
+	}
+
+	client := api.GetApiClient(ctx)
+
+	httpRes, err := client.NetworkDeviceAPI.
+		RemoveNetworkDeviceDefaults(ctx, siteIdNumeric, defaultsIdNumeric).
+		Execute()
+	if err := response_inspector.InspectResponse(httpRes, err); err != nil {
+		return err
+	}
+
+	logger.Get().Info().Msgf("Network device defaults %s for site %s deleted successfully", defaultsId, siteId)
+	return nil
+}
+
 func NetworkDeviceExampleDefaults(ctx context.Context) error {
 	networkDeviceDefaults := sdk.CreateNetworkDeviceDefaults{
 		DatacenterName:            "site1",

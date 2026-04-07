@@ -516,6 +516,18 @@ Examples:
 		},
 	}
 
+	networkDeviceDeleteDefaultsCmd = &cobra.Command{
+		Use:          "delete-defaults <site_id> <id>",
+		Aliases:      []string{"rm-defaults"},
+		Short:        "Remove network device default configuration for a site",
+		SilenceUsage: true,
+		Annotations:  map[string]string{system.REQUIRED_PERMISSION: system.PERMISSION_SWITCHES_WRITE},
+		Args:         cobra.ExactArgs(2),
+		RunE: func(cmd *cobra.Command, args []string) error {
+			return network_device.NetworkDeviceDeleteDefaults(cmd.Context(), args[0], args[1])
+		},
+	}
+
 	networkDeviceExampleDefaultsCmd = &cobra.Command{
 		Use:          "example-defaults",
 		Short:        "Network device default configuration example",
@@ -571,6 +583,8 @@ func init() {
 	networkDeviceCmd.AddCommand(networkDeviceAddDefaultsCmd)
 	networkDeviceAddDefaultsCmd.Flags().StringVar(&networkDeviceFlags.configSource, "config-source", "", "Source of the network device default configuration. Can be 'pipe' or path to a JSON file.")
 	networkDeviceAddDefaultsCmd.MarkFlagRequired("config-source")
+
+	networkDeviceCmd.AddCommand(networkDeviceDeleteDefaultsCmd)
 
 	networkDeviceCmd.AddCommand(networkDeviceExampleDefaultsCmd)
 }
