@@ -2,8 +2,12 @@ package network_device
 
 import (
 	"context"
+	"encoding/csv"
 	"fmt"
+	"io"
+	"os"
 	"strconv"
+	"strings"
 
 	"github.com/metalsoft-io/metalcloud-cli/pkg/api"
 	"github.com/metalsoft-io/metalcloud-cli/pkg/formatter"
@@ -588,4 +592,239 @@ func getNetworkDeviceIdAndRevision(ctx context.Context, networkDeviceId string) 
 	}
 
 	return float32(networkDeviceIdNumeric), strconv.Itoa(int(networkDevice.Revision)), nil
+}
+
+var networkDeviceDefaultSecretsPrintConfig = formatter.PrintConfig{
+	FieldsConfig: map[string]formatter.RecordFieldConfig{
+		"Id": {
+			Title: "#",
+			Order: 1,
+		},
+		"SiteId": {
+			Title: "Site ID",
+			Order: 2,
+		},
+		"MacAddressOrSerialNumber": {
+			Title:    "MAC/Serial",
+			MaxWidth: 30,
+			Order:    3,
+		},
+		"SecretName": {
+			Title: "Secret Name",
+			Order: 4,
+		},
+		"CreatedTimestamp": {
+			Title:       "Created",
+			Transformer: formatter.FormatDateTimeValue,
+			Order:       5,
+		},
+		"UpdatedTimestamp": {
+			Title:       "Updated",
+			Transformer: formatter.FormatDateTimeValue,
+			Order:       6,
+		},
+	},
+}
+
+func NetworkDeviceDefaultSecretsList(ctx context.Context, page int, limit int) error {
+	logger.Get().Info().Msgf("Listing network device default secrets")
+
+	client := api.GetApiClient(ctx)
+
+	req := client.NetworkDeviceDefaultSecretsAPI.GetNetworkDevicesDefaultSecrets(ctx)
+
+	if page > 0 {
+		req = req.Page(float32(page))
+	}
+
+	if limit > 0 {
+		req = req.Limit(float32(limit))
+	}
+
+	secretsList, httpRes, err := req.SortBy([]string{"id:ASC"}).Execute()
+	if err := response_inspector.InspectResponse(httpRes, err); err != nil {
+		return err
+	}
+
+	return formatter.PrintResult(secretsList.Data, &networkDeviceDefaultSecretsPrintConfig)
+}
+
+func NetworkDeviceDefaultSecretsGet(ctx context.Context, secretsId string) error {
+	logger.Get().Info().Msgf("Get network device default secrets '%s'", secretsId)
+
+	secretsIdNumeric, err := parseDefaultSecretsId(secretsId)
+	if err != nil {
+		return err
+	}
+
+	client := api.GetApiClient(ctx)
+
+	secrets, httpRes, err := client.NetworkDeviceDefaultSecretsAPI.GetNetworkDeviceDefaultSecretsInfo(ctx, secretsIdNumeric).Execute()
+	if err := response_inspector.InspectResponse(httpRes, err); err != nil {
+		return err
+	}
+
+	return formatter.PrintResult(secrets, &networkDeviceDefaultSecretsPrintConfig)
+}
+
+func NetworkDeviceDefaultSecretsGetCredentials(ctx context.Context, secretsId string) error {
+	logger.Get().Info().Msgf("Get network device default secrets credentials for '%s'", secretsId)
+
+	secretsIdNumeric, err := parseDefaultSecretsId(secretsId)
+	if err != nil {
+		return err
+	}
+
+	client := api.GetApiClient(ctx)
+
+	credentials, httpRes, err := client.NetworkDeviceDefaultSecretsAPI.GetNetworkDeviceDefaultSecretsCredentials(ctx, secretsIdNumeric).Execute()
+	if err := response_inspector.InspectResponse(httpRes, err); err != nil {
+		return err
+	}
+
+	return formatter.PrintResult(credentials, nil)
+}
+
+func NetworkDeviceDefaultSecretsCreate(ctx context.Context, siteId float32, macAddressOrSerialNumber string, secretName string, secretValue string) error {
+	logger.Get().Info().Msgf("Creating network device default secrets")
+
+	client := api.GetApiClient(ctx)
+
+	createSecrets := sdk.NewCreateNetworkDeviceDefaultSecrets(siteId, macAddressOrSerialNumber, secretName, secretValue)
+
+	secrets, httpRes, err := client.NetworkDeviceDefaultSecretsAPI.CreateNetworkDeviceDefaultSecrets(ctx).
+		CreateNetworkDeviceDefaultSecrets(*createSecrets).
+		Execute()
+	if err := response_inspector.InspectResponse(httpRes, err); err != nil {
+		return err
+	}
+
+	return formatter.PrintResult(secrets, &networkDeviceDefaultSecretsPrintConfig)
+}
+
+func NetworkDeviceDefaultSecretsUpdate(ctx context.Context, secretsId string, secretValue string) error {
+	logger.Get().Info().Msgf("Updating network device default secrets '%s'", secretsId)
+
+	secretsIdNumeric, err := parseDefaultSecretsId(secretsId)
+	if err != nil {
+		return err
+	}
+
+	client := api.GetApiClient(ctx)
+
+	updateSecrets := sdk.NewUpdateNetworkDeviceDefaultSecrets()
+	updateSecrets.SetSecretValue(secretValue)
+
+	secrets, httpRes, err := client.NetworkDeviceDefaultSecretsAPI.
+		UpdateNetworkDeviceDefaultSecrets(ctx, secretsIdNumeric).
+		UpdateNetworkDeviceDefaultSecrets(*updateSecrets).
+		Execute()
+	if err := response_inspector.InspectResponse(httpRes, err); err != nil {
+		return err
+	}
+
+	return formatter.PrintResult(secrets, &networkDeviceDefaultSecretsPrintConfig)
+}
+
+func NetworkDeviceDefaultSecretsDelete(ctx context.Context, secretsId string) error {
+	logger.Get().Info().Msgf("Deleting network device default secrets '%s'", secretsId)
+
+	secretsIdNumeric, err := parseDefaultSecretsId(secretsId)
+	if err != nil {
+		return err
+	}
+
+	client := api.GetApiClient(ctx)
+
+	httpRes, err := client.NetworkDeviceDefaultSecretsAPI.DeleteNetworkDeviceDefaultSecrets(ctx, secretsIdNumeric).Execute()
+	if err := response_inspector.InspectResponse(httpRes, err); err != nil {
+		return err
+	}
+
+	logger.Get().Info().Msgf("Network device default secrets with ID %s deleted successfully", secretsId)
+	return nil
+}
+
+func NetworkDeviceDefaultSecretsBatchCreate(ctx context.Context, filePath string) error {
+	logger.Get().Info().Msgf("Batch creating network device default secrets from %s", filePath)
+
+	f, err := os.Open(filePath)
+	if err != nil {
+		return fmt.Errorf("unable to open CSV file: %w", err)
+	}
+	defer f.Close()
+
+	reader := csv.NewReader(f)
+
+	header, err := reader.Read()
+	if err != nil {
+		return fmt.Errorf("unable to read CSV header: %w", err)
+	}
+
+	colIndex := map[string]int{}
+	for i, col := range header {
+		colIndex[strings.TrimSpace(strings.ToLower(col))] = i
+	}
+
+	requiredCols := []string{"siteid", "macaddressorserialnumber", "secretname", "secretvalue"}
+	for _, col := range requiredCols {
+		if _, ok := colIndex[col]; !ok {
+			return fmt.Errorf("missing required CSV column: %s (expected columns: siteId,macAddressOrSerialNumber,secretName,secretValue)", col)
+		}
+	}
+
+	client := api.GetApiClient(ctx)
+
+	var created []sdk.NetworkDeviceDefaultSecrets
+	rowNum := 1
+
+	for {
+		record, err := reader.Read()
+		if err == io.EOF {
+			break
+		}
+		if err != nil {
+			return fmt.Errorf("error reading CSV row %d: %w", rowNum+1, err)
+		}
+		rowNum++
+
+		siteIdStr := strings.TrimSpace(record[colIndex["siteid"]])
+		siteIdFloat, err := strconv.ParseFloat(siteIdStr, 32)
+		if err != nil {
+			return fmt.Errorf("invalid siteId on row %d: '%s'", rowNum, siteIdStr)
+		}
+
+		macOrSerial := strings.TrimSpace(record[colIndex["macaddressorserialnumber"]])
+		secretName := strings.TrimSpace(record[colIndex["secretname"]])
+		secretValue := strings.TrimSpace(record[colIndex["secretvalue"]])
+
+		createSecrets := sdk.NewCreateNetworkDeviceDefaultSecrets(float32(siteIdFloat), macOrSerial, secretName, secretValue)
+
+		secrets, httpRes, err := client.NetworkDeviceDefaultSecretsAPI.CreateNetworkDeviceDefaultSecrets(ctx).
+			CreateNetworkDeviceDefaultSecrets(*createSecrets).
+			Execute()
+		if err := response_inspector.InspectResponse(httpRes, err); err != nil {
+			return fmt.Errorf("failed to create secret on row %d: %w", rowNum, err)
+		}
+
+		created = append(created, *secrets)
+		logger.Get().Info().Msgf("Created secret #%d for %s", int(secrets.Id), macOrSerial)
+	}
+
+	if len(created) == 0 {
+		return fmt.Errorf("no data rows found in CSV file")
+	}
+
+	return formatter.PrintResult(created, &networkDeviceDefaultSecretsPrintConfig)
+}
+
+func parseDefaultSecretsId(secretsId string) (float32, error) {
+	secretsIdNumeric, err := strconv.ParseFloat(secretsId, 32)
+	if err != nil {
+		err := fmt.Errorf("invalid network device default secrets ID: '%s'", secretsId)
+		logger.Get().Error().Err(err).Msg("")
+		return 0, err
+	}
+
+	return float32(secretsIdNumeric), nil
 }

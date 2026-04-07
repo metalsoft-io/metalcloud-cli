@@ -14,6 +14,7 @@ var (
 		macAddressOrSerialNumberFlag string
 		secretNameFlag               string
 		secretValueFlag              string
+		csvFileFlag                  string
 	}{}
 
 	networkDeviceDefaultSecretsCmd = &cobra.Command{
@@ -174,6 +175,41 @@ Examples:
 		},
 	}
 
+	networkDeviceDefaultSecretsBatchCreateCmd = &cobra.Command{
+		Use:   "batch-create",
+		Short: "Create multiple network device default secrets from a CSV file",
+		Long: `Create multiple network device default secrets from a CSV file.
+
+The CSV file must have a header row with the following columns:
+  siteId, macAddressOrSerialNumber, secretName, secretValue
+
+Each subsequent row creates one secret.
+
+Required Flags:
+  --csv-file    Path to the CSV file
+
+Example CSV file:
+  siteId,macAddressOrSerialNumber,secretName,secretValue
+  1,AA:BB:CC:DD:EE:FF,admin_password,s3cur3
+  1,SN123456,enable_secret,mypass
+  2,11:22:33:44:55:66,snmp_community,public
+
+Examples:
+  # Batch create secrets from a CSV file
+  metalcloud-cli network-device default-secrets batch-create --csv-file secrets.csv
+
+  # Using alias
+  metalcloud-cli nd ds batch-create --csv-file /path/to/secrets.csv`,
+		SilenceUsage: true,
+		Annotations:  map[string]string{system.REQUIRED_PERMISSION: system.PERMISSION_SWITCHES_WRITE},
+		RunE: func(cmd *cobra.Command, args []string) error {
+			return network_device.NetworkDeviceDefaultSecretsBatchCreate(
+				cmd.Context(),
+				networkDeviceDefaultSecretsFlags.csvFileFlag,
+			)
+		},
+	}
+
 	networkDeviceDefaultSecretsDeleteCmd = &cobra.Command{
 		Use:     "delete <secrets_id>",
 		Aliases: []string{"rm"},
@@ -224,6 +260,10 @@ func init() {
 	networkDeviceDefaultSecretsCmd.AddCommand(networkDeviceDefaultSecretsUpdateCmd)
 	networkDeviceDefaultSecretsUpdateCmd.Flags().StringVar(&networkDeviceDefaultSecretsFlags.secretValueFlag, "secret-value", "", "New value of the secret")
 	networkDeviceDefaultSecretsUpdateCmd.MarkFlagRequired("secret-value")
+
+	networkDeviceDefaultSecretsCmd.AddCommand(networkDeviceDefaultSecretsBatchCreateCmd)
+	networkDeviceDefaultSecretsBatchCreateCmd.Flags().StringVar(&networkDeviceDefaultSecretsFlags.csvFileFlag, "csv-file", "", "Path to the CSV file")
+	networkDeviceDefaultSecretsBatchCreateCmd.MarkFlagRequired("csv-file")
 
 	networkDeviceDefaultSecretsCmd.AddCommand(networkDeviceDefaultSecretsDeleteCmd)
 }
