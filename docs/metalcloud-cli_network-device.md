@@ -36,7 +36,9 @@ monitor network devices.
 * [metalcloud-cli network-device archive](metalcloud-cli_network-device_archive.md)	 - Archive a network device (soft delete with history preservation)
 * [metalcloud-cli network-device config-example](metalcloud-cli_network-device_config-example.md)	 - Generate example configuration template for network devices
 * [metalcloud-cli network-device create](metalcloud-cli_network-device_create.md)	 - Create a new network device with specified configuration
+* [metalcloud-cli network-device default-secrets](metalcloud-cli_network-device_default-secrets.md)	 - Manage network device default secrets
 * [metalcloud-cli network-device delete](metalcloud-cli_network-device_delete.md)	 - Delete a network device from the infrastructure
+* [metalcloud-cli network-device delete-defaults](metalcloud-cli_network-device_delete-defaults.md)	 - Remove network device default configuration for a site
 * [metalcloud-cli network-device discover](metalcloud-cli_network-device_discover.md)	 - Discover and inventory network device interfaces and configuration
 * [metalcloud-cli network-device enable-syslog](metalcloud-cli_network-device_enable-syslog.md)	 - Enable remote syslog forwarding on the network device
 * [metalcloud-cli network-device example-defaults](metalcloud-cli_network-device_example-defaults.md)	 - Network device default configuration example
