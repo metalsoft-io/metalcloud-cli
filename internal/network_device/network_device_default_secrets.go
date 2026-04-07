@@ -1,4 +1,4 @@
-package network_device_default_secrets
+package network_device
 
 import (
 	"context"

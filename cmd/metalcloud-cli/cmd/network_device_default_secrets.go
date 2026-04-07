@@ -2,23 +2,23 @@ package cmd
 
 import (
 	"github.com/metalsoft-io/metalcloud-cli/cmd/metalcloud-cli/system"
-	"github.com/metalsoft-io/metalcloud-cli/internal/network_device_default_secrets"
+	"github.com/metalsoft-io/metalcloud-cli/internal/network_device"
 	"github.com/spf13/cobra"
 )
 
 var (
 	networkDeviceDefaultSecretsFlags = struct {
-		pageFlag                    int
-		limitFlag                   int
-		siteIdFlag                  float32
+		pageFlag                     int
+		limitFlag                    int
+		siteIdFlag                   float32
 		macAddressOrSerialNumberFlag string
-		secretNameFlag              string
-		secretValueFlag             string
+		secretNameFlag               string
+		secretValueFlag              string
 	}{}
 
 	networkDeviceDefaultSecretsCmd = &cobra.Command{
-		Use:     "network-device-default-secrets [command]",
-		Aliases: []string{"nd-secrets", "ndds"},
+		Use:     "default-secrets [command]",
+		Aliases: []string{"ds"},
 		Short:   "Manage network device default secrets",
 		Long: `Manage network device default secrets for network devices (switches).
 
@@ -26,23 +26,15 @@ Network device default secrets store secret values (such as passwords or keys) a
 with a specific network device identified by MAC address or serial number. These secrets
 are encrypted and stored securely.
 
-Available commands:
-  list              List all network device default secrets
-  get               Get detailed information about a specific secret
-  get-credentials   Retrieve the unencrypted secret value
-  create            Create a new network device default secret
-  update            Update an existing network device default secret
-  delete            Delete a network device default secret
-
 Examples:
   # List all network device default secrets
-  metalcloud-cli network-device-default-secrets list
+  metalcloud-cli network-device default-secrets list
 
   # Get specific secret information
-  metalcloud-cli network-device-default-secrets get 123
+  metalcloud-cli network-device default-secrets get 123
 
   # Create a new secret
-  metalcloud-cli ndds create --site-id 1 --mac-or-serial "AA:BB:CC:DD:EE:FF" --secret-name "admin_password" --secret-value "s3cur3"`,
+  metalcloud-cli nd ds create --site-id 1 --mac-or-serial "AA:BB:CC:DD:EE:FF" --secret-name "admin_password" --secret-value "s3cur3"`,
 	}
 
 	networkDeviceDefaultSecretsListCmd = &cobra.Command{
@@ -57,14 +49,14 @@ Flags:
 
 Examples:
   # List all network device default secrets
-  metalcloud-cli network-device-default-secrets list
+  metalcloud-cli network-device default-secrets list
 
   # List with pagination
-  metalcloud-cli ndds list --page 2 --limit 10`,
+  metalcloud-cli nd ds list --page 2 --limit 10`,
 		SilenceUsage: true,
 		Annotations:  map[string]string{system.REQUIRED_PERMISSION: system.PERMISSION_SWITCHES_READ},
 		RunE: func(cmd *cobra.Command, args []string) error {
-			return network_device_default_secrets.NetworkDeviceDefaultSecretsList(cmd.Context(), networkDeviceDefaultSecretsFlags.pageFlag, networkDeviceDefaultSecretsFlags.limitFlag)
+			return network_device.NetworkDeviceDefaultSecretsList(cmd.Context(), networkDeviceDefaultSecretsFlags.pageFlag, networkDeviceDefaultSecretsFlags.limitFlag)
 		},
 	}
 
@@ -82,15 +74,15 @@ Arguments:
 
 Examples:
   # Get secret information
-  metalcloud-cli network-device-default-secrets get 123
+  metalcloud-cli network-device default-secrets get 123
 
   # Using alias
-  metalcloud-cli ndds show 456`,
+  metalcloud-cli nd ds show 456`,
 		SilenceUsage: true,
 		Annotations:  map[string]string{system.REQUIRED_PERMISSION: system.PERMISSION_SWITCHES_READ},
 		Args:         cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
-			return network_device_default_secrets.NetworkDeviceDefaultSecretsGet(cmd.Context(), args[0])
+			return network_device.NetworkDeviceDefaultSecretsGet(cmd.Context(), args[0])
 		},
 	}
 
@@ -107,15 +99,15 @@ Arguments:
 
 Examples:
   # Get the secret value
-  metalcloud-cli network-device-default-secrets get-credentials 123
+  metalcloud-cli network-device default-secrets get-credentials 123
 
   # Using alias
-  metalcloud-cli ndds get-secret 456`,
+  metalcloud-cli nd ds get-secret 456`,
 		SilenceUsage: true,
 		Annotations:  map[string]string{system.REQUIRED_PERMISSION: system.PERMISSION_SWITCHES_READ},
 		Args:         cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
-			return network_device_default_secrets.NetworkDeviceDefaultSecretsGetCredentials(cmd.Context(), args[0])
+			return network_device.NetworkDeviceDefaultSecretsGetCredentials(cmd.Context(), args[0])
 		},
 	}
 
@@ -132,18 +124,18 @@ Required Flags:
 
 Examples:
   # Create a new secret
-  metalcloud-cli network-device-default-secrets create \
+  metalcloud-cli network-device default-secrets create \
     --site-id 1 \
     --mac-or-serial "AA:BB:CC:DD:EE:FF" \
     --secret-name "admin_password" \
     --secret-value "s3cur3"
 
   # Using alias
-  metalcloud-cli ndds create --site-id 2 --mac-or-serial "SN123456" --secret-name "enable_secret" --secret-value "mypass"`,
+  metalcloud-cli nd ds create --site-id 2 --mac-or-serial "SN123456" --secret-name "enable_secret" --secret-value "mypass"`,
 		SilenceUsage: true,
 		Annotations:  map[string]string{system.REQUIRED_PERMISSION: system.PERMISSION_SWITCHES_WRITE},
 		RunE: func(cmd *cobra.Command, args []string) error {
-			return network_device_default_secrets.NetworkDeviceDefaultSecretsCreate(
+			return network_device.NetworkDeviceDefaultSecretsCreate(
 				cmd.Context(),
 				networkDeviceDefaultSecretsFlags.siteIdFlag,
 				networkDeviceDefaultSecretsFlags.macAddressOrSerialNumberFlag,
@@ -166,15 +158,15 @@ Required Flags:
 
 Examples:
   # Update the secret value
-  metalcloud-cli network-device-default-secrets update 123 --secret-value "new_s3cur3"
+  metalcloud-cli network-device default-secrets update 123 --secret-value "new_s3cur3"
 
   # Using alias
-  metalcloud-cli ndds update 456 --secret-value "updated_password"`,
+  metalcloud-cli nd ds update 456 --secret-value "updated_password"`,
 		SilenceUsage: true,
 		Annotations:  map[string]string{system.REQUIRED_PERMISSION: system.PERMISSION_SWITCHES_WRITE},
 		Args:         cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
-			return network_device_default_secrets.NetworkDeviceDefaultSecretsUpdate(
+			return network_device.NetworkDeviceDefaultSecretsUpdate(
 				cmd.Context(),
 				args[0],
 				networkDeviceDefaultSecretsFlags.secretValueFlag,
@@ -195,21 +187,21 @@ Arguments:
 
 Examples:
   # Delete a secret
-  metalcloud-cli network-device-default-secrets delete 123
+  metalcloud-cli network-device default-secrets delete 123
 
   # Using alias
-  metalcloud-cli ndds rm 456`,
+  metalcloud-cli nd ds rm 456`,
 		SilenceUsage: true,
 		Annotations:  map[string]string{system.REQUIRED_PERMISSION: system.PERMISSION_SWITCHES_WRITE},
 		Args:         cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
-			return network_device_default_secrets.NetworkDeviceDefaultSecretsDelete(cmd.Context(), args[0])
+			return network_device.NetworkDeviceDefaultSecretsDelete(cmd.Context(), args[0])
 		},
 	}
 )
 
 func init() {
-	rootCmd.AddCommand(networkDeviceDefaultSecretsCmd)
+	networkDeviceCmd.AddCommand(networkDeviceDefaultSecretsCmd)
 
 	networkDeviceDefaultSecretsCmd.AddCommand(networkDeviceDefaultSecretsListCmd)
 	networkDeviceDefaultSecretsListCmd.Flags().IntVar(&networkDeviceDefaultSecretsFlags.pageFlag, "page", 0, "Page number")
