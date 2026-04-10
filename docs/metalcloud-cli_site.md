@@ -58,6 +58,7 @@ Examples:
 * [metalcloud-cli site agents](metalcloud-cli_site_agents.md)	 - List all agents deployed in a specific site
 * [metalcloud-cli site create](metalcloud-cli_site_create.md)	 - Create a new site with the specified name
 * [metalcloud-cli site decommission](metalcloud-cli_site_decommission.md)	 - Archive a site and mark it as inactive
+* [metalcloud-cli site dhcp-oob-reservations](metalcloud-cli_site_dhcp-oob-reservations.md)	 - Manage DHCP Option82 OOB IP reservations for a site
 * [metalcloud-cli site get](metalcloud-cli_site_get.md)	 - Retrieve detailed information about a specific site
 * [metalcloud-cli site get-config](metalcloud-cli_site_get-config.md)	 - Retrieve the configuration settings for a site
 * [metalcloud-cli site list](metalcloud-cli_site_list.md)	 - List all sites with their basic information

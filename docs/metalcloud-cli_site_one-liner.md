@@ -11,7 +11,7 @@ metalcloud-cli site one-liner site_id_or_label [flags]
 ```
       --github-tag string      GitHub tag for deploy-agents.sh script [33m(default: main)[0m
   -h, --help                   help for one-liner
-      --images-tag string      Docker images tag version [33m(default: develop)[0m
+      --images-tag string      Docker images tag version [33m(default: auto-detected from system version)[0m
       --inband-mode            Install in inband mode
       --registry string        Container registry URL [33m(default: registry.metalsoft.dev)[0m
       --ssl-hostname string    SSL hostname [33m(default: eveng-qa02.metalcloud.io)[0m
