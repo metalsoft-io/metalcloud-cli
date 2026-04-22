@@ -7,8 +7,12 @@ Update LDAP group mapping
 Update an existing LDAP group-to-role mapping.
 
 This command modifies an existing mapping between an LDAP group and a MetalCloud role.
-You can update either the role name, the priority, or both. At least one of these
-flags must be provided.
+You can update the role name, the priority, or any of the optional attributes. At
+least one of these flags must be provided.
+
+Passing one of the optional string flags (--user-external-identifier, --username,
+--email) with an empty value resets the attribute to its default (objectGUID,
+sAMAccountName, mail respectively).
 
 The priority value determines which role is assigned when a user belongs to multiple
 LDAP groups with different mappings. Lower priority numbers take precedence over
@@ -17,12 +21,15 @@ higher ones.
 Examples:
   # Update the role name for "Power Users" group
   metalcloud-cli auth ldap mapping-update "Power Users" --role-name senior-developer
-  
+
   # Update the priority for "Developers" group
   metalcloud-cli auth ldap mapping-update "Developers" --priority 15
-  
+
   # Update both role name and priority
   metalcloud-cli auth ldap mapping-update "Guests" --role-name read-only --priority 20
+
+  # Reset the email attribute to its default value
+  metalcloud-cli auth ldap mapping-update "Developers" --email ""
 
 ```
 metalcloud-cli auth ldap mapping-update group_name [flags]
@@ -31,9 +38,12 @@ metalcloud-cli auth ldap mapping-update group_name [flags]
 ### Options
 
 ```
-  -h, --help               help for mapping-update
-      --priority int32     Mapping priority. (default 10)
-      --role-name string   Role name to map to the LDAP group.
+      --email string                      LDAP attribute used as the email.
+  -h, --help                              help for mapping-update
+      --priority int32                    Mapping priority. (default 10)
+      --role-name string                  Role name to map to the LDAP group.
+      --user-external-identifier string   LDAP attribute used as the user external identifier.
+      --username string                   LDAP attribute used as the username.
 ```
 
 ### Options inherited from parent commands

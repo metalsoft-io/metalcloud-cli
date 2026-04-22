@@ -8,8 +8,11 @@ import (
 
 var (
 	authFlags = struct {
-		roleName string
-		priority int32
+		roleName               string
+		priority               int32
+		userExternalIdentifier string
+		username               string
+		email                  string
 	}{}
 
 	authCmd = &cobra.Command{
@@ -114,7 +117,13 @@ Examples:
 		Annotations:  map[string]string{system.REQUIRED_PERMISSION: system.PERMISSION_GLOBAL_CONFIGURATIONS_WRITE},
 		Args:         cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
-			return auth.AuthLdapMappingAdd(cmd.Context(), args[0], authFlags.roleName, authFlags.priority)
+			return auth.AuthLdapMappingAdd(cmd.Context(), args[0], auth.AuthLdapMappingOptions{
+				RoleName:               authFlags.roleName,
+				Priority:               authFlags.priority,
+				UserExternalIdentifier: optionalStringFlag(cmd, "user-external-identifier", authFlags.userExternalIdentifier),
+				Username:               optionalStringFlag(cmd, "username", authFlags.username),
+				Email:                  optionalStringFlag(cmd, "email", authFlags.email),
+			})
 		},
 	}
 
@@ -125,8 +134,12 @@ Examples:
 		Long: `Update an existing LDAP group-to-role mapping.
 
 This command modifies an existing mapping between an LDAP group and a MetalCloud role.
-You can update either the role name, the priority, or both. At least one of these
-flags must be provided.
+You can update the role name, the priority, or any of the optional attributes. At
+least one of these flags must be provided.
+
+Passing one of the optional string flags (--user-external-identifier, --username,
+--email) with an empty value resets the attribute to its default (objectGUID,
+sAMAccountName, mail respectively).
 
 The priority value determines which role is assigned when a user belongs to multiple
 LDAP groups with different mappings. Lower priority numbers take precedence over
@@ -135,17 +148,26 @@ higher ones.
 Examples:
   # Update the role name for "Power Users" group
   metalcloud-cli auth ldap mapping-update "Power Users" --role-name senior-developer
-  
+
   # Update the priority for "Developers" group
   metalcloud-cli auth ldap mapping-update "Developers" --priority 15
-  
+
   # Update both role name and priority
-  metalcloud-cli auth ldap mapping-update "Guests" --role-name read-only --priority 20`,
+  metalcloud-cli auth ldap mapping-update "Guests" --role-name read-only --priority 20
+
+  # Reset the email attribute to its default value
+  metalcloud-cli auth ldap mapping-update "Developers" --email ""`,
 		SilenceUsage: true,
 		Annotations:  map[string]string{system.REQUIRED_PERMISSION: system.PERMISSION_GLOBAL_CONFIGURATIONS_WRITE},
 		Args:         cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
-			return auth.AuthLdapMappingUpdate(cmd.Context(), args[0], authFlags.roleName, authFlags.priority)
+			return auth.AuthLdapMappingUpdate(cmd.Context(), args[0], auth.AuthLdapMappingOptions{
+				RoleName:               authFlags.roleName,
+				Priority:               authFlags.priority,
+				UserExternalIdentifier: optionalStringFlag(cmd, "user-external-identifier", authFlags.userExternalIdentifier),
+				Username:               optionalStringFlag(cmd, "username", authFlags.username),
+				Email:                  optionalStringFlag(cmd, "email", authFlags.email),
+			})
 		},
 	}
 
@@ -180,6 +202,13 @@ Examples:
 	}
 )
 
+func optionalStringFlag(cmd *cobra.Command, name string, value string) *string {
+	if !cmd.Flags().Changed(name) {
+		return nil
+	}
+	return &value
+}
+
 func init() {
 	rootCmd.AddCommand(authCmd)
 
@@ -190,13 +219,19 @@ func init() {
 	authLdapCmd.AddCommand(authLdapMappingAddCmd)
 	authLdapMappingAddCmd.Flags().StringVar(&authFlags.roleName, "role-name", "", "Role name to map to the LDAP group.")
 	authLdapMappingAddCmd.Flags().Int32Var(&authFlags.priority, "priority", 10, "Mapping priority.")
+	authLdapMappingAddCmd.Flags().StringVar(&authFlags.userExternalIdentifier, "user-external-identifier", "", "LDAP attribute used as the user external identifier.")
+	authLdapMappingAddCmd.Flags().StringVar(&authFlags.username, "username", "", "LDAP attribute used as the username.")
+	authLdapMappingAddCmd.Flags().StringVar(&authFlags.email, "email", "", "LDAP attribute used as the email.")
 	authLdapMappingAddCmd.MarkFlagRequired("role-name")
 	authLdapMappingAddCmd.MarkFlagRequired("priority")
 
 	authLdapCmd.AddCommand(authLdapMappingUpdateCmd)
 	authLdapMappingUpdateCmd.Flags().StringVar(&authFlags.roleName, "role-name", "", "Role name to map to the LDAP group.")
 	authLdapMappingUpdateCmd.Flags().Int32Var(&authFlags.priority, "priority", 10, "Mapping priority.")
-	authLdapMappingUpdateCmd.MarkFlagsOneRequired("role-name", "priority")
+	authLdapMappingUpdateCmd.Flags().StringVar(&authFlags.userExternalIdentifier, "user-external-identifier", "", "LDAP attribute used as the user external identifier.")
+	authLdapMappingUpdateCmd.Flags().StringVar(&authFlags.username, "username", "", "LDAP attribute used as the username.")
+	authLdapMappingUpdateCmd.Flags().StringVar(&authFlags.email, "email", "", "LDAP attribute used as the email.")
+	authLdapMappingUpdateCmd.MarkFlagsOneRequired("role-name", "priority", "user-external-identifier", "username", "email")
 
 	authLdapCmd.AddCommand(authLdapMappingRemoveCmd)
 }

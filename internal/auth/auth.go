@@ -10,10 +10,27 @@ import (
 	"github.com/metalsoft-io/metalcloud-cli/pkg/response_inspector"
 )
 
+const (
+	defaultUserExternalIdentifier = "objectGUID"
+	defaultUsername               = "sAMAccountName"
+	defaultEmail                  = "mail"
+)
+
 type AuthLdapGroupMapping struct {
-	GroupName string `json:"groupName"`
-	RoleName  string `json:"roleName"`
-	Priority  int32  `json:"priority"`
+	GroupName              string `json:"groupName"`
+	RoleName               string `json:"roleName"`
+	Priority               int32  `json:"priority"`
+	UserExternalIdentifier string `json:"userExternalIdentifier"`
+	Username               string `json:"username"`
+	Email                  string `json:"email"`
+}
+
+type AuthLdapMappingOptions struct {
+	RoleName               string
+	Priority               int32
+	UserExternalIdentifier *string
+	Username               *string
+	Email                  *string
 }
 
 var authLdapMappingPrintConfig = formatter.PrintConfig{
@@ -31,6 +48,21 @@ var authLdapMappingPrintConfig = formatter.PrintConfig{
 			Title: "Priority",
 			Order: 3,
 		},
+		"UserExternalIdentifier": {
+			Title:    "External Id",
+			MaxWidth: 30,
+			Order:    4,
+		},
+		"Username": {
+			Title:    "Username",
+			MaxWidth: 30,
+			Order:    5,
+		},
+		"Email": {
+			Title:    "Email",
+			MaxWidth: 30,
+			Order:    6,
+		},
 	},
 }
 
@@ -47,7 +79,7 @@ func AuthLdapMappingList(ctx context.Context) error {
 	return formatter.PrintResult(mappings, &authLdapMappingPrintConfig)
 }
 
-func AuthLdapMappingAdd(ctx context.Context, groupName string, roleName string, priority int32) error {
+func AuthLdapMappingAdd(ctx context.Context, groupName string, opts AuthLdapMappingOptions) error {
 	logger.Get().Info().Msgf("Adding LDAP mapping for group '%s'", groupName)
 
 	authConfig, err := getAuthConfig(ctx)
@@ -70,11 +102,25 @@ func AuthLdapMappingAdd(ctx context.Context, groupName string, roleName string, 
 		}
 	}
 
-	ldapConfig["groupsMapping"] = append(ldapConfig["groupsMapping"].([]interface{}), map[string]interface{}{
-		"groupName": groupName,
-		"roleName":  roleName,
-		"priority":  float64(priority),
-	})
+	newMapping := map[string]interface{}{
+		"groupName":              groupName,
+		"roleName":               opts.RoleName,
+		"priority":               float64(opts.Priority),
+		"userExternalIdentifier": defaultUserExternalIdentifier,
+		"username":               defaultUsername,
+		"email":                  defaultEmail,
+	}
+	if opts.UserExternalIdentifier != nil && *opts.UserExternalIdentifier != "" {
+		newMapping["userExternalIdentifier"] = *opts.UserExternalIdentifier
+	}
+	if opts.Username != nil && *opts.Username != "" {
+		newMapping["username"] = *opts.Username
+	}
+	if opts.Email != nil && *opts.Email != "" {
+		newMapping["email"] = *opts.Email
+	}
+
+	ldapConfig["groupsMapping"] = append(ldapConfig["groupsMapping"].([]interface{}), newMapping)
 
 	authConfig, err = patchAuthConfig(ctx, map[string]interface{}{"ldap": ldapConfig})
 	if err != nil {
@@ -86,7 +132,7 @@ func AuthLdapMappingAdd(ctx context.Context, groupName string, roleName string, 
 	return formatter.PrintResult(mappings, &authLdapMappingPrintConfig)
 }
 
-func AuthLdapMappingUpdate(ctx context.Context, groupName string, roleName string, priority int32) error {
+func AuthLdapMappingUpdate(ctx context.Context, groupName string, opts AuthLdapMappingOptions) error {
 	logger.Get().Info().Msgf("Updating LDAP mapping for group '%s'", groupName)
 
 	authConfig, err := getAuthConfig(ctx)
@@ -105,13 +151,17 @@ func AuthLdapMappingUpdate(ctx context.Context, groupName string, roleName strin
 
 	matchFound := false
 	for _, mapping := range ldapConfig["groupsMapping"].([]interface{}) {
-		if mapping.(map[string]interface{})["groupName"] == groupName {
-			if roleName != "" {
-				mapping.(map[string]interface{})["roleName"] = roleName
+		m := mapping.(map[string]interface{})
+		if m["groupName"] == groupName {
+			if opts.RoleName != "" {
+				m["roleName"] = opts.RoleName
 			}
-			if priority != 0 {
-				mapping.(map[string]interface{})["priority"] = float64(priority)
+			if opts.Priority != 0 {
+				m["priority"] = float64(opts.Priority)
 			}
+			applyOptionalStringWithDefault(m, "userExternalIdentifier", opts.UserExternalIdentifier, defaultUserExternalIdentifier)
+			applyOptionalStringWithDefault(m, "username", opts.Username, defaultUsername)
+			applyOptionalStringWithDefault(m, "email", opts.Email, defaultEmail)
 			matchFound = true
 			break
 		}
@@ -236,12 +286,37 @@ func getLdapGroupMapping(ldapConfig map[string]interface{}) []AuthLdapGroupMappi
 	for _, mapping := range groupsMapping.([]interface{}) {
 		m := mapping.(map[string]interface{})
 		groupMapping := AuthLdapGroupMapping{
-			GroupName: m["groupName"].(string),
-			RoleName:  m["roleName"].(string),
-			Priority:  int32(m["priority"].(float64)),
+			GroupName:              m["groupName"].(string),
+			RoleName:               m["roleName"].(string),
+			Priority:               int32(m["priority"].(float64)),
+			UserExternalIdentifier: stringValue(m["userExternalIdentifier"]),
+			Username:               stringValue(m["username"]),
+			Email:                  stringValue(m["email"]),
 		}
 		mappings = append(mappings, groupMapping)
 	}
 
 	return mappings
+}
+
+func applyOptionalStringWithDefault(m map[string]interface{}, key string, value *string, defaultValue string) {
+	if value == nil {
+		return
+	}
+	if *value == "" {
+		m[key] = defaultValue
+		return
+	}
+	m[key] = *value
+}
+
+func stringValue(v interface{}) string {
+	if v == nil {
+		return ""
+	}
+	s, ok := v.(string)
+	if !ok {
+		return ""
+	}
+	return s
 }

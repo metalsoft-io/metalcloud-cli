@@ -31,9 +31,12 @@ metalcloud-cli auth ldap mapping-add group_name [flags]
 ### Options
 
 ```
-  -h, --help               help for mapping-add
-      --priority int32     Mapping priority. (default 10)
-      --role-name string   Role name to map to the LDAP group.
+      --email string                      LDAP attribute used as the email.
+  -h, --help                              help for mapping-add
+      --priority int32                    Mapping priority. (default 10)
+      --role-name string                  Role name to map to the LDAP group.
+      --user-external-identifier string   LDAP attribute used as the user external identifier.
+      --username string                   LDAP attribute used as the username.
 ```
 
 ### Options inherited from parent commands
