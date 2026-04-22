@@ -6,16 +6,16 @@ toolchain go1.25.3
 
 require (
 	github.com/go-git/go-billy/v5 v5.8.0
-	github.com/go-git/go-git/v5 v5.17.2
-	github.com/jedib0t/go-pretty/v6 v6.7.9
+	github.com/go-git/go-git/v5 v5.18.0
+	github.com/jedib0t/go-pretty/v6 v6.7.10
 	github.com/metalsoft-io/metalcloud-sdk-go v0.0.0-20260406115718-0b30ddbb3f42
 	github.com/pkg/sftp v1.13.10
-	github.com/rs/zerolog v1.35.0
+	github.com/rs/zerolog v1.35.1
 	github.com/spf13/cobra v1.10.2
 	github.com/spf13/viper v1.21.0
-	golang.org/x/crypto v0.49.0
-	golang.org/x/exp v0.0.0-20260312153236-7ab1446f8b90
-	golang.org/x/text v0.35.0
+	golang.org/x/crypto v0.50.0
+	golang.org/x/exp v0.0.0-20260410095643-746e56fc9e2f
+	golang.org/x/text v0.36.0
 	gopkg.in/yaml.v3 v3.0.1
 )
 
@@ -38,8 +38,8 @@ require (
 	github.com/klauspost/cpuid/v2 v2.3.0 // indirect
 	github.com/kr/fs v0.1.0 // indirect
 	github.com/mattn/go-colorable v0.1.14 // indirect
-	github.com/mattn/go-isatty v0.0.20 // indirect
-	github.com/mattn/go-runewidth v0.0.22 // indirect
+	github.com/mattn/go-isatty v0.0.21 // indirect
+	github.com/mattn/go-runewidth v0.0.23 // indirect
 	github.com/pelletier/go-toml/v2 v2.3.0 // indirect
 	github.com/pjbgf/sha1cd v0.5.0 // indirect
 	github.com/russross/blackfriday/v2 v2.1.0 // indirect
@@ -52,7 +52,7 @@ require (
 	github.com/subosito/gotenv v1.6.0 // indirect
 	github.com/xanzy/ssh-agent v0.3.3 // indirect
 	go.yaml.in/yaml/v3 v3.0.4 // indirect
-	golang.org/x/net v0.52.0 // indirect
-	golang.org/x/sys v0.42.0 // indirect
+	golang.org/x/net v0.53.0 // indirect
+	golang.org/x/sys v0.43.0 // indirect
 	gopkg.in/warnings.v0 v0.1.2 // indirect
 )
