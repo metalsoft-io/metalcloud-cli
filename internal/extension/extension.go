@@ -359,6 +359,7 @@ func ExtensionListRepo(ctx context.Context, repoUrl string, repoUsername string,
 					},
 					"Kind": {
 						Order: 4,
+						Title: "Type",
 					},
 				},
 			},

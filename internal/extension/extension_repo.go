@@ -7,6 +7,7 @@ import (
 	"strings"
 
 	"github.com/go-git/go-git/v5/plumbing/object"
+	"github.com/metalsoft-io/metalcloud-cli/pkg/logger"
 	"github.com/metalsoft-io/metalcloud-cli/pkg/repo"
 	sdk "github.com/metalsoft-io/metalcloud-sdk-go"
 )
@@ -33,21 +34,23 @@ func getRepositoryExtensions(tree *object.Tree) map[string]RepositoryExtensionIn
 	files := tree.Files()
 	files.ForEach(func(file *object.File) error {
 		if file.Mode.IsRegular() {
-			if strings.Count(file.Name, "/") == 2 {
+			depthLevel := strings.Count(file.Name, "/")
+			if depthLevel > 0 && depthLevel <= 2 {
 				parts := strings.Split(file.Name, "/")
-				extensionPrefix := strings.Join(parts[:2], "/")
+				extensionPrefix := strings.Join(parts[:depthLevel], "/")
 
-				if parts[2] == readMeFileName {
+				if parts[depthLevel] == readMeFileName {
 					return nil // Skip the README file
 				}
 
 				var err error
-				if parts[2] == extensionFileName {
+				if parts[depthLevel] == extensionFileName {
 					extension := repoMap[extensionPrefix]
 
 					extension.SourcePath = extensionPrefix
 					extension.SourceContent, err = file.Contents()
 					if err != nil {
+						logger.Get().Trace().Msgf("Repo item %s skipped - reading the content failed: %s", file.Name, err.Error())
 						return err
 					}
 
@@ -63,13 +66,22 @@ func getRepositoryExtensions(tree *object.Tree) map[string]RepositoryExtensionIn
 }
 
 func processExtensionContent(repoExtension *RepositoryExtensionInfo) error {
-	err := json.Unmarshal([]byte(repoExtension.SourceContent), &repoExtension.Extension)
+	var extensionDefinition sdk.ExtensionDefinition
+	err := json.Unmarshal([]byte(repoExtension.SourceContent), &extensionDefinition)
 	if err != nil {
 		return err
 	}
 
-	if repoExtension.Extension.Name == "" {
+	if extensionDefinition.Name == "" {
 		return fmt.Errorf("extension definition is missing or is older format in %s", repoExtension.SourcePath)
+	}
+
+	repoExtension.Extension = sdk.CreateExtension{
+		Kind:        extensionDefinition.ExtensionType,
+		Label:       &extensionDefinition.Label,
+		Name:        extensionDefinition.Name,
+		Description: *extensionDefinition.Description,
+		Definition:  extensionDefinition,
 	}
 
 	return nil
