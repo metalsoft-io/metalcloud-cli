@@ -4,6 +4,8 @@
 
 The MetalCloud CLI allows management of all MetalCloud instance objects via the command line.
 
+[www.metalsoft.io](https://metalsoft.io)
+
 ## Installation
 
 > [!IMPORTANT]
