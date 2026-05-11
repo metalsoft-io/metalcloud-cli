@@ -5,8 +5,8 @@ go 1.25.0
 toolchain go1.25.3
 
 require (
-	github.com/go-git/go-billy/v5 v5.8.0
-	github.com/go-git/go-git/v5 v5.18.0
+	github.com/go-git/go-billy/v5 v5.9.0
+	github.com/go-git/go-git/v5 v5.19.0
 	github.com/jedib0t/go-pretty/v6 v6.7.10
 	github.com/metalsoft-io/metalcloud-sdk-go v0.0.0-20260406115718-0b30ddbb3f42
 	github.com/pkg/sftp v1.13.10
@@ -41,7 +41,7 @@ require (
 	github.com/mattn/go-isatty v0.0.22 // indirect
 	github.com/mattn/go-runewidth v0.0.23 // indirect
 	github.com/pelletier/go-toml/v2 v2.3.0 // indirect
-	github.com/pjbgf/sha1cd v0.5.0 // indirect
+	github.com/pjbgf/sha1cd v0.6.0 // indirect
 	github.com/russross/blackfriday/v2 v2.1.0 // indirect
 	github.com/sagikazarmark/locafero v0.12.0 // indirect
 	github.com/sergi/go-diff v1.4.0 // indirect
