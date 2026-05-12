@@ -23,26 +23,18 @@ var firmwareBaselinePrintConfig = formatter.PrintConfig{
 			MaxWidth: 30,
 			Order:    2,
 		},
-		"Level": {
-			Order: 3,
-		},
-		"LevelFilter": {
-			Title:    "Level Filter",
-			MaxWidth: 30,
-			Order:    4,
-		},
 		"Description": {
 			MaxWidth: 40,
-			Order:    5,
+			Order:    3,
 		},
 		"Catalog": {
 			MaxWidth: 30,
-			Order:    6,
+			Order:    4,
 		},
 		"CreatedTimestamp": {
 			Title:       "Created",
 			Transformer: formatter.FormatDateTimeValue,
-			Order:       7,
+			Order:       5,
 		},
 	},
 }
