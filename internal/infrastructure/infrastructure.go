@@ -78,7 +78,7 @@ func InfrastructureList(ctx context.Context, showAll bool, showOrdered bool, sho
 
 	request := client.InfrastructureAPI.GetInfrastructures(ctx)
 
-	if !showAll {
+	if !showAll && !api.IsAdminAccessLevel(api.GetUserAccessLevel(ctx)) {
 		userId := api.GetUserId(ctx)
 		request = request.FilterUserIdOwner([]string{"$eq:" + userId})
 	}

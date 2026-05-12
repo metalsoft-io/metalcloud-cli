@@ -14,8 +14,9 @@ import (
 type ContextKey string
 
 const (
-	ApiClientContextKey ContextKey = "apiClient"
-	UserIdContextKey    ContextKey = "userId"
+	ApiClientContextKey       ContextKey = "apiClient"
+	UserIdContextKey          ContextKey = "userId"
+	UserAccessLevelContextKey ContextKey = "userAccessLevel"
 )
 
 func GetApiClient(ctx context.Context) *sdk.APIClient {
@@ -105,4 +106,30 @@ func GetUserId(ctx context.Context) string {
 
 func SetUserId(ctx context.Context, userId string) context.Context {
 	return context.WithValue(ctx, UserIdContextKey, userId)
+}
+
+func GetUserAccessLevel(ctx context.Context) string {
+	level := ctx.Value(UserAccessLevelContextKey)
+	if level == nil {
+		return ""
+	}
+	levelStr, ok := level.(string)
+	if !ok {
+		return ""
+	}
+	return levelStr
+}
+
+func SetUserAccessLevel(ctx context.Context, level string) context.Context {
+	return context.WithValue(ctx, UserAccessLevelContextKey, level)
+}
+
+// IsAdminAccessLevel reports whether the given user access level grants
+// administrative scope. Values are sourced from the MetalSoft user model.
+func IsAdminAccessLevel(level string) bool {
+	switch level {
+	case "root", "admin", "full_admin":
+		return true
+	}
+	return false
 }

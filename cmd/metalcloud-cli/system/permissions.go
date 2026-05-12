@@ -135,17 +135,19 @@ const (
 	PERMISSION_IMPERSONATE                                                    = "impersonate"
 )
 
-func GetUserPermissions(ctx context.Context) (string, []string, error) {
+func GetUserPermissions(ctx context.Context) (string, string, []string, error) {
 	client := api.GetApiClient(ctx)
 
 	user, httpRes, err := client.AuthenticationAPI.GetCurrentUser(ctx).Execute()
 	if err := response_inspector.InspectResponse(httpRes, err); err != nil {
-		return "", nil, err
+		return "", "", nil, err
 	}
+
+	userIdStr := fmt.Sprintf("%d", int(user.Id))
 
 	// TODO: The API returns the permissions of the user in a map with no specific type
 	if user.Permissions == nil || user.Permissions.AdditionalProperties == nil {
-		return fmt.Sprintf("%d", int(user.Id)), nil, nil
+		return userIdStr, user.AccessLevel, nil, nil
 	}
 
 	userPermissions := make([]string, 0, len(user.Permissions.AdditionalProperties))
@@ -162,5 +164,5 @@ func GetUserPermissions(ctx context.Context) (string, []string, error) {
 		userPermissions = append(userPermissions, k)
 	}
 
-	return fmt.Sprintf("%d", int(user.Id)), userPermissions, nil
+	return userIdStr, user.AccessLevel, userPermissions, nil
 }

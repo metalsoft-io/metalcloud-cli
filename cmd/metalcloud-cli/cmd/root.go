@@ -135,7 +135,7 @@ func rootPersistentPreRun(cmd *cobra.Command, args []string) error {
 		}
 	}
 
-	userId, userPermissions, err := system.GetUserPermissions(ctx)
+	userId, accessLevel, userPermissions, err := system.GetUserPermissions(ctx)
 	if err != nil {
 		// For version and completion commands, don't fail if we can't get permissions
 		if skipValidation {
@@ -146,6 +146,7 @@ func rootPersistentPreRun(cmd *cobra.Command, args []string) error {
 	}
 
 	ctx = api.SetUserId(ctx, userId)
+	ctx = api.SetUserAccessLevel(ctx, accessLevel)
 
 	// TODO: At this point the help function is already processed and hiding the commands will not work
 	hideUnavailableCommands(cmd, userPermissions)
