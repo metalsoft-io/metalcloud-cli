@@ -127,7 +127,15 @@ func ServerDefaultCredentialsCreate(ctx context.Context, siteId float32, serialN
 
 	client := api.GetApiClient(ctx)
 
-	createCredentials := sdk.NewCreateServerDefaultCredentials(siteId, serialNumber, macAddress, username, password)
+	createCredentials := sdk.NewCreateServerDefaultCredentials(siteId, username, password)
+
+	if serialNumber != "" {
+		createCredentials.SetServerSerialNumber(serialNumber)
+	}
+
+	if macAddress != "" {
+		createCredentials.SetServerMacAddress(macAddress)
+	}
 
 	if rackName != "" {
 		createCredentials.SetDefaultRackName(rackName)
