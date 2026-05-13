@@ -2,6 +2,7 @@ package server
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 
 	"github.com/metalsoft-io/metalcloud-cli/pkg/api"
@@ -11,6 +12,58 @@ import (
 	"github.com/metalsoft-io/metalcloud-cli/pkg/utils"
 	sdk "github.com/metalsoft-io/metalcloud-sdk-go"
 )
+
+// ServerFirmwareInventoryEntry is the typed view of one Redfish
+// SoftwareInventory entry returned by GetServerFirmwareInventory. The SDK
+// returns []map[string]interface{}; we round-trip into this struct so the
+// formatter can drive a table from PrintConfig.
+type ServerFirmwareInventoryEntry struct {
+	Id                           string                         `json:"Id"`
+	Name                         string                         `json:"Name"`
+	Description                  string                         `json:"Description,omitempty"`
+	Version                      string                         `json:"Version,omitempty"`
+	Updateable                   bool                           `json:"Updateable"`
+	Status                       *ServerFirmwareInventoryStatus `json:"Status,omitempty"`
+	MatchedComponents            []map[string]interface{}       `json:"MatchedComponents,omitempty"`
+	MatchedComponentsDeviceClass string                         `json:"MatchedComponentsDeviceClass,omitempty"`
+	Oem                          map[string]interface{}         `json:"Oem,omitempty"`
+}
+
+type ServerFirmwareInventoryStatus struct {
+	Health string `json:"Health,omitempty"`
+	State  string `json:"State,omitempty"`
+}
+
+var serverFirmwareInventoryPrintConfig = formatter.PrintConfig{
+	FieldsConfig: map[string]formatter.RecordFieldConfig{
+		"Id":          {Title: "#", Order: 1},
+		"Name":        {Title: "Name", MaxWidth: 40, Order: 2},
+		"Description": {Title: "Description", MaxWidth: 32, Order: 3},
+		"Version":     {Title: "Version", Order: 4},
+		"Updateable": {
+			Title: "Updateable",
+			Order: 5,
+			Transformer: func(v interface{}) string {
+				if b, ok := v.(bool); ok && b {
+					return "Yes"
+				}
+				return "No"
+			},
+		},
+		"Status.Health": {Title: "Health", Order: 6},
+		"Status.State":  {Title: "State", Order: 7},
+		"MatchedComponents": {
+			Title: "Matches",
+			Order: 8,
+			Transformer: func(v interface{}) string {
+				if arr, ok := v.([]interface{}); ok {
+					return fmt.Sprintf("%d", len(arr))
+				}
+				return "0"
+			},
+		},
+	},
+}
 
 var serverComponentPrintConfig = formatter.PrintConfig{
 	FieldsConfig: map[string]formatter.RecordFieldConfig{
@@ -176,7 +229,16 @@ func ServerFirmwareInventory(ctx context.Context, serverId string) error {
 		return err
 	}
 
-	return formatter.PrintResult(inventory, nil)
+	raw, err := json.Marshal(inventory)
+	if err != nil {
+		return fmt.Errorf("failed to re-encode firmware inventory: %w", err)
+	}
+	entries := []ServerFirmwareInventoryEntry{}
+	if err := json.Unmarshal(raw, &entries); err != nil {
+		return fmt.Errorf("failed to decode firmware inventory: %w", err)
+	}
+
+	return formatter.PrintResult(entries, &serverFirmwareInventoryPrintConfig)
 }
 
 // ServerFirmwareUpgrade upgrades firmware for all components on a server
