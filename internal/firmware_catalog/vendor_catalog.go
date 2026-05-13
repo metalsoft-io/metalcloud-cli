@@ -97,6 +97,8 @@ func (vc *VendorCatalog) ProcessVendorCatalog(ctx context.Context) error {
 	if len(vc.ServerTypesFilter) > 0 {
 		logger.Get().Debug().Msgf("Server types filter provided: %v", vc.ServerTypesFilter)
 
+		isHpe := sdk.ServerFirmwareCatalogVendor(vc.CatalogInfo.Vendor) == sdk.SERVERFIRMWARECATALOGVENDOR_HP
+
 		// Lookup the system models for the requested server types
 		// and add them to the vendor systems filter
 		systemModels, systemModelsEx, err := vc.getFilteredSystemModels(ctx)
@@ -111,24 +113,45 @@ func (vc *VendorCatalog) ProcessVendorCatalog(ctx context.Context) error {
 			logger.Get().Debug().Msgf("Filtered system models: %v", systemModels)
 			logger.Get().Debug().Msgf("Filtered system models with serial numbers: %v", systemModelsEx)
 
-			if len(vc.VendorSystemsFilter) > 0 {
-				// Preserve user-provided VendorSystemsFilter entries in the extended map
-				// before merging with API results. This ensures that explicitly provided
-				// vendor system types (e.g., machine types like "7Y51") are not lost when
-				// the server API does not return model information for matching servers.
-				for _, system := range vc.VendorSystemsFilter {
-					if _, exists := systemModelsEx[system]; !exists {
-						systemModelsEx[system] = ""
+			// HPE catalogs reference firmware packages by component UUID, not by
+			// system model, so models from the server registry are not valid
+			// VendorSystemsFilter entries for HPE - they only populate the
+			// VendorServerTypesSupported metadata. The UUIDs themselves are
+			// collected from the servers' firmware inventory below.
+			if !isHpe {
+				if len(vc.VendorSystemsFilter) > 0 {
+					// Preserve user-provided VendorSystemsFilter entries in the extended map
+					// before merging with API results. This ensures that explicitly provided
+					// vendor system types (e.g., machine types like "7Y51") are not lost when
+					// the server API does not return model information for matching servers.
+					for _, system := range vc.VendorSystemsFilter {
+						if _, exists := systemModelsEx[system]; !exists {
+							systemModelsEx[system] = ""
+						}
 					}
+					vc.VendorSystemsFilter = append(vc.VendorSystemsFilter, systemModels...)
+				} else {
+					vc.VendorSystemsFilter = systemModels
 				}
-				vc.VendorSystemsFilter = append(vc.VendorSystemsFilter, systemModels...)
-			} else {
-				vc.VendorSystemsFilter = systemModels
+				vc.VendorSystemsFilterEx = systemModelsEx
 			}
-			vc.VendorSystemsFilterEx = systemModelsEx
 
 			if len(systemModels) > 0 {
 				vc.CatalogInfo.VendorServerTypesSupported = systemModels
+			}
+		}
+
+		if isHpe {
+			uuids, err := vc.getHpeFirmwareTargets(ctx)
+			if err != nil {
+				return fmt.Errorf("failed to look up HPE firmware targets from server inventory: %w", err)
+			}
+			logger.Get().Debug().Msgf("HPE firmware targets discovered from server inventory: %v", uuids)
+
+			for _, uuid := range uuids {
+				if !slices.Contains(vc.VendorSystemsFilter, uuid) {
+					vc.VendorSystemsFilter = append(vc.VendorSystemsFilter, uuid)
+				}
 			}
 		}
 	}

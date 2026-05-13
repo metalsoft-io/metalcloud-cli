@@ -11,7 +11,9 @@ import (
 	"slices"
 	"strings"
 
+	"github.com/metalsoft-io/metalcloud-cli/pkg/api"
 	"github.com/metalsoft-io/metalcloud-cli/pkg/logger"
+	"github.com/metalsoft-io/metalcloud-cli/pkg/response_inspector"
 	sdk "github.com/metalsoft-io/metalcloud-sdk-go"
 )
 
@@ -163,4 +165,96 @@ func (vc *VendorCatalog) processHpeCatalog(ctx context.Context) error {
 	}
 
 	return nil
+}
+
+// getHpeFirmwareTargets retrieves the component target UUIDs from the firmware
+// inventory of every registered HPE server whose server type appears in
+// ServerTypesFilter. The HPE catalog identifies firmware packages by these
+// UUIDs (the "target" field on each catalog entry), so they are needed to
+// drive catalog filtering when the user has not supplied them via
+// --vendor-systems.
+func (vc *VendorCatalog) getHpeFirmwareTargets(ctx context.Context) ([]string, error) {
+	client := api.GetApiClient(ctx)
+
+	serverTypes, httpRes, err := client.ServerTypeAPI.GetServerTypes(ctx).Execute()
+	if err := response_inspector.InspectResponse(httpRes, err); err != nil {
+		return nil, err
+	}
+
+	seen := map[string]struct{}{}
+	targets := []string{}
+
+	for _, serverType := range serverTypes.Data {
+		if !slices.Contains(vc.ServerTypesFilter, serverType.Label) {
+			continue
+		}
+
+		servers, httpRes, err := client.ServerAPI.GetServers(ctx).
+			FilterServerTypeId([]string{fmt.Sprintf("%d", int(serverType.Id))}).
+			Execute()
+		if err := response_inspector.InspectResponse(httpRes, err); err != nil {
+			return nil, err
+		}
+
+		for _, server := range servers.Data {
+			if server.Vendor == nil || !isHpeVendor(*server.Vendor) {
+				continue
+			}
+
+			logger.Get().Debug().Msgf("Retrieving firmware inventory for HPE server %d (type %s)", int(server.ServerId), serverType.Label)
+
+			inventory, httpRes, err := client.ServerFirmwareAPI.GetServerFirmwareInventory(ctx, server.ServerId).Execute()
+			if err := response_inspector.InspectResponse(httpRes, err); err != nil {
+				logger.Get().Warn().Err(err).Msgf("Failed to retrieve firmware inventory for server %d - skipping", int(server.ServerId))
+				continue
+			}
+
+			for _, entry := range inventory {
+				for _, uuid := range extractHpeFirmwareTargets(entry) {
+					if _, exists := seen[uuid]; !exists {
+						seen[uuid] = struct{}{}
+						targets = append(targets, uuid)
+					}
+				}
+			}
+		}
+	}
+
+	return targets, nil
+}
+
+// extractHpeFirmwareTargets pulls component target UUIDs out of a single
+// Redfish SoftwareInventory entry returned by iLO. HPE places these under
+// Oem.Hpe.Targets; older iLO firmware uses Oem.Hp.Targets.
+func extractHpeFirmwareTargets(entry map[string]interface{}) []string {
+	oem, ok := entry["Oem"].(map[string]interface{})
+	if !ok {
+		return nil
+	}
+	for _, key := range []string{"Hpe", "Hp"} {
+		sub, ok := oem[key].(map[string]interface{})
+		if !ok {
+			continue
+		}
+		raw, ok := sub["Targets"].([]interface{})
+		if !ok {
+			continue
+		}
+		result := []string{}
+		for _, t := range raw {
+			if s, ok := t.(string); ok && s != "" {
+				result = append(result, s)
+			}
+		}
+		return result
+	}
+	return nil
+}
+
+// isHpeVendor reports whether a server's reported Vendor field corresponds to
+// the HPE firmware catalog vendor. The MetalSoft API may report either "HP" or
+// "HPE" depending on the source, while the catalog vendor enum value is "hp".
+func isHpeVendor(serverVendor string) bool {
+	v := strings.ToLower(serverVendor)
+	return v == "hp" || v == "hpe"
 }
