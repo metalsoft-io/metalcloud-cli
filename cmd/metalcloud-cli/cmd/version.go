@@ -59,6 +59,13 @@ func runVersionCmd(cmd *cobra.Command, args []string) error {
 	fmt.Printf("Maximum Metalsoft Version: %s\n", maxVersion)
 
 	fmt.Printf("Metalsoft Endpoint: %s\n", viper.GetString(system.ConfigEndpoint))
+	if cmd.Context() != nil {
+		if apiClient, err := api.GetApiClientE(cmd.Context()); err == nil && apiClient != nil {
+			if ver, _, err := apiClient.SystemAPI.GetVersion(cmd.Context()).Execute(); err == nil {
+				fmt.Printf("Metalsoft Endpoint Version: %s\n", ver.Version)
+			}
+		}
+	}
 	if viper.GetBool(system.ConfigInsecure) {
 		fmt.Printf("Insecure Mode: %t\n", viper.GetBool(system.ConfigInsecure))
 	}
