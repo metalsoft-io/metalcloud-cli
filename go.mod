@@ -6,7 +6,7 @@ toolchain go1.25.3
 
 require (
 	github.com/go-git/go-billy/v5 v5.9.0
-	github.com/go-git/go-git/v5 v5.19.0
+	github.com/go-git/go-git/v5 v5.19.1
 	github.com/jedib0t/go-pretty/v6 v6.7.10
 	github.com/metalsoft-io/metalcloud-sdk-go v0.0.0-20260513150348-7a914f26f840
 	github.com/pkg/sftp v1.13.10
