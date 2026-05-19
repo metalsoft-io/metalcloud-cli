@@ -354,14 +354,14 @@ func TestProcessLenovoCatalog_BinaryFields(t *testing.T) {
 
 	// Check supported devices
 	devices := binary.VendorSupportedDevices
-	if len(devices) != 1 || devices[0]["type"] != "xcc-update-key" {
-		t.Errorf("VendorSupportedDevices = %v, want [{type: xcc-update-key}]", devices)
+	if len(devices) != 1 || devices[0]["id"] != lenovoSoftwareUpdateComponentXcc || devices[0]["model"] != lenovoSoftwareUpdateComponentXcc {
+		t.Errorf("VendorSupportedDevices = %v, want [{id: XCC, model: XCC}]", devices)
 	}
 
 	// Check supported systems
 	systems := binary.VendorSupportedSystems
-	if len(systems) != 1 || systems[0]["machineType"] != "7D2V" || systems[0]["serialNumber"] != "S1234" {
-		t.Errorf("VendorSupportedSystems = %v, want [{machineType: 7D2V, serialNumber: S1234}]", systems)
+	if len(systems) != 1 || systems[0]["id"] != "7D2V" {
+		t.Errorf("VendorSupportedSystems = %v, want [{id: 7D2V}]", systems)
 	}
 }
 

@@ -94,7 +94,7 @@ func (vc *VendorCatalog) processLenovoCatalog(ctx context.Context) error {
 
 			downloadUrl := ""
 			description := ""
-			infoUrl := ""
+			var infoUrl *string
 			for _, file := range softwareUpdate.Files {
 				if file.Type == lenovoSoftwareUpdateTypeFix {
 					downloadUrl = file.URL
@@ -105,7 +105,9 @@ func (vc *VendorCatalog) processLenovoCatalog(ctx context.Context) error {
 					continue
 				}
 				if file.Type == lenovoSoftwareUpdateTypeReadMe {
-					infoUrl = file.URL
+					if file.URL != "" {
+						infoUrl = sdk.PtrString(file.URL)
+					}
 					continue
 				}
 			}
@@ -126,25 +128,30 @@ func (vc *VendorCatalog) processLenovoCatalog(ctx context.Context) error {
 
 			supportedDevices := []map[string]interface{}{
 				{
-					"type": softwareUpdate.UpdateKey,
+					"id":    softwareUpdate.ComponentID,
+					"model": softwareUpdate.ComponentID,
 				},
 			}
 
 			supportedSystems := []map[string]interface{}{
 				{
-					"machineType":  serverType,
-					"serialNumber": serverSerialNumber,
+					"id": serverType,
 				},
+			}
+
+			var packageVersion *string
+			if softwareUpdate.Version != "" {
+				packageVersion = sdk.PtrString(softwareUpdate.Version)
 			}
 
 			firmwareBinary := sdk.FirmwareBinary{
 				ExternalId:             sdk.PtrString(softwareUpdate.FixID),
 				Name:                   description,
-				VendorInfoUrl:          &infoUrl,
+				VendorInfoUrl:          infoUrl,
 				VendorDownloadUrl:      downloadUrl,
 				CacheDownloadUrl:       nil, //	Will be set after the binary is downloaded
 				PackageId:              sdk.PtrString(softwareUpdate.FixID),
-				PackageVersion:         sdk.PtrString(softwareUpdate.Version),
+				PackageVersion:         packageVersion,
 				RebootRequired:         true,
 				UpdateSeverity:         sdk.FIRMWAREBINARYUPDATESEVERITY_UNKNOWN,
 				VendorSupportedDevices: supportedDevices,
