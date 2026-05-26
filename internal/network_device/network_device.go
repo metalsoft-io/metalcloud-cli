@@ -112,6 +112,11 @@ func NetworkDeviceConfigExample(ctx context.Context) error {
 	networkDeviceConfiguration.VtepAddress.Set(nil)
 	networkDeviceConfiguration.Asn.Set(sdk.PtrInt64(65000))
 
+	networkDeviceConfiguration.AuthenticationOptions = []sdk.NetworkDeviceAuthOption{
+		{Kind: "tacacs", DeviceAuthProviderId: sdk.PtrInt32(1)},
+		{Kind: "local"},
+	}
+
 	return formatter.PrintResult(networkDeviceConfiguration, nil)
 }
 
@@ -517,6 +522,10 @@ func NetworkDeviceExampleDefaults(ctx context.Context) error {
 		MlagSystemMac:             sdk.PtrString("AA:BB:CC:DD:EE:FF"),
 		MlagPeerLinkPortChannelId: sdk.PtrInt32(1),
 		MlagPartnerVlanId:         sdk.PtrInt32(100),
+		AuthenticationOptions: []sdk.NetworkDeviceAuthOption{
+			{Kind: "tacacs", DeviceAuthProviderId: sdk.PtrInt32(1)},
+			{Kind: "local"},
+		},
 	}
 
 	return formatter.PrintResult(networkDeviceDefaults, nil)

@@ -132,6 +132,9 @@ const (
 	PERMISSION_NETWORK_DEVICE_CONFIGURATION_TEMPLATES_WRITE                   = "network_device_configuration_templates_write"
 	PERMISSION_NETWORK_DEVICE_LINK_AGGREGATION_CONFIGURATION_TEMPLATES_READ   = "network_device_link_aggregation_configuration_templates_read"
 	PERMISSION_NETWORK_DEVICE_LINK_AGGREGATION_CONFIGURATION_TEMPLATES_WRITE  = "network_device_link_aggregation_configuration_templates_write"
+	PERMISSION_DEVICE_AUTH_PROVIDERS_READ                                     = "device_auth_providers_read"
+	PERMISSION_DEVICE_AUTH_PROVIDERS_WRITE                                    = "device_auth_providers_write"
+	PERMISSION_DEVICE_AUTH_PROVIDER_CREDENTIALS_READ                          = "device_auth_provider_credentials_read"
 	PERMISSION_IMPERSONATE                                                    = "impersonate"
 )
 

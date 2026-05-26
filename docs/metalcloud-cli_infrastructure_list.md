@@ -6,8 +6,9 @@ List infrastructures with optional filtering
 
 List all infrastructures with various filtering options to control visibility and scope.
 
-By default, this command shows only active infrastructures owned by the current user. 
-Use the filtering flags to customize the output based on your needs.
+By default, this command shows only active infrastructures owned by the current user.
+Admin and root users see all visible infrastructures instead of being scoped to their
+own. Use --show-all to force showing all infrastructures regardless of role.
 
 Flags:
   --show-all      Show infrastructures from all users (requires admin privileges)
