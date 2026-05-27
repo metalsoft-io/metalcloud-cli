@@ -41,6 +41,12 @@ Examples:
     --repo-username user --repo-password pass \
     --source-iso /path/to/custom.iso
 
+  # Clone from private repository on Windows OS (folder C:\os-templates)
+  # (on Windows, please use / to replace \ and do not include the drive letter (for
+  # example, if the os-template folder is in c:\os-templates, then the repo-url
+  # would be /os-templates and the command would need to be issued from that drive))
+  metalcloud-cli os-template create-from-repo Ubuntu/24.04/oob-u24-04-3-lts-v7
+    --repo-url /os-templates --name "Ubuntu2404" --label "Ubuntu2404"
 ```
 metalcloud-cli os-template create-from-repo <os_template_path> [flags]
 ```
