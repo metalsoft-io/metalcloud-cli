@@ -14,10 +14,10 @@ import (
 )
 
 type EndpointInterfaceDetails struct {
-	Id                         *float32
+	Id                         *int64
 	MacAddress                 *string
-	NetworkDeviceId            *float32
-	NetworkDeviceInterfaceId   *float32
+	NetworkDeviceId            *int64
+	NetworkDeviceInterfaceId   *int64
 	NetworkDeviceName          *string
 	NetworkDeviceInterfaceName *string
 }

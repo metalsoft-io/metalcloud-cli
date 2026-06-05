@@ -250,7 +250,7 @@ func OsTemplateUpdate(ctx context.Context, osTemplateId string, osTemplateUpdate
 
 	if osTemplateUpdateOptions.NewTemplateAssets != nil {
 		for _, asset := range osTemplateUpdateOptions.NewTemplateAssets {
-			asset.TemplateId = int32(osTemplateIdNumeric)
+			asset.TemplateId = int64(osTemplateIdNumeric)
 
 			newAsset, httpRes, err := client.TemplateAssetAPI.CreateTemplateAsset(ctx).TemplateAssetCreate(asset).Execute()
 			if err := response_inspector.InspectResponse(httpRes, err); err != nil {
@@ -262,7 +262,7 @@ func OsTemplateUpdate(ctx context.Context, osTemplateId string, osTemplateUpdate
 
 	if osTemplateUpdateOptions.UpdatedTemplateAssets != nil {
 		for assetId, asset := range osTemplateUpdateOptions.UpdatedTemplateAssets {
-			asset.TemplateId = int32(osTemplateIdNumeric)
+			asset.TemplateId = int64(osTemplateIdNumeric)
 
 			_, httpRes, err := client.TemplateAssetAPI.
 				UpdateTemplateAsset(ctx, float32(assetId)).

@@ -99,7 +99,7 @@ func DriveList(ctx context.Context, infrastructureIdOrLabel string, filterStatus
 
 	client := api.GetApiClient(ctx)
 
-	request := client.DriveAPI.GetInfrastructureDrives(ctx, infrastructureInfo.Id)
+	request := client.DriveAPI.GetInfrastructureDrives(ctx, float32(infrastructureInfo.Id))
 
 	if len(filterStatus) > 0 {
 		request = request.FilterServiceStatus(utils.ProcessFilterStringSlice(filterStatus))
@@ -129,7 +129,7 @@ func DriveGet(ctx context.Context, infrastructureIdOrLabel string, driveId strin
 
 	client := api.GetApiClient(ctx)
 
-	drive, httpRes, err := client.DriveAPI.GetInfrastructureDrive(ctx, infrastructureInfo.Id, driveIdNumeric).Execute()
+	drive, httpRes, err := client.DriveAPI.GetInfrastructureDrive(ctx, float32(infrastructureInfo.Id), driveIdNumeric).Execute()
 	if err := response_inspector.InspectResponse(httpRes, err); err != nil {
 		return err
 	}
@@ -155,7 +155,7 @@ func DriveCreate(ctx context.Context, infrastructureIdOrLabel string, config []b
 	client := api.GetApiClient(ctx)
 
 	drive, httpRes, err := client.DriveAPI.
-		CreateDrive(ctx, infrastructureInfo.Id).
+		CreateDrive(ctx, float32(infrastructureInfo.Id)).
 		CreateSharedDrive(driveConfig).
 		Execute()
 	if err := response_inspector.InspectResponse(httpRes, err); err != nil {
@@ -174,7 +174,7 @@ func DriveDelete(ctx context.Context, infrastructureIdOrLabel string, driveId st
 		return err
 	}
 
-	driveIdNumeric, revision, err := getDriveIdAndRevision(ctx, infrastructureInfo.Id, driveId)
+	driveIdNumeric, revision, err := getDriveIdAndRevision(ctx, float32(infrastructureInfo.Id), driveId)
 	if err != nil {
 		return err
 	}
@@ -182,7 +182,7 @@ func DriveDelete(ctx context.Context, infrastructureIdOrLabel string, driveId st
 	client := api.GetApiClient(ctx)
 
 	httpRes, err := client.DriveAPI.
-		DeleteDrive(ctx, infrastructureInfo.Id, driveIdNumeric).
+		DeleteDrive(ctx, float32(infrastructureInfo.Id), driveIdNumeric).
 		IfMatch(revision).
 		Execute()
 	if err := response_inspector.InspectResponse(httpRes, err); err != nil {
@@ -202,7 +202,7 @@ func DriveUpdateConfig(ctx context.Context, infrastructureIdOrLabel string, driv
 		return err
 	}
 
-	driveIdNumeric, revision, err := getDriveIdAndRevision(ctx, infrastructureInfo.Id, driveId)
+	driveIdNumeric, revision, err := getDriveIdAndRevision(ctx, float32(infrastructureInfo.Id), driveId)
 	if err != nil {
 		return err
 	}
@@ -216,7 +216,7 @@ func DriveUpdateConfig(ctx context.Context, infrastructureIdOrLabel string, driv
 	client := api.GetApiClient(ctx)
 
 	drive, httpRes, err := client.DriveAPI.
-		PatchDriveConfig(ctx, infrastructureInfo.Id, driveIdNumeric).
+		PatchDriveConfig(ctx, float32(infrastructureInfo.Id), driveIdNumeric).
 		UpdateSharedDrive(driveConfigUpdate).
 		IfMatch(revision).
 		Execute()
@@ -250,7 +250,7 @@ func DriveUpdateMeta(ctx context.Context, infrastructureIdOrLabel string, driveI
 	client := api.GetApiClient(ctx)
 
 	drive, httpRes, err := client.DriveAPI.
-		PatchDriveMeta(ctx, infrastructureInfo.Id, driveIdNumeric).
+		PatchDriveMeta(ctx, float32(infrastructureInfo.Id), driveIdNumeric).
 		UpdateSharedDriveMeta(driveMetaUpdate).
 		Execute()
 	if err := response_inspector.InspectResponse(httpRes, err); err != nil {
@@ -277,7 +277,7 @@ func DriveGetHosts(ctx context.Context, infrastructureIdOrLabel string, driveId 
 	client := api.GetApiClient(ctx)
 
 	hosts, httpRes, err := client.DriveAPI.
-		GetDriveHosts(ctx, infrastructureInfo.Id, driveIdNumeric).
+		GetDriveHosts(ctx, float32(infrastructureInfo.Id), driveIdNumeric).
 		Execute()
 	if err := response_inspector.InspectResponse(httpRes, err); err != nil {
 		return err
@@ -309,7 +309,7 @@ func DriveUpdateHosts(ctx context.Context, infrastructureIdOrLabel string, drive
 	client := api.GetApiClient(ctx)
 
 	hosts, httpRes, err := client.DriveAPI.
-		UpdateDriveServerInstanceGroupHostsBulk(ctx, infrastructureInfo.Id, driveIdNumeric).
+		UpdateDriveServerInstanceGroupHostsBulk(ctx, float32(infrastructureInfo.Id), driveIdNumeric).
 		SharedDriveHostsModifyBulk(hostsUpdate).
 		Execute()
 	if err := response_inspector.InspectResponse(httpRes, err); err != nil {
@@ -336,7 +336,7 @@ func DriveGetConfigInfo(ctx context.Context, infrastructureIdOrLabel string, dri
 	client := api.GetApiClient(ctx)
 
 	configInfo, httpRes, err := client.DriveAPI.
-		GetDriveConfigInfo(ctx, infrastructureInfo.Id, driveIdNumeric).
+		GetDriveConfigInfo(ctx, float32(infrastructureInfo.Id), driveIdNumeric).
 		Execute()
 	if err := response_inspector.InspectResponse(httpRes, err); err != nil {
 		return err

@@ -127,7 +127,7 @@ func ServerDefaultCredentialsCreate(ctx context.Context, siteId float32, serialN
 
 	client := api.GetApiClient(ctx)
 
-	createCredentials := sdk.NewCreateServerDefaultCredentials(siteId, username, password)
+	createCredentials := sdk.NewCreateServerDefaultCredentials(int64(siteId), username, password)
 
 	if serialNumber != "" {
 		createCredentials.SetServerSerialNumber(serialNumber)

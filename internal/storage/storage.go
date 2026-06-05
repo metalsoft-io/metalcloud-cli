@@ -233,7 +233,7 @@ func StorageGetBuckets(ctx context.Context, storageId string, limit float32, pag
 
 func StorageConfigExample(ctx context.Context) error {
 	storageConfiguration := sdk.CreateStorage{
-		UserId:              sdk.PtrFloat32(1),
+		UserId:              sdk.PtrInt64(1),
 		SiteId:              1,
 		Driver:              "netapp",
 		Technologies:        []string{"block"},

@@ -442,36 +442,6 @@ Examples:
 		},
 	}
 
-	infrastructureGetUserLimitsCmd = &cobra.Command{
-		Use:     "user-limits infrastructure_id_or_label",
-		Aliases: []string{"get-user-limits"},
-		Short:   "Display resource limits for an infrastructure",
-		Long: `Show the resource limits configured for a specific infrastructure including compute nodes,
-drives, and infrastructure count limits.
-
-This information helps understand the maximum resources that can be provisioned within
-the infrastructure and plan capacity accordingly.
-
-Arguments:
-  infrastructure_id_or_label  The ID (numeric) or label (string) of the infrastructure
-
-Examples:
-  # Get user limits for infrastructure by ID
-  metalcloud-cli infrastructure user-limits 123
-
-  # Get user limits for infrastructure by label
-  metalcloud-cli infrastructure user-limits "web-cluster"
-
-  # Using the alias
-  metalcloud-cli infrastructure get-user-limits production-env`,
-		SilenceUsage: true,
-		Annotations:  map[string]string{system.REQUIRED_PERMISSION: system.PERMISSION_INFRASTRUCTURES_READ},
-		Args:         cobra.ExactArgs(1),
-		RunE: func(cmd *cobra.Command, args []string) error {
-			return infrastructure.InfrastructureGetUserLimits(cmd.Context(), args[0])
-		},
-	}
-
 	infrastructureGetStatisticsCmd = &cobra.Command{
 		Use:     "statistics infrastructure_id_or_label",
 		Aliases: []string{"stats", "get-statistics"},
@@ -598,7 +568,7 @@ Examples:
 			// Log the converted values here:
 			// log.Printf("Converted start time from: %s, to start time UTC: %s", infrastructureUtilFlags.startTime, startTimeUTC);
 			// log.Printf("Converted start time from: %s, to start time UTC: %s", infrastructureUtilFlags.endTime, endTimeUTC);
-					
+
 			return infrastructure.InfrastructureGetUtilization(
 				cmd.Context(),
 				infrastructureUtilFlags.userId,
@@ -646,8 +616,6 @@ func init() {
 	infrastructureCmd.AddCommand(infrastructureAddUserCmd)
 
 	infrastructureCmd.AddCommand(infrastructureRemoveUserCmd)
-
-	infrastructureCmd.AddCommand(infrastructureGetUserLimitsCmd)
 
 	infrastructureCmd.AddCommand(infrastructureGetStatisticsCmd)
 

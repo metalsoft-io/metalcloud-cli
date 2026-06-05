@@ -179,7 +179,7 @@ func ServerGet(ctx context.Context, serverId string, showCredentials bool) error
 	}
 
 	if showCredentials {
-		serverCredentials, httpRes, err := client.ServerAPI.GetServerCredentials(ctx, serverInfo.ServerId).Execute()
+		serverCredentials, httpRes, err := client.ServerAPI.GetServerCredentials(ctx, float32(serverInfo.ServerId)).Execute()
 		if err := response_inspector.InspectResponse(httpRes, err); err != nil {
 			return err
 		}

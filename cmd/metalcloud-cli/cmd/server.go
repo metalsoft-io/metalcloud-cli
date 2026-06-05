@@ -11,10 +11,10 @@ import (
 // Server commands
 var (
 	serverFlags = struct {
-		showCredentials   bool
-		filterStatus      []string
-		filterType        []string
-		configSource      string
+		showCredentials bool
+		filterStatus    []string
+		filterType      []string
+		configSource    string
 
 		siteId            int
 		managementAddress string
@@ -177,7 +177,7 @@ Examples:
 			} else {
 				// Otherwise build config from command line parameters
 				serverConfig = sdk.RegisterServer{
-					SiteId:            float32(serverFlags.siteId),
+					SiteId:            int64(serverFlags.siteId),
 					ManagementAddress: &serverFlags.managementAddress,
 					Username:          &serverFlags.username,
 					Password:          &serverFlags.password,

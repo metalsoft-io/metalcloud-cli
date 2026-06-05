@@ -179,7 +179,7 @@ func FirmwareBaselineSearch(ctx context.Context, searchCriteria []byte) error {
 func FirmwareBaselineSearchExample(ctx context.Context) error {
 	// Example search criteria
 	searchCriteria := sdk.SearchFirmwareBinary{
-		Vendor:      sdk.SERVERFIRMWARECATALOGVENDOR_DELL,
+		Vendor:      "dell",
 		BaselineIds: []string{"baseline-1"},
 		ServerComponentFilter: &sdk.SearchFirmwareBinaryServerComponentFilter{
 			DellComponentFilter: &sdk.DellComponentFilter{

@@ -151,7 +151,7 @@ func ServerInstanceGroupCreate(ctx context.Context, infrastructureIdOrLabel stri
 
 	payload := sdk.ServerInstanceGroupCreate{
 		Label:               &label,
-		DefaultServerTypeId: int32(serverType.Id),
+		DefaultServerTypeId: int64(serverType.Id),
 		InstanceCount:       sdk.PtrInt32(int32(serverInstanceCountNumerical)),
 	}
 
@@ -161,7 +161,7 @@ func ServerInstanceGroupCreate(ctx context.Context, infrastructureIdOrLabel stri
 			return err
 		}
 
-		payload.OsTemplateId = sdk.PtrInt32(int32(osTemplate.Id))
+		payload.OsTemplateId = sdk.PtrInt64(int64(osTemplate.Id))
 	}
 
 	client := api.GetApiClient(ctx)
@@ -193,7 +193,7 @@ func ServerInstanceGroupUpdate(ctx context.Context, serverInstanceGroupId string
 	}
 
 	if osTemplateId > 0 {
-		payload.OsTemplateId = sdk.PtrInt32(int32(osTemplateId))
+		payload.OsTemplateId = sdk.PtrInt64(int64(osTemplateId))
 	}
 
 	client := api.GetApiClient(ctx)

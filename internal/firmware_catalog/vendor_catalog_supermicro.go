@@ -139,7 +139,7 @@ func (vc *VendorCatalog) processSupermicroCatalog(ctx context.Context) error {
 			PackageId:              sdk.PtrString(component.FileName),
 			PackageVersion:         sdk.PtrString(component.Version),
 			RebootRequired:         false,
-			UpdateSeverity:         sdk.FIRMWAREBINARYUPDATESEVERITY_UNKNOWN,
+			UpdateSeverity:         UpdateSeverityUnknown,
 			VendorSupportedDevices: supportedDevices,
 			VendorSupportedSystems: []map[string]interface{}{},
 			VendorReleaseTimestamp: sdk.PtrString(timestamp.Format(time.RFC3339)),

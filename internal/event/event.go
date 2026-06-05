@@ -73,7 +73,7 @@ func EventList(ctx context.Context, flags ListFlags) error {
 		request = request.FilterType(flags.FilterType)
 	}
 	if len(flags.FilterSeverity) > 0 {
-		request = request.FilterSeverity(flags.FilterSeverity)
+		request = request.FilterLevel(flags.FilterSeverity)
 	}
 	if len(flags.FilterVisibility) > 0 {
 		request = request.FilterVisibility(flags.FilterVisibility)

@@ -121,7 +121,7 @@ Examples:
 				}
 			} else {
 				endpointConfig = sdk.CreateEndpoint{
-					SiteId: int32(endpointFlags.siteId),
+					SiteId: int64(endpointFlags.siteId),
 					Name:   endpointFlags.name,
 					Label:  endpointFlags.label,
 				}

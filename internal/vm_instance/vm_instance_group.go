@@ -104,7 +104,7 @@ func VMInstanceGroupCreate(ctx context.Context, infrastructureId string, vmTypeI
 		return err
 	}
 
-	vmTypeIdNumerical, err := utils.GetFloat32FromString(vmTypeId)
+	vmTypeIdNumerical, err := utils.GetInt64FromString(vmTypeId)
 	if err != nil {
 		return err
 	}
@@ -126,7 +126,7 @@ func VMInstanceGroupCreate(ctx context.Context, infrastructureId string, vmTypeI
 	}
 
 	if osTemplateId != "" {
-		payload.OsTemplateId, err = utils.GetFloat32FromString(osTemplateId)
+		payload.OsTemplateId, err = utils.GetInt64FromString(osTemplateId)
 		if err != nil {
 			return err
 		}

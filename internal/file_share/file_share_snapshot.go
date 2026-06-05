@@ -41,7 +41,7 @@ func FileShareSnapshotList(ctx context.Context, infrastructureIdOrLabel string, 
 
 	client := api.GetApiClient(ctx)
 
-	snapshots, httpRes, err := client.FileShareAPI.GetFileShareSnapshots(ctx, infrastructureInfo.Id, fileShareIdNumeric).Execute()
+	snapshots, httpRes, err := client.FileShareAPI.GetFileShareSnapshots(ctx, float32(infrastructureInfo.Id), fileShareIdNumeric).Execute()
 	if err := response_inspector.InspectResponse(httpRes, err); err != nil {
 		return err
 	}
@@ -64,7 +64,7 @@ func FileShareSnapshotCreate(ctx context.Context, infrastructureIdOrLabel string
 
 	client := api.GetApiClient(ctx)
 
-	snapshot, httpRes, err := client.FileShareAPI.CreateFileShareSnapshot(ctx, infrastructureInfo.Id, fileShareIdNumeric).Execute()
+	snapshot, httpRes, err := client.FileShareAPI.CreateFileShareSnapshot(ctx, float32(infrastructureInfo.Id), fileShareIdNumeric).Execute()
 	if err := response_inspector.InspectResponse(httpRes, err); err != nil {
 		return err
 	}
@@ -89,7 +89,7 @@ func FileShareSnapshotDelete(ctx context.Context, infrastructureIdOrLabel string
 	client := api.GetApiClient(ctx)
 
 	httpRes, err := client.FileShareAPI.
-		DeleteFileShareSnapshot(ctx, infrastructureInfo.Id, fileShareIdNumeric).
+		DeleteFileShareSnapshot(ctx, float32(infrastructureInfo.Id), fileShareIdNumeric).
 		DeleteFileShareSnapshot(sdk.DeleteFileShareSnapshot{
 			Name: snapshotName,
 		}).
@@ -118,7 +118,7 @@ func FileShareSnapshotRestore(ctx context.Context, infrastructureIdOrLabel strin
 	client := api.GetApiClient(ctx)
 
 	httpRes, err := client.FileShareAPI.
-		RestoreFileShareToSnapshot(ctx, infrastructureInfo.Id, fileShareIdNumeric).
+		RestoreFileShareToSnapshot(ctx, float32(infrastructureInfo.Id), fileShareIdNumeric).
 		RestoreFileShareSnapshot(sdk.RestoreFileShareSnapshot{
 			Name: snapshotName,
 		}).

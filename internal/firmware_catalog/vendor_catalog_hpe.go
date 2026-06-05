@@ -154,7 +154,7 @@ func (vc *VendorCatalog) processHpeCatalog(ctx context.Context) error {
 			PackageId:              sdk.PtrString(packageKey),
 			PackageVersion:         sdk.PtrString(packageInfo.Version),
 			RebootRequired:         packageInfo.RebootRequired == "yes",
-			UpdateSeverity:         sdk.FIRMWAREBINARYUPDATESEVERITY_UNKNOWN,
+			UpdateSeverity:         UpdateSeverityUnknown,
 			VendorSupportedDevices: supportedDevices,
 			VendorSupportedSystems: []map[string]interface{}{},
 			VendorReleaseTimestamp: nil,
@@ -203,7 +203,7 @@ func (vc *VendorCatalog) getHpeFirmwareTargets(ctx context.Context) ([]string, e
 
 			logger.Get().Debug().Msgf("Retrieving firmware inventory for HPE server %d (type %s)", int(server.ServerId), serverType.Label)
 
-			inventory, httpRes, err := client.ServerFirmwareAPI.GetServerFirmwareInventory(ctx, server.ServerId).Execute()
+			inventory, httpRes, err := client.ServerFirmwareAPI.GetServerFirmwareInventory(ctx, float32(server.ServerId)).Execute()
 			if err := response_inspector.InspectResponse(httpRes, err); err != nil {
 				logger.Get().Warn().Err(err).Msgf("Failed to retrieve firmware inventory for server %d - skipping", int(server.ServerId))
 				continue

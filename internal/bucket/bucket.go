@@ -81,7 +81,7 @@ func BucketList(ctx context.Context, infrastructureIdOrLabel string, filterStatu
 
 	client := api.GetApiClient(ctx)
 
-	request := client.BucketAPI.GetInfrastructureBuckets(ctx, infrastructureInfo.Id)
+	request := client.BucketAPI.GetInfrastructureBuckets(ctx, float32(infrastructureInfo.Id))
 
 	if len(filterStatus) > 0 {
 		request = request.FilterServiceStatus(utils.ProcessFilterStringSlice(filterStatus))
@@ -111,7 +111,7 @@ func BucketGet(ctx context.Context, infrastructureIdOrLabel string, bucketId str
 
 	client := api.GetApiClient(ctx)
 
-	bucket, httpRes, err := client.BucketAPI.GetInfrastructureBucket(ctx, infrastructureInfo.Id, bucketIdNumeric).Execute()
+	bucket, httpRes, err := client.BucketAPI.GetInfrastructureBucket(ctx, float32(infrastructureInfo.Id), bucketIdNumeric).Execute()
 	if err := response_inspector.InspectResponse(httpRes, err); err != nil {
 		return err
 	}
@@ -137,7 +137,7 @@ func BucketCreate(ctx context.Context, infrastructureIdOrLabel string, config []
 	client := api.GetApiClient(ctx)
 
 	bucket, httpRes, err := client.BucketAPI.
-		CreateInfrastructureBucket(ctx, infrastructureInfo.Id).
+		CreateInfrastructureBucket(ctx, float32(infrastructureInfo.Id)).
 		CreateBucket(bucketConfig).
 		Execute()
 	if err := response_inspector.InspectResponse(httpRes, err); err != nil {
@@ -156,7 +156,7 @@ func BucketDelete(ctx context.Context, infrastructureIdOrLabel string, bucketId 
 		return err
 	}
 
-	bucketIdNumeric, revision, err := getBucketIdAndRevision(ctx, infrastructureInfo.Id, bucketId)
+	bucketIdNumeric, revision, err := getBucketIdAndRevision(ctx, float32(infrastructureInfo.Id), bucketId)
 	if err != nil {
 		return err
 	}
@@ -164,7 +164,7 @@ func BucketDelete(ctx context.Context, infrastructureIdOrLabel string, bucketId 
 	client := api.GetApiClient(ctx)
 
 	httpRes, err := client.BucketAPI.
-		DeleteBucket(ctx, infrastructureInfo.Id, bucketIdNumeric).
+		DeleteBucket(ctx, float32(infrastructureInfo.Id), bucketIdNumeric).
 		IfMatch(revision).
 		Execute()
 	if err := response_inspector.InspectResponse(httpRes, err); err != nil {
@@ -184,7 +184,7 @@ func BucketUpdateConfig(ctx context.Context, infrastructureIdOrLabel string, buc
 		return err
 	}
 
-	bucketIdNumeric, revision, err := getBucketIdAndRevision(ctx, infrastructureInfo.Id, bucketId)
+	bucketIdNumeric, revision, err := getBucketIdAndRevision(ctx, float32(infrastructureInfo.Id), bucketId)
 	if err != nil {
 		return err
 	}
@@ -198,7 +198,7 @@ func BucketUpdateConfig(ctx context.Context, infrastructureIdOrLabel string, buc
 	client := api.GetApiClient(ctx)
 
 	bucket, httpRes, err := client.BucketAPI.
-		UpdateBucket(ctx, infrastructureInfo.Id, bucketIdNumeric).
+		UpdateBucket(ctx, float32(infrastructureInfo.Id), bucketIdNumeric).
 		UpdateBucket(bucketConfigUpdate).
 		IfMatch(revision).
 		Execute()
@@ -232,7 +232,7 @@ func BucketUpdateMeta(ctx context.Context, infrastructureIdOrLabel string, bucke
 	client := api.GetApiClient(ctx)
 
 	bucket, httpRes, err := client.BucketAPI.
-		UpdateBucketMeta(ctx, infrastructureInfo.Id, bucketIdNumeric).
+		UpdateBucketMeta(ctx, float32(infrastructureInfo.Id), bucketIdNumeric).
 		UpdateBucketMeta(bucketMetaUpdate).
 		Execute()
 	if err := response_inspector.InspectResponse(httpRes, err); err != nil {
@@ -259,7 +259,7 @@ func BucketGetConfigInfo(ctx context.Context, infrastructureIdOrLabel string, bu
 	client := api.GetApiClient(ctx)
 
 	configInfo, httpRes, err := client.BucketAPI.
-		GetBucketConfigInfo(ctx, infrastructureInfo.Id, bucketIdNumeric).
+		GetBucketConfigInfo(ctx, float32(infrastructureInfo.Id), bucketIdNumeric).
 		Execute()
 	if err := response_inspector.InspectResponse(httpRes, err); err != nil {
 		return err
@@ -314,7 +314,7 @@ func BucketGetCredentials(ctx context.Context, infrastructureIdOrLabel string, b
 	client := api.GetApiClient(ctx)
 
 	credentials, httpRes, err := client.BucketAPI.
-		GetBucketCredentials(ctx, infrastructureInfo.Id, bucketIdNumeric).
+		GetBucketCredentials(ctx, float32(infrastructureInfo.Id), bucketIdNumeric).
 		Execute()
 	if err := response_inspector.InspectResponse(httpRes, err); err != nil {
 		return err

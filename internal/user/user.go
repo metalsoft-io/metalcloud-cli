@@ -54,19 +54,37 @@ var userPrintConfig = formatter.PrintConfig{
 	},
 }
 
+// userLimitsPrintConfig formats the effective quota limits (QuotaProfileLimits)
+// returned by the quota-limits-breakdown endpoint.
 var userLimitsPrintConfig = formatter.PrintConfig{
 	FieldsConfig: map[string]formatter.RecordFieldConfig{
-		"ComputeNodesInstancesToProvisionLimit": {
-			Title: "Compute Nodes Limit",
+		"InfrastructureServerGroupMaxCount": {
+			Title: "Max Server Groups / Infra",
 			Order: 1,
 		},
-		"DrivesAttachedToInstancesLimit": {
-			Title: "Drives Limit",
+		"InfrastructureDriveMaxCount": {
+			Title: "Max Drives / Infra",
 			Order: 2,
 		},
-		"InfrastructuresLimit": {
-			Title: "Infrastructures Limit",
+		"InfrastructureVmInstanceGroupMaxCount": {
+			Title: "Max VM Groups / Infra",
 			Order: 3,
+		},
+		"ServerGroupInstancesMaxCount": {
+			Title: "Max Instances / Server Group",
+			Order: 4,
+		},
+		"VmInstanceGroupVmInstancesMaxCount": {
+			Title: "Max VMs / VM Group",
+			Order: 5,
+		},
+		"DriveMaxSizeMbytes": {
+			Title: "Max Drive Size (MB)",
+			Order: 6,
+		},
+		"UserSshKeysCountMax": {
+			Title: "Max SSH Keys",
+			Order: 7,
 		},
 	},
 }
@@ -90,27 +108,6 @@ var userSshKeysPrintConfig = formatter.PrintConfig{
 			Title:       "Created",
 			Transformer: formatter.FormatDateTimeValue,
 			Order:       4,
-		},
-	},
-}
-
-var userPermissionsPrintConfig = formatter.PrintConfig{
-	FieldsConfig: map[string]formatter.RecordFieldConfig{
-		"UserId": {
-			Title: "User ID",
-			Order: 1,
-		},
-		"ResourceType": {
-			Title: "Resource Type",
-			Order: 2,
-		},
-		"ResourceId": {
-			Title: "Resource ID",
-			Order: 3,
-		},
-		"PermissionLevel": {
-			Title: "Permission Level",
-			Order: 4,
 		},
 	},
 }
@@ -307,37 +304,15 @@ func GetLimits(ctx context.Context, userId string) error {
 
 	client := api.GetApiClient(ctx)
 
-	userLimits, httpRes, err := client.UsersAPI.GetUserLimits(ctx, userIdNumber).Execute()
+	// Per-user limits are no longer stored directly on the user. The effective
+	// limits are now derived from the user's role/group/account quota profiles and
+	// exposed through the quota-limits-breakdown endpoint.
+	breakdown, httpRes, err := client.UsersAPI.GetQuotaLimitsBreakdown(ctx, userIdNumber).Execute()
 	if err := response_inspector.InspectResponse(httpRes, err); err != nil {
 		return err
 	}
 
-	return formatter.PrintResult(userLimits, &userLimitsPrintConfig)
-}
-
-func UpdateLimits(ctx context.Context, userId string, config []byte) error {
-	logger.Get().Info().Msgf("Updating limits for user '%s'", userId)
-
-	userIdNumber, revision, err := getUserIdAndRevision(ctx, userId)
-	if err != nil {
-		return err
-	}
-
-	var userLimitsConfig sdk.UserLimits
-	err = utils.UnmarshalContent(config, &userLimitsConfig)
-	if err != nil {
-		return err
-	}
-
-	client := api.GetApiClient(ctx)
-
-	userLimits, httpRes, err := client.UsersAPI.UpdateUserLimits(ctx, userIdNumber).UserLimits(userLimitsConfig).IfMatch(revision).Execute()
-	if err := response_inspector.InspectResponse(httpRes, err); err != nil {
-		return err
-	}
-
-	logger.Get().Info().Msgf("Limits updated for user '%s'", userId)
-	return formatter.PrintResult(userLimits, &userLimitsPrintConfig)
+	return formatter.PrintResult(breakdown.Effective, &userLimitsPrintConfig)
 }
 
 func UpdateConfig(ctx context.Context, userId string, config []byte) error {
@@ -374,7 +349,7 @@ func ChangeAccount(ctx context.Context, userId string, accountId int) error {
 	}
 
 	changeAccount := sdk.ChangeUserAccount{
-		NewAccountId: float32(accountId),
+		NewAccountId: int64(accountId),
 	}
 
 	client := api.GetApiClient(ctx)
@@ -495,49 +470,6 @@ func Unsuspend(ctx context.Context, userId string) error {
 
 	logger.Get().Info().Msgf("User '%s' un-suspended", userId)
 	return nil
-}
-
-func GetPermissions(ctx context.Context, userId string) error {
-	logger.Get().Info().Msgf("Getting permissions for user '%s'", userId)
-
-	userIdNumber, err := getUserId(userId)
-	if err != nil {
-		return err
-	}
-
-	client := api.GetApiClient(ctx)
-
-	permissions, httpRes, err := client.UsersAPI.GetUserPermissions(ctx, userIdNumber).Execute()
-	if err := response_inspector.InspectResponse(httpRes, err); err != nil {
-		return err
-	}
-
-	return formatter.PrintResult(permissions, &userPermissionsPrintConfig)
-}
-
-func UpdatePermissions(ctx context.Context, userId string, config []byte) error {
-	logger.Get().Info().Msgf("Updating permissions for user '%s'", userId)
-
-	userIdNumber, revision, err := getUserIdAndRevision(ctx, userId)
-	if err != nil {
-		return err
-	}
-
-	var permissionsConfig sdk.UpdateUserPermissions
-	err = utils.UnmarshalContent(config, &permissionsConfig)
-	if err != nil {
-		return err
-	}
-
-	client := api.GetApiClient(ctx)
-
-	permissions, httpRes, err := client.UsersAPI.UpdateUserPermissions(ctx, userIdNumber).UpdateUserPermissions(permissionsConfig).IfMatch(revision).Execute()
-	if err := response_inspector.InspectResponse(httpRes, err); err != nil {
-		return err
-	}
-
-	logger.Get().Info().Msgf("Permissions updated for user '%s'", userId)
-	return formatter.PrintResult(permissions, &userPermissionsPrintConfig)
 }
 
 func SetPassword(ctx context.Context, userId string, password string) error {

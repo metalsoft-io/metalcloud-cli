@@ -64,18 +64,18 @@ var fabricLinkPrintConfig = formatter.PrintConfig{
 }
 
 type NetworkFabricLinkFlat struct {
-	Id                          float32
-	NetworkFabricId             float32
+	Id                          int64
+	NetworkFabricId             int64
 	NetworkDeviceAId            float32
 	NetworkDeviceAName          string
 	NetworkDeviceARef           string
-	NetworkDeviceAInterfaceId   float32
+	NetworkDeviceAInterfaceId   int64
 	NetworkDeviceAInterfaceName string
 	NetworkDeviceAInterfaceRef  string
 	NetworkDeviceBId            float32
 	NetworkDeviceBName          string
 	NetworkDeviceBRef           string
-	NetworkDeviceBInterfaceId   float32
+	NetworkDeviceBInterfaceId   int64
 	NetworkDeviceBInterfaceName string
 	NetworkDeviceBInterfaceRef  string
 	LinkType                    string
@@ -142,7 +142,7 @@ func FabricLinksGet(ctx context.Context, fabricId string) error {
 }
 
 type interfaceInfo struct {
-	InterfaceId       float32
+	InterfaceId       int64
 	InterfaceName     string
 	NetworkDeviceId   float32
 	NetworkDeviceName string
@@ -150,8 +150,8 @@ type interfaceInfo struct {
 	NetworkDeviceRef  string
 }
 
-func getFabricInterfacesMap(ctx context.Context, client *sdk.APIClient, fabricId float32) (map[float32]interfaceInfo, error) {
-	networkFabricNodes := map[float32]interfaceInfo{}
+func getFabricInterfacesMap(ctx context.Context, client *sdk.APIClient, fabricId float32) (map[int64]interfaceInfo, error) {
+	networkFabricNodes := map[int64]interfaceInfo{}
 
 	networkDevices, httpRes, err := client.NetworkFabricAPI.GetFabricNetworkDevices(ctx, int32(fabricId)).Limit(1000).Execute()
 	if err := response_inspector.InspectResponse(httpRes, err); err != nil {
@@ -175,7 +175,7 @@ func getFabricInterfacesMap(ctx context.Context, client *sdk.APIClient, fabricId
 				p.InterfaceName,
 				nd_id,
 				nd.IdentifierString,
-				fmt.Sprintf("%s (%.0f)", p.InterfaceName, p.InterfaceId),
+				fmt.Sprintf("%s (%d)", p.InterfaceName, p.InterfaceId),
 				fmt.Sprintf("%s (%.0f)", nd.IdentifierString, nd_id),
 			}
 		}

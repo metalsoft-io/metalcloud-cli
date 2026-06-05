@@ -133,7 +133,7 @@ func LogicalNetworkConfigExample(ctx context.Context, kind string) error {
 	logicalNetworkConfiguration.Label = sdk.PtrString("example-logical-network")
 	logicalNetworkConfiguration.Name = sdk.PtrString("Example Logical Network")
 	logicalNetworkConfiguration.FabricId = 1
-	logicalNetworkConfiguration.InfrastructureId = *sdk.NewNullableInt32(sdk.PtrInt32(1))
+	logicalNetworkConfiguration.InfrastructureId = *sdk.NewNullableInt64(sdk.PtrInt64(1))
 
 	if kind == string(sdk.LOGICALNETWORKKIND_VLAN) {
 		logicalNetworkConfiguration.Kind = sdk.LOGICALNETWORKKIND_VLAN
@@ -161,7 +161,7 @@ func LogicalNetworkConfigExample(ctx context.Context, kind string) error {
 							ResourceId: 1,
 						},
 						PrefixLength:  24,
-						SubnetPoolIds: []int32{2, 3},
+						SubnetPoolIds: []int64{2, 3},
 					},
 				},
 			},
@@ -176,12 +176,12 @@ func LogicalNetworkConfigExample(ctx context.Context, kind string) error {
 							ResourceId: 1,
 						},
 						PrefixLength:  64,
-						SubnetPoolIds: []int32{2, 3},
+						SubnetPoolIds: []int64{2, 3},
 					},
 				},
 			},
 		}
-		logicalNetworkConfiguration.RouteDomainId = *sdk.NewNullableInt32(sdk.PtrInt32(1))
+		logicalNetworkConfiguration.RouteDomainId = *sdk.NewNullableInt64(sdk.PtrInt64(1))
 		logicalNetworkConfiguration.Annotations = &map[string]string{
 			"example": "example",
 		}
@@ -224,7 +224,7 @@ func LogicalNetworkConfigExample(ctx context.Context, kind string) error {
 							ResourceId: 1,
 						},
 						PrefixLength:  24,
-						SubnetPoolIds: []int32{2, 3},
+						SubnetPoolIds: []int64{2, 3},
 					},
 				},
 			},
@@ -239,12 +239,12 @@ func LogicalNetworkConfigExample(ctx context.Context, kind string) error {
 							ResourceId: 1,
 						},
 						PrefixLength:  64,
-						SubnetPoolIds: []int32{2, 3},
+						SubnetPoolIds: []int64{2, 3},
 					},
 				},
 			},
 		}
-		logicalNetworkConfiguration.RouteDomainId = *sdk.NewNullableInt32(sdk.PtrInt32(1))
+		logicalNetworkConfiguration.RouteDomainId = *sdk.NewNullableInt64(sdk.PtrInt64(1))
 		logicalNetworkConfiguration.Annotations = &map[string]string{
 			"example": "example",
 		}

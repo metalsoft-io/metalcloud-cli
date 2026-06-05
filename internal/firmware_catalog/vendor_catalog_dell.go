@@ -188,8 +188,8 @@ func (vc *VendorCatalog) processDellCatalog(ctx context.Context) error {
 				if !includedBinary {
 					systemName := brand.Display + " " + model.Display
 					if len(vc.VendorSystemsFilter) == 0 ||
-					slices.Contains(vc.VendorSystemsFilter, systemName) ||
-					slices.Contains(vc.VendorSystemsFilter, model.Display) {
+						slices.Contains(vc.VendorSystemsFilter, systemName) ||
+						slices.Contains(vc.VendorSystemsFilter, model.Display) {
 						includedBinary = true
 					}
 				}
@@ -251,21 +251,21 @@ func (vc *VendorCatalog) processDellCatalog(ctx context.Context) error {
 	return nil
 }
 
-func parseDellUpdateSeverity(dellCriticality string) sdk.FirmwareBinaryUpdateSeverity {
+func parseDellUpdateSeverity(dellCriticality string) string {
 	switch dellCriticality {
 	case "2":
-		return sdk.FIRMWAREBINARYUPDATESEVERITY_CRITICAL
+		return UpdateSeverityCritical
 	case "Urgent":
-		return sdk.FIRMWAREBINARYUPDATESEVERITY_CRITICAL
+		return UpdateSeverityCritical
 	case "1":
-		return sdk.FIRMWAREBINARYUPDATESEVERITY_RECOMMENDED
+		return UpdateSeverityRecommended
 	case "Recommended":
-		return sdk.FIRMWAREBINARYUPDATESEVERITY_RECOMMENDED
+		return UpdateSeverityRecommended
 	case "3":
-		return sdk.FIRMWAREBINARYUPDATESEVERITY_OPTIONAL
+		return UpdateSeverityOptional
 	case "Optional":
-		return sdk.FIRMWAREBINARYUPDATESEVERITY_OPTIONAL
+		return UpdateSeverityOptional
 	default:
-		return sdk.FIRMWAREBINARYUPDATESEVERITY_UNKNOWN
+		return UpdateSeverityUnknown
 	}
 }

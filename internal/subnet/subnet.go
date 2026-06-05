@@ -159,7 +159,7 @@ func SubnetConfigExample(ctx context.Context) error {
 		NetworkAddress:         "192.168.1.0",
 		PrefixLength:           24,
 		IsPool:                 false,
-		ParentSubnetId:         sdk.PtrInt32(0),
+		ParentSubnetId:         sdk.PtrInt64(0),
 		DefaultGatewayAddress:  sdk.PtrString("192.168.1.1"),
 		AllocationDenylist:     []sdk.AddressRange{},
 		ChildOverlapAllowRules: []string{},

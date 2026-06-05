@@ -171,7 +171,7 @@ func FabricCreate(ctx context.Context, siteIdOrLabel string, fabricName string, 
 	createFabric := sdk.CreateNetworkFabric{
 		Name:                fabricName,
 		Description:         sdk.PtrString(description),
-		SiteId:              sdk.PtrInt32(site.Id),
+		SiteId:              sdk.PtrInt64(site.Id),
 		FabricConfiguration: fabricConfiguration,
 	}
 
@@ -339,7 +339,7 @@ func FabricDevicesAdd(ctx context.Context, fabricId string, deviceIds []string) 
 			return err
 		}
 
-		if *fabricInfo.SiteId != int32(device.SiteId) {
+		if *fabricInfo.SiteId != device.SiteId {
 			err := fmt.Errorf("device '%s' is not in the same site as fabric '%s'", deviceId, fabricId)
 			logger.Get().Error().Err(err).Msg("")
 			return err

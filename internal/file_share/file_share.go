@@ -99,7 +99,7 @@ func FileShareList(ctx context.Context, infrastructureIdOrLabel string, filterSt
 
 	client := api.GetApiClient(ctx)
 
-	request := client.FileShareAPI.GetInfrastructureFileShares(ctx, infrastructureInfo.Id)
+	request := client.FileShareAPI.GetInfrastructureFileShares(ctx, float32(infrastructureInfo.Id))
 
 	if len(filterStatus) > 0 {
 		request = request.FilterServiceStatus(utils.ProcessFilterStringSlice(filterStatus))
@@ -129,7 +129,7 @@ func FileShareGet(ctx context.Context, infrastructureIdOrLabel string, fileShare
 
 	client := api.GetApiClient(ctx)
 
-	fileShare, httpRes, err := client.FileShareAPI.GetInfrastructureFileShare(ctx, infrastructureInfo.Id, fileShareIdNumeric).Execute()
+	fileShare, httpRes, err := client.FileShareAPI.GetInfrastructureFileShare(ctx, float32(infrastructureInfo.Id), fileShareIdNumeric).Execute()
 	if err := response_inspector.InspectResponse(httpRes, err); err != nil {
 		return err
 	}
@@ -155,7 +155,7 @@ func FileShareCreate(ctx context.Context, infrastructureIdOrLabel string, config
 	client := api.GetApiClient(ctx)
 
 	fileShare, httpRes, err := client.FileShareAPI.
-		CreateInfrastructureFileShare(ctx, infrastructureInfo.Id).
+		CreateInfrastructureFileShare(ctx, float32(infrastructureInfo.Id)).
 		CreateFileShare(fileShareConfig).
 		Execute()
 	if err := response_inspector.InspectResponse(httpRes, err); err != nil {
@@ -174,7 +174,7 @@ func FileShareDelete(ctx context.Context, infrastructureIdOrLabel string, fileSh
 		return err
 	}
 
-	fileShareIdNumeric, revision, err := getFileShareIdAndRevision(ctx, infrastructureInfo.Id, fileShareId)
+	fileShareIdNumeric, revision, err := getFileShareIdAndRevision(ctx, float32(infrastructureInfo.Id), fileShareId)
 	if err != nil {
 		return err
 	}
@@ -182,7 +182,7 @@ func FileShareDelete(ctx context.Context, infrastructureIdOrLabel string, fileSh
 	client := api.GetApiClient(ctx)
 
 	httpRes, err := client.FileShareAPI.
-		DeleteFileShare(ctx, infrastructureInfo.Id, fileShareIdNumeric).
+		DeleteFileShare(ctx, float32(infrastructureInfo.Id), fileShareIdNumeric).
 		IfMatch(revision).
 		Execute()
 	if err := response_inspector.InspectResponse(httpRes, err); err != nil {
@@ -202,7 +202,7 @@ func FileShareUpdateConfig(ctx context.Context, infrastructureIdOrLabel string, 
 		return err
 	}
 
-	fileShareIdNumeric, revision, err := getFileShareIdAndRevision(ctx, infrastructureInfo.Id, fileShareId)
+	fileShareIdNumeric, revision, err := getFileShareIdAndRevision(ctx, float32(infrastructureInfo.Id), fileShareId)
 	if err != nil {
 		return err
 	}
@@ -216,7 +216,7 @@ func FileShareUpdateConfig(ctx context.Context, infrastructureIdOrLabel string, 
 	client := api.GetApiClient(ctx)
 
 	fileShare, httpRes, err := client.FileShareAPI.
-		UpdateFileShareConfig(ctx, infrastructureInfo.Id, fileShareIdNumeric).
+		UpdateFileShareConfig(ctx, float32(infrastructureInfo.Id), fileShareIdNumeric).
 		UpdateFileShare(fileShareConfigUpdate).
 		IfMatch(revision).
 		Execute()
@@ -250,7 +250,7 @@ func FileShareUpdateMeta(ctx context.Context, infrastructureIdOrLabel string, fi
 	client := api.GetApiClient(ctx)
 
 	fileShare, httpRes, err := client.FileShareAPI.
-		PatchFileShareMeta(ctx, infrastructureInfo.Id, fileShareIdNumeric).
+		PatchFileShareMeta(ctx, float32(infrastructureInfo.Id), fileShareIdNumeric).
 		UpdateFileShareMeta(fileShareMetaUpdate).
 		Execute()
 	if err := response_inspector.InspectResponse(httpRes, err); err != nil {
@@ -277,7 +277,7 @@ func FileShareGetHosts(ctx context.Context, infrastructureIdOrLabel string, file
 	client := api.GetApiClient(ctx)
 
 	hosts, httpRes, err := client.FileShareAPI.
-		GetFileShareHosts(ctx, infrastructureInfo.Id, fileShareIdNumeric).
+		GetFileShareHosts(ctx, float32(infrastructureInfo.Id), fileShareIdNumeric).
 		Execute()
 	if err := response_inspector.InspectResponse(httpRes, err); err != nil {
 		return err
@@ -309,7 +309,7 @@ func FileShareUpdateHosts(ctx context.Context, infrastructureIdOrLabel string, f
 	client := api.GetApiClient(ctx)
 
 	hosts, httpRes, err := client.FileShareAPI.
-		UpdateFileShareInstanceArrayHostsBulk(ctx, infrastructureInfo.Id, fileShareIdNumeric).
+		UpdateFileShareInstanceArrayHostsBulk(ctx, float32(infrastructureInfo.Id), fileShareIdNumeric).
 		FileShareHostsModifyBulk(hostsUpdate).
 		Execute()
 	if err := response_inspector.InspectResponse(httpRes, err); err != nil {
@@ -336,7 +336,7 @@ func FileShareGetConfigInfo(ctx context.Context, infrastructureIdOrLabel string,
 	client := api.GetApiClient(ctx)
 
 	configInfo, httpRes, err := client.FileShareAPI.
-		GetFileShareConfigInfo(ctx, infrastructureInfo.Id, fileShareIdNumeric).
+		GetFileShareConfigInfo(ctx, float32(infrastructureInfo.Id), fileShareIdNumeric).
 		Execute()
 	if err := response_inspector.InspectResponse(httpRes, err); err != nil {
 		return err

@@ -41,7 +41,7 @@ func DriveSnapshotList(ctx context.Context, infrastructureIdOrLabel string, driv
 
 	client := api.GetApiClient(ctx)
 
-	snapshots, httpRes, err := client.DriveAPI.GetDriveSnapshots(ctx, infrastructureInfo.Id, driveIdNumeric).Execute()
+	snapshots, httpRes, err := client.DriveAPI.GetDriveSnapshots(ctx, float32(infrastructureInfo.Id), driveIdNumeric).Execute()
 	if err := response_inspector.InspectResponse(httpRes, err); err != nil {
 		return err
 	}
@@ -64,7 +64,7 @@ func DriveSnapshotCreate(ctx context.Context, infrastructureIdOrLabel string, dr
 
 	client := api.GetApiClient(ctx)
 
-	snapshot, httpRes, err := client.DriveAPI.CreateDriveSnapshot(ctx, infrastructureInfo.Id, driveIdNumeric).Execute()
+	snapshot, httpRes, err := client.DriveAPI.CreateDriveSnapshot(ctx, float32(infrastructureInfo.Id), driveIdNumeric).Execute()
 	if err := response_inspector.InspectResponse(httpRes, err); err != nil {
 		return err
 	}
@@ -89,7 +89,7 @@ func DriveSnapshotDelete(ctx context.Context, infrastructureIdOrLabel string, dr
 	client := api.GetApiClient(ctx)
 
 	httpRes, err := client.DriveAPI.
-		DeleteDriveSnapshot(ctx, infrastructureInfo.Id, driveIdNumeric).
+		DeleteDriveSnapshot(ctx, float32(infrastructureInfo.Id), driveIdNumeric).
 		DeleteSharedDriveSnapshot(sdk.DeleteSharedDriveSnapshot{
 			Name: snapshotName,
 		}).
@@ -118,7 +118,7 @@ func DriveSnapshotRestore(ctx context.Context, infrastructureIdOrLabel string, d
 	client := api.GetApiClient(ctx)
 
 	httpRes, err := client.DriveAPI.
-		RestoreDriveToSnapshot(ctx, infrastructureInfo.Id, driveIdNumeric).
+		RestoreDriveToSnapshot(ctx, float32(infrastructureInfo.Id), driveIdNumeric).
 		RestoreSharedDriveSnapshot(sdk.RestoreSharedDriveSnapshot{
 			Name: snapshotName,
 		}).

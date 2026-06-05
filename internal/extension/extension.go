@@ -294,9 +294,9 @@ func ExtensionUpdate(ctx context.Context, extensionId string, name string, descr
 
 	client := api.GetApiClient(ctx)
 
-	updatedExtension, httpRes, err := client.ExtensionAPI.UpdateExtension(ctx, extension.Id).
+	updatedExtension, httpRes, err := client.ExtensionAPI.UpdateExtension(ctx, float32(extension.Id)).
 		UpdateExtension(updateExtension).
-		IfMatch(fmt.Sprintf("%.0f", extension.Revision)).
+		IfMatch(fmt.Sprintf("%d", extension.Revision)).
 		Execute()
 	if err := response_inspector.InspectResponse(httpRes, err); err != nil {
 		return err
@@ -414,8 +414,8 @@ func ExtensionPublish(ctx context.Context, extensionId string) error {
 
 	client := api.GetApiClient(ctx)
 
-	httpRes, err := client.ExtensionAPI.PublishExtension(ctx, extension.Id).
-		IfMatch(fmt.Sprintf("%.0f", extension.Revision)).
+	httpRes, err := client.ExtensionAPI.PublishExtension(ctx, float32(extension.Id)).
+		IfMatch(fmt.Sprintf("%d", extension.Revision)).
 		Execute()
 	if err := response_inspector.InspectResponse(httpRes, err); err != nil {
 		return err
@@ -435,8 +435,8 @@ func ExtensionArchive(ctx context.Context, extensionId string) error {
 
 	client := api.GetApiClient(ctx)
 
-	httpRes, err := client.ExtensionAPI.ArchiveExtension(ctx, extension.Id).
-		IfMatch(fmt.Sprintf("%.0f", extension.Revision)).
+	httpRes, err := client.ExtensionAPI.ArchiveExtension(ctx, float32(extension.Id)).
+		IfMatch(fmt.Sprintf("%d", extension.Revision)).
 		Execute()
 	if err := response_inspector.InspectResponse(httpRes, err); err != nil {
 		return err
@@ -456,8 +456,8 @@ func ExtensionMakePublic(ctx context.Context, extensionId string) error {
 
 	client := api.GetApiClient(ctx)
 
-	httpRes, err := client.ExtensionAPI.MakePublicExtension(ctx, extension.Id).
-		IfMatch(fmt.Sprintf("%.0f", extension.Revision)).
+	httpRes, err := client.ExtensionAPI.MakePublicExtension(ctx, float32(extension.Id)).
+		IfMatch(fmt.Sprintf("%d", extension.Revision)).
 		Execute()
 	if err := response_inspector.InspectResponse(httpRes, err); err != nil {
 		return err
@@ -501,7 +501,7 @@ func GetExtensionByIdOrLabel(ctx context.Context, extensionIdOrLabel string) (*s
 		return nil, err
 	}
 
-	extensionInfo, httpRes, err := client.ExtensionAPI.GetExtension(ctx, *extensions.Data[0].Id).Execute()
+	extensionInfo, httpRes, err := client.ExtensionAPI.GetExtension(ctx, float32(*extensions.Data[0].Id)).Execute()
 	if err = response_inspector.InspectResponse(httpRes, err); err != nil {
 		return nil, err
 	}

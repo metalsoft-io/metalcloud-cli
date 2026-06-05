@@ -131,7 +131,7 @@ func LogicalNetworkProfileConfigExample(ctx context.Context, kind string) error 
 							ResourceId: 1,
 						},
 						PrefixLength:  24,
-						SubnetPoolIds: []int32{1},
+						SubnetPoolIds: []int64{1},
 					},
 				},
 			},
@@ -146,12 +146,12 @@ func LogicalNetworkProfileConfigExample(ctx context.Context, kind string) error 
 							ResourceId: 1,
 						},
 						PrefixLength:  64,
-						SubnetPoolIds: []int32{1},
+						SubnetPoolIds: []int64{1},
 					},
 				},
 			},
 		}
-		example.RouteDomainId = *sdk.NewNullableInt32(sdk.PtrInt32(1))
+		example.RouteDomainId = *sdk.NewNullableInt64(sdk.PtrInt64(1))
 	case string(sdk.LOGICALNETWORKKIND_VXLAN):
 		example.Kind = sdk.LOGICALNETWORKKIND_VXLAN
 		example.Vlan = &sdk.CreateLogicalNetworkVlanProperties{
@@ -191,7 +191,7 @@ func LogicalNetworkProfileConfigExample(ctx context.Context, kind string) error 
 							ResourceId: 1,
 						},
 						PrefixLength:  24,
-						SubnetPoolIds: []int32{1},
+						SubnetPoolIds: []int64{1},
 					},
 				},
 			},
@@ -206,12 +206,12 @@ func LogicalNetworkProfileConfigExample(ctx context.Context, kind string) error 
 							ResourceId: 1,
 						},
 						PrefixLength:  64,
-						SubnetPoolIds: []int32{1},
+						SubnetPoolIds: []int64{1},
 					},
 				},
 			},
 		}
-		example.RouteDomainId = *sdk.NewNullableInt32(sdk.PtrInt32(1))
+		example.RouteDomainId = *sdk.NewNullableInt64(sdk.PtrInt64(1))
 	default:
 		return fmt.Errorf("invalid logical network profile kind: '%s'", kind)
 	}

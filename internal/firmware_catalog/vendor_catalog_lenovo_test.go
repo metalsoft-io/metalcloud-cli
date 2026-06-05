@@ -9,8 +9,6 @@ import (
 	"path/filepath"
 	"strings"
 	"testing"
-
-	sdk "github.com/metalsoft-io/metalcloud-sdk-go"
 )
 
 // mockLenovoCatalog creates a lenovoCatalog with configurable updates for testing
@@ -338,7 +336,7 @@ func TestProcessLenovoCatalog_BinaryFields(t *testing.T) {
 	if !binary.RebootRequired {
 		t.Error("RebootRequired should be true")
 	}
-	if binary.UpdateSeverity != sdk.FIRMWAREBINARYUPDATESEVERITY_UNKNOWN {
+	if binary.UpdateSeverity != UpdateSeverityUnknown {
 		t.Errorf("UpdateSeverity = %v, want UNKNOWN", binary.UpdateSeverity)
 	}
 

@@ -207,7 +207,7 @@ Examples:
 					return fmt.Errorf("extension-id is required when config-source is not provided")
 				}
 
-				payload.ExtensionId = sdk.PtrFloat32(float32(extensionInstanceFlags.extensionId))
+				payload.ExtensionId = sdk.PtrInt64(int64(extensionInstanceFlags.extensionId))
 				if extensionInstanceFlags.label != "" {
 					payload.Label = &extensionInstanceFlags.label
 				}

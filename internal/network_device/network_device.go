@@ -86,11 +86,11 @@ func NetworkDeviceGet(ctx context.Context, networkDeviceId string) error {
 
 func NetworkDeviceConfigExample(ctx context.Context) error {
 	networkDeviceConfiguration := sdk.CreateNetworkDevice{
-		SiteId:           sdk.PtrInt32(1),
+		SiteId:           sdk.PtrInt64(1),
 		Driver:           sdk.NETWORKDEVICEDRIVER_SONIC_ENTERPRISE,
 		IdentifierString: sdk.PtrString("example"),
 		SerialNumber:     sdk.PtrString("1234567890"),
-		ChassisRackId:    sdk.PtrInt32(1),
+		ChassisRackId:    sdk.PtrInt64(1),
 		Position:         "leaf",
 		IsGateway:        sdk.PtrBool(false),
 		IsStorageSwitch:  sdk.PtrBool(false),
@@ -113,7 +113,7 @@ func NetworkDeviceConfigExample(ctx context.Context) error {
 	networkDeviceConfiguration.Asn.Set(sdk.PtrInt64(65000))
 
 	networkDeviceConfiguration.AuthenticationOptions = []sdk.NetworkDeviceAuthOption{
-		{Kind: "tacacs", DeviceAuthProviderId: sdk.PtrInt32(1)},
+		{Kind: "tacacs", DeviceAuthProviderId: sdk.PtrInt64(1)},
 		{Kind: "local"},
 	}
 
@@ -388,7 +388,7 @@ func NetworkDeviceEnableSyslog(ctx context.Context, networkDeviceId string) erro
 
 	client := api.GetApiClient(ctx)
 
-	httpRes, err := client.NetworkDeviceAPI.
+	_, httpRes, err := client.NetworkDeviceAPI.
 		EnableNetworkDeviceSyslog(ctx, networkDeviceIdNumeric).
 		Execute()
 	if err := response_inspector.InspectResponse(httpRes, err); err != nil {
@@ -510,20 +510,20 @@ func NetworkDeviceExampleDefaults(ctx context.Context) error {
 		IdentifierString:          sdk.PtrString("1234"),
 		Asn:                       sdk.PtrInt64(65000),
 		CustomVariables:           map[string]interface{}{"var1": "value1", "var2": "value2"},
-		MlagDomainId:              sdk.PtrInt32(1),
+		MlagDomainId:              sdk.PtrInt64(1),
 		LoopbackAddressIpv4:       sdk.PtrString("1.2.3.4"),
 		LoopbackAddressIpv6:       sdk.PtrString("0:0:0:0:0:0:0:1"),
 		VtepAddressIpv4:           sdk.PtrString("1.2.3.4"),
 		VtepAddressIpv6:           sdk.PtrString("0:0:0:0:0:0:0:1"),
 		OrderIndex:                sdk.PtrInt32(1),
-		OsTemplateId:              sdk.PtrInt32(10),
+		OsTemplateId:              sdk.PtrInt64(10),
 		MlagPartnerHostname:       sdk.PtrString("partner.example.com"),
 		IsPartOfMlagPair:          sdk.PtrBool(true),
 		MlagSystemMac:             sdk.PtrString("AA:BB:CC:DD:EE:FF"),
-		MlagPeerLinkPortChannelId: sdk.PtrInt32(1),
+		MlagPeerLinkPortChannelId: sdk.PtrInt64(1),
 		MlagPartnerVlanId:         sdk.PtrInt32(100),
 		AuthenticationOptions: []sdk.NetworkDeviceAuthOption{
-			{Kind: "tacacs", DeviceAuthProviderId: sdk.PtrInt32(1)},
+			{Kind: "tacacs", DeviceAuthProviderId: sdk.PtrInt64(1)},
 			{Kind: "local"},
 		},
 	}
@@ -699,7 +699,7 @@ func NetworkDeviceDefaultSecretsCreate(ctx context.Context, siteId float32, macA
 
 	client := api.GetApiClient(ctx)
 
-	createSecrets := sdk.NewCreateNetworkDeviceDefaultSecrets(siteId, macAddressOrSerialNumber, secretName, secretValue)
+	createSecrets := sdk.NewCreateNetworkDeviceDefaultSecrets(int64(siteId), macAddressOrSerialNumber, secretName, secretValue)
 
 	secrets, httpRes, err := client.NetworkDeviceDefaultSecretsAPI.CreateNetworkDeviceDefaultSecrets(ctx).
 		CreateNetworkDeviceDefaultSecrets(*createSecrets).
@@ -807,7 +807,7 @@ func NetworkDeviceDefaultSecretsBatchCreate(ctx context.Context, filePath string
 		secretName := strings.TrimSpace(record[colIndex["secretname"]])
 		secretValue := strings.TrimSpace(record[colIndex["secretvalue"]])
 
-		createSecrets := sdk.NewCreateNetworkDeviceDefaultSecrets(float32(siteIdFloat), macOrSerial, secretName, secretValue)
+		createSecrets := sdk.NewCreateNetworkDeviceDefaultSecrets(int64(siteIdFloat), macOrSerial, secretName, secretValue)
 
 		secrets, httpRes, err := client.NetworkDeviceDefaultSecretsAPI.CreateNetworkDeviceDefaultSecrets(ctx).
 			CreateNetworkDeviceDefaultSecrets(*createSecrets).

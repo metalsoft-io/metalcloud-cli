@@ -119,7 +119,7 @@ func InfrastructureGet(ctx context.Context, infrastructureIdOrLabel string) erro
 func InfrastructureCreate(ctx context.Context, siteId string, infrastructureLabel string) error {
 	logger.Get().Info().Msgf("Create infrastructure '%s'", infrastructureLabel)
 
-	siteIdNumber, err := strconv.ParseFloat(siteId, 32)
+	siteIdNumber, err := strconv.ParseInt(siteId, 10, 64)
 	if err != nil {
 		err := fmt.Errorf("invalid site ID: '%s'", siteId)
 		logger.Get().Error().Err(err).Msg("")
@@ -128,7 +128,7 @@ func InfrastructureCreate(ctx context.Context, siteId string, infrastructureLabe
 
 	createInfrastructure := sdk.InfrastructureCreate{
 		Label:  sdk.PtrString(infrastructureLabel),
-		SiteId: float32(siteIdNumber),
+		SiteId: siteIdNumber,
 		Meta:   nil,
 	}
 
@@ -168,7 +168,7 @@ func InfrastructureUpdate(ctx context.Context, infrastructureIdOrLabel string, l
 
 	client := api.GetApiClient(ctx)
 
-	infrastructureInfo, httpRes, err := client.InfrastructureAPI.UpdateInfrastructureConfiguration(ctx, infrastructureInfo.Id).
+	infrastructureInfo, httpRes, err := client.InfrastructureAPI.UpdateInfrastructureConfiguration(ctx, float32(infrastructureInfo.Id)).
 		UpdateInfrastructure(updateInfrastructure).
 		IfMatch(strconv.Itoa(int(*infrastructureInfo.Config.Revision))).
 		Execute()
@@ -190,7 +190,7 @@ func InfrastructureDelete(ctx context.Context, infrastructureIdOrLabel string) e
 	client := api.GetApiClient(ctx)
 
 	httpRes, err := client.InfrastructureAPI.
-		DeleteInfrastructure(ctx, infrastructureInfo.Id).
+		DeleteInfrastructure(ctx, float32(infrastructureInfo.Id)).
 		IfMatch(strconv.Itoa(int(infrastructureInfo.Revision))).
 		Execute()
 	if err := response_inspector.InspectResponse(httpRes, err); err != nil {
@@ -222,7 +222,7 @@ func InfrastructureDeploy(ctx context.Context, infrastructureIdOrLabel string, a
 	client := api.GetApiClient(ctx)
 
 	infrastructureInfo, httpRes, err := client.InfrastructureAPI.
-		DeployInfrastructure(ctx, infrastructureInfo.Id).
+		DeployInfrastructure(ctx, float32(infrastructureInfo.Id)).
 		InfrastructureDeployOptions(infrastructureDeployOptions).
 		Execute()
 	if err := response_inspector.InspectResponse(httpRes, err); err != nil {
@@ -243,7 +243,7 @@ func InfrastructureRevert(ctx context.Context, infrastructureIdOrLabel string) e
 	client := api.GetApiClient(ctx)
 
 	httpRes, err := client.InfrastructureAPI.
-		RevertInfrastructure(ctx, infrastructureInfo.Id).
+		RevertInfrastructure(ctx, float32(infrastructureInfo.Id)).
 		Execute()
 	if err := response_inspector.InspectResponse(httpRes, err); err != nil {
 		return err
@@ -263,7 +263,7 @@ func InfrastructureCancelDeploy(ctx context.Context, infrastructureIdOrLabel str
 	client := api.GetApiClient(ctx)
 
 	infrastructureInfo, httpRes, err := client.InfrastructureAPI.
-		CancelDeployInfrastructure(ctx, infrastructureInfo.Id).
+		CancelDeployInfrastructure(ctx, float32(infrastructureInfo.Id)).
 		Execute()
 	if err := response_inspector.InspectResponse(httpRes, err); err != nil {
 		return err
@@ -320,7 +320,7 @@ func InfrastructureGetUsers(ctx context.Context, infrastructureIdOrLabel string)
 	client := api.GetApiClient(ctx)
 
 	usersPaginated, httpRes, err := client.InfrastructureAPI.
-		GetInfrastructureUsers(ctx, infrastructureInfo.Id).
+		GetInfrastructureUsers(ctx, float32(infrastructureInfo.Id)).
 		Execute()
 	if err := response_inspector.InspectResponse(httpRes, err); err != nil {
 		return err
@@ -364,7 +364,7 @@ func InfrastructureAddUser(ctx context.Context, infrastructureIdOrLabel string, 
 	client := api.GetApiClient(ctx)
 
 	httpRes, err := client.InfrastructureAPI.
-		AddInfrastructureUser(ctx, infrastructureInfo.Id).
+		AddInfrastructureUser(ctx, float32(infrastructureInfo.Id)).
 		AddUserToInfrastructure(addUserConfig).
 		Execute()
 	if err := response_inspector.InspectResponse(httpRes, err); err != nil {
@@ -393,7 +393,7 @@ func InfrastructureRemoveUser(ctx context.Context, infrastructureIdOrLabel strin
 	client := api.GetApiClient(ctx)
 
 	httpRes, err := client.InfrastructureAPI.
-		RemoveInfrastructureUser(ctx, infrastructureInfo.Id, float32(userIdNumber)).
+		RemoveInfrastructureUser(ctx, float32(infrastructureInfo.Id), float32(userIdNumber)).
 		Execute()
 	if err := response_inspector.InspectResponse(httpRes, err); err != nil {
 		return err
@@ -401,41 +401,6 @@ func InfrastructureRemoveUser(ctx context.Context, infrastructureIdOrLabel strin
 
 	logger.Get().Info().Msgf("User '%s' removed from infrastructure '%s'", userId, infrastructureIdOrLabel)
 	return nil
-}
-
-func InfrastructureGetUserLimits(ctx context.Context, infrastructureIdOrLabel string) error {
-	logger.Get().Info().Msgf("Getting user limits for infrastructure '%s'", infrastructureIdOrLabel)
-
-	infrastructureInfo, err := GetInfrastructureByIdOrLabel(ctx, infrastructureIdOrLabel)
-	if err != nil {
-		return err
-	}
-
-	client := api.GetApiClient(ctx)
-
-	userLimits, httpRes, err := client.InfrastructureAPI.
-		GetInfrastructureUserLimits(ctx, infrastructureInfo.Id).
-		Execute()
-	if err := response_inspector.InspectResponse(httpRes, err); err != nil {
-		return err
-	}
-
-	return formatter.PrintResult(userLimits, &formatter.PrintConfig{
-		FieldsConfig: map[string]formatter.RecordFieldConfig{
-			"ComputeNodesInstancesToProvisionLimit": {
-				Title: "Compute Nodes Limit",
-				Order: 1,
-			},
-			"DrivesAttachedToInstancesLimit": {
-				Title: "Drives Limit",
-				Order: 2,
-			},
-			"InfrastructuresLimit": {
-				Title: "Infrastructures Limit",
-				Order: 3,
-			},
-		},
-	})
 }
 
 func InfrastructureGetStatistics(ctx context.Context, infrastructureIdOrLabel string) error {
@@ -449,7 +414,7 @@ func InfrastructureGetStatistics(ctx context.Context, infrastructureIdOrLabel st
 	client := api.GetApiClient(ctx)
 
 	statistics, httpRes, err := client.InfrastructureAPI.
-		GetInfrastructureStatistics(ctx, infrastructureInfo.Id).
+		GetInfrastructureStatistics(ctx, float32(infrastructureInfo.Id)).
 		Execute()
 	if err := response_inspector.InspectResponse(httpRes, err); err != nil {
 		return err
@@ -494,7 +459,7 @@ func InfrastructureGetConfigInfo(ctx context.Context, infrastructureIdOrLabel st
 	client := api.GetApiClient(ctx)
 
 	configInfo, httpRes, err := client.InfrastructureAPI.
-		GetInfrastructureConfigInfo(ctx, infrastructureInfo.Id).
+		GetInfrastructureConfigInfo(ctx, float32(infrastructureInfo.Id)).
 		Execute()
 	if err := response_inspector.InspectResponse(httpRes, err); err != nil {
 		return err
