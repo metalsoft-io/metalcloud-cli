@@ -68,12 +68,12 @@ func FirmwareBinaryList(ctx context.Context) error {
 
 	client := api.GetApiClient(ctx)
 
-	firmwareBinaryList, httpRes, err := client.FirmwareBinaryAPI.GetFirmwareBinaries(ctx).Execute()
-	if err := response_inspector.InspectResponse(httpRes, err); err != nil {
+	records, meta, err := utils.FetchAllPages(client.FirmwareBinaryAPI.GetFirmwareBinaries(ctx).SortBy([]string{"id:ASC"}))
+	if err != nil {
 		return err
 	}
 
-	return formatter.PrintResult(firmwareBinaryList, &firmwareBinaryPrintConfig)
+	return utils.PrintAll(records, meta, len(records), &firmwareBinaryPrintConfig)
 }
 
 func FirmwareBinaryGet(ctx context.Context, firmwareBinaryId string) error {

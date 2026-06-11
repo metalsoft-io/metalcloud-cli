@@ -58,12 +58,12 @@ func FirmwarePolicyList(ctx context.Context) error {
 
 	client := api.GetApiClient(ctx)
 
-	firmwarePolicyList, httpRes, err := client.FirmwarePolicyAPI.GetFirmwarePolicies(ctx).Execute()
-	if err := response_inspector.InspectResponse(httpRes, err); err != nil {
+	records, meta, err := utils.FetchAllPages(client.FirmwarePolicyAPI.GetFirmwarePolicies(ctx).SortBy([]string{"id:ASC"}))
+	if err != nil {
 		return err
 	}
 
-	return formatter.PrintResult(firmwarePolicyList, &firmwarePolicyPrintConfig)
+	return utils.PrintAll(records, meta, len(records), &firmwarePolicyPrintConfig)
 }
 
 func FirmwarePolicyGet(ctx context.Context, firmwarePolicyId string) error {

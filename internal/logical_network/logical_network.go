@@ -101,12 +101,25 @@ func LogicalNetworkList(ctx context.Context, fabricIdOrLabel string, flags ListF
 		request = request.FilterFabricId([]string{fabric.Id})
 	}
 
-	logicalNetworkList, httpRes, err := request.Execute()
-	if err := response_inspector.InspectResponse(httpRes, err); err != nil {
+	if flags.Page > 0 || flags.Limit > 0 {
+		logicalNetworkList, httpRes, err := request.Execute()
+		if err := response_inspector.InspectResponse(httpRes, err); err != nil {
+			return err
+		}
+
+		if err := formatter.PrintResult(logicalNetworkList, &logicalNetworkPrintConfig); err != nil {
+			return err
+		}
+		utils.PrintPaginationSummary(len(logicalNetworkList.Data), logicalNetworkList.Meta)
+		return nil
+	}
+
+	records, meta, err := utils.FetchAllPages(request)
+	if err != nil {
 		return err
 	}
 
-	return formatter.PrintResult(logicalNetworkList, &logicalNetworkPrintConfig)
+	return utils.PrintAll(records, meta, len(records), &logicalNetworkPrintConfig)
 }
 
 func LogicalNetworkGet(ctx context.Context, logicalNetworkId string) error {

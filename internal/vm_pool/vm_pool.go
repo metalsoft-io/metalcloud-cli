@@ -58,12 +58,12 @@ func VMPoolList(ctx context.Context, filterType []string) error {
 		request = request.FilterType(utils.ProcessFilterStringSlice(filterType))
 	}
 
-	vmPoolList, httpRes, err := request.SortBy([]string{"id:ASC"}).Execute()
-	if err := response_inspector.InspectResponse(httpRes, err); err != nil {
+	records, meta, err := utils.FetchAllPages(request.SortBy([]string{"id:ASC"}))
+	if err != nil {
 		return err
 	}
 
-	return formatter.PrintResult(vmPoolList, &VMPoolPrintConfig)
+	return utils.PrintAll(records, meta, len(records), &VMPoolPrintConfig)
 }
 
 func VMPoolGet(ctx context.Context, vmPoolId string) error {

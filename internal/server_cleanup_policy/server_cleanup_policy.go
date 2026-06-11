@@ -10,6 +10,7 @@ import (
 	"github.com/metalsoft-io/metalcloud-cli/pkg/formatter"
 	"github.com/metalsoft-io/metalcloud-cli/pkg/logger"
 	"github.com/metalsoft-io/metalcloud-cli/pkg/response_inspector"
+	"github.com/metalsoft-io/metalcloud-cli/pkg/utils"
 	"github.com/spf13/cobra"
 
 	sdk "github.com/metalsoft-io/metalcloud-sdk-go"
@@ -69,12 +70,12 @@ func CleanupPolicyList(ctx context.Context) error {
 
 	client := api.GetApiClient(ctx)
 
-	cleanupPoliciesList, httpRes, err := client.ServerCleanupPolicyAPI.GetServerCleanupPolicies(ctx).Execute()
-	if err := response_inspector.InspectResponse(httpRes, err); err != nil {
+	records, meta, err := utils.FetchAllPages(client.ServerCleanupPolicyAPI.GetServerCleanupPolicies(ctx).SortBy([]string{"id:ASC"}))
+	if err != nil {
 		return err
 	}
 
-	return formatter.PrintResult(cleanupPoliciesList, &cleanupPolicyPrintConfig)
+	return utils.PrintAll(records, meta, len(records), &cleanupPolicyPrintConfig)
 }
 
 func CleanupPolicyGet(ctx context.Context, cleanupPolicyId string) error {

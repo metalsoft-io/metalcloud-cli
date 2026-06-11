@@ -126,12 +126,12 @@ func DeviceAuthProviderList(ctx context.Context, filterSiteId, filterKind, filte
 		request = request.FilterStatus(utils.ProcessFilterStringSlice(filterStatus))
 	}
 
-	list, httpRes, err := request.SortBy([]string{"id:ASC"}).Execute()
-	if err := response_inspector.InspectResponse(httpRes, err); err != nil {
+	records, meta, err := utils.FetchAllPages(request.SortBy([]string{"id:ASC"}))
+	if err != nil {
 		return err
 	}
 
-	return formatter.PrintResult(list, &DeviceAuthProviderPrintConfig)
+	return utils.PrintAll(records, meta, len(records), &DeviceAuthProviderPrintConfig)
 }
 
 func DeviceAuthProviderGet(ctx context.Context, idOrLabel string) error {

@@ -168,12 +168,12 @@ func SiteList(ctx context.Context) error {
 
 	client := api.GetApiClient(ctx)
 
-	siteList, httpRes, err := client.SiteAPI.GetSites(ctx).SortBy([]string{"id:ASC"}).Execute()
-	if err := response_inspector.InspectResponse(httpRes, err); err != nil {
+	records, meta, err := utils.FetchAllPages(client.SiteAPI.GetSites(ctx).SortBy([]string{"id:ASC"}))
+	if err != nil {
 		return err
 	}
 
-	return formatter.PrintResult(siteList, &sitePrintConfig)
+	return utils.PrintAll(records, meta, len(records), &sitePrintConfig)
 }
 
 func SiteGet(ctx context.Context, siteIdOrName string) error {

@@ -15,6 +15,7 @@ import (
 	"github.com/metalsoft-io/metalcloud-cli/pkg/formatter"
 	"github.com/metalsoft-io/metalcloud-cli/pkg/logger"
 	"github.com/metalsoft-io/metalcloud-cli/pkg/response_inspector"
+	"github.com/metalsoft-io/metalcloud-cli/pkg/utils"
 )
 
 var jobPrintConfig = formatter.PrintConfig{
@@ -66,12 +67,12 @@ func JobList(ctx context.Context, flags ListFlags) error {
 		request = request.SortBy(flags.SortBy)
 	}
 
-	jobs, httpRes, err := request.Execute()
-	if err := response_inspector.InspectResponse(httpRes, err); err != nil {
+	records, meta, err := utils.FetchAllPages(request)
+	if err != nil {
 		return err
 	}
 
-	return formatter.PrintResult(jobs, &jobPrintConfig)
+	return utils.PrintAll(records, meta, len(records), &jobPrintConfig)
 }
 
 func JobGet(ctx context.Context, jobId string) error {

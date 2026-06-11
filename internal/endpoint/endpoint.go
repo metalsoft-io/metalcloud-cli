@@ -83,12 +83,12 @@ func EndpointList(ctx context.Context, filterSite []string, filterExternalId []s
 		request = request.FilterExternalId(utils.ProcessFilterStringSlice(filterExternalId))
 	}
 
-	endpointList, httpRes, err := request.Execute()
-	if err := response_inspector.InspectResponse(httpRes, err); err != nil {
+	records, meta, err := utils.FetchAllPages(request.SortBy([]string{"id:ASC"}))
+	if err != nil {
 		return err
 	}
 
-	return formatter.PrintResult(endpointList, &endpointPrintConfig)
+	return utils.PrintAll(records, meta, len(records), &endpointPrintConfig)
 }
 
 func EndpointGet(ctx context.Context, endpointId string) error {
@@ -191,13 +191,13 @@ func EndpointInterfaceList(ctx context.Context, endpointId string) error {
 
 	client := api.GetApiClient(ctx)
 
-	endpointInterfaces, httpRes, err := client.EndpointAPI.GetEndpointInterfaces(ctx, endpointIdNumeric).Execute()
-	if err := response_inspector.InspectResponse(httpRes, err); err != nil {
+	endpointInterfaces, meta, err := utils.FetchAllPages(client.EndpointAPI.GetEndpointInterfaces(ctx, endpointIdNumeric).SortBy([]string{"id:ASC"}))
+	if err != nil {
 		return err
 	}
 
-	endpointInterfacesList := make([]EndpointInterfaceDetails, 0, len(endpointInterfaces.Data))
-	for _, iface := range endpointInterfaces.Data {
+	endpointInterfacesList := make([]EndpointInterfaceDetails, 0, len(endpointInterfaces))
+	for _, iface := range endpointInterfaces {
 		endpointInterface := EndpointInterfaceDetails{
 			Id:                         &iface.Id,
 			MacAddress:                 iface.MacAddress,
@@ -209,7 +209,11 @@ func EndpointInterfaceList(ctx context.Context, endpointId string) error {
 		endpointInterfacesList = append(endpointInterfacesList, endpointInterface)
 	}
 
-	return formatter.PrintResult(endpointInterfacesList, &endpointInterfacePrintConfig)
+	if err := formatter.PrintResult(endpointInterfacesList, &endpointInterfacePrintConfig); err != nil {
+		return err
+	}
+	utils.PrintPaginationSummary(len(endpointInterfacesList), meta)
+	return nil
 }
 
 func GetEndpointId(endpointId string) (int32, error) {

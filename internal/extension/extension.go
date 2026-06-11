@@ -77,26 +77,9 @@ func ExtensionList(ctx context.Context, filterLabel []string, filterName []strin
 		request = request.FilterIsPublic([]string{filterPublic})
 	}
 
-	extensions := make([]sdk.ExtensionInfo, 0)
-
-	page := float32(1)
-
-	// Loop through all pages and collect extensions list
-	for {
-		request = request.Page(page)
-
-		extensionList, httpRes, err := request.Execute()
-		if err := response_inspector.InspectResponse(httpRes, err); err != nil {
-			return err
-		}
-
-		extensions = append(extensions, extensionList.Data...)
-
-		if *extensionList.Meta.TotalPages <= *extensionList.Meta.CurrentPage {
-			break // No more pages to process
-		}
-
-		page++
+	extensions, meta, err := utils.FetchAllPages(request)
+	if err != nil {
+		return err
 	}
 
 	// Workaround until the API supports this filter - filter out the extensions by kind, if needed
@@ -110,7 +93,11 @@ func ExtensionList(ctx context.Context, filterLabel []string, filterName []strin
 		extensions = filteredExtensions
 	}
 
-	return formatter.PrintResult(extensions, &extensionPrintConfig)
+	if err := formatter.PrintResult(extensions, &extensionPrintConfig); err != nil {
+		return err
+	}
+	utils.PrintPaginationSummary(len(extensions), meta)
+	return nil
 }
 
 func ExtensionGet(ctx context.Context, extensionId string) error {

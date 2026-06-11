@@ -61,12 +61,12 @@ func FirmwareCatalogList(ctx context.Context) error {
 
 	client := api.GetApiClient(ctx)
 
-	firmwareCatalogList, httpRes, err := client.FirmwareCatalogAPI.GetFirmwareCatalogs(ctx).Execute()
-	if err := response_inspector.InspectResponse(httpRes, err); err != nil {
+	records, meta, err := utils.FetchAllPages(client.FirmwareCatalogAPI.GetFirmwareCatalogs(ctx).SortBy([]string{"id:ASC"}))
+	if err != nil {
 		return err
 	}
 
-	return formatter.PrintResult(firmwareCatalogList, &firmwareCatalogPrintConfig)
+	return utils.PrintAll(records, meta, len(records), &firmwareCatalogPrintConfig)
 }
 
 func FirmwareCatalogGet(ctx context.Context, firmwareCatalogId string) error {

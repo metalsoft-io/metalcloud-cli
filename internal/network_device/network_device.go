@@ -65,12 +65,12 @@ func NetworkDeviceList(ctx context.Context, filterStatus []string) error {
 		request = request.FilterStatus(utils.ProcessFilterStringSlice(filterStatus))
 	}
 
-	networkDeviceList, httpRes, err := request.SortBy([]string{"id:ASC"}).Execute()
-	if err := response_inspector.InspectResponse(httpRes, err); err != nil {
+	records, meta, err := utils.FetchAllPages(request.SortBy([]string{"id:ASC"}))
+	if err != nil {
 		return err
 	}
 
-	return formatter.PrintResult(networkDeviceList, &NetworkDevicePrintConfig)
+	return utils.PrintAll(records, meta, len(records), &NetworkDevicePrintConfig)
 }
 
 func NetworkDeviceGet(ctx context.Context, networkDeviceId string) error {
@@ -650,12 +650,27 @@ func NetworkDeviceDefaultSecretsList(ctx context.Context, page int, limit int) e
 		req = req.Limit(float32(limit))
 	}
 
-	secretsList, httpRes, err := req.SortBy([]string{"id:ASC"}).Execute()
-	if err := response_inspector.InspectResponse(httpRes, err); err != nil {
+	req = req.SortBy([]string{"id:ASC"})
+
+	if page > 0 || limit > 0 {
+		secretsList, httpRes, err := req.Execute()
+		if err := response_inspector.InspectResponse(httpRes, err); err != nil {
+			return err
+		}
+
+		if err := formatter.PrintResult(secretsList.Data, &networkDeviceDefaultSecretsPrintConfig); err != nil {
+			return err
+		}
+		utils.PrintPaginationSummary(len(secretsList.Data), secretsList.Meta)
+		return nil
+	}
+
+	records, meta, err := utils.FetchAllPages(req)
+	if err != nil {
 		return err
 	}
 
-	return formatter.PrintResult(secretsList.Data, &networkDeviceDefaultSecretsPrintConfig)
+	return utils.PrintAll(records, meta, len(records), &networkDeviceDefaultSecretsPrintConfig)
 }
 
 func NetworkDeviceDefaultSecretsGet(ctx context.Context, secretsId string) error {

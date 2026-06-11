@@ -9,6 +9,7 @@ import (
 	"github.com/metalsoft-io/metalcloud-cli/pkg/formatter"
 	"github.com/metalsoft-io/metalcloud-cli/pkg/logger"
 	"github.com/metalsoft-io/metalcloud-cli/pkg/response_inspector"
+	"github.com/metalsoft-io/metalcloud-cli/pkg/utils"
 )
 
 var jobGroupPrintConfig = formatter.PrintConfig{
@@ -58,14 +59,16 @@ func JobGroupList(ctx context.Context, flags GroupListFlags) error {
 	}
 	if len(flags.SortBy) > 0 {
 		request = request.SortBy(flags.SortBy)
+	} else {
+		request = request.SortBy([]string{"id:ASC"})
 	}
 
-	groups, httpRes, err := request.Execute()
-	if err := response_inspector.InspectResponse(httpRes, err); err != nil {
+	records, meta, err := utils.FetchAllPages(request)
+	if err != nil {
 		return err
 	}
 
-	return formatter.PrintResult(groups, &jobGroupPrintConfig)
+	return utils.PrintAll(records, meta, len(records), &jobGroupPrintConfig)
 }
 
 func JobGroupGet(ctx context.Context, groupId string) error {

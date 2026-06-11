@@ -53,12 +53,12 @@ func VariableList(ctx context.Context) error {
 
 	client := api.GetApiClient(ctx)
 
-	variableList, httpRes, err := client.VariablesAPI.GetVariables(ctx).Execute()
-	if err := response_inspector.InspectResponse(httpRes, err); err != nil {
+	records, meta, err := utils.FetchAllPages(client.VariablesAPI.GetVariables(ctx).SortBy([]string{"id:ASC"}))
+	if err != nil {
 		return err
 	}
 
-	return formatter.PrintResult(variableList, &variablePrintConfig)
+	return utils.PrintAll(records, meta, len(records), &variablePrintConfig)
 }
 
 func VariableGet(ctx context.Context, variableId string) error {

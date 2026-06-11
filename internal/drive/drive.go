@@ -105,12 +105,12 @@ func DriveList(ctx context.Context, infrastructureIdOrLabel string, filterStatus
 		request = request.FilterServiceStatus(utils.ProcessFilterStringSlice(filterStatus))
 	}
 
-	driveList, httpRes, err := request.Execute()
-	if err := response_inspector.InspectResponse(httpRes, err); err != nil {
+	records, meta, err := utils.FetchAllPages(request.SortBy([]string{"id:ASC"}))
+	if err != nil {
 		return err
 	}
 
-	return formatter.PrintResult(driveList, &drivePrintConfig)
+	return utils.PrintAll(records, meta, len(records), &drivePrintConfig)
 }
 
 func DriveGet(ctx context.Context, infrastructureIdOrLabel string, driveId string) error {

@@ -50,12 +50,12 @@ func CustomIsoList(ctx context.Context) error {
 
 	client := api.GetApiClient(ctx)
 
-	customIsoList, httpRes, err := client.CustomIsoAPI.GetCustomIsos(ctx).Execute()
-	if err := response_inspector.InspectResponse(httpRes, err); err != nil {
+	records, meta, err := utils.FetchAllPages(client.CustomIsoAPI.GetCustomIsos(ctx).SortBy([]string{"id:ASC"}))
+	if err != nil {
 		return err
 	}
 
-	return formatter.PrintResult(customIsoList, &customIsoPrintConfig)
+	return utils.PrintAll(records, meta, len(records), &customIsoPrintConfig)
 }
 
 func CustomIsoGet(ctx context.Context, customIsoId string) error {

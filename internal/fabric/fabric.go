@@ -47,12 +47,12 @@ func FabricList(ctx context.Context) error {
 
 	client := api.GetApiClient(ctx)
 
-	fabricList, httpRes, err := client.NetworkFabricAPI.GetNetworkFabrics(ctx).SortBy([]string{"id:ASC"}).Execute()
-	if err := response_inspector.InspectResponse(httpRes, err); err != nil {
+	records, meta, err := utils.FetchAllPages(client.NetworkFabricAPI.GetNetworkFabrics(ctx).SortBy([]string{"id:ASC"}))
+	if err != nil {
 		return err
 	}
 
-	return formatter.PrintResult(fabricList, &fabricPrintConfig)
+	return utils.PrintAll(records, meta, len(records), &fabricPrintConfig)
 }
 
 func FabricGet(ctx context.Context, fabricId string) error {

@@ -105,12 +105,12 @@ func FileShareList(ctx context.Context, infrastructureIdOrLabel string, filterSt
 		request = request.FilterServiceStatus(utils.ProcessFilterStringSlice(filterStatus))
 	}
 
-	fileShareList, httpRes, err := request.Execute()
-	if err := response_inspector.InspectResponse(httpRes, err); err != nil {
+	records, meta, err := utils.FetchAllPages(request.SortBy([]string{"id:ASC"}))
+	if err != nil {
 		return err
 	}
 
-	return formatter.PrintResult(fileShareList, &fileSharePrintConfig)
+	return utils.PrintAll(records, meta, len(records), &fileSharePrintConfig)
 }
 
 func FileShareGet(ctx context.Context, infrastructureIdOrLabel string, fileShareId string) error {

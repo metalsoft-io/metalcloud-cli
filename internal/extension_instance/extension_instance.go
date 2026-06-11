@@ -60,12 +60,12 @@ func ExtensionInstanceList(ctx context.Context, infrastructureIdOrLabel string) 
 
 	client := api.GetApiClient(ctx)
 
-	instances, httpRes, err := client.ExtensionInstanceAPI.GetExtensionInstances(ctx, float32(infra.Id)).Execute()
-	if err := response_inspector.InspectResponse(httpRes, err); err != nil {
+	records, meta, err := utils.FetchAllPages(client.ExtensionInstanceAPI.GetExtensionInstances(ctx, float32(infra.Id)).SortBy([]string{"id:ASC"}))
+	if err != nil {
 		return err
 	}
 
-	return formatter.PrintResult(instances.Data, &extensionInstancePrintConfig)
+	return utils.PrintAll(records, meta, len(records), &extensionInstancePrintConfig)
 }
 
 func ExtensionInstanceGet(ctx context.Context, extensionInstanceId string) error {

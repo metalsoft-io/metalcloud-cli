@@ -72,12 +72,25 @@ func VMTypeList(ctx context.Context, limit float32, page float32) error {
 	// Sort by id ascending
 	request = request.SortBy([]string{"id:ASC"})
 
-	vmTypes, httpRes, err := request.Execute()
-	if err := response_inspector.InspectResponse(httpRes, err); err != nil {
+	if page > 0 || limit > 0 {
+		vmTypes, httpRes, err := request.Execute()
+		if err := response_inspector.InspectResponse(httpRes, err); err != nil {
+			return err
+		}
+
+		if err := formatter.PrintResult(vmTypes, &VMTypePrintConfig); err != nil {
+			return err
+		}
+		utils.PrintPaginationSummary(len(vmTypes.Data), vmTypes.Meta)
+		return nil
+	}
+
+	records, meta, err := utils.FetchAllPages(request)
+	if err != nil {
 		return err
 	}
 
-	return formatter.PrintResult(vmTypes, &VMTypePrintConfig)
+	return utils.PrintAll(records, meta, len(records), &VMTypePrintConfig)
 }
 
 func VMTypeGet(ctx context.Context, vmTypeId string) error {

@@ -73,14 +73,12 @@ func TemplateAssetList(ctx context.Context, templateId []string, usage []string,
 		request = request.FilterFileMimeType(utils.ProcessFilterStringSlice(mimeType))
 	}
 
-	request = request.SortBy([]string{"id:ASC"})
-
-	templateAssetList, httpRes, err := request.Execute()
-	if err := response_inspector.InspectResponse(httpRes, err); err != nil {
+	records, meta, err := utils.FetchAllPages(request.SortBy([]string{"id:ASC"}))
+	if err != nil {
 		return err
 	}
 
-	return formatter.PrintResult(templateAssetList, &templateAssetPrintConfig)
+	return utils.PrintAll(records, meta, len(records), &templateAssetPrintConfig)
 }
 
 func TemplateAssetGet(ctx context.Context, templateAssetId string) error {

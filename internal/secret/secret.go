@@ -54,12 +54,12 @@ func SecretList(ctx context.Context) error {
 
 	client := api.GetApiClient(ctx)
 
-	secretList, httpRes, err := client.SecretsAPI.GetSecrets(ctx).Execute()
-	if err := response_inspector.InspectResponse(httpRes, err); err != nil {
+	records, meta, err := utils.FetchAllPages(client.SecretsAPI.GetSecrets(ctx).SortBy([]string{"id:ASC"}))
+	if err != nil {
 		return err
 	}
 
-	return formatter.PrintResult(secretList, &secretPrintConfig)
+	return utils.PrintAll(records, meta, len(records), &secretPrintConfig)
 }
 
 func SecretGet(ctx context.Context, secretId string) error {

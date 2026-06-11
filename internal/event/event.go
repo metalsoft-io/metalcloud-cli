@@ -9,6 +9,7 @@ import (
 	"github.com/metalsoft-io/metalcloud-cli/pkg/formatter"
 	"github.com/metalsoft-io/metalcloud-cli/pkg/logger"
 	"github.com/metalsoft-io/metalcloud-cli/pkg/response_inspector"
+	"github.com/metalsoft-io/metalcloud-cli/pkg/utils"
 )
 
 var eventPrintConfig = formatter.PrintConfig{
@@ -103,12 +104,25 @@ func EventList(ctx context.Context, flags ListFlags) error {
 		request = request.SearchBy(flags.SearchBy)
 	}
 
-	events, httpRes, err := request.Execute()
-	if err := response_inspector.InspectResponse(httpRes, err); err != nil {
+	if flags.Page > 0 || flags.Limit > 0 {
+		events, httpRes, err := request.Execute()
+		if err := response_inspector.InspectResponse(httpRes, err); err != nil {
+			return err
+		}
+
+		if err := formatter.PrintResult(events, &eventPrintConfig); err != nil {
+			return err
+		}
+		utils.PrintPaginationSummary(len(events.Data), events.Meta)
+		return nil
+	}
+
+	records, meta, err := utils.FetchAllPages(request)
+	if err != nil {
 		return err
 	}
 
-	return formatter.PrintResult(events, &eventPrintConfig)
+	return utils.PrintAll(records, meta, len(records), &eventPrintConfig)
 }
 
 func EventGet(ctx context.Context, eventId string) error {

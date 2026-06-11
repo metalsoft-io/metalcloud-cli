@@ -73,12 +73,12 @@ func AccountList(ctx context.Context) error {
 
 	client := api.GetApiClient(ctx)
 
-	accountList, httpRes, err := client.AccountAPI.GetAccounts(ctx).Execute()
-	if err := response_inspector.InspectResponse(httpRes, err); err != nil {
+	records, meta, err := utils.FetchAllPages(client.AccountAPI.GetAccounts(ctx).SortBy([]string{"id:ASC"}))
+	if err != nil {
 		return err
 	}
 
-	return formatter.PrintResult(accountList, &accountPrintConfig)
+	return utils.PrintAll(records, meta, len(records), &accountPrintConfig)
 }
 
 func AccountGet(ctx context.Context, accountId string) error {

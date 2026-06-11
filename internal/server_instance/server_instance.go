@@ -60,12 +60,12 @@ func ServerInstanceList(ctx context.Context, infraId string) error {
 
 	client := api.GetApiClient(ctx)
 
-	result, httpRes, err := client.ServerInstanceAPI.GetInfrastructureServerInstances(ctx, int32(id)).Execute()
-	if err := response_inspector.InspectResponse(httpRes, err); err != nil {
+	records, meta, err := utils.FetchAllPages(client.ServerInstanceAPI.GetInfrastructureServerInstances(ctx, int32(id)).SortBy([]string{"id:ASC"}))
+	if err != nil {
 		return err
 	}
 
-	return formatter.PrintResult(result, &serverInstancePrintConfig)
+	return utils.PrintAll(records, meta, len(records), &serverInstancePrintConfig)
 }
 
 func ServerInstanceGet(ctx context.Context, serverInstanceId string) error {

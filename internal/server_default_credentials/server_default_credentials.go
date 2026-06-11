@@ -9,6 +9,7 @@ import (
 	"github.com/metalsoft-io/metalcloud-cli/pkg/formatter"
 	"github.com/metalsoft-io/metalcloud-cli/pkg/logger"
 	"github.com/metalsoft-io/metalcloud-cli/pkg/response_inspector"
+	"github.com/metalsoft-io/metalcloud-cli/pkg/utils"
 
 	sdk "github.com/metalsoft-io/metalcloud-sdk-go"
 )
@@ -74,12 +75,25 @@ func ServerDefaultCredentialsList(ctx context.Context, page int, limit int) erro
 		req = req.Limit(float32(limit))
 	}
 
-	credentialsList, httpRes, err := req.Execute()
-	if err := response_inspector.InspectResponse(httpRes, err); err != nil {
+	if page > 0 || limit > 0 {
+		credentialsList, httpRes, err := req.Execute()
+		if err := response_inspector.InspectResponse(httpRes, err); err != nil {
+			return err
+		}
+
+		if err := formatter.PrintResult(credentialsList.Data, &serverDefaultCredentialsPrintConfig); err != nil {
+			return err
+		}
+		utils.PrintPaginationSummary(len(credentialsList.Data), credentialsList.Meta)
+		return nil
+	}
+
+	records, meta, err := utils.FetchAllPages(req)
+	if err != nil {
 		return err
 	}
 
-	return formatter.PrintResult(credentialsList.Data, &serverDefaultCredentialsPrintConfig)
+	return utils.PrintAll(records, meta, len(records), &serverDefaultCredentialsPrintConfig)
 }
 
 func ServerDefaultCredentialsGet(ctx context.Context, credentialsId string) error {
