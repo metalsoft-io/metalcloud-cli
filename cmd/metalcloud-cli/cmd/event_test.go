@@ -124,3 +124,29 @@ func TestEventList_Formats(t *testing.T) {
 		})
 	}
 }
+
+// --- event get without severity ---
+
+// TestEventGet_NoSeverity guards against SDK schema drift: the SDK Event model
+// marks `severity` required but the real API can omit it (regression:
+// "no value given for required property severity").
+func TestEventGet_NoSeverity(t *testing.T) {
+	srv := httptest.NewServer(newMux(allPerms, func(mux *http.ServeMux) {
+		mux.HandleFunc("/api/v2/events/7", func(w http.ResponseWriter, r *http.Request) {
+			w.Header().Set("Content-Type", "application/json")
+			_ = json.NewEncoder(w).Encode(map[string]interface{}{
+				"id": "7", "type": "server.provision", "visibility": "private",
+				"title": "No severity event", "occurredTimestamp": "2024-01-01T00:00:00Z",
+			})
+		})
+	}))
+	defer srv.Close()
+
+	out, err := runCLI(t, srv, "event", "get", "7")
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if !strings.Contains(out, "No severity event") {
+		t.Errorf("expected output to contain event title, got: %s", out)
+	}
+}

@@ -1,6 +1,7 @@
 package formatter
 
 import (
+	"fmt"
 	"reflect"
 	"testing"
 
@@ -241,5 +242,19 @@ func TestLocateField_MapMissingKey(t *testing.T) {
 	field := locateField("Cfg.EthernetFabric.FabricType", reflect.ValueOf(h))
 	if field.IsValid() {
 		t.Errorf("expected invalid field for missing key, got %v", field)
+	}
+}
+
+// TestExtractValue_LargeWholeFloat guards against scientific-notation rendering
+// of large numeric IDs decoded from JSON as float64 (e.g. 2.4671856e+07).
+func TestExtractValue_LargeWholeFloat(t *testing.T) {
+	v := extractValue(reflect.ValueOf(float64(24671855)))
+	if got := fmt.Sprint(v); got != "24671855" {
+		t.Errorf("expected 24671855, got %s", got)
+	}
+	// Fractional values keep their float representation.
+	v = extractValue(reflect.ValueOf(float64(2.5)))
+	if got := fmt.Sprint(v); got != "2.5" {
+		t.Errorf("expected 2.5, got %s", got)
 	}
 }

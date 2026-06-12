@@ -271,3 +271,74 @@ func TestCronJobDelete(t *testing.T) {
 		t.Fatalf("unexpected error: %v", execErr)
 	}
 }
+
+// --- job get (large ID precision) ---
+
+// TestJobGet_LargeID guards against float32 truncation of job IDs > 16,777,216:
+// a truncated ID would request /api/v2/jobs/24671856 instead of .../24671855.
+func TestJobGet_LargeID(t *testing.T) {
+	srv := httptest.NewServer(newMux(allPerms, func(mux *http.ServeMux) {
+		mux.HandleFunc("/api/v2/jobs/24671855", func(w http.ResponseWriter, r *http.Request) {
+			w.Header().Set("Content-Type", "application/json")
+			_ = json.NewEncoder(w).Encode(map[string]interface{}{
+				"jobId": 24671855, "status": "completed", "functionName": "test_fn",
+				"createdTimestamp": "2024-01-01T00:00:00Z", "jobGroupId": 1,
+			})
+		})
+		mux.HandleFunc("/api/v2/jobs/", func(w http.ResponseWriter, r *http.Request) {
+			http.Error(w, `{"message":"not found"}`, http.StatusNotFound)
+		})
+	}))
+	defer srv.Close()
+
+	out, err := runCLI(t, srv, "job", "get", "24671855")
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if !strings.Contains(out, "24671855") {
+		t.Errorf("expected output to contain exact job ID 24671855 (not scientific notation), got: %s", out)
+	}
+}
+
+// --- job list-archived ---
+
+func TestJobListArchived(t *testing.T) {
+	srv := httptest.NewServer(newMux(allPerms, func(mux *http.ServeMux) {
+		mux.HandleFunc("/api/v2/jobs/archive", func(w http.ResponseWriter, r *http.Request) {
+			w.Header().Set("Content-Type", "application/json")
+			_ = json.NewEncoder(w).Encode(paginatedList(map[string]interface{}{
+				"jobId": 24399938, "status": "returned_success", "functionName": "fn",
+				"type": "asynchronous", "infrastructureId": nil, "jobGroupId": nil,
+			}))
+		})
+	}))
+	defer srv.Close()
+
+	out, err := runCLI(t, srv, "job", "list-archived")
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if !strings.Contains(out, "24399938") {
+		t.Errorf("expected output to contain job ID 24399938, got: %s", out)
+	}
+}
+
+func TestJobListArchived_Limit(t *testing.T) {
+	srv := httptest.NewServer(newMux(allPerms, func(mux *http.ServeMux) {
+		mux.HandleFunc("/api/v2/jobs/archive", func(w http.ResponseWriter, r *http.Request) {
+			if r.URL.Query().Get("limit") == "" {
+				t.Error("expected limit query param, got none (unlimited archive request returns the entire archive)")
+			}
+			w.Header().Set("Content-Type", "application/json")
+			_ = json.NewEncoder(w).Encode(paginatedList(map[string]interface{}{
+				"jobId": 1, "status": "returned_success", "functionName": "fn",
+				"type": "asynchronous",
+			}))
+		})
+	}))
+	defer srv.Close()
+
+	if _, err := runCLI(t, srv, "job", "list-archived", "--limit", "5"); err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+}

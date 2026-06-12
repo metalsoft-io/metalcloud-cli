@@ -90,3 +90,28 @@ func TestVmTypeList_Formats(t *testing.T) {
 		})
 	}
 }
+
+// --- vm-type vms without datacenterName ---
+
+// TestVmTypeVms_NoDatacenterName guards against SDK schema drift: the SDK VM
+// model marks `datacenterName` required but the real API omits it (regression:
+// "no value given for required property datacenterName").
+func TestVmTypeVms_NoDatacenterName(t *testing.T) {
+	srv := httptest.NewServer(newMux(allPerms, func(mux *http.ServeMux) {
+		mux.HandleFunc("/api/v2/vm-types/1/vms", func(w http.ResponseWriter, r *http.Request) {
+			w.Header().Set("Content-Type", "application/json")
+			_ = json.NewEncoder(w).Encode(paginatedList(map[string]interface{}{
+				"id": 65, "name": "vm-65", "siteId": 2081, "powerState": "off",
+			}))
+		})
+	}))
+	defer srv.Close()
+
+	out, err := runCLI(t, srv, "vm-type", "vms", "1", "-f", "json")
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if !strings.Contains(out, "vm-65") {
+		t.Errorf("expected output to contain vm-65, got: %s", out)
+	}
+}

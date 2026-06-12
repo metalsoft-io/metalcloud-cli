@@ -492,3 +492,42 @@ func writeTempJSON(t *testing.T, payload string) string {
 	f.Close()
 	return f.Name()
 }
+
+// ---------------------------------------------------------------------------
+// Account CRUD (create → get → update → archive)
+// Regression: SDK Account model requires `limits` which the API omits — every
+// account get/create/update/archive failed with
+// "no value given for required property limits".
+// ---------------------------------------------------------------------------
+
+func TestAccountCRUD_Integration(t *testing.T) {
+	skipIfNoEndpoint(t)
+
+	name := uniqueName("test-cli-account")
+	payload := fmt.Sprintf(`{"name":%q}`, name)
+	stdout, stderr, err := runCLI(t, "-x", "account", "create", "--config-source", writeTempJSON(t, payload), "-f", "json")
+	if err != nil {
+		t.Fatalf("account create failed: %v\nstdout: %s\nstderr: %s", err, stdout, stderr)
+	}
+
+	id := extractID(t, stdout)
+	t.Cleanup(func() {
+		runCLI(t, "-x", "account", "archive", id) //nolint:errcheck
+	})
+
+	stdout, _, err = runCLI(t, "-x", "account", "get", id, "-f", "json")
+	if err != nil {
+		t.Fatalf("account get after create failed: %v\nstdout: %s", err, stdout)
+	}
+
+	updated := name + "-upd"
+	stdout, stderr, err = runCLI(t, "-x", "account", "update", id, "--config-source", writeTempJSON(t, fmt.Sprintf(`{"name":%q}`, updated)), "-f", "json")
+	if err != nil {
+		t.Fatalf("account update failed: %v\nstdout: %s\nstderr: %s", err, stdout, stderr)
+	}
+
+	stdout, stderr, err = runCLI(t, "-x", "account", "archive", id)
+	if err != nil {
+		t.Fatalf("account archive failed: %v\nstdout: %s\nstderr: %s", err, stdout, stderr)
+	}
+}

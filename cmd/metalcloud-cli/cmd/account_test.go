@@ -9,9 +9,11 @@ import (
 	"testing"
 )
 
+// accountItem deliberately omits "limits": the real API does not return it even
+// though the SDK Account model marks it required (regression: account archive
+// failed with "no value given for required property limits").
 var accountItem = map[string]interface{}{
 	"id": 1.0, "name": "acme", "revision": 1.0,
-	"limits": map[string]interface{}{},
 	"config": map[string]interface{}{"revision": 1.0, "name": "acme"},
 }
 
@@ -27,6 +29,26 @@ func newAccountTestServer() *httptest.Server {
 		})
 	})
 	return httptest.NewServer(mux)
+}
+
+func TestAccountArchive(t *testing.T) {
+	mux := newMux(allPerms, func(mux *http.ServeMux) {
+		mux.HandleFunc("/api/v2/accounts/1", func(w http.ResponseWriter, r *http.Request) {
+			w.Header().Set("Content-Type", "application/json")
+			_ = json.NewEncoder(w).Encode(accountItem)
+		})
+		mux.HandleFunc("/api/v2/accounts/1/actions/archive", func(w http.ResponseWriter, r *http.Request) {
+			w.Header().Set("Content-Type", "application/json")
+			_ = json.NewEncoder(w).Encode(accountItem)
+		})
+	})
+	srv := httptest.NewServer(mux)
+	defer srv.Close()
+
+	_, err := runCLI(t, srv, "account", "archive", "1")
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
 }
 
 func TestAccountList(t *testing.T) {
@@ -173,5 +195,35 @@ func TestAccountList_Formats(t *testing.T) {
 				t.Errorf("format csv: no comma: %s", out)
 			}
 		})
+	}
+}
+
+// TestAccountList_Archived verifies --archived sends filter.archived to the API
+// (the API excludes archived accounts by default).
+func TestAccountList_Archived(t *testing.T) {
+	gotFilter := ""
+	srv := httptest.NewServer(newMux(allPerms, func(mux *http.ServeMux) {
+		mux.HandleFunc("/api/v2/accounts", func(w http.ResponseWriter, r *http.Request) {
+			gotFilter = r.URL.Query().Get("filter.archived")
+			w.Header().Set("Content-Type", "application/json")
+			_ = json.NewEncoder(w).Encode(paginatedList(accountItem))
+		})
+	}))
+	defer srv.Close()
+
+	// No-flag case first: the in-process test harness shares cobra flag
+	// globals across invocations, so --archived would leak into later runs.
+	if _, err := runCLI(t, srv, "account", "list"); err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if gotFilter != "" {
+		t.Errorf("expected no filter.archived without --archived, got %q", gotFilter)
+	}
+
+	if _, err := runCLI(t, srv, "account", "list", "--archived"); err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if gotFilter != "$eq:1" {
+		t.Errorf("expected filter.archived=$eq:1, got %q", gotFilter)
 	}
 }
