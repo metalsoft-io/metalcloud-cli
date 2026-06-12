@@ -3,6 +3,8 @@ package vm_instance
 import (
 	"context"
 	"encoding/json"
+	"fmt"
+	"net/http"
 	"strconv"
 
 	"github.com/metalsoft-io/metalcloud-cli/pkg/api"
@@ -12,6 +14,17 @@ import (
 	"github.com/metalsoft-io/metalcloud-cli/pkg/utils"
 	sdk "github.com/metalsoft-io/metalcloud-sdk-go"
 )
+
+type vmInstanceGroupRaw struct {
+	Id               interface{} `json:"id"`
+	Label            *string     `json:"label"`
+	InfrastructureId interface{} `json:"infrastructureId"`
+	InstanceCount    interface{} `json:"instanceCount"`
+	ServiceStatus    *string     `json:"serviceStatus"`
+	DiskSizeGB       interface{} `json:"diskSizeGB"`
+	CreatedTimestamp interface{} `json:"createdTimestamp"`
+	UpdatedTimestamp interface{} `json:"updatedTimestamp"`
+}
 
 var vmInstanceGroupPrintConfig = formatter.PrintConfig{
 	FieldsConfig: map[string]formatter.RecordFieldConfig{
@@ -87,13 +100,20 @@ func VMInstanceGroupList(ctx context.Context, infrastructureId string) error {
 
 	client := api.GetApiClient(ctx)
 
-	records, meta, err := utils.FetchAllPages(client.VMInstanceGroupAPI.GetInfrastructureVMInstanceGroups(
-		ctx, infraIdNumerical).SortBy([]string{"id:ASC"}))
+	rawItems, meta, err := utils.FetchAllPagesRaw(func(p float32) (*http.Response, error) {
+		_, httpRes, _ := client.VMInstanceGroupAPI.GetInfrastructureVMInstanceGroups(
+			ctx, infraIdNumerical).SortBy([]string{"id:ASC"}).Page(p).Limit(100).Execute()
+		return httpRes, nil
+	})
 	if err != nil {
 		return err
 	}
+	records, err := utils.UnmarshalRawItems[vmInstanceGroupRaw](rawItems)
+	if err != nil {
+		return fmt.Errorf("failed to parse vm instance groups: %w", err)
+	}
 
-	return utils.PrintAll(records, meta, len(records), &vmInstanceGroupPrintConfig)
+	return utils.PrintAllRaw(rawItems, records, meta, len(records), &vmInstanceGroupPrintConfig)
 }
 
 func VMInstanceGroupCreate(ctx context.Context, infrastructureId string, vmTypeId string, diskSizeGB string, instanceCount string, osTemplateId string) error {

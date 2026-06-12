@@ -3,6 +3,7 @@ package firmware_catalog
 import (
 	"context"
 	"fmt"
+	"net/http"
 	"strconv"
 
 	"github.com/metalsoft-io/metalcloud-cli/pkg/api"
@@ -12,6 +13,18 @@ import (
 	"github.com/metalsoft-io/metalcloud-cli/pkg/utils"
 	sdk "github.com/metalsoft-io/metalcloud-sdk-go"
 )
+
+type firmwareCatalogRaw struct {
+	Id                     interface{} `json:"id"`
+	Name                   *string     `json:"name"`
+	Vendor                 *string     `json:"vendor"`
+	UpdateType             *string     `json:"updateType"`
+	Description            *string     `json:"description"`
+	VendorId               *string     `json:"vendorId"`
+	VendorUrl              *string     `json:"vendorUrl"`
+	VendorReleaseTimestamp interface{} `json:"vendorReleaseTimestamp"`
+	CreatedTimestamp       interface{} `json:"createdTimestamp"`
+}
 
 var firmwareCatalogPrintConfig = formatter.PrintConfig{
 	FieldsConfig: map[string]formatter.RecordFieldConfig{
@@ -61,12 +74,19 @@ func FirmwareCatalogList(ctx context.Context) error {
 
 	client := api.GetApiClient(ctx)
 
-	records, meta, err := utils.FetchAllPages(client.FirmwareCatalogAPI.GetFirmwareCatalogs(ctx).SortBy([]string{"id:ASC"}))
+	rawItems, meta, err := utils.FetchAllPagesRaw(func(p float32) (*http.Response, error) {
+		_, httpRes, _ := client.FirmwareCatalogAPI.GetFirmwareCatalogs(ctx).SortBy([]string{"id:ASC"}).Page(p).Limit(100).Execute()
+		return httpRes, nil
+	})
 	if err != nil {
 		return err
 	}
+	records, err := utils.UnmarshalRawItems[firmwareCatalogRaw](rawItems)
+	if err != nil {
+		return fmt.Errorf("failed to parse firmware catalogs: %w", err)
+	}
 
-	return utils.PrintAll(records, meta, len(records), &firmwareCatalogPrintConfig)
+	return utils.PrintAllRaw(rawItems, records, meta, len(records), &firmwareCatalogPrintConfig)
 }
 
 func FirmwareCatalogGet(ctx context.Context, firmwareCatalogId string) error {

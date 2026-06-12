@@ -3,6 +3,7 @@ package server_instance
 import (
 	"context"
 	"fmt"
+	"net/http"
 	"strconv"
 	"strings"
 
@@ -13,6 +14,16 @@ import (
 	"github.com/metalsoft-io/metalcloud-cli/pkg/utils"
 	sdk "github.com/metalsoft-io/metalcloud-sdk-go"
 )
+
+type serverInstanceRaw struct {
+	Id               interface{} `json:"id"`
+	Label            *string     `json:"label"`
+	InfrastructureId interface{} `json:"infrastructureId"`
+	GroupId          interface{} `json:"groupId"`
+	ServiceStatus    *string     `json:"serviceStatus"`
+	CreatedTimestamp interface{} `json:"createdTimestamp"`
+	UpdatedTimestamp interface{} `json:"updatedTimestamp"`
+}
 
 var serverInstancePrintConfig = formatter.PrintConfig{
 	FieldsConfig: map[string]formatter.RecordFieldConfig{
@@ -60,12 +71,19 @@ func ServerInstanceList(ctx context.Context, infraId string) error {
 
 	client := api.GetApiClient(ctx)
 
-	records, meta, err := utils.FetchAllPages(client.ServerInstanceAPI.GetInfrastructureServerInstances(ctx, int32(id)).SortBy([]string{"id:ASC"}))
+	rawItems, meta, err := utils.FetchAllPagesRaw(func(p float32) (*http.Response, error) {
+		_, httpRes, _ := client.ServerInstanceAPI.GetInfrastructureServerInstances(ctx, int32(id)).SortBy([]string{"id:ASC"}).Page(p).Limit(100).Execute()
+		return httpRes, nil
+	})
 	if err != nil {
 		return err
 	}
+	records, err := utils.UnmarshalRawItems[serverInstanceRaw](rawItems)
+	if err != nil {
+		return fmt.Errorf("failed to parse server instances: %w", err)
+	}
 
-	return utils.PrintAll(records, meta, len(records), &serverInstancePrintConfig)
+	return utils.PrintAllRaw(rawItems, records, meta, len(records), &serverInstancePrintConfig)
 }
 
 func ServerInstanceGet(ctx context.Context, serverInstanceId string) error {

@@ -3,6 +3,7 @@ package bucket
 import (
 	"context"
 	"fmt"
+	"net/http"
 	"strconv"
 
 	"github.com/metalsoft-io/metalcloud-cli/internal/infrastructure"
@@ -70,10 +71,25 @@ var bucketPrintConfig = formatter.PrintConfig{
 	},
 }
 
+type bucketRaw struct {
+	Id               interface{} `json:"id"`
+	Label            *string     `json:"label"`
+	SizeGB           interface{} `json:"sizeGb"`
+	StoragePoolId    interface{} `json:"storagePoolId"`
+	InfrastructureId interface{} `json:"infrastructureId"`
+	ServiceStatus    *string     `json:"serviceStatus"`
+	Config           *struct {
+		DeployStatus *string `json:"deployStatus"`
+		DeployType   *string `json:"deployType"`
+	} `json:"config"`
+	Subdomain          *string `json:"subdomain"`
+	SubdomainPermanent *string `json:"subdomainPermanent"`
+	Endpoint           *string `json:"endpoint"`
+}
+
 func BucketList(ctx context.Context, infrastructureIdOrLabel string, filterStatus []string) error {
 	logger.Get().Info().Msgf("Listing buckets for infrastructure '%s'", infrastructureIdOrLabel)
 
-	// Get the infrastructure ID from ID or label
 	infrastructureInfo, err := infrastructure.GetInfrastructureByIdOrLabel(ctx, infrastructureIdOrLabel)
 	if err != nil {
 		return err
@@ -81,18 +97,24 @@ func BucketList(ctx context.Context, infrastructureIdOrLabel string, filterStatu
 
 	client := api.GetApiClient(ctx)
 
-	request := client.BucketAPI.GetInfrastructureBuckets(ctx, infrastructureInfo.Id)
-
-	if len(filterStatus) > 0 {
-		request = request.FilterServiceStatus(utils.ProcessFilterStringSlice(filterStatus))
-	}
-
-	records, meta, err := utils.FetchAllPages(request.SortBy([]string{"id:ASC"}))
+	rawItems, meta, err := utils.FetchAllPagesRaw(func(p float32) (*http.Response, error) {
+		req := client.BucketAPI.GetInfrastructureBuckets(ctx, infrastructureInfo.Id).SortBy([]string{"id:ASC"}).Page(p).Limit(100)
+		if len(filterStatus) > 0 {
+			req = req.FilterServiceStatus(utils.ProcessFilterStringSlice(filterStatus))
+		}
+		_, httpRes, _ := req.Execute()
+		return httpRes, nil
+	})
 	if err != nil {
 		return err
 	}
 
-	return utils.PrintAll(records, meta, len(records), &bucketPrintConfig)
+	records, err := utils.UnmarshalRawItems[bucketRaw](rawItems)
+	if err != nil {
+		return fmt.Errorf("failed to parse buckets: %w", err)
+	}
+
+	return utils.PrintAllRaw(rawItems, records, meta, len(records), &bucketPrintConfig)
 }
 
 func BucketGet(ctx context.Context, infrastructureIdOrLabel string, bucketId string) error {

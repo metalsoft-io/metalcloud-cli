@@ -3,6 +3,7 @@ package server_registration_profile
 import (
 	"context"
 	"fmt"
+	"net/http"
 	"strconv"
 
 	"github.com/metalsoft-io/metalcloud-cli/pkg/api"
@@ -101,17 +102,30 @@ var registrationProfilePrintConfig = formatter.PrintConfig{
 	},
 }
 
+type registrationProfileRaw struct {
+	Id       interface{} `json:"id"`
+	Name     *string     `json:"name"`
+	Settings interface{} `json:"settings"`
+}
+
 func RegistrationProfileList(ctx context.Context) error {
 	logger.Get().Info().Msgf("Listing all server cleanup policies")
 
 	client := api.GetApiClient(ctx)
 
-	records, meta, err := utils.FetchAllPages(client.ServerRegistrationProfileAPI.GetServerRegistrationProfiles(ctx).SortBy([]string{"id:ASC"}))
+	rawItems, meta, err := utils.FetchAllPagesRaw(func(p float32) (*http.Response, error) {
+		_, httpRes, _ := client.ServerRegistrationProfileAPI.GetServerRegistrationProfiles(ctx).SortBy([]string{"id:ASC"}).Page(p).Limit(100).Execute()
+		return httpRes, nil
+	})
 	if err != nil {
 		return err
 	}
+	records, err := utils.UnmarshalRawItems[registrationProfileRaw](rawItems)
+	if err != nil {
+		return fmt.Errorf("failed to parse registration profiles: %w", err)
+	}
 
-	return utils.PrintAll(records, meta, len(records), &registrationProfilePrintConfig)
+	return utils.PrintAllRaw(rawItems, records, meta, len(records), &registrationProfilePrintConfig)
 }
 
 func RegistrationProfileGet(ctx context.Context, registrationProfileId string) error {

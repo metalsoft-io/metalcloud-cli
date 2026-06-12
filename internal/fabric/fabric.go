@@ -3,6 +3,7 @@ package fabric
 import (
 	"context"
 	"fmt"
+	"net/http"
 
 	"github.com/metalsoft-io/metalcloud-cli/internal/network_device"
 	"github.com/metalsoft-io/metalcloud-cli/internal/site"
@@ -13,6 +14,15 @@ import (
 	"github.com/metalsoft-io/metalcloud-cli/pkg/utils"
 	sdk "github.com/metalsoft-io/metalcloud-sdk-go"
 )
+
+type fabricRaw struct {
+	Id                   interface{} `json:"id"`
+	Name                 *string     `json:"name"`
+	Description          *string     `json:"description"`
+	SiteId               interface{} `json:"siteId"`
+	Status               *string     `json:"status"`
+	FabricConfiguration  interface{} `json:"fabricConfiguration"`
+}
 
 var fabricPrintConfig = formatter.PrintConfig{
 	FieldsConfig: map[string]formatter.RecordFieldConfig{
@@ -47,12 +57,19 @@ func FabricList(ctx context.Context) error {
 
 	client := api.GetApiClient(ctx)
 
-	records, meta, err := utils.FetchAllPages(client.NetworkFabricAPI.GetNetworkFabrics(ctx).SortBy([]string{"id:ASC"}))
+	rawItems, meta, err := utils.FetchAllPagesRaw(func(p float32) (*http.Response, error) {
+		_, httpRes, _ := client.NetworkFabricAPI.GetNetworkFabrics(ctx).SortBy([]string{"id:ASC"}).Page(p).Limit(100).Execute()
+		return httpRes, nil
+	})
 	if err != nil {
 		return err
 	}
+	records, err := utils.UnmarshalRawItems[fabricRaw](rawItems)
+	if err != nil {
+		return fmt.Errorf("failed to parse fabrics: %w", err)
+	}
 
-	return utils.PrintAll(records, meta, len(records), &fabricPrintConfig)
+	return utils.PrintAllRaw(rawItems, records, meta, len(records), &fabricPrintConfig)
 }
 
 func FabricGet(ctx context.Context, fabricId string) error {

@@ -3,6 +3,7 @@ package dns_zone
 import (
 	"context"
 	"fmt"
+	"net/http"
 	"strconv"
 	"strings"
 
@@ -56,23 +57,41 @@ var dnsZonePrintConfig = formatter.PrintConfig{
 	},
 }
 
+type dnsZoneRaw struct {
+	Id          interface{} `json:"id"`
+	Label       *string     `json:"label"`
+	ZoneName    *string     `json:"zoneName"`
+	ZoneType    *string     `json:"zoneType"`
+	Status      *string     `json:"status"`
+	IsDefault   interface{} `json:"isDefault"`
+	SoaEmail    *string     `json:"soaEmail"`
+	Ttl         interface{} `json:"ttl"`
+	Description *string     `json:"description"`
+}
+
 func DNSZoneList(ctx context.Context, filterIsDefault []string) error {
 	logger.Get().Info().Msgf("Listing DNS zones")
 
 	client := api.GetApiClient(ctx)
 
-	request := client.DNSZoneAPI.GetDNSZones(ctx)
-
-	if len(filterIsDefault) > 0 {
-		request = request.FilterIsDefault(utils.ProcessFilterStringSlice(filterIsDefault))
-	}
-
-	records, meta, err := utils.FetchAllPages(request.SortBy([]string{"id:ASC"}))
+	rawItems, meta, err := utils.FetchAllPagesRaw(func(p float32) (*http.Response, error) {
+		req := client.DNSZoneAPI.GetDNSZones(ctx).SortBy([]string{"id:ASC"}).Page(p).Limit(100)
+		if len(filterIsDefault) > 0 {
+			req = req.FilterIsDefault(utils.ProcessFilterStringSlice(filterIsDefault))
+		}
+		_, httpRes, _ := req.Execute()
+		return httpRes, nil
+	})
 	if err != nil {
 		return err
 	}
 
-	return utils.PrintAll(records, meta, len(records), &dnsZonePrintConfig)
+	records, err := utils.UnmarshalRawItems[dnsZoneRaw](rawItems)
+	if err != nil {
+		return fmt.Errorf("failed to parse DNS zones: %w", err)
+	}
+
+	return utils.PrintAllRaw(rawItems, records, meta, len(records), &dnsZonePrintConfig)
 }
 
 func DNSZoneGet(ctx context.Context, dnsZoneId string) error {

@@ -3,6 +3,7 @@ package server_cleanup_policy
 import (
 	"context"
 	"fmt"
+	"net/http"
 	"strconv"
 	"strings"
 
@@ -65,17 +66,37 @@ var cleanupPolicyPrintConfig = formatter.PrintConfig{
 	},
 }
 
+type cleanupPolicyRaw struct {
+	Id                               interface{} `json:"id"`
+	Label                            *string     `json:"label"`
+	CleanupDrivesForOobEnabledServer interface{} `json:"cleanupDrivesForOobEnabledServer"`
+	RecreateRaid                     interface{} `json:"recreateRaid"`
+	DisableEmbeddedNics              interface{} `json:"disableEmbeddedNics"`
+	RaidOneDrive                     *string     `json:"raidOneDrive"`
+	RaidTwoDrives                    *string     `json:"raidTwoDrives"`
+	RaidEvenNumberMoreThanTwoDrives  *string     `json:"raidEvenNumberMoreThanTwoDrives"`
+	RaidOddNumberMoreThanOneDrive    *string     `json:"raidOddNumberMoreThanOneDrive"`
+	SkipRaidActions                  interface{} `json:"skipRaidActions"`
+}
+
 func CleanupPolicyList(ctx context.Context) error {
 	logger.Get().Info().Msgf("Listing all server cleanup policies")
 
 	client := api.GetApiClient(ctx)
 
-	records, meta, err := utils.FetchAllPages(client.ServerCleanupPolicyAPI.GetServerCleanupPolicies(ctx).SortBy([]string{"id:ASC"}))
+	rawItems, meta, err := utils.FetchAllPagesRaw(func(p float32) (*http.Response, error) {
+		_, httpRes, _ := client.ServerCleanupPolicyAPI.GetServerCleanupPolicies(ctx).SortBy([]string{"id:ASC"}).Page(p).Limit(100).Execute()
+		return httpRes, nil
+	})
 	if err != nil {
 		return err
 	}
+	records, err := utils.UnmarshalRawItems[cleanupPolicyRaw](rawItems)
+	if err != nil {
+		return fmt.Errorf("failed to parse cleanup policies: %w", err)
+	}
 
-	return utils.PrintAll(records, meta, len(records), &cleanupPolicyPrintConfig)
+	return utils.PrintAllRaw(rawItems, records, meta, len(records), &cleanupPolicyPrintConfig)
 }
 
 func CleanupPolicyGet(ctx context.Context, cleanupPolicyId string) error {

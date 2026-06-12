@@ -3,6 +3,7 @@ package network_device_default_secrets
 import (
 	"context"
 	"fmt"
+	"net/http"
 	"strconv"
 
 	"github.com/metalsoft-io/metalcloud-cli/pkg/api"
@@ -13,6 +14,15 @@ import (
 
 	sdk "github.com/metalsoft-io/metalcloud-sdk-go"
 )
+
+type networkDeviceDefaultSecretsRaw struct {
+	Id                       interface{} `json:"id"`
+	SiteId                   interface{} `json:"siteId"`
+	MacAddressOrSerialNumber *string     `json:"macAddressOrSerialNumber"`
+	SecretName               *string     `json:"secretName"`
+	CreatedTimestamp         *string     `json:"createdTimestamp"`
+	UpdatedTimestamp         *string     `json:"updatedTimestamp"`
+}
 
 var networkDeviceDefaultSecretsPrintConfig = formatter.PrintConfig{
 	FieldsConfig: map[string]formatter.RecordFieldConfig{
@@ -60,25 +70,48 @@ func NetworkDeviceDefaultSecretsList(ctx context.Context, page int, limit int) e
 
 	req = req.SortBy([]string{"id:ASC"})
 
-	if page > 0 || limit > 0 {
-		list, httpRes, err := req.Execute()
-		if err := response_inspector.InspectResponse(httpRes, err); err != nil {
+	if page > 0 {
+		rawItems, meta, err := utils.FetchPageWindowRaw(func(p, l float32) (*http.Response, error) {
+			_, httpRes, _ := req.Page(p).Limit(l).Execute()
+			return httpRes, nil
+		}, page, limit)
+		if err != nil {
 			return err
 		}
-
-		if err := formatter.PrintResult(list.Data, &networkDeviceDefaultSecretsPrintConfig); err != nil {
-			return err
+		records, err := utils.UnmarshalRawItems[networkDeviceDefaultSecretsRaw](rawItems)
+		if err != nil {
+			return fmt.Errorf("failed to parse network device default secrets: %w", err)
 		}
-		utils.PrintPaginationSummary(len(list.Data), list.Meta)
-		return nil
+		return utils.PrintAllRaw(rawItems, records, meta, len(records), &networkDeviceDefaultSecretsPrintConfig)
 	}
 
-	records, meta, err := utils.FetchAllPages(req)
+	if limit > 0 {
+		rawItems, meta, err := utils.FetchUpToRaw(func(p, l float32) (*http.Response, error) {
+			_, httpRes, _ := req.Page(p).Limit(l).Execute()
+			return httpRes, nil
+		}, limit)
+		if err != nil {
+			return err
+		}
+		records, err := utils.UnmarshalRawItems[networkDeviceDefaultSecretsRaw](rawItems)
+		if err != nil {
+			return fmt.Errorf("failed to parse network device default secrets: %w", err)
+		}
+		return utils.PrintAllRaw(rawItems, records, meta, len(records), &networkDeviceDefaultSecretsPrintConfig)
+	}
+
+	rawItems, meta, err := utils.FetchAllPagesRaw(func(p float32) (*http.Response, error) {
+		_, httpRes, _ := req.Page(p).Limit(100).Execute()
+		return httpRes, nil
+	})
 	if err != nil {
 		return err
 	}
-
-	return utils.PrintAll(records, meta, len(records), &networkDeviceDefaultSecretsPrintConfig)
+	records, err := utils.UnmarshalRawItems[networkDeviceDefaultSecretsRaw](rawItems)
+	if err != nil {
+		return fmt.Errorf("failed to parse network device default secrets: %w", err)
+	}
+	return utils.PrintAllRaw(rawItems, records, meta, len(records), &networkDeviceDefaultSecretsPrintConfig)
 }
 
 func NetworkDeviceDefaultSecretsGet(ctx context.Context, id string) error {

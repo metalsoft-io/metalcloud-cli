@@ -2,9 +2,7 @@ package vm_instance
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
-	"io"
 	"net/http"
 	"strconv"
 
@@ -30,10 +28,6 @@ type vmInstanceRaw struct {
 	CreatedTimestamp string      `json:"createdTimestamp"`
 	UpdatedTimestamp string      `json:"updatedTimestamp"`
 	Links            interface{} `json:"links,omitempty"`
-}
-
-type vmInstanceListRaw struct {
-	Data []vmInstanceRaw `json:"data"`
 }
 
 var vmInstancePrintConfig = formatter.PrintConfig{
@@ -122,28 +116,23 @@ func VMInstanceList(ctx context.Context, infrastructureId string) error {
 
 	client := api.GetApiClient(ctx)
 
-	_, httpRes, sdkErr := client.VMInstanceAPI.GetInfrastructureVMInstances(
-		ctx, infraIdNumerical).Execute()
-
-	if httpRes != nil && httpRes.StatusCode >= 400 {
-		if err := response_inspector.InspectResponse(httpRes, sdkErr); err != nil {
-			return err
-		}
-	} else if httpRes == nil {
-		return sdkErr
-	}
-
-	body, err := io.ReadAll(httpRes.Body)
+	// Uses FetchAllPagesRaw to work around the SDK bug where VMInstance.Links is typed as
+	// map[string]interface{} but the API may return an array.
+	rawItems, meta, err := utils.FetchAllPagesRaw(func(p float32) (*http.Response, error) {
+		_, httpRes, _ := client.VMInstanceAPI.GetInfrastructureVMInstances(ctx, infraIdNumerical).
+			Page(p).Limit(100).Execute()
+		return httpRes, nil
+	})
 	if err != nil {
-		return fmt.Errorf("failed to read response body: %w", err)
+		return err
 	}
 
-	var raw vmInstanceListRaw
-	if err := json.Unmarshal(body, &raw); err != nil {
+	records, err := utils.UnmarshalRawItems[vmInstanceRaw](rawItems)
+	if err != nil {
 		return fmt.Errorf("failed to parse VM instances: %w", err)
 	}
 
-	return formatter.PrintResult(raw.Data, &vmInstancePrintConfig)
+	return utils.PrintAllRaw(rawItems, records, meta, len(records), &vmInstancePrintConfig)
 }
 
 func VMInstanceGetConfig(ctx context.Context, infrastructureId string, vmInstanceId string) error {

@@ -3,6 +3,7 @@ package drive
 import (
 	"context"
 	"fmt"
+	"net/http"
 	"strconv"
 
 	"github.com/metalsoft-io/metalcloud-cli/internal/infrastructure"
@@ -88,10 +89,23 @@ var driveHostsPrintConfig = formatter.PrintConfig{
 	},
 }
 
+type driveRaw struct {
+	Id               interface{} `json:"id"`
+	Label            *string     `json:"label"`
+	SizeMBytes       interface{} `json:"sizeMBytes"`
+	StoragePoolId    interface{} `json:"storagePoolId"`
+	InfrastructureId interface{} `json:"infrastructureId"`
+	ServiceStatus    *string     `json:"serviceStatus"`
+	Config           *struct {
+		DeployStatus *string `json:"deployStatus"`
+		DeployType   *string `json:"deployType"`
+	} `json:"config"`
+	WWN *string `json:"wwn"`
+}
+
 func DriveList(ctx context.Context, infrastructureIdOrLabel string, filterStatus []string) error {
 	logger.Get().Info().Msgf("Listing drives for infrastructure '%s'", infrastructureIdOrLabel)
 
-	// Get the infrastructure ID from ID or label
 	infrastructureInfo, err := infrastructure.GetInfrastructureByIdOrLabel(ctx, infrastructureIdOrLabel)
 	if err != nil {
 		return err
@@ -99,18 +113,24 @@ func DriveList(ctx context.Context, infrastructureIdOrLabel string, filterStatus
 
 	client := api.GetApiClient(ctx)
 
-	request := client.DriveAPI.GetInfrastructureDrives(ctx, infrastructureInfo.Id)
-
-	if len(filterStatus) > 0 {
-		request = request.FilterServiceStatus(utils.ProcessFilterStringSlice(filterStatus))
-	}
-
-	records, meta, err := utils.FetchAllPages(request.SortBy([]string{"id:ASC"}))
+	rawItems, meta, err := utils.FetchAllPagesRaw(func(p float32) (*http.Response, error) {
+		req := client.DriveAPI.GetInfrastructureDrives(ctx, infrastructureInfo.Id).SortBy([]string{"id:ASC"}).Page(p).Limit(100)
+		if len(filterStatus) > 0 {
+			req = req.FilterServiceStatus(utils.ProcessFilterStringSlice(filterStatus))
+		}
+		_, httpRes, _ := req.Execute()
+		return httpRes, nil
+	})
 	if err != nil {
 		return err
 	}
 
-	return utils.PrintAll(records, meta, len(records), &drivePrintConfig)
+	records, err := utils.UnmarshalRawItems[driveRaw](rawItems)
+	if err != nil {
+		return fmt.Errorf("failed to parse drives: %w", err)
+	}
+
+	return utils.PrintAllRaw(rawItems, records, meta, len(records), &drivePrintConfig)
 }
 
 func DriveGet(ctx context.Context, infrastructureIdOrLabel string, driveId string) error {

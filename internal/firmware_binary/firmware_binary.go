@@ -3,6 +3,7 @@ package firmware_binary
 import (
 	"context"
 	"fmt"
+	"net/http"
 	"strconv"
 
 	"github.com/metalsoft-io/metalcloud-cli/pkg/api"
@@ -12,6 +13,20 @@ import (
 	"github.com/metalsoft-io/metalcloud-cli/pkg/utils"
 	sdk "github.com/metalsoft-io/metalcloud-sdk-go"
 )
+
+type firmwareBinaryRaw struct {
+	Id                     interface{} `json:"id"`
+	Name                   *string     `json:"name"`
+	CatalogId              interface{} `json:"catalogId"`
+	PackageVersion         *string     `json:"packageVersion"`
+	UpdateSeverity         *string     `json:"updateSeverity"`
+	RebootRequired         interface{} `json:"rebootRequired"`
+	VendorReleaseTimestamp interface{} `json:"vendorReleaseTimestamp"`
+	PackageId              *string     `json:"packageId"`
+	ExternalId             *string     `json:"externalId"`
+	VendorDownloadUrl      *string     `json:"vendorDownloadUrl"`
+	VendorInfoUrl          *string     `json:"vendorInfoUrl"`
+}
 
 var firmwareBinaryPrintConfig = formatter.PrintConfig{
 	FieldsConfig: map[string]formatter.RecordFieldConfig{
@@ -68,12 +83,19 @@ func FirmwareBinaryList(ctx context.Context) error {
 
 	client := api.GetApiClient(ctx)
 
-	records, meta, err := utils.FetchAllPages(client.FirmwareBinaryAPI.GetFirmwareBinaries(ctx).SortBy([]string{"id:ASC"}))
+	rawItems, meta, err := utils.FetchAllPagesRaw(func(p float32) (*http.Response, error) {
+		_, httpRes, _ := client.FirmwareBinaryAPI.GetFirmwareBinaries(ctx).SortBy([]string{"id:ASC"}).Page(p).Limit(100).Execute()
+		return httpRes, nil
+	})
 	if err != nil {
 		return err
 	}
+	records, err := utils.UnmarshalRawItems[firmwareBinaryRaw](rawItems)
+	if err != nil {
+		return fmt.Errorf("failed to parse firmware binaries: %w", err)
+	}
 
-	return utils.PrintAll(records, meta, len(records), &firmwareBinaryPrintConfig)
+	return utils.PrintAllRaw(rawItems, records, meta, len(records), &firmwareBinaryPrintConfig)
 }
 
 func FirmwareBinaryGet(ctx context.Context, firmwareBinaryId string) error {

@@ -3,6 +3,7 @@ package resource_pool
 import (
 	"context"
 	"fmt"
+	"net/http"
 	"strconv"
 
 	"github.com/metalsoft-io/metalcloud-cli/pkg/api"
@@ -13,6 +14,12 @@ import (
 
 	sdk "github.com/metalsoft-io/metalcloud-sdk-go"
 )
+
+type resourcePoolRaw struct {
+	ResourcePoolId          interface{} `json:"resourcePoolId"`
+	ResourcePoolLabel       *string     `json:"resourcePoolLabel"`
+	ResourcePoolDescription *string     `json:"resourcePoolDescription"`
+}
 
 var resourcePoolPrintConfig = formatter.PrintConfig{
 	FieldsConfig: map[string]formatter.RecordFieldConfig{
@@ -53,25 +60,48 @@ func ResourcePoolList(ctx context.Context, page int, limit int, search string) e
 		req = req.Search(search)
 	}
 
-	if page > 0 || limit > 0 {
-		poolList, httpRes, err := req.Execute()
-		if err := response_inspector.InspectResponse(httpRes, err); err != nil {
+	if page > 0 {
+		rawItems, meta, err := utils.FetchPageWindowRaw(func(p, l float32) (*http.Response, error) {
+			_, httpRes, _ := req.Page(p).Limit(l).Execute()
+			return httpRes, nil
+		}, page, limit)
+		if err != nil {
 			return err
 		}
-
-		if err := formatter.PrintResult(poolList.Data, &resourcePoolPrintConfig); err != nil {
-			return err
+		records, err := utils.UnmarshalRawItems[resourcePoolRaw](rawItems)
+		if err != nil {
+			return fmt.Errorf("failed to parse resource pools: %w", err)
 		}
-		utils.PrintPaginationSummary(len(poolList.Data), poolList.Meta)
-		return nil
+		return utils.PrintAllRaw(rawItems, records, meta, len(records), &resourcePoolPrintConfig)
 	}
 
-	records, meta, err := utils.FetchAllPages(req)
+	if limit > 0 {
+		rawItems, meta, err := utils.FetchUpToRaw(func(p, l float32) (*http.Response, error) {
+			_, httpRes, _ := req.Page(p).Limit(l).Execute()
+			return httpRes, nil
+		}, limit)
+		if err != nil {
+			return err
+		}
+		records, err := utils.UnmarshalRawItems[resourcePoolRaw](rawItems)
+		if err != nil {
+			return fmt.Errorf("failed to parse resource pools: %w", err)
+		}
+		return utils.PrintAllRaw(rawItems, records, meta, len(records), &resourcePoolPrintConfig)
+	}
+
+	rawItems, meta, err := utils.FetchAllPagesRaw(func(p float32) (*http.Response, error) {
+		_, httpRes, _ := req.Page(p).Limit(100).Execute()
+		return httpRes, nil
+	})
 	if err != nil {
 		return err
 	}
-
-	return utils.PrintAll(records, meta, len(records), &resourcePoolPrintConfig)
+	records, err := utils.UnmarshalRawItems[resourcePoolRaw](rawItems)
+	if err != nil {
+		return fmt.Errorf("failed to parse resource pools: %w", err)
+	}
+	return utils.PrintAllRaw(rawItems, records, meta, len(records), &resourcePoolPrintConfig)
 }
 
 // ResourcePoolGet retrieves a specific resource pool's information

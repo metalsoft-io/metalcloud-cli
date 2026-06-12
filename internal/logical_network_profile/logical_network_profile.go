@@ -3,6 +3,7 @@ package logical_network_profile
 import (
 	"context"
 	"fmt"
+	"net/http"
 	"strconv"
 
 	"github.com/metalsoft-io/metalcloud-cli/pkg/api"
@@ -74,12 +75,28 @@ func LogicalNetworkProfileList(ctx context.Context, flags ListFlags) error {
 		request = request.SortBy([]string{"id:ASC"})
 	}
 
-	records, meta, err := utils.FetchAllPages(request)
+	type logicalNetworkProfileRaw struct {
+		Id       interface{} `json:"id"`
+		Name     *string     `json:"name"`
+		Label    *string     `json:"label"`
+		Kind     *string     `json:"kind"`
+		FabricId interface{} `json:"fabricId"`
+	}
+
+	rawItems, meta, err := utils.FetchAllPagesRaw(func(page float32) (*http.Response, error) {
+		_, httpRes, _ := request.Page(page).Limit(100).Execute()
+		return httpRes, nil
+	})
 	if err != nil {
 		return err
 	}
 
-	return utils.PrintAll(records, meta, len(records), &logicalNetworkProfilePrintConfig)
+	records, err := utils.UnmarshalRawItems[logicalNetworkProfileRaw](rawItems)
+	if err != nil {
+		return fmt.Errorf("failed to parse logical network profiles: %w", err)
+	}
+
+	return utils.PrintAllRaw(rawItems, records, meta, len(records), &logicalNetworkProfilePrintConfig)
 }
 
 func LogicalNetworkProfileGet(ctx context.Context, profileId string) error {

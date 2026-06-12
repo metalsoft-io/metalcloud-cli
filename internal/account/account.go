@@ -3,6 +3,7 @@ package account
 import (
 	"context"
 	"fmt"
+	"net/http"
 	"strconv"
 
 	"github.com/metalsoft-io/metalcloud-cli/pkg/api"
@@ -12,6 +13,16 @@ import (
 	"github.com/metalsoft-io/metalcloud-cli/pkg/utils"
 	sdk "github.com/metalsoft-io/metalcloud-sdk-go"
 )
+
+type accountRaw struct {
+	Id                 interface{} `json:"id"`
+	Name               *string     `json:"name"`
+	Code               *string     `json:"code"`
+	FiscalNumber       *string     `json:"fiscalNumber"`
+	IsArchived         interface{} `json:"isArchived"`
+	PrimaryContactId   interface{} `json:"primaryContactId"`
+	SecondaryContactId interface{} `json:"secondaryContactId"`
+}
 
 var accountPrintConfig = formatter.PrintConfig{
 	FieldsConfig: map[string]formatter.RecordFieldConfig{
@@ -73,12 +84,20 @@ func AccountList(ctx context.Context) error {
 
 	client := api.GetApiClient(ctx)
 
-	records, meta, err := utils.FetchAllPages(client.AccountAPI.GetAccounts(ctx).SortBy([]string{"id:ASC"}))
+	rawItems, meta, err := utils.FetchAllPagesRaw(func(page float32) (*http.Response, error) {
+		_, httpRes, _ := client.AccountAPI.GetAccounts(ctx).SortBy([]string{"id:ASC"}).Page(page).Limit(100).Execute()
+		return httpRes, nil
+	})
 	if err != nil {
 		return err
 	}
 
-	return utils.PrintAll(records, meta, len(records), &accountPrintConfig)
+	records, err := utils.UnmarshalRawItems[accountRaw](rawItems)
+	if err != nil {
+		return fmt.Errorf("failed to parse accounts: %w", err)
+	}
+
+	return utils.PrintAllRaw(rawItems, records, meta, len(records), &accountPrintConfig)
 }
 
 func AccountGet(ctx context.Context, accountId string) error {

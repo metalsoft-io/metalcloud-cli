@@ -2,6 +2,8 @@ package server_type
 
 import (
 	"context"
+	"fmt"
+	"net/http"
 
 	"github.com/metalsoft-io/metalcloud-cli/pkg/api"
 	"github.com/metalsoft-io/metalcloud-cli/pkg/formatter"
@@ -10,6 +12,19 @@ import (
 	"github.com/metalsoft-io/metalcloud-cli/pkg/utils"
 	sdk "github.com/metalsoft-io/metalcloud-sdk-go"
 )
+
+type serverTypeRaw struct {
+	Id                   interface{} `json:"id"`
+	Name                 *string     `json:"name"`
+	Label                *string     `json:"label"`
+	ProcessorCount       interface{} `json:"processorCount"`
+	ProcessorCoreMhz     interface{} `json:"processorCoreMhz"`
+	ProcessorNames       interface{} `json:"processorNames"`
+	RamGbytes            interface{} `json:"ramGbytes"`
+	NetworkInterfaceCount interface{} `json:"networkInterfaceCount"`
+	DiskCount            interface{} `json:"diskCount"`
+	GpuCount             interface{} `json:"gpuCount"`
+}
 
 var serverTypePrintConfig = formatter.PrintConfig{
 	FieldsConfig: map[string]formatter.RecordFieldConfig{
@@ -61,12 +76,19 @@ func ServerTypeList(ctx context.Context) error {
 
 	client := api.GetApiClient(ctx)
 
-	records, meta, err := utils.FetchAllPages(client.ServerTypeAPI.GetServerTypes(ctx).SortBy([]string{"id:ASC"}))
+	rawItems, meta, err := utils.FetchAllPagesRaw(func(p float32) (*http.Response, error) {
+		_, httpRes, _ := client.ServerTypeAPI.GetServerTypes(ctx).SortBy([]string{"id:ASC"}).Page(p).Limit(100).Execute()
+		return httpRes, nil
+	})
 	if err != nil {
 		return err
 	}
+	records, err := utils.UnmarshalRawItems[serverTypeRaw](rawItems)
+	if err != nil {
+		return fmt.Errorf("failed to parse server types: %w", err)
+	}
 
-	return utils.PrintAll(records, meta, len(records), &serverTypePrintConfig)
+	return utils.PrintAllRaw(rawItems, records, meta, len(records), &serverTypePrintConfig)
 }
 
 func ServerTypeGet(ctx context.Context, serverTypeIdOrLabel string) error {

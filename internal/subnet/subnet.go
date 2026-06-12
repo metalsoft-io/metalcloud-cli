@@ -3,6 +3,7 @@ package subnet
 import (
 	"context"
 	"fmt"
+	"net/http"
 	"strconv"
 
 	"github.com/metalsoft-io/metalcloud-cli/pkg/api"
@@ -12,6 +13,17 @@ import (
 	"github.com/metalsoft-io/metalcloud-cli/pkg/utils"
 	sdk "github.com/metalsoft-io/metalcloud-sdk-go"
 )
+
+type subnetRaw struct {
+	Id             interface{} `json:"id"`
+	Name           *string     `json:"name"`
+	IpVersion      interface{} `json:"ipVersion"`
+	NetworkAddress *string     `json:"networkAddress"`
+	PrefixLength   interface{} `json:"prefixLength"`
+	Netmask        *string     `json:"netmask"`
+	IsPool         interface{} `json:"isPool"`
+	CreatedAt      interface{} `json:"createdAt"`
+}
 
 var SubnetPrintConfig = formatter.PrintConfig{
 	FieldsConfig: map[string]formatter.RecordFieldConfig{
@@ -56,12 +68,19 @@ func SubnetList(ctx context.Context) error {
 
 	client := api.GetApiClient(ctx)
 
-	records, meta, err := utils.FetchAllPages(client.SubnetAPI.GetSubnets(ctx).SortBy([]string{"id:ASC"}))
+	rawItems, meta, err := utils.FetchAllPagesRaw(func(p float32) (*http.Response, error) {
+		_, httpRes, _ := client.SubnetAPI.GetSubnets(ctx).SortBy([]string{"id:ASC"}).Page(p).Limit(100).Execute()
+		return httpRes, nil
+	})
 	if err != nil {
 		return err
 	}
+	records, err := utils.UnmarshalRawItems[subnetRaw](rawItems)
+	if err != nil {
+		return fmt.Errorf("failed to parse subnets: %w", err)
+	}
 
-	return utils.PrintAll(records, meta, len(records), &SubnetPrintConfig)
+	return utils.PrintAllRaw(rawItems, records, meta, len(records), &SubnetPrintConfig)
 }
 
 func SubnetGet(ctx context.Context, subnetId string) error {

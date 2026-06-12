@@ -2,7 +2,9 @@ package storage
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
+	"net/http"
 	"strconv"
 
 	"github.com/metalsoft-io/metalcloud-cli/pkg/api"
@@ -12,6 +14,18 @@ import (
 	"github.com/metalsoft-io/metalcloud-cli/pkg/utils"
 	sdk "github.com/metalsoft-io/metalcloud-sdk-go"
 )
+
+// storageRaw avoids SDK unmarshal failure: API returns options.fibreChannelEnabled as 0/1, SDK expects bool.
+type storageRaw struct {
+	Id         interface{}     `json:"id"`
+	SiteId     interface{}     `json:"siteId"`
+	Driver     *string         `json:"driver"`
+	Technology *string         `json:"technology"`
+	Type       *string         `json:"type"`
+	Name       *string         `json:"name"`
+	Status     *string         `json:"status"`
+	Options    json.RawMessage `json:"options"`
+}
 
 var StoragePrintConfig = formatter.PrintConfig{
 	FieldsConfig: map[string]formatter.RecordFieldConfig{
@@ -53,17 +67,25 @@ func StorageList(ctx context.Context, filterTechnology []string) error {
 	client := api.GetApiClient(ctx)
 
 	request := client.StorageAPI.GetStorages(ctx)
-
 	if len(filterTechnology) > 0 {
 		request = request.FilterTechnologies(utils.ProcessFilterStringSlice(filterTechnology))
 	}
+	request = request.SortBy([]string{"id:ASC"})
 
-	records, meta, err := utils.FetchAllPages(request.SortBy([]string{"id:ASC"}))
+	rawItems, meta, err := utils.FetchAllPagesRaw(func(page float32) (*http.Response, error) {
+		_, httpRes, _ := request.Page(page).Limit(100).Execute()
+		return httpRes, nil
+	})
 	if err != nil {
 		return err
 	}
 
-	return utils.PrintAll(records, meta, len(records), &StoragePrintConfig)
+	records, err := utils.UnmarshalRawItems[storageRaw](rawItems)
+	if err != nil {
+		return fmt.Errorf("failed to parse storages: %w", err)
+	}
+
+	return utils.PrintAllRaw(rawItems, records, meta, len(records), &StoragePrintConfig)
 }
 
 func StorageGet(ctx context.Context, storageId string) error {

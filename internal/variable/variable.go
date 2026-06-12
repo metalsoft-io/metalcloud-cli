@@ -3,6 +3,7 @@ package variable
 import (
 	"context"
 	"fmt"
+	"net/http"
 	"strconv"
 
 	"github.com/metalsoft-io/metalcloud-cli/pkg/api"
@@ -12,6 +13,17 @@ import (
 	"github.com/metalsoft-io/metalcloud-cli/pkg/utils"
 	sdk "github.com/metalsoft-io/metalcloud-sdk-go"
 )
+
+// variableRaw avoids SDK unmarshal failure: API returns value as string, SDK expects map.
+type variableRaw struct {
+	Id               interface{} `json:"id"`
+	Name             *string     `json:"name"`
+	Value            interface{} `json:"value"`
+	Usage            *string     `json:"usage"`
+	UserIdOwner      interface{} `json:"userIdOwner"`
+	CreatedTimestamp *string     `json:"createdTimestamp"`
+	UpdatedTimestamp *string     `json:"updatedTimestamp"`
+}
 
 var variablePrintConfig = formatter.PrintConfig{
 	FieldsConfig: map[string]formatter.RecordFieldConfig{
@@ -53,12 +65,20 @@ func VariableList(ctx context.Context) error {
 
 	client := api.GetApiClient(ctx)
 
-	records, meta, err := utils.FetchAllPages(client.VariablesAPI.GetVariables(ctx).SortBy([]string{"id:ASC"}))
+	rawItems, meta, err := utils.FetchAllPagesRaw(func(page float32) (*http.Response, error) {
+		_, httpRes, _ := client.VariablesAPI.GetVariables(ctx).SortBy([]string{"id:ASC"}).Page(page).Limit(100).Execute()
+		return httpRes, nil
+	})
 	if err != nil {
 		return err
 	}
 
-	return utils.PrintAll(records, meta, len(records), &variablePrintConfig)
+	records, err := utils.UnmarshalRawItems[variableRaw](rawItems)
+	if err != nil {
+		return fmt.Errorf("failed to parse variables: %w", err)
+	}
+
+	return utils.PrintAllRaw(rawItems, records, meta, len(records), &variablePrintConfig)
 }
 
 func VariableGet(ctx context.Context, variableId string) error {

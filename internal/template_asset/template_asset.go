@@ -3,6 +3,7 @@ package template_asset
 import (
 	"context"
 	"fmt"
+	"net/http"
 	"strconv"
 
 	"github.com/metalsoft-io/metalcloud-cli/pkg/api"
@@ -12,6 +13,18 @@ import (
 	"github.com/metalsoft-io/metalcloud-cli/pkg/utils"
 	sdk "github.com/metalsoft-io/metalcloud-sdk-go"
 )
+
+type templateAssetRaw struct {
+	Id         interface{} `json:"id"`
+	TemplateId interface{} `json:"templateId"`
+	Usage      *string     `json:"usage"`
+	File       *struct {
+		Name     *string `json:"name"`
+		MimeType *string `json:"mimeType"`
+	} `json:"file"`
+	CreatedAt  interface{} `json:"createdAt"`
+	ModifiedAt interface{} `json:"modifiedAt"`
+}
 
 var templateAssetPrintConfig = formatter.PrintConfig{
 	FieldsConfig: map[string]formatter.RecordFieldConfig{
@@ -73,12 +86,19 @@ func TemplateAssetList(ctx context.Context, templateId []string, usage []string,
 		request = request.FilterFileMimeType(utils.ProcessFilterStringSlice(mimeType))
 	}
 
-	records, meta, err := utils.FetchAllPages(request.SortBy([]string{"id:ASC"}))
+	rawItems, meta, err := utils.FetchAllPagesRaw(func(p float32) (*http.Response, error) {
+		_, httpRes, _ := request.SortBy([]string{"id:ASC"}).Page(p).Limit(100).Execute()
+		return httpRes, nil
+	})
 	if err != nil {
 		return err
 	}
+	records, err := utils.UnmarshalRawItems[templateAssetRaw](rawItems)
+	if err != nil {
+		return fmt.Errorf("failed to parse template assets: %w", err)
+	}
 
-	return utils.PrintAll(records, meta, len(records), &templateAssetPrintConfig)
+	return utils.PrintAllRaw(rawItems, records, meta, len(records), &templateAssetPrintConfig)
 }
 
 func TemplateAssetGet(ctx context.Context, templateAssetId string) error {

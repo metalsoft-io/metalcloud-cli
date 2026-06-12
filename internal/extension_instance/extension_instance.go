@@ -3,6 +3,7 @@ package extension_instance
 import (
 	"context"
 	"fmt"
+	"net/http"
 	"strconv"
 
 	"github.com/metalsoft-io/metalcloud-cli/internal/infrastructure"
@@ -13,6 +14,16 @@ import (
 	"github.com/metalsoft-io/metalcloud-cli/pkg/utils"
 	sdk "github.com/metalsoft-io/metalcloud-sdk-go"
 )
+
+type extensionInstanceRaw struct {
+	Id               interface{} `json:"id"`
+	Label            *string     `json:"label"`
+	ExtensionId      interface{} `json:"extensionId"`
+	InfrastructureId interface{} `json:"infrastructureId"`
+	ServiceStatus    *string     `json:"serviceStatus"`
+	CreatedTimestamp interface{} `json:"createdTimestamp"`
+	UpdatedTimestamp interface{} `json:"updatedTimestamp"`
+}
 
 var extensionInstancePrintConfig = formatter.PrintConfig{
 	FieldsConfig: map[string]formatter.RecordFieldConfig{
@@ -60,12 +71,19 @@ func ExtensionInstanceList(ctx context.Context, infrastructureIdOrLabel string) 
 
 	client := api.GetApiClient(ctx)
 
-	records, meta, err := utils.FetchAllPages(client.ExtensionInstanceAPI.GetExtensionInstances(ctx, float32(infra.Id)).SortBy([]string{"id:ASC"}))
+	rawItems, meta, err := utils.FetchAllPagesRaw(func(p float32) (*http.Response, error) {
+		_, httpRes, _ := client.ExtensionInstanceAPI.GetExtensionInstances(ctx, float32(infra.Id)).SortBy([]string{"id:ASC"}).Page(p).Limit(100).Execute()
+		return httpRes, nil
+	})
 	if err != nil {
 		return err
 	}
+	records, err := utils.UnmarshalRawItems[extensionInstanceRaw](rawItems)
+	if err != nil {
+		return fmt.Errorf("failed to parse extension instances: %w", err)
+	}
 
-	return utils.PrintAll(records, meta, len(records), &extensionInstancePrintConfig)
+	return utils.PrintAllRaw(rawItems, records, meta, len(records), &extensionInstancePrintConfig)
 }
 
 func ExtensionInstanceGet(ctx context.Context, extensionInstanceId string) error {

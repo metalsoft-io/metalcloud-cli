@@ -3,6 +3,7 @@ package extension
 import (
 	"context"
 	"fmt"
+	"net/http"
 	"slices"
 	"strconv"
 	"strings"
@@ -15,6 +16,16 @@ import (
 	sdk "github.com/metalsoft-io/metalcloud-sdk-go"
 	"github.com/spf13/viper"
 )
+
+type extensionRaw struct {
+	Id          interface{} `json:"id"`
+	Label       *string     `json:"label"`
+	Name        *string     `json:"name"`
+	Status      *string     `json:"status"`
+	IsPublic    interface{} `json:"isPublic"`
+	Kind        *string     `json:"kind"`
+	Description *string     `json:"description"`
+}
 
 var extensionPrintConfig = formatter.PrintConfig{
 	FieldsConfig: map[string]formatter.RecordFieldConfig{
@@ -77,27 +88,30 @@ func ExtensionList(ctx context.Context, filterLabel []string, filterName []strin
 		request = request.FilterIsPublic([]string{filterPublic})
 	}
 
-	extensions, meta, err := utils.FetchAllPages(request)
+	rawItems, meta, err := utils.FetchAllPagesRaw(func(p float32) (*http.Response, error) {
+		_, httpRes, _ := request.Page(p).Limit(100).Execute()
+		return httpRes, nil
+	})
 	if err != nil {
 		return err
+	}
+	extensions, err := utils.UnmarshalRawItems[extensionRaw](rawItems)
+	if err != nil {
+		return fmt.Errorf("failed to parse extensions: %w", err)
 	}
 
 	// Workaround until the API supports this filter - filter out the extensions by kind, if needed
 	if len(filterKind) > 0 {
-		filteredExtensions := make([]sdk.ExtensionInfo, 0)
+		filtered := make([]extensionRaw, 0)
 		for _, ext := range extensions {
-			if slices.Contains(filterKind, *ext.Kind) {
-				filteredExtensions = append(filteredExtensions, ext)
+			if ext.Kind != nil && slices.Contains(filterKind, *ext.Kind) {
+				filtered = append(filtered, ext)
 			}
 		}
-		extensions = filteredExtensions
+		extensions = filtered
 	}
 
-	if err := formatter.PrintResult(extensions, &extensionPrintConfig); err != nil {
-		return err
-	}
-	utils.PrintPaginationSummary(len(extensions), meta)
-	return nil
+	return utils.PrintAllRaw(rawItems, extensions, meta, len(extensions), &extensionPrintConfig)
 }
 
 func ExtensionGet(ctx context.Context, extensionId string) error {

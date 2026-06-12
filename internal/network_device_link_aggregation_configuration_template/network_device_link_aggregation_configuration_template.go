@@ -3,6 +3,7 @@ package network_device_link_aggregation_configuration_template
 import (
 	"context"
 	"fmt"
+	"net/http"
 	"strconv"
 	"strings"
 
@@ -92,12 +93,30 @@ func NetworkDeviceLinkAggregationConfigurationTemplateList(ctx context.Context, 
 		request = request.FilterLibraryLabel(filterLibraryLabel)
 	}
 
-	records, meta, err := utils.FetchAllPages(request.SortBy([]string{"id:ASC"}))
+	type networkDeviceLinkAggregationConfigurationTemplateRaw struct {
+		Id                  interface{} `json:"id"`
+		Action              *string     `json:"action"`
+		AggregationType     *string     `json:"aggregationType"`
+		NetworkDeviceDriver *string     `json:"networkDeviceDriver"`
+		ExecutionType       *string     `json:"executionType"`
+		LibraryLabel        *string     `json:"libraryLabel"`
+	}
+
+	sortedRequest := request.SortBy([]string{"id:ASC"})
+	rawItems, meta, err := utils.FetchAllPagesRaw(func(page float32) (*http.Response, error) {
+		_, httpRes, _ := sortedRequest.Page(page).Limit(100).Execute()
+		return httpRes, nil
+	})
 	if err != nil {
 		return err
 	}
 
-	return utils.PrintAll(records, meta, len(records), &NetworkDeviceLinkAggregationConfigurationTemplatePrintConfig)
+	records, err := utils.UnmarshalRawItems[networkDeviceLinkAggregationConfigurationTemplateRaw](rawItems)
+	if err != nil {
+		return fmt.Errorf("failed to parse network device link aggregation configuration templates: %w", err)
+	}
+
+	return utils.PrintAllRaw(rawItems, records, meta, len(records), &NetworkDeviceLinkAggregationConfigurationTemplatePrintConfig)
 }
 
 func NetworkDeviceLinkAggregationConfigurationTemplateConfigExample(ctx context.Context) error {

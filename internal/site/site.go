@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
+	"net/http"
 	"strconv"
 	"strings"
 
@@ -15,6 +16,15 @@ import (
 	"github.com/metalsoft-io/metalcloud-cli/pkg/utils"
 	sdk "github.com/metalsoft-io/metalcloud-sdk-go"
 )
+
+type siteRaw struct {
+	Id              interface{} `json:"id"`
+	Slug            *string     `json:"slug"`
+	Name            *string     `json:"name"`
+	Location        interface{} `json:"location"`
+	IsHidden        interface{} `json:"isHidden"`
+	IsInMaintenance interface{} `json:"isInMaintenance"`
+}
 
 var sitePrintConfig = formatter.PrintConfig{
 	FieldsConfig: map[string]formatter.RecordFieldConfig{
@@ -168,12 +178,19 @@ func SiteList(ctx context.Context) error {
 
 	client := api.GetApiClient(ctx)
 
-	records, meta, err := utils.FetchAllPages(client.SiteAPI.GetSites(ctx).SortBy([]string{"id:ASC"}))
+	rawItems, meta, err := utils.FetchAllPagesRaw(func(p float32) (*http.Response, error) {
+		_, httpRes, _ := client.SiteAPI.GetSites(ctx).SortBy([]string{"id:ASC"}).Page(p).Limit(100).Execute()
+		return httpRes, nil
+	})
 	if err != nil {
 		return err
 	}
+	records, err := utils.UnmarshalRawItems[siteRaw](rawItems)
+	if err != nil {
+		return fmt.Errorf("failed to parse sites: %w", err)
+	}
 
-	return utils.PrintAll(records, meta, len(records), &sitePrintConfig)
+	return utils.PrintAllRaw(rawItems, records, meta, len(records), &sitePrintConfig)
 }
 
 func SiteGet(ctx context.Context, siteIdOrName string) error {

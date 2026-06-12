@@ -3,6 +3,7 @@ package file_share
 import (
 	"context"
 	"fmt"
+	"net/http"
 	"strconv"
 
 	"github.com/metalsoft-io/metalcloud-cli/internal/infrastructure"
@@ -13,6 +14,17 @@ import (
 	"github.com/metalsoft-io/metalcloud-cli/pkg/utils"
 	sdk "github.com/metalsoft-io/metalcloud-sdk-go"
 )
+
+type fileShareRaw struct {
+	Id               interface{} `json:"id"`
+	Label            *string     `json:"label"`
+	SizeGB           interface{} `json:"sizeGB"`
+	StoragePoolId    interface{} `json:"storagePoolId"`
+	InfrastructureId interface{} `json:"infrastructureId"`
+	ServiceStatus    *string     `json:"serviceStatus"`
+	Config           interface{} `json:"config"`
+	Endpoint         *string     `json:"endpoint"`
+}
 
 var fileSharePrintConfig = formatter.PrintConfig{
 	FieldsConfig: map[string]formatter.RecordFieldConfig{
@@ -105,12 +117,19 @@ func FileShareList(ctx context.Context, infrastructureIdOrLabel string, filterSt
 		request = request.FilterServiceStatus(utils.ProcessFilterStringSlice(filterStatus))
 	}
 
-	records, meta, err := utils.FetchAllPages(request.SortBy([]string{"id:ASC"}))
+	rawItems, meta, err := utils.FetchAllPagesRaw(func(p float32) (*http.Response, error) {
+		_, httpRes, _ := request.SortBy([]string{"id:ASC"}).Page(p).Limit(100).Execute()
+		return httpRes, nil
+	})
 	if err != nil {
 		return err
 	}
+	records, err := utils.UnmarshalRawItems[fileShareRaw](rawItems)
+	if err != nil {
+		return fmt.Errorf("failed to parse file shares: %w", err)
+	}
 
-	return utils.PrintAll(records, meta, len(records), &fileSharePrintConfig)
+	return utils.PrintAllRaw(rawItems, records, meta, len(records), &fileSharePrintConfig)
 }
 
 func FileShareGet(ctx context.Context, infrastructureIdOrLabel string, fileShareId string) error {

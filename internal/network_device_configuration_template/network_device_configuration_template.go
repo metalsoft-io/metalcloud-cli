@@ -3,6 +3,7 @@ package network_device_configuration_template
 import (
 	"context"
 	"fmt"
+	"net/http"
 	"strconv"
 	"strings"
 
@@ -104,12 +105,32 @@ func NetworkDeviceConfigurationTemplateList(ctx context.Context, filterId []stri
 		request = request.FilterLibraryLabel(filterLibraryLabel)
 	}
 
-	records, meta, err := utils.FetchAllPages(request.SortBy([]string{"id:ASC"}))
+	type networkDeviceConfigurationTemplateRaw struct {
+		Id                          interface{} `json:"id"`
+		NetworkType                 *string     `json:"networkType"`
+		NetworkDeviceDriver         *string     `json:"networkDeviceDriver"`
+		NetworkDevicePosition       *string     `json:"networkDevicePosition"`
+		RemoteNetworkDevicePosition *string     `json:"remoteNetworkDevicePosition"`
+		BgpNumbering                *string     `json:"bgpNumbering"`
+		BgpLinkConfiguration        *string     `json:"bgpLinkConfiguration"`
+		LibraryLabel                *string     `json:"libraryLabel"`
+	}
+
+	sortedRequest := request.SortBy([]string{"id:ASC"})
+	rawItems, meta, err := utils.FetchAllPagesRaw(func(page float32) (*http.Response, error) {
+		_, httpRes, _ := sortedRequest.Page(page).Limit(100).Execute()
+		return httpRes, nil
+	})
 	if err != nil {
 		return err
 	}
 
-	return utils.PrintAll(records, meta, len(records), &NetworkDeviceConfigurationTemplatePrintConfig)
+	records, err := utils.UnmarshalRawItems[networkDeviceConfigurationTemplateRaw](rawItems)
+	if err != nil {
+		return fmt.Errorf("failed to parse network device configuration templates: %w", err)
+	}
+
+	return utils.PrintAllRaw(rawItems, records, meta, len(records), &NetworkDeviceConfigurationTemplatePrintConfig)
 }
 
 func NetworkDeviceConfigurationTemplateConfigExample(ctx context.Context) error {

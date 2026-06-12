@@ -3,6 +3,7 @@ package os_template
 import (
 	"context"
 	"fmt"
+	"net/http"
 	"strconv"
 
 	"github.com/metalsoft-io/metalcloud-cli/pkg/api"
@@ -71,17 +72,35 @@ var osTemplateCredentialsPrintConfig = formatter.PrintConfig{
 	},
 }
 
+type osTemplateRaw struct {
+	Id         interface{} `json:"id"`
+	Name       *string     `json:"name"`
+	Label      *string     `json:"label"`
+	Device     interface{} `json:"device"`
+	Status     *string     `json:"status"`
+	Visibility *string     `json:"visibility"`
+	CreatedAt  interface{} `json:"createdAt"`
+	ModifiedAt interface{} `json:"modifiedAt"`
+}
+
 func OsTemplateList(ctx context.Context) error {
 	logger.Get().Info().Msgf("Listing all OS templates")
 
 	client := api.GetApiClient(ctx)
 
-	osTemplateList, meta, err := utils.FetchAllPages(client.OSTemplateAPI.GetOSTemplates(ctx).SortBy([]string{"id:ASC"}))
+	rawItems, meta, err := utils.FetchAllPagesRaw(func(p float32) (*http.Response, error) {
+		_, httpRes, _ := client.OSTemplateAPI.GetOSTemplates(ctx).SortBy([]string{"id:ASC"}).Page(p).Limit(100).Execute()
+		return httpRes, nil
+	})
 	if err != nil {
 		return err
 	}
+	records, err := utils.UnmarshalRawItems[osTemplateRaw](rawItems)
+	if err != nil {
+		return fmt.Errorf("failed to parse os templates: %w", err)
+	}
 
-	return utils.PrintAll(osTemplateList, meta, len(osTemplateList), &osTemplatePrintConfig)
+	return utils.PrintAllRaw(rawItems, records, meta, len(records), &osTemplatePrintConfig)
 }
 
 func OsTemplateGet(ctx context.Context, osTemplateId string) error {

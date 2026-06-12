@@ -3,6 +3,7 @@ package vm_pool
 import (
 	"context"
 	"fmt"
+	"net/http"
 	"strconv"
 
 	"github.com/metalsoft-io/metalcloud-cli/pkg/api"
@@ -12,6 +13,16 @@ import (
 	"github.com/metalsoft-io/metalcloud-cli/pkg/utils"
 	sdk "github.com/metalsoft-io/metalcloud-sdk-go"
 )
+
+type vmPoolRaw struct {
+	Id             interface{} `json:"id"`
+	SiteId         interface{} `json:"siteId"`
+	Name           *string     `json:"name"`
+	Type           *string     `json:"type"`
+	ManagementHost *string     `json:"managementHost"`
+	ManagementPort interface{} `json:"managementPort"`
+	Status         *string     `json:"status"`
+}
 
 var VMPoolPrintConfig = formatter.PrintConfig{
 	FieldsConfig: map[string]formatter.RecordFieldConfig{
@@ -58,12 +69,19 @@ func VMPoolList(ctx context.Context, filterType []string) error {
 		request = request.FilterType(utils.ProcessFilterStringSlice(filterType))
 	}
 
-	records, meta, err := utils.FetchAllPages(request.SortBy([]string{"id:ASC"}))
+	rawItems, meta, err := utils.FetchAllPagesRaw(func(p float32) (*http.Response, error) {
+		_, httpRes, _ := request.SortBy([]string{"id:ASC"}).Page(p).Limit(100).Execute()
+		return httpRes, nil
+	})
 	if err != nil {
 		return err
 	}
+	records, err := utils.UnmarshalRawItems[vmPoolRaw](rawItems)
+	if err != nil {
+		return fmt.Errorf("failed to parse vm pools: %w", err)
+	}
 
-	return utils.PrintAll(records, meta, len(records), &VMPoolPrintConfig)
+	return utils.PrintAllRaw(rawItems, records, meta, len(records), &VMPoolPrintConfig)
 }
 
 func VMPoolGet(ctx context.Context, vmPoolId string) error {
@@ -156,21 +174,46 @@ func VMPoolGetVMs(ctx context.Context, vmPoolId string, limit float32, page floa
 
 	request := client.VMPoolAPI.GetVMPoolVMs(ctx, vmPoolIdNumeric)
 
-	// Set pagination if provided
-	if limit > 0 {
-		request = request.Limit(limit)
-	}
-
 	if page > 0 {
-		request = request.Page(page)
+		rawItems, meta, err := utils.FetchPageWindowRaw(func(p, l float32) (*http.Response, error) {
+			_, httpRes, _ := request.Page(p).Limit(l).Execute()
+			return httpRes, nil
+		}, int(page), int(limit))
+		if err != nil {
+			return err
+		}
+		items, err := utils.UnmarshalRawItems[map[string]interface{}](rawItems)
+		if err != nil {
+			return fmt.Errorf("failed to parse VM pool VMs: %w", err)
+		}
+		return utils.PrintAllRaw(rawItems, items, meta, len(items), nil)
 	}
-
-	vms, httpRes, err := request.Execute()
-	if err := response_inspector.InspectResponse(httpRes, err); err != nil {
+	if limit > 0 {
+		rawItems, meta, err := utils.FetchUpToRaw(func(p, l float32) (*http.Response, error) {
+			_, httpRes, _ := request.Page(p).Limit(l).Execute()
+			return httpRes, nil
+		}, int(limit))
+		if err != nil {
+			return err
+		}
+		items, err := utils.UnmarshalRawItems[map[string]interface{}](rawItems)
+		if err != nil {
+			return fmt.Errorf("failed to parse VM pool VMs: %w", err)
+		}
+		return utils.PrintAllRaw(rawItems, items, meta, len(items), nil)
+	}
+	rawItems, meta, err := utils.FetchAllPagesRaw(func(p float32) (*http.Response, error) {
+		_, httpRes, _ := request.Page(p).Limit(100).Execute()
+		return httpRes, nil
+	})
+	if err != nil {
 		return err
 	}
-
-	return formatter.PrintResult(vms, nil)
+	items, err := utils.UnmarshalRawItems[map[string]interface{}](rawItems)
+	if err != nil {
+		return fmt.Errorf("failed to parse VM pool VMs: %w", err)
+	}
+	return utils.PrintAllRaw(rawItems, items, meta, len(items), nil)
 }
 
 func VMPoolGetClusterHosts(ctx context.Context, vmPoolId string, limit float32, page float32) error {
@@ -185,21 +228,46 @@ func VMPoolGetClusterHosts(ctx context.Context, vmPoolId string, limit float32, 
 
 	request := client.VMPoolAPI.GetVMPoolClusterHosts(ctx, vmPoolIdNumeric)
 
-	// Set pagination if provided
-	if limit > 0 {
-		request = request.Limit(limit)
-	}
-
 	if page > 0 {
-		request = request.Page(page)
+		rawItems, meta, err := utils.FetchPageWindowRaw(func(p, l float32) (*http.Response, error) {
+			_, httpRes, _ := request.Page(p).Limit(l).Execute()
+			return httpRes, nil
+		}, int(page), int(limit))
+		if err != nil {
+			return err
+		}
+		items, err := utils.UnmarshalRawItems[map[string]interface{}](rawItems)
+		if err != nil {
+			return fmt.Errorf("failed to parse VM pool cluster hosts: %w", err)
+		}
+		return utils.PrintAllRaw(rawItems, items, meta, len(items), nil)
 	}
-
-	hosts, httpRes, err := request.Execute()
-	if err := response_inspector.InspectResponse(httpRes, err); err != nil {
+	if limit > 0 {
+		rawItems, meta, err := utils.FetchUpToRaw(func(p, l float32) (*http.Response, error) {
+			_, httpRes, _ := request.Page(p).Limit(l).Execute()
+			return httpRes, nil
+		}, int(limit))
+		if err != nil {
+			return err
+		}
+		items, err := utils.UnmarshalRawItems[map[string]interface{}](rawItems)
+		if err != nil {
+			return fmt.Errorf("failed to parse VM pool cluster hosts: %w", err)
+		}
+		return utils.PrintAllRaw(rawItems, items, meta, len(items), nil)
+	}
+	rawItems, meta, err := utils.FetchAllPagesRaw(func(p float32) (*http.Response, error) {
+		_, httpRes, _ := request.Page(p).Limit(100).Execute()
+		return httpRes, nil
+	})
+	if err != nil {
 		return err
 	}
-
-	return formatter.PrintResult(hosts, nil)
+	items, err := utils.UnmarshalRawItems[map[string]interface{}](rawItems)
+	if err != nil {
+		return fmt.Errorf("failed to parse VM pool cluster hosts: %w", err)
+	}
+	return utils.PrintAllRaw(rawItems, items, meta, len(items), nil)
 }
 
 func VMPoolGetClusterHostVMs(ctx context.Context, vmPoolId string, hostId string, limit float32, page float32) error {
@@ -219,21 +287,46 @@ func VMPoolGetClusterHostVMs(ctx context.Context, vmPoolId string, hostId string
 
 	request := client.VMPoolAPI.GetVMPoolClusterHostVMs(ctx, vmPoolIdNumeric, hostIdNumeric)
 
-	// Set pagination if provided
-	if limit > 0 {
-		request = request.Limit(limit)
-	}
-
 	if page > 0 {
-		request = request.Page(page)
+		rawItems, meta, err := utils.FetchPageWindowRaw(func(p, l float32) (*http.Response, error) {
+			_, httpRes, _ := request.Page(p).Limit(l).Execute()
+			return httpRes, nil
+		}, int(page), int(limit))
+		if err != nil {
+			return err
+		}
+		items, err := utils.UnmarshalRawItems[map[string]interface{}](rawItems)
+		if err != nil {
+			return fmt.Errorf("failed to parse VM pool cluster host VMs: %w", err)
+		}
+		return utils.PrintAllRaw(rawItems, items, meta, len(items), nil)
 	}
-
-	vms, httpRes, err := request.Execute()
-	if err := response_inspector.InspectResponse(httpRes, err); err != nil {
+	if limit > 0 {
+		rawItems, meta, err := utils.FetchUpToRaw(func(p, l float32) (*http.Response, error) {
+			_, httpRes, _ := request.Page(p).Limit(l).Execute()
+			return httpRes, nil
+		}, int(limit))
+		if err != nil {
+			return err
+		}
+		items, err := utils.UnmarshalRawItems[map[string]interface{}](rawItems)
+		if err != nil {
+			return fmt.Errorf("failed to parse VM pool cluster host VMs: %w", err)
+		}
+		return utils.PrintAllRaw(rawItems, items, meta, len(items), nil)
+	}
+	rawItems, meta, err := utils.FetchAllPagesRaw(func(p float32) (*http.Response, error) {
+		_, httpRes, _ := request.Page(p).Limit(100).Execute()
+		return httpRes, nil
+	})
+	if err != nil {
 		return err
 	}
-
-	return formatter.PrintResult(vms, nil)
+	items, err := utils.UnmarshalRawItems[map[string]interface{}](rawItems)
+	if err != nil {
+		return fmt.Errorf("failed to parse VM pool cluster host VMs: %w", err)
+	}
+	return utils.PrintAllRaw(rawItems, items, meta, len(items), nil)
 }
 
 func VMPoolGetClusterHostInterfaces(ctx context.Context, vmPoolId string, hostId string) error {
@@ -251,6 +344,7 @@ func VMPoolGetClusterHostInterfaces(ctx context.Context, vmPoolId string, hostId
 
 	client := api.GetApiClient(ctx)
 
+	// GetVMPoolClusterHostInterfaces returns a flat []VMPoolHostInterfaces — no Page/Limit methods.
 	interfaces, httpRes, err := client.VMPoolAPI.GetVMPoolClusterHostInterfaces(ctx, vmPoolIdNumeric, hostIdNumeric).Execute()
 	if err := response_inspector.InspectResponse(httpRes, err); err != nil {
 		return err

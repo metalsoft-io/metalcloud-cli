@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"net/http"
 	"strconv"
 	"strings"
 	"time"
@@ -16,6 +17,17 @@ import (
 	sdk "github.com/metalsoft-io/metalcloud-sdk-go"
 	"github.com/spf13/viper"
 )
+
+type infrastructureRaw struct {
+	Id               interface{} `json:"id"`
+	Label            *string     `json:"label"`
+	Config           interface{} `json:"config"`
+	ServiceStatus    *string     `json:"serviceStatus"`
+	UserIdOwner      interface{} `json:"userIdOwner"`
+	SiteId           interface{} `json:"siteId"`
+	CreatedTimestamp interface{} `json:"createdTimestamp"`
+	UpdatedTimestamp interface{} `json:"updatedTimestamp"`
+}
 
 var infrastructurePrintConfig = formatter.PrintConfig{
 	FieldsConfig: map[string]formatter.RecordFieldConfig{
@@ -98,12 +110,19 @@ func InfrastructureList(ctx context.Context, showAll bool, showOrdered bool, sho
 
 	request = request.SortBy([]string{"id:ASC"})
 
-	records, meta, err := utils.FetchAllPages(request)
+	rawItems, meta, err := utils.FetchAllPagesRaw(func(p float32) (*http.Response, error) {
+		_, httpRes, _ := request.Page(p).Limit(100).Execute()
+		return httpRes, nil
+	})
 	if err != nil {
 		return err
 	}
+	records, err := utils.UnmarshalRawItems[infrastructureRaw](rawItems)
+	if err != nil {
+		return fmt.Errorf("failed to parse infrastructures: %w", err)
+	}
 
-	return utils.PrintAll(records, meta, len(records), &infrastructurePrintConfig)
+	return utils.PrintAllRaw(rawItems, records, meta, len(records), &infrastructurePrintConfig)
 }
 
 func InfrastructureGet(ctx context.Context, infrastructureIdOrLabel string) error {

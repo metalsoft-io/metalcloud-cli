@@ -3,6 +3,7 @@ package firmware_policy
 import (
 	"context"
 	"fmt"
+	"net/http"
 	"strconv"
 
 	"github.com/metalsoft-io/metalcloud-cli/pkg/api"
@@ -12,6 +13,16 @@ import (
 	"github.com/metalsoft-io/metalcloud-cli/pkg/utils"
 	sdk "github.com/metalsoft-io/metalcloud-sdk-go"
 )
+
+type firmwarePolicyRaw struct {
+	Id               interface{} `json:"id"`
+	Label            *string     `json:"label"`
+	Status           *string     `json:"status"`
+	Action           *string     `json:"action"`
+	UserIdOwner      interface{} `json:"userIdOwner"`
+	CreatedTimestamp interface{} `json:"createdTimestamp"`
+	UpdatedTimestamp interface{} `json:"updatedTimestamp"`
+}
 
 var firmwarePolicyPrintConfig = formatter.PrintConfig{
 	FieldsConfig: map[string]formatter.RecordFieldConfig{
@@ -58,12 +69,19 @@ func FirmwarePolicyList(ctx context.Context) error {
 
 	client := api.GetApiClient(ctx)
 
-	records, meta, err := utils.FetchAllPages(client.FirmwarePolicyAPI.GetFirmwarePolicies(ctx).SortBy([]string{"id:ASC"}))
+	rawItems, meta, err := utils.FetchAllPagesRaw(func(p float32) (*http.Response, error) {
+		_, httpRes, _ := client.FirmwarePolicyAPI.GetFirmwarePolicies(ctx).SortBy([]string{"id:ASC"}).Page(p).Limit(100).Execute()
+		return httpRes, nil
+	})
 	if err != nil {
 		return err
 	}
+	records, err := utils.UnmarshalRawItems[firmwarePolicyRaw](rawItems)
+	if err != nil {
+		return fmt.Errorf("failed to parse firmware policies: %w", err)
+	}
 
-	return utils.PrintAll(records, meta, len(records), &firmwarePolicyPrintConfig)
+	return utils.PrintAllRaw(rawItems, records, meta, len(records), &firmwarePolicyPrintConfig)
 }
 
 func FirmwarePolicyGet(ctx context.Context, firmwarePolicyId string) error {

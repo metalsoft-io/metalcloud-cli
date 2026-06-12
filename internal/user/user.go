@@ -17,6 +17,16 @@ import (
 	sdk "github.com/metalsoft-io/metalcloud-sdk-go"
 )
 
+type userRaw struct {
+	Id                 interface{} `json:"id"`
+	DisplayName        *string     `json:"displayName"`
+	Email              *string     `json:"email"`
+	AccessLevel        *string     `json:"accessLevel"`
+	IsArchived         interface{} `json:"isArchived"`
+	CreatedTimestamp   interface{} `json:"createdTimestamp"`
+	LastLoginTimestamp interface{} `json:"lastLoginTimestamp"`
+}
+
 var userPrintConfig = formatter.PrintConfig{
 	FieldsConfig: map[string]formatter.RecordFieldConfig{
 		"Id": {
@@ -153,12 +163,19 @@ func List(ctx context.Context, archived bool, filterId, filterDisplayName, filte
 		request = request.SearchBy([]string{searchBy})
 	}
 
-	records, meta, err := utils.FetchAllPages(request)
+	rawItems, meta, err := utils.FetchAllPagesRaw(func(p float32) (*http.Response, error) {
+		_, httpRes, _ := request.Page(p).Limit(100).Execute()
+		return httpRes, nil
+	})
 	if err != nil {
 		return err
 	}
+	records, err := utils.UnmarshalRawItems[userRaw](rawItems)
+	if err != nil {
+		return fmt.Errorf("failed to parse users: %w", err)
+	}
 
-	return utils.PrintAll(records, meta, len(records), &userPrintConfig)
+	return utils.PrintAllRaw(rawItems, records, meta, len(records), &userPrintConfig)
 }
 
 func Get(ctx context.Context, userId string) error {

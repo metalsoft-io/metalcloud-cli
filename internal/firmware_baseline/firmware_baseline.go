@@ -3,6 +3,7 @@ package firmware_baseline
 import (
 	"context"
 	"fmt"
+	"net/http"
 	"strconv"
 
 	"github.com/metalsoft-io/metalcloud-cli/pkg/api"
@@ -12,6 +13,14 @@ import (
 	"github.com/metalsoft-io/metalcloud-cli/pkg/utils"
 	sdk "github.com/metalsoft-io/metalcloud-sdk-go"
 )
+
+type firmwareBaselineRaw struct {
+	Id               interface{} `json:"id"`
+	Name             *string     `json:"name"`
+	Description      *string     `json:"description"`
+	Catalog          interface{} `json:"catalog"`
+	CreatedTimestamp interface{} `json:"createdTimestamp"`
+}
 
 var firmwareBaselinePrintConfig = formatter.PrintConfig{
 	FieldsConfig: map[string]formatter.RecordFieldConfig{
@@ -44,12 +53,19 @@ func FirmwareBaselineList(ctx context.Context) error {
 
 	client := api.GetApiClient(ctx)
 
-	records, meta, err := utils.FetchAllPages(client.FirmwareBaselineAPI.GetFirmwareBaselines(ctx).SortBy([]string{"id:ASC"}))
+	rawItems, meta, err := utils.FetchAllPagesRaw(func(p float32) (*http.Response, error) {
+		_, httpRes, _ := client.FirmwareBaselineAPI.GetFirmwareBaselines(ctx).SortBy([]string{"id:ASC"}).Page(p).Limit(100).Execute()
+		return httpRes, nil
+	})
 	if err != nil {
 		return err
 	}
+	records, err := utils.UnmarshalRawItems[firmwareBaselineRaw](rawItems)
+	if err != nil {
+		return fmt.Errorf("failed to parse firmware baselines: %w", err)
+	}
 
-	return utils.PrintAll(records, meta, len(records), &firmwareBaselinePrintConfig)
+	return utils.PrintAllRaw(rawItems, records, meta, len(records), &firmwareBaselinePrintConfig)
 }
 
 func FirmwareBaselineGet(ctx context.Context, firmwareBaselineId string) error {

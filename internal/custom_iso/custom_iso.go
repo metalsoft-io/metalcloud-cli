@@ -3,6 +3,7 @@ package custom_iso
 import (
 	"context"
 	"fmt"
+	"net/http"
 	"strconv"
 
 	"github.com/metalsoft-io/metalcloud-cli/internal/server"
@@ -45,17 +46,34 @@ var customIsoPrintConfig = formatter.PrintConfig{
 	},
 }
 
+type customIsoRaw struct {
+	Id          interface{} `json:"id"`
+	Name        *string     `json:"name"`
+	DisplayName *string     `json:"displayName"`
+	AccessUrl   *string     `json:"accessUrl"`
+	IsPublic    interface{} `json:"isPublic"`
+	CreatedTimestamp *string `json:"createdTimestamp"`
+}
+
 func CustomIsoList(ctx context.Context) error {
 	logger.Get().Info().Msgf("Listing all custom ISOs")
 
 	client := api.GetApiClient(ctx)
 
-	records, meta, err := utils.FetchAllPages(client.CustomIsoAPI.GetCustomIsos(ctx).SortBy([]string{"id:ASC"}))
+	rawItems, meta, err := utils.FetchAllPagesRaw(func(p float32) (*http.Response, error) {
+		_, httpRes, _ := client.CustomIsoAPI.GetCustomIsos(ctx).SortBy([]string{"id:ASC"}).Page(p).Limit(100).Execute()
+		return httpRes, nil
+	})
 	if err != nil {
 		return err
 	}
 
-	return utils.PrintAll(records, meta, len(records), &customIsoPrintConfig)
+	records, err := utils.UnmarshalRawItems[customIsoRaw](rawItems)
+	if err != nil {
+		return fmt.Errorf("failed to parse custom ISOs: %w", err)
+	}
+
+	return utils.PrintAllRaw(rawItems, records, meta, len(records), &customIsoPrintConfig)
 }
 
 func CustomIsoGet(ctx context.Context, customIsoId string) error {

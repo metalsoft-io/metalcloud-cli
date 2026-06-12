@@ -3,6 +3,7 @@ package device_auth_provider
 import (
 	"context"
 	"fmt"
+	"net/http"
 	"strconv"
 
 	"github.com/metalsoft-io/metalcloud-cli/pkg/api"
@@ -110,28 +111,50 @@ func GetDeviceAuthProviderByIdOrLabel(ctx context.Context, idOrLabel string) (*s
 	return nil, err
 }
 
+type deviceAuthProviderRaw struct {
+	Id              interface{} `json:"id"`
+	Label           *string     `json:"label"`
+	Name            *string     `json:"name"`
+	Kind            *string     `json:"kind"`
+	SiteId          interface{} `json:"siteId"`
+	IpAddress       *string     `json:"ipAddress"`
+	Port            interface{} `json:"port"`
+	Username        *string     `json:"username"`
+	HasSharedSecret interface{} `json:"hasSharedSecret"`
+	HasPassword     interface{} `json:"hasPassword"`
+	Status          *string     `json:"status"`
+	CreatedAt       *string     `json:"createdAt"`
+}
+
 func DeviceAuthProviderList(ctx context.Context, filterSiteId, filterKind, filterStatus []string) error {
 	logger.Get().Info().Msgf("Listing all device auth providers")
 
 	client := api.GetApiClient(ctx)
 
-	request := client.SiteAPI.ListDeviceAuthProviders(ctx)
-	if len(filterSiteId) > 0 {
-		request = request.FilterSiteId(utils.ProcessFilterStringSlice(filterSiteId))
-	}
-	if len(filterKind) > 0 {
-		request = request.FilterKind(utils.ProcessFilterStringSlice(filterKind))
-	}
-	if len(filterStatus) > 0 {
-		request = request.FilterStatus(utils.ProcessFilterStringSlice(filterStatus))
-	}
-
-	records, meta, err := utils.FetchAllPages(request.SortBy([]string{"id:ASC"}))
+	rawItems, meta, err := utils.FetchAllPagesRaw(func(p float32) (*http.Response, error) {
+		req := client.SiteAPI.ListDeviceAuthProviders(ctx).SortBy([]string{"id:ASC"}).Page(p).Limit(100)
+		if len(filterSiteId) > 0 {
+			req = req.FilterSiteId(utils.ProcessFilterStringSlice(filterSiteId))
+		}
+		if len(filterKind) > 0 {
+			req = req.FilterKind(utils.ProcessFilterStringSlice(filterKind))
+		}
+		if len(filterStatus) > 0 {
+			req = req.FilterStatus(utils.ProcessFilterStringSlice(filterStatus))
+		}
+		_, httpRes, _ := req.Execute()
+		return httpRes, nil
+	})
 	if err != nil {
 		return err
 	}
 
-	return utils.PrintAll(records, meta, len(records), &DeviceAuthProviderPrintConfig)
+	records, err := utils.UnmarshalRawItems[deviceAuthProviderRaw](rawItems)
+	if err != nil {
+		return fmt.Errorf("failed to parse device auth providers: %w", err)
+	}
+
+	return utils.PrintAllRaw(rawItems, records, meta, len(records), &DeviceAuthProviderPrintConfig)
 }
 
 func DeviceAuthProviderGet(ctx context.Context, idOrLabel string) error {

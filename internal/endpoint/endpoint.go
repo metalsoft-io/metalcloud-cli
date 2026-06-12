@@ -3,6 +3,7 @@ package endpoint
 import (
 	"context"
 	"fmt"
+	"net/http"
 	"strconv"
 
 	"github.com/metalsoft-io/metalcloud-cli/pkg/api"
@@ -13,14 +14,23 @@ import (
 	sdk "github.com/metalsoft-io/metalcloud-sdk-go"
 )
 
-type EndpointInterfaceDetails struct {
-	Id                         *float32
-	MacAddress                 *string
-	NetworkDeviceId            *float32
-	NetworkDeviceInterfaceId   *float32
-	NetworkDeviceName          *string
-	NetworkDeviceInterfaceName *string
+type endpointRaw struct {
+	Id         interface{} `json:"id"`
+	SiteId     interface{} `json:"siteId"`
+	Name       *string     `json:"name"`
+	Label      *string     `json:"label"`
+	ExternalId *string     `json:"externalId"`
 }
+
+type endpointInterfaceRaw struct {
+	Id                         interface{} `json:"id"`
+	MacAddress                 *string     `json:"macAddress"`
+	NetworkDeviceId            interface{} `json:"networkDeviceId"`
+	NetworkDeviceInterfaceId   interface{} `json:"networkDeviceInterfaceId"`
+	NetworkDeviceName          *string     `json:"networkDeviceName"`
+	NetworkDeviceInterfaceName *string     `json:"networkDeviceInterfaceName"`
+}
+
 
 var endpointPrintConfig = formatter.PrintConfig{
 	FieldsConfig: map[string]formatter.RecordFieldConfig{
@@ -83,12 +93,19 @@ func EndpointList(ctx context.Context, filterSite []string, filterExternalId []s
 		request = request.FilterExternalId(utils.ProcessFilterStringSlice(filterExternalId))
 	}
 
-	records, meta, err := utils.FetchAllPages(request.SortBy([]string{"id:ASC"}))
+	rawItems, meta, err := utils.FetchAllPagesRaw(func(p float32) (*http.Response, error) {
+		_, httpRes, _ := request.SortBy([]string{"id:ASC"}).Page(p).Limit(100).Execute()
+		return httpRes, nil
+	})
 	if err != nil {
 		return err
 	}
+	records, err := utils.UnmarshalRawItems[endpointRaw](rawItems)
+	if err != nil {
+		return fmt.Errorf("failed to parse endpoints: %w", err)
+	}
 
-	return utils.PrintAll(records, meta, len(records), &endpointPrintConfig)
+	return utils.PrintAllRaw(rawItems, records, meta, len(records), &endpointPrintConfig)
 }
 
 func EndpointGet(ctx context.Context, endpointId string) error {
@@ -191,29 +208,19 @@ func EndpointInterfaceList(ctx context.Context, endpointId string) error {
 
 	client := api.GetApiClient(ctx)
 
-	endpointInterfaces, meta, err := utils.FetchAllPages(client.EndpointAPI.GetEndpointInterfaces(ctx, endpointIdNumeric).SortBy([]string{"id:ASC"}))
+	rawItems, meta, err := utils.FetchAllPagesRaw(func(p float32) (*http.Response, error) {
+		_, httpRes, _ := client.EndpointAPI.GetEndpointInterfaces(ctx, endpointIdNumeric).SortBy([]string{"id:ASC"}).Page(p).Limit(100).Execute()
+		return httpRes, nil
+	})
 	if err != nil {
 		return err
 	}
-
-	endpointInterfacesList := make([]EndpointInterfaceDetails, 0, len(endpointInterfaces))
-	for _, iface := range endpointInterfaces {
-		endpointInterface := EndpointInterfaceDetails{
-			Id:                         &iface.Id,
-			MacAddress:                 iface.MacAddress,
-			NetworkDeviceId:            &iface.NetworkDeviceId,
-			NetworkDeviceInterfaceId:   &iface.NetworkDeviceInterfaceId,
-			NetworkDeviceInterfaceName: &iface.NetworkDeviceInterfaceName,
-		}
-
-		endpointInterfacesList = append(endpointInterfacesList, endpointInterface)
+	records, err := utils.UnmarshalRawItems[endpointInterfaceRaw](rawItems)
+	if err != nil {
+		return fmt.Errorf("failed to parse endpoint interfaces: %w", err)
 	}
 
-	if err := formatter.PrintResult(endpointInterfacesList, &endpointInterfacePrintConfig); err != nil {
-		return err
-	}
-	utils.PrintPaginationSummary(len(endpointInterfacesList), meta)
-	return nil
+	return utils.PrintAllRaw(rawItems, records, meta, len(records), &endpointInterfacePrintConfig)
 }
 
 func GetEndpointId(endpointId string) (int32, error) {

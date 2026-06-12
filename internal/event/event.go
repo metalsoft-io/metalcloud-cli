@@ -3,6 +3,7 @@ package event
 import (
 	"context"
 	"fmt"
+	"net/http"
 	"strconv"
 
 	"github.com/metalsoft-io/metalcloud-cli/pkg/api"
@@ -11,6 +12,16 @@ import (
 	"github.com/metalsoft-io/metalcloud-cli/pkg/response_inspector"
 	"github.com/metalsoft-io/metalcloud-cli/pkg/utils"
 )
+
+// eventRaw avoids SDK unmarshal failure: API may omit severity (required in SDK); id as string.
+type eventRaw struct {
+	Id                interface{} `json:"id"`
+	Type              *string     `json:"type"`
+	Severity          *string     `json:"severity"`
+	Visibility        *string     `json:"visibility"`
+	OccurredTimestamp *string     `json:"occurredTimestamp"`
+	Title             *string     `json:"title"`
+}
 
 var eventPrintConfig = formatter.PrintConfig{
 	FieldsConfig: map[string]formatter.RecordFieldConfig{
@@ -104,25 +115,52 @@ func EventList(ctx context.Context, flags ListFlags) error {
 		request = request.SearchBy(flags.SearchBy)
 	}
 
-	if flags.Page > 0 || flags.Limit > 0 {
-		events, httpRes, err := request.Execute()
-		if err := response_inspector.InspectResponse(httpRes, err); err != nil {
+	if flags.Page > 0 {
+		// Specific page requested — fetch that page window, spanning API pages when limit > 100.
+		rawItems, meta, err := utils.FetchPageWindowRaw(func(p, l float32) (*http.Response, error) {
+			_, httpRes, _ := request.Page(p).Limit(l).Execute()
+			return httpRes, nil
+		}, flags.Page, flags.Limit)
+		if err != nil {
 			return err
 		}
-
-		if err := formatter.PrintResult(events, &eventPrintConfig); err != nil {
-			return err
+		records, err := utils.UnmarshalRawItems[eventRaw](rawItems)
+		if err != nil {
+			return fmt.Errorf("failed to parse events: %w", err)
 		}
-		utils.PrintPaginationSummary(len(events.Data), events.Meta)
-		return nil
+		return utils.PrintAllRaw(rawItems, records, meta, len(records), &eventPrintConfig)
 	}
 
-	records, meta, err := utils.FetchAllPages(request)
+	if flags.Limit > 0 {
+		// Limit without page — fetch exactly N records, spanning pages as needed.
+		rawItems, meta, err := utils.FetchUpToRaw(func(page, limit float32) (*http.Response, error) {
+			_, httpRes, _ := request.Page(page).Limit(limit).Execute()
+			return httpRes, nil
+		}, flags.Limit)
+		if err != nil {
+			return err
+		}
+		records, err := utils.UnmarshalRawItems[eventRaw](rawItems)
+		if err != nil {
+			return fmt.Errorf("failed to parse events: %w", err)
+		}
+		return utils.PrintAllRaw(rawItems, records, meta, len(records), &eventPrintConfig)
+	}
+
+	rawItems, meta, err := utils.FetchAllPagesRaw(func(page float32) (*http.Response, error) {
+		_, httpRes, _ := request.Page(page).Limit(100).Execute()
+		return httpRes, nil
+	})
 	if err != nil {
 		return err
 	}
 
-	return utils.PrintAll(records, meta, len(records), &eventPrintConfig)
+	records, err := utils.UnmarshalRawItems[eventRaw](rawItems)
+	if err != nil {
+		return fmt.Errorf("failed to parse events: %w", err)
+	}
+
+	return utils.PrintAllRaw(rawItems, records, meta, len(records), &eventPrintConfig)
 }
 
 func EventGet(ctx context.Context, eventId string) error {
