@@ -2,7 +2,9 @@ package event
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
+	"io"
 	"net/http"
 	"strconv"
 
@@ -172,12 +174,28 @@ func EventGet(ctx context.Context, eventId string) error {
 	}
 
 	client := api.GetApiClient(ctx)
-	event, httpRes, err := client.EventAPI.GetEvent(ctx, id).Execute()
-	if err := response_inspector.InspectResponse(httpRes, err); err != nil {
-		return err
+
+	// Raw-body parse: the SDK Event model requires `severity`, but the API
+	// can omit it, so SDK unmarshalling fails on valid responses.
+	_, httpRes, sdkErr := client.EventAPI.GetEvent(ctx, id).Execute()
+	if httpRes != nil && httpRes.StatusCode >= 400 {
+		return response_inspector.InspectResponse(httpRes, sdkErr)
+	}
+	if httpRes == nil {
+		return sdkErr
 	}
 
-	return formatter.PrintResult(event, &eventPrintConfig)
+	body, err := io.ReadAll(httpRes.Body)
+	if err != nil {
+		return fmt.Errorf("failed to read response body: %w", err)
+	}
+
+	var record eventRaw
+	if err := json.Unmarshal(body, &record); err != nil {
+		return fmt.Errorf("failed to parse event: %w", err)
+	}
+
+	return formatter.PrintResult(record, &eventPrintConfig)
 }
 
 func getEventId(eventId string) (float32, error) {
