@@ -2,6 +2,7 @@ package vm_type
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"net/http"
 	"strconv"
@@ -228,21 +229,38 @@ func VMTypeGetVMs(ctx context.Context, vmTypeId string, limit float32, page floa
 
 	request := client.VMTypeAPI.GetVMsByVMType(ctx, vmTypeIdNumeric)
 
-	// Set pagination if provided
-	if limit > 0 {
-		request = request.Limit(limit)
-	}
+	// Raw-body pagination: the SDK VM model requires `datacenterName`, but the
+	// API omits it, so SDK unmarshalling fails on valid responses.
+	var rawItems []json.RawMessage
+	var meta sdk.PaginatedResponseMeta
 
-	if page > 0 {
-		request = request.Page(page)
+	switch {
+	case page > 0:
+		rawItems, meta, err = utils.FetchPageWindowRaw(func(p, l float32) (*http.Response, error) {
+			_, httpRes, _ := request.Page(p).Limit(l).Execute()
+			return httpRes, nil
+		}, int(page), int(limit))
+	case limit > 0:
+		rawItems, meta, err = utils.FetchUpToRaw(func(p, l float32) (*http.Response, error) {
+			_, httpRes, _ := request.Page(p).Limit(l).Execute()
+			return httpRes, nil
+		}, int(limit))
+	default:
+		rawItems, meta, err = utils.FetchAllPagesRaw(func(p float32) (*http.Response, error) {
+			_, httpRes, _ := request.Page(p).Limit(100).Execute()
+			return httpRes, nil
+		})
 	}
-
-	vms, httpRes, err := request.Execute()
-	if err := response_inspector.InspectResponse(httpRes, err); err != nil {
+	if err != nil {
 		return err
 	}
 
-	return formatter.PrintResult(vms, nil)
+	records, err := utils.UnmarshalRawItems[map[string]interface{}](rawItems)
+	if err != nil {
+		return fmt.Errorf("failed to parse VMs: %w", err)
+	}
+
+	return utils.PrintAllRaw(rawItems, records, meta, len(records), nil)
 }
 
 func VMTypeConfigExample(ctx context.Context) error {
