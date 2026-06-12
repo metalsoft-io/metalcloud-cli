@@ -60,7 +60,7 @@ func TestAccountList_HappyPath(t *testing.T) {
 	defer ts.Close()
 
 	ctx := setupTestContext(ts.URL)
-	if err := AccountList(ctx); err != nil {
+	if err := AccountList(ctx, false); err != nil {
 		t.Errorf("expected nil error, got: %v", err)
 	}
 }
@@ -72,7 +72,7 @@ func TestAccountList_Error(t *testing.T) {
 	defer ts.Close()
 
 	ctx := setupTestContext(ts.URL)
-	if err := AccountList(ctx); err == nil {
+	if err := AccountList(ctx, false); err == nil {
 		t.Error("expected error for 500, got nil")
 	}
 }
@@ -84,7 +84,7 @@ func TestAccountList_Empty(t *testing.T) {
 	defer ts.Close()
 
 	ctx := setupTestContext(ts.URL)
-	if err := AccountList(ctx); err != nil {
+	if err := AccountList(ctx, false); err != nil {
 		t.Errorf("expected nil error for empty list, got: %v", err)
 	}
 }
@@ -94,7 +94,7 @@ func TestAccountList_Pagination(t *testing.T) {
 	defer ts.Close()
 
 	ctx := setupTestContext(ts.URL)
-	if err := AccountList(ctx); err != nil {
+	if err := AccountList(ctx, false); err != nil {
 		t.Errorf("expected nil error across 3 pages, got: %v", err)
 	}
 }

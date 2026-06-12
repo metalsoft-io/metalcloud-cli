@@ -13,6 +13,7 @@ var (
 		userEmail    string
 		roleLevel    string
 		reason       string
+		archived     bool
 	}{}
 
 	accountCmd = &cobra.Command{
@@ -53,11 +54,14 @@ Examples:
   metalcloud-cli account list -o json
 
   # List all accounts using alias
-  metalcloud-cli accounts ls`,
+  metalcloud-cli accounts ls
+
+  # List archived accounts (excluded by default)
+  metalcloud-cli account list --archived`,
 		SilenceUsage: true,
 		Annotations:  map[string]string{system.REQUIRED_PERMISSION: system.PERMISSION_USERS_READ},
 		RunE: func(cmd *cobra.Command, args []string) error {
-			return account.AccountList(cmd.Context())
+			return account.AccountList(cmd.Context(), accountFlags.archived)
 		},
 	}
 
@@ -257,6 +261,7 @@ func init() {
 	rootCmd.AddCommand(accountCmd)
 
 	accountCmd.AddCommand(accountListCmd)
+	accountListCmd.Flags().BoolVar(&accountFlags.archived, "archived", false, "List archived accounts (excluded by default).")
 	accountCmd.AddCommand(accountGetCmd)
 
 	// Account create
