@@ -3,6 +3,7 @@ package logical_network
 import (
 	"context"
 	"fmt"
+	"net/http"
 	"strconv"
 
 	"github.com/metalsoft-io/metalcloud-cli/internal/fabric"
@@ -13,6 +14,17 @@ import (
 	"github.com/metalsoft-io/metalcloud-cli/pkg/utils"
 	sdk "github.com/metalsoft-io/metalcloud-sdk-go"
 )
+
+// logicalNetworkRaw avoids SDK unmarshal failure: API may omit id (required in SDK struct).
+// ID fields are interface{} — API returns them inconsistently as number or string.
+type logicalNetworkRaw struct {
+	Id               interface{} `json:"id"`
+	Label            *string     `json:"label"`
+	Name             *string     `json:"name"`
+	Kind             *string     `json:"kind"`
+	FabricId         interface{} `json:"fabricId"`
+	InfrastructureId interface{} `json:"infrastructureId"`
+}
 
 var logicalNetworkPrintConfig = formatter.PrintConfig{
 	FieldsConfig: map[string]formatter.RecordFieldConfig{
@@ -101,25 +113,50 @@ func LogicalNetworkList(ctx context.Context, fabricIdOrLabel string, flags ListF
 		request = request.FilterFabricId([]string{fabric.Id})
 	}
 
-	if flags.Page > 0 || flags.Limit > 0 {
-		logicalNetworkList, httpRes, err := request.Execute()
-		if err := response_inspector.InspectResponse(httpRes, err); err != nil {
+	if flags.Page > 0 {
+		rawItems, meta, err := utils.FetchPageWindowRaw(func(p, l float32) (*http.Response, error) {
+			_, httpRes, _ := request.Page(p).Limit(l).Execute()
+			return httpRes, nil
+		}, flags.Page, flags.Limit)
+		if err != nil {
 			return err
 		}
-
-		if err := formatter.PrintResult(logicalNetworkList, &logicalNetworkPrintConfig); err != nil {
-			return err
+		records, err := utils.UnmarshalRawItems[logicalNetworkRaw](rawItems)
+		if err != nil {
+			return fmt.Errorf("failed to parse logical networks: %w", err)
 		}
-		utils.PrintPaginationSummary(len(logicalNetworkList.Data), logicalNetworkList.Meta)
-		return nil
+		return utils.PrintAllRaw(rawItems, records, meta, len(records), &logicalNetworkPrintConfig)
 	}
 
-	records, meta, err := utils.FetchAllPages(request)
+	if flags.Limit > 0 {
+		rawItems, meta, err := utils.FetchUpToRaw(func(page, limit float32) (*http.Response, error) {
+			_, httpRes, _ := request.Page(page).Limit(limit).Execute()
+			return httpRes, nil
+		}, flags.Limit)
+		if err != nil {
+			return err
+		}
+		records, err := utils.UnmarshalRawItems[logicalNetworkRaw](rawItems)
+		if err != nil {
+			return fmt.Errorf("failed to parse logical networks: %w", err)
+		}
+		return utils.PrintAllRaw(rawItems, records, meta, len(records), &logicalNetworkPrintConfig)
+	}
+
+	rawItems, meta, err := utils.FetchAllPagesRaw(func(page float32) (*http.Response, error) {
+		_, httpRes, _ := request.Page(page).Limit(100).Execute()
+		return httpRes, nil
+	})
 	if err != nil {
 		return err
 	}
 
-	return utils.PrintAll(records, meta, len(records), &logicalNetworkPrintConfig)
+	records, err := utils.UnmarshalRawItems[logicalNetworkRaw](rawItems)
+	if err != nil {
+		return fmt.Errorf("failed to parse logical networks: %w", err)
+	}
+
+	return utils.PrintAllRaw(rawItems, records, meta, len(records), &logicalNetworkPrintConfig)
 }
 
 func LogicalNetworkGet(ctx context.Context, logicalNetworkId string) error {
@@ -329,8 +366,15 @@ func LogicalNetworkDelete(ctx context.Context, logicalNetworkId string) error {
 
 	client := api.GetApiClient(ctx)
 
-	httpRes, err := client.LogicalNetworkAPI.
+	ln, httpRes, err := client.LogicalNetworkAPI.GetLogicalNetwork(ctx, logicalNetworkIdNumeric).Execute()
+	if err := response_inspector.InspectResponse(httpRes, err); err != nil {
+		return err
+	}
+	revision := strconv.Itoa(int(ln.Revision))
+
+	httpRes, err = client.LogicalNetworkAPI.
 		DeleteLogicalNetwork(ctx, logicalNetworkIdNumeric).
+		IfMatch(revision).
 		Execute()
 	if err := response_inspector.InspectResponse(httpRes, err); err != nil {
 		return err
