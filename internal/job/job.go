@@ -46,6 +46,8 @@ type ListFlags struct {
 	FilterStatus     []string
 	FilterJobGroupId []string
 	SortBy           []string
+	Page             int
+	Limit            int
 }
 
 func JobList(ctx context.Context, flags ListFlags) error {
@@ -67,12 +69,45 @@ func JobList(ctx context.Context, flags ListFlags) error {
 		request = request.SortBy(flags.SortBy)
 	}
 
-	records, meta, err := utils.FetchAllPages(request)
+	type jobRaw struct {
+		JobId            interface{} `json:"jobId"`
+		Status           *string     `json:"status"`
+		FunctionName     *string     `json:"functionName"`
+		CreatedTimestamp *string     `json:"createdTimestamp"`
+		JobGroupId       interface{} `json:"jobGroupId"`
+	}
+
+	var rawItems []json.RawMessage
+	var meta sdk.PaginatedResponseMeta
+	var err error
+
+	switch {
+	case flags.Page > 0:
+		rawItems, meta, err = utils.FetchPageWindowRaw(func(p, l float32) (*http.Response, error) {
+			_, httpRes, _ := request.Page(p).Limit(l).Execute()
+			return httpRes, nil
+		}, flags.Page, flags.Limit)
+	case flags.Limit > 0:
+		rawItems, meta, err = utils.FetchUpToRaw(func(p, l float32) (*http.Response, error) {
+			_, httpRes, _ := request.Page(p).Limit(l).Execute()
+			return httpRes, nil
+		}, flags.Limit)
+	default:
+		rawItems, meta, err = utils.FetchAllPagesRaw(func(page float32) (*http.Response, error) {
+			_, httpRes, _ := request.Page(page).Limit(100).Execute()
+			return httpRes, nil
+		})
+	}
 	if err != nil {
 		return err
 	}
 
-	return utils.PrintAll(records, meta, len(records), &jobPrintConfig)
+	records, err := utils.UnmarshalRawItems[jobRaw](rawItems)
+	if err != nil {
+		return fmt.Errorf("failed to parse jobs: %w", err)
+	}
+
+	return utils.PrintAllRaw(rawItems, records, meta, len(records), &jobPrintConfig)
 }
 
 func JobGet(ctx context.Context, jobId string) error {
