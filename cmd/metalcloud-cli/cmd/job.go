@@ -275,6 +275,8 @@ Examples:
 		filterStatus     []string
 		filterJobGroupId []string
 		sortBy           []string
+		page             int
+		limit            int
 	}{}
 
 	jobListArchivedCmd = &cobra.Command{
@@ -310,6 +312,8 @@ Examples:
 				FilterStatus:     jobArchiveFlags.filterStatus,
 				FilterJobGroupId: jobArchiveFlags.filterJobGroupId,
 				SortBy:           jobArchiveFlags.sortBy,
+				Page:             jobArchiveFlags.page,
+				Limit:            jobArchiveFlags.limit,
 			})
 		},
 	}
@@ -464,6 +468,8 @@ func init() {
 	jobListArchivedCmd.Flags().StringSliceVar(&jobArchiveFlags.filterStatus, "filter-status", nil, "Filter by job status.")
 	jobListArchivedCmd.Flags().StringSliceVar(&jobArchiveFlags.filterJobGroupId, "filter-job-group-id", nil, "Filter by job group ID.")
 	jobListArchivedCmd.Flags().StringSliceVar(&jobArchiveFlags.sortBy, "sort-by", nil, "Sort by fields (e.g., jobId:ASC, status:DESC).")
+	jobListArchivedCmd.Flags().IntVar(&jobArchiveFlags.page, "page", 0, "Page number to retrieve (default: return all records).")
+	jobListArchivedCmd.Flags().IntVar(&jobArchiveFlags.limit, "limit", 0, "Maximum number of records to return (default: all).")
 
 	// Job group commands
 	rootCmd.AddCommand(jobGroupCmd)

@@ -5,11 +5,14 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
+	"net/http"
 
 	"github.com/metalsoft-io/metalcloud-cli/pkg/api"
 	"github.com/metalsoft-io/metalcloud-cli/pkg/formatter"
 	"github.com/metalsoft-io/metalcloud-cli/pkg/logger"
 	"github.com/metalsoft-io/metalcloud-cli/pkg/response_inspector"
+	"github.com/metalsoft-io/metalcloud-cli/pkg/utils"
+	sdk "github.com/metalsoft-io/metalcloud-sdk-go"
 )
 
 var jobExceptionPrintConfig = formatter.PrintConfig{
@@ -156,6 +159,8 @@ type ArchiveListFlags struct {
 	FilterStatus     []string
 	FilterJobGroupId []string
 	SortBy           []string
+	Page             int
+	Limit            int
 }
 
 func JobListArchived(ctx context.Context, flags ArchiveListFlags) error {
@@ -177,10 +182,47 @@ func JobListArchived(ctx context.Context, flags ArchiveListFlags) error {
 		request = request.SortBy(flags.SortBy)
 	}
 
-	jobs, httpRes, err := request.Execute()
-	if err := response_inspector.InspectResponse(httpRes, err); err != nil {
+	// Raw-body pagination: this endpoint has no server-side default limit
+	// (an unpaginated request returns the entire archive), and the SDK
+	// model rejects some archived job payloads.
+	type jobArchiveRaw struct {
+		JobId            interface{} `json:"jobId"`
+		Status           *string     `json:"status"`
+		FunctionName     *string     `json:"functionName"`
+		Type             *string     `json:"type"`
+		InfrastructureId interface{} `json:"infrastructureId"`
+		JobGroupId       interface{} `json:"jobGroupId"`
+	}
+
+	var rawItems []json.RawMessage
+	var meta sdk.PaginatedResponseMeta
+	var err error
+
+	switch {
+	case flags.Page > 0:
+		rawItems, meta, err = utils.FetchPageWindowRaw(func(p, l float32) (*http.Response, error) {
+			_, httpRes, _ := request.Page(p).Limit(l).Execute()
+			return httpRes, nil
+		}, flags.Page, flags.Limit)
+	case flags.Limit > 0:
+		rawItems, meta, err = utils.FetchUpToRaw(func(p, l float32) (*http.Response, error) {
+			_, httpRes, _ := request.Page(p).Limit(l).Execute()
+			return httpRes, nil
+		}, flags.Limit)
+	default:
+		rawItems, meta, err = utils.FetchAllPagesRaw(func(page float32) (*http.Response, error) {
+			_, httpRes, _ := request.Page(page).Limit(100).Execute()
+			return httpRes, nil
+		})
+	}
+	if err != nil {
 		return err
 	}
 
-	return formatter.PrintResult(jobs, &jobArchivePrintConfig)
+	records, err := utils.UnmarshalRawItems[jobArchiveRaw](rawItems)
+	if err != nil {
+		return fmt.Errorf("failed to parse archived jobs: %w", err)
+	}
+
+	return utils.PrintAllRaw(rawItems, records, meta, len(records), &jobArchivePrintConfig)
 }

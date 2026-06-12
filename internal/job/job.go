@@ -113,18 +113,38 @@ func JobList(ctx context.Context, flags ListFlags) error {
 func JobGet(ctx context.Context, jobId string) error {
 	logger.Get().Info().Msgf("Get job '%s' details", jobId)
 
-	id, err := getJobId(jobId)
+	// Validate the ID but pass the original string in the URL: the SDK's
+	// float32 jobId parameter loses precision for IDs > 16,777,216.
+	if _, err := getJobId(jobId); err != nil {
+		return err
+	}
+
+	httpRes, err := jobRequest(ctx, http.MethodGet, fmt.Sprintf("/api/v2/jobs/%s", jobId), nil)
 	if err != nil {
+		if httpRes != nil {
+			return response_inspector.InspectResponse(httpRes, err)
+		}
 		return err
 	}
 
-	client := api.GetApiClient(ctx)
-	job, httpRes, err := client.JobAPI.GetJob(ctx, id).Execute()
-	if err := response_inspector.InspectResponse(httpRes, err); err != nil {
-		return err
+	body, err := io.ReadAll(httpRes.Body)
+	if err != nil {
+		return fmt.Errorf("failed to read response body: %w", err)
 	}
 
-	return formatter.PrintResult(job, &jobPrintConfig)
+	type jobGetRaw struct {
+		JobId            interface{} `json:"jobId"`
+		Status           *string     `json:"status"`
+		FunctionName     *string     `json:"functionName"`
+		CreatedTimestamp *string     `json:"createdTimestamp"`
+		JobGroupId       interface{} `json:"jobGroupId"`
+	}
+	var record jobGetRaw
+	if err := json.Unmarshal(body, &record); err != nil {
+		return fmt.Errorf("failed to parse job: %w", err)
+	}
+
+	return formatter.PrintResult(record, &jobPrintConfig)
 }
 
 func JobSkip(ctx context.Context, jobId string) error {
@@ -187,6 +207,12 @@ func JobKill(ctx context.Context, jobId string) error {
 // jobAction performs a POST to /api/v2/jobs/{jobId}/actions/{action} bypassing
 // the SDK's float32 jobId parameter which loses precision for IDs > 16,777,216.
 func jobAction(ctx context.Context, jobId string, action string, body interface{}) (*http.Response, error) {
+	return jobRequest(ctx, http.MethodPost, fmt.Sprintf("/api/v2/jobs/%s/actions/%s", jobId, action), body)
+}
+
+// jobRequest performs a direct HTTP request against the API, bypassing the
+// SDK's float32 jobId path parameter which loses precision for IDs > 16,777,216.
+func jobRequest(ctx context.Context, method string, path string, body interface{}) (*http.Response, error) {
 	client := api.GetApiClient(ctx)
 	cfg := client.GetConfig()
 
@@ -195,7 +221,7 @@ func jobAction(ctx context.Context, jobId string, action string, body interface{
 		return nil, err
 	}
 
-	url := fmt.Sprintf("%s/api/v2/jobs/%s/actions/%s", baseURL, jobId, action)
+	url := baseURL + path
 
 	var reqBody *bytes.Buffer
 	if body != nil {
@@ -208,7 +234,7 @@ func jobAction(ctx context.Context, jobId string, action string, body interface{
 		reqBody = &bytes.Buffer{}
 	}
 
-	req, err := http.NewRequestWithContext(ctx, http.MethodPost, url, reqBody)
+	req, err := http.NewRequestWithContext(ctx, method, url, reqBody)
 	if err != nil {
 		return nil, err
 	}
