@@ -293,7 +293,29 @@ func locateField(fieldName string, recordValue reflect.Value) reflect.Value {
 	field := recordValue
 
 	for _, namePart := range strings.Split(fieldName, ".") {
-		field = field.FieldByName(namePart)
+		// Unwrap interface/pointer wrappers before FieldByName — calling
+		// FieldByName on an interface or non-struct value panics.
+		for field.Kind() == reflect.Interface || field.Kind() == reflect.Ptr {
+			if field.IsNil() {
+				return reflect.Value{}
+			}
+			field = field.Elem()
+		}
+		switch field.Kind() {
+		case reflect.Struct:
+			field = field.FieldByName(namePart)
+		case reflect.Map:
+			// Raw-decoded JSON objects: look up by camelCase key
+			// (Go field name "EthernetFabric" → JSON key "ethernetFabric").
+			m := field
+			key := strings.ToLower(namePart[:1]) + namePart[1:]
+			field = m.MapIndex(reflect.ValueOf(key))
+			if !field.IsValid() {
+				field = m.MapIndex(reflect.ValueOf(namePart))
+			}
+		default:
+			return reflect.Value{}
+		}
 		if !field.IsValid() {
 			break
 		}
