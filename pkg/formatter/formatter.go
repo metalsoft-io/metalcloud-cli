@@ -3,6 +3,7 @@ package formatter
 import (
 	"encoding/json"
 	"fmt"
+	"math"
 	"os"
 	"strconv"
 	"strings"
@@ -387,7 +388,13 @@ func extractValue(value reflect.Value) interface{} {
 	case reflect.Uint, reflect.Uint8, reflect.Uint16, reflect.Uint32, reflect.Uint64:
 		return value.Uint()
 	case reflect.Float32, reflect.Float64:
-		return value.Float()
+		// Whole values (e.g. large numeric IDs decoded from JSON as float64)
+		// render as integers to avoid scientific notation like 2.4671856e+07.
+		f := value.Float()
+		if f == math.Trunc(f) && math.Abs(f) < 1e15 {
+			return int64(f)
+		}
+		return f
 	case reflect.Array, reflect.Slice:
 		var result []interface{}
 		for i := 0; i < value.Len(); i++ {
