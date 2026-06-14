@@ -231,13 +231,13 @@ func FirmwareCatalogDelete(ctx context.Context, firmwareCatalogId string) error 
 	return nil
 }
 
-func getFirmwareCatalogId(firmwareCatalogId string) (float32, error) {
-	firmwareCatalogIdNumeric, err := strconv.ParseFloat(firmwareCatalogId, 32)
+func getFirmwareCatalogId(firmwareCatalogId string) (int64, error) {
+	firmwareCatalogIdNumeric, err := strconv.ParseInt(firmwareCatalogId, 10, 64)
 	if err != nil {
 		err := fmt.Errorf("invalid firmware catalog ID: '%s'", firmwareCatalogId)
 		logger.Get().Error().Err(err).Msg("")
 		return 0, err
 	}
 
-	return float32(firmwareCatalogIdNumeric), nil
+	return firmwareCatalogIdNumeric, nil
 }

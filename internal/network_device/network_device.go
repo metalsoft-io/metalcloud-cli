@@ -265,7 +265,7 @@ func NetworkDeviceGetPorts(ctx context.Context, networkDeviceId string) error {
 		return err
 	}
 
-	portsInfo, err := GetNetworkDevicePorts(ctx, networkDeviceIdNumeric)
+	portsInfo, err := GetNetworkDevicePorts(ctx, float32(networkDeviceIdNumeric))
 	if err != nil {
 		return err
 	}
@@ -483,7 +483,7 @@ func NetworkDeviceDeleteDefaults(ctx context.Context, siteId string, defaultsId 
 		return err
 	}
 
-	defaultsIdNumeric, err := utils.GetFloat32FromString(defaultsId)
+	defaultsIdNumeric, err := utils.GetInt64FromString(defaultsId)
 	if err != nil {
 		return err
 	}
@@ -576,18 +576,18 @@ func GetNetworkDevicePorts(ctx context.Context, networkDeviceId float32) ([]sdk.
 	return portsInfo.Data, nil
 }
 
-func GetNetworkDeviceId(networkDeviceId string) (float32, error) {
-	networkDeviceIdNumeric, err := strconv.ParseFloat(networkDeviceId, 32)
+func GetNetworkDeviceId(networkDeviceId string) (int64, error) {
+	networkDeviceIdNumeric, err := strconv.ParseInt(networkDeviceId, 10, 64)
 	if err != nil {
 		err := fmt.Errorf("invalid network device ID: '%s'", networkDeviceId)
 		logger.Get().Error().Err(err).Msg("")
 		return 0, err
 	}
 
-	return float32(networkDeviceIdNumeric), nil
+	return networkDeviceIdNumeric, nil
 }
 
-func getNetworkDeviceIdAndRevision(ctx context.Context, networkDeviceId string) (float32, string, error) {
+func getNetworkDeviceIdAndRevision(ctx context.Context, networkDeviceId string) (int64, string, error) {
 	networkDeviceIdNumeric, err := GetNetworkDeviceId(networkDeviceId)
 	if err != nil {
 		return 0, "", err
@@ -595,12 +595,12 @@ func getNetworkDeviceIdAndRevision(ctx context.Context, networkDeviceId string) 
 
 	client := api.GetApiClient(ctx)
 
-	networkDevice, httpRes, err := client.NetworkDeviceAPI.GetNetworkDevice(ctx, float32(networkDeviceIdNumeric)).Execute()
+	networkDevice, httpRes, err := client.NetworkDeviceAPI.GetNetworkDevice(ctx, networkDeviceIdNumeric).Execute()
 	if err := response_inspector.InspectResponse(httpRes, err); err != nil {
 		return 0, "", err
 	}
 
-	return float32(networkDeviceIdNumeric), strconv.Itoa(int(networkDevice.Revision)), nil
+	return networkDeviceIdNumeric, strconv.Itoa(int(networkDevice.Revision)), nil
 }
 
 var networkDeviceDefaultSecretsPrintConfig = formatter.PrintConfig{
@@ -827,13 +827,13 @@ func NetworkDeviceDefaultSecretsBatchCreate(ctx context.Context, filePath string
 	return formatter.PrintResult(created, &networkDeviceDefaultSecretsPrintConfig)
 }
 
-func parseDefaultSecretsId(secretsId string) (float32, error) {
-	secretsIdNumeric, err := strconv.ParseFloat(secretsId, 32)
+func parseDefaultSecretsId(secretsId string) (int64, error) {
+	secretsIdNumeric, err := strconv.ParseInt(secretsId, 10, 64)
 	if err != nil {
 		err := fmt.Errorf("invalid network device default secrets ID: '%s'", secretsId)
 		logger.Get().Error().Err(err).Msg("")
 		return 0, err
 	}
 
-	return float32(secretsIdNumeric), nil
+	return secretsIdNumeric, nil
 }

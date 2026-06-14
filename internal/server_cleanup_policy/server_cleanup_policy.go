@@ -80,7 +80,7 @@ func CleanupPolicyList(ctx context.Context) error {
 func CleanupPolicyGet(ctx context.Context, cleanupPolicyId string) error {
 	logger.Get().Info().Msgf("Get server cleanup policy '%s'", cleanupPolicyId)
 
-	cleanupPolicyIdNumber, err := strconv.ParseFloat(cleanupPolicyId, 32)
+	cleanupPolicyIdNumber, err := strconv.ParseInt(cleanupPolicyId, 10, 64)
 	if err != nil {
 		err := fmt.Errorf("invalid server cleanup policy ID: '%s'", cleanupPolicyId)
 		logger.Get().Error().Err(err).Msg("")
@@ -89,7 +89,7 @@ func CleanupPolicyGet(ctx context.Context, cleanupPolicyId string) error {
 
 	client := api.GetApiClient(ctx)
 
-	cleanupPolicy, httpRes, err := client.ServerCleanupPolicyAPI.GetServerCleanupPolicyInfo(ctx, float32(cleanupPolicyIdNumber)).Execute()
+	cleanupPolicy, httpRes, err := client.ServerCleanupPolicyAPI.GetServerCleanupPolicyInfo(ctx, cleanupPolicyIdNumber).Execute()
 	if err := response_inspector.InspectResponse(httpRes, err); err != nil {
 		return err
 	}
@@ -149,7 +149,7 @@ func CleanupPolicyCreate(ctx context.Context, label string, cleanupDrives, recre
 func CleanupPolicyUpdate(ctx context.Context, cleanupPolicyId string, label string, cleanupDrives, recreateRaid, disableEmbeddedNics bool, raidOneDrive, raidTwoDrives, raidEvenDrives, raidOddDrives, skipRaidActionsStr string, cmd *cobra.Command) error {
 	logger.Get().Info().Msgf("Updating server cleanup policy '%s'", cleanupPolicyId)
 
-	cleanupPolicyIdNumber, err := strconv.ParseFloat(cleanupPolicyId, 32)
+	cleanupPolicyIdNumber, err := strconv.ParseInt(cleanupPolicyId, 10, 64)
 	if err != nil {
 		err := fmt.Errorf("invalid server cleanup policy ID: '%s'", cleanupPolicyId)
 		logger.Get().Error().Err(err).Msg("")
@@ -216,7 +216,7 @@ func CleanupPolicyUpdate(ctx context.Context, cleanupPolicyId string, label stri
 		updateRequest.SkipRaidActions = skipRaidActions
 	}
 
-	cleanupPolicy, httpRes, err := client.ServerCleanupPolicyAPI.UpdateServerCleanupPolicy(ctx, float32(cleanupPolicyIdNumber)).UpdateServerCleanupPolicy(updateRequest).Execute()
+	cleanupPolicy, httpRes, err := client.ServerCleanupPolicyAPI.UpdateServerCleanupPolicy(ctx, cleanupPolicyIdNumber).UpdateServerCleanupPolicy(updateRequest).Execute()
 	if err := response_inspector.InspectResponse(httpRes, err); err != nil {
 		return err
 	}
@@ -227,7 +227,7 @@ func CleanupPolicyUpdate(ctx context.Context, cleanupPolicyId string, label stri
 func CleanupPolicyDelete(ctx context.Context, cleanupPolicyId string) error {
 	logger.Get().Info().Msgf("Deleting server cleanup policy '%s'", cleanupPolicyId)
 
-	cleanupPolicyIdNumber, err := strconv.ParseFloat(cleanupPolicyId, 32)
+	cleanupPolicyIdNumber, err := strconv.ParseInt(cleanupPolicyId, 10, 64)
 	if err != nil {
 		err := fmt.Errorf("invalid server cleanup policy ID: '%s'", cleanupPolicyId)
 		logger.Get().Error().Err(err).Msg("")
@@ -236,7 +236,7 @@ func CleanupPolicyDelete(ctx context.Context, cleanupPolicyId string) error {
 
 	client := api.GetApiClient(ctx)
 
-	httpRes, err := client.ServerCleanupPolicyAPI.DeleteServerCleanupPolicy(ctx, float32(cleanupPolicyIdNumber)).Execute()
+	httpRes, err := client.ServerCleanupPolicyAPI.DeleteServerCleanupPolicy(ctx, cleanupPolicyIdNumber).Execute()
 	if err := response_inspector.InspectResponse(httpRes, err); err != nil {
 		return err
 	}

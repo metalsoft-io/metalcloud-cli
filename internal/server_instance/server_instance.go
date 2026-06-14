@@ -53,14 +53,14 @@ var serverInstancePrintConfig = formatter.PrintConfig{
 func ServerInstanceList(ctx context.Context, infraId string) error {
 	logger.Get().Info().Msgf("Listing server instances for infrastructure '%s'", infraId)
 
-	id, err := strconv.ParseInt(infraId, 10, 32)
+	id, err := strconv.ParseInt(infraId, 10, 64)
 	if err != nil {
 		return fmt.Errorf("invalid infrastructure ID '%s': %w", infraId, err)
 	}
 
 	client := api.GetApiClient(ctx)
 
-	result, httpRes, err := client.ServerInstanceAPI.GetInfrastructureServerInstances(ctx, int32(id)).Execute()
+	result, httpRes, err := client.ServerInstanceAPI.GetInfrastructureServerInstances(ctx, id).Execute()
 	if err := response_inspector.InspectResponse(httpRes, err); err != nil {
 		return err
 	}
@@ -71,14 +71,14 @@ func ServerInstanceList(ctx context.Context, infraId string) error {
 func ServerInstanceGet(ctx context.Context, serverInstanceId string) error {
 	logger.Get().Info().Msgf("Get server instance details for %s", serverInstanceId)
 
-	serverInstanceIdNumerical, err := utils.GetFloat32FromString(serverInstanceId)
+	serverInstanceIdNumerical, err := utils.GetInt64FromString(serverInstanceId)
 	if err != nil {
 		return err
 	}
 
 	client := api.GetApiClient(ctx)
 
-	serverInstanceInfo, httpRes, err := client.ServerInstanceAPI.GetServerInstance(ctx, int32(serverInstanceIdNumerical)).Execute()
+	serverInstanceInfo, httpRes, err := client.ServerInstanceAPI.GetServerInstance(ctx, serverInstanceIdNumerical).Execute()
 	if err := response_inspector.InspectResponse(httpRes, err); err != nil {
 		return err
 	}
@@ -275,15 +275,15 @@ func ServerInstanceConfig(ctx context.Context, serverInstanceId string) error {
 	})
 }
 
-func getServerInstanceId(serverInstanceId string) (int32, error) {
-	id, err := utils.GetFloat32FromString(serverInstanceId)
+func getServerInstanceId(serverInstanceId string) (int64, error) {
+	id, err := utils.GetInt64FromString(serverInstanceId)
 	if err != nil {
 		return 0, err
 	}
-	return int32(id), nil
+	return id, nil
 }
 
-func getServerInstanceIdAndRevision(ctx context.Context, serverInstanceId string) (int32, string, error) {
+func getServerInstanceIdAndRevision(ctx context.Context, serverInstanceId string) (int64, string, error) {
 	instanceId, err := getServerInstanceId(serverInstanceId)
 	if err != nil {
 		return 0, "", err

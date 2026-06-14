@@ -412,7 +412,7 @@ func DeleteSSHKey(ctx context.Context, userId string, keyId string) error {
 		return err
 	}
 
-	keyIdNumber, err := strconv.ParseFloat(keyId, 32)
+	keyIdNumber, err := strconv.ParseInt(keyId, 10, 64)
 	if err != nil {
 		err := fmt.Errorf("invalid SSH key ID: '%s'", keyId)
 		logger.Get().Error().Err(err).Msg("")
@@ -421,7 +421,7 @@ func DeleteSSHKey(ctx context.Context, userId string, keyId string) error {
 
 	client := api.GetApiClient(ctx)
 
-	httpRes, err := client.UsersAPI.DeleteUserSshKey(ctx, userIdNumber, float32(keyIdNumber)).Execute()
+	httpRes, err := client.UsersAPI.DeleteUserSshKey(ctx, userIdNumber, keyIdNumber).Execute()
 	if err := response_inspector.InspectResponse(httpRes, err); err != nil {
 		return err
 	}
@@ -540,18 +540,18 @@ func SetPassword(ctx context.Context, userId string, password string) error {
 	return formatter.PrintResult(userInfo, &userPrintConfig)
 }
 
-func getUserId(userId string) (float32, error) {
-	userIdNumeric, err := strconv.ParseFloat(userId, 32)
+func getUserId(userId string) (int64, error) {
+	userIdNumeric, err := strconv.ParseInt(userId, 10, 64)
 	if err != nil {
 		err := fmt.Errorf("invalid user ID: '%s'", userId)
 		logger.Get().Error().Err(err).Msg("")
 		return 0, err
 	}
 
-	return float32(userIdNumeric), nil
+	return userIdNumeric, nil
 }
 
-func getUserIdAndRevision(ctx context.Context, userId string) (float32, string, error) {
+func getUserIdAndRevision(ctx context.Context, userId string) (int64, string, error) {
 	userIdNumeric, err := getUserId(userId)
 	if err != nil {
 		return 0, "", err
@@ -559,10 +559,10 @@ func getUserIdAndRevision(ctx context.Context, userId string) (float32, string, 
 
 	client := api.GetApiClient(ctx)
 
-	user, httpRes, err := client.UsersAPI.GetUser(ctx, float32(userIdNumeric)).Execute()
+	user, httpRes, err := client.UsersAPI.GetUser(ctx, userIdNumeric).Execute()
 	if err := response_inspector.InspectResponse(httpRes, err); err != nil {
 		return 0, "", err
 	}
 
-	return float32(userIdNumeric), strconv.Itoa(int(user.Revision)), nil
+	return userIdNumeric, strconv.Itoa(int(user.Revision)), nil
 }

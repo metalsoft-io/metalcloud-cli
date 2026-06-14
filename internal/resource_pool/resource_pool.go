@@ -64,7 +64,7 @@ func ResourcePoolList(ctx context.Context, page int, limit int, search string) e
 func ResourcePoolGet(ctx context.Context, poolId string) error {
 	logger.Get().Info().Msgf("Getting resource pool '%s'", poolId)
 
-	poolIdNumber, err := strconv.ParseFloat(poolId, 32)
+	poolIdNumber, err := strconv.ParseInt(poolId, 10, 64)
 	if err != nil {
 		err := fmt.Errorf("invalid resource pool ID: '%s'", poolId)
 		logger.Get().Error().Err(err).Msg("")
@@ -103,7 +103,7 @@ func ResourcePoolCreate(ctx context.Context, label string, description string) e
 func ResourcePoolDelete(ctx context.Context, poolId string) error {
 	logger.Get().Info().Msgf("Deleting resource pool '%s'", poolId)
 
-	poolIdNumber, err := strconv.ParseFloat(poolId, 32)
+	poolIdNumber, err := strconv.ParseInt(poolId, 10, 64)
 	if err != nil {
 		err := fmt.Errorf("invalid resource pool ID: '%s'", poolId)
 		logger.Get().Error().Err(err).Msg("")
@@ -112,7 +112,7 @@ func ResourcePoolDelete(ctx context.Context, poolId string) error {
 
 	client := api.GetApiClient(ctx)
 
-	httpRes, err := client.ResourcePoolAPI.DeleteResourcePool(ctx, float32(poolIdNumber)).Execute()
+	httpRes, err := client.ResourcePoolAPI.DeleteResourcePool(ctx, poolIdNumber).Execute()
 	if err := response_inspector.InspectResponse(httpRes, err); err != nil {
 		return err
 	}
@@ -125,7 +125,7 @@ func ResourcePoolDelete(ctx context.Context, poolId string) error {
 func ResourcePoolGetUsers(ctx context.Context, poolId string) error {
 	logger.Get().Info().Msgf("Getting users for resource pool '%s'", poolId)
 
-	poolIdNumber, err := strconv.ParseFloat(poolId, 32)
+	poolIdNumber, err := strconv.ParseInt(poolId, 10, 64)
 	if err != nil {
 		err := fmt.Errorf("invalid resource pool ID: '%s'", poolId)
 		logger.Get().Error().Err(err).Msg("")
@@ -134,7 +134,7 @@ func ResourcePoolGetUsers(ctx context.Context, poolId string) error {
 
 	client := api.GetApiClient(ctx)
 
-	users, httpRes, err := client.ResourcePoolAPI.GetResourcePoolUsers(ctx, float32(poolIdNumber)).Execute()
+	users, httpRes, err := client.ResourcePoolAPI.GetResourcePoolUsers(ctx, poolIdNumber).Execute()
 	if err := response_inspector.InspectResponse(httpRes, err); err != nil {
 		return err
 	}
@@ -146,14 +146,14 @@ func ResourcePoolGetUsers(ctx context.Context, poolId string) error {
 func ResourcePoolAddUser(ctx context.Context, poolId string, userId string) error {
 	logger.Get().Info().Msgf("Adding user '%s' to resource pool '%s'", userId, poolId)
 
-	poolIdNumber, err := strconv.ParseFloat(poolId, 32)
+	poolIdNumber, err := strconv.ParseInt(poolId, 10, 64)
 	if err != nil {
 		err := fmt.Errorf("invalid resource pool ID: '%s'", poolId)
 		logger.Get().Error().Err(err).Msg("")
 		return err
 	}
 
-	userIdNumber, err := strconv.ParseFloat(userId, 32)
+	userIdNumber, err := strconv.ParseInt(userId, 10, 64)
 	if err != nil {
 		err := fmt.Errorf("invalid user ID: '%s'", userId)
 		logger.Get().Error().Err(err).Msg("")
@@ -162,7 +162,7 @@ func ResourcePoolAddUser(ctx context.Context, poolId string, userId string) erro
 
 	client := api.GetApiClient(ctx)
 
-	httpRes, err := client.ResourcePoolAPI.AddResourcePoolUser(ctx, float32(poolIdNumber), float32(userIdNumber)).Execute()
+	httpRes, err := client.ResourcePoolAPI.AddResourcePoolUser(ctx, poolIdNumber, userIdNumber).Execute()
 	if err := response_inspector.InspectResponse(httpRes, err); err != nil {
 		return err
 	}
@@ -175,14 +175,14 @@ func ResourcePoolAddUser(ctx context.Context, poolId string, userId string) erro
 func ResourcePoolRemoveUser(ctx context.Context, poolId string, userId string) error {
 	logger.Get().Info().Msgf("Removing user '%s' from resource pool '%s'", userId, poolId)
 
-	poolIdNumber, err := strconv.ParseFloat(poolId, 32)
+	poolIdNumber, err := strconv.ParseInt(poolId, 10, 64)
 	if err != nil {
 		err := fmt.Errorf("invalid resource pool ID: '%s'", poolId)
 		logger.Get().Error().Err(err).Msg("")
 		return err
 	}
 
-	userIdNumber, err := strconv.ParseFloat(userId, 32)
+	userIdNumber, err := strconv.ParseInt(userId, 10, 64)
 	if err != nil {
 		err := fmt.Errorf("invalid user ID: '%s'", userId)
 		logger.Get().Error().Err(err).Msg("")
@@ -191,7 +191,7 @@ func ResourcePoolRemoveUser(ctx context.Context, poolId string, userId string) e
 
 	client := api.GetApiClient(ctx)
 
-	httpRes, err := client.ResourcePoolAPI.RemoveResourcePoolUser(ctx, float32(poolIdNumber), float32(userIdNumber)).Execute()
+	httpRes, err := client.ResourcePoolAPI.RemoveResourcePoolUser(ctx, poolIdNumber, userIdNumber).Execute()
 	if err := response_inspector.InspectResponse(httpRes, err); err != nil {
 		return err
 	}
@@ -204,7 +204,7 @@ func ResourcePoolRemoveUser(ctx context.Context, poolId string, userId string) e
 func ResourcePoolGetServers(ctx context.Context, poolId string) error {
 	logger.Get().Info().Msgf("Getting servers for resource pool '%s'", poolId)
 
-	poolIdNumber, err := strconv.ParseFloat(poolId, 32)
+	poolIdNumber, err := strconv.ParseInt(poolId, 10, 64)
 	if err != nil {
 		err := fmt.Errorf("invalid resource pool ID: '%s'", poolId)
 		logger.Get().Error().Err(err).Msg("")
@@ -213,7 +213,7 @@ func ResourcePoolGetServers(ctx context.Context, poolId string) error {
 
 	client := api.GetApiClient(ctx)
 
-	servers, httpRes, err := client.ResourcePoolAPI.GetResourcePoolServers(ctx, float32(poolIdNumber)).Execute()
+	servers, httpRes, err := client.ResourcePoolAPI.GetResourcePoolServers(ctx, poolIdNumber).Execute()
 	if err := response_inspector.InspectResponse(httpRes, err); err != nil {
 		return err
 	}
@@ -225,14 +225,14 @@ func ResourcePoolGetServers(ctx context.Context, poolId string) error {
 func ResourcePoolAddServer(ctx context.Context, poolId string, serverId string) error {
 	logger.Get().Info().Msgf("Adding server '%s' to resource pool '%s'", serverId, poolId)
 
-	poolIdNumber, err := strconv.ParseFloat(poolId, 32)
+	poolIdNumber, err := strconv.ParseInt(poolId, 10, 64)
 	if err != nil {
 		err := fmt.Errorf("invalid resource pool ID: '%s'", poolId)
 		logger.Get().Error().Err(err).Msg("")
 		return err
 	}
 
-	serverIdNumber, err := strconv.ParseFloat(serverId, 32)
+	serverIdNumber, err := strconv.ParseInt(serverId, 10, 64)
 	if err != nil {
 		err := fmt.Errorf("invalid server ID: '%s'", serverId)
 		logger.Get().Error().Err(err).Msg("")
@@ -241,7 +241,7 @@ func ResourcePoolAddServer(ctx context.Context, poolId string, serverId string) 
 
 	client := api.GetApiClient(ctx)
 
-	httpRes, err := client.ResourcePoolAPI.AddServerToResourcePool(ctx, float32(poolIdNumber), float32(serverIdNumber)).Execute()
+	httpRes, err := client.ResourcePoolAPI.AddServerToResourcePool(ctx, poolIdNumber, serverIdNumber).Execute()
 	if err := response_inspector.InspectResponse(httpRes, err); err != nil {
 		return err
 	}
@@ -254,14 +254,14 @@ func ResourcePoolAddServer(ctx context.Context, poolId string, serverId string) 
 func ResourcePoolRemoveServer(ctx context.Context, poolId string, serverId string) error {
 	logger.Get().Info().Msgf("Removing server '%s' from resource pool '%s'", serverId, poolId)
 
-	poolIdNumber, err := strconv.ParseFloat(poolId, 32)
+	poolIdNumber, err := strconv.ParseInt(poolId, 10, 64)
 	if err != nil {
 		err := fmt.Errorf("invalid resource pool ID: '%s'", poolId)
 		logger.Get().Error().Err(err).Msg("")
 		return err
 	}
 
-	serverIdNumber, err := strconv.ParseFloat(serverId, 32)
+	serverIdNumber, err := strconv.ParseInt(serverId, 10, 64)
 	if err != nil {
 		err := fmt.Errorf("invalid server ID: '%s'", serverId)
 		logger.Get().Error().Err(err).Msg("")
@@ -270,7 +270,7 @@ func ResourcePoolRemoveServer(ctx context.Context, poolId string, serverId strin
 
 	client := api.GetApiClient(ctx)
 
-	httpRes, err := client.ResourcePoolAPI.RemoveServerFromResourcePool(ctx, float32(poolIdNumber), float32(serverIdNumber)).Execute()
+	httpRes, err := client.ResourcePoolAPI.RemoveServerFromResourcePool(ctx, poolIdNumber, serverIdNumber).Execute()
 	if err := response_inspector.InspectResponse(httpRes, err); err != nil {
 		return err
 	}
@@ -283,7 +283,7 @@ func ResourcePoolRemoveServer(ctx context.Context, poolId string, serverId strin
 func ResourcePoolGetSubnetPools(ctx context.Context, poolId string) error {
 	logger.Get().Info().Msgf("Getting subnet pools for resource pool '%s'", poolId)
 
-	poolIdNumber, err := strconv.ParseFloat(poolId, 32)
+	poolIdNumber, err := strconv.ParseInt(poolId, 10, 64)
 	if err != nil {
 		err := fmt.Errorf("invalid resource pool ID: '%s'", poolId)
 		logger.Get().Error().Err(err).Msg("")
@@ -292,7 +292,7 @@ func ResourcePoolGetSubnetPools(ctx context.Context, poolId string) error {
 
 	client := api.GetApiClient(ctx)
 
-	subnetPools, httpRes, err := client.ResourcePoolAPI.GetResourcePoolSubnetPools(ctx, float32(poolIdNumber)).Execute()
+	subnetPools, httpRes, err := client.ResourcePoolAPI.GetResourcePoolSubnetPools(ctx, poolIdNumber).Execute()
 	if err := response_inspector.InspectResponse(httpRes, err); err != nil {
 		return err
 	}
@@ -304,14 +304,14 @@ func ResourcePoolGetSubnetPools(ctx context.Context, poolId string) error {
 func ResourcePoolAddSubnetPool(ctx context.Context, poolId string, subnetPoolId string) error {
 	logger.Get().Info().Msgf("Adding subnet pool '%s' to resource pool '%s'", subnetPoolId, poolId)
 
-	poolIdNumber, err := strconv.ParseFloat(poolId, 32)
+	poolIdNumber, err := strconv.ParseInt(poolId, 10, 64)
 	if err != nil {
 		err := fmt.Errorf("invalid resource pool ID: '%s'", poolId)
 		logger.Get().Error().Err(err).Msg("")
 		return err
 	}
 
-	subnetPoolIdNumber, err := strconv.ParseFloat(subnetPoolId, 32)
+	subnetPoolIdNumber, err := strconv.ParseInt(subnetPoolId, 10, 64)
 	if err != nil {
 		err := fmt.Errorf("invalid subnet pool ID: '%s'", subnetPoolId)
 		logger.Get().Error().Err(err).Msg("")
@@ -320,7 +320,7 @@ func ResourcePoolAddSubnetPool(ctx context.Context, poolId string, subnetPoolId 
 
 	client := api.GetApiClient(ctx)
 
-	httpRes, err := client.ResourcePoolAPI.AddSubnetPoolToResourcePool(ctx, float32(poolIdNumber), float32(subnetPoolIdNumber)).Execute()
+	httpRes, err := client.ResourcePoolAPI.AddSubnetPoolToResourcePool(ctx, poolIdNumber, subnetPoolIdNumber).Execute()
 	if err := response_inspector.InspectResponse(httpRes, err); err != nil {
 		return err
 	}
@@ -333,14 +333,14 @@ func ResourcePoolAddSubnetPool(ctx context.Context, poolId string, subnetPoolId 
 func ResourcePoolRemoveSubnetPool(ctx context.Context, poolId string, subnetPoolId string) error {
 	logger.Get().Info().Msgf("Removing subnet pool '%s' from resource pool '%s'", subnetPoolId, poolId)
 
-	poolIdNumber, err := strconv.ParseFloat(poolId, 32)
+	poolIdNumber, err := strconv.ParseInt(poolId, 10, 64)
 	if err != nil {
 		err := fmt.Errorf("invalid resource pool ID: '%s'", poolId)
 		logger.Get().Error().Err(err).Msg("")
 		return err
 	}
 
-	subnetPoolIdNumber, err := strconv.ParseFloat(subnetPoolId, 32)
+	subnetPoolIdNumber, err := strconv.ParseInt(subnetPoolId, 10, 64)
 	if err != nil {
 		err := fmt.Errorf("invalid subnet pool ID: '%s'", subnetPoolId)
 		logger.Get().Error().Err(err).Msg("")
@@ -349,7 +349,7 @@ func ResourcePoolRemoveSubnetPool(ctx context.Context, poolId string, subnetPool
 
 	client := api.GetApiClient(ctx)
 
-	httpRes, err := client.ResourcePoolAPI.RemoveSubnetPoolFromResourcePool(ctx, float32(poolIdNumber), float32(subnetPoolIdNumber)).Execute()
+	httpRes, err := client.ResourcePoolAPI.RemoveSubnetPoolFromResourcePool(ctx, poolIdNumber, subnetPoolIdNumber).Execute()
 	if err := response_inspector.InspectResponse(httpRes, err); err != nil {
 		return err
 	}

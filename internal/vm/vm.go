@@ -47,15 +47,15 @@ var vmPrintConfig = formatter.PrintConfig{
 	},
 }
 
-func GetVMId(vmId string) (float32, error) {
-	vmIdNumeric, err := strconv.ParseFloat(vmId, 32)
+func GetVMId(vmId string) (int64, error) {
+	vmIdNumeric, err := strconv.ParseInt(vmId, 10, 64)
 	if err != nil {
 		err := fmt.Errorf("invalid VM ID: '%s'", vmId)
 		logger.Get().Error().Err(err).Msg("")
 		return 0, err
 	}
 
-	return float32(vmIdNumeric), nil
+	return vmIdNumeric, nil
 }
 
 func VMGet(ctx context.Context, vmId string) error {

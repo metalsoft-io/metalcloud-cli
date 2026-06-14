@@ -265,13 +265,13 @@ func StorageConfigExample(ctx context.Context) error {
 	return formatter.PrintResult(storageConfiguration, nil)
 }
 
-func getStorageId(storageId string) (float32, error) {
-	storageIdNumeric, err := strconv.ParseFloat(storageId, 32)
+func getStorageId(storageId string) (int64, error) {
+	storageIdNumeric, err := strconv.ParseInt(storageId, 10, 64)
 	if err != nil {
 		err := fmt.Errorf("invalid storage ID: '%s'", storageId)
 		logger.Get().Error().Err(err).Msg("")
 		return 0, err
 	}
 
-	return float32(storageIdNumeric), nil
+	return storageIdNumeric, nil
 }

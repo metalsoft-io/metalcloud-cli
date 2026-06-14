@@ -60,7 +60,7 @@ func ExtensionInstanceList(ctx context.Context, infrastructureIdOrLabel string) 
 
 	client := api.GetApiClient(ctx)
 
-	instances, httpRes, err := client.ExtensionInstanceAPI.GetExtensionInstances(ctx, float32(infra.Id)).Execute()
+	instances, httpRes, err := client.ExtensionInstanceAPI.GetExtensionInstances(ctx, infra.Id).Execute()
 	if err := response_inspector.InspectResponse(httpRes, err); err != nil {
 		return err
 	}
@@ -96,7 +96,7 @@ func ExtensionInstanceCreate(ctx context.Context, infrastructureIdOrLabel string
 
 	client := api.GetApiClient(ctx)
 
-	instance, httpRes, err := client.ExtensionInstanceAPI.CreateExtensionInstance(ctx, float32(infra.Id)).CreateExtensionInstance(payload).Execute()
+	instance, httpRes, err := client.ExtensionInstanceAPI.CreateExtensionInstance(ctx, infra.Id).CreateExtensionInstance(payload).Execute()
 	if err := response_inspector.InspectResponse(httpRes, err); err != nil {
 		return err
 	}
@@ -161,12 +161,12 @@ func ExtensionInstanceDelete(ctx context.Context, extensionInstanceId string) er
 	return nil
 }
 
-func GetExtensionInstanceId(extensionInstanceId string) (float32, error) {
-	id, err := strconv.ParseFloat(extensionInstanceId, 32)
+func GetExtensionInstanceId(extensionInstanceId string) (int64, error) {
+	id, err := strconv.ParseInt(extensionInstanceId, 10, 64)
 	if err != nil {
 		err := fmt.Errorf("invalid extension instance ID: '%s'", extensionInstanceId)
 		logger.Get().Error().Err(err).Msg("")
 		return 0, err
 	}
-	return float32(id), nil
+	return id, nil
 }

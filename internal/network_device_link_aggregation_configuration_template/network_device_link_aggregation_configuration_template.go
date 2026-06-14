@@ -222,13 +222,13 @@ func NetworkDeviceLinkAggregationConfigurationTemplateDelete(ctx context.Context
 	return nil
 }
 
-func getNetworkDeviceLinkAggregationConfigurationTemplateId(networkDeviceLinkAggregationConfigurationTemplateId string) (float32, error) {
-	networkDeviceLinkAggregationConfigurationTemplateIdNumeric, err := strconv.ParseFloat(networkDeviceLinkAggregationConfigurationTemplateId, 32)
+func getNetworkDeviceLinkAggregationConfigurationTemplateId(networkDeviceLinkAggregationConfigurationTemplateId string) (int64, error) {
+	networkDeviceLinkAggregationConfigurationTemplateIdNumeric, err := strconv.ParseInt(networkDeviceLinkAggregationConfigurationTemplateId, 10, 64)
 	if err != nil {
 		err := fmt.Errorf("invalid network device link aggregation configuration template ID: '%s'", networkDeviceLinkAggregationConfigurationTemplateId)
 		logger.Get().Error().Err(err).Msg("")
 		return 0, err
 	}
 
-	return float32(networkDeviceLinkAggregationConfigurationTemplateIdNumeric), nil
+	return networkDeviceLinkAggregationConfigurationTemplateIdNumeric, nil
 }

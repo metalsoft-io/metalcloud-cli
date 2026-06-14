@@ -220,12 +220,12 @@ func validateJobId(jobId string) error {
 	return nil
 }
 
-func getJobId(jobId string) (float32, error) {
-	id, err := strconv.ParseFloat(jobId, 32)
+func getJobId(jobId string) (int64, error) {
+	id, err := strconv.ParseInt(jobId, 10, 64)
 	if err != nil {
 		err := fmt.Errorf("invalid job ID: '%s'", jobId)
 		logger.Get().Error().Err(err).Msg("")
 		return 0, err
 	}
-	return float32(id), nil
+	return id, nil
 }

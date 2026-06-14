@@ -85,8 +85,8 @@ var DeviceAuthProviderCredentialsPrintConfig = formatter.PrintConfig{
 func GetDeviceAuthProviderByIdOrLabel(ctx context.Context, idOrLabel string) (*sdk.DeviceAuthProvider, error) {
 	client := api.GetApiClient(ctx)
 
-	if id, err := strconv.ParseFloat(idOrLabel, 32); err == nil {
-		provider, httpRes, err := client.SiteAPI.GetDeviceAuthProviderById(ctx, float32(id)).Execute()
+	if id, err := strconv.ParseInt(idOrLabel, 10, 64); err == nil {
+		provider, httpRes, err := client.SiteAPI.GetDeviceAuthProviderById(ctx, id).Execute()
 		if err := response_inspector.InspectResponse(httpRes, err); err != nil {
 			return nil, err
 		}
@@ -182,7 +182,7 @@ func DeviceAuthProviderUpdate(ctx context.Context, idOrLabel string, config []by
 	client := api.GetApiClient(ctx)
 
 	updated, httpRes, err := client.SiteAPI.
-		UpdateDeviceAuthProvider(ctx, float32(provider.Id)).
+		UpdateDeviceAuthProvider(ctx, int64(provider.Id)).
 		UpdateDeviceAuthProvider(updateRequest).
 		IfMatch(strconv.Itoa(int(provider.Revision))).
 		Execute()
@@ -204,7 +204,7 @@ func DeviceAuthProviderDelete(ctx context.Context, idOrLabel string) error {
 	client := api.GetApiClient(ctx)
 
 	httpRes, err := client.SiteAPI.
-		DeleteDeviceAuthProvider(ctx, float32(provider.Id)).
+		DeleteDeviceAuthProvider(ctx, int64(provider.Id)).
 		IfMatch(strconv.Itoa(int(provider.Revision))).
 		Execute()
 	if err := response_inspector.InspectResponse(httpRes, err); err != nil {
@@ -226,7 +226,7 @@ func DeviceAuthProviderGetCredentials(ctx context.Context, idOrLabel string) err
 	client := api.GetApiClient(ctx)
 
 	credentials, httpRes, err := client.SiteAPI.
-		GetDeviceAuthProviderCredentials(ctx, float32(provider.Id)).
+		GetDeviceAuthProviderCredentials(ctx, int64(provider.Id)).
 		Execute()
 	if err := response_inspector.InspectResponse(httpRes, err); err != nil {
 		return err
@@ -246,7 +246,7 @@ func DeviceAuthProviderUpdateSharedSecret(ctx context.Context, idOrLabel string,
 	client := api.GetApiClient(ctx)
 
 	httpRes, err := client.SiteAPI.
-		UpdateDeviceAuthProviderSharedSecret(ctx, float32(provider.Id)).
+		UpdateDeviceAuthProviderSharedSecret(ctx, int64(provider.Id)).
 		UpdateDeviceAuthProviderSharedSecret(sdk.UpdateDeviceAuthProviderSharedSecret{SharedSecret: sharedSecret}).
 		IfMatch(strconv.Itoa(int(provider.Revision))).
 		Execute()

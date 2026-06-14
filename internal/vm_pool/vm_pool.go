@@ -76,7 +76,7 @@ func VMPoolGet(ctx context.Context, vmPoolId string) error {
 
 	client := api.GetApiClient(ctx)
 
-	vmPool, httpRes, err := client.VMPoolAPI.GetVMPool(ctx, vmPoolIdNumeric).Execute()
+	vmPool, httpRes, err := client.VMPoolAPI.GetVMPool(ctx, float32(vmPoolIdNumeric)).Execute()
 	if err := response_inspector.InspectResponse(httpRes, err); err != nil {
 		return err
 	}
@@ -299,13 +299,13 @@ func VMPoolImportVMs(ctx context.Context, vmPoolId string, importVMs sdk.VMPoolI
 	return nil
 }
 
-func getVMPoolId(vmPoolId string) (float32, error) {
-	vmPoolIdNumeric, err := strconv.ParseFloat(vmPoolId, 32)
+func getVMPoolId(vmPoolId string) (int64, error) {
+	vmPoolIdNumeric, err := strconv.ParseInt(vmPoolId, 10, 64)
 	if err != nil {
 		err := fmt.Errorf("invalid VM pool ID: '%s'", vmPoolId)
 		logger.Get().Error().Err(err).Msg("")
 		return 0, err
 	}
 
-	return float32(vmPoolIdNumeric), nil
+	return vmPoolIdNumeric, nil
 }

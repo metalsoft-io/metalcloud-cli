@@ -203,7 +203,7 @@ func (vc *VendorCatalog) getHpeFirmwareTargets(ctx context.Context) ([]string, e
 
 			logger.Get().Debug().Msgf("Retrieving firmware inventory for HPE server %d (type %s)", int(server.ServerId), serverType.Label)
 
-			inventory, httpRes, err := client.ServerFirmwareAPI.GetServerFirmwareInventory(ctx, float32(server.ServerId)).Execute()
+			inventory, httpRes, err := client.ServerFirmwareAPI.GetServerFirmwareInventory(ctx, server.ServerId).Execute()
 			if err := response_inspector.InspectResponse(httpRes, err); err != nil {
 				logger.Get().Warn().Err(err).Msgf("Failed to retrieve firmware inventory for server %d - skipping", int(server.ServerId))
 				continue

@@ -168,7 +168,7 @@ func InfrastructureUpdate(ctx context.Context, infrastructureIdOrLabel string, l
 
 	client := api.GetApiClient(ctx)
 
-	infrastructureInfo, httpRes, err := client.InfrastructureAPI.UpdateInfrastructureConfiguration(ctx, float32(infrastructureInfo.Id)).
+	infrastructureInfo, httpRes, err := client.InfrastructureAPI.UpdateInfrastructureConfiguration(ctx, int64(infrastructureInfo.Id)).
 		UpdateInfrastructure(updateInfrastructure).
 		IfMatch(strconv.Itoa(int(*infrastructureInfo.Config.Revision))).
 		Execute()
@@ -190,7 +190,7 @@ func InfrastructureDelete(ctx context.Context, infrastructureIdOrLabel string) e
 	client := api.GetApiClient(ctx)
 
 	httpRes, err := client.InfrastructureAPI.
-		DeleteInfrastructure(ctx, float32(infrastructureInfo.Id)).
+		DeleteInfrastructure(ctx, int64(infrastructureInfo.Id)).
 		IfMatch(strconv.Itoa(int(infrastructureInfo.Revision))).
 		Execute()
 	if err := response_inspector.InspectResponse(httpRes, err); err != nil {
@@ -222,7 +222,7 @@ func InfrastructureDeploy(ctx context.Context, infrastructureIdOrLabel string, a
 	client := api.GetApiClient(ctx)
 
 	infrastructureInfo, httpRes, err := client.InfrastructureAPI.
-		DeployInfrastructure(ctx, float32(infrastructureInfo.Id)).
+		DeployInfrastructure(ctx, int64(infrastructureInfo.Id)).
 		InfrastructureDeployOptions(infrastructureDeployOptions).
 		Execute()
 	if err := response_inspector.InspectResponse(httpRes, err); err != nil {
@@ -243,7 +243,7 @@ func InfrastructureRevert(ctx context.Context, infrastructureIdOrLabel string) e
 	client := api.GetApiClient(ctx)
 
 	httpRes, err := client.InfrastructureAPI.
-		RevertInfrastructure(ctx, float32(infrastructureInfo.Id)).
+		RevertInfrastructure(ctx, int64(infrastructureInfo.Id)).
 		Execute()
 	if err := response_inspector.InspectResponse(httpRes, err); err != nil {
 		return err
@@ -263,7 +263,7 @@ func InfrastructureCancelDeploy(ctx context.Context, infrastructureIdOrLabel str
 	client := api.GetApiClient(ctx)
 
 	infrastructureInfo, httpRes, err := client.InfrastructureAPI.
-		CancelDeployInfrastructure(ctx, float32(infrastructureInfo.Id)).
+		CancelDeployInfrastructure(ctx, int64(infrastructureInfo.Id)).
 		Execute()
 	if err := response_inspector.InspectResponse(httpRes, err); err != nil {
 		return err
@@ -320,7 +320,7 @@ func InfrastructureGetUsers(ctx context.Context, infrastructureIdOrLabel string)
 	client := api.GetApiClient(ctx)
 
 	usersPaginated, httpRes, err := client.InfrastructureAPI.
-		GetInfrastructureUsers(ctx, float32(infrastructureInfo.Id)).
+		GetInfrastructureUsers(ctx, int64(infrastructureInfo.Id)).
 		Execute()
 	if err := response_inspector.InspectResponse(httpRes, err); err != nil {
 		return err
@@ -364,7 +364,7 @@ func InfrastructureAddUser(ctx context.Context, infrastructureIdOrLabel string, 
 	client := api.GetApiClient(ctx)
 
 	httpRes, err := client.InfrastructureAPI.
-		AddInfrastructureUser(ctx, float32(infrastructureInfo.Id)).
+		AddInfrastructureUser(ctx, int64(infrastructureInfo.Id)).
 		AddUserToInfrastructure(addUserConfig).
 		Execute()
 	if err := response_inspector.InspectResponse(httpRes, err); err != nil {
@@ -383,7 +383,7 @@ func InfrastructureRemoveUser(ctx context.Context, infrastructureIdOrLabel strin
 		return err
 	}
 
-	userIdNumber, err := strconv.ParseFloat(userId, 32)
+	userIdNumber, err := strconv.ParseInt(userId, 10, 64)
 	if err != nil {
 		err := fmt.Errorf("invalid user ID: '%s'", userId)
 		logger.Get().Error().Err(err).Msg("")
@@ -393,7 +393,7 @@ func InfrastructureRemoveUser(ctx context.Context, infrastructureIdOrLabel strin
 	client := api.GetApiClient(ctx)
 
 	httpRes, err := client.InfrastructureAPI.
-		RemoveInfrastructureUser(ctx, float32(infrastructureInfo.Id), float32(userIdNumber)).
+		RemoveInfrastructureUser(ctx, int64(infrastructureInfo.Id), int64(userIdNumber)).
 		Execute()
 	if err := response_inspector.InspectResponse(httpRes, err); err != nil {
 		return err
@@ -414,7 +414,7 @@ func InfrastructureGetStatistics(ctx context.Context, infrastructureIdOrLabel st
 	client := api.GetApiClient(ctx)
 
 	statistics, httpRes, err := client.InfrastructureAPI.
-		GetInfrastructureStatistics(ctx, float32(infrastructureInfo.Id)).
+		GetInfrastructureStatistics(ctx, int64(infrastructureInfo.Id)).
 		Execute()
 	if err := response_inspector.InspectResponse(httpRes, err); err != nil {
 		return err
@@ -459,7 +459,7 @@ func InfrastructureGetConfigInfo(ctx context.Context, infrastructureIdOrLabel st
 	client := api.GetApiClient(ctx)
 
 	configInfo, httpRes, err := client.InfrastructureAPI.
-		GetInfrastructureConfigInfo(ctx, float32(infrastructureInfo.Id)).
+		GetInfrastructureConfigInfo(ctx, int64(infrastructureInfo.Id)).
 		Execute()
 	if err := response_inspector.InspectResponse(httpRes, err); err != nil {
 		return err
@@ -560,18 +560,18 @@ func InfrastructureGetUtilization(ctx context.Context, userId int, startTime tim
 	}
 
 	if len(siteIds) > 0 {
-		request.SiteIds = make([]float32, 0, len(siteIds))
+		request.SiteIds = make([]int64, 0, len(siteIds))
 		for _, siteId := range siteIds {
-			siteIdFloat := float32(siteId)
-			request.SiteIds = append(request.SiteIds, siteIdFloat)
+			siteIdInt := int64(siteId)
+			request.SiteIds = append(request.SiteIds, siteIdInt)
 		}
 	}
 
 	if len(infrastructureIds) > 0 {
-		request.InfrastructureIds = make([]float32, 0, len(infrastructureIds))
+		request.InfrastructureIds = make([]int64, 0, len(infrastructureIds))
 		for _, infrastructureId := range infrastructureIds {
-			infrastructureIdFloat := float32(infrastructureId)
-			request.InfrastructureIds = append(request.InfrastructureIds, infrastructureIdFloat)
+			infrastructureIdInt := int64(infrastructureId)
+			request.InfrastructureIds = append(request.InfrastructureIds, infrastructureIdInt)
 		}
 	}
 

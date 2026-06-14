@@ -246,13 +246,13 @@ func NetworkDeviceConfigurationTemplateDelete(ctx context.Context, networkDevice
 	return nil
 }
 
-func getNetworkDeviceConfigurationTemplateId(networkDeviceConfigurationTemplateId string) (float32, error) {
-	networkDeviceConfigurationTemplateIdNumeric, err := strconv.ParseFloat(networkDeviceConfigurationTemplateId, 32)
+func getNetworkDeviceConfigurationTemplateId(networkDeviceConfigurationTemplateId string) (int64, error) {
+	networkDeviceConfigurationTemplateIdNumeric, err := strconv.ParseInt(networkDeviceConfigurationTemplateId, 10, 64)
 	if err != nil {
 		err := fmt.Errorf("invalid network device configuration template ID: '%s'", networkDeviceConfigurationTemplateId)
 		logger.Get().Error().Err(err).Msg("")
 		return 0, err
 	}
 
-	return float32(networkDeviceConfigurationTemplateIdNumeric), nil
+	return networkDeviceConfigurationTemplateIdNumeric, nil
 }

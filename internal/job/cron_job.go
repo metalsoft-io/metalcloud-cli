@@ -170,7 +170,7 @@ func CronJobUpdate(ctx context.Context, cronJobId string, configBytes []byte) er
 
 	client := api.GetApiClient(ctx)
 
-	httpRes, err := client.JobAPI.UpdateCronJob(ctx, id).UpdateCronJob(cronJobConfig).Execute()
+	_, httpRes, err := client.JobAPI.UpdateCronJob(ctx, float32(id)).UpdateCronJob(cronJobConfig).Execute()
 	if err := response_inspector.InspectResponse(httpRes, err); err != nil {
 		return err
 	}
@@ -198,10 +198,10 @@ func CronJobDelete(ctx context.Context, cronJobId string) error {
 	return nil
 }
 
-func getCronJobId(cronJobId string) (float32, error) {
-	id, err := strconv.ParseFloat(cronJobId, 32)
+func getCronJobId(cronJobId string) (int64, error) {
+	id, err := strconv.ParseInt(cronJobId, 10, 64)
 	if err != nil {
 		return 0, fmt.Errorf("invalid cron job ID '%s': %w", cronJobId, err)
 	}
-	return float32(id), nil
+	return id, nil
 }

@@ -2,12 +2,14 @@ package auth
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 
 	"github.com/metalsoft-io/metalcloud-cli/pkg/api"
 	"github.com/metalsoft-io/metalcloud-cli/pkg/formatter"
 	"github.com/metalsoft-io/metalcloud-cli/pkg/logger"
 	"github.com/metalsoft-io/metalcloud-cli/pkg/response_inspector"
+	sdk "github.com/metalsoft-io/metalcloud-sdk-go"
 )
 
 const (
@@ -232,33 +234,52 @@ func getAuthConfig(ctx context.Context) (map[string]interface{}, error) {
 		return nil, err
 	}
 
-	if configuration == nil {
-		logger.Get().Warn().Msg("No configuration found")
-		return nil, nil
-	}
-
-	authConfig, ok := configuration["auth"]
-	if !ok {
-		authConfig = configuration
-	}
-
-	if authConfig == nil {
+	if configuration == nil || configuration.Auth == nil {
 		logger.Get().Warn().Msg("No auth configuration found")
 		return nil, nil
 	}
 
-	return authConfig.(map[string]interface{}), nil
+	return dtoToMap(configuration.Auth)
+}
+
+func dtoToMap(v interface{}) (map[string]interface{}, error) {
+	data, err := json.Marshal(v)
+	if err != nil {
+		return nil, err
+	}
+
+	var result map[string]interface{}
+	if err := json.Unmarshal(data, &result); err != nil {
+		return nil, err
+	}
+
+	return result, nil
 }
 
 func patchAuthConfig(ctx context.Context, authConfigChange map[string]interface{}) (map[string]interface{}, error) {
 	client := api.GetApiClient(ctx)
 
-	authConfig, httpRes, err := client.ConfigurationAPI.PatchConfiguration(ctx, "auth").Body(authConfigChange).Execute()
+	authConfigDto := sdk.NewAuthConfigurationDto()
+	data, err := json.Marshal(authConfigChange)
+	if err != nil {
+		return nil, err
+	}
+	if err := json.Unmarshal(data, authConfigDto); err != nil {
+		return nil, err
+	}
+
+	putRequest := sdk.AuthConfigurationDtoAsPutConfigurationRequest(authConfigDto)
+
+	result, httpRes, err := client.ConfigurationAPI.PatchConfiguration(ctx, "auth").PutConfigurationRequest(putRequest).Execute()
 	if err := response_inspector.InspectResponse(httpRes, err); err != nil {
 		return nil, err
 	}
 
-	return authConfig, nil
+	if result == nil || result.AuthConfigurationDto == nil {
+		return nil, nil
+	}
+
+	return dtoToMap(result.AuthConfigurationDto)
 }
 
 func getLdapConfig(authConfig map[string]interface{}) map[string]interface{} {

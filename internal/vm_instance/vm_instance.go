@@ -91,12 +91,12 @@ var vmInstancePrintConfig = formatter.PrintConfig{
 func VMInstanceGet(ctx context.Context, infrastructureId string, vmInstanceId string) error {
 	logger.Get().Info().Msgf("Get VM instance details for %s in infrastructure %s", vmInstanceId, infrastructureId)
 
-	infraIdNumerical, err := utils.GetFloat32FromString(infrastructureId)
+	infraIdNumerical, err := utils.GetInt64FromString(infrastructureId)
 	if err != nil {
 		return err
 	}
 
-	vmInstanceIdNumerical, err := utils.GetFloat32FromString(vmInstanceId)
+	vmInstanceIdNumerical, err := utils.GetInt64FromString(vmInstanceId)
 	if err != nil {
 		return err
 	}
@@ -115,7 +115,7 @@ func VMInstanceGet(ctx context.Context, infrastructureId string, vmInstanceId st
 func VMInstanceList(ctx context.Context, infrastructureId string) error {
 	logger.Get().Info().Msgf("List all VM instances for infrastructure %s", infrastructureId)
 
-	infraIdNumerical, err := utils.GetFloat32FromString(infrastructureId)
+	infraIdNumerical, err := utils.GetInt64FromString(infrastructureId)
 	if err != nil {
 		return err
 	}
@@ -149,12 +149,12 @@ func VMInstanceList(ctx context.Context, infrastructureId string) error {
 func VMInstanceGetConfig(ctx context.Context, infrastructureId string, vmInstanceId string) error {
 	logger.Get().Info().Msgf("Get VM instance configuration for %s in infrastructure %s", vmInstanceId, infrastructureId)
 
-	infraIdNumerical, err := utils.GetFloat32FromString(infrastructureId)
+	infraIdNumerical, err := utils.GetInt64FromString(infrastructureId)
 	if err != nil {
 		return err
 	}
 
-	vmInstanceIdNumerical, err := utils.GetFloat32FromString(vmInstanceId)
+	vmInstanceIdNumerical, err := utils.GetInt64FromString(vmInstanceId)
 	if err != nil {
 		return err
 	}
@@ -173,12 +173,12 @@ func VMInstanceGetConfig(ctx context.Context, infrastructureId string, vmInstanc
 func VMInstancePowerControl(ctx context.Context, infrastructureId string, vmInstanceId string, action string) error {
 	logger.Get().Info().Msgf("Performing %s action on VM instance %s in infrastructure %s", action, vmInstanceId, infrastructureId)
 
-	infraIdNumerical, err := utils.GetFloat32FromString(infrastructureId)
+	infraIdNumerical, err := utils.GetInt64FromString(infrastructureId)
 	if err != nil {
 		return err
 	}
 
-	vmInstanceIdNumerical, err := utils.GetFloat32FromString(vmInstanceId)
+	vmInstanceIdNumerical, err := utils.GetInt64FromString(vmInstanceId)
 	if err != nil {
 		return err
 	}
@@ -211,12 +211,12 @@ func VMInstancePowerControl(ctx context.Context, infrastructureId string, vmInst
 func VMInstanceGetPowerStatus(ctx context.Context, infrastructureId string, vmInstanceId string) error {
 	logger.Get().Info().Msgf("Get VM instance power status for %s in infrastructure %s", vmInstanceId, infrastructureId)
 
-	infraIdNumerical, err := utils.GetFloat32FromString(infrastructureId)
+	infraIdNumerical, err := utils.GetInt64FromString(infrastructureId)
 	if err != nil {
 		return err
 	}
 
-	vmInstanceIdNumerical, err := utils.GetFloat32FromString(vmInstanceId)
+	vmInstanceIdNumerical, err := utils.GetInt64FromString(vmInstanceId)
 	if err != nil {
 		return err
 	}
@@ -236,19 +236,19 @@ func VMInstanceGetPowerStatus(ctx context.Context, infrastructureId string, vmIn
 func VMInstanceGetCredentials(ctx context.Context, infraIdStr string, vmInstanceIdStr string) error {
 	logger.Get().Info().Msgf("Getting credentials for VM instance '%s' in infrastructure '%s'", vmInstanceIdStr, infraIdStr)
 
-	infraId, err := strconv.ParseInt(infraIdStr, 10, 32)
+	infraId, err := strconv.ParseInt(infraIdStr, 10, 64)
 	if err != nil {
 		return fmt.Errorf("invalid infrastructure ID '%s': %w", infraIdStr, err)
 	}
 
-	vmInstanceId, err := strconv.ParseInt(vmInstanceIdStr, 10, 32)
+	vmInstanceId, err := strconv.ParseInt(vmInstanceIdStr, 10, 64)
 	if err != nil {
 		return fmt.Errorf("invalid VM instance ID '%s': %w", vmInstanceIdStr, err)
 	}
 
 	client := api.GetApiClient(ctx)
 
-	creds, httpRes, err := client.VMInstanceAPI.GetVMInstanceCredentials(ctx, int32(infraId), int32(vmInstanceId)).Execute()
+	creds, httpRes, err := client.VMInstanceAPI.GetVMInstanceCredentials(ctx, infraId, vmInstanceId).Execute()
 	if err := response_inspector.InspectResponse(httpRes, err); err != nil {
 		return err
 	}

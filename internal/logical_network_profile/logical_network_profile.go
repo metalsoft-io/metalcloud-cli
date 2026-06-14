@@ -288,12 +288,12 @@ func LogicalNetworkProfileDelete(ctx context.Context, profileId string) error {
 	return nil
 }
 
-func getLogicalNetworkProfileId(profileId string) (float32, error) {
-	id, err := strconv.ParseFloat(profileId, 32)
+func getLogicalNetworkProfileId(profileId string) (int64, error) {
+	id, err := strconv.ParseInt(profileId, 10, 64)
 	if err != nil {
 		err := fmt.Errorf("invalid logical network profile ID: '%s'", profileId)
 		logger.Get().Error().Err(err).Msg("")
 		return 0, err
 	}
-	return float32(id), nil
+	return id, nil
 }

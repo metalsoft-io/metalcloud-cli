@@ -146,7 +146,7 @@ func ServerList(ctx context.Context, showCredentials bool, filterStatus []string
 		data := make([]serverRawWithCredentials, 0, len(raw.Data))
 
 		for _, server := range raw.Data {
-			serverCredentials, httpRes, err := client.ServerAPI.GetServerCredentials(ctx, server.ServerId).Execute()
+			serverCredentials, httpRes, err := client.ServerAPI.GetServerCredentials(ctx, int64(server.ServerId)).Execute()
 			if err := response_inspector.InspectResponse(httpRes, err); err != nil {
 				return err
 			}
@@ -179,7 +179,7 @@ func ServerGet(ctx context.Context, serverId string, showCredentials bool) error
 	}
 
 	if showCredentials {
-		serverCredentials, httpRes, err := client.ServerAPI.GetServerCredentials(ctx, float32(serverInfo.ServerId)).Execute()
+		serverCredentials, httpRes, err := client.ServerAPI.GetServerCredentials(ctx, int64(serverInfo.ServerId)).Execute()
 		if err := response_inspector.InspectResponse(httpRes, err); err != nil {
 			return err
 		}
@@ -597,18 +597,18 @@ func ServerIdentify(ctx context.Context, serverId string) error {
 	return nil
 }
 
-func GetServerId(serverId string) (float32, error) {
-	serverIdNumeric, err := strconv.ParseFloat(serverId, 32)
+func GetServerId(serverId string) (int64, error) {
+	serverIdNumeric, err := strconv.ParseInt(serverId, 10, 64)
 	if err != nil {
 		err := fmt.Errorf("invalid server ID: '%s'", serverId)
 		logger.Get().Error().Err(err).Msg("")
 		return 0, err
 	}
 
-	return float32(serverIdNumeric), nil
+	return int64(serverIdNumeric), nil
 }
 
-func getServerIdAndRevision(ctx context.Context, serverId string) (float32, string, error) {
+func getServerIdAndRevision(ctx context.Context, serverId string) (int64, string, error) {
 	serverIdNumeric, err := GetServerId(serverId)
 	if err != nil {
 		return 0, "", err
@@ -616,10 +616,10 @@ func getServerIdAndRevision(ctx context.Context, serverId string) (float32, stri
 
 	client := api.GetApiClient(ctx)
 
-	server, httpRes, err := client.ServerAPI.GetServerInfo(ctx, float32(serverIdNumeric)).Execute()
+	server, httpRes, err := client.ServerAPI.GetServerInfo(ctx, int64(serverIdNumeric)).Execute()
 	if err := response_inspector.InspectResponse(httpRes, err); err != nil {
 		return 0, "", err
 	}
 
-	return float32(serverIdNumeric), strconv.Itoa(int(server.Revision)), nil
+	return int64(serverIdNumeric), strconv.Itoa(int(server.Revision)), nil
 }

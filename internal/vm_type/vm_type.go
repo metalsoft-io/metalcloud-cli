@@ -90,7 +90,7 @@ func VMTypeGet(ctx context.Context, vmTypeId string) error {
 
 	client := api.GetApiClient(ctx)
 
-	vmType, httpRes, err := client.VMTypeAPI.GetVMType(ctx, vmTypeIdNumeric).Execute()
+	vmType, httpRes, err := client.VMTypeAPI.GetVMType(ctx, float32(vmTypeIdNumeric)).Execute()
 	if err := response_inspector.InspectResponse(httpRes, err); err != nil {
 		return err
 	}
@@ -212,13 +212,13 @@ func VMTypeConfigExample(ctx context.Context) error {
 	return formatter.PrintResult(vmTypeConfig, nil)
 }
 
-func getVMTypeId(vmTypeId string) (float32, error) {
-	vmTypeIdNumeric, err := strconv.ParseFloat(vmTypeId, 32)
+func getVMTypeId(vmTypeId string) (int64, error) {
+	vmTypeIdNumeric, err := strconv.ParseInt(vmTypeId, 10, 64)
 	if err != nil {
 		err := fmt.Errorf("invalid VM type ID: '%s'", vmTypeId)
 		logger.Get().Error().Err(err).Msg("")
 		return 0, err
 	}
 
-	return float32(vmTypeIdNumeric), nil
+	return vmTypeIdNumeric, nil
 }

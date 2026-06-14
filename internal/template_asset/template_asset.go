@@ -187,13 +187,13 @@ func TemplateAssetDelete(ctx context.Context, templateAssetId string) error {
 	return nil
 }
 
-func getTemplateAssetId(templateAssetId string) (float32, error) {
-	templateAssetIdNumeric, err := strconv.ParseFloat(templateAssetId, 32)
+func getTemplateAssetId(templateAssetId string) (int64, error) {
+	templateAssetIdNumeric, err := strconv.ParseInt(templateAssetId, 10, 64)
 	if err != nil {
 		err := fmt.Errorf("invalid template asset ID: '%s'", templateAssetId)
 		logger.Get().Error().Err(err).Msg("")
 		return 0, err
 	}
 
-	return float32(templateAssetIdNumeric), nil
+	return templateAssetIdNumeric, nil
 }

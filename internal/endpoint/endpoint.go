@@ -212,13 +212,13 @@ func EndpointInterfaceList(ctx context.Context, endpointId string) error {
 	return formatter.PrintResult(endpointInterfacesList, &endpointInterfacePrintConfig)
 }
 
-func GetEndpointId(endpointId string) (int32, error) {
-	endpointIdNumeric, err := strconv.ParseFloat(endpointId, 32)
+func GetEndpointId(endpointId string) (int64, error) {
+	endpointIdNumeric, err := strconv.ParseInt(endpointId, 10, 64)
 	if err != nil {
 		err := fmt.Errorf("invalid endpoint ID: '%s'", endpointId)
 		logger.Get().Error().Err(err).Msg("")
 		return 0, err
 	}
 
-	return int32(endpointIdNumeric), nil
+	return endpointIdNumeric, nil
 }

@@ -85,7 +85,7 @@ func ServerDefaultCredentialsList(ctx context.Context, page int, limit int) erro
 func ServerDefaultCredentialsGet(ctx context.Context, credentialsId string) error {
 	logger.Get().Info().Msgf("Get server default credentials '%s'", credentialsId)
 
-	credentialsIdNumber, err := strconv.ParseFloat(credentialsId, 32)
+	credentialsIdNumber, err := strconv.ParseInt(credentialsId, 10, 64)
 	if err != nil {
 		err := fmt.Errorf("invalid server default credentials ID: '%s'", credentialsId)
 		logger.Get().Error().Err(err).Msg("")
@@ -94,7 +94,7 @@ func ServerDefaultCredentialsGet(ctx context.Context, credentialsId string) erro
 
 	client := api.GetApiClient(ctx)
 
-	credentials, httpRes, err := client.ServerDefaultCredentialsAPI.GetServerDefaultCredentialsInfo(ctx, float32(credentialsIdNumber)).Execute()
+	credentials, httpRes, err := client.ServerDefaultCredentialsAPI.GetServerDefaultCredentialsInfo(ctx, credentialsIdNumber).Execute()
 	if err := response_inspector.InspectResponse(httpRes, err); err != nil {
 		return err
 	}
@@ -105,7 +105,7 @@ func ServerDefaultCredentialsGet(ctx context.Context, credentialsId string) erro
 func ServerDefaultCredentialsGetCredentials(ctx context.Context, credentialsId string) error {
 	logger.Get().Info().Msgf("Get server default credentials unencrypted password for '%s'", credentialsId)
 
-	credentialsIdNumber, err := strconv.ParseFloat(credentialsId, 32)
+	credentialsIdNumber, err := strconv.ParseInt(credentialsId, 10, 64)
 	if err != nil {
 		err := fmt.Errorf("invalid server default credentials ID: '%s'", credentialsId)
 		logger.Get().Error().Err(err).Msg("")
@@ -114,7 +114,7 @@ func ServerDefaultCredentialsGetCredentials(ctx context.Context, credentialsId s
 
 	client := api.GetApiClient(ctx)
 
-	credentials, httpRes, err := client.ServerDefaultCredentialsAPI.GetServerDefaultCredentialsCredentials(ctx, float32(credentialsIdNumber)).Execute()
+	credentials, httpRes, err := client.ServerDefaultCredentialsAPI.GetServerDefaultCredentialsCredentials(ctx, credentialsIdNumber).Execute()
 	if err := response_inspector.InspectResponse(httpRes, err); err != nil {
 		return err
 	}
@@ -170,7 +170,7 @@ func ServerDefaultCredentialsCreate(ctx context.Context, siteId float32, serialN
 func ServerDefaultCredentialsDelete(ctx context.Context, credentialsId string) error {
 	logger.Get().Info().Msgf("Deleting server default credentials '%s'", credentialsId)
 
-	credentialsIdNumber, err := strconv.ParseFloat(credentialsId, 32)
+	credentialsIdNumber, err := strconv.ParseInt(credentialsId, 10, 64)
 	if err != nil {
 		err := fmt.Errorf("invalid server default credentials ID: '%s'", credentialsId)
 		logger.Get().Error().Err(err).Msg("")
@@ -179,7 +179,7 @@ func ServerDefaultCredentialsDelete(ctx context.Context, credentialsId string) e
 
 	client := api.GetApiClient(ctx)
 
-	httpRes, err := client.ServerDefaultCredentialsAPI.DeleteServerDefaultCredentials(ctx, float32(credentialsIdNumber)).Execute()
+	httpRes, err := client.ServerDefaultCredentialsAPI.DeleteServerDefaultCredentials(ctx, credentialsIdNumber).Execute()
 	if err := response_inspector.InspectResponse(httpRes, err); err != nil {
 		return err
 	}

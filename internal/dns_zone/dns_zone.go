@@ -203,13 +203,13 @@ func DNSZoneRecords(ctx context.Context, dnsZoneId string) error {
 	return formatter.PrintResult(result, &dnsRecordSetPrintConfig)
 }
 
-func GetDNSZoneId(dnsZoneId string) (float32, error) {
-	dnsZoneIdNumeric, err := strconv.ParseFloat(dnsZoneId, 32)
+func GetDNSZoneId(dnsZoneId string) (int64, error) {
+	dnsZoneIdNumeric, err := strconv.ParseInt(dnsZoneId, 10, 64)
 	if err != nil {
 		err := fmt.Errorf("invalid DNS zone ID: '%s'", dnsZoneId)
 		logger.Get().Error().Err(err).Msg("")
 		return 0, err
 	}
 
-	return float32(dnsZoneIdNumeric), nil
+	return dnsZoneIdNumeric, nil
 }

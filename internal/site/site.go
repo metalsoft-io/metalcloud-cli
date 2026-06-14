@@ -219,7 +219,7 @@ func SiteUpdate(ctx context.Context, siteIdOrName string, label string) error {
 
 	client := api.GetApiClient(ctx)
 
-	siteInfo, httpRes, err := client.SiteAPI.UpdateSite(ctx, float32(siteInfo.Id)).
+	siteInfo, httpRes, err := client.SiteAPI.UpdateSite(ctx, siteInfo.Id).
 		SiteUpdate(updateSite).
 		IfMatch(strconv.Itoa(int(siteInfo.Revision))).
 		Execute()
@@ -241,7 +241,7 @@ func SiteDecommission(ctx context.Context, siteIdOrName string) error {
 	client := api.GetApiClient(ctx)
 
 	httpRes, err := client.SiteAPI.
-		DecommissionSite(ctx, float32(siteInfo.Id)).
+		DecommissionSite(ctx, siteInfo.Id).
 		IfMatch(strconv.Itoa(int(siteInfo.Revision))).
 		Execute()
 	if err := response_inspector.InspectResponse(httpRes, err); err != nil {
@@ -261,7 +261,7 @@ func SiteGetAgents(ctx context.Context, siteIdOrName string) error {
 
 	client := api.GetApiClient(ctx)
 
-	agents, httpRes, err := client.SiteAPI.GetAgents(ctx, float32(siteInfo.Id)).Execute()
+	agents, httpRes, err := client.SiteAPI.GetAgents(ctx, siteInfo.Id).Execute()
 	if err := response_inspector.InspectResponse(httpRes, err); err != nil {
 		return err
 	}
@@ -279,7 +279,7 @@ func SiteGetConfig(ctx context.Context, siteIdOrName string) error {
 
 	client := api.GetApiClient(ctx)
 
-	siteConfig, httpRes, err := client.SiteAPI.GetSiteConfig(ctx, float32(siteInfo.Id)).Execute()
+	siteConfig, httpRes, err := client.SiteAPI.GetSiteConfig(ctx, siteInfo.Id).Execute()
 	if err := response_inspector.InspectResponse(httpRes, err); err != nil {
 		return err
 	}
@@ -297,7 +297,7 @@ func SiteOneLiner(ctx context.Context, siteIdOrLabel string, onelinerConfig sdk.
 
 	client := api.GetApiClient(ctx)
 
-	_, httpRes, sdkErr := client.SiteAPI.GetSiteControllerOneLiner(ctx, float32(site.Id)).
+	_, httpRes, sdkErr := client.SiteAPI.GetSiteControllerOneLiner(ctx, site.Id).
 		GenerateSiteControllerOneliner(onelinerConfig).
 		Execute()
 
@@ -339,7 +339,7 @@ func SiteUpdateConfig(ctx context.Context, siteIdOrName string, config []byte) e
 	client := api.GetApiClient(ctx)
 
 	// First get the current config to get the revision number
-	currentSite, httpRes, err := client.SiteAPI.GetSite(ctx, float32(siteInfo.Id)).Execute()
+	currentSite, httpRes, err := client.SiteAPI.GetSite(ctx, siteInfo.Id).Execute()
 	if err := response_inspector.InspectResponse(httpRes, err); err != nil {
 		return err
 	}
@@ -351,7 +351,7 @@ func SiteUpdateConfig(ctx context.Context, siteIdOrName string, config []byte) e
 		return err
 	}
 
-	updatedConfig, httpRes, err := client.SiteAPI.UpdateSiteConfig(ctx, float32(siteInfo.Id)).
+	updatedConfig, httpRes, err := client.SiteAPI.UpdateSiteConfig(ctx, siteInfo.Id).
 		SiteConfigUpdate(configUpdate).
 		IfMatch(strconv.Itoa(int(currentSite.Revision))).
 		Execute()

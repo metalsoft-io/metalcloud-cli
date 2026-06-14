@@ -93,14 +93,14 @@ func FabricLinksGet(ctx context.Context, fabricId string) error {
 		return err
 	}
 
-	fabricIdNumeric, err := utils.GetFloat32FromString(fabricInfo.Id)
+	fabricIdNumeric, err := utils.GetInt64FromString(fabricInfo.Id)
 	if err != nil {
 		return err
 	}
 
 	client := api.GetApiClient(ctx)
 
-	linksList, httpRes, err := client.NetworkFabricAPI.GetNetworkFabricLinks(ctx, int32(fabricIdNumeric)).Limit(1000).Execute()
+	linksList, httpRes, err := client.NetworkFabricAPI.GetNetworkFabricLinks(ctx, fabricIdNumeric).Limit(1000).Execute()
 	if err := response_inspector.InspectResponse(httpRes, err); err != nil {
 		return err
 	}
@@ -150,10 +150,10 @@ type interfaceInfo struct {
 	NetworkDeviceRef  string
 }
 
-func getFabricInterfacesMap(ctx context.Context, client *sdk.APIClient, fabricId float32) (map[int64]interfaceInfo, error) {
+func getFabricInterfacesMap(ctx context.Context, client *sdk.APIClient, fabricId int64) (map[int64]interfaceInfo, error) {
 	networkFabricNodes := map[int64]interfaceInfo{}
 
-	networkDevices, httpRes, err := client.NetworkFabricAPI.GetFabricNetworkDevices(ctx, int32(fabricId)).Limit(1000).Execute()
+	networkDevices, httpRes, err := client.NetworkFabricAPI.GetFabricNetworkDevices(ctx, fabricId).Limit(1000).Execute()
 	if err := response_inspector.InspectResponse(httpRes, err); err != nil {
 		return nil, err
 	}
@@ -192,14 +192,14 @@ func FabricLinkAdd(ctx context.Context, fabricId string, createLink sdk.CreateNe
 		return err
 	}
 
-	fabricIdNumeric, err := utils.GetFloat32FromString(fabricInfo.Id)
+	fabricIdNumeric, err := utils.GetInt64FromString(fabricInfo.Id)
 	if err != nil {
 		return err
 	}
 
 	client := api.GetApiClient(ctx)
 
-	linkInfo, httpRes, err := client.NetworkFabricAPI.CreateNetworkFabricLink(ctx, int32(fabricIdNumeric)).
+	linkInfo, httpRes, err := client.NetworkFabricAPI.CreateNetworkFabricLink(ctx, fabricIdNumeric).
 		CreateNetworkFabricLink(createLink).
 		Execute()
 	if err := response_inspector.InspectResponse(httpRes, err); err != nil {
@@ -219,7 +219,7 @@ func FabricLinkAddEx(ctx context.Context, fabricId string,
 	bgpLinkConfiguration string,
 	customVariables []string,
 ) error {
-	fabricIdNumeric, err := utils.GetFloat32FromString(fabricId)
+	fabricIdNumeric, err := utils.GetInt64FromString(fabricId)
 	if err != nil {
 		return err
 	}
@@ -237,7 +237,7 @@ func FabricLinkAddEx(ctx context.Context, fabricId string,
 
 	client := api.GetApiClient(ctx)
 
-	networkDevices, httpRes, err := client.NetworkFabricAPI.GetFabricNetworkDevices(ctx, int32(fabricIdNumeric)).Limit(1000).Execute()
+	networkDevices, httpRes, err := client.NetworkFabricAPI.GetFabricNetworkDevices(ctx, fabricIdNumeric).Limit(1000).Execute()
 	if err := response_inspector.InspectResponse(httpRes, err); err != nil {
 		return err
 	}
@@ -297,19 +297,19 @@ func FabricLinkRemove(ctx context.Context, fabricId string, linkId string) error
 		return err
 	}
 
-	fabricIdNumeric, err := utils.GetFloat32FromString(fabricInfo.Id)
+	fabricIdNumeric, err := utils.GetInt64FromString(fabricInfo.Id)
 	if err != nil {
 		return err
 	}
 
-	linkIdNumeric, err := utils.GetFloat32FromString(linkId)
+	linkIdNumeric, err := utils.GetInt64FromString(linkId)
 	if err != nil {
 		return err
 	}
 
 	client := api.GetApiClient(ctx)
 
-	httpRes, err := client.NetworkFabricAPI.DeleteNetworkFabricLink(ctx, int32(fabricIdNumeric), int32(linkIdNumeric)).
+	httpRes, err := client.NetworkFabricAPI.DeleteNetworkFabricLink(ctx, fabricIdNumeric, linkIdNumeric).
 		Execute()
 	if err := response_inspector.InspectResponse(httpRes, err); err != nil {
 		return err

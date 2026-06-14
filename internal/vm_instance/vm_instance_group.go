@@ -56,12 +56,12 @@ var vmInstanceGroupPrintConfig = formatter.PrintConfig{
 func VMInstanceGroupGet(ctx context.Context, infrastructureId string, vmInstanceGroupId string) error {
 	logger.Get().Info().Msgf("Get VM instance group details for %s in infrastructure %s", vmInstanceGroupId, infrastructureId)
 
-	infraIdNumerical, err := utils.GetFloat32FromString(infrastructureId)
+	infraIdNumerical, err := utils.GetInt64FromString(infrastructureId)
 	if err != nil {
 		return err
 	}
 
-	vmInstanceGroupIdNumerical, err := utils.GetFloat32FromString(vmInstanceGroupId)
+	vmInstanceGroupIdNumerical, err := utils.GetInt64FromString(vmInstanceGroupId)
 	if err != nil {
 		return err
 	}
@@ -80,7 +80,7 @@ func VMInstanceGroupGet(ctx context.Context, infrastructureId string, vmInstance
 func VMInstanceGroupList(ctx context.Context, infrastructureId string) error {
 	logger.Get().Info().Msgf("List all VM instance groups for infrastructure %s", infrastructureId)
 
-	infraIdNumerical, err := utils.GetFloat32FromString(infrastructureId)
+	infraIdNumerical, err := utils.GetInt64FromString(infrastructureId)
 	if err != nil {
 		return err
 	}
@@ -99,7 +99,7 @@ func VMInstanceGroupList(ctx context.Context, infrastructureId string) error {
 func VMInstanceGroupCreate(ctx context.Context, infrastructureId string, vmTypeId string, diskSizeGB string, instanceCount string, osTemplateId string) error {
 	logger.Get().Info().Msgf("Create new VM instance group in infrastructure %s", infrastructureId)
 
-	infraIdNumerical, err := utils.GetFloat32FromString(infrastructureId)
+	infraIdNumerical, err := utils.GetInt64FromString(infrastructureId)
 	if err != nil {
 		return err
 	}
@@ -203,12 +203,12 @@ func VMInstanceGroupDelete(ctx context.Context, infrastructureId string, vmInsta
 func VMInstanceGroupInstances(ctx context.Context, infrastructureId string, vmInstanceGroupId string) error {
 	logger.Get().Info().Msgf("List instances of VM instance group %s in infrastructure %s", vmInstanceGroupId, infrastructureId)
 
-	infraIdNumerical, err := utils.GetFloat32FromString(infrastructureId)
+	infraIdNumerical, err := utils.GetInt64FromString(infrastructureId)
 	if err != nil {
 		return err
 	}
 
-	vmInstanceGroupIdNumerical, err := utils.GetFloat32FromString(vmInstanceGroupId)
+	vmInstanceGroupIdNumerical, err := utils.GetInt64FromString(vmInstanceGroupId)
 	if err != nil {
 		return err
 	}
@@ -224,13 +224,13 @@ func VMInstanceGroupInstances(ctx context.Context, infrastructureId string, vmIn
 	return formatter.PrintResult(vmInstancesList.Data, &vmInstancePrintConfig)
 }
 
-func getVmInstanceGroupIdAndRevision(ctx context.Context, infrastructureId string, vmInstanceGroupId string) (float32, float32, string, error) {
-	infraIdNumerical, err := utils.GetFloat32FromString(infrastructureId)
+func getVmInstanceGroupIdAndRevision(ctx context.Context, infrastructureId string, vmInstanceGroupId string) (int64, int64, string, error) {
+	infraIdNumerical, err := utils.GetInt64FromString(infrastructureId)
 	if err != nil {
 		return 0, 0, "", err
 	}
 
-	vmInstanceGroupIdNumerical, err := utils.GetFloat32FromString(vmInstanceGroupId)
+	vmInstanceGroupIdNumerical, err := utils.GetInt64FromString(vmInstanceGroupId)
 	if err != nil {
 		return 0, 0, "", err
 	}

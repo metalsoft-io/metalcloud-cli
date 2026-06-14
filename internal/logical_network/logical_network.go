@@ -327,13 +327,13 @@ func LogicalNetworkDelete(ctx context.Context, logicalNetworkId string) error {
 	return nil
 }
 
-func getLogicalNetworkId(logicalNetworkId string) (float32, error) {
-	logicalNetworkIdNumeric, err := strconv.ParseFloat(logicalNetworkId, 32)
+func getLogicalNetworkId(logicalNetworkId string) (int64, error) {
+	logicalNetworkIdNumeric, err := strconv.ParseInt(logicalNetworkId, 10, 64)
 	if err != nil {
 		err := fmt.Errorf("invalid logical network ID: '%s'", logicalNetworkId)
 		logger.Get().Error().Err(err).Msg("")
 		return 0, err
 	}
 
-	return float32(logicalNetworkIdNumeric), nil
+	return logicalNetworkIdNumeric, nil
 }

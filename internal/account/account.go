@@ -188,18 +188,18 @@ func AccountGetUsers(ctx context.Context, accountId string) error {
 	return formatter.PrintResult(users, &accountUsersPrintConfig)
 }
 
-func getAccountId(accountId string) (float32, error) {
-	accountIdNumber, err := strconv.ParseFloat(accountId, 32)
+func getAccountId(accountId string) (int64, error) {
+	accountIdNumber, err := strconv.ParseInt(accountId, 10, 64)
 	if err != nil {
 		err := fmt.Errorf("invalid account ID: '%s'", accountId)
 		logger.Get().Error().Err(err).Msg("")
 		return 0, err
 	}
 
-	return float32(accountIdNumber), nil
+	return accountIdNumber, nil
 }
 
-func getAccountIdAndRevision(ctx context.Context, accountId string) (float32, string, error) {
+func getAccountIdAndRevision(ctx context.Context, accountId string) (int64, string, error) {
 	accountIdNumber, err := getAccountId(accountId)
 	if err != nil {
 		return 0, "", err
@@ -208,11 +208,11 @@ func getAccountIdAndRevision(ctx context.Context, accountId string) (float32, st
 	client := api.GetApiClient(ctx)
 
 	account, httpRes, err := client.AccountAPI.
-		GetAccount(ctx, float32(accountIdNumber)).
+		GetAccount(ctx, accountIdNumber).
 		Execute()
 	if err := response_inspector.InspectResponse(httpRes, err); err != nil {
 		return 0, "", err
 	}
 
-	return float32(accountIdNumber), strconv.Itoa(int(account.Revision)), nil
+	return accountIdNumber, strconv.Itoa(int(account.Revision)), nil
 }

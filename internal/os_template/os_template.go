@@ -265,7 +265,7 @@ func OsTemplateUpdate(ctx context.Context, osTemplateId string, osTemplateUpdate
 			asset.TemplateId = int64(osTemplateIdNumeric)
 
 			_, httpRes, err := client.TemplateAssetAPI.
-				UpdateTemplateAsset(ctx, float32(assetId)).
+				UpdateTemplateAsset(ctx, int64(assetId)).
 				TemplateAssetCreate(asset).
 				Execute()
 			if err := response_inspector.InspectResponse(httpRes, err); err != nil {
@@ -278,7 +278,7 @@ func OsTemplateUpdate(ctx context.Context, osTemplateId string, osTemplateUpdate
 	if osTemplateUpdateOptions.DeletedTemplateAssetIds != nil {
 		for _, assetId := range osTemplateUpdateOptions.DeletedTemplateAssetIds {
 			httpRes, err := client.TemplateAssetAPI.
-				DeleteTemplateAsset(ctx, float32(assetId)).
+				DeleteTemplateAsset(ctx, int64(assetId)).
 				Execute()
 			if err := response_inspector.InspectResponse(httpRes, err); err != nil {
 				return err
@@ -319,7 +319,7 @@ func OsTemplateSetStatus(ctx context.Context, osTemplateId string, newStatus str
 	client := api.GetApiClient(ctx)
 
 	_, httpRes, err := client.OSTemplateAPI.
-		UpdateOSTemplate(ctx, float32(osTemplate.Id)).
+		UpdateOSTemplate(ctx, osTemplate.Id).
 		OSTemplateUpdate(osTemplateUpdates).
 		IfMatch(strconv.Itoa(int(osTemplate.Revision))).
 		Execute()
@@ -384,7 +384,7 @@ func OsTemplateGetAssets(ctx context.Context, osTemplateId string) error {
 	// Use the template asset API with filter for this template ID
 	templateAssetList, httpRes, err := client.TemplateAssetAPI.
 		GetTemplateAssets(ctx).
-		FilterTemplateId([]string{"$eq:" + fmt.Sprintf("%d", int32(osTemplateIdNumeric))}).
+		FilterTemplateId([]string{"$eq:" + fmt.Sprintf("%d", osTemplateIdNumeric)}).
 		Execute()
 	if err := response_inspector.InspectResponse(httpRes, err); err != nil {
 		return err
@@ -586,18 +586,18 @@ func GetOsTemplateByIdOrLabel(ctx context.Context, osTemplateIdOrLabel string) (
 	return osTemplateInfo, nil
 }
 
-func getOsTemplateId(osTemplateId string) (float32, error) {
-	osTemplateIdNumeric, err := strconv.ParseFloat(osTemplateId, 32)
+func getOsTemplateId(osTemplateId string) (int64, error) {
+	osTemplateIdNumeric, err := strconv.ParseInt(osTemplateId, 10, 64)
 	if err != nil {
 		err := fmt.Errorf("invalid OS template ID: '%s'", osTemplateId)
 		logger.Get().Error().Err(err).Msg("")
 		return 0, err
 	}
 
-	return float32(osTemplateIdNumeric), nil
+	return osTemplateIdNumeric, nil
 }
 
-func getOsTemplateIdAndRevision(ctx context.Context, osTemplateId string) (float32, string, error) {
+func getOsTemplateIdAndRevision(ctx context.Context, osTemplateId string) (int64, string, error) {
 	osTemplateIdNumeric, err := getOsTemplateId(osTemplateId)
 	if err != nil {
 		return 0, "", err
@@ -605,10 +605,10 @@ func getOsTemplateIdAndRevision(ctx context.Context, osTemplateId string) (float
 
 	client := api.GetApiClient(ctx)
 
-	osTemplate, httpRes, err := client.OSTemplateAPI.GetOSTemplate(ctx, float32(osTemplateIdNumeric)).Execute()
+	osTemplate, httpRes, err := client.OSTemplateAPI.GetOSTemplate(ctx, osTemplateIdNumeric).Execute()
 	if err := response_inspector.InspectResponse(httpRes, err); err != nil {
 		return 0, "", err
 	}
 
-	return float32(osTemplateIdNumeric), strconv.Itoa(int(osTemplate.Revision)), nil
+	return osTemplateIdNumeric, strconv.Itoa(int(osTemplate.Revision)), nil
 }

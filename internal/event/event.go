@@ -128,12 +128,12 @@ func EventGet(ctx context.Context, eventId string) error {
 	return formatter.PrintResult(event, &eventPrintConfig)
 }
 
-func getEventId(eventId string) (float32, error) {
-	id, err := strconv.ParseFloat(eventId, 32)
+func getEventId(eventId string) (int64, error) {
+	id, err := strconv.ParseInt(eventId, 10, 64)
 	if err != nil {
 		err := fmt.Errorf("invalid event ID: '%s'", eventId)
 		logger.Get().Error().Err(err).Msg("")
 		return 0, err
 	}
-	return float32(id), nil
+	return id, nil
 }

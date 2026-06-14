@@ -191,13 +191,13 @@ func FirmwareBaselineSearchExample(ctx context.Context) error {
 	return formatter.PrintResult(searchCriteria, nil)
 }
 
-func getFirmwareBaselineId(firmwareBaselineId string) (float32, error) {
-	firmwareBaselineIdNumeric, err := strconv.ParseFloat(firmwareBaselineId, 32)
+func getFirmwareBaselineId(firmwareBaselineId string) (int64, error) {
+	firmwareBaselineIdNumeric, err := strconv.ParseInt(firmwareBaselineId, 10, 64)
 	if err != nil {
 		err := fmt.Errorf("invalid firmware baseline ID: '%s'", firmwareBaselineId)
 		logger.Get().Error().Err(err).Msg("")
 		return 0, err
 	}
 
-	return float32(firmwareBaselineIdNumeric), nil
+	return firmwareBaselineIdNumeric, nil
 }

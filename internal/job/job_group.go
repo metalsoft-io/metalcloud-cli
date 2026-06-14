@@ -85,12 +85,12 @@ func JobGroupGet(ctx context.Context, groupId string) error {
 	return formatter.PrintResult(group, &jobGroupPrintConfig)
 }
 
-func getJobGroupId(groupId string) (float32, error) {
-	id, err := strconv.ParseFloat(groupId, 32)
+func getJobGroupId(groupId string) (int64, error) {
+	id, err := strconv.ParseInt(groupId, 10, 64)
 	if err != nil {
 		err := fmt.Errorf("invalid job group ID: '%s'", groupId)
 		logger.Get().Error().Err(err).Msg("")
 		return 0, err
 	}
-	return float32(id), nil
+	return id, nil
 }

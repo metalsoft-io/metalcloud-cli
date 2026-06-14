@@ -83,7 +83,7 @@ func ServerTypeGet(ctx context.Context, serverTypeIdOrLabel string) error {
 func GetServerTypeByIdOrLabel(ctx context.Context, serverTypeIdOrLabel string) (*sdk.ServerType, error) {
 	client := api.GetApiClient(ctx)
 
-	serverTypeId, err := utils.GetFloat32FromString(serverTypeIdOrLabel)
+	serverTypeId, err := utils.GetInt64FromString(serverTypeIdOrLabel)
 	if err != nil {
 		return nil, err
 	}

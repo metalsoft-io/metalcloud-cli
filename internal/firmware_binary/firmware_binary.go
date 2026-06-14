@@ -171,13 +171,13 @@ func FirmwareBinaryConfigExample(ctx context.Context) error {
 	return formatter.PrintResult(firmwareBinaryConfiguration, nil)
 }
 
-func getFirmwareBinaryId(firmwareBinaryId string) (float32, error) {
-	firmwareBinaryIdNumeric, err := strconv.ParseFloat(firmwareBinaryId, 32)
+func getFirmwareBinaryId(firmwareBinaryId string) (int64, error) {
+	firmwareBinaryIdNumeric, err := strconv.ParseInt(firmwareBinaryId, 10, 64)
 	if err != nil {
 		err := fmt.Errorf("invalid firmware binary ID: '%s'", firmwareBinaryId)
 		logger.Get().Error().Err(err).Msg("")
 		return 0, err
 	}
 
-	return float32(firmwareBinaryIdNumeric), nil
+	return firmwareBinaryIdNumeric, nil
 }

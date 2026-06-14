@@ -209,13 +209,13 @@ func CustomIsoConfigExample(ctx context.Context) error {
 	return formatter.PrintResult(customIsoConfiguration, nil)
 }
 
-func getCustomIsoId(customIsoId string) (float32, error) {
-	customIsoIdNumeric, err := strconv.ParseFloat(customIsoId, 32)
+func getCustomIsoId(customIsoId string) (int64, error) {
+	customIsoIdNumeric, err := strconv.ParseInt(customIsoId, 10, 64)
 	if err != nil {
 		err := fmt.Errorf("invalid custom ISO ID: '%s'", customIsoId)
 		logger.Get().Error().Err(err).Msg("")
 		return 0, err
 	}
 
-	return float32(customIsoIdNumeric), nil
+	return customIsoIdNumeric, nil
 }
