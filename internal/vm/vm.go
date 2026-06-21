@@ -13,6 +13,76 @@ import (
 	sdk "github.com/metalsoft-io/metalcloud-sdk-go"
 )
 
+// VMListRaw mirrors the JSON returned by the VM list endpoints (vm-pool vms,
+// vm-type vms, cluster-host vms). It is used for table rendering of raw API
+// responses, which the SDK VM model rejects due to schema drift.
+type VMListRaw struct {
+	Id                  interface{} `json:"id"`
+	Name                *string     `json:"name"`
+	InfrastructureId    interface{} `json:"infrastructureId"`
+	Host                *string     `json:"host"`
+	CpuCores            interface{} `json:"cpuCores"`
+	RamGB               interface{} `json:"ramGB"`
+	DiskSizeGB          interface{} `json:"diskSizeGB"`
+	TypeId              interface{} `json:"typeId"`
+	PoolId              interface{} `json:"poolId"`
+	AdministrationState *string     `json:"administrationState"`
+	PowerState          *string     `json:"powerState"`
+}
+
+// VMListPrintConfig drives the table columns for VM list output.
+var VMListPrintConfig = formatter.PrintConfig{
+	FieldsConfig: map[string]formatter.RecordFieldConfig{
+		"Id": {
+			Title: "#",
+			Order: 1,
+		},
+		"Name": {
+			Title:    "Name",
+			MaxWidth: 30,
+			Order:    2,
+		},
+		"InfrastructureId": {
+			Title: "Infra",
+			Order: 3,
+		},
+		"Host": {
+			Title:    "Host",
+			MaxWidth: 40,
+			Order:    4,
+		},
+		"CpuCores": {
+			Title: "CPU Cores",
+			Order: 5,
+		},
+		"RamGB": {
+			Title: "RAM (GB)",
+			Order: 6,
+		},
+		"DiskSizeGB": {
+			Title: "Disk (GB)",
+			Order: 7,
+		},
+		"TypeId": {
+			Title: "Type",
+			Order: 8,
+		},
+		"PoolId": {
+			Title: "Pool",
+			Order: 9,
+		},
+		"AdministrationState": {
+			Title: "Admin State",
+			Order: 10,
+		},
+		"PowerState": {
+			Title:       "Power",
+			Transformer: formatter.FormatStatusValue,
+			Order:       11,
+		},
+	},
+}
+
 var vmPrintConfig = formatter.PrintConfig{
 	FieldsConfig: map[string]formatter.RecordFieldConfig{
 		"VmId": {

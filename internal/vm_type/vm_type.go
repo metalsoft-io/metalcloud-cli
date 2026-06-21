@@ -7,6 +7,7 @@ import (
 	"net/http"
 	"strconv"
 
+	"github.com/metalsoft-io/metalcloud-cli/internal/vm"
 	"github.com/metalsoft-io/metalcloud-cli/pkg/api"
 	"github.com/metalsoft-io/metalcloud-cli/pkg/formatter"
 	"github.com/metalsoft-io/metalcloud-cli/pkg/logger"
@@ -255,12 +256,12 @@ func VMTypeGetVMs(ctx context.Context, vmTypeId string, limit float32, page floa
 		return err
 	}
 
-	records, err := utils.UnmarshalRawItems[map[string]interface{}](rawItems)
+	records, err := utils.UnmarshalRawItems[vm.VMListRaw](rawItems)
 	if err != nil {
 		return fmt.Errorf("failed to parse VMs: %w", err)
 	}
 
-	return utils.PrintAllRaw(rawItems, records, meta, len(records), nil)
+	return utils.PrintAllRaw(rawItems, records, meta, len(records), &vm.VMListPrintConfig)
 }
 
 func VMTypeConfigExample(ctx context.Context) error {

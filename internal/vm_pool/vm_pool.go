@@ -6,6 +6,7 @@ import (
 	"net/http"
 	"strconv"
 
+	"github.com/metalsoft-io/metalcloud-cli/internal/vm"
 	"github.com/metalsoft-io/metalcloud-cli/pkg/api"
 	"github.com/metalsoft-io/metalcloud-cli/pkg/formatter"
 	"github.com/metalsoft-io/metalcloud-cli/pkg/logger"
@@ -182,11 +183,11 @@ func VMPoolGetVMs(ctx context.Context, vmPoolId string, limit float32, page floa
 		if err != nil {
 			return err
 		}
-		items, err := utils.UnmarshalRawItems[map[string]interface{}](rawItems)
+		items, err := utils.UnmarshalRawItems[vm.VMListRaw](rawItems)
 		if err != nil {
 			return fmt.Errorf("failed to parse VM pool VMs: %w", err)
 		}
-		return utils.PrintAllRaw(rawItems, items, meta, len(items), nil)
+		return utils.PrintAllRaw(rawItems, items, meta, len(items), &vm.VMListPrintConfig)
 	}
 	if limit > 0 {
 		rawItems, meta, err := utils.FetchUpToRaw(func(p, l float32) (*http.Response, error) {
@@ -196,11 +197,11 @@ func VMPoolGetVMs(ctx context.Context, vmPoolId string, limit float32, page floa
 		if err != nil {
 			return err
 		}
-		items, err := utils.UnmarshalRawItems[map[string]interface{}](rawItems)
+		items, err := utils.UnmarshalRawItems[vm.VMListRaw](rawItems)
 		if err != nil {
 			return fmt.Errorf("failed to parse VM pool VMs: %w", err)
 		}
-		return utils.PrintAllRaw(rawItems, items, meta, len(items), nil)
+		return utils.PrintAllRaw(rawItems, items, meta, len(items), &vm.VMListPrintConfig)
 	}
 	rawItems, meta, err := utils.FetchAllPagesRaw(func(p float32) (*http.Response, error) {
 		_, httpRes, _ := request.Page(p).Limit(100).Execute()
@@ -209,11 +210,11 @@ func VMPoolGetVMs(ctx context.Context, vmPoolId string, limit float32, page floa
 	if err != nil {
 		return err
 	}
-	items, err := utils.UnmarshalRawItems[map[string]interface{}](rawItems)
+	items, err := utils.UnmarshalRawItems[vm.VMListRaw](rawItems)
 	if err != nil {
 		return fmt.Errorf("failed to parse VM pool VMs: %w", err)
 	}
-	return utils.PrintAllRaw(rawItems, items, meta, len(items), nil)
+	return utils.PrintAllRaw(rawItems, items, meta, len(items), &vm.VMListPrintConfig)
 }
 
 func VMPoolGetClusterHosts(ctx context.Context, vmPoolId string, limit float32, page float32) error {
@@ -295,11 +296,11 @@ func VMPoolGetClusterHostVMs(ctx context.Context, vmPoolId string, hostId string
 		if err != nil {
 			return err
 		}
-		items, err := utils.UnmarshalRawItems[map[string]interface{}](rawItems)
+		items, err := utils.UnmarshalRawItems[vm.VMListRaw](rawItems)
 		if err != nil {
 			return fmt.Errorf("failed to parse VM pool cluster host VMs: %w", err)
 		}
-		return utils.PrintAllRaw(rawItems, items, meta, len(items), nil)
+		return utils.PrintAllRaw(rawItems, items, meta, len(items), &vm.VMListPrintConfig)
 	}
 	if limit > 0 {
 		rawItems, meta, err := utils.FetchUpToRaw(func(p, l float32) (*http.Response, error) {
@@ -309,11 +310,11 @@ func VMPoolGetClusterHostVMs(ctx context.Context, vmPoolId string, hostId string
 		if err != nil {
 			return err
 		}
-		items, err := utils.UnmarshalRawItems[map[string]interface{}](rawItems)
+		items, err := utils.UnmarshalRawItems[vm.VMListRaw](rawItems)
 		if err != nil {
 			return fmt.Errorf("failed to parse VM pool cluster host VMs: %w", err)
 		}
-		return utils.PrintAllRaw(rawItems, items, meta, len(items), nil)
+		return utils.PrintAllRaw(rawItems, items, meta, len(items), &vm.VMListPrintConfig)
 	}
 	rawItems, meta, err := utils.FetchAllPagesRaw(func(p float32) (*http.Response, error) {
 		_, httpRes, _ := request.Page(p).Limit(100).Execute()
@@ -322,11 +323,11 @@ func VMPoolGetClusterHostVMs(ctx context.Context, vmPoolId string, hostId string
 	if err != nil {
 		return err
 	}
-	items, err := utils.UnmarshalRawItems[map[string]interface{}](rawItems)
+	items, err := utils.UnmarshalRawItems[vm.VMListRaw](rawItems)
 	if err != nil {
 		return fmt.Errorf("failed to parse VM pool cluster host VMs: %w", err)
 	}
-	return utils.PrintAllRaw(rawItems, items, meta, len(items), nil)
+	return utils.PrintAllRaw(rawItems, items, meta, len(items), &vm.VMListPrintConfig)
 }
 
 func VMPoolGetClusterHostInterfaces(ctx context.Context, vmPoolId string, hostId string) error {
