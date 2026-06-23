@@ -259,27 +259,28 @@ func dtoToMap(v interface{}) (map[string]interface{}, error) {
 func patchAuthConfig(ctx context.Context, authConfigChange map[string]interface{}) (map[string]interface{}, error) {
 	client := api.GetApiClient(ctx)
 
-	authConfigDto := sdk.NewAuthConfigurationDto()
 	data, err := json.Marshal(authConfigChange)
 	if err != nil {
 		return nil, err
 	}
-	if err := json.Unmarshal(data, authConfigDto); err != nil {
+
+	authConfig := sdk.NewAuthConfiguration()
+	if err := json.Unmarshal(data, authConfig); err != nil {
 		return nil, err
 	}
 
-	putRequest := sdk.AuthConfigurationDtoAsPutConfigurationRequest(authConfigDto)
+	putRequest := sdk.ReplaceConfigurationRequest(sdk.AuthConfigurationAsReplaceConfigurationRequest(authConfig))
 
-	result, httpRes, err := client.ConfigurationAPI.PatchConfiguration(ctx, "auth").PutConfigurationRequest(putRequest).Execute()
+	result, httpRes, err := client.ConfigurationAPI.UpdateConfiguration(ctx, "auth").ReplaceConfigurationRequest(putRequest).Execute()
 	if err := response_inspector.InspectResponse(httpRes, err); err != nil {
 		return nil, err
 	}
 
-	if result == nil || result.AuthConfigurationDto == nil {
+	if result == nil || result.AuthConfiguration == nil {
 		return nil, nil
 	}
 
-	return dtoToMap(result.AuthConfigurationDto)
+	return dtoToMap(result.AuthConfiguration)
 }
 
 func getLdapConfig(authConfig map[string]interface{}) map[string]interface{} {
