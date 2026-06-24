@@ -14,12 +14,12 @@ var (
 		filterName       []string
 		filterStatus     []string
 		filterKind       []string
-		filterPublic     string
-		repoUrl          string
-		repoUsername     string
-		repoPassword     string
-		name             string
-		label            string
+		// filterPublic     string
+		repoUrl      string
+		repoUsername string
+		repoPassword string
+		name         string
+		label        string
 	}{}
 
 	extensionCmd = &cobra.Command{
@@ -106,7 +106,7 @@ Examples:
 				extensionFlags.filterName,
 				extensionFlags.filterStatus,
 				extensionFlags.filterKind,
-				extensionFlags.filterPublic,
+				// extensionFlags.filterPublic,
 			)
 		},
 	}
@@ -416,36 +416,36 @@ Examples:
 		},
 	}
 
-	extensionMakePublicCmd = &cobra.Command{
-		Use:   "make-public extension_id_or_label",
-		Short: "Make extension publicly available to all users",
-		Long: `Make an extension publicly available to all users in the organization.
+// 	extensionMakePublicCmd = &cobra.Command{
+// 		Use:   "make-public extension_id_or_label",
+// 		Short: "Make extension publicly available to all users",
+// 		Long: `Make an extension publicly available to all users in the organization.
 
-This command changes the visibility of an extension from private (accessible only
-to the owner) to public (accessible to all users with appropriate permissions).
-Public extensions can be discovered and used by other users within the organization.
+// This command changes the visibility of an extension from private (accessible only
+// to the owner) to public (accessible to all users with appropriate permissions).
+// Public extensions can be discovered and used by other users within the organization.
 
-Arguments:
-  extension_id_or_label    The unique ID or label of the extension to make public
+// Arguments:
+//   extension_id_or_label    The unique ID or label of the extension to make public
 
-Requirements:
-- Extension must exist and be accessible
-- User must be the owner of the extension or have admin privileges
-- User must have write permissions for extensions
+// Requirements:
+// - Extension must exist and be accessible
+// - User must be the owner of the extension or have admin privileges
+// - User must have write permissions for extensions
 
-Examples:
-  # Make extension public by ID
-  metalcloud extension make-public 12345
-  
-  # Make extension public by label
-  metalcloud extension make-public my-workflow-v1`,
-		SilenceUsage: true,
-		Annotations:  map[string]string{system.REQUIRED_PERMISSION: system.PERMISSION_EXTENSIONS_WRITE},
-		Args:         cobra.ExactArgs(1),
-		RunE: func(cmd *cobra.Command, args []string) error {
-			return extension.ExtensionMakePublic(cmd.Context(), args[0])
-		},
-	}
+// Examples:
+//   # Make extension public by ID
+//   metalcloud extension make-public 12345
+
+//	  # Make extension public by label
+//	  metalcloud extension make-public my-workflow-v1`,
+//			SilenceUsage: true,
+//			Annotations:  map[string]string{system.REQUIRED_PERMISSION: system.PERMISSION_EXTENSIONS_WRITE},
+//			Args:         cobra.ExactArgs(1),
+//			RunE: func(cmd *cobra.Command, args []string) error {
+//				return extension.ExtensionMakePublic(cmd.Context(), args[0])
+//			},
+//		}
 )
 
 func init() {
@@ -456,7 +456,7 @@ func init() {
 	extensionListCmd.Flags().StringSliceVar(&extensionFlags.filterName, "filter-name", nil, "Filter extensions by name")
 	extensionListCmd.Flags().StringSliceVar(&extensionFlags.filterStatus, "filter-status", nil, "Filter extensions by status (draft, active, archived)")
 	extensionListCmd.Flags().StringSliceVar(&extensionFlags.filterKind, "filter-kind", nil, "Filter extensions by kind (application, workflow, action)")
-	extensionListCmd.Flags().StringVar(&extensionFlags.filterPublic, "filter-public", "", "Filter extensions by public status (true/false)")
+	// extensionListCmd.Flags().StringVar(&extensionFlags.filterPublic, "filter-public", "", "Filter extensions by public status (true/false)")
 
 	extensionCmd.AddCommand(extensionGetCmd)
 
@@ -483,5 +483,5 @@ func init() {
 
 	extensionCmd.AddCommand(extensionPublishCmd)
 	extensionCmd.AddCommand(extensionArchiveCmd)
-	extensionCmd.AddCommand(extensionMakePublicCmd)
+	// extensionCmd.AddCommand(extensionMakePublicCmd)
 }

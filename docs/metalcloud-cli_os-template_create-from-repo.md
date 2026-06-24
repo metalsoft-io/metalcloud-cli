@@ -47,6 +47,7 @@ Examples:
   # would be /os-templates and the command would need to be issued from that drive))
   metalcloud-cli os-template create-from-repo Ubuntu/24.04/oob-u24-04-3-lts-v7
     --repo-url /os-templates --name "Ubuntu2404" --label "Ubuntu2404"
+
 ```
 metalcloud-cli os-template create-from-repo <os_template_path> [flags]
 ```

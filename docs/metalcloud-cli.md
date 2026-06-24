@@ -45,7 +45,6 @@ metalcloud-cli [flags]
 * [metalcloud-cli firmware-baseline](metalcloud-cli_firmware-baseline.md)	 - Manage firmware baselines for consistent hardware configurations
 * [metalcloud-cli firmware-binary](metalcloud-cli_firmware-binary.md)	 - Manage individual firmware binary files and packages
 * [metalcloud-cli firmware-catalog](metalcloud-cli_firmware-catalog.md)	 - Manage firmware catalogs for server hardware updates
-* [metalcloud-cli firmware-policy](metalcloud-cli_firmware-policy.md)	 - Manage server firmware upgrade policies and global firmware configurations
 * [metalcloud-cli infrastructure](metalcloud-cli_infrastructure.md)	 - Manage infrastructure resources and configurations
 * [metalcloud-cli job](metalcloud-cli_job.md)	 - Manage MetalCloud jobs and job execution
 * [metalcloud-cli job-group](metalcloud-cli_job-group.md)	 - Manage MetalCloud job groups and group operations
@@ -55,7 +54,8 @@ metalcloud-cli [flags]
 * [metalcloud-cli network-configuration](metalcloud-cli_network-configuration.md)	 - Manage network configuration templates
 * [metalcloud-cli network-device](metalcloud-cli_network-device.md)	 - Manage network devices (switches) in the infrastructure
 * [metalcloud-cli os-template](metalcloud-cli_os-template.md)	 - Manage OS templates for server deployments
-* [metalcloud-cli permission](metalcloud-cli_permission.md)	 - Manage system permissions and access control
+* [metalcloud-cli permission](metalcloud-cli_permission.md)	 - Permission management
+* [metalcloud-cli quota-profile](metalcloud-cli_quota-profile.md)	 - Quota Profile management
 * [metalcloud-cli resource-pool](metalcloud-cli_resource-pool.md)	 - Manage resource pools and their associated resources
 * [metalcloud-cli role](metalcloud-cli_role.md)	 - Manage user roles and permissions
 * [metalcloud-cli secret](metalcloud-cli_secret.md)	 - Manage encrypted secrets for secure credential storage

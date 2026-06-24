@@ -53,7 +53,6 @@ metalcloud-cli extension list [flags]
       --filter-kind strings     Filter extensions by kind (application, workflow, action)
       --filter-label strings    Filter extensions by label
       --filter-name strings     Filter extensions by name
-      --filter-public string    Filter extensions by public status (true/false)
       --filter-status strings   Filter extensions by status (draft, active, archived)
   -h, --help                    help for list
 ```

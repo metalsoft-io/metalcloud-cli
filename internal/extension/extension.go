@@ -50,7 +50,7 @@ var extensionPrintConfig = formatter.PrintConfig{
 	},
 }
 
-func ExtensionList(ctx context.Context, filterLabel []string, filterName []string, filterStatus []string, filterKind []string, filterPublic string) error {
+func ExtensionList(ctx context.Context, filterLabel []string, filterName []string, filterStatus []string, filterKind []string /*, filterPublic string*/) error {
 	logger.Get().Info().Msgf("Listing extensions")
 
 	client := api.GetApiClient(ctx)
@@ -73,9 +73,9 @@ func ExtensionList(ctx context.Context, filterLabel []string, filterName []strin
 	// 	request = request.FilterKind(utils.ProcessFilterStringSlice(filterKind))
 	// }
 
-	if filterPublic != "" {
-		request = request.FilterIsPublic([]string{filterPublic})
-	}
+	// if filterPublic != "" {
+	// 	request = request..FilterIsPublic([]string{filterPublic})
+	// }
 
 	extensions := make([]sdk.ExtensionInfo, 0)
 
@@ -446,26 +446,26 @@ func ExtensionArchive(ctx context.Context, extensionId string) error {
 	return nil
 }
 
-func ExtensionMakePublic(ctx context.Context, extensionId string) error {
-	logger.Get().Info().Msgf("Making extension '%s' public", extensionId)
+// func ExtensionMakePublic(ctx context.Context, extensionId string) error {
+// 	logger.Get().Info().Msgf("Making extension '%s' public", extensionId)
 
-	extension, err := GetExtensionByIdOrLabel(ctx, extensionId)
-	if err != nil {
-		return err
-	}
+// 	extension, err := GetExtensionByIdOrLabel(ctx, extensionId)
+// 	if err != nil {
+// 		return err
+// 	}
 
-	client := api.GetApiClient(ctx)
+// 	client := api.GetApiClient(ctx)
 
-	httpRes, err := client.ExtensionAPI.MakePublicExtension(ctx, int64(extension.Id)).
-		IfMatch(fmt.Sprintf("%d", extension.Revision)).
-		Execute()
-	if err := response_inspector.InspectResponse(httpRes, err); err != nil {
-		return err
-	}
+// 	httpRes, err := client.ExtensionAPI.MakePublicExtension(ctx, int64(extension.Id)).
+// 		IfMatch(fmt.Sprintf("%d", extension.Revision)).
+// 		Execute()
+// 	if err := response_inspector.InspectResponse(httpRes, err); err != nil {
+// 		return err
+// 	}
 
-	logger.Get().Info().Msgf("Extension '%s' is now public", extensionId)
-	return nil
-}
+// 	logger.Get().Info().Msgf("Extension '%s' is now public", extensionId)
+// 	return nil
+// }
 
 func GetExtensionByIdOrLabel(ctx context.Context, extensionIdOrLabel string) (*sdk.Extension, error) {
 	client := api.GetApiClient(ctx)

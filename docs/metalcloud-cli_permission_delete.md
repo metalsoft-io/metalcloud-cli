@@ -1,27 +1,33 @@
-## metalcloud-cli permission list
+## metalcloud-cli permission delete
 
-List permissions
+Delete a permission
 
 ### Synopsis
 
-List all permissions.
+Delete a permission.
 
-This command displays information about all permissions including their IDs,
-names, labels, types, and descriptions.
+This command permanently deletes a permission. This action cannot be undone,
+so use with caution.
+
+Required Arguments:
+  permission_name       The name of the permission to delete
 
 Examples:
-  # List all permissions
-  metalcloud-cli permission list
+  # Delete a permission
+  metalcloud-cli permission delete custom_read
+
+  # Delete a permission using alias
+  metalcloud-cli permission rm custom_read
 
 
 ```
-metalcloud-cli permission list [flags]
+metalcloud-cli permission delete permission_name [flags]
 ```
 
 ### Options
 
 ```
-  -h, --help   help for list
+  -h, --help   help for delete
 ```
 
 ### Options inherited from parent commands

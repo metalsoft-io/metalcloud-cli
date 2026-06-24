@@ -1,27 +1,25 @@
-## metalcloud-cli permission list
+## metalcloud-cli permission config-example
 
-List permissions
+Show a permission configuration example
 
 ### Synopsis
 
-List all permissions.
-
-This command displays information about all permissions including their IDs,
-names, labels, types, and descriptions.
+Show an example permission configuration that can be used as a
+template for creating a new permission.
 
 Examples:
-  # List all permissions
-  metalcloud-cli permission list
+  # Show a permission configuration example
+  metalcloud-cli permission config-example
 
 
 ```
-metalcloud-cli permission list [flags]
+metalcloud-cli permission config-example [flags]
 ```
 
 ### Options
 
 ```
-  -h, --help   help for list
+  -h, --help   help for config-example
 ```
 
 ### Options inherited from parent commands

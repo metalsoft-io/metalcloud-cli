@@ -1,27 +1,27 @@
-## metalcloud-cli permission list
+## metalcloud-cli quota-profile config-example
 
-List permissions
+Show quota profile configuration example
 
 ### Synopsis
 
-List all permissions.
+Show an example quota profile configuration.
 
-This command displays information about all permissions including their IDs,
-names, labels, types, and descriptions.
+This command outputs an example quota profile configuration that can be used as a
+starting point for creating or updating quota profiles.
 
 Examples:
-  # List all permissions
-  metalcloud-cli permission list
+  # Show the configuration example
+  metalcloud-cli quota-profile config-example
 
 
 ```
-metalcloud-cli permission list [flags]
+metalcloud-cli quota-profile config-example [flags]
 ```
 
 ### Options
 
 ```
-  -h, --help   help for list
+  -h, --help   help for config-example
 ```
 
 ### Options inherited from parent commands
@@ -39,5 +39,5 @@ metalcloud-cli permission list [flags]
 
 ### SEE ALSO
 
-* [metalcloud-cli permission](metalcloud-cli_permission.md)	 - Permission management
+* [metalcloud-cli quota-profile](metalcloud-cli_quota-profile.md)	 - Quota Profile management
 

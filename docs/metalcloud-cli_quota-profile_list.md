@@ -1,21 +1,21 @@
-## metalcloud-cli permission list
+## metalcloud-cli quota-profile list
 
-List permissions
+List quota profiles
 
 ### Synopsis
 
-List all permissions.
+List all quota profiles in the MetalSoft infrastructure.
 
-This command displays information about all permissions including their IDs,
-names, labels, types, and descriptions.
+This command displays information about all quota profiles including their IDs,
+names, and descriptions.
 
 Examples:
-  # List all permissions
-  metalcloud-cli permission list
+  # List all quota profiles
+  metalcloud-cli quota-profile list
 
 
 ```
-metalcloud-cli permission list [flags]
+metalcloud-cli quota-profile list [flags]
 ```
 
 ### Options
@@ -39,5 +39,5 @@ metalcloud-cli permission list [flags]
 
 ### SEE ALSO
 
-* [metalcloud-cli permission](metalcloud-cli_permission.md)	 - Permission management
+* [metalcloud-cli quota-profile](metalcloud-cli_quota-profile.md)	 - Quota Profile management
 
