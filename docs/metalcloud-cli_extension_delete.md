@@ -1,38 +1,38 @@
-## metalcloud-cli extension make-public
+## metalcloud-cli extension delete
 
-Make extension publicly available to all users
+Permanently delete an extension
 
 ### Synopsis
 
-Make an extension publicly available to all users in the organization.
+Permanently delete an extension from the platform.
 
-This command changes the visibility of an extension from private (accessible only
-to the owner) to public (accessible to all users with appropriate permissions).
-Public extensions can be discovered and used by other users within the organization.
+This command permanently removes an extension identified by its ID or label.
+Unlike archiving, which preserves the extension's definition and history in an
+inactive state, deletion is irreversible and removes the extension entirely.
 
 Arguments:
-  extension_id_or_label    The unique ID or label of the extension to make public
+  extension_id_or_label    The unique ID or label of the extension to delete
 
 Requirements:
 - Extension must exist and be accessible
-- User must be the owner of the extension or have admin privileges
 - User must have write permissions for extensions
+- Extension should not be in use by any active extension instances
 
 Examples:
-  # Make extension public by ID
-  metalcloud extension make-public 12345
-  
-  # Make extension public by label
-  metalcloud extension make-public my-workflow-v1
+  # Delete extension by ID
+  metalcloud extension delete 12345
+
+  # Delete extension by label
+  metalcloud extension rm deprecated-workflow-v1
 
 ```
-metalcloud-cli extension make-public extension_id_or_label [flags]
+metalcloud-cli extension delete extension_id_or_label [flags]
 ```
 
 ### Options
 
 ```
-  -h, --help   help for make-public
+  -h, --help   help for delete
 ```
 
 ### Options inherited from parent commands

@@ -10,6 +10,7 @@ import (
 var (
 	extensionFlags = struct {
 		definitionSource string
+		configSource     string
 		filterLabel      []string
 		filterName       []string
 		filterStatus     []string
@@ -43,7 +44,10 @@ Available Commands:
   update              Modify existing extension properties
   publish             Activate draft extension for platform use
   archive             Deactivate published extension
-  make-public         Make extension publicly available to all users
+  activate            Return a suspended extension to active status
+  suspend             Temporarily disable an active extension
+  delete              Permanently delete an extension
+  site-config         Manage per-site configuration for extensions
   list-repo           List extensions available in a remote repository
   create-from-repo    Create extension by cloning from a repository
 
@@ -52,7 +56,7 @@ Examples:
   metalcloud extension create my-workflow workflow "Custom deployment workflow" --definition-source definition.json
   metalcloud extension update ext123 "Updated Name" "New description"
   metalcloud extension publish ext123
-  metalcloud extension make-public ext123`,
+  metalcloud extension delete ext123`,
 	}
 
 	extensionListCmd = &cobra.Command{
@@ -63,7 +67,7 @@ Examples:
 
 This command displays all extensions accessible to your account, including workflows,
 applications, and actions. Use filters to narrow down the results based on labels,
-names, status, kind, and public visibility.
+names, status, and kind.
 
 Extension kinds:
 - workflow: Automated sequences of operations
@@ -80,21 +84,17 @@ Flags:
   --filter-name strings     Filter by extension names (can specify multiple)
   --filter-status strings   Filter by status: draft, active, archived (can specify multiple)
   --filter-kind strings     Filter by kind: workflow, application, action (can specify multiple)
-  --filter-public string    Filter by public visibility: true or false
 
 Examples:
   # List all extensions
   metalcloud extension list
-  
+
   # List only workflow extensions
   metalcloud extension list --filter-kind workflow
-  
+
   # List active and draft extensions
   metalcloud extension list --filter-status active --filter-status draft
-  
-  # List public workflows
-  metalcloud extension list --filter-kind workflow --filter-public true
-  
+
   # List extensions with specific labels
   metalcloud extension list --filter-label production --filter-label critical`,
 		SilenceUsage: true,
@@ -416,36 +416,226 @@ Examples:
 		},
 	}
 
-// 	extensionMakePublicCmd = &cobra.Command{
-// 		Use:   "make-public extension_id_or_label",
-// 		Short: "Make extension publicly available to all users",
-// 		Long: `Make an extension publicly available to all users in the organization.
+	extensionDeleteCmd = &cobra.Command{
+		Use:     "delete extension_id_or_label",
+		Aliases: []string{"rm"},
+		Short:   "Permanently delete an extension",
+		Long: `Permanently delete an extension from the platform.
 
-// This command changes the visibility of an extension from private (accessible only
-// to the owner) to public (accessible to all users with appropriate permissions).
-// Public extensions can be discovered and used by other users within the organization.
+This command permanently removes an extension identified by its ID or label.
+Unlike archiving, which preserves the extension's definition and history in an
+inactive state, deletion is irreversible and removes the extension entirely.
 
-// Arguments:
-//   extension_id_or_label    The unique ID or label of the extension to make public
+Arguments:
+  extension_id_or_label    The unique ID or label of the extension to delete
 
-// Requirements:
-// - Extension must exist and be accessible
-// - User must be the owner of the extension or have admin privileges
-// - User must have write permissions for extensions
+Requirements:
+- Extension must exist and be accessible
+- User must have write permissions for extensions
+- Extension should not be in use by any active extension instances
 
-// Examples:
-//   # Make extension public by ID
-//   metalcloud extension make-public 12345
+Examples:
+  # Delete extension by ID
+  metalcloud extension delete 12345
 
-//	  # Make extension public by label
-//	  metalcloud extension make-public my-workflow-v1`,
-//			SilenceUsage: true,
-//			Annotations:  map[string]string{system.REQUIRED_PERMISSION: system.PERMISSION_EXTENSIONS_WRITE},
-//			Args:         cobra.ExactArgs(1),
-//			RunE: func(cmd *cobra.Command, args []string) error {
-//				return extension.ExtensionMakePublic(cmd.Context(), args[0])
-//			},
-//		}
+  # Delete extension by label
+  metalcloud extension rm deprecated-workflow-v1`,
+		SilenceUsage: true,
+		Annotations:  map[string]string{system.REQUIRED_PERMISSION: system.PERMISSION_EXTENSIONS_WRITE},
+		Args:         cobra.ExactArgs(1),
+		RunE: func(cmd *cobra.Command, args []string) error {
+			return extension.ExtensionDelete(cmd.Context(), args[0])
+		},
+	}
+
+	extensionActivateCmd = &cobra.Command{
+		Use:   "activate extension_id_or_label",
+		Short: "Activate a suspended extension",
+		Long: `Activate an extension, returning it to active status so it can be used across the platform.
+
+This command transitions an extension to the active status. It is typically used to
+re-enable an extension that was previously suspended.
+
+Arguments:
+  extension_id_or_label    The unique ID or label of the extension to activate
+
+Examples:
+  # Activate extension by ID
+  metalcloud extension activate 12345
+
+  # Activate extension by label
+  metalcloud extension activate my-workflow-v1`,
+		SilenceUsage: true,
+		Annotations:  map[string]string{system.REQUIRED_PERMISSION: system.PERMISSION_EXTENSIONS_WRITE},
+		Args:         cobra.ExactArgs(1),
+		RunE: func(cmd *cobra.Command, args []string) error {
+			return extension.ExtensionActivate(cmd.Context(), args[0])
+		},
+	}
+
+	extensionSuspendCmd = &cobra.Command{
+		Use:   "suspend extension_id_or_label",
+		Short: "Suspend an active extension",
+		Long: `Suspend an extension, temporarily disabling it without archiving or deleting it.
+
+This command transitions an active extension to the suspended status. Suspended
+extensions are unavailable for use but can be reactivated later with the activate
+command.
+
+Arguments:
+  extension_id_or_label    The unique ID or label of the extension to suspend
+
+Examples:
+  # Suspend extension by ID
+  metalcloud extension suspend 12345
+
+  # Suspend extension by label
+  metalcloud extension suspend my-workflow-v1`,
+		SilenceUsage: true,
+		Annotations:  map[string]string{system.REQUIRED_PERMISSION: system.PERMISSION_EXTENSIONS_WRITE},
+		Args:         cobra.ExactArgs(1),
+		RunE: func(cmd *cobra.Command, args []string) error {
+			return extension.ExtensionSuspend(cmd.Context(), args[0])
+		},
+	}
+
+	extensionSiteConfigCmd = &cobra.Command{
+		Use:     "site-config [command]",
+		Aliases: []string{"site-configs"},
+		Short:   "Manage per-site configuration for extensions",
+		Long: `Manage per-site configuration variables for extensions.
+
+Site configurations bind an extension to a specific site with a set of configuration
+variables, controlling how the extension behaves on that site.
+
+Available Commands:
+  list             List the site configurations for an extension
+  get              Get the configuration values for an extension on a site
+  set              Set the configuration values for an extension on a site
+  delete           Remove an extension's configuration for a site
+  list-for-site    List the extension configurations defined for a site`,
+	}
+
+	extensionSiteConfigListCmd = &cobra.Command{
+		Use:     "list extension_id_or_label",
+		Aliases: []string{"ls"},
+		Short:   "List the site configurations for an extension",
+		Long: `List all per-site configurations defined for an extension.
+
+Arguments:
+  extension_id_or_label    The unique ID or label of the extension
+
+Examples:
+  metalcloud extension site-config list 12345
+  metalcloud extension site-config list my-workflow-v1`,
+		SilenceUsage: true,
+		Annotations:  map[string]string{system.REQUIRED_PERMISSION: system.PERMISSION_EXTENSIONS_READ},
+		Args:         cobra.ExactArgs(1),
+		RunE: func(cmd *cobra.Command, args []string) error {
+			return extension.ExtensionSiteConfigList(cmd.Context(), args[0])
+		},
+	}
+
+	extensionSiteConfigGetCmd = &cobra.Command{
+		Use:     "get extension_id_or_label site_id_or_label",
+		Aliases: []string{"show"},
+		Short:   "Get the configuration values for an extension on a site",
+		Long: `Get the configuration variable values for an extension on a specific site.
+
+Arguments:
+  extension_id_or_label    The unique ID or label of the extension
+  site_id_or_label         The unique ID or label of the site
+
+Examples:
+  metalcloud extension site-config get 12345 1
+  metalcloud extension site-config get my-workflow-v1 my-site`,
+		SilenceUsage: true,
+		Annotations:  map[string]string{system.REQUIRED_PERMISSION: system.PERMISSION_EXTENSIONS_READ},
+		Args:         cobra.ExactArgs(2),
+		RunE: func(cmd *cobra.Command, args []string) error {
+			return extension.ExtensionSiteConfigGet(cmd.Context(), args[0], args[1])
+		},
+	}
+
+	extensionSiteConfigSetCmd = &cobra.Command{
+		Use:     "set extension_id_or_label site_id_or_label",
+		Aliases: []string{"update", "edit"},
+		Short:   "Set the configuration values for an extension on a site",
+		Long: `Set the configuration variable values for an extension on a specific site.
+
+The configuration values must be provided through the --config-source flag, which
+accepts either 'pipe' for stdin input or a path to a JSON file.
+
+Arguments:
+  extension_id_or_label    The unique ID or label of the extension
+  site_id_or_label         The unique ID or label of the site
+
+Required Flags:
+  --config-source string   Source of the configuration values (pipe or JSON file path)
+
+JSON Configuration Format:
+  [
+    {"label": "variable1", "value": "value1"},
+    {"label": "variable2", "value": true}
+  ]
+
+Examples:
+  # Set from JSON file
+  metalcloud extension site-config set 12345 1 --config-source ./config.json
+
+  # Set from pipe
+  echo '[{"label":"env","value":"prod"}]' | metalcloud extension site-config set my-workflow-v1 my-site --config-source pipe`,
+		SilenceUsage: true,
+		Annotations:  map[string]string{system.REQUIRED_PERMISSION: system.PERMISSION_EXTENSIONS_WRITE},
+		Args:         cobra.ExactArgs(2),
+		RunE: func(cmd *cobra.Command, args []string) error {
+			config, err := utils.ReadConfigFromPipeOrFile(extensionFlags.configSource)
+			if err != nil {
+				return err
+			}
+			return extension.ExtensionSiteConfigSet(cmd.Context(), args[0], args[1], config)
+		},
+	}
+
+	extensionSiteConfigDeleteCmd = &cobra.Command{
+		Use:     "delete extension_id_or_label site_id_or_label",
+		Aliases: []string{"rm"},
+		Short:   "Remove an extension's configuration for a site",
+		Long: `Remove the per-site configuration of an extension for a specific site.
+
+Arguments:
+  extension_id_or_label    The unique ID or label of the extension
+  site_id_or_label         The unique ID or label of the site
+
+Examples:
+  metalcloud extension site-config delete 12345 1
+  metalcloud extension site-config rm my-workflow-v1 my-site`,
+		SilenceUsage: true,
+		Annotations:  map[string]string{system.REQUIRED_PERMISSION: system.PERMISSION_EXTENSIONS_WRITE},
+		Args:         cobra.ExactArgs(2),
+		RunE: func(cmd *cobra.Command, args []string) error {
+			return extension.ExtensionSiteConfigDelete(cmd.Context(), args[0], args[1])
+		},
+	}
+
+	extensionSiteConfigListForSiteCmd = &cobra.Command{
+		Use:   "list-for-site site_id_or_label",
+		Short: "List the extension configurations defined for a site",
+		Long: `List all extension configurations defined for a specific site.
+
+Arguments:
+  site_id_or_label    The unique ID or label of the site
+
+Examples:
+  metalcloud extension site-config list-for-site 1
+  metalcloud extension site-config list-for-site my-site`,
+		SilenceUsage: true,
+		Annotations:  map[string]string{system.REQUIRED_PERMISSION: system.PERMISSION_EXTENSIONS_READ},
+		Args:         cobra.ExactArgs(1),
+		RunE: func(cmd *cobra.Command, args []string) error {
+			return extension.SiteExtensionConfigList(cmd.Context(), args[0])
+		},
+	}
 )
 
 func init() {
@@ -483,5 +673,18 @@ func init() {
 
 	extensionCmd.AddCommand(extensionPublishCmd)
 	extensionCmd.AddCommand(extensionArchiveCmd)
-	// extensionCmd.AddCommand(extensionMakePublicCmd)
+	extensionCmd.AddCommand(extensionDeleteCmd)
+	extensionCmd.AddCommand(extensionActivateCmd)
+	extensionCmd.AddCommand(extensionSuspendCmd)
+
+	extensionCmd.AddCommand(extensionSiteConfigCmd)
+	extensionSiteConfigCmd.AddCommand(extensionSiteConfigListCmd)
+	extensionSiteConfigCmd.AddCommand(extensionSiteConfigGetCmd)
+
+	extensionSiteConfigCmd.AddCommand(extensionSiteConfigSetCmd)
+	extensionSiteConfigSetCmd.Flags().StringVar(&extensionFlags.configSource, "config-source", "", "Source of the site configuration values. Can be 'pipe' or path to a JSON file.")
+	extensionSiteConfigSetCmd.MarkFlagRequired("config-source")
+
+	extensionSiteConfigCmd.AddCommand(extensionSiteConfigDeleteCmd)
+	extensionSiteConfigCmd.AddCommand(extensionSiteConfigListForSiteCmd)
 }

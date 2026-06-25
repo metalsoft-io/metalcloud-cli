@@ -8,7 +8,7 @@ List and filter platform extensions with various criteria.
 
 This command displays all extensions accessible to your account, including workflows,
 applications, and actions. Use filters to narrow down the results based on labels,
-names, status, kind, and public visibility.
+names, status, and kind.
 
 Extension kinds:
 - workflow: Automated sequences of operations
@@ -25,21 +25,17 @@ Flags:
   --filter-name strings     Filter by extension names (can specify multiple)
   --filter-status strings   Filter by status: draft, active, archived (can specify multiple)
   --filter-kind strings     Filter by kind: workflow, application, action (can specify multiple)
-  --filter-public string    Filter by public visibility: true or false
 
 Examples:
   # List all extensions
   metalcloud extension list
-  
+
   # List only workflow extensions
   metalcloud extension list --filter-kind workflow
-  
+
   # List active and draft extensions
   metalcloud extension list --filter-status active --filter-status draft
-  
-  # List public workflows
-  metalcloud extension list --filter-kind workflow --filter-public true
-  
+
   # List extensions with specific labels
   metalcloud extension list --filter-label production --filter-label critical
 

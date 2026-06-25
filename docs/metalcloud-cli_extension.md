@@ -21,7 +21,10 @@ Available Commands:
   update              Modify existing extension properties
   publish             Activate draft extension for platform use
   archive             Deactivate published extension
-  make-public         Make extension publicly available to all users
+  activate            Return a suspended extension to active status
+  suspend             Temporarily disable an active extension
+  delete              Permanently delete an extension
+  site-config         Manage per-site configuration for extensions
   list-repo           List extensions available in a remote repository
   create-from-repo    Create extension by cloning from a repository
 
@@ -30,7 +33,7 @@ Examples:
   metalcloud extension create my-workflow workflow "Custom deployment workflow" --definition-source definition.json
   metalcloud extension update ext123 "Updated Name" "New description"
   metalcloud extension publish ext123
-  metalcloud extension make-public ext123
+  metalcloud extension delete ext123
 
 ### Options
 
@@ -54,12 +57,16 @@ Examples:
 ### SEE ALSO
 
 * [metalcloud-cli](metalcloud-cli.md)	 - MetalCloud CLI
+* [metalcloud-cli extension activate](metalcloud-cli_extension_activate.md)	 - Activate a suspended extension
 * [metalcloud-cli extension archive](metalcloud-cli_extension_archive.md)	 - Deactivate published extension and make it unavailable
 * [metalcloud-cli extension create](metalcloud-cli_extension_create.md)	 - Create new extension from definition
 * [metalcloud-cli extension create-from-repo](metalcloud-cli_extension_create-from-repo.md)	 - Create a new extension by cloning from a repository
+* [metalcloud-cli extension delete](metalcloud-cli_extension_delete.md)	 - Permanently delete an extension
 * [metalcloud-cli extension get](metalcloud-cli_extension_get.md)	 - Retrieve detailed information about a specific extension
 * [metalcloud-cli extension list](metalcloud-cli_extension_list.md)	 - List and filter platform extensions
 * [metalcloud-cli extension list-repo](metalcloud-cli_extension_list-repo.md)	 - List available extensions from a remote repository
 * [metalcloud-cli extension publish](metalcloud-cli_extension_publish.md)	 - Activate draft extension for platform use
+* [metalcloud-cli extension site-config](metalcloud-cli_extension_site-config.md)	 - Manage per-site configuration for extensions
+* [metalcloud-cli extension suspend](metalcloud-cli_extension_suspend.md)	 - Suspend an active extension
 * [metalcloud-cli extension update](metalcloud-cli_extension_update.md)	 - Modify existing extension properties and definition
 

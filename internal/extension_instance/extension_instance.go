@@ -37,20 +37,15 @@ var extensionInstancePrintConfig = formatter.PrintConfig{
 			Transformer: formatter.FormatStatusValue,
 			Order:       5,
 		},
-		"CreatedTimestamp": {
-			Title:       "Created",
-			Transformer: formatter.FormatDateTimeValue,
-			Order:       6,
-		},
 		"UpdatedTimestamp": {
 			Title:       "Updated",
 			Transformer: formatter.FormatDateTimeValue,
-			Order:       7,
+			Order:       6,
 		},
 	},
 }
 
-func ExtensionInstanceList(ctx context.Context, infrastructureIdOrLabel string) error {
+func ExtensionInstanceList(ctx context.Context, infrastructureIdOrLabel string, filterExtensionId []string, filterServiceStatus []string, filterConfigDeployStatus []string, filterConfigDeployType []string) error {
 	logger.Get().Info().Msgf("List all extension instances for infrastructure %s", infrastructureIdOrLabel)
 
 	infra, err := infrastructure.GetInfrastructureByIdOrLabel(ctx, infrastructureIdOrLabel)
@@ -59,13 +54,47 @@ func ExtensionInstanceList(ctx context.Context, infrastructureIdOrLabel string) 
 	}
 
 	client := api.GetApiClient(ctx)
+	request := client.ExtensionInstanceAPI.GetExtensionInstances(ctx, infra.Id).SortBy([]string{"id:ASC"})
 
-	instances, httpRes, err := client.ExtensionInstanceAPI.GetExtensionInstances(ctx, infra.Id).Execute()
-	if err := response_inspector.InspectResponse(httpRes, err); err != nil {
-		return err
+	if len(filterExtensionId) > 0 {
+		request = request.FilterExtensionId(utils.ProcessFilterStringSlice(filterExtensionId))
 	}
 
-	return formatter.PrintResult(instances.Data, &extensionInstancePrintConfig)
+	if len(filterServiceStatus) > 0 {
+		request = request.FilterServiceStatus(utils.ProcessFilterStringSlice(filterServiceStatus))
+	}
+
+	if len(filterConfigDeployStatus) > 0 {
+		request = request.FilterConfigDeployStatus(utils.ProcessFilterStringSlice(filterConfigDeployStatus))
+	}
+
+	if len(filterConfigDeployType) > 0 {
+		request = request.FilterConfigDeployType(utils.ProcessFilterStringSlice(filterConfigDeployType))
+	}
+
+	instances := make([]sdk.ExtensionInstance, 0)
+
+	page := float32(1)
+
+	// Loop through all pages and collect the extension instances list
+	for {
+		request = request.Page(page)
+
+		instanceList, httpRes, err := request.Execute()
+		if err := response_inspector.InspectResponse(httpRes, err); err != nil {
+			return err
+		}
+
+		instances = append(instances, instanceList.Data...)
+
+		if *instanceList.Meta.TotalPages <= *instanceList.Meta.CurrentPage {
+			break // No more pages to process
+		}
+
+		page++
+	}
+
+	return formatter.PrintResult(instances, &extensionInstancePrintConfig)
 }
 
 func ExtensionInstanceGet(ctx context.Context, extensionInstanceId string) error {
@@ -84,6 +113,24 @@ func ExtensionInstanceGet(ctx context.Context, extensionInstanceId string) error
 	}
 
 	return formatter.PrintResult(instance, &extensionInstancePrintConfig)
+}
+
+func ExtensionInstanceGetCredentials(ctx context.Context, extensionInstanceId string) error {
+	logger.Get().Info().Msgf("Get credentials for extension instance %s", extensionInstanceId)
+
+	id, err := GetExtensionInstanceId(extensionInstanceId)
+	if err != nil {
+		return err
+	}
+
+	client := api.GetApiClient(ctx)
+
+	credentials, httpRes, err := client.ExtensionInstanceAPI.GetExtensionInstanceCredentials(ctx, id).Execute()
+	if err := response_inspector.InspectResponse(httpRes, err); err != nil {
+		return err
+	}
+
+	return formatter.PrintResult(credentials, &formatter.PrintConfig{})
 }
 
 func ExtensionInstanceCreate(ctx context.Context, infrastructureIdOrLabel string, payload sdk.CreateExtensionInstance) error {

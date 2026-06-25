@@ -38,7 +38,11 @@ metalcloud-cli extension-instance list infrastructure_id_or_label [flags]
 ### Options
 
 ```
-  -h, --help   help for list
+      --filter-config-deploy-status strings   Filter extension instances by config deploy status
+      --filter-config-deploy-type strings     Filter extension instances by config deploy type
+      --filter-extension-id strings           Filter extension instances by extension ID
+      --filter-service-status strings         Filter extension instances by service status
+  -h, --help                                  help for list
 ```
 
 ### Options inherited from parent commands

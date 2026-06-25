@@ -13,10 +13,14 @@ import (
 
 var (
 	extensionInstanceFlags = struct {
-		configSource   string
-		extensionId    int
-		label          string
-		inputVariables []string
+		configSource             string
+		extensionId              int
+		label                    string
+		inputVariables           []string
+		filterExtensionId        []string
+		filterServiceStatus      []string
+		filterConfigDeployStatus []string
+		filterConfigDeployType   []string
 	}{}
 
 	extensionInstanceCmd = &cobra.Command{
@@ -33,11 +37,12 @@ variables that define its behavior. Extension instances go through various lifec
 including deployment, running, and deletion.
 
 Available Commands:
-  list     List all extension instances in an infrastructure
-  get      Retrieve detailed extension instance information
-  create   Deploy new extension instance in infrastructure
-  update   Modify existing extension instance configuration
-  delete   Remove extension instance from infrastructure
+  list         List all extension instances in an infrastructure
+  get          Retrieve detailed extension instance information
+  credentials  Retrieve the credentials of an extension instance
+  create       Deploy new extension instance in infrastructure
+  update       Modify existing extension instance configuration
+  delete       Remove extension instance from infrastructure
 
 Examples:
   metalcloud extension-instance list my-infrastructure
@@ -80,7 +85,14 @@ Examples:
 		Annotations:  map[string]string{system.REQUIRED_PERMISSION: system.PERMISSION_EXTENSION_INSTANCES_READ},
 		Args:         cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
-			return extension_instance.ExtensionInstanceList(cmd.Context(), args[0])
+			return extension_instance.ExtensionInstanceList(
+				cmd.Context(),
+				args[0],
+				extensionInstanceFlags.filterExtensionId,
+				extensionInstanceFlags.filterServiceStatus,
+				extensionInstanceFlags.filterConfigDeployStatus,
+				extensionInstanceFlags.filterConfigDeployType,
+			)
 		},
 	}
 
@@ -121,6 +133,33 @@ Examples:
 		Args:         cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			return extension_instance.ExtensionInstanceGet(cmd.Context(), args[0])
+		},
+	}
+
+	extensionInstanceCredentialsCmd = &cobra.Command{
+		Use:     "credentials extension_instance_id",
+		Aliases: []string{"get-credentials"},
+		Short:   "Retrieve the credentials of an extension instance",
+		Long: `Retrieve the credentials (resolved input variables) of an extension instance.
+
+This command returns the credential input variables associated with a deployed
+extension instance, such as generated passwords or tokens that the extension
+exposes for use.
+
+Arguments:
+  extension_instance_id    The unique ID of the extension instance
+
+Examples:
+  # Get credentials by instance ID
+  metalcloud extension-instance credentials 12345
+
+  # Get credentials using alias
+  metalcloud ext-inst get-credentials 12345`,
+		SilenceUsage: true,
+		Annotations:  map[string]string{system.REQUIRED_PERMISSION: system.PERMISSION_EXTENSION_INSTANCES_READ},
+		Args:         cobra.ExactArgs(1),
+		RunE: func(cmd *cobra.Command, args []string) error {
+			return extension_instance.ExtensionInstanceGetCredentials(cmd.Context(), args[0])
 		},
 	}
 
@@ -334,7 +373,13 @@ func init() {
 	rootCmd.AddCommand(extensionInstanceCmd)
 
 	extensionInstanceCmd.AddCommand(extensionInstanceListCmd)
+	extensionInstanceListCmd.Flags().StringSliceVar(&extensionInstanceFlags.filterExtensionId, "filter-extension-id", nil, "Filter extension instances by extension ID")
+	extensionInstanceListCmd.Flags().StringSliceVar(&extensionInstanceFlags.filterServiceStatus, "filter-service-status", nil, "Filter extension instances by service status")
+	extensionInstanceListCmd.Flags().StringSliceVar(&extensionInstanceFlags.filterConfigDeployStatus, "filter-config-deploy-status", nil, "Filter extension instances by config deploy status")
+	extensionInstanceListCmd.Flags().StringSliceVar(&extensionInstanceFlags.filterConfigDeployType, "filter-config-deploy-type", nil, "Filter extension instances by config deploy type")
+
 	extensionInstanceCmd.AddCommand(extensionInstanceGetCmd)
+	extensionInstanceCmd.AddCommand(extensionInstanceCredentialsCmd)
 
 	extensionInstanceCmd.AddCommand(extensionInstanceCreateCmd)
 	extensionInstanceCreateCmd.Flags().StringVar(&extensionInstanceFlags.configSource, "config-source", "", "Source of the new extension instance configuration. Can be 'pipe' or path to a JSON file.")
