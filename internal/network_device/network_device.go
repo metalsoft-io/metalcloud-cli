@@ -139,6 +139,85 @@ func NetworkDeviceCreate(ctx context.Context, config []byte) error {
 	return formatter.PrintResult(networkDeviceInfo, &NetworkDevicePrintConfig)
 }
 
+func NetworkDeviceCreateBulk(ctx context.Context, config []byte) error {
+	logger.Get().Info().Msgf("Creating network devices in bulk")
+
+	var devicesConfig []sdk.CreateNetworkDevice
+	err := utils.UnmarshalContent(config, &devicesConfig)
+	if err != nil {
+		return err
+	}
+
+	if len(devicesConfig) == 0 {
+		return fmt.Errorf("no network devices found in configuration")
+	}
+
+	client := api.GetApiClient(ctx)
+
+	// Track results for reporting
+	results := make([]interface{}, 0)
+	errors := make([]error, 0)
+
+	logger.Get().Info().Msgf("Creating %d network devices", len(devicesConfig))
+
+	// Process each network device
+	for i, deviceConfig := range devicesConfig {
+		label := networkDeviceConfigLabel(deviceConfig, i)
+
+		networkDeviceInfo, httpRes, err := client.NetworkDeviceAPI.CreateNetworkDevice(ctx).CreateNetworkDevice(deviceConfig).Execute()
+		if err := response_inspector.InspectResponse(httpRes, err); err != nil {
+			logger.Get().Error().Msgf("Failed to create network device %d: %s", i+1, err)
+			errors = append(errors, fmt.Errorf("network device %d (%s): %s", i+1, label, err))
+			continue
+		}
+
+		results = append(results, networkDeviceInfo)
+		logger.Get().Info().Msgf("Created network device %d: %s", i+1, label)
+	}
+
+	// Print summary
+	logger.Get().Info().Msgf("Bulk network device creation complete: %d created, %d failed", len(results), len(errors))
+
+	// Print any errors that occurred
+	errorsText := ""
+	if len(errors) > 0 {
+		logger.Get().Error().Msgf("Errors encountered during bulk creation:")
+		for _, err := range errors {
+			logger.Get().Error().Msgf("  - %s", err)
+			errorsText += fmt.Sprintf("\n  - %s", err)
+		}
+	}
+
+	// Print the successfully created network devices
+	if len(results) > 0 {
+		err = formatter.PrintResult(results, &NetworkDevicePrintConfig)
+	}
+
+	if len(errors) > 0 || err != nil {
+		if err != nil {
+			errorsText += fmt.Sprintf("\n  - %s", err)
+		}
+		return fmt.Errorf("bulk network device creation completed with errors: %s", errorsText)
+	}
+
+	return nil
+}
+
+// networkDeviceConfigLabel returns a human-friendly identifier for a device
+// config, used only in bulk-creation log lines and error messages.
+func networkDeviceConfigLabel(device sdk.CreateNetworkDevice, index int) string {
+	if device.IdentifierString != nil && *device.IdentifierString != "" {
+		return *device.IdentifierString
+	}
+	if device.ManagementAddress.IsSet() && device.ManagementAddress.Get() != nil && *device.ManagementAddress.Get() != "" {
+		return *device.ManagementAddress.Get()
+	}
+	if device.SerialNumber != nil && *device.SerialNumber != "" {
+		return *device.SerialNumber
+	}
+	return fmt.Sprintf("device[%d]", index)
+}
+
 func NetworkDeviceUpdate(ctx context.Context, networkDeviceId string, config []byte) error {
 	logger.Get().Info().Msgf("Updating network device")
 
