@@ -13,6 +13,11 @@ var (
 		configSource     string
 		portId           string
 		portStatusAction string
+		portEnabled      bool
+		portDescription  string
+		portIpFamily     string
+		portIpAddress    string
+		portIpPrefix     int32
 	}{}
 
 	networkDeviceCmd = &cobra.Command{
@@ -425,6 +430,81 @@ Examples:
 		},
 	}
 
+	networkDeviceUpdatePortConfigCmd = &cobra.Command{
+		Use:   "update-port-config <network_device_id>",
+		Short: "Update the staged config (enable/description) of a port",
+		Long: `Update the staged configuration of a single network device port, addressed
+by its numeric interface id.
+
+This patches the port's persistent config (applied on the next fabric deploy),
+not its live administrative status (use 'set-port-status' for that). You can set
+the enabled flag and/or the interface description.
+
+Arguments:
+  network_device_id   The unique identifier of the network device
+
+Required Flags:
+  --port-id           Numeric interface id of the port to configure
+
+Optional Flags (at least one must be specified):
+  --enabled           Whether the port should be enabled (true/false)
+  --description       Interface description text
+
+Examples:
+  # Enable a port and set its description
+  metalcloud-cli network-device update-port-config 12345 --port-id 67890 --enabled --description "to_spine-s00_swp1s0"
+
+  # Only set a description
+  metalcloud-cli nd update-port-config 12345 --port-id 67890 --description "to_hgx-su00-h00_enp26s0f0np0"`,
+		SilenceUsage: true,
+		Annotations:  map[string]string{system.REQUIRED_PERMISSION: system.PERMISSION_SWITCHES_WRITE},
+		Args:         cobra.ExactArgs(1),
+		RunE: func(cmd *cobra.Command, args []string) error {
+			var enabled *bool
+			if cmd.Flags().Changed("enabled") {
+				enabled = &networkDeviceFlags.portEnabled
+			}
+			var description *string
+			if cmd.Flags().Changed("description") {
+				description = &networkDeviceFlags.portDescription
+			}
+
+			return network_device.NetworkDeviceUpdatePortConfig(cmd.Context(), args[0], networkDeviceFlags.portId, enabled, description)
+		},
+	}
+
+	networkDeviceAddPortIpCmd = &cobra.Command{
+		Use:   "add-port-ip <network_device_id>",
+		Short: "Add an IP address to a network device port",
+		Long: `Stage a new IP address on a network device port, addressed by its numeric
+interface id. Typically used to assign a /32 loopback address to the loopback
+interface.
+
+Arguments:
+  network_device_id   The unique identifier of the network device
+
+Required Flags:
+  --port-id           Numeric interface id of the port
+  --address           IP address to add (without prefix, e.g. "10.253.128.1")
+  --prefix            Prefix length (e.g. 32 for a loopback /32)
+
+Optional Flags:
+  --family            Address family: ipv4 (default) or ipv6
+
+Examples:
+  # Add a /32 loopback address
+  metalcloud-cli network-device add-port-ip 12345 --port-id 67890 --address 10.253.128.1 --prefix 32
+
+  # Add an IPv6 address
+  metalcloud-cli nd add-port-ip 12345 --port-id 67890 --family ipv6 --address 2001:db8::1 --prefix 128`,
+		SilenceUsage: true,
+		Annotations:  map[string]string{system.REQUIRED_PERMISSION: system.PERMISSION_SWITCHES_WRITE},
+		Args:         cobra.ExactArgs(1),
+		RunE: func(cmd *cobra.Command, args []string) error {
+			return network_device.NetworkDeviceAddPortIp(cmd.Context(), args[0], networkDeviceFlags.portId, networkDeviceFlags.portIpFamily, networkDeviceFlags.portIpAddress, networkDeviceFlags.portIpPrefix)
+		},
+	}
+
 	networkDeviceResetCmd = &cobra.Command{
 		Use:   "reset <network_device_id>",
 		Short: "Reset network device to factory defaults (destructive operation)",
@@ -632,6 +712,22 @@ func init() {
 	networkDeviceSetPortStatusCmd.Flags().StringVar(&networkDeviceFlags.portId, "port-id", "", "ID of the port to change status.")
 	networkDeviceSetPortStatusCmd.Flags().StringVar(&networkDeviceFlags.portStatusAction, "action", "", "Action to perform on the port (up/down).")
 	networkDeviceSetPortStatusCmd.MarkFlagsOneRequired("port-id", "action")
+
+	networkDeviceCmd.AddCommand(networkDeviceUpdatePortConfigCmd)
+	networkDeviceUpdatePortConfigCmd.Flags().StringVar(&networkDeviceFlags.portId, "port-id", "", "Numeric interface id of the port to configure.")
+	networkDeviceUpdatePortConfigCmd.Flags().BoolVar(&networkDeviceFlags.portEnabled, "enabled", false, "Whether the port should be enabled.")
+	networkDeviceUpdatePortConfigCmd.Flags().StringVar(&networkDeviceFlags.portDescription, "description", "", "Interface description text.")
+	networkDeviceUpdatePortConfigCmd.MarkFlagRequired("port-id")
+	networkDeviceUpdatePortConfigCmd.MarkFlagsOneRequired("enabled", "description")
+
+	networkDeviceCmd.AddCommand(networkDeviceAddPortIpCmd)
+	networkDeviceAddPortIpCmd.Flags().StringVar(&networkDeviceFlags.portId, "port-id", "", "Numeric interface id of the port.")
+	networkDeviceAddPortIpCmd.Flags().StringVar(&networkDeviceFlags.portIpFamily, "family", "ipv4", "Address family: ipv4 or ipv6.")
+	networkDeviceAddPortIpCmd.Flags().StringVar(&networkDeviceFlags.portIpAddress, "address", "", "IP address to add (without prefix).")
+	networkDeviceAddPortIpCmd.Flags().Int32Var(&networkDeviceFlags.portIpPrefix, "prefix", 0, "Prefix length (e.g. 32 for a loopback /32).")
+	networkDeviceAddPortIpCmd.MarkFlagRequired("port-id")
+	networkDeviceAddPortIpCmd.MarkFlagRequired("address")
+	networkDeviceAddPortIpCmd.MarkFlagRequired("prefix")
 
 	networkDeviceCmd.AddCommand(networkDeviceResetCmd)
 

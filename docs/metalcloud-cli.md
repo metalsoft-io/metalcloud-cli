@@ -55,6 +55,7 @@ metalcloud-cli [flags]
 * [metalcloud-cli network-device](metalcloud-cli_network-device.md)	 - Manage network devices (switches) in the infrastructure
 * [metalcloud-cli os-template](metalcloud-cli_os-template.md)	 - Manage OS templates for server deployments
 * [metalcloud-cli permission](metalcloud-cli_permission.md)	 - Permission management
+* [metalcloud-cli point-to-point-link](metalcloud-cli_point-to-point-link.md)	 - Manage point-to-point links between network interfaces
 * [metalcloud-cli quota-profile](metalcloud-cli_quota-profile.md)	 - Quota Profile management
 * [metalcloud-cli resource-pool](metalcloud-cli_resource-pool.md)	 - Manage resource pools and their associated resources
 * [metalcloud-cli role](metalcloud-cli_role.md)	 - Manage user roles and permissions
