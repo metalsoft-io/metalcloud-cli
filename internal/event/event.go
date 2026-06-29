@@ -2,7 +2,10 @@ package event
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
+	"io"
+	"net/http"
 	"strconv"
 
 	"github.com/metalsoft-io/metalcloud-cli/pkg/api"
@@ -11,6 +14,20 @@ import (
 	"github.com/metalsoft-io/metalcloud-cli/pkg/response_inspector"
 	"github.com/metalsoft-io/metalcloud-cli/pkg/utils"
 )
+
+// eventRaw avoids SDK unmarshal failure: the SDK's typed Event model rejects
+// API responses whose enum values it doesn't know (e.g. a numeric EventTypes
+// like "109") and requires `severity`, which the API may omit. Parsing the raw
+// body into plain string fields keeps `event list`/`event get` tolerant of
+// SDK <-> API schema drift.
+type eventRaw struct {
+	Id                interface{} `json:"id"`
+	Type              *string     `json:"type"`
+	Severity          *string     `json:"severity"`
+	Visibility        *string     `json:"visibility"`
+	OccurredTimestamp *string     `json:"occurredTimestamp"`
+	Title             *string     `json:"title"`
+}
 
 var eventPrintConfig = formatter.PrintConfig{
 	FieldsConfig: map[string]formatter.RecordFieldConfig{
@@ -100,28 +117,50 @@ func EventList(ctx context.Context, flags ListFlags) error {
 
 	if flags.Page > 0 {
 		// Specific page requested — fetch that page window, spanning API pages when limit > 100.
-		records, meta, err := utils.FetchPageWindow(request, flags.Page, flags.Limit)
+		rawItems, meta, err := utils.FetchPageWindowRaw(func(p, l float32) (*http.Response, error) {
+			_, httpRes, _ := request.Page(p).Limit(l).Execute()
+			return httpRes, nil
+		}, flags.Page, flags.Limit)
 		if err != nil {
 			return err
 		}
-		return utils.PrintAll(records, meta, len(records), &eventPrintConfig)
+		records, err := utils.UnmarshalRawItems[eventRaw](rawItems)
+		if err != nil {
+			return fmt.Errorf("failed to parse events: %w", err)
+		}
+		return utils.PrintAllRaw(rawItems, records, meta, len(records), &eventPrintConfig)
 	}
 
 	if flags.Limit > 0 {
 		// Limit without page — fetch exactly N records, spanning pages as needed.
-		records, meta, err := utils.FetchUpTo(request, flags.Limit)
+		rawItems, meta, err := utils.FetchUpToRaw(func(page, limit float32) (*http.Response, error) {
+			_, httpRes, _ := request.Page(page).Limit(limit).Execute()
+			return httpRes, nil
+		}, flags.Limit)
 		if err != nil {
 			return err
 		}
-		return utils.PrintAll(records, meta, len(records), &eventPrintConfig)
+		records, err := utils.UnmarshalRawItems[eventRaw](rawItems)
+		if err != nil {
+			return fmt.Errorf("failed to parse events: %w", err)
+		}
+		return utils.PrintAllRaw(rawItems, records, meta, len(records), &eventPrintConfig)
 	}
 
-	records, meta, err := utils.FetchAllPages(request)
+	rawItems, meta, err := utils.FetchAllPagesRaw(func(page float32) (*http.Response, error) {
+		_, httpRes, _ := request.Page(page).Limit(100).Execute()
+		return httpRes, nil
+	})
 	if err != nil {
 		return err
 	}
 
-	return utils.PrintAll(records, meta, len(records), &eventPrintConfig)
+	records, err := utils.UnmarshalRawItems[eventRaw](rawItems)
+	if err != nil {
+		return fmt.Errorf("failed to parse events: %w", err)
+	}
+
+	return utils.PrintAllRaw(rawItems, records, meta, len(records), &eventPrintConfig)
 }
 
 func EventGet(ctx context.Context, eventId string) error {
@@ -134,12 +173,27 @@ func EventGet(ctx context.Context, eventId string) error {
 
 	client := api.GetApiClient(ctx)
 
-	event, httpRes, err := client.EventAPI.GetEvent(ctx, id).Execute()
-	if err := response_inspector.InspectResponse(httpRes, err); err != nil {
-		return err
+	// Raw-body parse: the SDK Event model rejects unknown enum values and requires
+	// `severity`, which the API can omit, so SDK unmarshalling fails on valid responses.
+	_, httpRes, sdkErr := client.EventAPI.GetEvent(ctx, id).Execute()
+	if httpRes != nil && httpRes.StatusCode >= 400 {
+		return response_inspector.InspectResponse(httpRes, sdkErr)
+	}
+	if httpRes == nil {
+		return sdkErr
 	}
 
-	return formatter.PrintResult(event, &eventPrintConfig)
+	body, err := io.ReadAll(httpRes.Body)
+	if err != nil {
+		return fmt.Errorf("failed to read response body: %w", err)
+	}
+
+	var record eventRaw
+	if err := json.Unmarshal(body, &record); err != nil {
+		return fmt.Errorf("failed to parse event: %w", err)
+	}
+
+	return formatter.PrintResult(record, &eventPrintConfig)
 }
 
 func getEventId(eventId string) (int64, error) {

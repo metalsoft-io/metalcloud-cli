@@ -1,10 +1,13 @@
 package api
 
 import (
+	"bytes"
 	"context"
 	"crypto/tls"
 	"fmt"
+	"io"
 	"net/http"
+	"strings"
 
 	"github.com/metalsoft-io/metalcloud-cli/pkg/logger"
 	sdk "github.com/metalsoft-io/metalcloud-sdk-go"
@@ -84,6 +87,53 @@ func SetApiClient(ctx context.Context, apiEndpoint string, apiKey string, debug 
 	ctx = context.WithValue(ctx, sdk.ContextAccessToken, apiKey)
 
 	return ctx
+}
+
+// DoJSONRequest issues an HTTP request against the configured API endpoint using
+// the same base URL, auth token, and HTTP client as the SDK, but bypassing the
+// typed SDK request/response models. Use it for endpoints whose generated types
+// reject valid payloads due to schema drift — e.g. polymorphic `oneOf` unions
+// that fail to match an empty object. `body` may be nil for bodyless requests.
+// The caller owns closing the returned response body.
+func DoJSONRequest(ctx context.Context, method, path string, body []byte) (*http.Response, error) {
+	apiClient, err := GetApiClientE(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	cfg := apiClient.GetConfig()
+	if cfg == nil || len(cfg.Servers) == 0 {
+		return nil, fmt.Errorf("no API server configured")
+	}
+	url := strings.TrimRight(cfg.Servers[0].URL, "/") + path
+
+	var reqBody io.Reader
+	if body != nil {
+		reqBody = bytes.NewReader(body)
+	}
+
+	req, err := http.NewRequestWithContext(ctx, method, url, reqBody)
+	if err != nil {
+		return nil, err
+	}
+
+	if token, ok := ctx.Value(sdk.ContextAccessToken).(string); ok && token != "" {
+		req.Header.Set("Authorization", "Bearer "+token)
+	}
+	if body != nil {
+		req.Header.Set("Content-Type", "application/json")
+	}
+	req.Header.Set("Accept", "application/json")
+	if cfg.UserAgent != "" {
+		req.Header.Set("User-Agent", cfg.UserAgent)
+	}
+
+	httpClient := cfg.HTTPClient
+	if httpClient == nil {
+		httpClient = http.DefaultClient
+	}
+
+	return httpClient.Do(req)
 }
 
 func GetUserId(ctx context.Context) string {

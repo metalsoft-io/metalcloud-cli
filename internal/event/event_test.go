@@ -104,6 +104,51 @@ func TestEventList_Pagination(t *testing.T) {
 	}
 }
 
+// makeDriftedEvent returns an event whose `type` is an enum value the SDK does
+// not know (a numeric EventTypes such as "109") and which omits the SDK-required
+// `severity`. The typed SDK model rejects such responses; raw-body parsing must not.
+func makeDriftedEvent(id string) map[string]any {
+	return map[string]any{
+		"id":                id,
+		"type":              "109",
+		"severity":          "info",
+		"level":             "info",
+		"visibility":        "public",
+		"title":             "Drifted event " + id,
+		"message":           "something happened",
+		"occurredTimestamp": "2024-01-01T00:00:00Z",
+	}
+}
+
+// TestEventList_UnknownEnumValue is a regression test for the SDK<->API enum
+// desync where `event list` failed with "109 is not a valid EventTypes".
+func TestEventList_UnknownEnumValue(t *testing.T) {
+	page := testutils.PaginatedResponse([]any{makeDriftedEvent("1"), makeEvent("2")}, 1, 1)
+	ts := testutils.NewTestServer(map[string]http.HandlerFunc{
+		"/api/v2/events": testutils.JSONHandler(http.StatusOK, page),
+	})
+	defer ts.Close()
+
+	ctx := testutils.SetupTestContext(ts.URL)
+	if err := EventList(ctx, ListFlags{}); err != nil {
+		t.Fatalf("expected nil error for unknown EventTypes value, got: %v", err)
+	}
+}
+
+// TestEventGet_UnknownEnumValue is the single-event counterpart of the regression test.
+func TestEventGet_UnknownEnumValue(t *testing.T) {
+	ev := makeDriftedEvent("7")
+	ts := testutils.NewTestServer(map[string]http.HandlerFunc{
+		"/api/v2/events/7": testutils.JSONHandler(http.StatusOK, ev),
+	})
+	defer ts.Close()
+
+	ctx := testutils.SetupTestContext(ts.URL)
+	if err := EventGet(ctx, "7"); err != nil {
+		t.Fatalf("expected nil error for unknown EventTypes value, got: %v", err)
+	}
+}
+
 // TestEventGet_HappyPath verifies successful retrieval of a single event.
 func TestEventGet_HappyPath(t *testing.T) {
 	ev := makeEvent("7")

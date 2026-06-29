@@ -2,6 +2,9 @@ package role
 
 import (
 	"context"
+	"encoding/json"
+	"fmt"
+	"io"
 
 	"github.com/metalsoft-io/metalcloud-cli/pkg/api"
 	"github.com/metalsoft-io/metalcloud-cli/pkg/formatter"
@@ -10,6 +13,22 @@ import (
 	"github.com/metalsoft-io/metalcloud-cli/pkg/utils"
 	sdk "github.com/metalsoft-io/metalcloud-sdk-go"
 )
+
+// roleRaw avoids SDK unmarshal failure: the SDK's typed Role model decodes
+// `permissions` into the strict MetalsoftPermissions enum, which rejects
+// permission values it doesn't know (e.g. network_profile_allowed_for_user_read).
+// Parsing the raw body into plain string fields keeps `role list`/`role get`
+// tolerant of SDK <-> API permission-enum drift.
+type roleRaw struct {
+	Id             interface{} `json:"id"`
+	Name           *string     `json:"name"`
+	Label          *string     `json:"label"`
+	Description    *string     `json:"description"`
+	Type           *string     `json:"type"`
+	Permissions    []string    `json:"permissions"`
+	QuotaProfileId interface{} `json:"quotaProfileId"`
+	UsersWithRole  *float32    `json:"usersWithRole"`
+}
 
 var rolePrintConfig = formatter.PrintConfig{
 	FieldsConfig: map[string]formatter.RecordFieldConfig{
@@ -39,12 +58,24 @@ func List(ctx context.Context) error {
 
 	client := api.GetApiClient(ctx)
 
-	roles, httpRes, err := client.SecurityAPI.GetRoles(ctx).Execute()
-	if err := response_inspector.InspectResponse(httpRes, err); err != nil {
+	// Raw-body parse: the typed Role model rejects unknown permission enum
+	// values, so SDK unmarshalling fails on otherwise-valid responses.
+	_, httpRes, sdkErr := client.SecurityAPI.GetRoles(ctx).Execute()
+	if httpRes == nil {
+		return sdkErr
+	}
+
+	rawItems, meta, err := utils.ParseRawPage(httpRes)
+	if err != nil {
 		return err
 	}
 
-	return formatter.PrintResult(roles.Data, &rolePrintConfig)
+	records, err := utils.UnmarshalRawItems[roleRaw](rawItems)
+	if err != nil {
+		return fmt.Errorf("failed to parse roles: %w", err)
+	}
+
+	return utils.PrintAllRaw(rawItems, records, meta, len(records), &rolePrintConfig)
 }
 
 func Get(ctx context.Context, roleName string) error {
@@ -52,12 +83,26 @@ func Get(ctx context.Context, roleName string) error {
 
 	client := api.GetApiClient(ctx)
 
-	role, httpRes, err := client.SecurityAPI.GetRole(ctx, roleName).Execute()
-	if err := response_inspector.InspectResponse(httpRes, err); err != nil {
-		return err
+	// Raw-body parse: see List — the MetalsoftPermissions enum drift breaks typed decoding.
+	_, httpRes, sdkErr := client.SecurityAPI.GetRole(ctx, roleName).Execute()
+	if httpRes != nil && httpRes.StatusCode >= 400 {
+		return response_inspector.InspectResponse(httpRes, sdkErr)
+	}
+	if httpRes == nil {
+		return sdkErr
 	}
 
-	return formatter.PrintResult(role, &rolePrintConfig)
+	body, err := io.ReadAll(httpRes.Body)
+	if err != nil {
+		return fmt.Errorf("failed to read response body: %w", err)
+	}
+
+	var record roleRaw
+	if err := json.Unmarshal(body, &record); err != nil {
+		return fmt.Errorf("failed to parse role: %w", err)
+	}
+
+	return formatter.PrintResult(record, &rolePrintConfig)
 }
 
 func Create(ctx context.Context, config []byte) error {

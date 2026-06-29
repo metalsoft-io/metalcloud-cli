@@ -58,6 +58,8 @@ metalcloud-cli job-group list [flags]
       --filter-job-group-id strings   Filter by job group ID.
       --filter-type strings           Filter by job group type.
   -h, --help                          help for list
+      --limit int                     Number of records per page (default: return all records).
+      --page int                      Page number to retrieve (default: return all records).
       --sort-by strings               Sort by fields (e.g., jobGroupId:ASC).
 ```
 

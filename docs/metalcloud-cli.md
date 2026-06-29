@@ -34,6 +34,7 @@ metalcloud-cli [flags]
 * [metalcloud-cli bucket](metalcloud-cli_bucket.md)	 - Manage S3-compatible object storage buckets
 * [metalcloud-cli cron-job](metalcloud-cli_cron-job.md)	 - Manage scheduled cron jobs
 * [metalcloud-cli custom-iso](metalcloud-cli_custom-iso.md)	 - Manage custom ISO images for server provisioning
+* [metalcloud-cli device-config-template](metalcloud-cli_device-config-template.md)	 - Manage device configuration templates and profiles
 * [metalcloud-cli dns-zone](metalcloud-cli_dns-zone.md)	 - DNS Zone management
 * [metalcloud-cli drive](metalcloud-cli_drive.md)	 - Manage drives within infrastructures
 * [metalcloud-cli endpoint](metalcloud-cli_endpoint.md)	 - Endpoint management

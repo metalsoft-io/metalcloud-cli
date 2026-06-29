@@ -19,8 +19,8 @@ Flags:
   --filter-infrastructure-id Filter results by infrastructure ID(s) (can be used multiple times). Use 'null' to filter public logical networks
   --filter-kind              Filter results by network kind(s) like 'vlan', 'vxlan' (can be used multiple times)
   --sort-by                  Sort results by field(s) with direction (e.g., id:ASC, name:DESC)
-  --page                     Page number to retrieve (default: 1)
-  --limit                    Number of records per page (default: 20, max: 100)
+  --page                     Page number to retrieve (default: all records)
+  --limit                    Number of records per page (default: all records)
 
 Examples:
   # List all logical networks
@@ -57,8 +57,8 @@ metalcloud-cli logical-network list [fabric_id_or_label] [flags]
       --filter-kind strings                Filter by logical network kind.
       --filter-label strings               Filter by logical network label.
   -h, --help                               help for list
-      --limit int                          Number of records per page (default: 20, max: 100). (default 20)
-      --page int                           Page number to retrieve (default: 1). (default 1)
+      --limit int                          Number of records per page (default: return all records).
+      --page int                           Page number to retrieve (default: return all records).
       --sort-by strings                    Sort by fields (e.g., id:ASC, name:DESC).
 ```
 
