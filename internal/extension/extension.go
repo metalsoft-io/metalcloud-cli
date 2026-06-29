@@ -264,8 +264,8 @@ func ExtensionUpdate(ctx context.Context, extensionId string, name string, descr
 	}
 
 	updateExtension := sdk.UpdateExtension{
-		Name:        name,
-		Description: description,
+		Name:        sdk.PtrString(name),
+		Description: sdk.PtrString(description),
 		Definition:  definition,
 	}
 
