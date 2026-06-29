@@ -36,6 +36,8 @@ metalcloud-cli job list-archived [flags]
       --filter-job-id strings         Filter by job ID.
       --filter-status strings         Filter by job status.
   -h, --help                          help for list-archived
+      --limit int                     Maximum number of records to return (default: all).
+      --page int                      Page number to retrieve (default: return all records).
       --sort-by strings               Sort by fields (e.g., jobId:ASC, status:DESC).
 ```
 

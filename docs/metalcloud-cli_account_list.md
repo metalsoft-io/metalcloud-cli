@@ -23,6 +23,9 @@ Examples:
   # List all accounts using alias
   metalcloud-cli accounts ls
 
+  # List archived accounts (excluded by default)
+  metalcloud-cli account list --archived
+
 ```
 metalcloud-cli account list [flags]
 ```
@@ -30,7 +33,8 @@ metalcloud-cli account list [flags]
 ### Options
 
 ```
-  -h, --help   help for list
+      --archived   List archived accounts (excluded by default).
+  -h, --help       help for list
 ```
 
 ### Options inherited from parent commands
