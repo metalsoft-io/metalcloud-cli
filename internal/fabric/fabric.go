@@ -466,6 +466,15 @@ func FabricConfigureSwitches(ctx context.Context, fabricIdOrLabel string, config
 	return nil
 }
 
+// FabricConfigureSwitchesExample prints a commented, ready-to-edit example of
+// the fabric switch configuration accepted by FabricConfigureSwitches. The
+// output is valid YAML and can be piped straight into the configure-switches
+// command's --config-source.
+func FabricConfigureSwitchesExample(ctx context.Context) error {
+	fmt.Print(fabric_switch_config.ExampleConfigYAML())
+	return nil
+}
+
 func GetFabricByIdOrLabel(ctx context.Context, fabricIdOrLabel string) (*sdk.NetworkFabric, error) {
 	client := api.GetApiClient(ctx)
 

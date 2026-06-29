@@ -548,6 +548,25 @@ Examples:
 			return fabric.FabricConfigureSwitches(cmd.Context(), args[0], config, fabricFlags.dryRun)
 		},
 	}
+
+	fabricConfigureSwitchesExampleCmd = &cobra.Command{
+		Use:     "configure-switches-example",
+		Aliases: []string{"configure-switches-config-example"},
+		Short:   "Show an example switch configuration for configure-switches",
+		Long: `Print a commented, ready-to-edit example of the configuration accepted by
+'fabric configure-switches'. The output is valid YAML; redirect it to a file or
+pipe it straight into the command.
+
+Examples:
+  metalcloud-cli fabric configure-switches-example
+  metalcloud-cli fabric configure-switches-example > fabric-config.yaml
+  metalcloud-cli fabric configure-switches-example | metalcloud-cli fabric configure-switches 5 --config-source pipe --dry-run`,
+		SilenceUsage: true,
+		Annotations:  map[string]string{system.REQUIRED_PERMISSION: system.PERMISSION_NETWORK_FABRICS_READ},
+		RunE: func(cmd *cobra.Command, args []string) error {
+			return fabric.FabricConfigureSwitchesExample(cmd.Context())
+		},
+	}
 )
 
 func init() {
@@ -595,4 +614,6 @@ func init() {
 	fabricConfigureSwitchesCmd.Flags().StringVar(&fabricFlags.configSource, "config-source", "", "Source of the switch configuration. Can be 'pipe' or path to a YAML/JSON file.")
 	fabricConfigureSwitchesCmd.Flags().BoolVar(&fabricFlags.dryRun, "dry-run", false, "Compute and preview the plan without making any changes.")
 	fabricConfigureSwitchesCmd.MarkFlagRequired("config-source")
+
+	fabricCmd.AddCommand(fabricConfigureSwitchesExampleCmd)
 }
