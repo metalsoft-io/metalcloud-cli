@@ -57,6 +57,7 @@ Available Commands:
 * [metalcloud-cli fabric get](metalcloud-cli_fabric_get.md)	 - Get detailed fabric information
 * [metalcloud-cli fabric get-devices](metalcloud-cli_fabric_get-devices.md)	 - List devices in a fabric
 * [metalcloud-cli fabric get-links](metalcloud-cli_fabric_get-links.md)	 - List links in a fabric
+* [metalcloud-cli fabric import-devices](metalcloud-cli_fabric_import-devices.md)	 - Bulk-import switches and attach them to a fabric (idempotent)
 * [metalcloud-cli fabric list](metalcloud-cli_fabric_list.md)	 - List all network fabrics
 * [metalcloud-cli fabric remove-device](metalcloud-cli_fabric_remove-device.md)	 - Remove network device from a fabric
 * [metalcloud-cli fabric remove-link](metalcloud-cli_fabric_remove-link.md)	 - Remove a network fabric link
