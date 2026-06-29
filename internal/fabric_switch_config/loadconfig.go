@@ -50,10 +50,9 @@ type rawP2p struct {
 }
 
 // LoadConfig parses and validates a fabric-switch configuration from YAML/JSON
-// bytes. It mirrors load_config() in configure_switches.py: it validates the
-// feature sections' shapes and value ranges and returns a *ConfigError on any
-// violation. Structural rules that depend on the device set (tag presence,
-// topology fit) are enforced later by ComputeDesired.
+// bytes. It validates the feature sections' shapes and value ranges and returns
+// a *ConfigError on any violation. Structural rules that depend on the device
+// set (tag presence, topology fit) are enforced later by ComputeDesired.
 func LoadConfig(data []byte) (*Config, error) {
 	var raw rawConfig
 	if err := yaml.Unmarshal(data, &raw); err != nil {

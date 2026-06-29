@@ -1,5 +1,4 @@
-// Package fabric_switch_config is a pure (no I/O, no SDK) port of the compute
-// engine of the standalone nvidia-ra-scripts/configure_switches.py script.
+// Package fabric_switch_config is a pure (no I/O, no SDK) compute engine.
 //
 // It turns a declarative fabric configuration plus the current set of fabric
 // devices into a fully-computed DesiredState: per-device hostname/ASN/loopback,

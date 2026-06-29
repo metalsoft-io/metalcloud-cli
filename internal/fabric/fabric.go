@@ -406,8 +406,7 @@ func FabricDevicesRemove(ctx context.Context, fabricId string, deviceId string) 
 
 // FabricConfigureSwitches applies a declarative fabric-switch configuration
 // (hostnames, ASNs, loopbacks, port enable/descriptions, point-to-point links)
-// to every device in a fabric. It is the CLI port of the standalone
-// configure_switches.py script: idempotent, with a --dry-run preview.
+// to every device in a fabric. It is idempotent, with a --dry-run preview.
 func FabricConfigureSwitches(ctx context.Context, fabricIdOrLabel string, config []byte, dryRun bool) error {
 	fabricInfo, err := GetFabricByIdOrLabel(ctx, fabricIdOrLabel)
 	if err != nil {

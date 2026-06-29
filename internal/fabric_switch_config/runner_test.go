@@ -3,7 +3,7 @@ package fabric_switch_config
 import "testing"
 
 // fakeClient is an in-memory Client that records writes and applies them so a
-// re-run observes the new state (mirrors FakeClient in test_offline.py).
+// re-run observes the new state.
 type fakeClient struct {
 	fabric      *FabricInfo
 	devices     map[int64]*DeviceRecord

@@ -8,7 +8,6 @@ func ptrInt(v int) *int       { return &v }
 func ptrInt32(v int32) *int32 { return &v }
 func ptrStr(v string) *string { return &v }
 
-// fixtureDevices mirrors make_fixture() in nvidia-ra-scripts/test_offline.py.
 func fixtureDevices() []*Device {
 	d := func(id int64, position, mgmt string, tags map[string]string) *Device {
 		return &Device{

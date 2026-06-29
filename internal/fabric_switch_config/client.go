@@ -1,8 +1,7 @@
 package fabric_switch_config
 
 // Client is the narrow set of fabric operations the runner needs, abstracted
-// away from the SDK so the runner can be unit-tested with a fake (mirroring the
-// FakeClient in nvidia-ra-scripts/test_offline.py). sdkClient is the production
+// away from the SDK so the runner can be unit-tested. sdkClient is the production
 // implementation over *sdk.APIClient.
 type Client interface {
 	GetFabric(fabricId int64) (*FabricInfo, error)

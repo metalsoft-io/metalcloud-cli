@@ -2,7 +2,6 @@ package fabric_switch_config
 
 import "testing"
 
-// twoTierDevices mirrors make_2tier_fixture() in test_offline.py.
 func twoTierDevices() []*Device {
 	d := func(id int64, position, mgmt string, tags map[string]string) *Device {
 		return &Device{Id: id, Position: position, ManagementAddress: mgmt,

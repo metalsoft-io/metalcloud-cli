@@ -11,7 +11,7 @@ const exampleConfigYAML = `# Fabric switch configuration for 'metalcloud-cli fab
 # written. Run with --dry-run to preview the full computed plan without writing.
 #
 # Device roles are taken from each device's 'position' (leaf | spine |
-# super_spine). A fabric is 3-tier iff it has super_spine devices. Most steps are
+# super_spine). A fabric is 3-tier if it has super_spine devices. Most steps are
 # driven by NVIDIA tags on the devices: nvidia/pod-id, nvidia/scalability-unit-id,
 # nvidia/rail-group-id, nvidia/spine-index, nvidia/ssp-group-id.
 
