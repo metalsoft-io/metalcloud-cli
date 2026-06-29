@@ -61,18 +61,17 @@ func DNSZoneList(ctx context.Context, filterIsDefault []string) error {
 
 	client := api.GetApiClient(ctx)
 
-	request := client.DNSZoneAPI.GetDNSZones(ctx)
-
+	request := client.DNSZoneAPI.GetDNSZones(ctx).SortBy([]string{"id:ASC"})
 	if len(filterIsDefault) > 0 {
 		request = request.FilterIsDefault(utils.ProcessFilterStringSlice(filterIsDefault))
 	}
 
-	dnsZoneList, httpRes, err := request.Execute()
-	if err := response_inspector.InspectResponse(httpRes, err); err != nil {
+	records, meta, err := utils.FetchAllPages(request)
+	if err != nil {
 		return err
 	}
 
-	return formatter.PrintResult(dnsZoneList, &dnsZonePrintConfig)
+	return utils.PrintAll(records, meta, len(records), &dnsZonePrintConfig)
 }
 
 func DNSZoneGet(ctx context.Context, dnsZoneId string) error {

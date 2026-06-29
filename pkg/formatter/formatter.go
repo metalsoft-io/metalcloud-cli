@@ -3,6 +3,7 @@ package formatter
 import (
 	"encoding/json"
 	"fmt"
+	"math"
 	"os"
 	"strconv"
 	"strings"
@@ -293,7 +294,29 @@ func locateField(fieldName string, recordValue reflect.Value) reflect.Value {
 	field := recordValue
 
 	for _, namePart := range strings.Split(fieldName, ".") {
-		field = field.FieldByName(namePart)
+		// Unwrap interface/pointer wrappers before FieldByName — calling
+		// FieldByName on an interface or non-struct value panics.
+		for field.Kind() == reflect.Interface || field.Kind() == reflect.Ptr {
+			if field.IsNil() {
+				return reflect.Value{}
+			}
+			field = field.Elem()
+		}
+		switch field.Kind() {
+		case reflect.Struct:
+			field = field.FieldByName(namePart)
+		case reflect.Map:
+			// Raw-decoded JSON objects: look up by camelCase key
+			// (Go field name "EthernetFabric" → JSON key "ethernetFabric").
+			m := field
+			key := strings.ToLower(namePart[:1]) + namePart[1:]
+			field = m.MapIndex(reflect.ValueOf(key))
+			if !field.IsValid() {
+				field = m.MapIndex(reflect.ValueOf(namePart))
+			}
+		default:
+			return reflect.Value{}
+		}
 		if !field.IsValid() {
 			break
 		}
@@ -365,7 +388,13 @@ func extractValue(value reflect.Value) interface{} {
 	case reflect.Uint, reflect.Uint8, reflect.Uint16, reflect.Uint32, reflect.Uint64:
 		return value.Uint()
 	case reflect.Float32, reflect.Float64:
-		return value.Float()
+		// Whole values (e.g. large numeric IDs decoded from JSON as float64)
+		// render as integers to avoid scientific notation like 2.4671856e+07.
+		f := value.Float()
+		if f == math.Trunc(f) && math.Abs(f) < 1e15 {
+			return int64(f)
+		}
+		return f
 	case reflect.Array, reflect.Slice:
 		var result []interface{}
 		for i := 0; i < value.Len(); i++ {

@@ -73,7 +73,7 @@ func EndpointList(ctx context.Context, filterSite []string, filterExternalId []s
 
 	client := api.GetApiClient(ctx)
 
-	request := client.EndpointAPI.GetEndpoints(ctx)
+	request := client.EndpointAPI.GetEndpoints(ctx).SortBy([]string{"id:ASC"})
 
 	if len(filterSite) > 0 {
 		request = request.FilterSiteId(utils.ProcessFilterStringSlice(filterSite))
@@ -83,12 +83,12 @@ func EndpointList(ctx context.Context, filterSite []string, filterExternalId []s
 		request = request.FilterExternalId(utils.ProcessFilterStringSlice(filterExternalId))
 	}
 
-	endpointList, httpRes, err := request.Execute()
-	if err := response_inspector.InspectResponse(httpRes, err); err != nil {
+	endpoints, meta, err := utils.FetchAllPages(request)
+	if err != nil {
 		return err
 	}
 
-	return formatter.PrintResult(endpointList, &endpointPrintConfig)
+	return utils.PrintAll(endpoints, meta, len(endpoints), &endpointPrintConfig)
 }
 
 func EndpointGet(ctx context.Context, endpointId string) error {
@@ -191,13 +191,15 @@ func EndpointInterfaceList(ctx context.Context, endpointId string) error {
 
 	client := api.GetApiClient(ctx)
 
-	endpointInterfaces, httpRes, err := client.EndpointAPI.GetEndpointInterfaces(ctx, endpointIdNumeric).Execute()
-	if err := response_inspector.InspectResponse(httpRes, err); err != nil {
+	request := client.EndpointAPI.GetEndpointInterfaces(ctx, endpointIdNumeric).SortBy([]string{"id:ASC"})
+
+	interfaces, _, err := utils.FetchAllPages(request)
+	if err != nil {
 		return err
 	}
 
-	endpointInterfacesList := make([]EndpointInterfaceDetails, 0, len(endpointInterfaces.Data))
-	for _, iface := range endpointInterfaces.Data {
+	endpointInterfacesList := make([]EndpointInterfaceDetails, 0, len(interfaces))
+	for _, iface := range interfaces {
 		endpointInterface := EndpointInterfaceDetails{
 			Id:                         &iface.Id,
 			MacAddress:                 iface.MacAddress,

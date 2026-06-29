@@ -69,29 +69,12 @@ func ExtensionList(ctx context.Context, filterLabel []string, filterName []strin
 		request = request.FilterKind(utils.ProcessFilterStringSlice(filterKind))
 	}
 
-	extensions := make([]sdk.ExtensionInfo, 0)
-
-	page := float32(1)
-
-	// Loop through all pages and collect extensions list
-	for {
-		request = request.Page(page)
-
-		extensionList, httpRes, err := request.Execute()
-		if err := response_inspector.InspectResponse(httpRes, err); err != nil {
-			return err
-		}
-
-		extensions = append(extensions, extensionList.Data...)
-
-		if *extensionList.Meta.TotalPages <= *extensionList.Meta.CurrentPage {
-			break // No more pages to process
-		}
-
-		page++
+	extensions, meta, err := utils.FetchAllPages(request)
+	if err != nil {
+		return err
 	}
 
-	return formatter.PrintResult(extensions, &extensionPrintConfig)
+	return utils.PrintAll(extensions, meta, len(extensions), &extensionPrintConfig)
 }
 
 func ExtensionGet(ctx context.Context, extensionId string) error {

@@ -41,6 +41,7 @@ func FileShareSnapshotList(ctx context.Context, infrastructureIdOrLabel string, 
 
 	client := api.GetApiClient(ctx)
 
+	// GetFileShareSnapshots returns a flat []FileShareSnapshot — no Page/Limit methods; not paginated.
 	snapshots, httpRes, err := client.FileShareAPI.GetFileShareSnapshots(ctx, int64(infrastructureInfo.Id), fileShareIdNumeric).Execute()
 	if err := response_inspector.InspectResponse(httpRes, err); err != nil {
 		return err

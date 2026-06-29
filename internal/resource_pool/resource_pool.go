@@ -9,6 +9,7 @@ import (
 	"github.com/metalsoft-io/metalcloud-cli/pkg/formatter"
 	"github.com/metalsoft-io/metalcloud-cli/pkg/logger"
 	"github.com/metalsoft-io/metalcloud-cli/pkg/response_inspector"
+	"github.com/metalsoft-io/metalcloud-cli/pkg/utils"
 
 	sdk "github.com/metalsoft-io/metalcloud-sdk-go"
 )
@@ -40,24 +41,31 @@ func ResourcePoolList(ctx context.Context, page int, limit int, search string) e
 
 	req := client.ResourcePoolAPI.GetResourcePools(ctx)
 
-	if page > 0 {
-		req = req.Page(float32(page))
-	}
-
-	if limit > 0 {
-		req = req.Limit(float32(limit))
-	}
-
 	if search != "" {
 		req = req.Search(search)
 	}
 
-	poolList, httpRes, err := req.Execute()
-	if err := response_inspector.InspectResponse(httpRes, err); err != nil {
-		return err
+	if page > 0 {
+		records, meta, err := utils.FetchPageWindow(req, page, limit)
+		if err != nil {
+			return err
+		}
+		return utils.PrintAll(records, meta, len(records), &resourcePoolPrintConfig)
 	}
 
-	return formatter.PrintResult(poolList.Data, &resourcePoolPrintConfig)
+	if limit > 0 {
+		records, meta, err := utils.FetchUpTo(req, limit)
+		if err != nil {
+			return err
+		}
+		return utils.PrintAll(records, meta, len(records), &resourcePoolPrintConfig)
+	}
+
+	records, meta, err := utils.FetchAllPages(req)
+	if err != nil {
+		return err
+	}
+	return utils.PrintAll(records, meta, len(records), &resourcePoolPrintConfig)
 }
 
 // ResourcePoolGet retrieves a specific resource pool's information

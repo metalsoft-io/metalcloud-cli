@@ -87,12 +87,12 @@ func BucketList(ctx context.Context, infrastructureIdOrLabel string, filterStatu
 		request = request.FilterServiceStatus(utils.ProcessFilterStringSlice(filterStatus))
 	}
 
-	bucketList, httpRes, err := request.Execute()
-	if err := response_inspector.InspectResponse(httpRes, err); err != nil {
+	buckets, meta, err := utils.FetchAllPages(request)
+	if err != nil {
 		return err
 	}
 
-	return formatter.PrintResult(bucketList, &bucketPrintConfig)
+	return utils.PrintAll(buckets, meta, len(buckets), &bucketPrintConfig)
 }
 
 func BucketGet(ctx context.Context, infrastructureIdOrLabel string, bucketId string) error {

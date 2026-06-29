@@ -40,7 +40,13 @@ const cronJobListResponseLinksArray = `{
 			"disabled": 0,
 			"links": []
 		}
-	]
+	],
+	"meta": {
+		"currentPage": 1,
+		"totalPages": 1,
+		"itemsPerPage": 100,
+		"totalItems": 1
+	}
 }`
 
 const cronJobListResponseLinksMap = `{
@@ -55,9 +61,15 @@ const cronJobListResponseLinksMap = `{
 			"waitForCompletion": 0,
 			"lifetimeSeconds": 3600,
 			"disabled": 0,
-			"links": {"self": "http://example.com/cron-jobs/1"}
+			"links": [{"rel": "self", "href": "http://example.com/cron-jobs/1"}]
 		}
-	]
+	],
+	"meta": {
+		"currentPage": 1,
+		"totalPages": 1,
+		"itemsPerPage": 100,
+		"totalItems": 1
+	}
 }`
 
 const cronJobSingleResponseLinksArray = `{

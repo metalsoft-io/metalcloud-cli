@@ -44,12 +44,14 @@ func FirmwareBaselineList(ctx context.Context) error {
 
 	client := api.GetApiClient(ctx)
 
-	firmwareBaselineList, httpRes, err := client.FirmwareBaselineAPI.GetFirmwareBaselines(ctx).Execute()
-	if err := response_inspector.InspectResponse(httpRes, err); err != nil {
+	request := client.FirmwareBaselineAPI.GetFirmwareBaselines(ctx).SortBy([]string{"id:ASC"})
+
+	records, meta, err := utils.FetchAllPages(request)
+	if err != nil {
 		return err
 	}
 
-	return formatter.PrintResult(firmwareBaselineList, &firmwareBaselinePrintConfig)
+	return utils.PrintAll(records, meta, len(records), &firmwareBaselinePrintConfig)
 }
 
 func FirmwareBaselineGet(ctx context.Context, firmwareBaselineId string) error {

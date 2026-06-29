@@ -2,9 +2,7 @@ package job
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
-	"io"
 	"strconv"
 
 	"github.com/metalsoft-io/metalcloud-cli/pkg/api"
@@ -14,25 +12,6 @@ import (
 	"github.com/metalsoft-io/metalcloud-cli/pkg/utils"
 	sdk "github.com/metalsoft-io/metalcloud-sdk-go"
 )
-
-// TODO: cronJobRaw works around the SDK bug where CronJob.Links is typed as
-// map[string]interface{} but the API may return an array.
-type cronJobRaw struct {
-	Id                float32     `json:"id"`
-	Label             string      `json:"label"`
-	Description       *string     `json:"description,omitempty"`
-	FunctionName      string      `json:"functionName"`
-	Params            interface{} `json:"params,omitempty"`
-	Schedule          string      `json:"schedule"`
-	WaitForCompletion float32     `json:"waitForCompletion"`
-	LifetimeSeconds   float32     `json:"lifetimeSeconds"`
-	Disabled          float32     `json:"disabled"`
-	Links             interface{} `json:"links,omitempty"`
-}
-
-type cronJobListRaw struct {
-	Data []cronJobRaw `json:"data"`
-}
 
 var cronJobPrintConfig = formatter.PrintConfig{
 	FieldsConfig: map[string]formatter.RecordFieldConfig{
@@ -80,27 +59,14 @@ func CronJobList(ctx context.Context) error {
 
 	client := api.GetApiClient(ctx)
 
-	_, httpRes, sdkErr := client.JobAPI.GetCronJobs(ctx).Execute()
+	request := client.JobAPI.GetCronJobs(ctx).SortBy([]string{"id:ASC"})
 
-	if httpRes != nil && httpRes.StatusCode >= 400 {
-		if err := response_inspector.InspectResponse(httpRes, sdkErr); err != nil {
-			return err
-		}
-	} else if httpRes == nil {
-		return sdkErr
-	}
-
-	body, err := io.ReadAll(httpRes.Body)
+	cronJobs, meta, err := utils.FetchAllPages(request)
 	if err != nil {
-		return fmt.Errorf("failed to read response body: %w", err)
+		return err
 	}
 
-	var raw cronJobListRaw
-	if err := json.Unmarshal(body, &raw); err != nil {
-		return fmt.Errorf("failed to parse cron jobs: %w", err)
-	}
-
-	return formatter.PrintResult(raw.Data, &cronJobPrintConfig)
+	return utils.PrintAll(cronJobs, meta, len(cronJobs), &cronJobPrintConfig)
 }
 
 func CronJobGet(ctx context.Context, cronJobId string) error {
@@ -113,27 +79,12 @@ func CronJobGet(ctx context.Context, cronJobId string) error {
 
 	client := api.GetApiClient(ctx)
 
-	_, httpRes, sdkErr := client.JobAPI.GetCronJob(ctx, id).Execute()
-
-	if httpRes != nil && httpRes.StatusCode >= 400 {
-		if err := response_inspector.InspectResponse(httpRes, sdkErr); err != nil {
-			return err
-		}
-	} else if httpRes == nil {
-		return sdkErr
+	cronJob, httpRes, err := client.JobAPI.GetCronJob(ctx, id).Execute()
+	if err := response_inspector.InspectResponse(httpRes, err); err != nil {
+		return err
 	}
 
-	body, err := io.ReadAll(httpRes.Body)
-	if err != nil {
-		return fmt.Errorf("failed to read response body: %w", err)
-	}
-
-	var raw cronJobRaw
-	if err := json.Unmarshal(body, &raw); err != nil {
-		return fmt.Errorf("failed to parse cron job: %w", err)
-	}
-
-	return formatter.PrintResult(raw, &cronJobPrintConfig)
+	return formatter.PrintResult(cronJob, &cronJobPrintConfig)
 }
 
 func CronJobCreate(ctx context.Context, configBytes []byte) error {

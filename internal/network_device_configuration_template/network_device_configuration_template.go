@@ -104,12 +104,14 @@ func NetworkDeviceConfigurationTemplateList(ctx context.Context, filterId []stri
 		request = request.FilterLibraryLabel(filterLibraryLabel)
 	}
 
-	networkDeviceConfigurationTemplateList, httpRes, err := request.SortBy([]string{"id:ASC"}).Execute()
-	if err := response_inspector.InspectResponse(httpRes, err); err != nil {
+	request = request.SortBy([]string{"id:ASC"})
+
+	records, meta, err := utils.FetchAllPages(request)
+	if err != nil {
 		return err
 	}
 
-	return formatter.PrintResult(networkDeviceConfigurationTemplateList, &NetworkDeviceConfigurationTemplatePrintConfig)
+	return utils.PrintAll(records, meta, len(records), &NetworkDeviceConfigurationTemplatePrintConfig)
 }
 
 func NetworkDeviceConfigurationTemplateConfigExample(ctx context.Context) error {

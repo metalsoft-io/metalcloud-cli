@@ -87,13 +87,14 @@ func VMInstanceGroupList(ctx context.Context, infrastructureId string) error {
 
 	client := api.GetApiClient(ctx)
 
-	vmInstanceGroupsList, httpRes, err := client.VMInstanceGroupAPI.GetInfrastructureVMInstanceGroups(
-		ctx, infraIdNumerical).Execute()
-	if err := response_inspector.InspectResponse(httpRes, err); err != nil {
+	request := client.VMInstanceGroupAPI.GetInfrastructureVMInstanceGroups(ctx, infraIdNumerical).SortBy([]string{"id:ASC"})
+
+	records, meta, err := utils.FetchAllPages(request)
+	if err != nil {
 		return err
 	}
 
-	return formatter.PrintResult(vmInstanceGroupsList.Data, &vmInstanceGroupPrintConfig)
+	return utils.PrintAll(records, meta, len(records), &vmInstanceGroupPrintConfig)
 }
 
 func VMInstanceGroupCreate(ctx context.Context, infrastructureId string, vmTypeId string, diskSizeGB string, instanceCount string, osTemplateId string) error {

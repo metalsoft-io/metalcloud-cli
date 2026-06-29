@@ -9,6 +9,7 @@ import (
 	"github.com/metalsoft-io/metalcloud-cli/pkg/formatter"
 	"github.com/metalsoft-io/metalcloud-cli/pkg/logger"
 	"github.com/metalsoft-io/metalcloud-cli/pkg/response_inspector"
+	"github.com/metalsoft-io/metalcloud-cli/pkg/utils"
 	sdk "github.com/metalsoft-io/metalcloud-sdk-go"
 	"golang.org/x/exp/slices"
 )
@@ -75,29 +76,14 @@ func OsTemplateList(ctx context.Context) error {
 
 	client := api.GetApiClient(ctx)
 
-	request := client.OSTemplateAPI.GetOSTemplates(ctx).SortBy([]string{"id:ASC"}).Limit(100)
+	request := client.OSTemplateAPI.GetOSTemplates(ctx).SortBy([]string{"id:ASC"})
 
-	osTemplateList := []sdk.OSTemplate{}
-
-	page := float32(1)
-	for {
-		request = request.Page(page)
-
-		result, httpRes, err := request.Execute()
-		if err := response_inspector.InspectResponse(httpRes, err); err != nil {
-			return err
-		}
-
-		osTemplateList = append(osTemplateList, result.Data...)
-
-		if *result.Meta.TotalPages <= *result.Meta.CurrentPage {
-			break // No more pages to process
-		}
-
-		page++
+	records, meta, err := utils.FetchAllPages(request)
+	if err != nil {
+		return err
 	}
 
-	return formatter.PrintResult(osTemplateList, &osTemplatePrintConfig)
+	return utils.PrintAll(records, meta, len(records), &osTemplatePrintConfig)
 }
 
 func OsTemplateGet(ctx context.Context, osTemplateId string) error {

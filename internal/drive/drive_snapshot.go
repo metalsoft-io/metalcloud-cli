@@ -41,6 +41,7 @@ func DriveSnapshotList(ctx context.Context, infrastructureIdOrLabel string, driv
 
 	client := api.GetApiClient(ctx)
 
+	// GetDriveSnapshots returns a flat []SharedDriveSnapshot — no Page/Limit methods; not paginated.
 	snapshots, httpRes, err := client.DriveAPI.GetDriveSnapshots(ctx, int64(infrastructureInfo.Id), driveIdNumeric).Execute()
 	if err := response_inspector.InspectResponse(httpRes, err); err != nil {
 		return err

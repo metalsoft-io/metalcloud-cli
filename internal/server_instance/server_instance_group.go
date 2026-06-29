@@ -105,12 +105,14 @@ func ServerInstanceGroupList(ctx context.Context, infrastructureIdOrLabel string
 
 	client := api.GetApiClient(ctx)
 
-	serverInstanceGroupList, httpRes, err := client.ServerInstanceGroupAPI.GetInfrastructureServerInstanceGroups(ctx, int64(infra.Id)).Execute()
-	if err := response_inspector.InspectResponse(httpRes, err); err != nil {
+	request := client.ServerInstanceGroupAPI.GetInfrastructureServerInstanceGroups(ctx, int64(infra.Id)).SortBy([]string{"id:ASC"})
+
+	groups, meta, err := utils.FetchAllPages(request)
+	if err != nil {
 		return err
 	}
 
-	return formatter.PrintResult(serverInstanceGroupList, &serverInstanceGroupPrintConfig)
+	return utils.PrintAll(groups, meta, len(groups), &serverInstanceGroupPrintConfig)
 }
 
 func ServerInstanceGroupGet(ctx context.Context, serverInstanceGroupId string) error {

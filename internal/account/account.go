@@ -68,17 +68,23 @@ var accountUsersPrintConfig = formatter.PrintConfig{
 	},
 }
 
-func AccountList(ctx context.Context) error {
+func AccountList(ctx context.Context, archived bool) error {
 	logger.Get().Info().Msgf("Listing all accounts")
 
 	client := api.GetApiClient(ctx)
 
-	accountList, httpRes, err := client.AccountAPI.GetAccounts(ctx).Execute()
-	if err := response_inspector.InspectResponse(httpRes, err); err != nil {
+	request := client.AccountAPI.GetAccounts(ctx).SortBy([]string{"id:ASC"})
+	if archived {
+		// The API excludes archived accounts by default.
+		request = request.FilterArchived([]string{"$eq:1"})
+	}
+
+	accounts, meta, err := utils.FetchAllPages(request)
+	if err != nil {
 		return err
 	}
 
-	return formatter.PrintResult(accountList, &accountPrintConfig)
+	return utils.PrintAll(accounts, meta, len(accounts), &accountPrintConfig)
 }
 
 func AccountGet(ctx context.Context, accountId string) error {

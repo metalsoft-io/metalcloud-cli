@@ -56,12 +56,14 @@ func SubnetList(ctx context.Context) error {
 
 	client := api.GetApiClient(ctx)
 
-	subnetList, httpRes, err := client.SubnetAPI.GetSubnets(ctx).Execute()
-	if err := response_inspector.InspectResponse(httpRes, err); err != nil {
+	request := client.SubnetAPI.GetSubnets(ctx).SortBy([]string{"id:ASC"})
+
+	records, meta, err := utils.FetchAllPages(request)
+	if err != nil {
 		return err
 	}
 
-	return formatter.PrintResult(subnetList, &SubnetPrintConfig)
+	return utils.PrintAll(records, meta, len(records), &SubnetPrintConfig)
 }
 
 func SubnetGet(ctx context.Context, subnetId string) error {

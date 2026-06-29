@@ -9,6 +9,7 @@ import (
 	"github.com/metalsoft-io/metalcloud-cli/pkg/formatter"
 	"github.com/metalsoft-io/metalcloud-cli/pkg/logger"
 	"github.com/metalsoft-io/metalcloud-cli/pkg/response_inspector"
+	"github.com/metalsoft-io/metalcloud-cli/pkg/utils"
 )
 
 var eventPrintConfig = formatter.PrintConfig{
@@ -60,12 +61,6 @@ func EventList(ctx context.Context, flags ListFlags) error {
 	client := api.GetApiClient(ctx)
 	request := client.EventAPI.GetEvents(ctx)
 
-	if flags.Page > 0 {
-		request = request.Page(float32(flags.Page))
-	}
-	if flags.Limit > 0 {
-		request = request.Limit(float32(flags.Limit))
-	}
 	if len(flags.FilterId) > 0 {
 		request = request.FilterId(flags.FilterId)
 	}
@@ -103,12 +98,30 @@ func EventList(ctx context.Context, flags ListFlags) error {
 		request = request.SearchBy(flags.SearchBy)
 	}
 
-	events, httpRes, err := request.Execute()
-	if err := response_inspector.InspectResponse(httpRes, err); err != nil {
+	if flags.Page > 0 {
+		// Specific page requested — fetch that page window, spanning API pages when limit > 100.
+		records, meta, err := utils.FetchPageWindow(request, flags.Page, flags.Limit)
+		if err != nil {
+			return err
+		}
+		return utils.PrintAll(records, meta, len(records), &eventPrintConfig)
+	}
+
+	if flags.Limit > 0 {
+		// Limit without page — fetch exactly N records, spanning pages as needed.
+		records, meta, err := utils.FetchUpTo(request, flags.Limit)
+		if err != nil {
+			return err
+		}
+		return utils.PrintAll(records, meta, len(records), &eventPrintConfig)
+	}
+
+	records, meta, err := utils.FetchAllPages(request)
+	if err != nil {
 		return err
 	}
 
-	return formatter.PrintResult(events, &eventPrintConfig)
+	return utils.PrintAll(records, meta, len(records), &eventPrintConfig)
 }
 
 func EventGet(ctx context.Context, eventId string) error {
@@ -120,6 +133,7 @@ func EventGet(ctx context.Context, eventId string) error {
 	}
 
 	client := api.GetApiClient(ctx)
+
 	event, httpRes, err := client.EventAPI.GetEvent(ctx, id).Execute()
 	if err := response_inspector.InspectResponse(httpRes, err); err != nil {
 		return err

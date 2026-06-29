@@ -140,6 +140,8 @@ func List(ctx context.Context, archived bool, filterId, filterDisplayName, filte
 	}
 	if sortBy != "" {
 		request = request.SortBy([]string{sortBy})
+	} else {
+		request = request.SortBy([]string{"id:ASC"})
 	}
 	if search != "" {
 		request = request.Search(search)
@@ -148,12 +150,12 @@ func List(ctx context.Context, archived bool, filterId, filterDisplayName, filte
 		request = request.SearchBy([]string{searchBy})
 	}
 
-	userList, httpRes, err := request.Execute()
-	if err := response_inspector.InspectResponse(httpRes, err); err != nil {
+	users, meta, err := utils.FetchAllPages(request)
+	if err != nil {
 		return err
 	}
 
-	return formatter.PrintResult(userList, &userPrintConfig)
+	return utils.PrintAll(users, meta, len(users), &userPrintConfig)
 }
 
 func Get(ctx context.Context, userId string) error {

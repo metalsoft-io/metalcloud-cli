@@ -60,17 +60,17 @@ func NetworkDeviceList(ctx context.Context, filterStatus []string) error {
 	client := api.GetApiClient(ctx)
 
 	request := client.NetworkDeviceAPI.GetNetworkDevices(ctx)
-
 	if len(filterStatus) > 0 {
 		request = request.FilterStatus(utils.ProcessFilterStringSlice(filterStatus))
 	}
+	request = request.SortBy([]string{"id:ASC"})
 
-	networkDeviceList, httpRes, err := request.SortBy([]string{"id:ASC"}).Execute()
-	if err := response_inspector.InspectResponse(httpRes, err); err != nil {
+	records, meta, err := utils.FetchAllPages(request)
+	if err != nil {
 		return err
 	}
 
-	return formatter.PrintResult(networkDeviceList, &NetworkDevicePrintConfig)
+	return utils.PrintAll(records, meta, len(records), &NetworkDevicePrintConfig)
 }
 
 func NetworkDeviceGet(ctx context.Context, networkDeviceId string) error {
@@ -721,20 +721,28 @@ func NetworkDeviceDefaultSecretsList(ctx context.Context, page int, limit int) e
 
 	req := client.NetworkDeviceDefaultSecretsAPI.GetNetworkDevicesDefaultSecrets(ctx)
 
-	if page > 0 {
-		req = req.Page(float32(page))
-	}
+	req = req.SortBy([]string{"id:ASC"})
 
-	if limit > 0 {
-		req = req.Limit(float32(limit))
+	switch {
+	case page > 0:
+		records, meta, err := utils.FetchPageWindow(req, page, limit)
+		if err != nil {
+			return err
+		}
+		return utils.PrintAll(records, meta, len(records), &networkDeviceDefaultSecretsPrintConfig)
+	case limit > 0:
+		records, meta, err := utils.FetchUpTo(req, limit)
+		if err != nil {
+			return err
+		}
+		return utils.PrintAll(records, meta, len(records), &networkDeviceDefaultSecretsPrintConfig)
+	default:
+		records, meta, err := utils.FetchAllPages(req)
+		if err != nil {
+			return err
+		}
+		return utils.PrintAll(records, meta, len(records), &networkDeviceDefaultSecretsPrintConfig)
 	}
-
-	secretsList, httpRes, err := req.SortBy([]string{"id:ASC"}).Execute()
-	if err := response_inspector.InspectResponse(httpRes, err); err != nil {
-		return err
-	}
-
-	return formatter.PrintResult(secretsList.Data, &networkDeviceDefaultSecretsPrintConfig)
 }
 
 func NetworkDeviceDefaultSecretsGet(ctx context.Context, secretsId string) error {

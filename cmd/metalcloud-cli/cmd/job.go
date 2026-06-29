@@ -12,12 +12,16 @@ var (
 		filterStatus     []string
 		filterJobGroupId []string
 		sortBy           []string
+		page             int
+		limit            int
 	}{}
 
 	jobGroupFlags = struct {
 		filterJobGroupId []string
 		filterType       []string
 		sortBy           []string
+		page             int
+		limit            int
 	}{}
 
 	retryFlags = struct {
@@ -100,6 +104,8 @@ Examples:
 				FilterStatus:     jobFlags.filterStatus,
 				FilterJobGroupId: jobFlags.filterJobGroupId,
 				SortBy:           jobFlags.sortBy,
+				Page:             jobFlags.page,
+				Limit:            jobFlags.limit,
 			})
 		},
 	}
@@ -269,6 +275,8 @@ Examples:
 		filterStatus     []string
 		filterJobGroupId []string
 		sortBy           []string
+		page             int
+		limit            int
 	}{}
 
 	jobListArchivedCmd = &cobra.Command{
@@ -304,6 +312,8 @@ Examples:
 				FilterStatus:     jobArchiveFlags.filterStatus,
 				FilterJobGroupId: jobArchiveFlags.filterJobGroupId,
 				SortBy:           jobArchiveFlags.sortBy,
+				Page:             jobArchiveFlags.page,
+				Limit:            jobArchiveFlags.limit,
 			})
 		},
 	}
@@ -381,6 +391,8 @@ Permissions:
 				FilterJobGroupId: jobGroupFlags.filterJobGroupId,
 				FilterType:       jobGroupFlags.filterType,
 				SortBy:           jobGroupFlags.sortBy,
+				Page:             jobGroupFlags.page,
+				Limit:            jobGroupFlags.limit,
 			})
 		},
 	}
@@ -435,6 +447,8 @@ func init() {
 	jobListCmd.Flags().StringSliceVar(&jobFlags.filterStatus, "filter-status", nil, "Filter by job status.")
 	jobListCmd.Flags().StringSliceVar(&jobFlags.filterJobGroupId, "filter-job-group-id", nil, "Filter by job group ID.")
 	jobListCmd.Flags().StringSliceVar(&jobFlags.sortBy, "sort-by", nil, "Sort by fields (e.g., jobId:ASC, status:DESC).")
+	jobListCmd.Flags().IntVar(&jobFlags.page, "page", 0, "Page number to retrieve (default: return all records).")
+	jobListCmd.Flags().IntVar(&jobFlags.limit, "limit", 0, "Number of records per page (default: return all records).")
 
 	jobCmd.AddCommand(jobGetCmd)
 
@@ -454,6 +468,8 @@ func init() {
 	jobListArchivedCmd.Flags().StringSliceVar(&jobArchiveFlags.filterStatus, "filter-status", nil, "Filter by job status.")
 	jobListArchivedCmd.Flags().StringSliceVar(&jobArchiveFlags.filterJobGroupId, "filter-job-group-id", nil, "Filter by job group ID.")
 	jobListArchivedCmd.Flags().StringSliceVar(&jobArchiveFlags.sortBy, "sort-by", nil, "Sort by fields (e.g., jobId:ASC, status:DESC).")
+	jobListArchivedCmd.Flags().IntVar(&jobArchiveFlags.page, "page", 0, "Page number to retrieve (default: return all records).")
+	jobListArchivedCmd.Flags().IntVar(&jobArchiveFlags.limit, "limit", 0, "Maximum number of records to return (default: all).")
 
 	// Job group commands
 	rootCmd.AddCommand(jobGroupCmd)
@@ -462,6 +478,8 @@ func init() {
 	jobGroupListCmd.Flags().StringSliceVar(&jobGroupFlags.filterJobGroupId, "filter-job-group-id", nil, "Filter by job group ID.")
 	jobGroupListCmd.Flags().StringSliceVar(&jobGroupFlags.filterType, "filter-type", nil, "Filter by job group type.")
 	jobGroupListCmd.Flags().StringSliceVar(&jobGroupFlags.sortBy, "sort-by", nil, "Sort by fields (e.g., jobGroupId:ASC).")
+	jobGroupListCmd.Flags().IntVar(&jobGroupFlags.page, "page", 0, "Page number to retrieve (default: return all records).")
+	jobGroupListCmd.Flags().IntVar(&jobGroupFlags.limit, "limit", 0, "Number of records per page (default: return all records).")
 
 	jobGroupCmd.AddCommand(jobGroupGetCmd)
 }

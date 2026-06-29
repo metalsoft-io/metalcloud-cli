@@ -68,8 +68,8 @@ Flags:
   --filter-infrastructure-id Filter results by infrastructure ID(s) (can be used multiple times). Use 'null' to filter public logical networks
   --filter-kind              Filter results by network kind(s) like 'vlan', 'vxlan' (can be used multiple times)
   --sort-by                  Sort results by field(s) with direction (e.g., id:ASC, name:DESC)
-  --page                     Page number to retrieve (default: 1)
-  --limit                    Number of records per page (default: 20, max: 100)
+  --page                     Page number to retrieve (default: all records)
+  --limit                    Number of records per page (default: all records)
 
 Examples:
   # List all logical networks
@@ -324,8 +324,8 @@ func init() {
 	logicalNetworkListCmd.Flags().StringSliceVar(&logicalNetworkFlags.filterInfrastructureId, "filter-infrastructure-id", nil, "Filter by infrastructure ID. Use 'null' to filter public logical networks.")
 	logicalNetworkListCmd.Flags().StringSliceVar(&logicalNetworkFlags.filterKind, "filter-kind", nil, "Filter by logical network kind.")
 	logicalNetworkListCmd.Flags().StringSliceVar(&logicalNetworkFlags.sortBy, "sort-by", nil, "Sort by fields (e.g., id:ASC, name:DESC).")
-	logicalNetworkListCmd.Flags().IntVar(&logicalNetworkFlags.page, "page", 1, "Page number to retrieve (default: 1).")
-	logicalNetworkListCmd.Flags().IntVar(&logicalNetworkFlags.limit, "limit", 20, "Number of records per page (default: 20, max: 100).")
+	logicalNetworkListCmd.Flags().IntVar(&logicalNetworkFlags.page, "page", 0, "Page number to retrieve (default: return all records).")
+	logicalNetworkListCmd.Flags().IntVar(&logicalNetworkFlags.limit, "limit", 0, "Number of records per page (default: return all records).")
 
 	logicalNetworkCmd.AddCommand(logicalNetworkGetCmd)
 

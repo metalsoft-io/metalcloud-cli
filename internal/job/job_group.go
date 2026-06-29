@@ -9,6 +9,7 @@ import (
 	"github.com/metalsoft-io/metalcloud-cli/pkg/formatter"
 	"github.com/metalsoft-io/metalcloud-cli/pkg/logger"
 	"github.com/metalsoft-io/metalcloud-cli/pkg/response_inspector"
+	"github.com/metalsoft-io/metalcloud-cli/pkg/utils"
 )
 
 var jobGroupPrintConfig = formatter.PrintConfig{
@@ -42,6 +43,8 @@ type GroupListFlags struct {
 	FilterJobGroupId []string
 	FilterType       []string
 	SortBy           []string
+	Page             int
+	Limit            int
 }
 
 func JobGroupList(ctx context.Context, flags GroupListFlags) error {
@@ -58,14 +61,30 @@ func JobGroupList(ctx context.Context, flags GroupListFlags) error {
 	}
 	if len(flags.SortBy) > 0 {
 		request = request.SortBy(flags.SortBy)
+	} else {
+		request = request.SortBy([]string{"id:ASC"})
 	}
 
-	groups, httpRes, err := request.Execute()
-	if err := response_inspector.InspectResponse(httpRes, err); err != nil {
-		return err
+	switch {
+	case flags.Page > 0:
+		records, meta, err := utils.FetchPageWindow(request, flags.Page, flags.Limit)
+		if err != nil {
+			return err
+		}
+		return utils.PrintAll(records, meta, len(records), &jobGroupPrintConfig)
+	case flags.Limit > 0:
+		records, meta, err := utils.FetchUpTo(request, flags.Limit)
+		if err != nil {
+			return err
+		}
+		return utils.PrintAll(records, meta, len(records), &jobGroupPrintConfig)
+	default:
+		records, meta, err := utils.FetchAllPages(request)
+		if err != nil {
+			return err
+		}
+		return utils.PrintAll(records, meta, len(records), &jobGroupPrintConfig)
 	}
-
-	return formatter.PrintResult(groups, &jobGroupPrintConfig)
 }
 
 func JobGroupGet(ctx context.Context, groupId string) error {

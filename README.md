@@ -219,10 +219,48 @@ To run the CLI in VS Code in debug mode add the following configuration in `laun
 
 ## Building the CLI
 
-To run the unit tests:
+### Running tests
+
+**Unit tests** (no external dependencies, run anywhere):
 
 ```bash
 go test ./...
+```
+
+**Unit tests with coverage report:**
+
+```bash
+go test $(go list ./... | grep -v '/internal/testutils\|/internal/vm$\|/pkg/api\|/pkg/logger\|/pkg/repo\|/cmd/metalcloud-cli$\|/system$') -coverprofile=coverage.out && go tool cover -func=coverage.out | tail -1
+```
+
+**Integration tests** (read-only, requires a real MetalCloud endpoint):
+
+```bash
+export METALCLOUD_ENDPOINT="https://your-instance.metalsoft.io"
+export METALCLOUD_API_KEY="<your key>"
+go test -tags integration -v ./test/integration/
+```
+
+The tests default to `./metalcloud-cli` in the repo root. Build it first with `./ron_build` or `go build ./cmd/metalcloud-cli/`. Override with `METALCLOUD_CLI_BINARY`:
+
+```bash
+METALCLOUD_CLI_BINARY=/usr/local/bin/metalcloud-cli go test -tags integration ./test/integration/
+```
+
+Integration tests are read-only (list/get only). They skip automatically when `METALCLOUD_ENDPOINT` is not set.
+
+**CRUD integration tests** (creates and immediately deletes real resources — use a dedicated test environment):
+
+```bash
+export METALCLOUD_ENDPOINT="https://your-instance.metalsoft.io"
+export METALCLOUD_API_KEY="<your key>"
+export METALCLOUD_TEST_SITE_ID="<site id>"
+# Optional — enables additional tests:
+# export METALCLOUD_TEST_FABRIC_ID="<fabric id>"      # logical-network-profile CRUD
+# export METALCLOUD_TEST_INFRA_ID="<infra id>"        # server-instance-group CRUD
+# export METALCLOUD_TEST_SERVER_TYPE_ID="<type id>"   # server-instance-group CRUD
+# export METALCLOUD_TEST_CRON_FUNCTION="<fn name>"    # cron-job CRUD (function names are deployment-specific)
+go test -tags integration_crud -v ./test/integration/
 ```
 
 To build manually:

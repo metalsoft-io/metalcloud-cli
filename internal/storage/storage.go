@@ -53,17 +53,17 @@ func StorageList(ctx context.Context, filterTechnology []string) error {
 	client := api.GetApiClient(ctx)
 
 	request := client.StorageAPI.GetStorages(ctx)
-
 	if len(filterTechnology) > 0 {
 		request = request.FilterTechnologies(utils.ProcessFilterStringSlice(filterTechnology))
 	}
+	request = request.SortBy([]string{"id:ASC"})
 
-	storageList, httpRes, err := request.SortBy([]string{"id:ASC"}).Execute()
-	if err := response_inspector.InspectResponse(httpRes, err); err != nil {
+	records, meta, err := utils.FetchAllPages(request)
+	if err != nil {
 		return err
 	}
 
-	return formatter.PrintResult(storageList, &StoragePrintConfig)
+	return utils.PrintAll(records, meta, len(records), &StoragePrintConfig)
 }
 
 func StorageGet(ctx context.Context, storageId string) error {

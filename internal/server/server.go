@@ -15,8 +15,8 @@ import (
 	sdk "github.com/metalsoft-io/metalcloud-sdk-go"
 )
 
-// TODO: serverRaw works around the SDK bug where Server.ServerMetricsMetadata
-// is typed as a struct but the API may return an array.
+// serverRaw works around the SDK bug where Server.ServerMetricsMetadata is typed
+// as a map but the API returns an array, which makes typed unmarshalling fail.
 type serverRaw struct {
 	ServerId          float32     `json:"serverId"`
 	SiteId            float32     `json:"siteId"`
@@ -117,6 +117,8 @@ func ServerList(ctx context.Context, showCredentials bool, filterStatus []string
 		request = request.FilterServerTypeId(utils.ProcessFilterStringSlice(filterType))
 	}
 
+	// Raw-body parse: the SDK Server model types ServerMetricsMetadata as a map but
+	// the API returns an array, so typed unmarshalling fails on valid responses.
 	_, httpRes, sdkErr := request.Execute()
 
 	if httpRes != nil && httpRes.StatusCode >= 400 {

@@ -85,12 +85,6 @@ func LogicalNetworkList(ctx context.Context, fabricIdOrLabel string, flags ListF
 	if len(flags.SortBy) > 0 {
 		request = request.SortBy(flags.SortBy)
 	}
-	if flags.Page > 0 {
-		request = request.Page(float32(flags.Page))
-	}
-	if flags.Limit > 0 {
-		request = request.Limit(float32(flags.Limit))
-	}
 
 	if fabricIdOrLabel != "" {
 		fabric, err := fabric.GetFabricByIdOrLabel(ctx, fabricIdOrLabel)
@@ -101,12 +95,26 @@ func LogicalNetworkList(ctx context.Context, fabricIdOrLabel string, flags ListF
 		request = request.FilterFabricId([]string{fabric.Id})
 	}
 
-	logicalNetworkList, httpRes, err := request.Execute()
-	if err := response_inspector.InspectResponse(httpRes, err); err != nil {
-		return err
+	switch {
+	case flags.Page > 0:
+		records, meta, err := utils.FetchPageWindow(request, flags.Page, flags.Limit)
+		if err != nil {
+			return err
+		}
+		return utils.PrintAll(records, meta, len(records), &logicalNetworkPrintConfig)
+	case flags.Limit > 0:
+		records, meta, err := utils.FetchUpTo(request, flags.Limit)
+		if err != nil {
+			return err
+		}
+		return utils.PrintAll(records, meta, len(records), &logicalNetworkPrintConfig)
+	default:
+		records, meta, err := utils.FetchAllPages(request)
+		if err != nil {
+			return err
+		}
+		return utils.PrintAll(records, meta, len(records), &logicalNetworkPrintConfig)
 	}
-
-	return formatter.PrintResult(logicalNetworkList, &logicalNetworkPrintConfig)
 }
 
 func LogicalNetworkGet(ctx context.Context, logicalNetworkId string) error {
@@ -316,8 +324,15 @@ func LogicalNetworkDelete(ctx context.Context, logicalNetworkId string) error {
 
 	client := api.GetApiClient(ctx)
 
-	httpRes, err := client.LogicalNetworkAPI.
+	ln, httpRes, err := client.LogicalNetworkAPI.GetLogicalNetwork(ctx, logicalNetworkIdNumeric).Execute()
+	if err := response_inspector.InspectResponse(httpRes, err); err != nil {
+		return err
+	}
+	revision := strconv.Itoa(int(ln.Revision))
+
+	httpRes, err = client.LogicalNetworkAPI.
 		DeleteLogicalNetwork(ctx, logicalNetworkIdNumeric).
+		IfMatch(revision).
 		Execute()
 	if err := response_inspector.InspectResponse(httpRes, err); err != nil {
 		return err

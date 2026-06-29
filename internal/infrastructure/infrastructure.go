@@ -12,6 +12,7 @@ import (
 	"github.com/metalsoft-io/metalcloud-cli/pkg/formatter"
 	"github.com/metalsoft-io/metalcloud-cli/pkg/logger"
 	"github.com/metalsoft-io/metalcloud-cli/pkg/response_inspector"
+	"github.com/metalsoft-io/metalcloud-cli/pkg/utils"
 	sdk "github.com/metalsoft-io/metalcloud-sdk-go"
 	"github.com/spf13/viper"
 )
@@ -97,12 +98,12 @@ func InfrastructureList(ctx context.Context, showAll bool, showOrdered bool, sho
 
 	request = request.SortBy([]string{"id:ASC"})
 
-	infrastructureList, httpRes, err := request.Execute()
-	if err := response_inspector.InspectResponse(httpRes, err); err != nil {
+	records, meta, err := utils.FetchAllPages(request)
+	if err != nil {
 		return err
 	}
 
-	return formatter.PrintResult(infrastructureList, &infrastructurePrintConfig)
+	return utils.PrintAll(records, meta, len(records), &infrastructurePrintConfig)
 }
 
 func InfrastructureGet(ctx context.Context, infrastructureIdOrLabel string) error {

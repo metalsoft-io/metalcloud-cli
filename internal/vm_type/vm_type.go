@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"strconv"
 
+	"github.com/metalsoft-io/metalcloud-cli/internal/vm"
 	"github.com/metalsoft-io/metalcloud-cli/pkg/api"
 	"github.com/metalsoft-io/metalcloud-cli/pkg/formatter"
 	"github.com/metalsoft-io/metalcloud-cli/pkg/logger"
@@ -58,26 +59,30 @@ func VMTypeList(ctx context.Context, limit float32, page float32) error {
 
 	client := api.GetApiClient(ctx)
 
-	request := client.VMTypeAPI.GetVMTypes(ctx)
+	request := client.VMTypeAPI.GetVMTypes(ctx).SortBy([]string{"id:ASC"})
 
-	// Set pagination if provided
-	if limit > 0 {
-		request = request.Limit(limit)
+	if limit > 0 || page > 0 {
+		if limit > 0 {
+			request = request.Limit(limit)
+		}
+		if page > 0 {
+			request = request.Page(page)
+		}
+
+		result, httpRes, err := request.Execute()
+		if err := response_inspector.InspectResponse(httpRes, err); err != nil {
+			return err
+		}
+
+		return utils.PrintAll(result.Data, result.Meta, len(result.Data), &VMTypePrintConfig)
 	}
 
-	if page > 0 {
-		request = request.Page(page)
-	}
-
-	// Sort by id ascending
-	request = request.SortBy([]string{"id:ASC"})
-
-	vmTypes, httpRes, err := request.Execute()
-	if err := response_inspector.InspectResponse(httpRes, err); err != nil {
+	records, meta, err := utils.FetchAllPages(request)
+	if err != nil {
 		return err
 	}
 
-	return formatter.PrintResult(vmTypes, &VMTypePrintConfig)
+	return utils.PrintAll(records, meta, len(records), &VMTypePrintConfig)
 }
 
 func VMTypeGet(ctx context.Context, vmTypeId string) error {
@@ -180,21 +185,28 @@ func VMTypeGetVMs(ctx context.Context, vmTypeId string, limit float32, page floa
 
 	request := client.VMTypeAPI.GetVMsByVMType(ctx, vmTypeIdNumeric)
 
-	// Set pagination if provided
-	if limit > 0 {
-		request = request.Limit(limit)
+	if limit > 0 || page > 0 {
+		if limit > 0 {
+			request = request.Limit(limit)
+		}
+		if page > 0 {
+			request = request.Page(page)
+		}
+
+		result, httpRes, err := request.Execute()
+		if err := response_inspector.InspectResponse(httpRes, err); err != nil {
+			return err
+		}
+
+		return utils.PrintAll(result.Data, result.Meta, len(result.Data), &vm.VMListPrintConfig)
 	}
 
-	if page > 0 {
-		request = request.Page(page)
-	}
-
-	vms, httpRes, err := request.Execute()
-	if err := response_inspector.InspectResponse(httpRes, err); err != nil {
+	records, meta, err := utils.FetchAllPages(request)
+	if err != nil {
 		return err
 	}
 
-	return formatter.PrintResult(vms, nil)
+	return utils.PrintAll(records, meta, len(records), &vm.VMListPrintConfig)
 }
 
 func VMTypeConfigExample(ctx context.Context) error {

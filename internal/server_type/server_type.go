@@ -61,12 +61,14 @@ func ServerTypeList(ctx context.Context) error {
 
 	client := api.GetApiClient(ctx)
 
-	typesList, httpRes, err := client.ServerTypeAPI.GetServerTypes(ctx).SortBy([]string{"id:ASC"}).Execute()
-	if err := response_inspector.InspectResponse(httpRes, err); err != nil {
+	request := client.ServerTypeAPI.GetServerTypes(ctx).SortBy([]string{"id:ASC"})
+
+	records, meta, err := utils.FetchAllPages(request)
+	if err != nil {
 		return err
 	}
 
-	return formatter.PrintResult(typesList, &serverTypePrintConfig)
+	return utils.PrintAll(records, meta, len(records), &serverTypePrintConfig)
 }
 
 func ServerTypeGet(ctx context.Context, serverTypeIdOrLabel string) error {

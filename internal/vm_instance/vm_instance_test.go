@@ -35,7 +35,9 @@ func TestVMInstanceList(t *testing.T) {
 				{
 					"id": 1,
 					"label": "vm-1",
+					"revision": 1,
 					"infrastructureId": 123,
+					"infrastructure": {"id": 123},
 					"groupId": 10,
 					"serviceStatus": "active",
 					"typeId": 5,
@@ -44,9 +46,22 @@ func TestVMInstanceList(t *testing.T) {
 					"cpuCores": 8,
 					"createdTimestamp": "2024-01-01T00:00:00Z",
 					"updatedTimestamp": "2024-01-01T00:00:00Z",
+					"config": {
+						"label": "vm-1",
+						"typeId": 5,
+						"diskSizeGB": 100,
+						"ramGB": 16,
+						"cpuCores": 8,
+						"revision": 1,
+						"deployStatus": "not_started",
+						"deployType": "deploy",
+						"updatedTimestamp": "2024-01-01T00:00:00Z"
+					},
+					"meta": {},
 					"links": []
 				}
-			]
+			],
+			"meta": {"currentPage": 1, "totalPages": 1, "itemsPerPage": 100, "totalItems": 1}
 		}`
 
 		ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -64,44 +79,6 @@ func TestVMInstanceList(t *testing.T) {
 		err := VMInstanceList(ctx, "123")
 		if err != nil {
 			t.Errorf("expected nil error with links as array, got: %v", err)
-		}
-	})
-
-	t.Run("LinksAsMap", func(t *testing.T) {
-		body := `{
-			"data": [
-				{
-					"id": 1,
-					"label": "vm-1",
-					"infrastructureId": 123,
-					"groupId": 10,
-					"serviceStatus": "active",
-					"typeId": 5,
-					"diskSizeGB": 100,
-					"ramGB": 16,
-					"cpuCores": 8,
-					"createdTimestamp": "2024-01-01T00:00:00Z",
-					"updatedTimestamp": "2024-01-01T00:00:00Z",
-					"links": {"self": "/api/v2/vm-instances/1"}
-				}
-			]
-		}`
-
-		ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-			if strings.Contains(r.URL.Path, "/infrastructures/") && strings.Contains(r.URL.Path, "/vm-instances") {
-				w.Header().Set("Content-Type", "application/json")
-				w.WriteHeader(http.StatusOK)
-				_, _ = w.Write([]byte(body))
-				return
-			}
-			http.NotFound(w, r)
-		}))
-		defer ts.Close()
-
-		ctx := setupTestContext(ts.URL)
-		err := VMInstanceList(ctx, "123")
-		if err != nil {
-			t.Errorf("expected nil error with links as map, got: %v", err)
 		}
 	})
 

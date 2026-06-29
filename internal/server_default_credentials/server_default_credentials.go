@@ -9,6 +9,7 @@ import (
 	"github.com/metalsoft-io/metalcloud-cli/pkg/formatter"
 	"github.com/metalsoft-io/metalcloud-cli/pkg/logger"
 	"github.com/metalsoft-io/metalcloud-cli/pkg/response_inspector"
+	"github.com/metalsoft-io/metalcloud-cli/pkg/utils"
 
 	sdk "github.com/metalsoft-io/metalcloud-sdk-go"
 )
@@ -67,19 +68,27 @@ func ServerDefaultCredentialsList(ctx context.Context, page int, limit int) erro
 	req := client.ServerDefaultCredentialsAPI.GetServersDefaultCredentials(ctx)
 
 	if page > 0 {
-		req = req.Page(float32(page))
+		records, meta, err := utils.FetchPageWindow(req, page, limit)
+		if err != nil {
+			return err
+		}
+		return utils.PrintAll(records, meta, len(records), &serverDefaultCredentialsPrintConfig)
 	}
 
 	if limit > 0 {
-		req = req.Limit(float32(limit))
+		records, meta, err := utils.FetchUpTo(req, limit)
+		if err != nil {
+			return err
+		}
+		return utils.PrintAll(records, meta, len(records), &serverDefaultCredentialsPrintConfig)
 	}
 
-	credentialsList, httpRes, err := req.Execute()
-	if err := response_inspector.InspectResponse(httpRes, err); err != nil {
+	records, meta, err := utils.FetchAllPages(req)
+	if err != nil {
 		return err
 	}
 
-	return formatter.PrintResult(credentialsList.Data, &serverDefaultCredentialsPrintConfig)
+	return utils.PrintAll(records, meta, len(records), &serverDefaultCredentialsPrintConfig)
 }
 
 func ServerDefaultCredentialsGet(ctx context.Context, credentialsId string) error {

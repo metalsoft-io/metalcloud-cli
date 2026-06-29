@@ -72,29 +72,12 @@ func ExtensionInstanceList(ctx context.Context, infrastructureIdOrLabel string, 
 		request = request.FilterConfigDeployType(utils.ProcessFilterStringSlice(filterConfigDeployType))
 	}
 
-	instances := make([]sdk.ExtensionInstance, 0)
-
-	page := float32(1)
-
-	// Loop through all pages and collect the extension instances list
-	for {
-		request = request.Page(page)
-
-		instanceList, httpRes, err := request.Execute()
-		if err := response_inspector.InspectResponse(httpRes, err); err != nil {
-			return err
-		}
-
-		instances = append(instances, instanceList.Data...)
-
-		if *instanceList.Meta.TotalPages <= *instanceList.Meta.CurrentPage {
-			break // No more pages to process
-		}
-
-		page++
+	instances, meta, err := utils.FetchAllPages(request)
+	if err != nil {
+		return err
 	}
 
-	return formatter.PrintResult(instances, &extensionInstancePrintConfig)
+	return utils.PrintAll(instances, meta, len(instances), &extensionInstancePrintConfig)
 }
 
 func ExtensionInstanceGet(ctx context.Context, extensionInstanceId string) error {

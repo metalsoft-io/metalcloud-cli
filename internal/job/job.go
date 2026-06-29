@@ -15,6 +15,7 @@ import (
 	"github.com/metalsoft-io/metalcloud-cli/pkg/formatter"
 	"github.com/metalsoft-io/metalcloud-cli/pkg/logger"
 	"github.com/metalsoft-io/metalcloud-cli/pkg/response_inspector"
+	"github.com/metalsoft-io/metalcloud-cli/pkg/utils"
 )
 
 var jobPrintConfig = formatter.PrintConfig{
@@ -45,6 +46,8 @@ type ListFlags struct {
 	FilterStatus     []string
 	FilterJobGroupId []string
 	SortBy           []string
+	Page             int
+	Limit            int
 }
 
 func JobList(ctx context.Context, flags ListFlags) error {
@@ -66,12 +69,26 @@ func JobList(ctx context.Context, flags ListFlags) error {
 		request = request.SortBy(flags.SortBy)
 	}
 
-	jobs, httpRes, err := request.Execute()
-	if err := response_inspector.InspectResponse(httpRes, err); err != nil {
-		return err
+	switch {
+	case flags.Page > 0:
+		records, meta, err := utils.FetchPageWindow(request, flags.Page, flags.Limit)
+		if err != nil {
+			return err
+		}
+		return utils.PrintAll(records, meta, len(records), &jobPrintConfig)
+	case flags.Limit > 0:
+		records, meta, err := utils.FetchUpTo(request, flags.Limit)
+		if err != nil {
+			return err
+		}
+		return utils.PrintAll(records, meta, len(records), &jobPrintConfig)
+	default:
+		records, meta, err := utils.FetchAllPages(request)
+		if err != nil {
+			return err
+		}
+		return utils.PrintAll(records, meta, len(records), &jobPrintConfig)
 	}
-
-	return formatter.PrintResult(jobs, &jobPrintConfig)
 }
 
 func JobGet(ctx context.Context, jobId string) error {
@@ -83,6 +100,7 @@ func JobGet(ctx context.Context, jobId string) error {
 	}
 
 	client := api.GetApiClient(ctx)
+
 	job, httpRes, err := client.JobAPI.GetJob(ctx, id).Execute()
 	if err := response_inspector.InspectResponse(httpRes, err); err != nil {
 		return err
@@ -151,6 +169,12 @@ func JobKill(ctx context.Context, jobId string) error {
 // jobAction performs a POST to /api/v2/jobs/{jobId}/actions/{action} bypassing
 // the SDK's float32 jobId parameter which loses precision for IDs > 16,777,216.
 func jobAction(ctx context.Context, jobId string, action string, body interface{}) (*http.Response, error) {
+	return jobRequest(ctx, http.MethodPost, fmt.Sprintf("/api/v2/jobs/%s/actions/%s", jobId, action), body)
+}
+
+// jobRequest performs a direct HTTP request against the API, bypassing the
+// SDK's float32 jobId path parameter which loses precision for IDs > 16,777,216.
+func jobRequest(ctx context.Context, method string, path string, body interface{}) (*http.Response, error) {
 	client := api.GetApiClient(ctx)
 	cfg := client.GetConfig()
 
@@ -159,7 +183,7 @@ func jobAction(ctx context.Context, jobId string, action string, body interface{
 		return nil, err
 	}
 
-	url := fmt.Sprintf("%s/api/v2/jobs/%s/actions/%s", baseURL, jobId, action)
+	url := baseURL + path
 
 	var reqBody *bytes.Buffer
 	if body != nil {
@@ -172,7 +196,7 @@ func jobAction(ctx context.Context, jobId string, action string, body interface{
 		reqBody = &bytes.Buffer{}
 	}
 
-	req, err := http.NewRequestWithContext(ctx, http.MethodPost, url, reqBody)
+	req, err := http.NewRequestWithContext(ctx, method, url, reqBody)
 	if err != nil {
 		return nil, err
 	}

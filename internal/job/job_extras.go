@@ -2,14 +2,13 @@ package job
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
-	"io"
 
 	"github.com/metalsoft-io/metalcloud-cli/pkg/api"
 	"github.com/metalsoft-io/metalcloud-cli/pkg/formatter"
 	"github.com/metalsoft-io/metalcloud-cli/pkg/logger"
 	"github.com/metalsoft-io/metalcloud-cli/pkg/response_inspector"
+	"github.com/metalsoft-io/metalcloud-cli/pkg/utils"
 )
 
 var jobExceptionPrintConfig = formatter.PrintConfig{
@@ -78,22 +77,6 @@ var jobStatisticsPrintConfig = formatter.PrintConfig{
 	},
 }
 
-// TODO: jobExceptionRaw is a local type that accepts links as interface{} to work
-// around an SDK bug where links is typed as map[string]interface{} but the
-// API returns an array.
-type jobExceptionRaw struct {
-	ExceptionId      int32       `json:"exceptionId"`
-	ArchiveId        *int32      `json:"archiveId,omitempty"`
-	JobId            *int32      `json:"jobId,omitempty"`
-	Exception        interface{} `json:"exception,omitempty"`
-	CreatedTimestamp string      `json:"createdTimestamp"`
-	Links            interface{} `json:"links,omitempty"`
-}
-
-type jobExceptionListRaw struct {
-	Data []jobExceptionRaw `json:"data"`
-}
-
 func JobExceptions(ctx context.Context, jobId string) error {
 	logger.Get().Info().Msgf("Getting exceptions for job '%s'", jobId)
 
@@ -104,31 +87,14 @@ func JobExceptions(ctx context.Context, jobId string) error {
 
 	client := api.GetApiClient(ctx)
 
-	// The SDK's JobException.Links is typed as map[string]interface{} but the API
-	// returns an array, causing unmarshaling to fail. We make the call, check for
-	// HTTP-level errors, then decode the body ourselves with flexible types.
-	_, httpRes, sdkErr := client.JobAPI.GetJobExceptions(ctx, id).Execute()
+	request := client.JobAPI.GetJobExceptions(ctx, id)
 
-	// Only use InspectResponse for real HTTP errors (4xx/5xx), not SDK unmarshal errors
-	if httpRes != nil && httpRes.StatusCode >= 400 {
-		if err := response_inspector.InspectResponse(httpRes, sdkErr); err != nil {
-			return err
-		}
-	} else if httpRes == nil {
-		return sdkErr
-	}
-
-	body, err := io.ReadAll(httpRes.Body)
+	exceptions, meta, err := utils.FetchAllPages(request)
 	if err != nil {
-		return fmt.Errorf("failed to read response body: %w", err)
+		return err
 	}
 
-	var raw jobExceptionListRaw
-	if err := json.Unmarshal(body, &raw); err != nil {
-		return fmt.Errorf("failed to parse job exceptions: %w", err)
-	}
-
-	return formatter.PrintResult(raw, &jobExceptionPrintConfig)
+	return utils.PrintAll(exceptions, meta, len(exceptions), &jobExceptionPrintConfig)
 }
 
 func JobStatistics(ctx context.Context) error {
@@ -156,6 +122,8 @@ type ArchiveListFlags struct {
 	FilterStatus     []string
 	FilterJobGroupId []string
 	SortBy           []string
+	Page             int
+	Limit            int
 }
 
 func JobListArchived(ctx context.Context, flags ArchiveListFlags) error {
@@ -177,10 +145,24 @@ func JobListArchived(ctx context.Context, flags ArchiveListFlags) error {
 		request = request.SortBy(flags.SortBy)
 	}
 
-	jobs, httpRes, err := request.Execute()
-	if err := response_inspector.InspectResponse(httpRes, err); err != nil {
-		return err
+	switch {
+	case flags.Page > 0:
+		records, meta, err := utils.FetchPageWindow(request, flags.Page, flags.Limit)
+		if err != nil {
+			return err
+		}
+		return utils.PrintAll(records, meta, len(records), &jobArchivePrintConfig)
+	case flags.Limit > 0:
+		records, meta, err := utils.FetchUpTo(request, flags.Limit)
+		if err != nil {
+			return err
+		}
+		return utils.PrintAll(records, meta, len(records), &jobArchivePrintConfig)
+	default:
+		records, meta, err := utils.FetchAllPages(request)
+		if err != nil {
+			return err
+		}
+		return utils.PrintAll(records, meta, len(records), &jobArchivePrintConfig)
 	}
-
-	return formatter.PrintResult(jobs, &jobArchivePrintConfig)
 }

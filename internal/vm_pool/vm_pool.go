@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"strconv"
 
+	"github.com/metalsoft-io/metalcloud-cli/internal/vm"
 	"github.com/metalsoft-io/metalcloud-cli/pkg/api"
 	"github.com/metalsoft-io/metalcloud-cli/pkg/formatter"
 	"github.com/metalsoft-io/metalcloud-cli/pkg/logger"
@@ -52,18 +53,18 @@ func VMPoolList(ctx context.Context, filterType []string) error {
 
 	client := api.GetApiClient(ctx)
 
-	request := client.VMPoolAPI.GetVMPools(ctx)
+	request := client.VMPoolAPI.GetVMPools(ctx).SortBy([]string{"id:ASC"})
 
 	if len(filterType) > 0 {
 		request = request.FilterType(utils.ProcessFilterStringSlice(filterType))
 	}
 
-	vmPoolList, httpRes, err := request.SortBy([]string{"id:ASC"}).Execute()
-	if err := response_inspector.InspectResponse(httpRes, err); err != nil {
+	records, meta, err := utils.FetchAllPages(request)
+	if err != nil {
 		return err
 	}
 
-	return formatter.PrintResult(vmPoolList, &VMPoolPrintConfig)
+	return utils.PrintAll(records, meta, len(records), &VMPoolPrintConfig)
 }
 
 func VMPoolGet(ctx context.Context, vmPoolId string) error {
@@ -156,21 +157,28 @@ func VMPoolGetVMs(ctx context.Context, vmPoolId string, limit float32, page floa
 
 	request := client.VMPoolAPI.GetVMPoolVMs(ctx, vmPoolIdNumeric)
 
-	// Set pagination if provided
-	if limit > 0 {
-		request = request.Limit(limit)
+	if limit > 0 || page > 0 {
+		if limit > 0 {
+			request = request.Limit(limit)
+		}
+		if page > 0 {
+			request = request.Page(page)
+		}
+
+		result, httpRes, err := request.Execute()
+		if err := response_inspector.InspectResponse(httpRes, err); err != nil {
+			return err
+		}
+
+		return utils.PrintAll(result.Data, result.Meta, len(result.Data), &vm.VMListPrintConfig)
 	}
 
-	if page > 0 {
-		request = request.Page(page)
-	}
-
-	vms, httpRes, err := request.Execute()
-	if err := response_inspector.InspectResponse(httpRes, err); err != nil {
+	records, meta, err := utils.FetchAllPages(request)
+	if err != nil {
 		return err
 	}
 
-	return formatter.PrintResult(vms, nil)
+	return utils.PrintAll(records, meta, len(records), &vm.VMListPrintConfig)
 }
 
 func VMPoolGetClusterHosts(ctx context.Context, vmPoolId string, limit float32, page float32) error {
@@ -185,21 +193,28 @@ func VMPoolGetClusterHosts(ctx context.Context, vmPoolId string, limit float32, 
 
 	request := client.VMPoolAPI.GetVMPoolClusterHosts(ctx, vmPoolIdNumeric)
 
-	// Set pagination if provided
-	if limit > 0 {
-		request = request.Limit(limit)
+	if limit > 0 || page > 0 {
+		if limit > 0 {
+			request = request.Limit(limit)
+		}
+		if page > 0 {
+			request = request.Page(page)
+		}
+
+		result, httpRes, err := request.Execute()
+		if err := response_inspector.InspectResponse(httpRes, err); err != nil {
+			return err
+		}
+
+		return utils.PrintAll(result.Data, result.Meta, len(result.Data), nil)
 	}
 
-	if page > 0 {
-		request = request.Page(page)
-	}
-
-	hosts, httpRes, err := request.Execute()
-	if err := response_inspector.InspectResponse(httpRes, err); err != nil {
+	records, meta, err := utils.FetchAllPages(request)
+	if err != nil {
 		return err
 	}
 
-	return formatter.PrintResult(hosts, nil)
+	return utils.PrintAll(records, meta, len(records), nil)
 }
 
 func VMPoolGetClusterHostVMs(ctx context.Context, vmPoolId string, hostId string, limit float32, page float32) error {
@@ -219,21 +234,28 @@ func VMPoolGetClusterHostVMs(ctx context.Context, vmPoolId string, hostId string
 
 	request := client.VMPoolAPI.GetVMPoolClusterHostVMs(ctx, vmPoolIdNumeric, hostIdNumeric)
 
-	// Set pagination if provided
-	if limit > 0 {
-		request = request.Limit(limit)
+	if limit > 0 || page > 0 {
+		if limit > 0 {
+			request = request.Limit(limit)
+		}
+		if page > 0 {
+			request = request.Page(page)
+		}
+
+		result, httpRes, err := request.Execute()
+		if err := response_inspector.InspectResponse(httpRes, err); err != nil {
+			return err
+		}
+
+		return utils.PrintAll(result.Data, result.Meta, len(result.Data), &vm.VMListPrintConfig)
 	}
 
-	if page > 0 {
-		request = request.Page(page)
-	}
-
-	vms, httpRes, err := request.Execute()
-	if err := response_inspector.InspectResponse(httpRes, err); err != nil {
+	records, meta, err := utils.FetchAllPages(request)
+	if err != nil {
 		return err
 	}
 
-	return formatter.PrintResult(vms, nil)
+	return utils.PrintAll(records, meta, len(records), &vm.VMListPrintConfig)
 }
 
 func VMPoolGetClusterHostInterfaces(ctx context.Context, vmPoolId string, hostId string) error {
@@ -251,6 +273,7 @@ func VMPoolGetClusterHostInterfaces(ctx context.Context, vmPoolId string, hostId
 
 	client := api.GetApiClient(ctx)
 
+	// GetVMPoolClusterHostInterfaces returns a flat []VMPoolHostInterfaces — no Page/Limit methods.
 	interfaces, httpRes, err := client.VMPoolAPI.GetVMPoolClusterHostInterfaces(ctx, vmPoolIdNumeric, hostIdNumeric).Execute()
 	if err := response_inspector.InspectResponse(httpRes, err); err != nil {
 		return err

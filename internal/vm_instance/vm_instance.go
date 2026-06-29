@@ -2,9 +2,7 @@ package vm_instance
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
-	"io"
 	"net/http"
 	"strconv"
 
@@ -14,27 +12,6 @@ import (
 	"github.com/metalsoft-io/metalcloud-cli/pkg/response_inspector"
 	"github.com/metalsoft-io/metalcloud-cli/pkg/utils"
 )
-
-// TODO: vmInstanceRaw works around the SDK bug where VMInstance.Links is typed as
-// map[string]interface{} but the API may return an array.
-type vmInstanceRaw struct {
-	Id               float32     `json:"id"`
-	Label            string      `json:"label"`
-	InfrastructureId float32     `json:"infrastructureId"`
-	GroupId          float32     `json:"groupId"`
-	ServiceStatus    string      `json:"serviceStatus"`
-	TypeId           float32     `json:"typeId"`
-	DiskSizeGB       float32     `json:"diskSizeGB"`
-	RamGB            float32     `json:"ramGB"`
-	CpuCores         float32     `json:"cpuCores"`
-	CreatedTimestamp string      `json:"createdTimestamp"`
-	UpdatedTimestamp string      `json:"updatedTimestamp"`
-	Links            interface{} `json:"links,omitempty"`
-}
-
-type vmInstanceListRaw struct {
-	Data []vmInstanceRaw `json:"data"`
-}
 
 var vmInstancePrintConfig = formatter.PrintConfig{
 	FieldsConfig: map[string]formatter.RecordFieldConfig{
@@ -122,28 +99,14 @@ func VMInstanceList(ctx context.Context, infrastructureId string) error {
 
 	client := api.GetApiClient(ctx)
 
-	_, httpRes, sdkErr := client.VMInstanceAPI.GetInfrastructureVMInstances(
-		ctx, infraIdNumerical).Execute()
+	request := client.VMInstanceAPI.GetInfrastructureVMInstances(ctx, infraIdNumerical)
 
-	if httpRes != nil && httpRes.StatusCode >= 400 {
-		if err := response_inspector.InspectResponse(httpRes, sdkErr); err != nil {
-			return err
-		}
-	} else if httpRes == nil {
-		return sdkErr
-	}
-
-	body, err := io.ReadAll(httpRes.Body)
+	records, meta, err := utils.FetchAllPages(request)
 	if err != nil {
-		return fmt.Errorf("failed to read response body: %w", err)
+		return err
 	}
 
-	var raw vmInstanceListRaw
-	if err := json.Unmarshal(body, &raw); err != nil {
-		return fmt.Errorf("failed to parse VM instances: %w", err)
-	}
-
-	return formatter.PrintResult(raw.Data, &vmInstancePrintConfig)
+	return utils.PrintAll(records, meta, len(records), &vmInstancePrintConfig)
 }
 
 func VMInstanceGetConfig(ctx context.Context, infrastructureId string, vmInstanceId string) error {

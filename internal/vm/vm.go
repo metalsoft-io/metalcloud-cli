@@ -13,6 +13,59 @@ import (
 	sdk "github.com/metalsoft-io/metalcloud-sdk-go"
 )
 
+// VMListPrintConfig drives the table columns for VM list output.
+var VMListPrintConfig = formatter.PrintConfig{
+	FieldsConfig: map[string]formatter.RecordFieldConfig{
+		"Id": {
+			Title: "#",
+			Order: 1,
+		},
+		"Name": {
+			Title:    "Name",
+			MaxWidth: 30,
+			Order:    2,
+		},
+		"InfrastructureId": {
+			Title: "Infra",
+			Order: 3,
+		},
+		"Host": {
+			Title:    "Host",
+			MaxWidth: 40,
+			Order:    4,
+		},
+		"CpuCores": {
+			Title: "CPU Cores",
+			Order: 5,
+		},
+		"RamGB": {
+			Title: "RAM (GB)",
+			Order: 6,
+		},
+		"DiskSizeGB": {
+			Title: "Disk (GB)",
+			Order: 7,
+		},
+		"TypeId": {
+			Title: "Type",
+			Order: 8,
+		},
+		"PoolId": {
+			Title: "Pool",
+			Order: 9,
+		},
+		"AdministrationState": {
+			Title: "Admin State",
+			Order: 10,
+		},
+		"PowerState": {
+			Title:       "Power",
+			Transformer: formatter.FormatStatusValue,
+			Order:       11,
+		},
+	},
+}
+
 var vmPrintConfig = formatter.PrintConfig{
 	FieldsConfig: map[string]formatter.RecordFieldConfig{
 		"VmId": {

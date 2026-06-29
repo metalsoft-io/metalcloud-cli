@@ -130,12 +130,14 @@ func ServerFirmwareComponentsList(ctx context.Context, serverId string) error {
 
 	client := api.GetApiClient(ctx)
 
-	componentsList, httpRes, err := client.ServerFirmwareAPI.GetServerComponents(ctx, serverIdNumeric).Execute()
-	if err := response_inspector.InspectResponse(httpRes, err); err != nil {
+	request := client.ServerFirmwareAPI.GetServerComponents(ctx, serverIdNumeric).SortBy([]string{"id:ASC"})
+
+	components, meta, err := utils.FetchAllPages(request)
+	if err != nil {
 		return err
 	}
 
-	return formatter.PrintResult(componentsList, &serverComponentPrintConfig)
+	return utils.PrintAll(components, meta, len(components), &serverComponentPrintConfig)
 }
 
 // ServerFirmwareComponentGet retrieves information about a specific component

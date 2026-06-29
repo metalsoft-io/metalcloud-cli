@@ -92,12 +92,14 @@ func NetworkDeviceLinkAggregationConfigurationTemplateList(ctx context.Context, 
 		request = request.FilterLibraryLabel(filterLibraryLabel)
 	}
 
-	networkDeviceLinkAggregationConfigurationTemplateList, httpRes, err := request.SortBy([]string{"id:ASC"}).Execute()
-	if err := response_inspector.InspectResponse(httpRes, err); err != nil {
+	request = request.SortBy([]string{"id:ASC"})
+
+	records, meta, err := utils.FetchAllPages(request)
+	if err != nil {
 		return err
 	}
 
-	return formatter.PrintResult(networkDeviceLinkAggregationConfigurationTemplateList, &NetworkDeviceLinkAggregationConfigurationTemplatePrintConfig)
+	return utils.PrintAll(records, meta, len(records), &NetworkDeviceLinkAggregationConfigurationTemplatePrintConfig)
 }
 
 func NetworkDeviceLinkAggregationConfigurationTemplateConfigExample(ctx context.Context) error {
