@@ -3,7 +3,10 @@ package fabric
 import (
 	"context"
 	"fmt"
+	"sort"
+	"strconv"
 
+	"github.com/metalsoft-io/metalcloud-cli/internal/fabric_switch_config"
 	"github.com/metalsoft-io/metalcloud-cli/internal/network_device"
 	"github.com/metalsoft-io/metalcloud-cli/internal/site"
 	"github.com/metalsoft-io/metalcloud-cli/pkg/api"
@@ -398,6 +401,68 @@ func FabricDevicesRemove(ctx context.Context, fabricId string, deviceId string) 
 		return err
 	}
 
+	return nil
+}
+
+// FabricConfigureSwitches applies a declarative fabric-switch configuration
+// (hostnames, ASNs, loopbacks, port enable/descriptions, point-to-point links)
+// to every device in a fabric. It is the CLI port of the standalone
+// configure_switches.py script: idempotent, with a --dry-run preview.
+func FabricConfigureSwitches(ctx context.Context, fabricIdOrLabel string, config []byte, dryRun bool) error {
+	fabricInfo, err := GetFabricByIdOrLabel(ctx, fabricIdOrLabel)
+	if err != nil {
+		return err
+	}
+	fabricId, err := strconv.ParseInt(fabricInfo.Id, 10, 64)
+	if err != nil {
+		return fmt.Errorf("invalid fabric ID %q: %w", fabricInfo.Id, err)
+	}
+
+	cfg, err := fabric_switch_config.LoadConfig(config)
+	if err != nil {
+		return err
+	}
+
+	client := api.GetApiClient(ctx)
+	switchClient := fabric_switch_config.NewSDKClient(ctx, client)
+
+	if dryRun {
+		logger.Get().Info().Msgf("Dry run: computing the plan for fabric %d without writing", fabricId)
+	}
+
+	result, err := fabric_switch_config.Configure(switchClient, cfg, fabricId, dryRun)
+	if err != nil {
+		return err
+	}
+
+	for _, w := range result.Warnings {
+		logger.Get().Warn().Msg(w)
+	}
+
+	keys := make([]string, 0, len(result.Counters))
+	for k := range result.Counters {
+		keys = append(keys, k)
+	}
+	sort.Strings(keys)
+	summary := ""
+	for _, k := range keys {
+		if summary != "" {
+			summary += ", "
+		}
+		summary += fmt.Sprintf("%s=%d", k, result.Counters[k])
+	}
+	if summary == "" {
+		summary = "nothing to do"
+	}
+	suffix := ""
+	if dryRun {
+		suffix = " (dry-run, no changes made)"
+	}
+	logger.Get().Info().Msgf("Summary: %s, failures=%d%s", summary, result.Failures, suffix)
+
+	if result.Failures > 0 {
+		return fmt.Errorf("fabric switch configuration completed with %d failure(s)", result.Failures)
+	}
 	return nil
 }
 

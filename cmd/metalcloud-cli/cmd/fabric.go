@@ -19,6 +19,7 @@ var (
 		bgpNumbering         string
 		bgpLinkConfiguration string
 		customVariables      []string
+		dryRun               bool
 	}{}
 
 	fabricCmd = &cobra.Command{
@@ -506,6 +507,47 @@ Examples:
 			return fabric.FabricLinkRemove(cmd.Context(), args[0], args[1])
 		},
 	}
+
+	fabricConfigureSwitchesCmd = &cobra.Command{
+		Use:     "configure-switches fabric_id",
+		Aliases: []string{"configure-switch"},
+		Short:   "Configure all switches of a fabric from a declarative YAML/JSON",
+		Long: `Configure every network device attached to a fabric from one declarative
+configuration: hostnames (identifierString), ASNs, loopback IPs, physical-port
+enable + interface descriptions, and point-to-point links with deterministic
+/31 IPAM subnets.
+
+Each feature section is optional - omit one to skip that step. Every step is
+idempotent: current state is read first and only differences are written. Use
+--dry-run to compute and preview the full plan without making any changes.
+
+Arguments:
+  fabric_id    The ID or label of the fabric to configure
+
+Required Flags:
+  --config-source   'pipe' to read from stdin, or a path to a YAML/JSON config file.
+
+Optional Flags:
+  --dry-run         Compute the plan and report what would change, without writing.
+
+Config sections: hostname, asn, loopback, topology (leafSpine/spineSuperSpine/
+leafHost), p2p, descriptionTemplate, enablePhysicalPorts, ordering.
+
+Examples:
+  metalcloud-cli fabric configure-switches 5 --config-source fabric-config.yaml --dry-run
+  metalcloud-cli fabric configure-switches my-fabric --config-source fabric-config.yaml
+  cat fabric-config.yaml | metalcloud-cli fabric configure-switches 5 --config-source pipe`,
+		SilenceUsage: true,
+		Annotations:  map[string]string{system.REQUIRED_PERMISSION: system.PERMISSION_NETWORK_FABRICS_WRITE},
+		Args:         cobra.ExactArgs(1),
+		RunE: func(cmd *cobra.Command, args []string) error {
+			config, err := utils.ReadConfigFromPipeOrFile(fabricFlags.configSource)
+			if err != nil {
+				return err
+			}
+			return fabric.FabricConfigureSwitches(cmd.Context(), args[0], config, fabricFlags.dryRun)
+		},
+	}
 )
 
 func init() {
@@ -548,4 +590,9 @@ func init() {
 	fabricLinkAddCmd.MarkFlagsRequiredTogether("network-device-a", "interface-a", "network-device-b", "interface-b", "link-type")
 
 	fabricCmd.AddCommand(fabricLinkRemoveCmd)
+
+	fabricCmd.AddCommand(fabricConfigureSwitchesCmd)
+	fabricConfigureSwitchesCmd.Flags().StringVar(&fabricFlags.configSource, "config-source", "", "Source of the switch configuration. Can be 'pipe' or path to a YAML/JSON file.")
+	fabricConfigureSwitchesCmd.Flags().BoolVar(&fabricFlags.dryRun, "dry-run", false, "Compute and preview the plan without making any changes.")
+	fabricConfigureSwitchesCmd.MarkFlagRequired("config-source")
 }
