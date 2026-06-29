@@ -13,22 +13,54 @@ Each feature section is optional - omit one to skip that step. Every step is
 idempotent: current state is read first and only differences are written. Use
 --dry-run to compute and preview the full plan without making any changes.
 
+The configuration is supplied EITHER as a whole document via --config-source,
+OR built up from the individual per-property flags below. The two are mutually
+exclusive; provide one or the other.
+
 Arguments:
   fabric_id    The ID or label of the fabric to configure
 
-Required Flags:
+Whole-document input:
   --config-source   'pipe' to read from stdin, or a path to a YAML/JSON config file.
+                    Run 'fabric configure-switches-example' for a template.
 
-Optional Flags:
+Per-property flags (alternative to --config-source). A feature section is
+enabled when its toggle flag is set or any of its sub-flags is provided:
+  ordering        --ordering
+  enable ports    --enable-physical-ports
+  descriptions    --description-template
+  hostname        --hostname, --hostname-leaf, --hostname-spine,
+                  --hostname-super-spine, --hostname-skip
+  asn             --asn, --asn-leaf-start, --asn-spine-start, --asn-super-spine-start
+  loopback        --loopback, --loopback-subnet
+  topology        --topology-leaf-spine[-links-per-pair],
+                  --topology-spine-super-spine[-links-per-pair],
+                  --topology-leaf-host[-node-count|-nodes|-port-pattern|
+                  -nic-names|-description-template]
+  p2p             --p2p, --p2p-pool-leaf-spine, --p2p-pool-spine-super-spine,
+                  --p2p-pool-leaf-host, --p2p-mtu
+
+Always available:
   --dry-run         Compute the plan and report what would change, without writing.
 
-Config sections: hostname, asn, loopback, topology (leafSpine/spineSuperSpine/
-leafHost), p2p, descriptionTemplate, enablePhysicalPorts, ordering.
-
 Examples:
+  # Whole-document input from a file or stdin
   metalcloud-cli fabric configure-switches 5 --config-source fabric-config.yaml --dry-run
-  metalcloud-cli fabric configure-switches my-fabric --config-source fabric-config.yaml
   cat fabric-config.yaml | metalcloud-cli fabric configure-switches 5 --config-source pipe
+
+  # Per-property flags: hostnames + ASNs + loopbacks with the reference defaults
+  metalcloud-cli fabric configure-switches 5 --hostname --asn --loopback --dry-run
+
+  # Per-property flags: full leaf/spine fabric with links and a custom pool
+  metalcloud-cli fabric configure-switches my-fabric \
+    --hostname --asn --loopback \
+    --topology-leaf-spine --topology-leaf-host-node-count 8 \
+    --description-template "to_{peerHostname}_{peerPort}" \
+    --p2p --p2p-pool-leaf-spine 10.254.0.0/16 --p2p-mtu 9216
+
+  # Override one ASN start and skip naming the spines
+  metalcloud-cli fabric configure-switches 5 --asn --asn-leaf-start 4200001000 \
+    --hostname --hostname-skip spine
 
 ```
 metalcloud-cli fabric configure-switches fabric_id [flags]
