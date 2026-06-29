@@ -306,6 +306,38 @@ func FabricDeploy(ctx context.Context, fabricId string) error {
 	return formatter.PrintResult(jobInfo, nil)
 }
 
+// FabricRescanLinks re-scans the fabric's links, deriving the physical-link
+// records from the LLDP data present once the ports are up (the "Discover links"
+// action). It is idempotent: on a fabric whose links already exist it matches
+// rows in place. Returns the kicked-off job.
+func FabricRescanLinks(ctx context.Context, fabricId string, updateLLDPInfo bool) error {
+	logger.Get().Info().Msgf("Rescan links of fabric '%s'", fabricId)
+
+	fabricInfo, err := GetFabricByIdOrLabel(ctx, fabricId)
+	if err != nil {
+		return err
+	}
+	fabricIdNumeric, err := utils.GetInt64FromString(fabricInfo.Id)
+	if err != nil {
+		return err
+	}
+
+	options := sdk.NewNetworkFabricLinkRescanOptions()
+	options.UpdateLLDPInfo = sdk.PtrBool(updateLLDPInfo)
+
+	client := api.GetApiClient(ctx)
+
+	jobInfo, httpRes, err := client.NetworkFabricAPI.
+		RescanNetworkFabricLinks(ctx, fabricIdNumeric).
+		NetworkFabricLinkRescanOptions(*options).
+		Execute()
+	if err := response_inspector.InspectResponse(httpRes, err); err != nil {
+		return err
+	}
+
+	return formatter.PrintResult(jobInfo, nil)
+}
+
 func FabricDevicesGet(ctx context.Context, fabricId string) error {
 	logger.Get().Info().Msgf("Get fabric '%s' devices", fabricId)
 

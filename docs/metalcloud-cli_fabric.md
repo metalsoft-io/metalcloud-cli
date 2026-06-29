@@ -60,5 +60,6 @@ Available Commands:
 * [metalcloud-cli fabric list](metalcloud-cli_fabric_list.md)	 - List all network fabrics
 * [metalcloud-cli fabric remove-device](metalcloud-cli_fabric_remove-device.md)	 - Remove network device from a fabric
 * [metalcloud-cli fabric remove-link](metalcloud-cli_fabric_remove-link.md)	 - Remove a network fabric link
+* [metalcloud-cli fabric rescan-links](metalcloud-cli_fabric_rescan-links.md)	 - Re-scan (discover) the fabric's links from LLDP
 * [metalcloud-cli fabric update](metalcloud-cli_fabric_update.md)	 - Update fabric configuration
 

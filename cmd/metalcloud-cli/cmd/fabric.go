@@ -24,6 +24,7 @@ var (
 		bgpLinkConfiguration string
 		customVariables      []string
 		dryRun               bool
+		updateLLDP           bool
 	}{}
 
 	// configureSwitchesFlags are the per-property alternatives to --config-source
@@ -345,6 +346,36 @@ Examples:
 		Args:         cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			return fabric.FabricDeploy(cmd.Context(), args[0])
+		},
+	}
+
+	fabricRescanLinksCmd = &cobra.Command{
+		Use:     "rescan-links fabric_id",
+		Aliases: []string{"discover-links"},
+		Short:   "Re-scan (discover) the fabric's links from LLDP",
+		Long: `Re-scan the links of a network fabric, deriving the physical-link records from
+the LLDP data that flows once the ports are up. This is the "Discover links"
+action: run it after the first fabric deploy, then deploy again so the links
+become MetalSoft-managed.
+
+It is idempotent - on a fabric whose links already exist it matches rows in
+place without creating duplicates.
+
+Arguments:
+  fabric_id    The ID or label of the fabric whose links to rescan
+
+Optional Flags:
+  --update-lldp   Update LLDP information during the rescan (default true).
+
+Examples:
+  metalcloud-cli fabric rescan-links 12345
+  metalcloud-cli fabric discover-links my-fabric
+  metalcloud-cli fabric rescan-links 12345 --update-lldp=false`,
+		SilenceUsage: true,
+		Annotations:  map[string]string{system.REQUIRED_PERMISSION: system.PERMISSION_NETWORK_FABRICS_WRITE},
+		Args:         cobra.ExactArgs(1),
+		RunE: func(cmd *cobra.Command, args []string) error {
+			return fabric.FabricRescanLinks(cmd.Context(), args[0], fabricFlags.updateLLDP)
 		},
 	}
 
@@ -859,6 +890,9 @@ func init() {
 
 	fabricCmd.AddCommand(fabricActivateCmd)
 	fabricCmd.AddCommand(fabricDeployCmd)
+
+	fabricCmd.AddCommand(fabricRescanLinksCmd)
+	fabricRescanLinksCmd.Flags().BoolVar(&fabricFlags.updateLLDP, "update-lldp", true, "Update LLDP information during the link rescan.")
 
 	fabricCmd.AddCommand(fabricDevicesGetCmd)
 	fabricCmd.AddCommand(fabricDevicesAddCmd)
