@@ -33,6 +33,7 @@ monitor network devices.
 
 * [metalcloud-cli](metalcloud-cli.md)	 - MetalCloud CLI
 * [metalcloud-cli network-device add-defaults](metalcloud-cli_network-device_add-defaults.md)	 - Add network device default configuration
+* [metalcloud-cli network-device add-port-ip](metalcloud-cli_network-device_add-port-ip.md)	 - Add an IP address to a network device port
 * [metalcloud-cli network-device archive](metalcloud-cli_network-device_archive.md)	 - Archive a network device (soft delete with history preservation)
 * [metalcloud-cli network-device config-example](metalcloud-cli_network-device_config-example.md)	 - Generate example configuration template for network devices
 * [metalcloud-cli network-device create](metalcloud-cli_network-device_create.md)	 - Create a new network device with specified configuration
@@ -52,4 +53,5 @@ monitor network devices.
 * [metalcloud-cli network-device set-failed](metalcloud-cli_network-device_set-failed.md)	 - Set the network device as failed
 * [metalcloud-cli network-device set-port-status](metalcloud-cli_network-device_set-port-status.md)	 - Enable or disable a specific port on the network device
 * [metalcloud-cli network-device update](metalcloud-cli_network-device_update.md)	 - Update configuration of an existing network device
+* [metalcloud-cli network-device update-port-config](metalcloud-cli_network-device_update-port-config.md)	 - Update the staged config (enable/description) of a port
 

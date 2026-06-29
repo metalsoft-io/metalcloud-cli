@@ -3,9 +3,11 @@ package network_device
 import (
 	"context"
 	"encoding/csv"
+	"errors"
 	"fmt"
 	"io"
 	"os"
+	"regexp"
 	"strconv"
 	"strings"
 
@@ -412,6 +414,189 @@ func NetworkDeviceSetPortStatus(ctx context.Context, networkDeviceId string, por
 
 	logger.Get().Info().Msgf("Port %s status for network device %s set to %s", portId, networkDeviceId, action)
 	return nil
+}
+
+var networkDevicePortConfigPrintConfig = formatter.PrintConfig{
+	FieldsConfig: map[string]formatter.RecordFieldConfig{
+		"Enabled": {
+			Title: "Enabled",
+			Order: 1,
+		},
+		"Description": {
+			Title: "Description",
+			Order: 2,
+		},
+		"Mtu": {
+			Title: "MTU",
+			Order: 3,
+		},
+		"Revision": {
+			Title: "Revision",
+			Order: 4,
+		},
+	},
+}
+
+var networkDevicePortIpPrintConfig = formatter.PrintConfig{
+	FieldsConfig: map[string]formatter.RecordFieldConfig{
+		"Id": {
+			Title: "#",
+			Order: 1,
+		},
+		"InterfaceId": {
+			Title: "Interface",
+			Order: 2,
+		},
+		"Address": {
+			Title: "Address",
+			Order: 3,
+		},
+		"PrefixLength": {
+			Title: "Prefix",
+			Order: 4,
+		},
+		"ServiceStatus": {
+			Title: "Status",
+			Order: 5,
+		},
+	},
+}
+
+// revisionMismatchRe extracts the server-expected revision out of an optimistic
+// locking 409 body ("... found 7 ..."), used to retry the staged port-IP POST.
+var revisionMismatchRe = regexp.MustCompile(`found (\d+)`)
+
+// NetworkDeviceUpdatePortConfig patches the staged config (enabled flag and/or
+// description) of a single network device port. The port is addressed by its
+// numeric interface id. The current config revision is read first and sent as
+// If-Match for optimistic concurrency.
+func NetworkDeviceUpdatePortConfig(ctx context.Context, networkDeviceId string, portId string, enabled *bool, description *string) error {
+	logger.Get().Info().Msgf("Updating port %s config of network device %s", portId, networkDeviceId)
+
+	networkDeviceIdNumeric, err := GetNetworkDeviceId(networkDeviceId)
+	if err != nil {
+		return err
+	}
+
+	portIdNumeric, err := getNetworkDevicePortId(portId)
+	if err != nil {
+		return err
+	}
+
+	if enabled == nil && description == nil {
+		return fmt.Errorf("nothing to update: specify --enabled and/or --description")
+	}
+
+	client := api.GetApiClient(ctx)
+
+	port, httpRes, err := client.NetworkDeviceAPI.
+		GetNetworkDevicePort(ctx, networkDeviceIdNumeric, portIdNumeric).
+		Execute()
+	if err := response_inspector.InspectResponse(httpRes, err); err != nil {
+		return err
+	}
+
+	configUpdate := sdk.UpdateNetworkEquipmentInterfaceConfig{}
+	if enabled != nil {
+		configUpdate.Enabled = *sdk.NewNullableBool(enabled)
+	}
+	if description != nil {
+		configUpdate.Description = *sdk.NewNullableString(description)
+	}
+
+	revision := strconv.FormatInt(port.Config.Revision, 10)
+
+	configInfo, httpRes, err := client.NetworkDeviceAPI.
+		UpdateNetworkDevicePortConfig(ctx, networkDeviceIdNumeric, portIdNumeric).
+		UpdateNetworkEquipmentInterfaceConfig(configUpdate).
+		IfMatch(revision).
+		Execute()
+	if err := response_inspector.InspectResponse(httpRes, err); err != nil {
+		return err
+	}
+
+	return formatter.PrintResult(configInfo, &networkDevicePortConfigPrintConfig)
+}
+
+// NetworkDeviceAddPortIp stages a new IP address on a network device port
+// (addressed by its numeric interface id), e.g. a /32 loopback address.
+//
+// The POST is guarded by optimistic locking, but the interface entity revision
+// is not served directly: the single-port GET exposes a zero-based
+// config.revision while the lock checks a one-based counter. We therefore send
+// config.revision + 1, and if the server still rejects with a 409 naming a
+// different current revision, retry once with the value it expects.
+func NetworkDeviceAddPortIp(ctx context.Context, networkDeviceId string, portId string, family string, address string, prefixLength int32) error {
+	logger.Get().Info().Msgf("Adding %s/%d to port %s of network device %s", address, prefixLength, portId, networkDeviceId)
+
+	networkDeviceIdNumeric, err := GetNetworkDeviceId(networkDeviceId)
+	if err != nil {
+		return err
+	}
+
+	portIdNumeric, err := getNetworkDevicePortId(portId)
+	if err != nil {
+		return err
+	}
+
+	client := api.GetApiClient(ctx)
+
+	port, httpRes, err := client.NetworkDeviceAPI.
+		GetNetworkDevicePort(ctx, networkDeviceIdNumeric, portIdNumeric).
+		Execute()
+	if err := response_inspector.InspectResponse(httpRes, err); err != nil {
+		return err
+	}
+
+	payload := sdk.AddNetworkEquipmentInterfaceIp{
+		Address:      address,
+		PrefixLength: prefixLength,
+	}
+
+	revision := strconv.FormatInt(port.Config.Revision+1, 10)
+
+	ipInfo, httpRes, err := client.NetworkDeviceAPI.
+		AddNetworkDevicePortIp(ctx, networkDeviceIdNumeric, portIdNumeric, family).
+		AddNetworkEquipmentInterfaceIp(payload).
+		IfMatch(revision).
+		Execute()
+
+	// Optimistic-lock retry: the server reports the revision it actually expects.
+	if err != nil && httpRes != nil && httpRes.StatusCode == 409 {
+		if expected := expectedRevisionFromError(err); expected != "" {
+			ipInfo, httpRes, err = client.NetworkDeviceAPI.
+				AddNetworkDevicePortIp(ctx, networkDeviceIdNumeric, portIdNumeric, family).
+				AddNetworkEquipmentInterfaceIp(payload).
+				IfMatch(expected).
+				Execute()
+		}
+	}
+	if err := response_inspector.InspectResponse(httpRes, err); err != nil {
+		return err
+	}
+
+	return formatter.PrintResult(ipInfo, &networkDevicePortIpPrintConfig)
+}
+
+func getNetworkDevicePortId(portId string) (int64, error) {
+	portIdNumeric, err := strconv.ParseInt(portId, 10, 64)
+	if err != nil {
+		err := fmt.Errorf("invalid port (interface) ID: '%s'", portId)
+		logger.Get().Error().Err(err).Msg("")
+		return 0, err
+	}
+
+	return portIdNumeric, nil
+}
+
+func expectedRevisionFromError(err error) string {
+	var apiErr sdk.GenericOpenAPIError
+	if errors.As(err, &apiErr) {
+		if m := revisionMismatchRe.FindSubmatch(apiErr.Body()); m != nil {
+			return string(m[1])
+		}
+	}
+	return ""
 }
 
 func NetworkDeviceReset(ctx context.Context, networkDeviceId string) error {
