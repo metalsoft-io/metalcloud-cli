@@ -25,6 +25,53 @@ func roleItem(id, name, label string) map[string]interface{} {
 	}
 }
 
+// roleItemWithUnknownPermission returns a role carrying a permission value the
+// SDK's MetalsoftPermissions enum doesn't know. The typed SDK model rejects such
+// responses; raw-body parsing must not.
+func roleItemWithUnknownPermission(id, name, label string) map[string]interface{} {
+	item := roleItem(id, name, label)
+	item["permissions"] = []interface{}{"network_profile_allowed_for_user_read"}
+	return item
+}
+
+// TestRoleList_UnknownPermission is a regression test for the SDK<->API enum
+// desync where `role list` failed with
+// "network_profile_allowed_for_user_read is not a valid MetalsoftPermissions".
+func TestRoleList_UnknownPermission(t *testing.T) {
+	resp := map[string]interface{}{
+		"data": []interface{}{
+			roleItemWithUnknownPermission("1", "admin", "Admin"),
+			roleItem("2", "user", "User"),
+		},
+		"meta": map[string]interface{}{
+			"currentPage": 1, "totalPages": 1, "itemsPerPage": 100, "totalItems": 2,
+		},
+	}
+	ts := testutils.NewTestServer(map[string]http.HandlerFunc{
+		"/api/v2/roles": testutils.JSONHandler(http.StatusOK, resp),
+	})
+	defer ts.Close()
+
+	ctx := testutils.SetupTestContext(ts.URL)
+	if err := List(ctx); err != nil {
+		t.Errorf("RoleList with unknown permission: expected nil error, got: %v", err)
+	}
+}
+
+// TestRoleGet_UnknownPermission is the single-role counterpart of the regression test.
+func TestRoleGet_UnknownPermission(t *testing.T) {
+	item := roleItemWithUnknownPermission("1", "admin", "Admin")
+	ts := testutils.NewTestServer(map[string]http.HandlerFunc{
+		"/api/v2/roles/admin": testutils.JSONHandler(http.StatusOK, item),
+	})
+	defer ts.Close()
+
+	ctx := testutils.SetupTestContext(ts.URL)
+	if err := Get(ctx, "admin"); err != nil {
+		t.Errorf("RoleGet with unknown permission: expected nil error, got: %v", err)
+	}
+}
+
 func TestRoleList_HappyPath(t *testing.T) {
 	resp := map[string]interface{}{
 		"data": []interface{}{

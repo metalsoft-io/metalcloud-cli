@@ -55,6 +55,41 @@ func variablePage(n int) []any {
 	return items
 }
 
+// variableStringValueJSON carries `value` as a plain string. The SDK types
+// Variable.value as map[string]interface{}, so the typed model rejects this;
+// raw-body parsing must not.
+const variableStringValueJSON = `{"id":2,"userIdOwner":1,"name":"str-var","value":"plain-string-value","createdTimestamp":"2024-01-01T00:00:00Z","updatedTimestamp":"2024-01-01T00:00:00Z"}`
+
+// TestVariableList_StringValue is a regression test for the SDK<->API type
+// mismatch where `variable list` failed with
+// "json: cannot unmarshal string into Go struct field ...data.value of type map[string]interface {}".
+func TestVariableList_StringValue(t *testing.T) {
+	body := fmt.Sprintf(`{"data":[%s,%s],"meta":{"currentPage":1,"totalPages":1,"itemsPerPage":100}}`,
+		variableStringValueJSON, variableJSON)
+	ts := testutils.NewTestServer(map[string]http.HandlerFunc{
+		"/api/v2/variables": testutils.RawHandler(http.StatusOK, body),
+	})
+	defer ts.Close()
+
+	ctx := setupTestContext(ts.URL)
+	if err := VariableList(ctx); err != nil {
+		t.Errorf("expected nil error for string-valued variable, got: %v", err)
+	}
+}
+
+// TestVariableGet_StringValue is the single-variable counterpart of the regression test.
+func TestVariableGet_StringValue(t *testing.T) {
+	ts := testutils.NewTestServer(map[string]http.HandlerFunc{
+		"/api/v2/variables/2": testutils.RawHandler(http.StatusOK, variableStringValueJSON),
+	})
+	defer ts.Close()
+
+	ctx := setupTestContext(ts.URL)
+	if err := VariableGet(ctx, "2"); err != nil {
+		t.Errorf("expected nil error for string-valued variable, got: %v", err)
+	}
+}
+
 func TestVariableList_HappyPath(t *testing.T) {
 	ts := testutils.NewTestServer(map[string]http.HandlerFunc{
 		"/api/v2/variables": variableListHandler(http.StatusOK, 2, 1, 1),
@@ -149,6 +184,45 @@ func TestVariableCreate_HappyPath(t *testing.T) {
 	config := []byte(`{"name":"my-var","value":{"key":"val"}}`)
 	if err := VariableCreate(ctx, config); err != nil {
 		t.Errorf("expected nil error, got: %v", err)
+	}
+}
+
+// TestVariableCreate_StringValueResponse locks in that create tolerates a
+// response whose `value` is a plain string (or empty object) — values the
+// regenerated SDK's VariableValue oneOf union cannot unmarshal. Create/update
+// bypass the union via a raw request + raw response parse.
+func TestVariableCreate_StringValueResponse(t *testing.T) {
+	ts := testutils.NewTestServer(map[string]http.HandlerFunc{
+		"/api/v2/variables": func(w http.ResponseWriter, r *http.Request) {
+			w.Header().Set("Content-Type", "application/json")
+			w.WriteHeader(http.StatusCreated)
+			fmt.Fprint(w, variableStringValueJSON)
+		},
+	})
+	defer ts.Close()
+
+	ctx := setupTestContext(ts.URL)
+	config := []byte(`{"name":"str-var","value":"plain-string-value"}`)
+	if err := VariableCreate(ctx, config); err != nil {
+		t.Errorf("expected nil error for string-valued create response, got: %v", err)
+	}
+}
+
+// TestVariableUpdate_EmptyObjectResponse covers the exact oneOf failure mode:
+// a response value of `{}` matches zero union branches in the typed SDK.
+func TestVariableUpdate_EmptyObjectResponse(t *testing.T) {
+	ts := testutils.NewTestServer(map[string]http.HandlerFunc{
+		"/api/v2/variables/1": func(w http.ResponseWriter, r *http.Request) {
+			w.Header().Set("Content-Type", "application/json")
+			fmt.Fprint(w, `{"id":1,"userIdOwner":1,"name":"v","value":{},"createdTimestamp":"2024-01-01T00:00:00Z","updatedTimestamp":"2024-01-01T00:00:00Z"}`)
+		},
+	})
+	defer ts.Close()
+
+	ctx := setupTestContext(ts.URL)
+	config := []byte(`{"name":"v","value":{}}`)
+	if err := VariableUpdate(ctx, "1", config); err != nil {
+		t.Errorf("expected nil error for empty-object update response, got: %v", err)
 	}
 }
 
