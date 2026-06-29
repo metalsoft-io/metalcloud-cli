@@ -37,9 +37,38 @@ metalcloud-cli fabric configure-switches fabric_id [flags]
 ### Options
 
 ```
-      --config-source string   Source of the switch configuration. Can be 'pipe' or path to a YAML/JSON file.
-      --dry-run                Compute and preview the plan without making any changes.
-  -h, --help                   help for configure-switches
+      --asn                                                Enable ASN assignment using the default starts.
+      --asn-leaf-start int                                 Starting ASN for leaves.
+      --asn-spine-start int                                Starting ASN for spine groups.
+      --asn-super-spine-start int                          Shared ASN for superspines.
+      --config-source string                               Source of the switch configuration. Can be 'pipe' or path to a YAML/JSON file. Mutually exclusive with the per-property flags below.
+      --description-template string                        Interface description template (placeholders {peerHostname}, {peerPort}). Requires a topology section.
+      --dry-run                                            Compute and preview the plan without making any changes.
+      --enable-physical-ports                              Enable every physical port's staged config. (default true)
+  -h, --help                                               help for configure-switches
+      --hostname                                           Enable hostname computation using the built-in reference templates.
+      --hostname-leaf string                               Hostname template for leaf devices.
+      --hostname-skip strings                              Positions to skip (set to null), e.g. spine.
+      --hostname-spine string                              Hostname template for spine devices.
+      --hostname-super-spine string                        Hostname template for super_spine devices.
+      --loopback                                           Enable loopback IP allocation using the default subnet.
+      --loopback-subnet string                             Pool the loopback /32s are carved from.
+      --ordering string                                    Device ordering: managementAddress | identifierString | id. (default "managementAddress")
+      --p2p                                                Enable point-to-point link creation with reference default pools.
+      --p2p-mtu int32                                      MTU applied to created links.
+      --p2p-pool-leaf-host string                          Leaf->host /31 pool.
+      --p2p-pool-leaf-spine string                         Leaf<->spine /31 pool.
+      --p2p-pool-spine-super-spine string                  Spine<->superspine /31 pool.
+      --topology-leaf-host                                 Enable leaf->host downlinks.
+      --topology-leaf-host-description-template string     Leaf->host description template.
+      --topology-leaf-host-nic-names strings               Remote host NIC names (even count).
+      --topology-leaf-host-node-count int                  Number of host port-pairs per leaf.
+      --topology-leaf-host-nodes ints                      Exact 0-based node indices (mutually exclusive with node-count).
+      --topology-leaf-host-port-pattern string             Leaf host port pattern, e.g. swp{port}s{sub}.
+      --topology-leaf-spine                                Enable leaf<->spine pairing.
+      --topology-leaf-spine-links-per-pair string          Leaf<->spine links per pair: 'auto' or an integer.
+      --topology-spine-super-spine                         Enable spine<->superspine pairing (3-tier only).
+      --topology-spine-super-spine-links-per-pair string   Spine<->superspine links per pair: 'auto' or an integer.
 ```
 
 ### Options inherited from parent commands

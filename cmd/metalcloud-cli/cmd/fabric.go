@@ -1,11 +1,15 @@
 package cmd
 
 import (
+	"fmt"
+	"strconv"
+
 	"github.com/metalsoft-io/metalcloud-cli/cmd/metalcloud-cli/system"
 	"github.com/metalsoft-io/metalcloud-cli/internal/fabric"
 	"github.com/metalsoft-io/metalcloud-cli/pkg/utils"
 	sdk "github.com/metalsoft-io/metalcloud-sdk-go"
 	"github.com/spf13/cobra"
+	"gopkg.in/yaml.v3"
 )
 
 var (
@@ -21,6 +25,62 @@ var (
 		customVariables      []string
 		dryRun               bool
 	}{}
+
+	// configureSwitchesFlags are the per-property alternatives to --config-source
+	// for the configure-switches command. A section is enabled if its enable bool
+	// is set or any of its sub-flags is provided (detected via Flags().Changed).
+	configureSwitchesFlags = struct {
+		ordering            string
+		enablePhysicalPorts bool
+		descriptionTemplate string
+
+		hostname           bool
+		hostnameLeaf       string
+		hostnameSpine      string
+		hostnameSuperSpine string
+		hostnameSkip       []string
+
+		asn                bool
+		asnLeafStart       int64
+		asnSpineStart      int64
+		asnSuperSpineStart int64
+
+		loopback       bool
+		loopbackSubnet string
+
+		topoLeafSpine          bool
+		topoLeafSpineLPP       string
+		topoSpineSuperSpine    bool
+		topoSpineSuperSpineLPP string
+
+		topoLeafHost            bool
+		topoLeafHostNodeCount   int
+		topoLeafHostNodes       []int
+		topoLeafHostPortPattern string
+		topoLeafHostNicNames    []string
+		topoLeafHostDescription string
+
+		p2p                    bool
+		p2pPoolLeafSpine       string
+		p2pPoolSpineSuperSpine string
+		p2pPoolLeafHost        string
+		p2pMtu                 int32
+	}{}
+
+	// configureSwitchesDetailFlags is every per-property flag; each is marked
+	// mutually exclusive with --config-source.
+	configureSwitchesDetailFlags = []string{
+		"ordering", "enable-physical-ports", "description-template",
+		"hostname", "hostname-leaf", "hostname-spine", "hostname-super-spine", "hostname-skip",
+		"asn", "asn-leaf-start", "asn-spine-start", "asn-super-spine-start",
+		"loopback", "loopback-subnet",
+		"topology-leaf-spine", "topology-leaf-spine-links-per-pair",
+		"topology-spine-super-spine", "topology-spine-super-spine-links-per-pair",
+		"topology-leaf-host", "topology-leaf-host-node-count", "topology-leaf-host-nodes",
+		"topology-leaf-host-port-pattern", "topology-leaf-host-nic-names",
+		"topology-leaf-host-description-template",
+		"p2p", "p2p-pool-leaf-spine", "p2p-pool-spine-super-spine", "p2p-pool-leaf-host", "p2p-mtu",
+	}
 
 	fabricCmd = &cobra.Command{
 		Use:     "fabric [command]",
@@ -541,7 +601,13 @@ Examples:
 		Annotations:  map[string]string{system.REQUIRED_PERMISSION: system.PERMISSION_NETWORK_FABRICS_WRITE},
 		Args:         cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
-			config, err := utils.ReadConfigFromPipeOrFile(fabricFlags.configSource)
+			var config []byte
+			var err error
+			if fabricFlags.configSource != "" {
+				config, err = utils.ReadConfigFromPipeOrFile(fabricFlags.configSource)
+			} else {
+				config, err = buildSwitchConfigFromFlags(cmd)
+			}
 			if err != nil {
 				return err
 			}
@@ -568,6 +634,179 @@ Examples:
 		},
 	}
 )
+
+// buildSwitchConfigFromFlags assembles a configure-switches YAML document from
+// the individual --... flags that were set, then hands it to the same loader as
+// --config-source. A section appears only if its enable flag or any of its
+// sub-flags was provided (so presence semantics match the file path exactly).
+func buildSwitchConfigFromFlags(cmd *cobra.Command) ([]byte, error) {
+	f := cmd.Flags()
+	cs := &configureSwitchesFlags
+	doc := map[string]interface{}{}
+
+	if f.Changed("ordering") {
+		doc["ordering"] = cs.ordering
+	}
+	if f.Changed("enable-physical-ports") {
+		doc["enablePhysicalPorts"] = cs.enablePhysicalPorts
+	}
+	if f.Changed("description-template") {
+		doc["descriptionTemplate"] = cs.descriptionTemplate
+	}
+
+	// hostname
+	hostname := map[string]interface{}{}
+	hostnamePresent := f.Changed("hostname") && cs.hostname
+	if f.Changed("hostname-leaf") {
+		hostname["leaf"] = cs.hostnameLeaf
+		hostnamePresent = true
+	}
+	if f.Changed("hostname-spine") {
+		hostname["spine"] = cs.hostnameSpine
+		hostnamePresent = true
+	}
+	if f.Changed("hostname-super-spine") {
+		hostname["super_spine"] = cs.hostnameSuperSpine
+		hostnamePresent = true
+	}
+	for _, position := range cs.hostnameSkip {
+		hostname[position] = nil // explicit null => skip the position
+		hostnamePresent = true
+	}
+	if hostnamePresent {
+		doc["hostname"] = hostname
+	}
+
+	// asn
+	asn := map[string]interface{}{}
+	asnPresent := f.Changed("asn") && cs.asn
+	if f.Changed("asn-leaf-start") {
+		asn["leafStart"] = cs.asnLeafStart
+		asnPresent = true
+	}
+	if f.Changed("asn-spine-start") {
+		asn["spineStart"] = cs.asnSpineStart
+		asnPresent = true
+	}
+	if f.Changed("asn-super-spine-start") {
+		asn["superSpineStart"] = cs.asnSuperSpineStart
+		asnPresent = true
+	}
+	if asnPresent {
+		doc["asn"] = asn
+	}
+
+	// loopback
+	loopback := map[string]interface{}{}
+	loopbackPresent := f.Changed("loopback") && cs.loopback
+	if f.Changed("loopback-subnet") {
+		loopback["subnet"] = cs.loopbackSubnet
+		loopbackPresent = true
+	}
+	if loopbackPresent {
+		doc["loopback"] = loopback
+	}
+
+	// topology
+	topology := map[string]interface{}{}
+	if leafSpine, present, err := buildLayerFlags(f, "topology-leaf-spine", cs.topoLeafSpine, "topology-leaf-spine-links-per-pair", cs.topoLeafSpineLPP); err != nil {
+		return nil, err
+	} else if present {
+		topology["leafSpine"] = leafSpine
+	}
+	if spineSsp, present, err := buildLayerFlags(f, "topology-spine-super-spine", cs.topoSpineSuperSpine, "topology-spine-super-spine-links-per-pair", cs.topoSpineSuperSpineLPP); err != nil {
+		return nil, err
+	} else if present {
+		topology["spineSuperSpine"] = spineSsp
+	}
+	leafHost := map[string]interface{}{}
+	leafHostPresent := f.Changed("topology-leaf-host") && cs.topoLeafHost
+	if f.Changed("topology-leaf-host-node-count") {
+		leafHost["nodeCount"] = cs.topoLeafHostNodeCount
+		leafHostPresent = true
+	}
+	if f.Changed("topology-leaf-host-nodes") {
+		leafHost["nodes"] = cs.topoLeafHostNodes
+		leafHostPresent = true
+	}
+	if f.Changed("topology-leaf-host-port-pattern") {
+		leafHost["portPattern"] = cs.topoLeafHostPortPattern
+		leafHostPresent = true
+	}
+	if f.Changed("topology-leaf-host-nic-names") {
+		leafHost["nicNames"] = cs.topoLeafHostNicNames
+		leafHostPresent = true
+	}
+	if f.Changed("topology-leaf-host-description-template") {
+		leafHost["descriptionTemplate"] = cs.topoLeafHostDescription
+		leafHostPresent = true
+	}
+	if leafHostPresent {
+		topology["leafHost"] = leafHost
+	}
+	if len(topology) > 0 {
+		doc["topology"] = topology
+	}
+
+	// p2p
+	p2p := map[string]interface{}{}
+	p2pPresent := f.Changed("p2p") && cs.p2p
+	pools := map[string]interface{}{}
+	if f.Changed("p2p-pool-leaf-spine") {
+		pools["leafSpine"] = cs.p2pPoolLeafSpine
+	}
+	if f.Changed("p2p-pool-spine-super-spine") {
+		pools["spineSuperSpine"] = cs.p2pPoolSpineSuperSpine
+	}
+	if f.Changed("p2p-pool-leaf-host") {
+		pools["leafHost"] = cs.p2pPoolLeafHost
+	}
+	if len(pools) > 0 {
+		p2p["pools"] = pools
+		p2pPresent = true
+	}
+	if f.Changed("p2p-mtu") {
+		p2p["mtu"] = cs.p2pMtu
+		p2pPresent = true
+	}
+	if p2pPresent {
+		doc["p2p"] = p2p
+	}
+
+	if len(doc) == 0 {
+		return nil, fmt.Errorf("specify --config-source or at least one configuration flag (see 'fabric configure-switches --help')")
+	}
+	return yaml.Marshal(doc)
+}
+
+// buildLayerFlags builds a topology fabric-layer (leafSpine / spineSuperSpine)
+// section from its enable flag and its links-per-pair flag.
+func buildLayerFlags(f interface{ Changed(string) bool }, enableName string, enabled bool, lppName, lpp string) (map[string]interface{}, bool, error) {
+	layer := map[string]interface{}{}
+	present := f.Changed(enableName) && enabled
+	if f.Changed(lppName) {
+		value, err := parseLinksPerPair(lpp)
+		if err != nil {
+			return nil, false, err
+		}
+		layer["linksPerPair"] = value
+		present = true
+	}
+	return layer, present, nil
+}
+
+// parseLinksPerPair maps the CLI string to what the loader expects: the literal
+// "auto", or an integer.
+func parseLinksPerPair(s string) (interface{}, error) {
+	if s == "" || s == "auto" {
+		return "auto", nil
+	}
+	n, err := strconv.Atoi(s)
+	if err != nil {
+		return nil, fmt.Errorf("links-per-pair must be 'auto' or an integer, got %q", s)
+	}
+	return n, nil
+}
 
 func init() {
 	rootCmd.AddCommand(fabricCmd)
@@ -611,9 +850,52 @@ func init() {
 	fabricCmd.AddCommand(fabricLinkRemoveCmd)
 
 	fabricCmd.AddCommand(fabricConfigureSwitchesCmd)
-	fabricConfigureSwitchesCmd.Flags().StringVar(&fabricFlags.configSource, "config-source", "", "Source of the switch configuration. Can be 'pipe' or path to a YAML/JSON file.")
-	fabricConfigureSwitchesCmd.Flags().BoolVar(&fabricFlags.dryRun, "dry-run", false, "Compute and preview the plan without making any changes.")
-	fabricConfigureSwitchesCmd.MarkFlagRequired("config-source")
+	csCmd := fabricConfigureSwitchesCmd
+	csCmd.Flags().StringVar(&fabricFlags.configSource, "config-source", "", "Source of the switch configuration. Can be 'pipe' or path to a YAML/JSON file. Mutually exclusive with the per-property flags below.")
+	csCmd.Flags().BoolVar(&fabricFlags.dryRun, "dry-run", false, "Compute and preview the plan without making any changes.")
+
+	cs := &configureSwitchesFlags
+	csCmd.Flags().StringVar(&cs.ordering, "ordering", "managementAddress", "Device ordering: managementAddress | identifierString | id.")
+	csCmd.Flags().BoolVar(&cs.enablePhysicalPorts, "enable-physical-ports", true, "Enable every physical port's staged config.")
+	csCmd.Flags().StringVar(&cs.descriptionTemplate, "description-template", "", "Interface description template (placeholders {peerHostname}, {peerPort}). Requires a topology section.")
+
+	csCmd.Flags().BoolVar(&cs.hostname, "hostname", false, "Enable hostname computation using the built-in reference templates.")
+	csCmd.Flags().StringVar(&cs.hostnameLeaf, "hostname-leaf", "", "Hostname template for leaf devices.")
+	csCmd.Flags().StringVar(&cs.hostnameSpine, "hostname-spine", "", "Hostname template for spine devices.")
+	csCmd.Flags().StringVar(&cs.hostnameSuperSpine, "hostname-super-spine", "", "Hostname template for super_spine devices.")
+	csCmd.Flags().StringSliceVar(&cs.hostnameSkip, "hostname-skip", nil, "Positions to skip (set to null), e.g. spine.")
+
+	csCmd.Flags().BoolVar(&cs.asn, "asn", false, "Enable ASN assignment using the default starts.")
+	csCmd.Flags().Int64Var(&cs.asnLeafStart, "asn-leaf-start", 0, "Starting ASN for leaves.")
+	csCmd.Flags().Int64Var(&cs.asnSpineStart, "asn-spine-start", 0, "Starting ASN for spine groups.")
+	csCmd.Flags().Int64Var(&cs.asnSuperSpineStart, "asn-super-spine-start", 0, "Shared ASN for superspines.")
+
+	csCmd.Flags().BoolVar(&cs.loopback, "loopback", false, "Enable loopback IP allocation using the default subnet.")
+	csCmd.Flags().StringVar(&cs.loopbackSubnet, "loopback-subnet", "", "Pool the loopback /32s are carved from.")
+
+	csCmd.Flags().BoolVar(&cs.topoLeafSpine, "topology-leaf-spine", false, "Enable leaf<->spine pairing.")
+	csCmd.Flags().StringVar(&cs.topoLeafSpineLPP, "topology-leaf-spine-links-per-pair", "", "Leaf<->spine links per pair: 'auto' or an integer.")
+	csCmd.Flags().BoolVar(&cs.topoSpineSuperSpine, "topology-spine-super-spine", false, "Enable spine<->superspine pairing (3-tier only).")
+	csCmd.Flags().StringVar(&cs.topoSpineSuperSpineLPP, "topology-spine-super-spine-links-per-pair", "", "Spine<->superspine links per pair: 'auto' or an integer.")
+
+	csCmd.Flags().BoolVar(&cs.topoLeafHost, "topology-leaf-host", false, "Enable leaf->host downlinks.")
+	csCmd.Flags().IntVar(&cs.topoLeafHostNodeCount, "topology-leaf-host-node-count", 0, "Number of host port-pairs per leaf.")
+	csCmd.Flags().IntSliceVar(&cs.topoLeafHostNodes, "topology-leaf-host-nodes", nil, "Exact 0-based node indices (mutually exclusive with node-count).")
+	csCmd.Flags().StringVar(&cs.topoLeafHostPortPattern, "topology-leaf-host-port-pattern", "", "Leaf host port pattern, e.g. swp{port}s{sub}.")
+	csCmd.Flags().StringSliceVar(&cs.topoLeafHostNicNames, "topology-leaf-host-nic-names", nil, "Remote host NIC names (even count).")
+	csCmd.Flags().StringVar(&cs.topoLeafHostDescription, "topology-leaf-host-description-template", "", "Leaf->host description template.")
+
+	csCmd.Flags().BoolVar(&cs.p2p, "p2p", false, "Enable point-to-point link creation with reference default pools.")
+	csCmd.Flags().StringVar(&cs.p2pPoolLeafSpine, "p2p-pool-leaf-spine", "", "Leaf<->spine /31 pool.")
+	csCmd.Flags().StringVar(&cs.p2pPoolSpineSuperSpine, "p2p-pool-spine-super-spine", "", "Spine<->superspine /31 pool.")
+	csCmd.Flags().StringVar(&cs.p2pPoolLeafHost, "p2p-pool-leaf-host", "", "Leaf->host /31 pool.")
+	csCmd.Flags().Int32Var(&cs.p2pMtu, "p2p-mtu", 0, "MTU applied to created links.")
+
+	// --config-source is mutually exclusive with each per-property flag; the
+	// per-property flags can be combined freely with one another.
+	for _, name := range configureSwitchesDetailFlags {
+		csCmd.MarkFlagsMutuallyExclusive("config-source", name)
+	}
 
 	fabricCmd.AddCommand(fabricConfigureSwitchesExampleCmd)
 }
