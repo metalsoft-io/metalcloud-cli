@@ -417,34 +417,6 @@ func TestInfrastructureGetStatistics_Error(t *testing.T) {
 	}
 }
 
-func TestInfrastructureGetUserLimits_Success(t *testing.T) {
-	searchResp := map[string]interface{}{
-		"data": []interface{}{infraItem(123, "my-infra")},
-		"meta": testutils.PaginatedMeta(1, 1, 100),
-	}
-	limitsResp := map[string]interface{}{"computeNodesInstancesToProvisionLimit": 10, "drivesAttachedToInstancesLimit": 20, "infrastructuresLimit": 5}
-	ts := testutils.NewTestServer(map[string]http.HandlerFunc{
-		"/api/v2/infrastructures":                testutils.JSONHandler(http.StatusOK, searchResp),
-		"/api/v2/infrastructures/123/user-limits": testutils.JSONHandler(http.StatusOK, limitsResp),
-	})
-	defer ts.Close()
-	ctx := testutils.SetupTestContext(ts.URL)
-	if err := InfrastructureGetUserLimits(ctx, "my-infra"); err != nil {
-		t.Errorf("InfrastructureGetUserLimits: expected nil error, got: %v", err)
-	}
-}
-
-func TestInfrastructureGetUserLimits_Error(t *testing.T) {
-	ts := testutils.NewTestServer(map[string]http.HandlerFunc{
-		"/api/v2/infrastructures": testutils.ErrorHandler(http.StatusInternalServerError, "internal error"),
-	})
-	defer ts.Close()
-	ctx := testutils.SetupTestContext(ts.URL)
-	if err := InfrastructureGetUserLimits(ctx, "my-infra"); err == nil {
-		t.Error("InfrastructureGetUserLimits with 500: expected error, got nil")
-	}
-}
-
 func TestGetInfrastructureByIdOrLabel_ById(t *testing.T) {
 	items := []interface{}{infraItem(1, "infra-1")}
 	ts := testutils.NewTestServer(map[string]http.HandlerFunc{

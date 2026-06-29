@@ -60,7 +60,6 @@ Use "metalcloud-cli infrastructure [command] --help" for more information about 
 * [metalcloud-cli infrastructure revert](metalcloud-cli_infrastructure_revert.md)	 - Revert infrastructure to the last deployed state
 * [metalcloud-cli infrastructure statistics](metalcloud-cli_infrastructure_statistics.md)	 - Get deployment statistics for an infrastructure
 * [metalcloud-cli infrastructure update](metalcloud-cli_infrastructure_update.md)	 - Update infrastructure configuration and metadata
-* [metalcloud-cli infrastructure user-limits](metalcloud-cli_infrastructure_user-limits.md)	 - Display resource limits for an infrastructure
 * [metalcloud-cli infrastructure users](metalcloud-cli_infrastructure_users.md)	 - List users with access to an infrastructure
 * [metalcloud-cli infrastructure utilization](metalcloud-cli_infrastructure_utilization.md)	 - Get resource utilization report for infrastructures
 

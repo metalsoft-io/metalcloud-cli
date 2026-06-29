@@ -148,8 +148,12 @@ func rootPersistentPreRun(cmd *cobra.Command, args []string) error {
 	ctx = api.SetUserId(ctx, userId)
 	ctx = api.SetUserAccessLevel(ctx, accessLevel)
 
-	// TODO: At this point the help function is already processed and hiding the commands will not work
-	hideUnavailableCommands(cmd, userPermissions)
+	// The API no longer exposes a per-user permission list, so command visibility
+	// can no longer be gated by permission key. When no permissions are returned,
+	// leave every command visible; the server still enforces authorization.
+	if len(userPermissions) > 0 {
+		hideUnavailableCommands(cmd, userPermissions)
+	}
 
 	cmd.SetContext(ctx)
 

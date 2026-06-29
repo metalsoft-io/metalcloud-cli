@@ -3,7 +3,6 @@ package custom_iso
 import (
 	"context"
 	"fmt"
-	"net/http"
 	"strconv"
 
 	"github.com/metalsoft-io/metalcloud-cli/internal/server"
@@ -46,34 +45,19 @@ var customIsoPrintConfig = formatter.PrintConfig{
 	},
 }
 
-type customIsoRaw struct {
-	Id          interface{} `json:"id"`
-	Name        *string     `json:"name"`
-	DisplayName *string     `json:"displayName"`
-	AccessUrl   *string     `json:"accessUrl"`
-	IsPublic    interface{} `json:"isPublic"`
-	CreatedTimestamp *string `json:"createdTimestamp"`
-}
-
 func CustomIsoList(ctx context.Context) error {
 	logger.Get().Info().Msgf("Listing all custom ISOs")
 
 	client := api.GetApiClient(ctx)
 
-	rawItems, meta, err := utils.FetchAllPagesRaw(func(p float32) (*http.Response, error) {
-		_, httpRes, _ := client.CustomIsoAPI.GetCustomIsos(ctx).SortBy([]string{"id:ASC"}).Page(p).Limit(100).Execute()
-		return httpRes, nil
-	})
+	request := client.CustomIsoAPI.GetCustomIsos(ctx).SortBy([]string{"id:ASC"})
+
+	records, meta, err := utils.FetchAllPages(request)
 	if err != nil {
 		return err
 	}
 
-	records, err := utils.UnmarshalRawItems[customIsoRaw](rawItems)
-	if err != nil {
-		return fmt.Errorf("failed to parse custom ISOs: %w", err)
-	}
-
-	return utils.PrintAllRaw(rawItems, records, meta, len(records), &customIsoPrintConfig)
+	return utils.PrintAll(records, meta, len(records), &customIsoPrintConfig)
 }
 
 func CustomIsoGet(ctx context.Context, customIsoId string) error {
@@ -227,13 +211,13 @@ func CustomIsoConfigExample(ctx context.Context) error {
 	return formatter.PrintResult(customIsoConfiguration, nil)
 }
 
-func getCustomIsoId(customIsoId string) (float32, error) {
-	customIsoIdNumeric, err := strconv.ParseFloat(customIsoId, 32)
+func getCustomIsoId(customIsoId string) (int64, error) {
+	customIsoIdNumeric, err := strconv.ParseInt(customIsoId, 10, 64)
 	if err != nil {
 		err := fmt.Errorf("invalid custom ISO ID: '%s'", customIsoId)
 		logger.Get().Error().Err(err).Msg("")
 		return 0, err
 	}
 
-	return float32(customIsoIdNumeric), nil
+	return customIsoIdNumeric, nil
 }

@@ -3,7 +3,6 @@ package network_device_default_secrets
 import (
 	"context"
 	"fmt"
-	"net/http"
 	"strconv"
 
 	"github.com/metalsoft-io/metalcloud-cli/pkg/api"
@@ -14,15 +13,6 @@ import (
 
 	sdk "github.com/metalsoft-io/metalcloud-sdk-go"
 )
-
-type networkDeviceDefaultSecretsRaw struct {
-	Id                       interface{} `json:"id"`
-	SiteId                   interface{} `json:"siteId"`
-	MacAddressOrSerialNumber *string     `json:"macAddressOrSerialNumber"`
-	SecretName               *string     `json:"secretName"`
-	CreatedTimestamp         *string     `json:"createdTimestamp"`
-	UpdatedTimestamp         *string     `json:"updatedTimestamp"`
-}
 
 var networkDeviceDefaultSecretsPrintConfig = formatter.PrintConfig{
 	FieldsConfig: map[string]formatter.RecordFieldConfig{
@@ -60,58 +50,28 @@ func NetworkDeviceDefaultSecretsList(ctx context.Context, page int, limit int) e
 
 	req := client.NetworkDeviceDefaultSecretsAPI.GetNetworkDevicesDefaultSecrets(ctx)
 
-	if page > 0 {
-		req = req.Page(float32(page))
-	}
-
-	if limit > 0 {
-		req = req.Limit(float32(limit))
-	}
-
 	req = req.SortBy([]string{"id:ASC"})
 
-	if page > 0 {
-		rawItems, meta, err := utils.FetchPageWindowRaw(func(p, l float32) (*http.Response, error) {
-			_, httpRes, _ := req.Page(p).Limit(l).Execute()
-			return httpRes, nil
-		}, page, limit)
+	switch {
+	case page > 0:
+		records, meta, err := utils.FetchPageWindow(req, page, limit)
 		if err != nil {
 			return err
 		}
-		records, err := utils.UnmarshalRawItems[networkDeviceDefaultSecretsRaw](rawItems)
-		if err != nil {
-			return fmt.Errorf("failed to parse network device default secrets: %w", err)
-		}
-		return utils.PrintAllRaw(rawItems, records, meta, len(records), &networkDeviceDefaultSecretsPrintConfig)
-	}
-
-	if limit > 0 {
-		rawItems, meta, err := utils.FetchUpToRaw(func(p, l float32) (*http.Response, error) {
-			_, httpRes, _ := req.Page(p).Limit(l).Execute()
-			return httpRes, nil
-		}, limit)
+		return utils.PrintAll(records, meta, len(records), &networkDeviceDefaultSecretsPrintConfig)
+	case limit > 0:
+		records, meta, err := utils.FetchUpTo(req, limit)
 		if err != nil {
 			return err
 		}
-		records, err := utils.UnmarshalRawItems[networkDeviceDefaultSecretsRaw](rawItems)
+		return utils.PrintAll(records, meta, len(records), &networkDeviceDefaultSecretsPrintConfig)
+	default:
+		records, meta, err := utils.FetchAllPages(req)
 		if err != nil {
-			return fmt.Errorf("failed to parse network device default secrets: %w", err)
+			return err
 		}
-		return utils.PrintAllRaw(rawItems, records, meta, len(records), &networkDeviceDefaultSecretsPrintConfig)
+		return utils.PrintAll(records, meta, len(records), &networkDeviceDefaultSecretsPrintConfig)
 	}
-
-	rawItems, meta, err := utils.FetchAllPagesRaw(func(p float32) (*http.Response, error) {
-		_, httpRes, _ := req.Page(p).Limit(100).Execute()
-		return httpRes, nil
-	})
-	if err != nil {
-		return err
-	}
-	records, err := utils.UnmarshalRawItems[networkDeviceDefaultSecretsRaw](rawItems)
-	if err != nil {
-		return fmt.Errorf("failed to parse network device default secrets: %w", err)
-	}
-	return utils.PrintAllRaw(rawItems, records, meta, len(records), &networkDeviceDefaultSecretsPrintConfig)
 }
 
 func NetworkDeviceDefaultSecretsGet(ctx context.Context, id string) error {
@@ -155,7 +115,7 @@ func NetworkDeviceDefaultSecretsCreate(ctx context.Context, siteId float32, macO
 
 	client := api.GetApiClient(ctx)
 
-	body := sdk.NewCreateNetworkDeviceDefaultSecrets(siteId, macOrSerial, secretName, secretValue)
+	body := sdk.NewCreateNetworkDeviceDefaultSecrets(int64(siteId), macOrSerial, secretName, secretValue)
 
 	secret, httpRes, err := client.NetworkDeviceDefaultSecretsAPI.
 		CreateNetworkDeviceDefaultSecrets(ctx).
@@ -212,12 +172,12 @@ func NetworkDeviceDefaultSecretsDelete(ctx context.Context, id string) error {
 	return nil
 }
 
-func parseId(id string) (float32, error) {
-	idNumeric, err := strconv.ParseFloat(id, 32)
+func parseId(id string) (int64, error) {
+	idNumeric, err := strconv.ParseInt(id, 10, 64)
 	if err != nil {
 		err := fmt.Errorf("invalid network device default secrets ID: '%s'", id)
 		logger.Get().Error().Err(err).Msg("")
 		return 0, err
 	}
-	return float32(idNumeric), nil
+	return idNumeric, nil
 }

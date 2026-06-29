@@ -3,7 +3,6 @@ package firmware_baseline
 import (
 	"context"
 	"fmt"
-	"net/http"
 	"strconv"
 
 	"github.com/metalsoft-io/metalcloud-cli/pkg/api"
@@ -13,14 +12,6 @@ import (
 	"github.com/metalsoft-io/metalcloud-cli/pkg/utils"
 	sdk "github.com/metalsoft-io/metalcloud-sdk-go"
 )
-
-type firmwareBaselineRaw struct {
-	Id               interface{} `json:"id"`
-	Name             *string     `json:"name"`
-	Description      *string     `json:"description"`
-	Catalog          interface{} `json:"catalog"`
-	CreatedTimestamp interface{} `json:"createdTimestamp"`
-}
 
 var firmwareBaselinePrintConfig = formatter.PrintConfig{
 	FieldsConfig: map[string]formatter.RecordFieldConfig{
@@ -53,19 +44,14 @@ func FirmwareBaselineList(ctx context.Context) error {
 
 	client := api.GetApiClient(ctx)
 
-	rawItems, meta, err := utils.FetchAllPagesRaw(func(p float32) (*http.Response, error) {
-		_, httpRes, _ := client.FirmwareBaselineAPI.GetFirmwareBaselines(ctx).SortBy([]string{"id:ASC"}).Page(p).Limit(100).Execute()
-		return httpRes, nil
-	})
+	request := client.FirmwareBaselineAPI.GetFirmwareBaselines(ctx).SortBy([]string{"id:ASC"})
+
+	records, meta, err := utils.FetchAllPages(request)
 	if err != nil {
 		return err
 	}
-	records, err := utils.UnmarshalRawItems[firmwareBaselineRaw](rawItems)
-	if err != nil {
-		return fmt.Errorf("failed to parse firmware baselines: %w", err)
-	}
 
-	return utils.PrintAllRaw(rawItems, records, meta, len(records), &firmwareBaselinePrintConfig)
+	return utils.PrintAll(records, meta, len(records), &firmwareBaselinePrintConfig)
 }
 
 func FirmwareBaselineGet(ctx context.Context, firmwareBaselineId string) error {
@@ -195,7 +181,7 @@ func FirmwareBaselineSearch(ctx context.Context, searchCriteria []byte) error {
 func FirmwareBaselineSearchExample(ctx context.Context) error {
 	// Example search criteria
 	searchCriteria := sdk.SearchFirmwareBinary{
-		Vendor:      sdk.SERVERFIRMWARECATALOGVENDOR_DELL,
+		Vendor:      "dell",
 		BaselineIds: []string{"baseline-1"},
 		ServerComponentFilter: &sdk.SearchFirmwareBinaryServerComponentFilter{
 			DellComponentFilter: &sdk.DellComponentFilter{
@@ -207,13 +193,13 @@ func FirmwareBaselineSearchExample(ctx context.Context) error {
 	return formatter.PrintResult(searchCriteria, nil)
 }
 
-func getFirmwareBaselineId(firmwareBaselineId string) (float32, error) {
-	firmwareBaselineIdNumeric, err := strconv.ParseFloat(firmwareBaselineId, 32)
+func getFirmwareBaselineId(firmwareBaselineId string) (int64, error) {
+	firmwareBaselineIdNumeric, err := strconv.ParseInt(firmwareBaselineId, 10, 64)
 	if err != nil {
 		err := fmt.Errorf("invalid firmware baseline ID: '%s'", firmwareBaselineId)
 		logger.Get().Error().Err(err).Msg("")
 		return 0, err
 	}
 
-	return float32(firmwareBaselineIdNumeric), nil
+	return firmwareBaselineIdNumeric, nil
 }

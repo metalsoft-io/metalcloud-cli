@@ -3,7 +3,6 @@ package subnet
 import (
 	"context"
 	"fmt"
-	"net/http"
 	"strconv"
 
 	"github.com/metalsoft-io/metalcloud-cli/pkg/api"
@@ -13,17 +12,6 @@ import (
 	"github.com/metalsoft-io/metalcloud-cli/pkg/utils"
 	sdk "github.com/metalsoft-io/metalcloud-sdk-go"
 )
-
-type subnetRaw struct {
-	Id             interface{} `json:"id"`
-	Name           *string     `json:"name"`
-	IpVersion      interface{} `json:"ipVersion"`
-	NetworkAddress *string     `json:"networkAddress"`
-	PrefixLength   interface{} `json:"prefixLength"`
-	Netmask        *string     `json:"netmask"`
-	IsPool         interface{} `json:"isPool"`
-	CreatedAt      interface{} `json:"createdAt"`
-}
 
 var SubnetPrintConfig = formatter.PrintConfig{
 	FieldsConfig: map[string]formatter.RecordFieldConfig{
@@ -68,19 +56,14 @@ func SubnetList(ctx context.Context) error {
 
 	client := api.GetApiClient(ctx)
 
-	rawItems, meta, err := utils.FetchAllPagesRaw(func(p float32) (*http.Response, error) {
-		_, httpRes, _ := client.SubnetAPI.GetSubnets(ctx).SortBy([]string{"id:ASC"}).Page(p).Limit(100).Execute()
-		return httpRes, nil
-	})
+	request := client.SubnetAPI.GetSubnets(ctx).SortBy([]string{"id:ASC"})
+
+	records, meta, err := utils.FetchAllPages(request)
 	if err != nil {
 		return err
 	}
-	records, err := utils.UnmarshalRawItems[subnetRaw](rawItems)
-	if err != nil {
-		return fmt.Errorf("failed to parse subnets: %w", err)
-	}
 
-	return utils.PrintAllRaw(rawItems, records, meta, len(records), &SubnetPrintConfig)
+	return utils.PrintAll(records, meta, len(records), &SubnetPrintConfig)
 }
 
 func SubnetGet(ctx context.Context, subnetId string) error {
@@ -137,7 +120,7 @@ func SubnetUpdate(ctx context.Context, subnetId string, config []byte) error {
 	client := api.GetApiClient(ctx)
 
 	subnetInfo, httpRes, err := client.SubnetAPI.
-		UpdateSubnet(ctx, int32(subnetIdNumeric)).
+		UpdateSubnet(ctx, subnetIdNumeric).
 		UpdateSubnet(subnetConfig).
 		IfMatch(revision).
 		Execute()
@@ -159,7 +142,7 @@ func SubnetDelete(ctx context.Context, subnetId string) error {
 	client := api.GetApiClient(ctx)
 
 	httpRes, err := client.SubnetAPI.
-		DeleteSubnet(ctx, int32(subnetIdNumeric)).
+		DeleteSubnet(ctx, subnetIdNumeric).
 		IfMatch(revision).
 		Execute()
 	if err := response_inspector.InspectResponse(httpRes, err); err != nil {
@@ -178,7 +161,7 @@ func SubnetConfigExample(ctx context.Context) error {
 		NetworkAddress:         "192.168.1.0",
 		PrefixLength:           24,
 		IsPool:                 false,
-		ParentSubnetId:         sdk.PtrInt32(0),
+		ParentSubnetId:         sdk.PtrInt64(0),
 		DefaultGatewayAddress:  sdk.PtrString("192.168.1.1"),
 		AllocationDenylist:     []sdk.AddressRange{},
 		ChildOverlapAllowRules: []string{},
@@ -249,7 +232,7 @@ func SubnetIps(ctx context.Context, subnetId string) error {
 
 	client := api.GetApiClient(ctx)
 
-	result, httpRes, err := client.SubnetAPI.GetSubnetIps(ctx, id).Execute()
+	result, httpRes, err := client.SubnetAPI.GetSubnetIps(ctx, float32(id)).Execute()
 	if err := response_inspector.InspectResponse(httpRes, err); err != nil {
 		return err
 	}
@@ -267,7 +250,7 @@ func SubnetIpRanges(ctx context.Context, subnetId string) error {
 
 	client := api.GetApiClient(ctx)
 
-	result, httpRes, err := client.SubnetAPI.GetSubnetIpRanges(ctx, id).Execute()
+	result, httpRes, err := client.SubnetAPI.GetSubnetIpRanges(ctx, float32(id)).Execute()
 	if err := response_inspector.InspectResponse(httpRes, err); err != nil {
 		return err
 	}
@@ -275,18 +258,18 @@ func SubnetIpRanges(ctx context.Context, subnetId string) error {
 	return formatter.PrintResult(result, &subnetIpRangePrintConfig)
 }
 
-func getSubnetId(subnetId string) (float32, error) {
-	subnetIdNumeric, err := strconv.ParseFloat(subnetId, 32)
+func getSubnetId(subnetId string) (int64, error) {
+	subnetIdNumeric, err := strconv.ParseInt(subnetId, 10, 64)
 	if err != nil {
 		err := fmt.Errorf("invalid subnet ID: '%s'", subnetId)
 		logger.Get().Error().Err(err).Msg("")
 		return 0, err
 	}
 
-	return float32(subnetIdNumeric), nil
+	return subnetIdNumeric, nil
 }
 
-func getSubnetIdAndRevision(ctx context.Context, subnetId string) (float32, string, error) {
+func getSubnetIdAndRevision(ctx context.Context, subnetId string) (int64, string, error) {
 	subnetIdNumeric, err := getSubnetId(subnetId)
 	if err != nil {
 		return 0, "", err

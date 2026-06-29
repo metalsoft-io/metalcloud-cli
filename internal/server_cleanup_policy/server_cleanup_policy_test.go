@@ -17,6 +17,7 @@ func TestMain(m *testing.M) {
 const cleanupPolicyItem = `{
 	"id": 1, "label": "policy-1",
 	"cleanupDrivesForOobEnabledServer": 1, "recreateRaid": 0,
+	"clearTpm": 0,
 	"resetRaidControllers": 0, "disableEmbeddedNics": 0,
 	"raidOneDrive": "raid1", "raidTwoDrives": "raid1",
 	"raidEvenNumberMoreThanTwoDrives": "raid5", "raidOddNumberMoreThanOneDrive": "raid5",
@@ -73,7 +74,7 @@ func TestCleanupPolicyList(t *testing.T) {
 					s += ","
 				}
 				id := start + i
-				s += fmt.Sprintf(`{"id":%d,"label":"policy-%d","cleanupDrivesForOobEnabledServer":0,"recreateRaid":0,"resetRaidControllers":0,"disableEmbeddedNics":0,"raidOneDrive":"","raidTwoDrives":"","raidEvenNumberMoreThanTwoDrives":"","raidOddNumberMoreThanOneDrive":"","skipRaidActions":[],"createdTimestamp":"2024-01-01T00:00:00Z","updatedTimestamp":"2024-01-01T00:00:00Z","links":[]}`, id, id)
+				s += fmt.Sprintf(`{"id":%d,"label":"policy-%d","cleanupDrivesForOobEnabledServer":0,"clearTpm":0,"recreateRaid":0,"resetRaidControllers":0,"disableEmbeddedNics":0,"raidOneDrive":"","raidTwoDrives":"","raidEvenNumberMoreThanTwoDrives":"","raidOddNumberMoreThanOneDrive":"","skipRaidActions":[],"createdTimestamp":"2024-01-01T00:00:00Z","updatedTimestamp":"2024-01-01T00:00:00Z","links":[]}`, id, id)
 			}
 			s += `]`
 			return s

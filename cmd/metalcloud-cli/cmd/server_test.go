@@ -268,7 +268,7 @@ func TestServerTypeList_Formats(t *testing.T) {
 		"name": "Standard", "label": "standard",
 		"networkTotalCapacityMbps": 10000.0, "networkInterfaceCount": 2.0,
 		"networkInterfaceSpeeds": []interface{}{10000.0},
-		"processorNames":          "Intel Xeon",
+		"processorNames":          []interface{}{"Intel Xeon"},
 		"diskCount":               4.0, "serverClass": "bigdata",
 	}
 	srv := httptest.NewServer(newMux(allPerms, func(mux *http.ServeMux) {

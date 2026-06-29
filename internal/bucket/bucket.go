@@ -3,7 +3,6 @@ package bucket
 import (
 	"context"
 	"fmt"
-	"net/http"
 	"strconv"
 
 	"github.com/metalsoft-io/metalcloud-cli/internal/infrastructure"
@@ -71,25 +70,10 @@ var bucketPrintConfig = formatter.PrintConfig{
 	},
 }
 
-type bucketRaw struct {
-	Id               interface{} `json:"id"`
-	Label            *string     `json:"label"`
-	SizeGB           interface{} `json:"sizeGb"`
-	StoragePoolId    interface{} `json:"storagePoolId"`
-	InfrastructureId interface{} `json:"infrastructureId"`
-	ServiceStatus    *string     `json:"serviceStatus"`
-	Config           *struct {
-		DeployStatus *string `json:"deployStatus"`
-		DeployType   *string `json:"deployType"`
-	} `json:"config"`
-	Subdomain          *string `json:"subdomain"`
-	SubdomainPermanent *string `json:"subdomainPermanent"`
-	Endpoint           *string `json:"endpoint"`
-}
-
 func BucketList(ctx context.Context, infrastructureIdOrLabel string, filterStatus []string) error {
 	logger.Get().Info().Msgf("Listing buckets for infrastructure '%s'", infrastructureIdOrLabel)
 
+	// Get the infrastructure ID from ID or label
 	infrastructureInfo, err := infrastructure.GetInfrastructureByIdOrLabel(ctx, infrastructureIdOrLabel)
 	if err != nil {
 		return err
@@ -97,24 +81,18 @@ func BucketList(ctx context.Context, infrastructureIdOrLabel string, filterStatu
 
 	client := api.GetApiClient(ctx)
 
-	rawItems, meta, err := utils.FetchAllPagesRaw(func(p float32) (*http.Response, error) {
-		req := client.BucketAPI.GetInfrastructureBuckets(ctx, infrastructureInfo.Id).SortBy([]string{"id:ASC"}).Page(p).Limit(100)
-		if len(filterStatus) > 0 {
-			req = req.FilterServiceStatus(utils.ProcessFilterStringSlice(filterStatus))
-		}
-		_, httpRes, _ := req.Execute()
-		return httpRes, nil
-	})
+	request := client.BucketAPI.GetInfrastructureBuckets(ctx, int64(infrastructureInfo.Id))
+
+	if len(filterStatus) > 0 {
+		request = request.FilterServiceStatus(utils.ProcessFilterStringSlice(filterStatus))
+	}
+
+	buckets, meta, err := utils.FetchAllPages(request)
 	if err != nil {
 		return err
 	}
 
-	records, err := utils.UnmarshalRawItems[bucketRaw](rawItems)
-	if err != nil {
-		return fmt.Errorf("failed to parse buckets: %w", err)
-	}
-
-	return utils.PrintAllRaw(rawItems, records, meta, len(records), &bucketPrintConfig)
+	return utils.PrintAll(buckets, meta, len(buckets), &bucketPrintConfig)
 }
 
 func BucketGet(ctx context.Context, infrastructureIdOrLabel string, bucketId string) error {
@@ -133,7 +111,7 @@ func BucketGet(ctx context.Context, infrastructureIdOrLabel string, bucketId str
 
 	client := api.GetApiClient(ctx)
 
-	bucket, httpRes, err := client.BucketAPI.GetInfrastructureBucket(ctx, infrastructureInfo.Id, bucketIdNumeric).Execute()
+	bucket, httpRes, err := client.BucketAPI.GetInfrastructureBucket(ctx, int64(infrastructureInfo.Id), bucketIdNumeric).Execute()
 	if err := response_inspector.InspectResponse(httpRes, err); err != nil {
 		return err
 	}
@@ -159,7 +137,7 @@ func BucketCreate(ctx context.Context, infrastructureIdOrLabel string, config []
 	client := api.GetApiClient(ctx)
 
 	bucket, httpRes, err := client.BucketAPI.
-		CreateInfrastructureBucket(ctx, infrastructureInfo.Id).
+		CreateInfrastructureBucket(ctx, int64(infrastructureInfo.Id)).
 		CreateBucket(bucketConfig).
 		Execute()
 	if err := response_inspector.InspectResponse(httpRes, err); err != nil {
@@ -178,7 +156,7 @@ func BucketDelete(ctx context.Context, infrastructureIdOrLabel string, bucketId 
 		return err
 	}
 
-	bucketIdNumeric, revision, err := getBucketIdAndRevision(ctx, infrastructureInfo.Id, bucketId)
+	bucketIdNumeric, revision, err := getBucketIdAndRevision(ctx, int64(infrastructureInfo.Id), bucketId)
 	if err != nil {
 		return err
 	}
@@ -186,7 +164,7 @@ func BucketDelete(ctx context.Context, infrastructureIdOrLabel string, bucketId 
 	client := api.GetApiClient(ctx)
 
 	httpRes, err := client.BucketAPI.
-		DeleteBucket(ctx, infrastructureInfo.Id, bucketIdNumeric).
+		DeleteBucket(ctx, int64(infrastructureInfo.Id), bucketIdNumeric).
 		IfMatch(revision).
 		Execute()
 	if err := response_inspector.InspectResponse(httpRes, err); err != nil {
@@ -206,7 +184,7 @@ func BucketUpdateConfig(ctx context.Context, infrastructureIdOrLabel string, buc
 		return err
 	}
 
-	bucketIdNumeric, revision, err := getBucketIdAndRevision(ctx, infrastructureInfo.Id, bucketId)
+	bucketIdNumeric, revision, err := getBucketIdAndRevision(ctx, int64(infrastructureInfo.Id), bucketId)
 	if err != nil {
 		return err
 	}
@@ -220,7 +198,7 @@ func BucketUpdateConfig(ctx context.Context, infrastructureIdOrLabel string, buc
 	client := api.GetApiClient(ctx)
 
 	bucket, httpRes, err := client.BucketAPI.
-		UpdateBucket(ctx, infrastructureInfo.Id, bucketIdNumeric).
+		UpdateBucket(ctx, int64(infrastructureInfo.Id), bucketIdNumeric).
 		UpdateBucket(bucketConfigUpdate).
 		IfMatch(revision).
 		Execute()
@@ -254,7 +232,7 @@ func BucketUpdateMeta(ctx context.Context, infrastructureIdOrLabel string, bucke
 	client := api.GetApiClient(ctx)
 
 	bucket, httpRes, err := client.BucketAPI.
-		UpdateBucketMeta(ctx, infrastructureInfo.Id, bucketIdNumeric).
+		UpdateBucketMeta(ctx, int64(infrastructureInfo.Id), bucketIdNumeric).
 		UpdateBucketMeta(bucketMetaUpdate).
 		Execute()
 	if err := response_inspector.InspectResponse(httpRes, err); err != nil {
@@ -281,7 +259,7 @@ func BucketGetConfigInfo(ctx context.Context, infrastructureIdOrLabel string, bu
 	client := api.GetApiClient(ctx)
 
 	configInfo, httpRes, err := client.BucketAPI.
-		GetBucketConfigInfo(ctx, infrastructureInfo.Id, bucketIdNumeric).
+		GetBucketConfigInfo(ctx, int64(infrastructureInfo.Id), bucketIdNumeric).
 		Execute()
 	if err := response_inspector.InspectResponse(httpRes, err); err != nil {
 		return err
@@ -336,7 +314,7 @@ func BucketGetCredentials(ctx context.Context, infrastructureIdOrLabel string, b
 	client := api.GetApiClient(ctx)
 
 	credentials, httpRes, err := client.BucketAPI.
-		GetBucketCredentials(ctx, infrastructureInfo.Id, bucketIdNumeric).
+		GetBucketCredentials(ctx, float32(infrastructureInfo.Id), bucketIdNumeric).
 		Execute()
 	if err := response_inspector.InspectResponse(httpRes, err); err != nil {
 		return err
@@ -360,18 +338,18 @@ func BucketGetCredentials(ctx context.Context, infrastructureIdOrLabel string, b
 	})
 }
 
-func getBucketId(bucketId string) (float32, error) {
-	bucketIdNumeric, err := strconv.ParseFloat(bucketId, 32)
+func getBucketId(bucketId string) (int64, error) {
+	bucketIdNumeric, err := strconv.ParseInt(bucketId, 10, 64)
 	if err != nil {
 		err := fmt.Errorf("invalid bucket ID: '%s'", bucketId)
 		logger.Get().Error().Err(err).Msg("")
 		return 0, err
 	}
 
-	return float32(bucketIdNumeric), nil
+	return bucketIdNumeric, nil
 }
 
-func getBucketIdAndRevision(ctx context.Context, infrastructureId float32, bucketId string) (float32, string, error) {
+func getBucketIdAndRevision(ctx context.Context, infrastructureId int64, bucketId string) (int64, string, error) {
 	bucketIdNumeric, err := getBucketId(bucketId)
 	if err != nil {
 		return 0, "", err

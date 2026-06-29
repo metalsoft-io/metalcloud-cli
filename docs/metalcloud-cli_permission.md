@@ -1,27 +1,19 @@
 ## metalcloud-cli permission
 
-Manage system permissions and access control
+Permission management
 
 ### Synopsis
 
-Manage system permissions and access control.
+Permission management commands.
 
-Permissions define what actions users and roles can perform within the MetalCloud platform.
-This command group provides functionality to view and manage the available permissions
-in the system.
+This command group provides management capabilities for permissions including
+listing, creating, and deleting permissions.
 
-Available Commands:
-  list        List all available permissions in the system
+Available commands:
+  - list, create, delete, config-example
 
-Examples:
-  # List all permissions
-  metalcloud-cli permission list
-  
-  # List permissions with short alias
-  metalcloud-cli permissions ls
+Use "metalcloud-cli permission [command] --help" for detailed information about each command.
 
-Required Permissions:
-  Most permission management operations require the 'roles:read' permission.
 
 ### Options
 
@@ -45,5 +37,8 @@ Required Permissions:
 ### SEE ALSO
 
 * [metalcloud-cli](metalcloud-cli.md)	 - MetalCloud CLI
-* [metalcloud-cli permission list](metalcloud-cli_permission_list.md)	 - List all available system permissions
+* [metalcloud-cli permission config-example](metalcloud-cli_permission_config-example.md)	 - Show a permission configuration example
+* [metalcloud-cli permission create](metalcloud-cli_permission_create.md)	 - Create a new permission
+* [metalcloud-cli permission delete](metalcloud-cli_permission_delete.md)	 - Delete a permission
+* [metalcloud-cli permission list](metalcloud-cli_permission_list.md)	 - List permissions
 

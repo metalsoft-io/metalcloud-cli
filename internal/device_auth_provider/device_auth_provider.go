@@ -3,7 +3,6 @@ package device_auth_provider
 import (
 	"context"
 	"fmt"
-	"net/http"
 	"strconv"
 
 	"github.com/metalsoft-io/metalcloud-cli/pkg/api"
@@ -86,8 +85,8 @@ var DeviceAuthProviderCredentialsPrintConfig = formatter.PrintConfig{
 func GetDeviceAuthProviderByIdOrLabel(ctx context.Context, idOrLabel string) (*sdk.DeviceAuthProvider, error) {
 	client := api.GetApiClient(ctx)
 
-	if id, err := strconv.ParseFloat(idOrLabel, 32); err == nil {
-		provider, httpRes, err := client.SiteAPI.GetDeviceAuthProviderById(ctx, float32(id)).Execute()
+	if id, err := strconv.ParseInt(idOrLabel, 10, 64); err == nil {
+		provider, httpRes, err := client.SiteAPI.GetDeviceAuthProviderById(ctx, id).Execute()
 		if err := response_inspector.InspectResponse(httpRes, err); err != nil {
 			return nil, err
 		}
@@ -111,50 +110,28 @@ func GetDeviceAuthProviderByIdOrLabel(ctx context.Context, idOrLabel string) (*s
 	return nil, err
 }
 
-type deviceAuthProviderRaw struct {
-	Id              interface{} `json:"id"`
-	Label           *string     `json:"label"`
-	Name            *string     `json:"name"`
-	Kind            *string     `json:"kind"`
-	SiteId          interface{} `json:"siteId"`
-	IpAddress       *string     `json:"ipAddress"`
-	Port            interface{} `json:"port"`
-	Username        *string     `json:"username"`
-	HasSharedSecret interface{} `json:"hasSharedSecret"`
-	HasPassword     interface{} `json:"hasPassword"`
-	Status          *string     `json:"status"`
-	CreatedAt       *string     `json:"createdAt"`
-}
-
 func DeviceAuthProviderList(ctx context.Context, filterSiteId, filterKind, filterStatus []string) error {
 	logger.Get().Info().Msgf("Listing all device auth providers")
 
 	client := api.GetApiClient(ctx)
 
-	rawItems, meta, err := utils.FetchAllPagesRaw(func(p float32) (*http.Response, error) {
-		req := client.SiteAPI.ListDeviceAuthProviders(ctx).SortBy([]string{"id:ASC"}).Page(p).Limit(100)
-		if len(filterSiteId) > 0 {
-			req = req.FilterSiteId(utils.ProcessFilterStringSlice(filterSiteId))
-		}
-		if len(filterKind) > 0 {
-			req = req.FilterKind(utils.ProcessFilterStringSlice(filterKind))
-		}
-		if len(filterStatus) > 0 {
-			req = req.FilterStatus(utils.ProcessFilterStringSlice(filterStatus))
-		}
-		_, httpRes, _ := req.Execute()
-		return httpRes, nil
-	})
+	request := client.SiteAPI.ListDeviceAuthProviders(ctx).SortBy([]string{"id:ASC"})
+	if len(filterSiteId) > 0 {
+		request = request.FilterSiteId(utils.ProcessFilterStringSlice(filterSiteId))
+	}
+	if len(filterKind) > 0 {
+		request = request.FilterKind(utils.ProcessFilterStringSlice(filterKind))
+	}
+	if len(filterStatus) > 0 {
+		request = request.FilterStatus(utils.ProcessFilterStringSlice(filterStatus))
+	}
+
+	records, meta, err := utils.FetchAllPages(request)
 	if err != nil {
 		return err
 	}
 
-	records, err := utils.UnmarshalRawItems[deviceAuthProviderRaw](rawItems)
-	if err != nil {
-		return fmt.Errorf("failed to parse device auth providers: %w", err)
-	}
-
-	return utils.PrintAllRaw(rawItems, records, meta, len(records), &DeviceAuthProviderPrintConfig)
+	return utils.PrintAll(records, meta, len(records), &DeviceAuthProviderPrintConfig)
 }
 
 func DeviceAuthProviderGet(ctx context.Context, idOrLabel string) error {
@@ -205,7 +182,7 @@ func DeviceAuthProviderUpdate(ctx context.Context, idOrLabel string, config []by
 	client := api.GetApiClient(ctx)
 
 	updated, httpRes, err := client.SiteAPI.
-		UpdateDeviceAuthProvider(ctx, float32(provider.Id)).
+		UpdateDeviceAuthProvider(ctx, int64(provider.Id)).
 		UpdateDeviceAuthProvider(updateRequest).
 		IfMatch(strconv.Itoa(int(provider.Revision))).
 		Execute()
@@ -227,7 +204,7 @@ func DeviceAuthProviderDelete(ctx context.Context, idOrLabel string) error {
 	client := api.GetApiClient(ctx)
 
 	httpRes, err := client.SiteAPI.
-		DeleteDeviceAuthProvider(ctx, float32(provider.Id)).
+		DeleteDeviceAuthProvider(ctx, int64(provider.Id)).
 		IfMatch(strconv.Itoa(int(provider.Revision))).
 		Execute()
 	if err := response_inspector.InspectResponse(httpRes, err); err != nil {
@@ -249,7 +226,7 @@ func DeviceAuthProviderGetCredentials(ctx context.Context, idOrLabel string) err
 	client := api.GetApiClient(ctx)
 
 	credentials, httpRes, err := client.SiteAPI.
-		GetDeviceAuthProviderCredentials(ctx, float32(provider.Id)).
+		GetDeviceAuthProviderCredentials(ctx, int64(provider.Id)).
 		Execute()
 	if err := response_inspector.InspectResponse(httpRes, err); err != nil {
 		return err
@@ -269,7 +246,7 @@ func DeviceAuthProviderUpdateSharedSecret(ctx context.Context, idOrLabel string,
 	client := api.GetApiClient(ctx)
 
 	httpRes, err := client.SiteAPI.
-		UpdateDeviceAuthProviderSharedSecret(ctx, float32(provider.Id)).
+		UpdateDeviceAuthProviderSharedSecret(ctx, int64(provider.Id)).
 		UpdateDeviceAuthProviderSharedSecret(sdk.UpdateDeviceAuthProviderSharedSecret{SharedSecret: sharedSecret}).
 		IfMatch(strconv.Itoa(int(provider.Revision))).
 		Execute()

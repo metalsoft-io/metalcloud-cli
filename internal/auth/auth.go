@@ -1,13 +1,18 @@
 package auth
 
 import (
+	"bytes"
 	"context"
+	"encoding/json"
 	"fmt"
+	"io"
+	"net/http"
 
 	"github.com/metalsoft-io/metalcloud-cli/pkg/api"
 	"github.com/metalsoft-io/metalcloud-cli/pkg/formatter"
 	"github.com/metalsoft-io/metalcloud-cli/pkg/logger"
 	"github.com/metalsoft-io/metalcloud-cli/pkg/response_inspector"
+	sdk "github.com/metalsoft-io/metalcloud-sdk-go"
 )
 
 const (
@@ -224,41 +229,115 @@ func AuthLdapMappingRemove(ctx context.Context, groupName string) error {
 	return formatter.PrintResult(mappings, &authLdapMappingPrintConfig)
 }
 
-func getAuthConfig(ctx context.Context) (map[string]interface{}, error) {
-	client := api.GetApiClient(ctx)
+// The v7.4 SDK models the LDAP mapping fields (groupName/roleName/priority and the
+// profileMapping attributes) as map[string]interface{}, which cannot represent the
+// API's scalar values — so typed (un)marshalling of the auth configuration fails on
+// valid responses. We read and write the auth config as raw JSON to work around it.
 
-	configuration, httpRes, err := client.ConfigurationAPI.GetConfiguration(ctx).Filter("auth").Execute()
-	if err := response_inspector.InspectResponse(httpRes, err); err != nil {
+func getAuthConfig(ctx context.Context) (map[string]interface{}, error) {
+	httpRes, reqErr := authConfigRequest(ctx, http.MethodGet, "/api/v2/config?filter=auth", nil)
+	config, err := parseAuthConfigResponse(httpRes, reqErr)
+	if err != nil {
 		return nil, err
 	}
 
-	if configuration == nil {
-		logger.Get().Warn().Msg("No configuration found")
-		return nil, nil
-	}
-
-	authConfig, ok := configuration["auth"]
-	if !ok {
-		authConfig = configuration
-	}
-
-	if authConfig == nil {
+	if config == nil {
 		logger.Get().Warn().Msg("No auth configuration found")
 		return nil, nil
 	}
 
-	return authConfig.(map[string]interface{}), nil
-}
-
-func patchAuthConfig(ctx context.Context, authConfigChange map[string]interface{}) (map[string]interface{}, error) {
-	client := api.GetApiClient(ctx)
-
-	authConfig, httpRes, err := client.ConfigurationAPI.PatchConfiguration(ctx, "auth").Body(authConfigChange).Execute()
-	if err := response_inspector.InspectResponse(httpRes, err); err != nil {
-		return nil, err
+	authConfig, ok := config["auth"].(map[string]interface{})
+	if !ok || authConfig == nil {
+		logger.Get().Warn().Msg("No auth configuration found")
+		return nil, nil
 	}
 
 	return authConfig, nil
+}
+
+func patchAuthConfig(ctx context.Context, authConfigChange map[string]interface{}) (map[string]interface{}, error) {
+	httpRes, reqErr := authConfigRequest(ctx, http.MethodPut, "/api/v2/config/auth", authConfigChange)
+	return parseAuthConfigResponse(httpRes, reqErr)
+}
+
+// authConfigRequest performs a direct HTTP request against the configuration API,
+// bypassing the SDK's typed configuration models (see note above).
+func authConfigRequest(ctx context.Context, method, path string, body interface{}) (*http.Response, error) {
+	client := api.GetApiClient(ctx)
+	cfg := client.GetConfig()
+
+	baseURL, err := cfg.ServerURL(0, nil)
+	if err != nil {
+		return nil, err
+	}
+
+	var reqBody io.Reader
+	if body != nil {
+		data, err := json.Marshal(body)
+		if err != nil {
+			return nil, err
+		}
+		reqBody = bytes.NewReader(data)
+	}
+
+	req, err := http.NewRequestWithContext(ctx, method, baseURL+path, reqBody)
+	if err != nil {
+		return nil, err
+	}
+
+	req.Header.Set("Accept", "application/json")
+	if body != nil {
+		req.Header.Set("Content-Type", "application/json")
+	}
+	if auth, ok := ctx.Value(sdk.ContextAccessToken).(string); ok {
+		req.Header.Set("Authorization", "Bearer "+auth)
+	}
+
+	httpClient := cfg.HTTPClient
+	if httpClient == nil {
+		httpClient = http.DefaultClient
+	}
+
+	resp, err := httpClient.Do(req)
+	if err != nil {
+		return resp, err
+	}
+
+	// Re-wrap the body so response_inspector can read it for error formatting.
+	respBody, readErr := io.ReadAll(resp.Body)
+	resp.Body.Close()
+	resp.Body = io.NopCloser(bytes.NewBuffer(respBody))
+	if readErr != nil {
+		return resp, readErr
+	}
+
+	return resp, nil
+}
+
+// parseAuthConfigResponse inspects the HTTP response for errors and parses its body
+// into a generic map without SDK type unmarshalling.
+func parseAuthConfigResponse(httpRes *http.Response, reqErr error) (map[string]interface{}, error) {
+	if err := response_inspector.InspectResponse(httpRes, reqErr); err != nil {
+		return nil, err
+	}
+	if httpRes == nil {
+		return nil, fmt.Errorf("no response from server")
+	}
+
+	body, err := io.ReadAll(httpRes.Body)
+	if err != nil {
+		return nil, fmt.Errorf("failed to read response body: %w", err)
+	}
+	if len(body) == 0 {
+		return nil, nil
+	}
+
+	var result map[string]interface{}
+	if err := json.Unmarshal(body, &result); err != nil {
+		return nil, fmt.Errorf("failed to parse auth configuration: %w", err)
+	}
+
+	return result, nil
 }
 
 func getLdapConfig(authConfig map[string]interface{}) map[string]interface{} {

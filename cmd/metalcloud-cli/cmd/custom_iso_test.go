@@ -70,12 +70,10 @@ func TestCustomIsoGetRequiresArg(t *testing.T) {
 }
 
 func TestCustomIsoList_Formats(t *testing.T) {
-	// customIsoRaw.IsPublic is *bool, so the list path requires a JSON bool.
-	// The shared customIsoItem uses 0.0 (float) to satisfy the SDK GET path
-	// (sdk.CustomIso.IsPublic is float32), so we use a separate inline fixture here.
+	// sdk.CustomIso.IsPublic is float32, so the JSON value must be a number.
 	isoListItem := map[string]interface{}{
 		"id": 1.0, "label": "test-iso", "name": "Test ISO",
-		"type": "standard", "isPublic": false,
+		"type": "standard", "isPublic": 0,
 		"accessUrl":        "http://example.com/test.iso",
 		"createdTimestamp": "2024-01-01T00:00:00Z",
 		"updatedTimestamp": "2024-01-01T00:00:00Z",

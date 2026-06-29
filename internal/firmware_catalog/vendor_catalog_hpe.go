@@ -154,7 +154,7 @@ func (vc *VendorCatalog) processHpeCatalog(ctx context.Context) error {
 			PackageId:              sdk.PtrString(packageKey),
 			PackageVersion:         sdk.PtrString(packageInfo.Version),
 			RebootRequired:         packageInfo.RebootRequired == "yes",
-			UpdateSeverity:         sdk.FIRMWAREBINARYUPDATESEVERITY_UNKNOWN,
+			UpdateSeverity:         UpdateSeverityUnknown,
 			VendorSupportedDevices: supportedDevices,
 			VendorSupportedSystems: []map[string]interface{}{},
 			VendorReleaseTimestamp: nil,

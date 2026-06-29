@@ -3,7 +3,6 @@ package server_instance
 import (
 	"context"
 	"fmt"
-	"net/http"
 	"strconv"
 
 	"github.com/metalsoft-io/metalcloud-cli/internal/infrastructure"
@@ -16,15 +15,6 @@ import (
 	"github.com/metalsoft-io/metalcloud-cli/pkg/utils"
 	sdk "github.com/metalsoft-io/metalcloud-sdk-go"
 )
-
-type serverInstanceGroupRaw struct {
-	Id               interface{} `json:"id"`
-	Label            *string     `json:"label"`
-	InfrastructureId interface{} `json:"infrastructureId"`
-	ServiceStatus    *string     `json:"serviceStatus"`
-	CreatedTimestamp interface{} `json:"createdTimestamp"`
-	UpdatedTimestamp interface{} `json:"updatedTimestamp"`
-}
 
 var serverInstanceGroupPrintConfig = formatter.PrintConfig{
 	FieldsConfig: map[string]formatter.RecordFieldConfig{
@@ -115,19 +105,14 @@ func ServerInstanceGroupList(ctx context.Context, infrastructureIdOrLabel string
 
 	client := api.GetApiClient(ctx)
 
-	rawItems, meta, err := utils.FetchAllPagesRaw(func(p float32) (*http.Response, error) {
-		_, httpRes, _ := client.ServerInstanceGroupAPI.GetInfrastructureServerInstanceGroups(ctx, int32(infra.Id)).SortBy([]string{"id:ASC"}).Page(p).Limit(100).Execute()
-		return httpRes, nil
-	})
+	request := client.ServerInstanceGroupAPI.GetInfrastructureServerInstanceGroups(ctx, int64(infra.Id)).SortBy([]string{"id:ASC"})
+
+	groups, meta, err := utils.FetchAllPages(request)
 	if err != nil {
 		return err
 	}
-	records, err := utils.UnmarshalRawItems[serverInstanceGroupRaw](rawItems)
-	if err != nil {
-		return fmt.Errorf("failed to parse server instance groups: %w", err)
-	}
 
-	return utils.PrintAllRaw(rawItems, records, meta, len(records), &serverInstanceGroupPrintConfig)
+	return utils.PrintAll(groups, meta, len(groups), &serverInstanceGroupPrintConfig)
 }
 
 func ServerInstanceGroupGet(ctx context.Context, serverInstanceGroupId string) error {
@@ -140,7 +125,7 @@ func ServerInstanceGroupGet(ctx context.Context, serverInstanceGroupId string) e
 
 	client := api.GetApiClient(ctx)
 
-	serverInstanceGroup, httpRes, err := client.ServerInstanceGroupAPI.GetServerInstanceGroup(ctx, int32(serverInstanceGroupIdNumerical)).Execute()
+	serverInstanceGroup, httpRes, err := client.ServerInstanceGroupAPI.GetServerInstanceGroup(ctx, serverInstanceGroupIdNumerical).Execute()
 	if err := response_inspector.InspectResponse(httpRes, err); err != nil {
 		return err
 	}
@@ -168,7 +153,7 @@ func ServerInstanceGroupCreate(ctx context.Context, infrastructureIdOrLabel stri
 
 	payload := sdk.ServerInstanceGroupCreate{
 		Label:               &label,
-		DefaultServerTypeId: int32(serverType.Id),
+		DefaultServerTypeId: int64(serverType.Id),
 		InstanceCount:       sdk.PtrInt32(int32(serverInstanceCountNumerical)),
 	}
 
@@ -178,12 +163,12 @@ func ServerInstanceGroupCreate(ctx context.Context, infrastructureIdOrLabel stri
 			return err
 		}
 
-		payload.OsTemplateId = sdk.PtrInt32(int32(osTemplate.Id))
+		payload.OsTemplateId = sdk.PtrInt64(int64(osTemplate.Id))
 	}
 
 	client := api.GetApiClient(ctx)
 
-	serverInstanceGroupInfo, httpRes, err := client.ServerInstanceGroupAPI.CreateServerInstanceGroup(ctx, int32(infra.Id)).ServerInstanceGroupCreate(payload).Execute()
+	serverInstanceGroupInfo, httpRes, err := client.ServerInstanceGroupAPI.CreateServerInstanceGroup(ctx, int64(infra.Id)).ServerInstanceGroupCreate(payload).Execute()
 	if err := response_inspector.InspectResponse(httpRes, err); err != nil {
 		return err
 	}
@@ -210,17 +195,17 @@ func ServerInstanceGroupUpdate(ctx context.Context, serverInstanceGroupId string
 	}
 
 	if osTemplateId > 0 {
-		payload.OsTemplateId = sdk.PtrInt32(int32(osTemplateId))
+		payload.OsTemplateId = sdk.PtrInt64(int64(osTemplateId))
 	}
 
 	client := api.GetApiClient(ctx)
 
-	serverInstanceGroupConfig, httpRes, err := client.ServerInstanceGroupAPI.GetServerInstanceGroupConfig(ctx, int32(serverInstanceGroupIdNumerical)).Execute()
+	serverInstanceGroupConfig, httpRes, err := client.ServerInstanceGroupAPI.GetServerInstanceGroupConfig(ctx, serverInstanceGroupIdNumerical).Execute()
 	if err := response_inspector.InspectResponse(httpRes, err); err != nil {
 		return err
 	}
 
-	serverInstanceGroupConfig, httpRes, err = client.ServerInstanceGroupAPI.UpdateServerInstanceGroupConfig(ctx, int32(serverInstanceGroupIdNumerical)).
+	serverInstanceGroupConfig, httpRes, err = client.ServerInstanceGroupAPI.UpdateServerInstanceGroupConfig(ctx, serverInstanceGroupIdNumerical).
 		IfMatch(strconv.Itoa(int(serverInstanceGroupConfig.Revision))).
 		ServerInstanceGroupUpdate(payload).
 		Execute()
@@ -241,12 +226,12 @@ func ServerInstanceGroupDelete(ctx context.Context, serverInstanceGroupId string
 
 	client := api.GetApiClient(ctx)
 
-	serverInstanceGroup, httpRes, err := client.ServerInstanceGroupAPI.GetServerInstanceGroup(ctx, int32(serverInstanceGroupIdNumerical)).Execute()
+	serverInstanceGroup, httpRes, err := client.ServerInstanceGroupAPI.GetServerInstanceGroup(ctx, serverInstanceGroupIdNumerical).Execute()
 	if err := response_inspector.InspectResponse(httpRes, err); err != nil {
 		return err
 	}
 
-	httpRes, err = client.ServerInstanceGroupAPI.DeleteServerInstanceGroup(ctx, int32(serverInstanceGroupIdNumerical)).
+	httpRes, err = client.ServerInstanceGroupAPI.DeleteServerInstanceGroup(ctx, serverInstanceGroupIdNumerical).
 		IfMatch(strconv.Itoa(int(serverInstanceGroup.Revision))).
 		Execute()
 	if err := response_inspector.InspectResponse(httpRes, err); err != nil {
@@ -266,7 +251,7 @@ func ServerInstanceGroupInstances(ctx context.Context, serverInstanceGroupId str
 
 	client := api.GetApiClient(ctx)
 
-	serverInstancesList, httpRes, err := client.ServerInstanceGroupAPI.GetServerInstanceGroupServerInstances(ctx, int32(serverInstanceGroupIdNumerical)).Execute()
+	serverInstancesList, httpRes, err := client.ServerInstanceGroupAPI.GetServerInstanceGroupServerInstances(ctx, serverInstanceGroupIdNumerical).Execute()
 	if err := response_inspector.InspectResponse(httpRes, err); err != nil {
 		return err
 	}
@@ -284,7 +269,7 @@ func ServerInstanceGroupNetworkList(ctx context.Context, serverInstanceGroupId s
 
 	client := api.GetApiClient(ctx)
 
-	connections, httpRes, err := client.ServerInstanceGroupAPI.GetServerInstanceGroupNetworkConfigurationConnections(ctx, int32(serverInstanceGroupIdNumerical)).Execute()
+	connections, httpRes, err := client.ServerInstanceGroupAPI.GetServerInstanceGroupNetworkConfigurationConnections(ctx, serverInstanceGroupIdNumerical).Execute()
 	if err := response_inspector.InspectResponse(httpRes, err); err != nil {
 		return err
 	}
@@ -300,14 +285,14 @@ func ServerInstanceGroupNetworkGet(ctx context.Context, serverInstanceGroupId st
 		return err
 	}
 
-	networkConnectionIdNumerical, err := utils.GetFloat32FromString(networkConnectionId)
+	networkConnectionIdNumerical, err := utils.GetInt64FromString(networkConnectionId)
 	if err != nil {
 		return err
 	}
 
 	client := api.GetApiClient(ctx)
 
-	connection, httpRes, err := client.ServerInstanceGroupAPI.GetServerInstanceGroupNetworkConfigurationConnectionById(ctx, int32(serverInstanceGroupIdNumerical), int32(networkConnectionIdNumerical)).Execute()
+	connection, httpRes, err := client.ServerInstanceGroupAPI.GetServerInstanceGroupNetworkConfigurationConnectionById(ctx, serverInstanceGroupIdNumerical, networkConnectionIdNumerical).Execute()
 	if err := response_inspector.InspectResponse(httpRes, err); err != nil {
 		return err
 	}
@@ -345,7 +330,7 @@ func ServerInstanceGroupNetworkConnect(ctx context.Context, serverInstanceGroupI
 	client := api.GetApiClient(ctx)
 
 	connection, httpRes, err := client.ServerInstanceGroupAPI.
-		CreateServerInstanceGroupNetworkConfigurationConnection(ctx, int32(serverInstanceGroupIdNumerical)).
+		CreateServerInstanceGroupNetworkConfigurationConnection(ctx, serverInstanceGroupIdNumerical).
 		CreateServerInstanceGroupNetworkConnection(payload).
 		Execute()
 	if err := response_inspector.InspectResponse(httpRes, err); err != nil {
@@ -395,7 +380,7 @@ func ServerInstanceGroupNetworkUpdate(ctx context.Context, serverInstanceGroupId
 	client := api.GetApiClient(ctx)
 
 	connection, httpRes, err := client.ServerInstanceGroupAPI.
-		UpdateServerInstanceGroupNetworkConfigurationConnection(ctx, int32(serverInstanceGroupIdNumerical), networkConnectionIdNumerical).
+		UpdateServerInstanceGroupNetworkConfigurationConnection(ctx, serverInstanceGroupIdNumerical, networkConnectionIdNumerical).
 		UpdateNetworkEndpointGroupLogicalNetwork(payload).
 		Execute()
 	if err := response_inspector.InspectResponse(httpRes, err); err != nil {
@@ -413,14 +398,14 @@ func ServerInstanceGroupNetworkDisconnect(ctx context.Context, serverInstanceGro
 		return err
 	}
 
-	networkConnectionIdNumerical, err := utils.GetFloat32FromString(networkConnectionId)
+	networkConnectionIdNumerical, err := utils.GetInt64FromString(networkConnectionId)
 	if err != nil {
 		return err
 	}
 
 	client := api.GetApiClient(ctx)
 
-	httpRes, err := client.ServerInstanceGroupAPI.DeleteServerInstanceGroupNetworkConfigurationConnection(ctx, int32(serverInstanceGroupIdNumerical), int32(networkConnectionIdNumerical)).Execute()
+	httpRes, err := client.ServerInstanceGroupAPI.DeleteServerInstanceGroupNetworkConfigurationConnection(ctx, serverInstanceGroupIdNumerical, networkConnectionIdNumerical).Execute()
 	if err := response_inspector.InspectResponse(httpRes, err); err != nil {
 		return err
 	}
@@ -429,13 +414,13 @@ func ServerInstanceGroupNetworkDisconnect(ctx context.Context, serverInstanceGro
 	return nil
 }
 
-func GetServerInstanceGroupId(serverInstanceGroupId string) (float32, error) {
-	serverInstanceGroupIdNumeric, err := strconv.ParseFloat(serverInstanceGroupId, 32)
+func GetServerInstanceGroupId(serverInstanceGroupId string) (int64, error) {
+	serverInstanceGroupIdNumeric, err := strconv.ParseInt(serverInstanceGroupId, 10, 64)
 	if err != nil {
 		err := fmt.Errorf("invalid server instance group ID: '%s'", serverInstanceGroupId)
 		logger.Get().Error().Err(err).Msg("")
 		return 0, err
 	}
 
-	return float32(serverInstanceGroupIdNumeric), nil
+	return serverInstanceGroupIdNumeric, nil
 }

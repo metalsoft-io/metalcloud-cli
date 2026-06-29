@@ -5,7 +5,6 @@ import (
 	"encoding/csv"
 	"fmt"
 	"io"
-	"net/http"
 	"os"
 	"strconv"
 	"strings"
@@ -17,26 +16,6 @@ import (
 	"github.com/metalsoft-io/metalcloud-cli/pkg/utils"
 	sdk "github.com/metalsoft-io/metalcloud-sdk-go"
 )
-
-// ndSecretsRaw avoids SDK unmarshal failures in NetworkDeviceDefaultSecrets list.
-type ndSecretsRaw struct {
-	Id                       interface{} `json:"id"`
-	SiteId                   interface{} `json:"siteId"`
-	MacAddressOrSerialNumber *string     `json:"macAddressOrSerialNumber"`
-	SecretName               *string     `json:"secretName"`
-	CreatedTimestamp         *string     `json:"createdTimestamp"`
-	UpdatedTimestamp         *string     `json:"updatedTimestamp"`
-}
-
-// networkDeviceRaw avoids SDK unmarshal failure: API returns super_spine enum value not in SDK; id as string.
-type networkDeviceRaw struct {
-	Id                   interface{} `json:"id"`
-	IdentifierString     *string     `json:"identifierString"`
-	SiteId               interface{} `json:"siteId"`
-	ManagementAddress    *string     `json:"managementAddress"`
-	ManagementMacAddress *string     `json:"managementMacAddress"`
-	SerialNumber         *string     `json:"serialNumber"`
-}
 
 var NetworkDevicePrintConfig = formatter.PrintConfig{
 	FieldsConfig: map[string]formatter.RecordFieldConfig{
@@ -86,20 +65,12 @@ func NetworkDeviceList(ctx context.Context, filterStatus []string) error {
 	}
 	request = request.SortBy([]string{"id:ASC"})
 
-	rawItems, meta, err := utils.FetchAllPagesRaw(func(page float32) (*http.Response, error) {
-		_, httpRes, _ := request.Page(page).Limit(100).Execute()
-		return httpRes, nil
-	})
+	records, meta, err := utils.FetchAllPages(request)
 	if err != nil {
 		return err
 	}
 
-	records, err := utils.UnmarshalRawItems[networkDeviceRaw](rawItems)
-	if err != nil {
-		return fmt.Errorf("failed to parse network devices: %w", err)
-	}
-
-	return utils.PrintAllRaw(rawItems, records, meta, len(records), &NetworkDevicePrintConfig)
+	return utils.PrintAll(records, meta, len(records), &NetworkDevicePrintConfig)
 }
 
 func NetworkDeviceGet(ctx context.Context, networkDeviceId string) error {
@@ -115,11 +86,11 @@ func NetworkDeviceGet(ctx context.Context, networkDeviceId string) error {
 
 func NetworkDeviceConfigExample(ctx context.Context) error {
 	networkDeviceConfiguration := sdk.CreateNetworkDevice{
-		SiteId:           sdk.PtrInt32(1),
+		SiteId:           sdk.PtrInt64(1),
 		Driver:           sdk.NETWORKDEVICEDRIVER_SONIC_ENTERPRISE,
 		IdentifierString: sdk.PtrString("example"),
 		SerialNumber:     sdk.PtrString("1234567890"),
-		ChassisRackId:    sdk.PtrInt32(1),
+		ChassisRackId:    sdk.PtrInt64(1),
 		Position:         "leaf",
 		IsGateway:        sdk.PtrBool(false),
 		IsStorageSwitch:  sdk.PtrBool(false),
@@ -142,7 +113,7 @@ func NetworkDeviceConfigExample(ctx context.Context) error {
 	networkDeviceConfiguration.Asn.Set(sdk.PtrInt64(65000))
 
 	networkDeviceConfiguration.AuthenticationOptions = []sdk.NetworkDeviceAuthOption{
-		{Kind: "tacacs", DeviceAuthProviderId: sdk.PtrInt32(1)},
+		{Kind: "tacacs", DeviceAuthProviderId: sdk.PtrInt64(1)},
 		{Kind: "local"},
 	}
 
@@ -166,6 +137,85 @@ func NetworkDeviceCreate(ctx context.Context, config []byte) error {
 	}
 
 	return formatter.PrintResult(networkDeviceInfo, &NetworkDevicePrintConfig)
+}
+
+func NetworkDeviceCreateBulk(ctx context.Context, config []byte) error {
+	logger.Get().Info().Msgf("Creating network devices in bulk")
+
+	var devicesConfig []sdk.CreateNetworkDevice
+	err := utils.UnmarshalContent(config, &devicesConfig)
+	if err != nil {
+		return err
+	}
+
+	if len(devicesConfig) == 0 {
+		return fmt.Errorf("no network devices found in configuration")
+	}
+
+	client := api.GetApiClient(ctx)
+
+	// Track results for reporting
+	results := make([]interface{}, 0)
+	errors := make([]error, 0)
+
+	logger.Get().Info().Msgf("Creating %d network devices", len(devicesConfig))
+
+	// Process each network device
+	for i, deviceConfig := range devicesConfig {
+		label := networkDeviceConfigLabel(deviceConfig, i)
+
+		networkDeviceInfo, httpRes, err := client.NetworkDeviceAPI.CreateNetworkDevice(ctx).CreateNetworkDevice(deviceConfig).Execute()
+		if err := response_inspector.InspectResponse(httpRes, err); err != nil {
+			logger.Get().Error().Msgf("Failed to create network device %d: %s", i+1, err)
+			errors = append(errors, fmt.Errorf("network device %d (%s): %s", i+1, label, err))
+			continue
+		}
+
+		results = append(results, networkDeviceInfo)
+		logger.Get().Info().Msgf("Created network device %d: %s", i+1, label)
+	}
+
+	// Print summary
+	logger.Get().Info().Msgf("Bulk network device creation complete: %d created, %d failed", len(results), len(errors))
+
+	// Print any errors that occurred
+	errorsText := ""
+	if len(errors) > 0 {
+		logger.Get().Error().Msgf("Errors encountered during bulk creation:")
+		for _, err := range errors {
+			logger.Get().Error().Msgf("  - %s", err)
+			errorsText += fmt.Sprintf("\n  - %s", err)
+		}
+	}
+
+	// Print the successfully created network devices
+	if len(results) > 0 {
+		err = formatter.PrintResult(results, &NetworkDevicePrintConfig)
+	}
+
+	if len(errors) > 0 || err != nil {
+		if err != nil {
+			errorsText += fmt.Sprintf("\n  - %s", err)
+		}
+		return fmt.Errorf("bulk network device creation completed with errors: %s", errorsText)
+	}
+
+	return nil
+}
+
+// networkDeviceConfigLabel returns a human-friendly identifier for a device
+// config, used only in bulk-creation log lines and error messages.
+func networkDeviceConfigLabel(device sdk.CreateNetworkDevice, index int) string {
+	if device.IdentifierString != nil && *device.IdentifierString != "" {
+		return *device.IdentifierString
+	}
+	if device.ManagementAddress.IsSet() && device.ManagementAddress.Get() != nil && *device.ManagementAddress.Get() != "" {
+		return *device.ManagementAddress.Get()
+	}
+	if device.SerialNumber != nil && *device.SerialNumber != "" {
+		return *device.SerialNumber
+	}
+	return fmt.Sprintf("device[%d]", index)
 }
 
 func NetworkDeviceUpdate(ctx context.Context, networkDeviceId string, config []byte) error {
@@ -294,7 +344,7 @@ func NetworkDeviceGetPorts(ctx context.Context, networkDeviceId string) error {
 		return err
 	}
 
-	portsInfo, err := GetNetworkDevicePorts(ctx, networkDeviceIdNumeric)
+	portsInfo, err := GetNetworkDevicePorts(ctx, float32(networkDeviceIdNumeric))
 	if err != nil {
 		return err
 	}
@@ -417,7 +467,7 @@ func NetworkDeviceEnableSyslog(ctx context.Context, networkDeviceId string) erro
 
 	client := api.GetApiClient(ctx)
 
-	httpRes, err := client.NetworkDeviceAPI.
+	_, httpRes, err := client.NetworkDeviceAPI.
 		EnableNetworkDeviceSyslog(ctx, networkDeviceIdNumeric).
 		Execute()
 	if err := response_inspector.InspectResponse(httpRes, err); err != nil {
@@ -512,7 +562,7 @@ func NetworkDeviceDeleteDefaults(ctx context.Context, siteId string, defaultsId 
 		return err
 	}
 
-	defaultsIdNumeric, err := utils.GetFloat32FromString(defaultsId)
+	defaultsIdNumeric, err := utils.GetInt64FromString(defaultsId)
 	if err != nil {
 		return err
 	}
@@ -539,20 +589,20 @@ func NetworkDeviceExampleDefaults(ctx context.Context) error {
 		IdentifierString:          sdk.PtrString("1234"),
 		Asn:                       sdk.PtrInt64(65000),
 		CustomVariables:           map[string]interface{}{"var1": "value1", "var2": "value2"},
-		MlagDomainId:              sdk.PtrInt32(1),
+		MlagDomainId:              sdk.PtrInt64(1),
 		LoopbackAddressIpv4:       sdk.PtrString("1.2.3.4"),
 		LoopbackAddressIpv6:       sdk.PtrString("0:0:0:0:0:0:0:1"),
 		VtepAddressIpv4:           sdk.PtrString("1.2.3.4"),
 		VtepAddressIpv6:           sdk.PtrString("0:0:0:0:0:0:0:1"),
 		OrderIndex:                sdk.PtrInt32(1),
-		OsTemplateId:              sdk.PtrInt32(10),
+		OsTemplateId:              sdk.PtrInt64(10),
 		MlagPartnerHostname:       sdk.PtrString("partner.example.com"),
 		IsPartOfMlagPair:          sdk.PtrBool(true),
 		MlagSystemMac:             sdk.PtrString("AA:BB:CC:DD:EE:FF"),
-		MlagPeerLinkPortChannelId: sdk.PtrInt32(1),
+		MlagPeerLinkPortChannelId: sdk.PtrInt64(1),
 		MlagPartnerVlanId:         sdk.PtrInt32(100),
 		AuthenticationOptions: []sdk.NetworkDeviceAuthOption{
-			{Kind: "tacacs", DeviceAuthProviderId: sdk.PtrInt32(1)},
+			{Kind: "tacacs", DeviceAuthProviderId: sdk.PtrInt64(1)},
 			{Kind: "local"},
 		},
 	}
@@ -605,18 +655,18 @@ func GetNetworkDevicePorts(ctx context.Context, networkDeviceId float32) ([]sdk.
 	return portsInfo.Data, nil
 }
 
-func GetNetworkDeviceId(networkDeviceId string) (float32, error) {
-	networkDeviceIdNumeric, err := strconv.ParseFloat(networkDeviceId, 32)
+func GetNetworkDeviceId(networkDeviceId string) (int64, error) {
+	networkDeviceIdNumeric, err := strconv.ParseInt(networkDeviceId, 10, 64)
 	if err != nil {
 		err := fmt.Errorf("invalid network device ID: '%s'", networkDeviceId)
 		logger.Get().Error().Err(err).Msg("")
 		return 0, err
 	}
 
-	return float32(networkDeviceIdNumeric), nil
+	return networkDeviceIdNumeric, nil
 }
 
-func getNetworkDeviceIdAndRevision(ctx context.Context, networkDeviceId string) (float32, string, error) {
+func getNetworkDeviceIdAndRevision(ctx context.Context, networkDeviceId string) (int64, string, error) {
 	networkDeviceIdNumeric, err := GetNetworkDeviceId(networkDeviceId)
 	if err != nil {
 		return 0, "", err
@@ -624,12 +674,12 @@ func getNetworkDeviceIdAndRevision(ctx context.Context, networkDeviceId string) 
 
 	client := api.GetApiClient(ctx)
 
-	networkDevice, httpRes, err := client.NetworkDeviceAPI.GetNetworkDevice(ctx, float32(networkDeviceIdNumeric)).Execute()
+	networkDevice, httpRes, err := client.NetworkDeviceAPI.GetNetworkDevice(ctx, networkDeviceIdNumeric).Execute()
 	if err := response_inspector.InspectResponse(httpRes, err); err != nil {
 		return 0, "", err
 	}
 
-	return float32(networkDeviceIdNumeric), strconv.Itoa(int(networkDevice.Revision)), nil
+	return networkDeviceIdNumeric, strconv.Itoa(int(networkDevice.Revision)), nil
 }
 
 var networkDeviceDefaultSecretsPrintConfig = formatter.PrintConfig{
@@ -671,58 +721,28 @@ func NetworkDeviceDefaultSecretsList(ctx context.Context, page int, limit int) e
 
 	req := client.NetworkDeviceDefaultSecretsAPI.GetNetworkDevicesDefaultSecrets(ctx)
 
-	if page > 0 {
-		req = req.Page(float32(page))
-	}
-
-	if limit > 0 {
-		req = req.Limit(float32(limit))
-	}
-
 	req = req.SortBy([]string{"id:ASC"})
 
-	if page > 0 {
-		rawItems, meta, err := utils.FetchPageWindowRaw(func(p, l float32) (*http.Response, error) {
-			_, httpRes, _ := req.Page(p).Limit(l).Execute()
-			return httpRes, nil
-		}, page, limit)
+	switch {
+	case page > 0:
+		records, meta, err := utils.FetchPageWindow(req, page, limit)
 		if err != nil {
 			return err
 		}
-		records, err := utils.UnmarshalRawItems[ndSecretsRaw](rawItems)
-		if err != nil {
-			return fmt.Errorf("failed to parse network device default secrets: %w", err)
-		}
-		return utils.PrintAllRaw(rawItems, records, meta, len(records), &networkDeviceDefaultSecretsPrintConfig)
-	}
-
-	if limit > 0 {
-		rawItems, meta, err := utils.FetchUpToRaw(func(p, l float32) (*http.Response, error) {
-			_, httpRes, _ := req.Page(p).Limit(l).Execute()
-			return httpRes, nil
-		}, limit)
+		return utils.PrintAll(records, meta, len(records), &networkDeviceDefaultSecretsPrintConfig)
+	case limit > 0:
+		records, meta, err := utils.FetchUpTo(req, limit)
 		if err != nil {
 			return err
 		}
-		records, err := utils.UnmarshalRawItems[ndSecretsRaw](rawItems)
+		return utils.PrintAll(records, meta, len(records), &networkDeviceDefaultSecretsPrintConfig)
+	default:
+		records, meta, err := utils.FetchAllPages(req)
 		if err != nil {
-			return fmt.Errorf("failed to parse network device default secrets: %w", err)
+			return err
 		}
-		return utils.PrintAllRaw(rawItems, records, meta, len(records), &networkDeviceDefaultSecretsPrintConfig)
+		return utils.PrintAll(records, meta, len(records), &networkDeviceDefaultSecretsPrintConfig)
 	}
-
-	rawAll, meta, err := utils.FetchAllPagesRaw(func(p float32) (*http.Response, error) {
-		_, httpRes, _ := req.Page(p).Limit(100).Execute()
-		return httpRes, nil
-	})
-	if err != nil {
-		return err
-	}
-	records, err := utils.UnmarshalRawItems[ndSecretsRaw](rawAll)
-	if err != nil {
-		return fmt.Errorf("failed to parse network device default secrets: %w", err)
-	}
-	return utils.PrintAllRaw(rawAll, records, meta, len(records), &networkDeviceDefaultSecretsPrintConfig)
 }
 
 func NetworkDeviceDefaultSecretsGet(ctx context.Context, secretsId string) error {
@@ -766,7 +786,7 @@ func NetworkDeviceDefaultSecretsCreate(ctx context.Context, siteId float32, macA
 
 	client := api.GetApiClient(ctx)
 
-	createSecrets := sdk.NewCreateNetworkDeviceDefaultSecrets(siteId, macAddressOrSerialNumber, secretName, secretValue)
+	createSecrets := sdk.NewCreateNetworkDeviceDefaultSecrets(int64(siteId), macAddressOrSerialNumber, secretName, secretValue)
 
 	secrets, httpRes, err := client.NetworkDeviceDefaultSecretsAPI.CreateNetworkDeviceDefaultSecrets(ctx).
 		CreateNetworkDeviceDefaultSecrets(*createSecrets).
@@ -874,7 +894,7 @@ func NetworkDeviceDefaultSecretsBatchCreate(ctx context.Context, filePath string
 		secretName := strings.TrimSpace(record[colIndex["secretname"]])
 		secretValue := strings.TrimSpace(record[colIndex["secretvalue"]])
 
-		createSecrets := sdk.NewCreateNetworkDeviceDefaultSecrets(float32(siteIdFloat), macOrSerial, secretName, secretValue)
+		createSecrets := sdk.NewCreateNetworkDeviceDefaultSecrets(int64(siteIdFloat), macOrSerial, secretName, secretValue)
 
 		secrets, httpRes, err := client.NetworkDeviceDefaultSecretsAPI.CreateNetworkDeviceDefaultSecrets(ctx).
 			CreateNetworkDeviceDefaultSecrets(*createSecrets).
@@ -894,13 +914,13 @@ func NetworkDeviceDefaultSecretsBatchCreate(ctx context.Context, filePath string
 	return formatter.PrintResult(created, &networkDeviceDefaultSecretsPrintConfig)
 }
 
-func parseDefaultSecretsId(secretsId string) (float32, error) {
-	secretsIdNumeric, err := strconv.ParseFloat(secretsId, 32)
+func parseDefaultSecretsId(secretsId string) (int64, error) {
+	secretsIdNumeric, err := strconv.ParseInt(secretsId, 10, 64)
 	if err != nil {
 		err := fmt.Errorf("invalid network device default secrets ID: '%s'", secretsId)
 		logger.Get().Error().Err(err).Msg("")
 		return 0, err
 	}
 
-	return float32(secretsIdNumeric), nil
+	return secretsIdNumeric, nil
 }

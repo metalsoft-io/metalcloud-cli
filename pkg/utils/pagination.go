@@ -60,6 +60,92 @@ func FetchAllPages[Req PaginatedRequest[Req, L], L PaginatedList[T], T any](req 
 	return records, meta, nil
 }
 
+// FetchUpTo fetches up to n records across pages using the typed SDK request.
+// Use for --limit-only paths (no explicit --page). The page size is held constant
+// (capped at 100) so page numbers stay well-defined across requests.
+func FetchUpTo[Req PaginatedRequest[Req, L], L PaginatedList[T], T any](req Req, n int) ([]T, sdk.PaginatedResponseMeta, error) {
+	records := make([]T, 0)
+	var meta sdk.PaginatedResponseMeta
+
+	pageSize := n
+	if pageSize > defaultPageSize {
+		pageSize = defaultPageSize
+	}
+	req = req.Limit(float32(pageSize))
+
+	for page := 1; len(records) < n; page++ {
+		result, httpRes, err := req.Page(float32(page)).Execute()
+		if err := response_inspector.InspectResponse(httpRes, err); err != nil {
+			return nil, meta, err
+		}
+
+		batch := result.GetData()
+		records = append(records, batch...)
+		meta = result.GetMeta()
+
+		if len(batch) < pageSize {
+			break
+		}
+	}
+
+	if len(records) > n {
+		records = records[:n]
+	}
+	return records, meta, nil
+}
+
+// FetchPageWindow fetches the records belonging to user-requested page `page` of size `limit`,
+// even when limit exceeds the API's per-page cap (100). It computes the record window
+// [(page-1)*limit, page*limit) and collects it across as many API pages as required.
+func FetchPageWindow[Req PaginatedRequest[Req, L], L PaginatedList[T], T any](req Req, page, limit int) ([]T, sdk.PaginatedResponseMeta, error) {
+	if page < 1 {
+		page = 1
+	}
+	if limit < 1 {
+		limit = defaultPageSize
+	}
+
+	start := (page - 1) * limit // 0-based index of first wanted record
+	end := page * limit         // exclusive
+
+	apiPageSize := limit
+	if apiPageSize > defaultPageSize {
+		apiPageSize = defaultPageSize
+	}
+	req = req.Limit(float32(apiPageSize))
+
+	window := make([]T, 0, limit)
+	var meta sdk.PaginatedResponseMeta
+
+	for apiPage := start/apiPageSize + 1; len(window) < limit; apiPage++ {
+		result, httpRes, err := req.Page(float32(apiPage)).Execute()
+		if err := response_inspector.InspectResponse(httpRes, err); err != nil {
+			return nil, meta, err
+		}
+
+		batch := result.GetData()
+		meta = result.GetMeta()
+
+		// Index of first record on this API page within the overall record stream.
+		pageStart := (apiPage - 1) * apiPageSize
+		for i, item := range batch {
+			abs := pageStart + i
+			if abs >= start && abs < end {
+				window = append(window, item)
+			}
+		}
+
+		if len(batch) < apiPageSize {
+			break // last page reached
+		}
+		if pageStart+len(batch) >= end {
+			break // window complete
+		}
+	}
+
+	return window, meta, nil
+}
+
 // PrintAll renders results via formatter then prints the pagination summary to stderr.
 // Use this instead of formatter.PrintResult directly after FetchAllPages.
 func PrintAll(result interface{}, meta sdk.PaginatedResponseMeta, count int, printConfig *formatter.PrintConfig) error {

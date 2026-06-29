@@ -3,7 +3,6 @@ package fabric
 import (
 	"context"
 	"fmt"
-	"net/http"
 
 	"github.com/metalsoft-io/metalcloud-cli/internal/network_device"
 	"github.com/metalsoft-io/metalcloud-cli/internal/site"
@@ -14,15 +13,6 @@ import (
 	"github.com/metalsoft-io/metalcloud-cli/pkg/utils"
 	sdk "github.com/metalsoft-io/metalcloud-sdk-go"
 )
-
-type fabricRaw struct {
-	Id                   interface{} `json:"id"`
-	Name                 *string     `json:"name"`
-	Description          *string     `json:"description"`
-	SiteId               interface{} `json:"siteId"`
-	Status               *string     `json:"status"`
-	FabricConfiguration  interface{} `json:"fabricConfiguration"`
-}
 
 var fabricPrintConfig = formatter.PrintConfig{
 	FieldsConfig: map[string]formatter.RecordFieldConfig{
@@ -57,19 +47,14 @@ func FabricList(ctx context.Context) error {
 
 	client := api.GetApiClient(ctx)
 
-	rawItems, meta, err := utils.FetchAllPagesRaw(func(p float32) (*http.Response, error) {
-		_, httpRes, _ := client.NetworkFabricAPI.GetNetworkFabrics(ctx).SortBy([]string{"id:ASC"}).Page(p).Limit(100).Execute()
-		return httpRes, nil
-	})
+	request := client.NetworkFabricAPI.GetNetworkFabrics(ctx).SortBy([]string{"id:ASC"})
+
+	records, meta, err := utils.FetchAllPages(request)
 	if err != nil {
 		return err
 	}
-	records, err := utils.UnmarshalRawItems[fabricRaw](rawItems)
-	if err != nil {
-		return fmt.Errorf("failed to parse fabrics: %w", err)
-	}
 
-	return utils.PrintAllRaw(rawItems, records, meta, len(records), &fabricPrintConfig)
+	return utils.PrintAll(records, meta, len(records), &fabricPrintConfig)
 }
 
 func FabricGet(ctx context.Context, fabricId string) error {
@@ -188,7 +173,7 @@ func FabricCreate(ctx context.Context, siteIdOrLabel string, fabricName string, 
 	createFabric := sdk.CreateNetworkFabric{
 		Name:                fabricName,
 		Description:         sdk.PtrString(description),
-		SiteId:              sdk.PtrInt32(site.Id),
+		SiteId:              sdk.PtrInt64(site.Id),
 		FabricConfiguration: fabricConfiguration,
 	}
 
@@ -209,7 +194,7 @@ func FabricUpdate(ctx context.Context, fabricId string, fabricName string, descr
 	if err != nil {
 		return err
 	}
-	fabricIdNumber, err := utils.GetFloat32FromString(fabricInfo.Id)
+	fabricIdNumber, err := utils.GetInt64FromString(fabricInfo.Id)
 	if err != nil {
 		return err
 	}
@@ -260,7 +245,7 @@ func FabricUpdate(ctx context.Context, fabricId string, fabricName string, descr
 
 	client := api.GetApiClient(ctx)
 
-	fabricInfoUpdated, httpRes, err := client.NetworkFabricAPI.UpdateNetworkFabric(ctx, int32(fabricIdNumber)).
+	fabricInfoUpdated, httpRes, err := client.NetworkFabricAPI.UpdateNetworkFabric(ctx, fabricIdNumber).
 		UpdateNetworkFabric(updateFabric).
 		IfMatch(fabricInfo.Revision).
 		Execute()
@@ -274,7 +259,7 @@ func FabricUpdate(ctx context.Context, fabricId string, fabricName string, descr
 func FabricActivate(ctx context.Context, fabricId string) error {
 	logger.Get().Info().Msgf("Activate fabric '%s'", fabricId)
 
-	fabricIdNumeric, err := utils.GetFloat32FromString(fabricId)
+	fabricIdNumeric, err := utils.GetInt64FromString(fabricId)
 	if err != nil {
 		return err
 	}
@@ -287,7 +272,7 @@ func FabricActivate(ctx context.Context, fabricId string) error {
 	client := api.GetApiClient(ctx)
 
 	fabricInfo, httpRes, err := client.NetworkFabricAPI.
-		ActivateNetworkFabric(ctx, int32(fabricIdNumeric)).
+		ActivateNetworkFabric(ctx, fabricIdNumeric).
 		IfMatch(fabricInfo.Revision).
 		Execute()
 	if err := response_inspector.InspectResponse(httpRes, err); err != nil {
@@ -300,7 +285,7 @@ func FabricActivate(ctx context.Context, fabricId string) error {
 func FabricDeploy(ctx context.Context, fabricId string) error {
 	logger.Get().Info().Msgf("Deploy fabric '%s'", fabricId)
 
-	fabricIdNumeric, err := utils.GetFloat32FromString(fabricId)
+	fabricIdNumeric, err := utils.GetInt64FromString(fabricId)
 	if err != nil {
 		return err
 	}
@@ -321,14 +306,14 @@ func FabricDeploy(ctx context.Context, fabricId string) error {
 func FabricDevicesGet(ctx context.Context, fabricId string) error {
 	logger.Get().Info().Msgf("Get fabric '%s' devices", fabricId)
 
-	fabricIdNumeric, err := utils.GetFloat32FromString(fabricId)
+	fabricIdNumeric, err := utils.GetInt64FromString(fabricId)
 	if err != nil {
 		return err
 	}
 
 	client := api.GetApiClient(ctx)
 
-	devicesList, httpRes, err := client.NetworkFabricAPI.GetFabricNetworkDevices(ctx, int32(fabricIdNumeric)).Execute()
+	devicesList, httpRes, err := client.NetworkFabricAPI.GetFabricNetworkDevices(ctx, fabricIdNumeric).Execute()
 	if err := response_inspector.InspectResponse(httpRes, err); err != nil {
 		return err
 	}
@@ -344,25 +329,25 @@ func FabricDevicesAdd(ctx context.Context, fabricId string, deviceIds []string) 
 		return err
 	}
 
-	fabricIdNumeric, err := utils.GetFloat32FromString(fabricInfo.Id)
+	fabricIdNumeric, err := utils.GetInt64FromString(fabricInfo.Id)
 	if err != nil {
 		return err
 	}
 
-	deviceIdsNumeric := make([]float32, 0)
+	deviceIdsNumeric := make([]int64, 0)
 	for _, deviceId := range deviceIds {
 		device, err := network_device.GetNetworkDeviceById(ctx, deviceId)
 		if err != nil {
 			return err
 		}
 
-		if *fabricInfo.SiteId != int32(device.SiteId) {
+		if *fabricInfo.SiteId != device.SiteId {
 			err := fmt.Errorf("device '%s' is not in the same site as fabric '%s'", deviceId, fabricId)
 			logger.Get().Error().Err(err).Msg("")
 			return err
 		}
 
-		deviceIdNumeric, err := utils.GetFloat32FromString(device.Id)
+		deviceIdNumeric, err := utils.GetInt64FromString(device.Id)
 		if err != nil {
 			return err
 		}
@@ -372,7 +357,7 @@ func FabricDevicesAdd(ctx context.Context, fabricId string, deviceIds []string) 
 
 	client := api.GetApiClient(ctx)
 
-	_, httpRes, err := client.NetworkFabricAPI.AddNetworkDevicesToFabric(ctx, int32(fabricIdNumeric)).
+	_, httpRes, err := client.NetworkFabricAPI.AddNetworkDevicesToFabric(ctx, fabricIdNumeric).
 		NetworkDevicesToFabric(sdk.NetworkDevicesToFabric{NetworkDeviceIds: deviceIdsNumeric}).
 		Execute()
 	if err := response_inspector.InspectResponse(httpRes, err); err != nil {
@@ -390,7 +375,7 @@ func FabricDevicesRemove(ctx context.Context, fabricId string, deviceId string) 
 		return err
 	}
 
-	fabricIdNumeric, err := utils.GetFloat32FromString(fabricInfo.Id)
+	fabricIdNumeric, err := utils.GetInt64FromString(fabricInfo.Id)
 	if err != nil {
 		return err
 	}
@@ -400,14 +385,14 @@ func FabricDevicesRemove(ctx context.Context, fabricId string, deviceId string) 
 		return err
 	}
 
-	deviceIdNumeric, err := utils.GetFloat32FromString(device.Id)
+	deviceIdNumeric, err := utils.GetInt64FromString(device.Id)
 	if err != nil {
 		return err
 	}
 
 	client := api.GetApiClient(ctx)
 
-	_, httpRes, err := client.NetworkFabricAPI.RemoveNetworkDeviceFromFabric(ctx, int32(fabricIdNumeric), int32(deviceIdNumeric)).
+	_, httpRes, err := client.NetworkFabricAPI.RemoveNetworkDeviceFromFabric(ctx, fabricIdNumeric, deviceIdNumeric).
 		Execute()
 	if err := response_inspector.InspectResponse(httpRes, err); err != nil {
 		return err
@@ -419,7 +404,7 @@ func FabricDevicesRemove(ctx context.Context, fabricId string, deviceId string) 
 func GetFabricByIdOrLabel(ctx context.Context, fabricIdOrLabel string) (*sdk.NetworkFabric, error) {
 	client := api.GetApiClient(ctx)
 
-	fabricIdNumber, err := utils.GetFloat32FromString(fabricIdOrLabel)
+	fabricIdNumber, err := utils.GetInt64FromString(fabricIdOrLabel)
 	if err == nil {
 		fabricInfo, httpRes, err := client.NetworkFabricAPI.GetNetworkFabricById(ctx, fabricIdNumber).Execute()
 		if err = response_inspector.InspectResponse(httpRes, err); err == nil {

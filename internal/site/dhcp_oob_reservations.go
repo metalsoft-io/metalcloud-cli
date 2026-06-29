@@ -69,7 +69,7 @@ func DhcpOobReservationsAdd(ctx context.Context, siteIdOrName string, entries ma
 
 	client := api.GetApiClient(ctx)
 
-	siteConfig, httpRes, err := client.SiteAPI.GetSiteConfig(ctx, float32(siteInfo.Id)).Execute()
+	siteConfig, httpRes, err := client.SiteAPI.GetSiteConfig(ctx, siteInfo.Id).Execute()
 	if err := response_inspector.InspectResponse(httpRes, err); err != nil {
 		return err
 	}
@@ -123,7 +123,7 @@ func DhcpOobReservationsRemove(ctx context.Context, siteIdOrName string, macAddr
 
 	client := api.GetApiClient(ctx)
 
-	siteConfig, httpRes, err := client.SiteAPI.GetSiteConfig(ctx, float32(siteInfo.Id)).Execute()
+	siteConfig, httpRes, err := client.SiteAPI.GetSiteConfig(ctx, siteInfo.Id).Execute()
 	if err := response_inspector.InspectResponse(httpRes, err); err != nil {
 		return err
 	}
@@ -185,7 +185,7 @@ func getDhcpOption82Mapping(ctx context.Context, siteIdOrName string) (map[strin
 
 	client := api.GetApiClient(ctx)
 
-	siteConfig, httpRes, err := client.SiteAPI.GetSiteConfig(ctx, float32(siteInfo.Id)).Execute()
+	siteConfig, httpRes, err := client.SiteAPI.GetSiteConfig(ctx, siteInfo.Id).Execute()
 	if err := response_inspector.InspectResponse(httpRes, err); err != nil {
 		return nil, err
 	}
@@ -223,7 +223,7 @@ func mapToReservations(mapping map[string]interface{}) []DHCPOOBReservation {
 }
 
 func updateDhcpOption82Mapping(ctx context.Context, client *sdk.APIClient, siteInfo *sdk.Site, mapping map[string]interface{}) error {
-	currentSite, httpRes, err := client.SiteAPI.GetSite(ctx, float32(siteInfo.Id)).Execute()
+	currentSite, httpRes, err := client.SiteAPI.GetSite(ctx, siteInfo.Id).Execute()
 	if err := response_inspector.InspectResponse(httpRes, err); err != nil {
 		return err
 	}
@@ -234,7 +234,7 @@ func updateDhcpOption82Mapping(ctx context.Context, client *sdk.APIClient, siteI
 		},
 	}
 
-	updatedConfig, httpRes, err := client.SiteAPI.UpdateSiteConfig(ctx, float32(siteInfo.Id)).
+	updatedConfig, httpRes, err := client.SiteAPI.UpdateSiteConfig(ctx, siteInfo.Id).
 		SiteConfigUpdate(configUpdate).
 		IfMatch(strconv.Itoa(int(currentSite.Revision))).
 		Execute()

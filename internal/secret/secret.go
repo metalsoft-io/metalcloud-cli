@@ -3,7 +3,6 @@ package secret
 import (
 	"context"
 	"fmt"
-	"net/http"
 	"strconv"
 
 	"github.com/metalsoft-io/metalcloud-cli/pkg/api"
@@ -50,34 +49,19 @@ var secretPrintConfig = formatter.PrintConfig{
 	},
 }
 
-type secretRaw struct {
-	Id               interface{} `json:"id"`
-	Name             *string     `json:"name"`
-	ValueEncrypted   *string     `json:"valueEncrypted"`
-	Usage            *string     `json:"usage"`
-	UserIdOwner      interface{} `json:"userIdOwner"`
-	CreatedTimestamp interface{} `json:"createdTimestamp"`
-	UpdatedTimestamp interface{} `json:"updatedTimestamp"`
-}
-
 func SecretList(ctx context.Context) error {
 	logger.Get().Info().Msgf("Listing all secrets")
 
 	client := api.GetApiClient(ctx)
 
-	rawItems, meta, err := utils.FetchAllPagesRaw(func(p float32) (*http.Response, error) {
-		_, httpRes, _ := client.SecretsAPI.GetSecrets(ctx).SortBy([]string{"id:ASC"}).Page(p).Limit(100).Execute()
-		return httpRes, nil
-	})
+	request := client.SecretsAPI.GetSecrets(ctx).SortBy([]string{"id:ASC"})
+
+	records, meta, err := utils.FetchAllPages(request)
 	if err != nil {
 		return err
 	}
-	records, err := utils.UnmarshalRawItems[secretRaw](rawItems)
-	if err != nil {
-		return fmt.Errorf("failed to parse secrets: %w", err)
-	}
 
-	return utils.PrintAllRaw(rawItems, records, meta, len(records), &secretPrintConfig)
+	return utils.PrintAll(records, meta, len(records), &secretPrintConfig)
 }
 
 func SecretGet(ctx context.Context, secretId string) error {

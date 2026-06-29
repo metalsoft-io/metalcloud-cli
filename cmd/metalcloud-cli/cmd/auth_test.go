@@ -15,7 +15,14 @@ func newAuthTestServer() *httptest.Server {
 			_ = json.NewEncoder(w).Encode(map[string]interface{}{
 				"auth": map[string]interface{}{
 					"ldap": map[string]interface{}{
-						"groupMappings": []interface{}{},
+						"server":        map[string]interface{}{},
+						"groupsMapping": []interface{}{},
+						"profileMapping": map[string]interface{}{
+							"userExternalIdentifier": map[string]interface{}{},
+							"username":               map[string]interface{}{},
+							"email":                  map[string]interface{}{},
+							"role":                   map[string]interface{}{},
+						},
 					},
 				},
 			})

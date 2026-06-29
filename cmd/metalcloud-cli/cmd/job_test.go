@@ -282,7 +282,10 @@ func TestJobGet_LargeID(t *testing.T) {
 			w.Header().Set("Content-Type", "application/json")
 			_ = json.NewEncoder(w).Encode(map[string]interface{}{
 				"jobId": 24671855, "status": "completed", "functionName": "test_fn",
-				"createdTimestamp": "2024-01-01T00:00:00Z", "jobGroupId": 1,
+				"type": "asynchronous", "callCount": 1, "retryMax": 3, "retryCount": 0,
+				"retryMinSeconds": 5, "requiresConfirmation": false, "options": map[string]interface{}{},
+				"createdTimestamp": "2024-01-01T00:00:00Z", "updatedTimestamp": "2024-01-01T00:00:00Z",
+				"links": []interface{}{}, "jobGroupId": 1,
 			})
 		})
 		mux.HandleFunc("/api/v2/jobs/", func(w http.ResponseWriter, r *http.Request) {
@@ -308,7 +311,10 @@ func TestJobListArchived(t *testing.T) {
 			w.Header().Set("Content-Type", "application/json")
 			_ = json.NewEncoder(w).Encode(paginatedList(map[string]interface{}{
 				"jobId": 24399938, "status": "returned_success", "functionName": "fn",
-				"type": "asynchronous", "infrastructureId": nil, "jobGroupId": nil,
+				"type": "asynchronous", "callCount": 1, "retryMax": 3, "retryCount": 0,
+				"retryMinSeconds": 5, "requiresConfirmation": false, "options": map[string]interface{}{},
+				"createdTimestamp": "2024-01-01T00:00:00Z", "updatedTimestamp": "2024-01-01T00:00:00Z",
+				"links": []interface{}{}, "infrastructureId": nil, "jobGroupId": nil,
 			}))
 		})
 	}))
@@ -332,7 +338,10 @@ func TestJobListArchived_Limit(t *testing.T) {
 			w.Header().Set("Content-Type", "application/json")
 			_ = json.NewEncoder(w).Encode(paginatedList(map[string]interface{}{
 				"jobId": 1, "status": "returned_success", "functionName": "fn",
-				"type": "asynchronous",
+				"type": "asynchronous", "callCount": 1, "retryMax": 3, "retryCount": 0,
+				"retryMinSeconds": 5, "requiresConfirmation": false, "options": map[string]interface{}{},
+				"createdTimestamp": "2024-01-01T00:00:00Z", "updatedTimestamp": "2024-01-01T00:00:00Z",
+				"links": []interface{}{},
 			}))
 		})
 	}))

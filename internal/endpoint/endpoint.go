@@ -3,7 +3,6 @@ package endpoint
 import (
 	"context"
 	"fmt"
-	"net/http"
 	"strconv"
 
 	"github.com/metalsoft-io/metalcloud-cli/pkg/api"
@@ -14,23 +13,14 @@ import (
 	sdk "github.com/metalsoft-io/metalcloud-sdk-go"
 )
 
-type endpointRaw struct {
-	Id         interface{} `json:"id"`
-	SiteId     interface{} `json:"siteId"`
-	Name       *string     `json:"name"`
-	Label      *string     `json:"label"`
-	ExternalId *string     `json:"externalId"`
+type EndpointInterfaceDetails struct {
+	Id                         *int64
+	MacAddress                 *string
+	NetworkDeviceId            *int64
+	NetworkDeviceInterfaceId   *int64
+	NetworkDeviceName          *string
+	NetworkDeviceInterfaceName *string
 }
-
-type endpointInterfaceRaw struct {
-	Id                         interface{} `json:"id"`
-	MacAddress                 *string     `json:"macAddress"`
-	NetworkDeviceId            interface{} `json:"networkDeviceId"`
-	NetworkDeviceInterfaceId   interface{} `json:"networkDeviceInterfaceId"`
-	NetworkDeviceName          *string     `json:"networkDeviceName"`
-	NetworkDeviceInterfaceName *string     `json:"networkDeviceInterfaceName"`
-}
-
 
 var endpointPrintConfig = formatter.PrintConfig{
 	FieldsConfig: map[string]formatter.RecordFieldConfig{
@@ -83,7 +73,7 @@ func EndpointList(ctx context.Context, filterSite []string, filterExternalId []s
 
 	client := api.GetApiClient(ctx)
 
-	request := client.EndpointAPI.GetEndpoints(ctx)
+	request := client.EndpointAPI.GetEndpoints(ctx).SortBy([]string{"id:ASC"})
 
 	if len(filterSite) > 0 {
 		request = request.FilterSiteId(utils.ProcessFilterStringSlice(filterSite))
@@ -93,19 +83,12 @@ func EndpointList(ctx context.Context, filterSite []string, filterExternalId []s
 		request = request.FilterExternalId(utils.ProcessFilterStringSlice(filterExternalId))
 	}
 
-	rawItems, meta, err := utils.FetchAllPagesRaw(func(p float32) (*http.Response, error) {
-		_, httpRes, _ := request.SortBy([]string{"id:ASC"}).Page(p).Limit(100).Execute()
-		return httpRes, nil
-	})
+	endpoints, meta, err := utils.FetchAllPages(request)
 	if err != nil {
 		return err
 	}
-	records, err := utils.UnmarshalRawItems[endpointRaw](rawItems)
-	if err != nil {
-		return fmt.Errorf("failed to parse endpoints: %w", err)
-	}
 
-	return utils.PrintAllRaw(rawItems, records, meta, len(records), &endpointPrintConfig)
+	return utils.PrintAll(endpoints, meta, len(endpoints), &endpointPrintConfig)
 }
 
 func EndpointGet(ctx context.Context, endpointId string) error {
@@ -208,28 +191,36 @@ func EndpointInterfaceList(ctx context.Context, endpointId string) error {
 
 	client := api.GetApiClient(ctx)
 
-	rawItems, meta, err := utils.FetchAllPagesRaw(func(p float32) (*http.Response, error) {
-		_, httpRes, _ := client.EndpointAPI.GetEndpointInterfaces(ctx, endpointIdNumeric).SortBy([]string{"id:ASC"}).Page(p).Limit(100).Execute()
-		return httpRes, nil
-	})
+	request := client.EndpointAPI.GetEndpointInterfaces(ctx, endpointIdNumeric).SortBy([]string{"id:ASC"})
+
+	interfaces, _, err := utils.FetchAllPages(request)
 	if err != nil {
 		return err
 	}
-	records, err := utils.UnmarshalRawItems[endpointInterfaceRaw](rawItems)
-	if err != nil {
-		return fmt.Errorf("failed to parse endpoint interfaces: %w", err)
+
+	endpointInterfacesList := make([]EndpointInterfaceDetails, 0, len(interfaces))
+	for _, iface := range interfaces {
+		endpointInterface := EndpointInterfaceDetails{
+			Id:                         &iface.Id,
+			MacAddress:                 iface.MacAddress,
+			NetworkDeviceId:            &iface.NetworkDeviceId,
+			NetworkDeviceInterfaceId:   &iface.NetworkDeviceInterfaceId,
+			NetworkDeviceInterfaceName: &iface.NetworkDeviceInterfaceName,
+		}
+
+		endpointInterfacesList = append(endpointInterfacesList, endpointInterface)
 	}
 
-	return utils.PrintAllRaw(rawItems, records, meta, len(records), &endpointInterfacePrintConfig)
+	return formatter.PrintResult(endpointInterfacesList, &endpointInterfacePrintConfig)
 }
 
-func GetEndpointId(endpointId string) (int32, error) {
-	endpointIdNumeric, err := strconv.ParseFloat(endpointId, 32)
+func GetEndpointId(endpointId string) (int64, error) {
+	endpointIdNumeric, err := strconv.ParseInt(endpointId, 10, 64)
 	if err != nil {
 		err := fmt.Errorf("invalid endpoint ID: '%s'", endpointId)
 		logger.Get().Error().Err(err).Msg("")
 		return 0, err
 	}
 
-	return int32(endpointIdNumeric), nil
+	return endpointIdNumeric, nil
 }

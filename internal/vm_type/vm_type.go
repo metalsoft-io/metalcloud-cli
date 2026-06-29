@@ -2,9 +2,7 @@ package vm_type
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
-	"net/http"
 	"strconv"
 
 	"github.com/metalsoft-io/metalcloud-cli/internal/vm"
@@ -15,17 +13,6 @@ import (
 	"github.com/metalsoft-io/metalcloud-cli/pkg/utils"
 	sdk "github.com/metalsoft-io/metalcloud-sdk-go"
 )
-
-type vmTypeRaw struct {
-	Id                  interface{} `json:"id"`
-	Label               *string     `json:"label"`
-	Name                *string     `json:"name"`
-	DisplayName         *string     `json:"displayName"`
-	CpuCores            *float32    `json:"cpuCores"`
-	RamGB               *float32    `json:"ramGB"`
-	IsExperimental      interface{} `json:"isExperimental"`
-	ForUnmanagedVMsOnly interface{} `json:"forUnmanagedVMsOnly"`
-}
 
 var VMTypePrintConfig = formatter.PrintConfig{
 	FieldsConfig: map[string]formatter.RecordFieldConfig{
@@ -72,62 +59,30 @@ func VMTypeList(ctx context.Context, limit float32, page float32) error {
 
 	client := api.GetApiClient(ctx)
 
-	request := client.VMTypeAPI.GetVMTypes(ctx)
+	request := client.VMTypeAPI.GetVMTypes(ctx).SortBy([]string{"id:ASC"})
 
-	// Set pagination if provided
-	if limit > 0 {
-		request = request.Limit(limit)
-	}
+	if limit > 0 || page > 0 {
+		if limit > 0 {
+			request = request.Limit(limit)
+		}
+		if page > 0 {
+			request = request.Page(page)
+		}
 
-	if page > 0 {
-		request = request.Page(page)
-	}
-
-	// Sort by id ascending
-	request = request.SortBy([]string{"id:ASC"})
-
-	if page > 0 {
-		rawItems, meta, err := utils.FetchPageWindowRaw(func(p, l float32) (*http.Response, error) {
-			_, httpRes, _ := request.Page(p).Limit(l).Execute()
-			return httpRes, nil
-		}, int(page), int(limit))
-		if err != nil {
+		result, httpRes, err := request.Execute()
+		if err := response_inspector.InspectResponse(httpRes, err); err != nil {
 			return err
 		}
-		records, err := utils.UnmarshalRawItems[vmTypeRaw](rawItems)
-		if err != nil {
-			return fmt.Errorf("failed to parse vm types: %w", err)
-		}
-		return utils.PrintAllRaw(rawItems, records, meta, len(records), &VMTypePrintConfig)
+
+		return utils.PrintAll(result.Data, result.Meta, len(result.Data), &VMTypePrintConfig)
 	}
 
-	if limit > 0 {
-		rawItems, meta, err := utils.FetchUpToRaw(func(p, l float32) (*http.Response, error) {
-			_, httpRes, _ := request.Page(p).Limit(l).Execute()
-			return httpRes, nil
-		}, int(limit))
-		if err != nil {
-			return err
-		}
-		records, err := utils.UnmarshalRawItems[vmTypeRaw](rawItems)
-		if err != nil {
-			return fmt.Errorf("failed to parse vm types: %w", err)
-		}
-		return utils.PrintAllRaw(rawItems, records, meta, len(records), &VMTypePrintConfig)
-	}
-
-	rawItems, meta, err := utils.FetchAllPagesRaw(func(p float32) (*http.Response, error) {
-		_, httpRes, _ := request.Page(p).Limit(100).Execute()
-		return httpRes, nil
-	})
+	records, meta, err := utils.FetchAllPages(request)
 	if err != nil {
 		return err
 	}
-	records, err := utils.UnmarshalRawItems[vmTypeRaw](rawItems)
-	if err != nil {
-		return fmt.Errorf("failed to parse vm types: %w", err)
-	}
-	return utils.PrintAllRaw(rawItems, records, meta, len(records), &VMTypePrintConfig)
+
+	return utils.PrintAll(records, meta, len(records), &VMTypePrintConfig)
 }
 
 func VMTypeGet(ctx context.Context, vmTypeId string) error {
@@ -140,7 +95,7 @@ func VMTypeGet(ctx context.Context, vmTypeId string) error {
 
 	client := api.GetApiClient(ctx)
 
-	vmType, httpRes, err := client.VMTypeAPI.GetVMType(ctx, vmTypeIdNumeric).Execute()
+	vmType, httpRes, err := client.VMTypeAPI.GetVMType(ctx, float32(vmTypeIdNumeric)).Execute()
 	if err := response_inspector.InspectResponse(httpRes, err); err != nil {
 		return err
 	}
@@ -230,38 +185,28 @@ func VMTypeGetVMs(ctx context.Context, vmTypeId string, limit float32, page floa
 
 	request := client.VMTypeAPI.GetVMsByVMType(ctx, vmTypeIdNumeric)
 
-	// Raw-body pagination: the SDK VM model requires `datacenterName`, but the
-	// API omits it, so SDK unmarshalling fails on valid responses.
-	var rawItems []json.RawMessage
-	var meta sdk.PaginatedResponseMeta
+	if limit > 0 || page > 0 {
+		if limit > 0 {
+			request = request.Limit(limit)
+		}
+		if page > 0 {
+			request = request.Page(page)
+		}
 
-	switch {
-	case page > 0:
-		rawItems, meta, err = utils.FetchPageWindowRaw(func(p, l float32) (*http.Response, error) {
-			_, httpRes, _ := request.Page(p).Limit(l).Execute()
-			return httpRes, nil
-		}, int(page), int(limit))
-	case limit > 0:
-		rawItems, meta, err = utils.FetchUpToRaw(func(p, l float32) (*http.Response, error) {
-			_, httpRes, _ := request.Page(p).Limit(l).Execute()
-			return httpRes, nil
-		}, int(limit))
-	default:
-		rawItems, meta, err = utils.FetchAllPagesRaw(func(p float32) (*http.Response, error) {
-			_, httpRes, _ := request.Page(p).Limit(100).Execute()
-			return httpRes, nil
-		})
+		result, httpRes, err := request.Execute()
+		if err := response_inspector.InspectResponse(httpRes, err); err != nil {
+			return err
+		}
+
+		return utils.PrintAll(result.Data, result.Meta, len(result.Data), &vm.VMListPrintConfig)
 	}
+
+	records, meta, err := utils.FetchAllPages(request)
 	if err != nil {
 		return err
 	}
 
-	records, err := utils.UnmarshalRawItems[vm.VMListRaw](rawItems)
-	if err != nil {
-		return fmt.Errorf("failed to parse VMs: %w", err)
-	}
-
-	return utils.PrintAllRaw(rawItems, records, meta, len(records), &vm.VMListPrintConfig)
+	return utils.PrintAll(records, meta, len(records), &vm.VMListPrintConfig)
 }
 
 func VMTypeConfigExample(ctx context.Context) error {
@@ -279,13 +224,13 @@ func VMTypeConfigExample(ctx context.Context) error {
 	return formatter.PrintResult(vmTypeConfig, nil)
 }
 
-func getVMTypeId(vmTypeId string) (float32, error) {
-	vmTypeIdNumeric, err := strconv.ParseFloat(vmTypeId, 32)
+func getVMTypeId(vmTypeId string) (int64, error) {
+	vmTypeIdNumeric, err := strconv.ParseInt(vmTypeId, 10, 64)
 	if err != nil {
 		err := fmt.Errorf("invalid VM type ID: '%s'", vmTypeId)
 		logger.Get().Error().Err(err).Msg("")
 		return 0, err
 	}
 
-	return float32(vmTypeIdNumeric), nil
+	return vmTypeIdNumeric, nil
 }

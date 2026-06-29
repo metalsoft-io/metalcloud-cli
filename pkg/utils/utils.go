@@ -39,6 +39,15 @@ func GetFloat32FromString(input string) (float32, error) {
 	return float32(result), nil
 }
 
+func GetInt64FromString(input string) (int64, error) {
+	result, err := strconv.ParseInt(input, 10, 64)
+	if err != nil {
+		return 0, err
+	}
+
+	return result, nil
+}
+
 func ReadConfigFromPipe() ([]byte, error) {
 	stat, _ := os.Stdin.Stat()
 	if (stat.Mode() & os.ModeCharDevice) != 0 {

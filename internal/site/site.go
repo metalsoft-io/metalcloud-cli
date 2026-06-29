@@ -5,7 +5,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
-	"net/http"
 	"strconv"
 	"strings"
 
@@ -16,15 +15,6 @@ import (
 	"github.com/metalsoft-io/metalcloud-cli/pkg/utils"
 	sdk "github.com/metalsoft-io/metalcloud-sdk-go"
 )
-
-type siteRaw struct {
-	Id              interface{} `json:"id"`
-	Slug            *string     `json:"slug"`
-	Name            *string     `json:"name"`
-	Location        interface{} `json:"location"`
-	IsHidden        interface{} `json:"isHidden"`
-	IsInMaintenance interface{} `json:"isInMaintenance"`
-}
 
 var sitePrintConfig = formatter.PrintConfig{
 	FieldsConfig: map[string]formatter.RecordFieldConfig{
@@ -178,19 +168,14 @@ func SiteList(ctx context.Context) error {
 
 	client := api.GetApiClient(ctx)
 
-	rawItems, meta, err := utils.FetchAllPagesRaw(func(p float32) (*http.Response, error) {
-		_, httpRes, _ := client.SiteAPI.GetSites(ctx).SortBy([]string{"id:ASC"}).Page(p).Limit(100).Execute()
-		return httpRes, nil
-	})
+	request := client.SiteAPI.GetSites(ctx).SortBy([]string{"id:ASC"})
+
+	sites, meta, err := utils.FetchAllPages(request)
 	if err != nil {
 		return err
 	}
-	records, err := utils.UnmarshalRawItems[siteRaw](rawItems)
-	if err != nil {
-		return fmt.Errorf("failed to parse sites: %w", err)
-	}
 
-	return utils.PrintAllRaw(rawItems, records, meta, len(records), &sitePrintConfig)
+	return utils.PrintAll(sites, meta, len(sites), &sitePrintConfig)
 }
 
 func SiteGet(ctx context.Context, siteIdOrName string) error {
@@ -236,7 +221,7 @@ func SiteUpdate(ctx context.Context, siteIdOrName string, label string) error {
 
 	client := api.GetApiClient(ctx)
 
-	siteInfo, httpRes, err := client.SiteAPI.UpdateSite(ctx, float32(siteInfo.Id)).
+	siteInfo, httpRes, err := client.SiteAPI.UpdateSite(ctx, siteInfo.Id).
 		SiteUpdate(updateSite).
 		IfMatch(strconv.Itoa(int(siteInfo.Revision))).
 		Execute()
@@ -258,7 +243,7 @@ func SiteDecommission(ctx context.Context, siteIdOrName string) error {
 	client := api.GetApiClient(ctx)
 
 	httpRes, err := client.SiteAPI.
-		DecommissionSite(ctx, float32(siteInfo.Id)).
+		DecommissionSite(ctx, siteInfo.Id).
 		IfMatch(strconv.Itoa(int(siteInfo.Revision))).
 		Execute()
 	if err := response_inspector.InspectResponse(httpRes, err); err != nil {
@@ -278,7 +263,7 @@ func SiteGetAgents(ctx context.Context, siteIdOrName string) error {
 
 	client := api.GetApiClient(ctx)
 
-	agents, httpRes, err := client.SiteAPI.GetAgents(ctx, float32(siteInfo.Id)).Execute()
+	agents, httpRes, err := client.SiteAPI.GetAgents(ctx, siteInfo.Id).Execute()
 	if err := response_inspector.InspectResponse(httpRes, err); err != nil {
 		return err
 	}
@@ -296,7 +281,7 @@ func SiteGetConfig(ctx context.Context, siteIdOrName string) error {
 
 	client := api.GetApiClient(ctx)
 
-	siteConfig, httpRes, err := client.SiteAPI.GetSiteConfig(ctx, float32(siteInfo.Id)).Execute()
+	siteConfig, httpRes, err := client.SiteAPI.GetSiteConfig(ctx, siteInfo.Id).Execute()
 	if err := response_inspector.InspectResponse(httpRes, err); err != nil {
 		return err
 	}
@@ -314,7 +299,7 @@ func SiteOneLiner(ctx context.Context, siteIdOrLabel string, onelinerConfig sdk.
 
 	client := api.GetApiClient(ctx)
 
-	_, httpRes, sdkErr := client.SiteAPI.GetSiteControllerOneLiner(ctx, float32(site.Id)).
+	_, httpRes, sdkErr := client.SiteAPI.GetSiteControllerOneLiner(ctx, site.Id).
 		GenerateSiteControllerOneliner(onelinerConfig).
 		Execute()
 
@@ -356,7 +341,7 @@ func SiteUpdateConfig(ctx context.Context, siteIdOrName string, config []byte) e
 	client := api.GetApiClient(ctx)
 
 	// First get the current config to get the revision number
-	currentSite, httpRes, err := client.SiteAPI.GetSite(ctx, float32(siteInfo.Id)).Execute()
+	currentSite, httpRes, err := client.SiteAPI.GetSite(ctx, siteInfo.Id).Execute()
 	if err := response_inspector.InspectResponse(httpRes, err); err != nil {
 		return err
 	}
@@ -368,7 +353,7 @@ func SiteUpdateConfig(ctx context.Context, siteIdOrName string, config []byte) e
 		return err
 	}
 
-	updatedConfig, httpRes, err := client.SiteAPI.UpdateSiteConfig(ctx, float32(siteInfo.Id)).
+	updatedConfig, httpRes, err := client.SiteAPI.UpdateSiteConfig(ctx, siteInfo.Id).
 		SiteConfigUpdate(configUpdate).
 		IfMatch(strconv.Itoa(int(currentSite.Revision))).
 		Execute()

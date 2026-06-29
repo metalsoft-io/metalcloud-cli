@@ -3,7 +3,6 @@ package file_share
 import (
 	"context"
 	"fmt"
-	"net/http"
 	"strconv"
 
 	"github.com/metalsoft-io/metalcloud-cli/internal/infrastructure"
@@ -14,17 +13,6 @@ import (
 	"github.com/metalsoft-io/metalcloud-cli/pkg/utils"
 	sdk "github.com/metalsoft-io/metalcloud-sdk-go"
 )
-
-type fileShareRaw struct {
-	Id               interface{} `json:"id"`
-	Label            *string     `json:"label"`
-	SizeGB           interface{} `json:"sizeGB"`
-	StoragePoolId    interface{} `json:"storagePoolId"`
-	InfrastructureId interface{} `json:"infrastructureId"`
-	ServiceStatus    *string     `json:"serviceStatus"`
-	Config           interface{} `json:"config"`
-	Endpoint         *string     `json:"endpoint"`
-}
 
 var fileSharePrintConfig = formatter.PrintConfig{
 	FieldsConfig: map[string]formatter.RecordFieldConfig{
@@ -111,25 +99,18 @@ func FileShareList(ctx context.Context, infrastructureIdOrLabel string, filterSt
 
 	client := api.GetApiClient(ctx)
 
-	request := client.FileShareAPI.GetInfrastructureFileShares(ctx, infrastructureInfo.Id)
+	request := client.FileShareAPI.GetInfrastructureFileShares(ctx, int64(infrastructureInfo.Id)).SortBy([]string{"id:ASC"})
 
 	if len(filterStatus) > 0 {
 		request = request.FilterServiceStatus(utils.ProcessFilterStringSlice(filterStatus))
 	}
 
-	rawItems, meta, err := utils.FetchAllPagesRaw(func(p float32) (*http.Response, error) {
-		_, httpRes, _ := request.SortBy([]string{"id:ASC"}).Page(p).Limit(100).Execute()
-		return httpRes, nil
-	})
+	records, meta, err := utils.FetchAllPages(request)
 	if err != nil {
 		return err
 	}
-	records, err := utils.UnmarshalRawItems[fileShareRaw](rawItems)
-	if err != nil {
-		return fmt.Errorf("failed to parse file shares: %w", err)
-	}
 
-	return utils.PrintAllRaw(rawItems, records, meta, len(records), &fileSharePrintConfig)
+	return utils.PrintAll(records, meta, len(records), &fileSharePrintConfig)
 }
 
 func FileShareGet(ctx context.Context, infrastructureIdOrLabel string, fileShareId string) error {
@@ -148,7 +129,7 @@ func FileShareGet(ctx context.Context, infrastructureIdOrLabel string, fileShare
 
 	client := api.GetApiClient(ctx)
 
-	fileShare, httpRes, err := client.FileShareAPI.GetInfrastructureFileShare(ctx, infrastructureInfo.Id, fileShareIdNumeric).Execute()
+	fileShare, httpRes, err := client.FileShareAPI.GetInfrastructureFileShare(ctx, int64(infrastructureInfo.Id), fileShareIdNumeric).Execute()
 	if err := response_inspector.InspectResponse(httpRes, err); err != nil {
 		return err
 	}
@@ -174,7 +155,7 @@ func FileShareCreate(ctx context.Context, infrastructureIdOrLabel string, config
 	client := api.GetApiClient(ctx)
 
 	fileShare, httpRes, err := client.FileShareAPI.
-		CreateInfrastructureFileShare(ctx, infrastructureInfo.Id).
+		CreateInfrastructureFileShare(ctx, int64(infrastructureInfo.Id)).
 		CreateFileShare(fileShareConfig).
 		Execute()
 	if err := response_inspector.InspectResponse(httpRes, err); err != nil {
@@ -193,7 +174,7 @@ func FileShareDelete(ctx context.Context, infrastructureIdOrLabel string, fileSh
 		return err
 	}
 
-	fileShareIdNumeric, revision, err := getFileShareIdAndRevision(ctx, infrastructureInfo.Id, fileShareId)
+	fileShareIdNumeric, revision, err := getFileShareIdAndRevision(ctx, int64(infrastructureInfo.Id), fileShareId)
 	if err != nil {
 		return err
 	}
@@ -201,7 +182,7 @@ func FileShareDelete(ctx context.Context, infrastructureIdOrLabel string, fileSh
 	client := api.GetApiClient(ctx)
 
 	httpRes, err := client.FileShareAPI.
-		DeleteFileShare(ctx, infrastructureInfo.Id, fileShareIdNumeric).
+		DeleteFileShare(ctx, int64(infrastructureInfo.Id), fileShareIdNumeric).
 		IfMatch(revision).
 		Execute()
 	if err := response_inspector.InspectResponse(httpRes, err); err != nil {
@@ -221,7 +202,7 @@ func FileShareUpdateConfig(ctx context.Context, infrastructureIdOrLabel string, 
 		return err
 	}
 
-	fileShareIdNumeric, revision, err := getFileShareIdAndRevision(ctx, infrastructureInfo.Id, fileShareId)
+	fileShareIdNumeric, revision, err := getFileShareIdAndRevision(ctx, int64(infrastructureInfo.Id), fileShareId)
 	if err != nil {
 		return err
 	}
@@ -235,7 +216,7 @@ func FileShareUpdateConfig(ctx context.Context, infrastructureIdOrLabel string, 
 	client := api.GetApiClient(ctx)
 
 	fileShare, httpRes, err := client.FileShareAPI.
-		UpdateFileShareConfig(ctx, infrastructureInfo.Id, fileShareIdNumeric).
+		UpdateFileShareConfig(ctx, int64(infrastructureInfo.Id), fileShareIdNumeric).
 		UpdateFileShare(fileShareConfigUpdate).
 		IfMatch(revision).
 		Execute()
@@ -269,7 +250,7 @@ func FileShareUpdateMeta(ctx context.Context, infrastructureIdOrLabel string, fi
 	client := api.GetApiClient(ctx)
 
 	fileShare, httpRes, err := client.FileShareAPI.
-		PatchFileShareMeta(ctx, infrastructureInfo.Id, fileShareIdNumeric).
+		PatchFileShareMeta(ctx, int64(infrastructureInfo.Id), fileShareIdNumeric).
 		UpdateFileShareMeta(fileShareMetaUpdate).
 		Execute()
 	if err := response_inspector.InspectResponse(httpRes, err); err != nil {
@@ -296,7 +277,7 @@ func FileShareGetHosts(ctx context.Context, infrastructureIdOrLabel string, file
 	client := api.GetApiClient(ctx)
 
 	hosts, httpRes, err := client.FileShareAPI.
-		GetFileShareHosts(ctx, infrastructureInfo.Id, fileShareIdNumeric).
+		GetFileShareHosts(ctx, int64(infrastructureInfo.Id), fileShareIdNumeric).
 		Execute()
 	if err := response_inspector.InspectResponse(httpRes, err); err != nil {
 		return err
@@ -328,7 +309,7 @@ func FileShareUpdateHosts(ctx context.Context, infrastructureIdOrLabel string, f
 	client := api.GetApiClient(ctx)
 
 	hosts, httpRes, err := client.FileShareAPI.
-		UpdateFileShareInstanceArrayHostsBulk(ctx, infrastructureInfo.Id, fileShareIdNumeric).
+		UpdateFileShareInstanceArrayHostsBulk(ctx, int64(infrastructureInfo.Id), fileShareIdNumeric).
 		FileShareHostsModifyBulk(hostsUpdate).
 		Execute()
 	if err := response_inspector.InspectResponse(httpRes, err); err != nil {
@@ -355,7 +336,7 @@ func FileShareGetConfigInfo(ctx context.Context, infrastructureIdOrLabel string,
 	client := api.GetApiClient(ctx)
 
 	configInfo, httpRes, err := client.FileShareAPI.
-		GetFileShareConfigInfo(ctx, infrastructureInfo.Id, fileShareIdNumeric).
+		GetFileShareConfigInfo(ctx, int64(infrastructureInfo.Id), fileShareIdNumeric).
 		Execute()
 	if err := response_inspector.InspectResponse(httpRes, err); err != nil {
 		return err
@@ -397,18 +378,18 @@ func FileShareGetConfigInfo(ctx context.Context, infrastructureIdOrLabel string,
 	})
 }
 
-func getFileShareId(fileShareId string) (float32, error) {
-	fileShareIdNumeric, err := strconv.ParseFloat(fileShareId, 32)
+func getFileShareId(fileShareId string) (int64, error) {
+	fileShareIdNumeric, err := strconv.ParseInt(fileShareId, 10, 64)
 	if err != nil {
 		err := fmt.Errorf("invalid file share ID: '%s'", fileShareId)
 		logger.Get().Error().Err(err).Msg("")
 		return 0, err
 	}
 
-	return float32(fileShareIdNumeric), nil
+	return fileShareIdNumeric, nil
 }
 
-func getFileShareIdAndRevision(ctx context.Context, infrastructureId float32, fileShareId string) (float32, string, error) {
+func getFileShareIdAndRevision(ctx context.Context, infrastructureId int64, fileShareId string) (int64, string, error) {
 	fileShareIdNumeric, err := getFileShareId(fileShareId)
 	if err != nil {
 		return 0, "", err
@@ -416,10 +397,10 @@ func getFileShareIdAndRevision(ctx context.Context, infrastructureId float32, fi
 
 	client := api.GetApiClient(ctx)
 
-	fileShare, httpRes, err := client.FileShareAPI.GetInfrastructureFileShare(ctx, infrastructureId, float32(fileShareIdNumeric)).Execute()
+	fileShare, httpRes, err := client.FileShareAPI.GetInfrastructureFileShare(ctx, infrastructureId, fileShareIdNumeric).Execute()
 	if err := response_inspector.InspectResponse(httpRes, err); err != nil {
 		return 0, "", err
 	}
 
-	return float32(fileShareIdNumeric), strconv.Itoa(int(fileShare.Revision)), nil
+	return fileShareIdNumeric, strconv.Itoa(int(fileShare.Revision)), nil
 }

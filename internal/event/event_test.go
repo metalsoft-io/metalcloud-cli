@@ -15,8 +15,9 @@ func TestMain(m *testing.M) {
 func makeEvent(id string) map[string]any {
 	return map[string]any{
 		"id":                id,
-		"type":              "user",
+		"type":              "infrastructure_instances_info",
 		"severity":          "info",
+		"level":             "info",
 		"visibility":        "public",
 		"title":             "Test event " + id,
 		"message":           "something happened",

@@ -3,7 +3,6 @@ package network_device_link_aggregation_configuration_template
 import (
 	"context"
 	"fmt"
-	"net/http"
 	"strconv"
 	"strings"
 
@@ -93,30 +92,14 @@ func NetworkDeviceLinkAggregationConfigurationTemplateList(ctx context.Context, 
 		request = request.FilterLibraryLabel(filterLibraryLabel)
 	}
 
-	type networkDeviceLinkAggregationConfigurationTemplateRaw struct {
-		Id                  interface{} `json:"id"`
-		Action              *string     `json:"action"`
-		AggregationType     *string     `json:"aggregationType"`
-		NetworkDeviceDriver *string     `json:"networkDeviceDriver"`
-		ExecutionType       *string     `json:"executionType"`
-		LibraryLabel        *string     `json:"libraryLabel"`
-	}
+	request = request.SortBy([]string{"id:ASC"})
 
-	sortedRequest := request.SortBy([]string{"id:ASC"})
-	rawItems, meta, err := utils.FetchAllPagesRaw(func(page float32) (*http.Response, error) {
-		_, httpRes, _ := sortedRequest.Page(page).Limit(100).Execute()
-		return httpRes, nil
-	})
+	records, meta, err := utils.FetchAllPages(request)
 	if err != nil {
 		return err
 	}
 
-	records, err := utils.UnmarshalRawItems[networkDeviceLinkAggregationConfigurationTemplateRaw](rawItems)
-	if err != nil {
-		return fmt.Errorf("failed to parse network device link aggregation configuration templates: %w", err)
-	}
-
-	return utils.PrintAllRaw(rawItems, records, meta, len(records), &NetworkDeviceLinkAggregationConfigurationTemplatePrintConfig)
+	return utils.PrintAll(records, meta, len(records), &NetworkDeviceLinkAggregationConfigurationTemplatePrintConfig)
 }
 
 func NetworkDeviceLinkAggregationConfigurationTemplateConfigExample(ctx context.Context) error {
@@ -241,13 +224,13 @@ func NetworkDeviceLinkAggregationConfigurationTemplateDelete(ctx context.Context
 	return nil
 }
 
-func getNetworkDeviceLinkAggregationConfigurationTemplateId(networkDeviceLinkAggregationConfigurationTemplateId string) (float32, error) {
-	networkDeviceLinkAggregationConfigurationTemplateIdNumeric, err := strconv.ParseFloat(networkDeviceLinkAggregationConfigurationTemplateId, 32)
+func getNetworkDeviceLinkAggregationConfigurationTemplateId(networkDeviceLinkAggregationConfigurationTemplateId string) (int64, error) {
+	networkDeviceLinkAggregationConfigurationTemplateIdNumeric, err := strconv.ParseInt(networkDeviceLinkAggregationConfigurationTemplateId, 10, 64)
 	if err != nil {
 		err := fmt.Errorf("invalid network device link aggregation configuration template ID: '%s'", networkDeviceLinkAggregationConfigurationTemplateId)
 		logger.Get().Error().Err(err).Msg("")
 		return 0, err
 	}
 
-	return float32(networkDeviceLinkAggregationConfigurationTemplateIdNumeric), nil
+	return networkDeviceLinkAggregationConfigurationTemplateIdNumeric, nil
 }

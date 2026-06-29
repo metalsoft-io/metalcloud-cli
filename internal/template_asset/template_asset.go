@@ -3,7 +3,6 @@ package template_asset
 import (
 	"context"
 	"fmt"
-	"net/http"
 	"strconv"
 
 	"github.com/metalsoft-io/metalcloud-cli/pkg/api"
@@ -13,18 +12,6 @@ import (
 	"github.com/metalsoft-io/metalcloud-cli/pkg/utils"
 	sdk "github.com/metalsoft-io/metalcloud-sdk-go"
 )
-
-type templateAssetRaw struct {
-	Id         interface{} `json:"id"`
-	TemplateId interface{} `json:"templateId"`
-	Usage      *string     `json:"usage"`
-	File       *struct {
-		Name     *string `json:"name"`
-		MimeType *string `json:"mimeType"`
-	} `json:"file"`
-	CreatedAt  interface{} `json:"createdAt"`
-	ModifiedAt interface{} `json:"modifiedAt"`
-}
 
 var templateAssetPrintConfig = formatter.PrintConfig{
 	FieldsConfig: map[string]formatter.RecordFieldConfig{
@@ -86,19 +73,14 @@ func TemplateAssetList(ctx context.Context, templateId []string, usage []string,
 		request = request.FilterFileMimeType(utils.ProcessFilterStringSlice(mimeType))
 	}
 
-	rawItems, meta, err := utils.FetchAllPagesRaw(func(p float32) (*http.Response, error) {
-		_, httpRes, _ := request.SortBy([]string{"id:ASC"}).Page(p).Limit(100).Execute()
-		return httpRes, nil
-	})
+	request = request.SortBy([]string{"id:ASC"})
+
+	records, meta, err := utils.FetchAllPages(request)
 	if err != nil {
 		return err
 	}
-	records, err := utils.UnmarshalRawItems[templateAssetRaw](rawItems)
-	if err != nil {
-		return fmt.Errorf("failed to parse template assets: %w", err)
-	}
 
-	return utils.PrintAllRaw(rawItems, records, meta, len(records), &templateAssetPrintConfig)
+	return utils.PrintAll(records, meta, len(records), &templateAssetPrintConfig)
 }
 
 func TemplateAssetGet(ctx context.Context, templateAssetId string) error {
@@ -205,13 +187,13 @@ func TemplateAssetDelete(ctx context.Context, templateAssetId string) error {
 	return nil
 }
 
-func getTemplateAssetId(templateAssetId string) (float32, error) {
-	templateAssetIdNumeric, err := strconv.ParseFloat(templateAssetId, 32)
+func getTemplateAssetId(templateAssetId string) (int64, error) {
+	templateAssetIdNumeric, err := strconv.ParseInt(templateAssetId, 10, 64)
 	if err != nil {
 		err := fmt.Errorf("invalid template asset ID: '%s'", templateAssetId)
 		logger.Get().Error().Err(err).Msg("")
 		return 0, err
 	}
 
-	return float32(templateAssetIdNumeric), nil
+	return templateAssetIdNumeric, nil
 }

@@ -20,9 +20,7 @@ func newPermissionTestServer() *httptest.Server {
 	mux := newMux(allPerms, func(mux *http.ServeMux) {
 		mux.HandleFunc("/api/v2/permissions", func(w http.ResponseWriter, r *http.Request) {
 			w.Header().Set("Content-Type", "application/json")
-			_ = json.NewEncoder(w).Encode(map[string]interface{}{
-				"permissions": []interface{}{permissionItem},
-			})
+			_ = json.NewEncoder(w).Encode(paginatedList(permissionItem))
 		})
 	})
 	return httptest.NewServer(mux)

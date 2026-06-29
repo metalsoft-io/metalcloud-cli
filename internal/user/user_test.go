@@ -324,15 +324,49 @@ func TestUnsuspend_500(t *testing.T) {
 
 // --- GetLimits / UpdateLimits ---
 
+// makeUserLimits returns a complete QuotaLimitsBreakdown payload. The
+// "effective" QuotaProfileLimits object must include every SDK-required field
+// or typed unmarshalling fails.
 func makeUserLimits() map[string]any {
+	effective := map[string]any{
+		"infrastructureServerGroupMaxCount":     float64(10),
+		"infrastructureDriveMaxCount":           float64(10),
+		"infrastructureFileShareMaxCount":       float64(10),
+		"infrastructureBucketMaxCount":          float64(10),
+		"infrastructureVmInstanceGroupMaxCount": float64(10),
+		"serverGroupInstancesMaxCount":          float64(10),
+		"serverGroupInstancesMinCount":          float64(1),
+		"vmInstanceGroupVmInstancesMaxCount":    float64(10),
+		"vmInstanceMaxDiskSizeMbytes":           float64(1048576),
+		"driveMaxSizeMbytes":                    float64(1048576),
+		"driveMinSizeMbytes":                    float64(1024),
+		"fileShareMinSizeGb":                    float64(1),
+		"fileShareMaxSizeGb":                    float64(1024),
+		"bucketMinSizeGb":                       float64(1),
+		"bucketMaxSizeGb":                       float64(1024),
+		"showOperatingSystemImagesTab":          true,
+		"showTemplateAssetsView":                true,
+		"userResourceServerTypeNameToMaxCount":  map[string]any{},
+		"userSshKeysCountMax":                   float64(10),
+		"showLegacyPages":                       false,
+		"showEliChatBot":                        false,
+		"enableCustomRaidConfiguration":         true,
+		"enableInfrastructureVmInstance":        true,
+		"enableInfrastructureExtensions":        true,
+		"allowedInfrastructureExtensions":       []any{},
+		"allowedServerTypes":                    []any{},
+		"allowedSites":                          []any{},
+		"allowedLogicalNetworkProfiles":         []any{},
+		"allowedPreCreatedLogicalNetworks":      []any{},
+	}
 	return map[string]any{
-		"infrastructureActiveMaxCount": float64(10),
+		"effective": effective,
 	}
 }
 
 func TestGetLimits_HappyPath(t *testing.T) {
 	ts := testutils.NewTestServer(map[string]http.HandlerFunc{
-		"/api/v2/users/1/limits": testutils.JSONHandler(200, makeUserLimits()),
+		"/api/v2/users/1/quota-limits-breakdown": testutils.JSONHandler(200, makeUserLimits()),
 	})
 	defer ts.Close()
 
@@ -344,7 +378,7 @@ func TestGetLimits_HappyPath(t *testing.T) {
 
 func TestGetLimits_500(t *testing.T) {
 	ts := testutils.NewTestServer(map[string]http.HandlerFunc{
-		"/api/v2/users/1/limits": testutils.ErrorHandler(500, "internal server error"),
+		"/api/v2/users/1/quota-limits-breakdown": testutils.ErrorHandler(500, "internal server error"),
 	})
 	defer ts.Close()
 
@@ -361,134 +395,6 @@ func TestGetLimits_InvalidId(t *testing.T) {
 	ctx := testutils.SetupTestContext(ts.URL)
 	if err := GetLimits(ctx, "bad"); err == nil {
 		t.Fatal("expected error on invalid ID, got nil")
-	}
-}
-
-func TestUpdateLimits_HappyPath(t *testing.T) {
-	routes := map[string]http.HandlerFunc{
-		"/api/v2/users/1":                       testutils.JSONHandler(200, makeUser(1)),
-		"/api/v2/users/1/actions/change-limits": testutils.JSONHandler(200, makeUserLimits()),
-	}
-	ts := testutils.NewTestServer(routes)
-	defer ts.Close()
-
-	ctx := testutils.SetupTestContext(ts.URL)
-	config := []byte(`{"infrastructureActiveMaxCount":10}`)
-	if err := UpdateLimits(ctx, "1", config); err != nil {
-		t.Fatalf("expected nil error, got: %v", err)
-	}
-}
-
-func TestUpdateLimits_500(t *testing.T) {
-	routes := map[string]http.HandlerFunc{
-		"/api/v2/users/1":                       testutils.JSONHandler(200, makeUser(1)),
-		"/api/v2/users/1/actions/change-limits": testutils.ErrorHandler(500, "internal server error"),
-	}
-	ts := testutils.NewTestServer(routes)
-	defer ts.Close()
-
-	ctx := testutils.SetupTestContext(ts.URL)
-	config := []byte(`{"infrastructureActiveMaxCount":10}`)
-	if err := UpdateLimits(ctx, "1", config); err == nil {
-		t.Fatal("expected error on 500, got nil")
-	}
-}
-
-func TestUpdateLimits_InvalidConfig(t *testing.T) {
-	routes := map[string]http.HandlerFunc{
-		"/api/v2/users/1": testutils.JSONHandler(200, makeUser(1)),
-	}
-	ts := testutils.NewTestServer(routes)
-	defer ts.Close()
-
-	ctx := testutils.SetupTestContext(ts.URL)
-	if err := UpdateLimits(ctx, "1", []byte("not-json")); err == nil {
-		t.Fatal("expected error on invalid config, got nil")
-	}
-}
-
-// --- GetPermissions / UpdatePermissions ---
-
-func makeUserPermissions() map[string]any {
-	return map[string]any{
-		"rolePermissions": []any{"admin"},
-	}
-}
-
-func TestGetPermissions_HappyPath(t *testing.T) {
-	ts := testutils.NewTestServer(map[string]http.HandlerFunc{
-		"/api/v2/users/1/permissions": testutils.JSONHandler(200, makeUserPermissions()),
-	})
-	defer ts.Close()
-
-	ctx := testutils.SetupTestContext(ts.URL)
-	if err := GetPermissions(ctx, "1"); err != nil {
-		t.Fatalf("expected nil error, got: %v", err)
-	}
-}
-
-func TestGetPermissions_500(t *testing.T) {
-	ts := testutils.NewTestServer(map[string]http.HandlerFunc{
-		"/api/v2/users/1/permissions": testutils.ErrorHandler(500, "internal server error"),
-	})
-	defer ts.Close()
-
-	ctx := testutils.SetupTestContext(ts.URL)
-	if err := GetPermissions(ctx, "1"); err == nil {
-		t.Fatal("expected error on 500, got nil")
-	}
-}
-
-func TestGetPermissions_InvalidId(t *testing.T) {
-	ts := testutils.NewTestServer(map[string]http.HandlerFunc{})
-	defer ts.Close()
-
-	ctx := testutils.SetupTestContext(ts.URL)
-	if err := GetPermissions(ctx, "bad"); err == nil {
-		t.Fatal("expected error on invalid ID, got nil")
-	}
-}
-
-func TestUpdatePermissions_HappyPath(t *testing.T) {
-	routes := map[string]http.HandlerFunc{
-		"/api/v2/users/1":                                   testutils.JSONHandler(200, makeUser(1)),
-		"/api/v2/users/1/actions/change-resource-permissions": testutils.JSONHandler(200, makeUserPermissions()),
-	}
-	ts := testutils.NewTestServer(routes)
-	defer ts.Close()
-
-	ctx := testutils.SetupTestContext(ts.URL)
-	config := []byte(`{"rolePermissions":["admin"]}`)
-	if err := UpdatePermissions(ctx, "1", config); err != nil {
-		t.Fatalf("expected nil error, got: %v", err)
-	}
-}
-
-func TestUpdatePermissions_500(t *testing.T) {
-	routes := map[string]http.HandlerFunc{
-		"/api/v2/users/1":                                   testutils.JSONHandler(200, makeUser(1)),
-		"/api/v2/users/1/actions/change-resource-permissions": testutils.ErrorHandler(500, "internal server error"),
-	}
-	ts := testutils.NewTestServer(routes)
-	defer ts.Close()
-
-	ctx := testutils.SetupTestContext(ts.URL)
-	config := []byte(`{"rolePermissions":["admin"]}`)
-	if err := UpdatePermissions(ctx, "1", config); err == nil {
-		t.Fatal("expected error on 500, got nil")
-	}
-}
-
-func TestUpdatePermissions_InvalidConfig(t *testing.T) {
-	routes := map[string]http.HandlerFunc{
-		"/api/v2/users/1": testutils.JSONHandler(200, makeUser(1)),
-	}
-	ts := testutils.NewTestServer(routes)
-	defer ts.Close()
-
-	ctx := testutils.SetupTestContext(ts.URL)
-	if err := UpdatePermissions(ctx, "1", []byte("not-json")); err == nil {
-		t.Fatal("expected error on invalid config, got nil")
 	}
 }
 

@@ -3,7 +3,6 @@ package dns_zone
 import (
 	"context"
 	"fmt"
-	"net/http"
 	"strconv"
 	"strings"
 
@@ -57,41 +56,22 @@ var dnsZonePrintConfig = formatter.PrintConfig{
 	},
 }
 
-type dnsZoneRaw struct {
-	Id          interface{} `json:"id"`
-	Label       *string     `json:"label"`
-	ZoneName    *string     `json:"zoneName"`
-	ZoneType    *string     `json:"zoneType"`
-	Status      *string     `json:"status"`
-	IsDefault   interface{} `json:"isDefault"`
-	SoaEmail    *string     `json:"soaEmail"`
-	Ttl         interface{} `json:"ttl"`
-	Description *string     `json:"description"`
-}
-
 func DNSZoneList(ctx context.Context, filterIsDefault []string) error {
 	logger.Get().Info().Msgf("Listing DNS zones")
 
 	client := api.GetApiClient(ctx)
 
-	rawItems, meta, err := utils.FetchAllPagesRaw(func(p float32) (*http.Response, error) {
-		req := client.DNSZoneAPI.GetDNSZones(ctx).SortBy([]string{"id:ASC"}).Page(p).Limit(100)
-		if len(filterIsDefault) > 0 {
-			req = req.FilterIsDefault(utils.ProcessFilterStringSlice(filterIsDefault))
-		}
-		_, httpRes, _ := req.Execute()
-		return httpRes, nil
-	})
+	request := client.DNSZoneAPI.GetDNSZones(ctx).SortBy([]string{"id:ASC"})
+	if len(filterIsDefault) > 0 {
+		request = request.FilterIsDefault(utils.ProcessFilterStringSlice(filterIsDefault))
+	}
+
+	records, meta, err := utils.FetchAllPages(request)
 	if err != nil {
 		return err
 	}
 
-	records, err := utils.UnmarshalRawItems[dnsZoneRaw](rawItems)
-	if err != nil {
-		return fmt.Errorf("failed to parse DNS zones: %w", err)
-	}
-
-	return utils.PrintAllRaw(rawItems, records, meta, len(records), &dnsZonePrintConfig)
+	return utils.PrintAll(records, meta, len(records), &dnsZonePrintConfig)
 }
 
 func DNSZoneGet(ctx context.Context, dnsZoneId string) error {
@@ -222,13 +202,13 @@ func DNSZoneRecords(ctx context.Context, dnsZoneId string) error {
 	return formatter.PrintResult(result, &dnsRecordSetPrintConfig)
 }
 
-func GetDNSZoneId(dnsZoneId string) (float32, error) {
-	dnsZoneIdNumeric, err := strconv.ParseFloat(dnsZoneId, 32)
+func GetDNSZoneId(dnsZoneId string) (int64, error) {
+	dnsZoneIdNumeric, err := strconv.ParseInt(dnsZoneId, 10, 64)
 	if err != nil {
 		err := fmt.Errorf("invalid DNS zone ID: '%s'", dnsZoneId)
 		logger.Get().Error().Err(err).Msg("")
 		return 0, err
 	}
 
-	return float32(dnsZoneIdNumeric), nil
+	return dnsZoneIdNumeric, nil
 }

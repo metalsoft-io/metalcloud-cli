@@ -16,15 +16,18 @@ const siteListBody = `{"data":[` + siteItem + `],"meta":{"currentPage":1,"totalP
 
 // ndItem2: minimal NetworkDevice for fabric tests (siteId=10 to match siteItem).
 const ndItem2 = `{
-	"id":"5","revision":1,"status":"active","siteId":10,
-	"identifierString":"switch-a","description":"","chassisIdentifier":"",
+	"id":"5","revision":1,"status":"active","vendorId":1,"siteId":10,
+	"identifierString":"switch-a","applyIdentifierAsHostnameOnNextDeploy":false,
+	"description":"","chassisIdentifier":"",
 	"country":"","city":"","datacenterMeta":"","datacenterRoom":"","datacenterRack":"",
 	"rackPositionUpperUnit":0,"rackPositionLowerUnit":0,
 	"managementAddress":"10.0.0.1","managementAddressPrefixLength":24,
 	"managementAddressGateway":"10.0.0.254","managementPort":22,
-	"syslogEnabled":0,"username":"admin","managementMacAddress":"AA:BB:CC:DD:EE:01",
+	"syslogEnabled":0,"snmpServiceEnabled":false,"snmpMonitoringEnabled":false,
+	"username":"admin","managementMacAddress":"AA:BB:CC:DD:EE:01",
 	"serialNumber":"SN001","driver":"sonic_enterprise","position":"leaf",
-	"orderIndex":1,"tags":[],"readyForInitialConfiguration":0,
+	"driftDetectionSyncStatus":"",
+	"orderIndex":1,"tags":[],"tagsMap":{},"readyForInitialConfiguration":0,
 	"bootstrapReadinessCheckInProgress":0,"subnetOobId":0,"subnetOobIndex":0,
 	"requiresOsInstall":false,"bootstrapExpectedPartnerHostname":"",
 	"loopbackAddressIpv6":"","asn":65000,"vtepAddressIpv6":"",
@@ -477,8 +480,8 @@ func TestFabricLinkAdd_HappyPath(t *testing.T) {
 	defer ts.Close()
 
 	ctx := setupTestContext(ts.URL)
-	ifA := float32(10)
-	ifB := float32(20)
+	ifA := int64(10)
+	ifB := int64(20)
 	createLink := sdk.CreateNetworkFabricLink{
 		LinkType:                  "fabric",
 		NetworkDeviceAInterfaceId: &ifA,

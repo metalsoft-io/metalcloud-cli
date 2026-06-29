@@ -3,8 +3,6 @@ package vm_instance
 import (
 	"context"
 	"encoding/json"
-	"fmt"
-	"net/http"
 	"strconv"
 
 	"github.com/metalsoft-io/metalcloud-cli/pkg/api"
@@ -14,17 +12,6 @@ import (
 	"github.com/metalsoft-io/metalcloud-cli/pkg/utils"
 	sdk "github.com/metalsoft-io/metalcloud-sdk-go"
 )
-
-type vmInstanceGroupRaw struct {
-	Id               interface{} `json:"id"`
-	Label            *string     `json:"label"`
-	InfrastructureId interface{} `json:"infrastructureId"`
-	InstanceCount    interface{} `json:"instanceCount"`
-	ServiceStatus    *string     `json:"serviceStatus"`
-	DiskSizeGB       interface{} `json:"diskSizeGB"`
-	CreatedTimestamp interface{} `json:"createdTimestamp"`
-	UpdatedTimestamp interface{} `json:"updatedTimestamp"`
-}
 
 var vmInstanceGroupPrintConfig = formatter.PrintConfig{
 	FieldsConfig: map[string]formatter.RecordFieldConfig{
@@ -69,12 +56,12 @@ var vmInstanceGroupPrintConfig = formatter.PrintConfig{
 func VMInstanceGroupGet(ctx context.Context, infrastructureId string, vmInstanceGroupId string) error {
 	logger.Get().Info().Msgf("Get VM instance group details for %s in infrastructure %s", vmInstanceGroupId, infrastructureId)
 
-	infraIdNumerical, err := utils.GetFloat32FromString(infrastructureId)
+	infraIdNumerical, err := utils.GetInt64FromString(infrastructureId)
 	if err != nil {
 		return err
 	}
 
-	vmInstanceGroupIdNumerical, err := utils.GetFloat32FromString(vmInstanceGroupId)
+	vmInstanceGroupIdNumerical, err := utils.GetInt64FromString(vmInstanceGroupId)
 	if err != nil {
 		return err
 	}
@@ -93,38 +80,32 @@ func VMInstanceGroupGet(ctx context.Context, infrastructureId string, vmInstance
 func VMInstanceGroupList(ctx context.Context, infrastructureId string) error {
 	logger.Get().Info().Msgf("List all VM instance groups for infrastructure %s", infrastructureId)
 
-	infraIdNumerical, err := utils.GetFloat32FromString(infrastructureId)
+	infraIdNumerical, err := utils.GetInt64FromString(infrastructureId)
 	if err != nil {
 		return err
 	}
 
 	client := api.GetApiClient(ctx)
 
-	rawItems, meta, err := utils.FetchAllPagesRaw(func(p float32) (*http.Response, error) {
-		_, httpRes, _ := client.VMInstanceGroupAPI.GetInfrastructureVMInstanceGroups(
-			ctx, infraIdNumerical).SortBy([]string{"id:ASC"}).Page(p).Limit(100).Execute()
-		return httpRes, nil
-	})
+	request := client.VMInstanceGroupAPI.GetInfrastructureVMInstanceGroups(ctx, infraIdNumerical).SortBy([]string{"id:ASC"})
+
+	records, meta, err := utils.FetchAllPages(request)
 	if err != nil {
 		return err
 	}
-	records, err := utils.UnmarshalRawItems[vmInstanceGroupRaw](rawItems)
-	if err != nil {
-		return fmt.Errorf("failed to parse vm instance groups: %w", err)
-	}
 
-	return utils.PrintAllRaw(rawItems, records, meta, len(records), &vmInstanceGroupPrintConfig)
+	return utils.PrintAll(records, meta, len(records), &vmInstanceGroupPrintConfig)
 }
 
 func VMInstanceGroupCreate(ctx context.Context, infrastructureId string, vmTypeId string, diskSizeGB string, instanceCount string, osTemplateId string) error {
 	logger.Get().Info().Msgf("Create new VM instance group in infrastructure %s", infrastructureId)
 
-	infraIdNumerical, err := utils.GetFloat32FromString(infrastructureId)
+	infraIdNumerical, err := utils.GetInt64FromString(infrastructureId)
 	if err != nil {
 		return err
 	}
 
-	vmTypeIdNumerical, err := utils.GetFloat32FromString(vmTypeId)
+	vmTypeIdNumerical, err := utils.GetInt64FromString(vmTypeId)
 	if err != nil {
 		return err
 	}
@@ -146,7 +127,7 @@ func VMInstanceGroupCreate(ctx context.Context, infrastructureId string, vmTypeI
 	}
 
 	if osTemplateId != "" {
-		payload.OsTemplateId, err = utils.GetFloat32FromString(osTemplateId)
+		payload.OsTemplateId, err = utils.GetInt64FromString(osTemplateId)
 		if err != nil {
 			return err
 		}
@@ -223,12 +204,12 @@ func VMInstanceGroupDelete(ctx context.Context, infrastructureId string, vmInsta
 func VMInstanceGroupInstances(ctx context.Context, infrastructureId string, vmInstanceGroupId string) error {
 	logger.Get().Info().Msgf("List instances of VM instance group %s in infrastructure %s", vmInstanceGroupId, infrastructureId)
 
-	infraIdNumerical, err := utils.GetFloat32FromString(infrastructureId)
+	infraIdNumerical, err := utils.GetInt64FromString(infrastructureId)
 	if err != nil {
 		return err
 	}
 
-	vmInstanceGroupIdNumerical, err := utils.GetFloat32FromString(vmInstanceGroupId)
+	vmInstanceGroupIdNumerical, err := utils.GetInt64FromString(vmInstanceGroupId)
 	if err != nil {
 		return err
 	}
@@ -244,13 +225,13 @@ func VMInstanceGroupInstances(ctx context.Context, infrastructureId string, vmIn
 	return formatter.PrintResult(vmInstancesList.Data, &vmInstancePrintConfig)
 }
 
-func getVmInstanceGroupIdAndRevision(ctx context.Context, infrastructureId string, vmInstanceGroupId string) (float32, float32, string, error) {
-	infraIdNumerical, err := utils.GetFloat32FromString(infrastructureId)
+func getVmInstanceGroupIdAndRevision(ctx context.Context, infrastructureId string, vmInstanceGroupId string) (int64, int64, string, error) {
+	infraIdNumerical, err := utils.GetInt64FromString(infrastructureId)
 	if err != nil {
 		return 0, 0, "", err
 	}
 
-	vmInstanceGroupIdNumerical, err := utils.GetFloat32FromString(vmInstanceGroupId)
+	vmInstanceGroupIdNumerical, err := utils.GetInt64FromString(vmInstanceGroupId)
 	if err != nil {
 		return 0, 0, "", err
 	}

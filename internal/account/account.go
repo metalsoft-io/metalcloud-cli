@@ -2,10 +2,7 @@ package account
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
-	"io"
-	"net/http"
 	"strconv"
 
 	"github.com/metalsoft-io/metalcloud-cli/pkg/api"
@@ -15,17 +12,6 @@ import (
 	"github.com/metalsoft-io/metalcloud-cli/pkg/utils"
 	sdk "github.com/metalsoft-io/metalcloud-sdk-go"
 )
-
-type accountRaw struct {
-	Id                 interface{} `json:"id"`
-	Revision           json.Number `json:"revision"`
-	Name               *string     `json:"name"`
-	Code               *string     `json:"code"`
-	FiscalNumber       *string     `json:"fiscalNumber"`
-	IsArchived         interface{} `json:"isArchived"`
-	PrimaryContactId   interface{} `json:"primaryContactId"`
-	SecondaryContactId interface{} `json:"secondaryContactId"`
-}
 
 var accountPrintConfig = formatter.PrintConfig{
 	FieldsConfig: map[string]formatter.RecordFieldConfig{
@@ -87,25 +73,18 @@ func AccountList(ctx context.Context, archived bool) error {
 
 	client := api.GetApiClient(ctx)
 
-	rawItems, meta, err := utils.FetchAllPagesRaw(func(page float32) (*http.Response, error) {
-		request := client.AccountAPI.GetAccounts(ctx).SortBy([]string{"id:ASC"})
-		if archived {
-			// The API excludes archived accounts by default.
-			request = request.FilterArchived([]string{"$eq:1"})
-		}
-		_, httpRes, _ := request.Page(page).Limit(100).Execute()
-		return httpRes, nil
-	})
+	request := client.AccountAPI.GetAccounts(ctx).SortBy([]string{"id:ASC"})
+	if archived {
+		// The API excludes archived accounts by default.
+		request = request.FilterArchived([]string{"$eq:1"})
+	}
+
+	accounts, meta, err := utils.FetchAllPages(request)
 	if err != nil {
 		return err
 	}
 
-	records, err := utils.UnmarshalRawItems[accountRaw](rawItems)
-	if err != nil {
-		return fmt.Errorf("failed to parse accounts: %w", err)
-	}
-
-	return utils.PrintAllRaw(rawItems, records, meta, len(records), &accountPrintConfig)
+	return utils.PrintAll(accounts, meta, len(accounts), &accountPrintConfig)
 }
 
 func AccountGet(ctx context.Context, accountId string) error {
@@ -118,14 +97,12 @@ func AccountGet(ctx context.Context, accountId string) error {
 
 	client := api.GetApiClient(ctx)
 
-	_, httpRes, sdkErr := client.AccountAPI.GetAccount(ctx, accountIdNumber).Execute()
-
-	record, err := parseAccountResponse(httpRes, sdkErr)
-	if err != nil {
+	accountInfo, httpRes, err := client.AccountAPI.GetAccount(ctx, accountIdNumber).Execute()
+	if err := response_inspector.InspectResponse(httpRes, err); err != nil {
 		return err
 	}
 
-	return formatter.PrintResult(record, &accountPrintConfig)
+	return formatter.PrintResult(accountInfo, &accountPrintConfig)
 }
 
 func AccountCreate(ctx context.Context, config []byte) error {
@@ -139,14 +116,12 @@ func AccountCreate(ctx context.Context, config []byte) error {
 
 	client := api.GetApiClient(ctx)
 
-	_, httpRes, sdkErr := client.AccountAPI.CreateAccount(ctx).CreateAccount(accountConfig).Execute()
-
-	record, err := parseAccountResponse(httpRes, sdkErr)
-	if err != nil {
+	accountInfo, httpRes, err := client.AccountAPI.CreateAccount(ctx).CreateAccount(accountConfig).Execute()
+	if err := response_inspector.InspectResponse(httpRes, err); err != nil {
 		return err
 	}
 
-	return formatter.PrintResult(record, &accountPrintConfig)
+	return formatter.PrintResult(accountInfo, &accountPrintConfig)
 }
 
 func AccountUpdate(ctx context.Context, accountId string, config []byte) error {
@@ -165,18 +140,16 @@ func AccountUpdate(ctx context.Context, accountId string, config []byte) error {
 
 	client := api.GetApiClient(ctx)
 
-	_, httpRes, sdkErr := client.AccountAPI.
+	accountInfo, httpRes, err := client.AccountAPI.
 		UpdateAccountConfig(ctx, accountIdNumber).
 		UpdateAccount(accountConfig).
 		IfMatch(revision).
 		Execute()
-
-	record, err := parseAccountResponse(httpRes, sdkErr)
-	if err != nil {
+	if err := response_inspector.InspectResponse(httpRes, err); err != nil {
 		return err
 	}
 
-	return formatter.PrintResult(record, &accountPrintConfig)
+	return formatter.PrintResult(accountInfo, &accountPrintConfig)
 }
 
 func AccountArchive(ctx context.Context, accountId string) error {
@@ -189,11 +162,11 @@ func AccountArchive(ctx context.Context, accountId string) error {
 
 	client := api.GetApiClient(ctx)
 
-	_, httpRes, sdkErr := client.AccountAPI.
+	_, httpRes, err := client.AccountAPI.
 		ArchiveAccount(ctx, accountIdNumber).
 		IfMatch(revision).
 		Execute()
-	if _, err := parseAccountResponse(httpRes, sdkErr); err != nil {
+	if err := response_inspector.InspectResponse(httpRes, err); err != nil {
 		return err
 	}
 
@@ -221,18 +194,18 @@ func AccountGetUsers(ctx context.Context, accountId string) error {
 	return formatter.PrintResult(users, &accountUsersPrintConfig)
 }
 
-func getAccountId(accountId string) (float32, error) {
-	accountIdNumber, err := strconv.ParseFloat(accountId, 32)
+func getAccountId(accountId string) (int64, error) {
+	accountIdNumber, err := strconv.ParseInt(accountId, 10, 64)
 	if err != nil {
 		err := fmt.Errorf("invalid account ID: '%s'", accountId)
 		logger.Get().Error().Err(err).Msg("")
 		return 0, err
 	}
 
-	return float32(accountIdNumber), nil
+	return accountIdNumber, nil
 }
 
-func getAccountIdAndRevision(ctx context.Context, accountId string) (float32, string, error) {
+func getAccountIdAndRevision(ctx context.Context, accountId string) (int64, string, error) {
 	accountIdNumber, err := getAccountId(accountId)
 	if err != nil {
 		return 0, "", err
@@ -240,37 +213,12 @@ func getAccountIdAndRevision(ctx context.Context, accountId string) (float32, st
 
 	client := api.GetApiClient(ctx)
 
-	_, httpRes, sdkErr := client.AccountAPI.
-		GetAccount(ctx, float32(accountIdNumber)).
+	account, httpRes, err := client.AccountAPI.
+		GetAccount(ctx, accountIdNumber).
 		Execute()
-
-	record, err := parseAccountResponse(httpRes, sdkErr)
-	if err != nil {
+	if err := response_inspector.InspectResponse(httpRes, err); err != nil {
 		return 0, "", err
 	}
 
-	return float32(accountIdNumber), record.Revision.String(), nil
-}
-
-// parseAccountResponse reads an account response body without SDK type unmarshalling.
-// The SDK Account model marks `limits` as required, but the API omits it, so SDK
-// unmarshalling fails on otherwise valid responses.
-func parseAccountResponse(httpRes *http.Response, sdkErr error) (*accountRaw, error) {
-	if httpRes != nil && httpRes.StatusCode >= 400 {
-		return nil, response_inspector.InspectResponse(httpRes, sdkErr)
-	}
-	if httpRes == nil {
-		return nil, sdkErr
-	}
-
-	body, err := io.ReadAll(httpRes.Body)
-	if err != nil {
-		return nil, fmt.Errorf("failed to read response body: %w", err)
-	}
-
-	var record accountRaw
-	if err := json.Unmarshal(body, &record); err != nil {
-		return nil, fmt.Errorf("failed to parse account: %w", err)
-	}
-	return &record, nil
+	return accountIdNumber, strconv.Itoa(int(account.Revision)), nil
 }

@@ -58,7 +58,7 @@ func OsTemplateClone(ctx context.Context, osTemplateId string, name string, labe
 		} else {
 			// Content-based asset: fetch full content
 			fullAsset, httpRes, err := client.TemplateAssetAPI.
-				GetTemplateAsset(ctx, float32(asset.Id)).
+				GetTemplateAsset(ctx, asset.Id).
 				Execute()
 			if err := response_inspector.InspectResponse(httpRes, err); err != nil {
 				return fmt.Errorf("failed to get asset %d content: %w", asset.Id, err)

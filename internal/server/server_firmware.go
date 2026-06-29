@@ -4,7 +4,6 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"net/http"
 
 	"github.com/metalsoft-io/metalcloud-cli/pkg/api"
 	"github.com/metalsoft-io/metalcloud-cli/pkg/formatter"
@@ -120,19 +119,6 @@ var serverComponentPrintConfig = formatter.PrintConfig{
 	},
 }
 
-type serverComponentRaw struct {
-	Id                         interface{} `json:"id"`
-	ExternalId                 *string     `json:"externalId"`
-	Name                       *string     `json:"name"`
-	Type                       *string     `json:"type"`
-	FirmwareVersion            *string     `json:"firmwareVersion"`
-	FirmwareTargetVersion      *string     `json:"firmwareTargetVersion"`
-	FirmwareUpdateable         interface{} `json:"firmwareUpdateable"`
-	FirmwareStatus             *string     `json:"firmwareStatus"`
-	FirmwareUpdateTimestamp    interface{} `json:"firmwareUpdateTimestamp"`
-	FirmwareScheduledTimestamp interface{} `json:"firmwareScheduledTimestamp"`
-}
-
 // ServerFirmwareComponentsList lists all firmware components for a server
 func ServerFirmwareComponentsList(ctx context.Context, serverId string) error {
 	logger.Get().Info().Msgf("Listing firmware components for server '%s'", serverId)
@@ -144,19 +130,14 @@ func ServerFirmwareComponentsList(ctx context.Context, serverId string) error {
 
 	client := api.GetApiClient(ctx)
 
-	rawItems, meta, err := utils.FetchAllPagesRaw(func(p float32) (*http.Response, error) {
-		_, httpRes, _ := client.ServerFirmwareAPI.GetServerComponents(ctx, serverIdNumeric).SortBy([]string{"id:ASC"}).Page(p).Limit(100).Execute()
-		return httpRes, nil
-	})
+	request := client.ServerFirmwareAPI.GetServerComponents(ctx, serverIdNumeric).SortBy([]string{"id:ASC"})
+
+	components, meta, err := utils.FetchAllPages(request)
 	if err != nil {
 		return err
 	}
-	records, err := utils.UnmarshalRawItems[serverComponentRaw](rawItems)
-	if err != nil {
-		return fmt.Errorf("failed to parse server components: %w", err)
-	}
 
-	return utils.PrintAllRaw(rawItems, records, meta, len(records), &serverComponentPrintConfig)
+	return utils.PrintAll(components, meta, len(components), &serverComponentPrintConfig)
 }
 
 // ServerFirmwareComponentGet retrieves information about a specific component

@@ -14,11 +14,12 @@ variables that define its behavior. Extension instances go through various lifec
 including deployment, running, and deletion.
 
 Available Commands:
-  list     List all extension instances in an infrastructure
-  get      Retrieve detailed extension instance information
-  create   Deploy new extension instance in infrastructure
-  update   Modify existing extension instance configuration
-  delete   Remove extension instance from infrastructure
+  list         List all extension instances in an infrastructure
+  get          Retrieve detailed extension instance information
+  credentials  Retrieve the credentials of an extension instance
+  create       Deploy new extension instance in infrastructure
+  update       Modify existing extension instance configuration
+  delete       Remove extension instance from infrastructure
 
 Examples:
   metalcloud extension-instance list my-infrastructure
@@ -49,6 +50,7 @@ Examples:
 
 * [metalcloud-cli](metalcloud-cli.md)	 - MetalCloud CLI
 * [metalcloud-cli extension-instance create](metalcloud-cli_extension-instance_create.md)	 - Deploy new extension instance in specified infrastructure
+* [metalcloud-cli extension-instance credentials](metalcloud-cli_extension-instance_credentials.md)	 - Retrieve the credentials of an extension instance
 * [metalcloud-cli extension-instance delete](metalcloud-cli_extension-instance_delete.md)	 - Remove extension instance from infrastructure
 * [metalcloud-cli extension-instance get](metalcloud-cli_extension-instance_get.md)	 - Retrieve detailed information about a specific extension instance
 * [metalcloud-cli extension-instance list](metalcloud-cli_extension-instance_list.md)	 - List all extension instances in an infrastructure

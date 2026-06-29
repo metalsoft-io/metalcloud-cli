@@ -465,12 +465,12 @@ EXAMPLES:
 				}
 
 				if vmPoolFlags.infrastructureId != "" {
-					infraId, err := strconv.ParseFloat(vmPoolFlags.infrastructureId, 32)
+					infraId, err := strconv.ParseInt(vmPoolFlags.infrastructureId, 10, 64)
 					if err != nil {
 						return fmt.Errorf("invalid infrastructure ID: '%s'", vmPoolFlags.infrastructureId)
 					}
 
-					importVMs.InfrastructureId = sdk.PtrFloat32(float32(infraId))
+					importVMs.InfrastructureId = sdk.PtrInt64(infraId)
 				}
 			}
 

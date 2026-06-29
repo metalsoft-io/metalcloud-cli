@@ -207,7 +207,7 @@ Configuration File Format (JSON):
 			}
 
 			if userFlags.accountId != 0 {
-				userConfig.AccountId = sdk.PtrFloat32(float32(userFlags.accountId))
+				userConfig.AccountId = sdk.PtrInt64(int64(userFlags.accountId))
 			}
 
 			if userFlags.createWithAccount {
@@ -346,44 +346,6 @@ Examples:
 		Args:         cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			return user.GetLimits(cmd.Context(), args[0])
-		},
-	}
-
-	userLimitsUpdateCmd = &cobra.Command{
-		Use:     "limits-update user_id",
-		Aliases: []string{"update-limits"},
-		Short:   "Update resource limits for a specific user",
-		Long: `Update the resource limits for a specific user account to control their resource allocation.
-
-This command allows you to modify compute node, drive, and infrastructure limits that restrict
-how many resources the user can provision. Changes take effect immediately.
-
-Arguments:
-  user_id                 The numeric ID of the user whose limits to update
-
-Required Flags:
-  --config-source         Source of user limits configuration (JSON file path or 'pipe')
-
-Configuration File Format (JSON):
-  {
-    "computeNodesInstancesToProvisionLimit": 100,
-    "drivesAttachedToInstancesLimit": 200,
-    "infrastructuresLimit": 10
-  }
-
-Examples:
-  metalcloud-cli user limits-update 12345 --config-source limits.json
-  echo '{"computeNodesInstancesToProvisionLimit": 50}' | metalcloud-cli user limits-update 12345 --config-source pipe`,
-		SilenceUsage: true,
-		Annotations:  map[string]string{system.REQUIRED_PERMISSION: system.PERMISSION_USERS_WRITE},
-		Args:         cobra.ExactArgs(1),
-		RunE: func(cmd *cobra.Command, args []string) error {
-			config, err := utils.ReadConfigFromPipeOrFile(userFlags.configSource)
-			if err != nil {
-				return err
-			}
-
-			return user.UpdateLimits(cmd.Context(), args[0], config)
 		},
 	}
 
@@ -578,78 +540,6 @@ Examples:
 		},
 	}
 
-	userPermissionsGetCmd = &cobra.Command{
-		Use:     "permissions user_id",
-		Aliases: []string{"get-permissions"},
-		Short:   "Display permissions for a specific user",
-		Long: `Retrieve and display all permissions associated with a specific user account.
-
-This command shows the user's permission configuration including resource types,
-resource IDs, and permission levels. Permissions control what resources the user
-can access and what operations they can perform.
-
-Arguments:
-  user_id                 The numeric ID of the user whose permissions to display
-
-Examples:
-  metalcloud-cli user permissions 12345
-  metalcloud-cli user get-permissions 12345`,
-		SilenceUsage: true,
-		Annotations:  map[string]string{system.REQUIRED_PERMISSION: system.PERMISSION_USERS_READ},
-		Args:         cobra.ExactArgs(1),
-		RunE: func(cmd *cobra.Command, args []string) error {
-			return user.GetPermissions(cmd.Context(), args[0])
-		},
-	}
-
-	userPermissionsUpdateCmd = &cobra.Command{
-		Use:     "permissions-update user_id",
-		Aliases: []string{"update-permissions"},
-		Short:   "Update permissions for a specific user",
-		Long: `Update the permissions configuration for a specific user account.
-
-This command allows modifying user permissions including resource access levels and
-operational capabilities. Permissions changes take effect immediately and control
-what resources the user can access and what operations they can perform.
-
-Arguments:
-  user_id                 The numeric ID of the user whose permissions to update
-
-Required Flags:
-  --config-source         Source of user permissions configuration (JSON file path or 'pipe')
-
-Configuration File Format (JSON):
-  {
-    "permissions": [
-      {
-        "resourceType": "infrastructure",
-        "resourceId": "123",
-        "permissionLevel": "read"
-      },
-      {
-        "resourceType": "account",
-        "resourceId": "456",
-        "permissionLevel": "write"
-      }
-    ]
-  }
-
-Examples:
-  metalcloud-cli user permissions-update 12345 --config-source permissions.json
-  echo '{"permissions": [{"resourceType": "infrastructure", "resourceId": "123", "permissionLevel": "read"}]}' | metalcloud-cli user permissions-update 12345 --config-source pipe`,
-		SilenceUsage: true,
-		Annotations:  map[string]string{system.REQUIRED_PERMISSION: system.PERMISSION_USERS_AND_PERMISSIONS_WRITE},
-		Args:         cobra.ExactArgs(1),
-		RunE: func(cmd *cobra.Command, args []string) error {
-			config, err := utils.ReadConfigFromPipeOrFile(userFlags.configSource)
-			if err != nil {
-				return err
-			}
-
-			return user.UpdatePermissions(cmd.Context(), args[0], config)
-		},
-	}
-
 	userApiKeyGetCmd = &cobra.Command{
 		Use:   "api-key",
 		Short: "Get the current user's API key",
@@ -806,11 +696,8 @@ func init() {
 	userCmd.AddCommand(userArchiveCmd)
 	userCmd.AddCommand(userUnarchiveCmd)
 
-	// User limits update
+	// User limits (effective quota limits, read-only)
 	userCmd.AddCommand(userLimitsGetCmd)
-	userCmd.AddCommand(userLimitsUpdateCmd)
-	userLimitsUpdateCmd.Flags().StringVar(&userFlags.configSource, "config-source", "", "Source of the user limits configuration. Can be 'pipe' or path to a JSON file.")
-	userLimitsUpdateCmd.MarkFlagsOneRequired("config-source")
 
 	// User config update
 	userCmd.AddCommand(userConfigUpdateCmd)
@@ -834,12 +721,6 @@ func init() {
 	userSuspendCmd.Flags().StringVar(&userFlags.reason, "reason", "", "The reason for suspending the user.")
 	userSuspendCmd.MarkFlagRequired("reason")
 	userCmd.AddCommand(userUnsuspendCmd)
-
-	// Permissions
-	userCmd.AddCommand(userPermissionsGetCmd)
-	userCmd.AddCommand(userPermissionsUpdateCmd)
-	userPermissionsUpdateCmd.Flags().StringVar(&userFlags.configSource, "config-source", "", "Source of the user permissions configuration. Can be 'pipe' or path to a JSON file.")
-	userPermissionsUpdateCmd.MarkFlagsOneRequired("config-source")
 
 	// Set password
 	userCmd.AddCommand(userSetPasswordCmd)

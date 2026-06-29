@@ -13,23 +13,6 @@ import (
 	"github.com/metalsoft-io/metalcloud-cli/pkg/utils"
 )
 
-// TODO: vmInstanceRaw works around the SDK bug where VMInstance.Links is typed as
-// map[string]interface{} but the API may return an array.
-type vmInstanceRaw struct {
-	Id               float32     `json:"id"`
-	Label            string      `json:"label"`
-	InfrastructureId float32     `json:"infrastructureId"`
-	GroupId          float32     `json:"groupId"`
-	ServiceStatus    string      `json:"serviceStatus"`
-	TypeId           float32     `json:"typeId"`
-	DiskSizeGB       float32     `json:"diskSizeGB"`
-	RamGB            float32     `json:"ramGB"`
-	CpuCores         float32     `json:"cpuCores"`
-	CreatedTimestamp string      `json:"createdTimestamp"`
-	UpdatedTimestamp string      `json:"updatedTimestamp"`
-	Links            interface{} `json:"links,omitempty"`
-}
-
 var vmInstancePrintConfig = formatter.PrintConfig{
 	FieldsConfig: map[string]formatter.RecordFieldConfig{
 		"Id": {
@@ -85,12 +68,12 @@ var vmInstancePrintConfig = formatter.PrintConfig{
 func VMInstanceGet(ctx context.Context, infrastructureId string, vmInstanceId string) error {
 	logger.Get().Info().Msgf("Get VM instance details for %s in infrastructure %s", vmInstanceId, infrastructureId)
 
-	infraIdNumerical, err := utils.GetFloat32FromString(infrastructureId)
+	infraIdNumerical, err := utils.GetInt64FromString(infrastructureId)
 	if err != nil {
 		return err
 	}
 
-	vmInstanceIdNumerical, err := utils.GetFloat32FromString(vmInstanceId)
+	vmInstanceIdNumerical, err := utils.GetInt64FromString(vmInstanceId)
 	if err != nil {
 		return err
 	}
@@ -109,41 +92,32 @@ func VMInstanceGet(ctx context.Context, infrastructureId string, vmInstanceId st
 func VMInstanceList(ctx context.Context, infrastructureId string) error {
 	logger.Get().Info().Msgf("List all VM instances for infrastructure %s", infrastructureId)
 
-	infraIdNumerical, err := utils.GetFloat32FromString(infrastructureId)
+	infraIdNumerical, err := utils.GetInt64FromString(infrastructureId)
 	if err != nil {
 		return err
 	}
 
 	client := api.GetApiClient(ctx)
 
-	// Uses FetchAllPagesRaw to work around the SDK bug where VMInstance.Links is typed as
-	// map[string]interface{} but the API may return an array.
-	rawItems, meta, err := utils.FetchAllPagesRaw(func(p float32) (*http.Response, error) {
-		_, httpRes, _ := client.VMInstanceAPI.GetInfrastructureVMInstances(ctx, infraIdNumerical).
-			Page(p).Limit(100).Execute()
-		return httpRes, nil
-	})
+	request := client.VMInstanceAPI.GetInfrastructureVMInstances(ctx, infraIdNumerical)
+
+	records, meta, err := utils.FetchAllPages(request)
 	if err != nil {
 		return err
 	}
 
-	records, err := utils.UnmarshalRawItems[vmInstanceRaw](rawItems)
-	if err != nil {
-		return fmt.Errorf("failed to parse VM instances: %w", err)
-	}
-
-	return utils.PrintAllRaw(rawItems, records, meta, len(records), &vmInstancePrintConfig)
+	return utils.PrintAll(records, meta, len(records), &vmInstancePrintConfig)
 }
 
 func VMInstanceGetConfig(ctx context.Context, infrastructureId string, vmInstanceId string) error {
 	logger.Get().Info().Msgf("Get VM instance configuration for %s in infrastructure %s", vmInstanceId, infrastructureId)
 
-	infraIdNumerical, err := utils.GetFloat32FromString(infrastructureId)
+	infraIdNumerical, err := utils.GetInt64FromString(infrastructureId)
 	if err != nil {
 		return err
 	}
 
-	vmInstanceIdNumerical, err := utils.GetFloat32FromString(vmInstanceId)
+	vmInstanceIdNumerical, err := utils.GetInt64FromString(vmInstanceId)
 	if err != nil {
 		return err
 	}
@@ -162,12 +136,12 @@ func VMInstanceGetConfig(ctx context.Context, infrastructureId string, vmInstanc
 func VMInstancePowerControl(ctx context.Context, infrastructureId string, vmInstanceId string, action string) error {
 	logger.Get().Info().Msgf("Performing %s action on VM instance %s in infrastructure %s", action, vmInstanceId, infrastructureId)
 
-	infraIdNumerical, err := utils.GetFloat32FromString(infrastructureId)
+	infraIdNumerical, err := utils.GetInt64FromString(infrastructureId)
 	if err != nil {
 		return err
 	}
 
-	vmInstanceIdNumerical, err := utils.GetFloat32FromString(vmInstanceId)
+	vmInstanceIdNumerical, err := utils.GetInt64FromString(vmInstanceId)
 	if err != nil {
 		return err
 	}
@@ -200,12 +174,12 @@ func VMInstancePowerControl(ctx context.Context, infrastructureId string, vmInst
 func VMInstanceGetPowerStatus(ctx context.Context, infrastructureId string, vmInstanceId string) error {
 	logger.Get().Info().Msgf("Get VM instance power status for %s in infrastructure %s", vmInstanceId, infrastructureId)
 
-	infraIdNumerical, err := utils.GetFloat32FromString(infrastructureId)
+	infraIdNumerical, err := utils.GetInt64FromString(infrastructureId)
 	if err != nil {
 		return err
 	}
 
-	vmInstanceIdNumerical, err := utils.GetFloat32FromString(vmInstanceId)
+	vmInstanceIdNumerical, err := utils.GetInt64FromString(vmInstanceId)
 	if err != nil {
 		return err
 	}
@@ -225,19 +199,19 @@ func VMInstanceGetPowerStatus(ctx context.Context, infrastructureId string, vmIn
 func VMInstanceGetCredentials(ctx context.Context, infraIdStr string, vmInstanceIdStr string) error {
 	logger.Get().Info().Msgf("Getting credentials for VM instance '%s' in infrastructure '%s'", vmInstanceIdStr, infraIdStr)
 
-	infraId, err := strconv.ParseInt(infraIdStr, 10, 32)
+	infraId, err := strconv.ParseInt(infraIdStr, 10, 64)
 	if err != nil {
 		return fmt.Errorf("invalid infrastructure ID '%s': %w", infraIdStr, err)
 	}
 
-	vmInstanceId, err := strconv.ParseInt(vmInstanceIdStr, 10, 32)
+	vmInstanceId, err := strconv.ParseInt(vmInstanceIdStr, 10, 64)
 	if err != nil {
 		return fmt.Errorf("invalid VM instance ID '%s': %w", vmInstanceIdStr, err)
 	}
 
 	client := api.GetApiClient(ctx)
 
-	creds, httpRes, err := client.VMInstanceAPI.GetVMInstanceCredentials(ctx, int32(infraId), int32(vmInstanceId)).Execute()
+	creds, httpRes, err := client.VMInstanceAPI.GetVMInstanceCredentials(ctx, infraId, vmInstanceId).Execute()
 	if err := response_inspector.InspectResponse(httpRes, err); err != nil {
 		return err
 	}

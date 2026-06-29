@@ -12,18 +12,17 @@ import (
 // roleItem matches the SDK Role struct: id and permissions are string/[]string.
 var roleItem = map[string]interface{}{
 	"id": "1", "name": "admin", "label": "Admin",
-	"type":        "system",
-	"permissions": []interface{}{},
+	"type":           "system",
+	"permissions":    []interface{}{},
+	"quotaProfileId": nil,
 }
 
 func newRoleTestServer() *httptest.Server {
 	mux := newMux(allPerms, func(mux *http.ServeMux) {
-		// GetRoles returns RoleList: {"roles": [...]}
+		// GetRoles returns a paginated list: {"data": [...], "meta": {...}}
 		mux.HandleFunc("/api/v2/roles", func(w http.ResponseWriter, r *http.Request) {
 			w.Header().Set("Content-Type", "application/json")
-			_ = json.NewEncoder(w).Encode(map[string]interface{}{
-				"roles": []interface{}{roleItem},
-			})
+			_ = json.NewEncoder(w).Encode(paginatedList(roleItem))
 		})
 		mux.HandleFunc("/api/v2/roles/admin", func(w http.ResponseWriter, r *http.Request) {
 			w.Header().Set("Content-Type", "application/json")
@@ -100,9 +99,7 @@ func TestRoleCreate(t *testing.T) {
 				return
 			}
 			w.Header().Set("Content-Type", "application/json")
-			_ = json.NewEncoder(w).Encode(map[string]interface{}{
-				"roles": []interface{}{roleItem},
-			})
+			_ = json.NewEncoder(w).Encode(paginatedList(roleItem))
 		})
 		mux.HandleFunc("/api/v2/roles/admin", func(w http.ResponseWriter, r *http.Request) {
 			w.Header().Set("Content-Type", "application/json")
@@ -129,9 +126,7 @@ func TestRoleUpdate(t *testing.T) {
 	mux := newMux(allPerms, func(mux *http.ServeMux) {
 		mux.HandleFunc("/api/v2/roles", func(w http.ResponseWriter, r *http.Request) {
 			w.Header().Set("Content-Type", "application/json")
-			_ = json.NewEncoder(w).Encode(map[string]interface{}{
-				"roles": []interface{}{roleItem},
-			})
+			_ = json.NewEncoder(w).Encode(paginatedList(roleItem))
 		})
 		mux.HandleFunc("/api/v2/roles/admin", func(w http.ResponseWriter, r *http.Request) {
 			if r.Method == http.MethodPatch {
@@ -162,9 +157,7 @@ func TestRoleDelete(t *testing.T) {
 	mux := newMux(allPerms, func(mux *http.ServeMux) {
 		mux.HandleFunc("/api/v2/roles", func(w http.ResponseWriter, r *http.Request) {
 			w.Header().Set("Content-Type", "application/json")
-			_ = json.NewEncoder(w).Encode(map[string]interface{}{
-				"roles": []interface{}{roleItem},
-			})
+			_ = json.NewEncoder(w).Encode(paginatedList(roleItem))
 		})
 		mux.HandleFunc("/api/v2/roles/admin", func(w http.ResponseWriter, r *http.Request) {
 			if r.Method == http.MethodDelete {

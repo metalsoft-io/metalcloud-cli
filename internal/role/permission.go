@@ -37,5 +37,5 @@ func ListPermissions(ctx context.Context) error {
 		return err
 	}
 
-	return formatter.PrintResult(permissions.Permissions, &permissionPrintConfig)
+	return formatter.PrintResult(permissions.Data, &permissionPrintConfig)
 }

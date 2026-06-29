@@ -31,15 +31,18 @@ func TestMain(m *testing.M) {
 
 // minimal NetworkDevice JSON — only required fields
 const ndItem = `{
-	"id":"1","revision":1,"status":"active","siteId":1,
-	"identifierString":"sw-01","description":"","chassisIdentifier":"",
+	"id":"1","revision":1,"status":"active","vendorId":1,"siteId":1,
+	"identifierString":"sw-01","applyIdentifierAsHostnameOnNextDeploy":false,
+	"description":"","chassisIdentifier":"",
 	"country":"","city":"","datacenterMeta":"","datacenterRoom":"","datacenterRack":"",
 	"rackPositionUpperUnit":0,"rackPositionLowerUnit":0,
 	"managementAddress":"10.0.0.1","managementAddressPrefixLength":24,
 	"managementAddressGateway":"10.0.0.254","managementPort":22,
-	"syslogEnabled":0,"username":"admin","managementMacAddress":"AA:BB:CC:DD:EE:01",
+	"syslogEnabled":0,"snmpServiceEnabled":false,"snmpMonitoringEnabled":false,
+	"username":"admin","managementMacAddress":"AA:BB:CC:DD:EE:01",
 	"serialNumber":"SN001","driver":"sonic_enterprise","position":"leaf",
-	"orderIndex":1,"tags":[],"readyForInitialConfiguration":0,
+	"driftDetectionSyncStatus":"",
+	"orderIndex":1,"tags":[],"tagsMap":{},"readyForInitialConfiguration":0,
 	"bootstrapReadinessCheckInProgress":0,"subnetOobId":0,"subnetOobIndex":0,
 	"requiresOsInstall":false,"bootstrapExpectedPartnerHostname":"",
 	"loopbackAddressIpv6":"","asn":65000,"vtepAddressIpv6":"",
@@ -98,15 +101,18 @@ func TestNetworkDeviceList_Pagination(t *testing.T) {
 		items := make([]string, n)
 		for i := range items {
 			items[i] = fmt.Sprintf(`{
-				"id":"%d","revision":1,"status":"active","siteId":1,
-				"identifierString":"sw-%d","description":"","chassisIdentifier":"",
+				"id":"%d","revision":1,"status":"active","vendorId":1,"siteId":1,
+				"identifierString":"sw-%d","applyIdentifierAsHostnameOnNextDeploy":false,
+				"description":"","chassisIdentifier":"",
 				"country":"","city":"","datacenterMeta":"","datacenterRoom":"","datacenterRack":"",
 				"rackPositionUpperUnit":0,"rackPositionLowerUnit":0,
 				"managementAddress":"10.0.0.1","managementAddressPrefixLength":24,
 				"managementAddressGateway":"10.0.0.254","managementPort":22,
-				"syslogEnabled":0,"username":"admin","managementMacAddress":"AA:BB:CC:DD:EE:01",
+				"syslogEnabled":0,"snmpServiceEnabled":false,"snmpMonitoringEnabled":false,
+				"username":"admin","managementMacAddress":"AA:BB:CC:DD:EE:01",
 				"serialNumber":"SN%d","driver":"sonic_enterprise","position":"leaf",
-				"orderIndex":1,"tags":[],"readyForInitialConfiguration":0,
+				"driftDetectionSyncStatus":"",
+				"orderIndex":1,"tags":[],"tagsMap":{},"readyForInitialConfiguration":0,
 				"bootstrapReadinessCheckInProgress":0,"subnetOobId":0,"subnetOobIndex":0,
 				"requiresOsInstall":false,"bootstrapExpectedPartnerHostname":"",
 				"loopbackAddressIpv6":"","asn":65000,"vtepAddressIpv6":"",
@@ -493,6 +499,7 @@ func TestNetworkDeviceGetCredentials_InvalidId(t *testing.T) {
 const ndPortItem = `{
 	"interfaceId":1,"networkDeviceId":1,"interfaceName":"Ethernet1","kind":"port",
 	"dirtyBit":0,"cachedUpdatedTimestamp":"2024-01-01T00:00:00Z",
+	"tags":{},"config":{"revision":1},"ipv4":{"addresses":[]},"ipv6":{"addresses":[]},
 	"portName":"Ethernet1","enabled":true,"active":true,
 	"linkSpeed":10000,"linkDuplex":"full","utilizationIn":0,"utilizationOut":0
 }`

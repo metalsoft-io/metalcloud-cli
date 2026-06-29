@@ -11,7 +11,8 @@ import (
 // eventItem satisfies sdk.Event required fields.
 var eventItem = map[string]interface{}{
 	"id":                 "1",
-	"type":               "server.provision",
+	"type":               "cluster_deployed",
+	"level":              "info",
 	"severity":           "info",
 	"visibility":         "public",
 	"title":              "Server provisioned",
@@ -135,7 +136,8 @@ func TestEventGet_NoSeverity(t *testing.T) {
 		mux.HandleFunc("/api/v2/events/7", func(w http.ResponseWriter, r *http.Request) {
 			w.Header().Set("Content-Type", "application/json")
 			_ = json.NewEncoder(w).Encode(map[string]interface{}{
-				"id": "7", "type": "server.provision", "visibility": "private",
+				"id": "7", "type": "cluster_deployed", "visibility": "private",
+				"level": "info", "message": "no severity provided",
 				"title": "No severity event", "occurredTimestamp": "2024-01-01T00:00:00Z",
 			})
 		})

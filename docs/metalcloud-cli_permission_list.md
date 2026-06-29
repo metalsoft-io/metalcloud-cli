@@ -1,33 +1,18 @@
 ## metalcloud-cli permission list
 
-List all available system permissions
+List permissions
 
 ### Synopsis
 
-List all available system permissions.
+List all permissions.
 
-This command displays all permissions available in the MetalCloud system, including
-their IDs, names, labels, and descriptions. Permissions control access to various
-system resources and operations.
-
-The output includes:
-  - ID: Unique identifier for the permission
-  - Label: Human-readable label for the permission
-  - Name: Technical name of the permission
-  - Description: Detailed description of what the permission allows
-
-Required Permissions:
-  - roles:read: Required to view permission information
+This command displays information about all permissions including their IDs,
+names, labels, types, and descriptions.
 
 Examples:
   # List all permissions
   metalcloud-cli permission list
-  
-  # List permissions using alias
-  metalcloud-cli permissions ls
-  
-  # List permissions with JSON output format
-  metalcloud-cli permission list --format json
+
 
 ```
 metalcloud-cli permission list [flags]
@@ -54,5 +39,5 @@ metalcloud-cli permission list [flags]
 
 ### SEE ALSO
 
-* [metalcloud-cli permission](metalcloud-cli_permission.md)	 - Manage system permissions and access control
+* [metalcloud-cli permission](metalcloud-cli_permission.md)	 - Permission management
 

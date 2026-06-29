@@ -56,6 +56,12 @@ var networkDeviceItem = map[string]interface{}{
 	"secretsMaterializedForOSAssets":   map[string]interface{}{},
 	"bootstrapReadinessCheckResult":    map[string]interface{}{},
 	"isGateway":                        false,
+	"vendorId":                         1.0,
+	"applyIdentifierAsHostnameOnNextDeploy": false,
+	"snmpServiceEnabled":               false,
+	"snmpMonitoringEnabled":            false,
+	"driftDetectionSyncStatus":         "synced",
+	"tagsMap":                          map[string]interface{}{},
 }
 
 func newNetworkDeviceTestServer() *httptest.Server {

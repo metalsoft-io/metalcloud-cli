@@ -3,7 +3,6 @@ package extension_instance
 import (
 	"context"
 	"fmt"
-	"net/http"
 	"strconv"
 
 	"github.com/metalsoft-io/metalcloud-cli/internal/infrastructure"
@@ -14,16 +13,6 @@ import (
 	"github.com/metalsoft-io/metalcloud-cli/pkg/utils"
 	sdk "github.com/metalsoft-io/metalcloud-sdk-go"
 )
-
-type extensionInstanceRaw struct {
-	Id               interface{} `json:"id"`
-	Label            *string     `json:"label"`
-	ExtensionId      interface{} `json:"extensionId"`
-	InfrastructureId interface{} `json:"infrastructureId"`
-	ServiceStatus    *string     `json:"serviceStatus"`
-	CreatedTimestamp interface{} `json:"createdTimestamp"`
-	UpdatedTimestamp interface{} `json:"updatedTimestamp"`
-}
 
 var extensionInstancePrintConfig = formatter.PrintConfig{
 	FieldsConfig: map[string]formatter.RecordFieldConfig{
@@ -48,20 +37,15 @@ var extensionInstancePrintConfig = formatter.PrintConfig{
 			Transformer: formatter.FormatStatusValue,
 			Order:       5,
 		},
-		"CreatedTimestamp": {
-			Title:       "Created",
-			Transformer: formatter.FormatDateTimeValue,
-			Order:       6,
-		},
 		"UpdatedTimestamp": {
 			Title:       "Updated",
 			Transformer: formatter.FormatDateTimeValue,
-			Order:       7,
+			Order:       6,
 		},
 	},
 }
 
-func ExtensionInstanceList(ctx context.Context, infrastructureIdOrLabel string) error {
+func ExtensionInstanceList(ctx context.Context, infrastructureIdOrLabel string, filterExtensionId []string, filterServiceStatus []string, filterConfigDeployStatus []string, filterConfigDeployType []string) error {
 	logger.Get().Info().Msgf("List all extension instances for infrastructure %s", infrastructureIdOrLabel)
 
 	infra, err := infrastructure.GetInfrastructureByIdOrLabel(ctx, infrastructureIdOrLabel)
@@ -70,20 +54,30 @@ func ExtensionInstanceList(ctx context.Context, infrastructureIdOrLabel string) 
 	}
 
 	client := api.GetApiClient(ctx)
+	request := client.ExtensionInstanceAPI.GetExtensionInstances(ctx, infra.Id).SortBy([]string{"id:ASC"})
 
-	rawItems, meta, err := utils.FetchAllPagesRaw(func(p float32) (*http.Response, error) {
-		_, httpRes, _ := client.ExtensionInstanceAPI.GetExtensionInstances(ctx, float32(infra.Id)).SortBy([]string{"id:ASC"}).Page(p).Limit(100).Execute()
-		return httpRes, nil
-	})
+	if len(filterExtensionId) > 0 {
+		request = request.FilterExtensionId(utils.ProcessFilterStringSlice(filterExtensionId))
+	}
+
+	if len(filterServiceStatus) > 0 {
+		request = request.FilterServiceStatus(utils.ProcessFilterStringSlice(filterServiceStatus))
+	}
+
+	if len(filterConfigDeployStatus) > 0 {
+		request = request.FilterConfigDeployStatus(utils.ProcessFilterStringSlice(filterConfigDeployStatus))
+	}
+
+	if len(filterConfigDeployType) > 0 {
+		request = request.FilterConfigDeployType(utils.ProcessFilterStringSlice(filterConfigDeployType))
+	}
+
+	instances, meta, err := utils.FetchAllPages(request)
 	if err != nil {
 		return err
 	}
-	records, err := utils.UnmarshalRawItems[extensionInstanceRaw](rawItems)
-	if err != nil {
-		return fmt.Errorf("failed to parse extension instances: %w", err)
-	}
 
-	return utils.PrintAllRaw(rawItems, records, meta, len(records), &extensionInstancePrintConfig)
+	return utils.PrintAll(instances, meta, len(instances), &extensionInstancePrintConfig)
 }
 
 func ExtensionInstanceGet(ctx context.Context, extensionInstanceId string) error {
@@ -104,6 +98,24 @@ func ExtensionInstanceGet(ctx context.Context, extensionInstanceId string) error
 	return formatter.PrintResult(instance, &extensionInstancePrintConfig)
 }
 
+func ExtensionInstanceGetCredentials(ctx context.Context, extensionInstanceId string) error {
+	logger.Get().Info().Msgf("Get credentials for extension instance %s", extensionInstanceId)
+
+	id, err := GetExtensionInstanceId(extensionInstanceId)
+	if err != nil {
+		return err
+	}
+
+	client := api.GetApiClient(ctx)
+
+	credentials, httpRes, err := client.ExtensionInstanceAPI.GetExtensionInstanceCredentials(ctx, id).Execute()
+	if err := response_inspector.InspectResponse(httpRes, err); err != nil {
+		return err
+	}
+
+	return formatter.PrintResult(credentials, &formatter.PrintConfig{})
+}
+
 func ExtensionInstanceCreate(ctx context.Context, infrastructureIdOrLabel string, payload sdk.CreateExtensionInstance) error {
 	logger.Get().Info().Msgf("Create new extension instance in infrastructure %s", infrastructureIdOrLabel)
 
@@ -114,7 +126,7 @@ func ExtensionInstanceCreate(ctx context.Context, infrastructureIdOrLabel string
 
 	client := api.GetApiClient(ctx)
 
-	instance, httpRes, err := client.ExtensionInstanceAPI.CreateExtensionInstance(ctx, float32(infra.Id)).CreateExtensionInstance(payload).Execute()
+	instance, httpRes, err := client.ExtensionInstanceAPI.CreateExtensionInstance(ctx, infra.Id).CreateExtensionInstance(payload).Execute()
 	if err := response_inspector.InspectResponse(httpRes, err); err != nil {
 		return err
 	}
@@ -179,12 +191,12 @@ func ExtensionInstanceDelete(ctx context.Context, extensionInstanceId string) er
 	return nil
 }
 
-func GetExtensionInstanceId(extensionInstanceId string) (float32, error) {
-	id, err := strconv.ParseFloat(extensionInstanceId, 32)
+func GetExtensionInstanceId(extensionInstanceId string) (int64, error) {
+	id, err := strconv.ParseInt(extensionInstanceId, 10, 64)
 	if err != nil {
 		err := fmt.Errorf("invalid extension instance ID: '%s'", extensionInstanceId)
 		logger.Get().Error().Err(err).Msg("")
 		return 0, err
 	}
-	return float32(id), nil
+	return id, nil
 }

@@ -102,6 +102,14 @@ func TestVmTypeVms_NoDatacenterName(t *testing.T) {
 			w.Header().Set("Content-Type", "application/json")
 			_ = json.NewEncoder(w).Encode(paginatedList(map[string]interface{}{
 				"id": 65, "name": "vm-65", "siteId": 2081, "powerState": "off",
+				"infrastructureId": 1, "userId": 1, "instanceId": 1, "vmInstanceId": 1,
+				"host": "host-1", "hosts": []interface{}{"host-1"},
+				"cpuCores": 4, "ramGB": 8, "diskSizeGB": 100, "typeId": 1, "poolId": 1,
+				"administrationState": "active",
+				"powerStateLastUpdatedTimestamp": "2024-01-01T00:00:00Z",
+				"createdTimestamp":               "2024-01-01T00:00:00Z",
+				"allocationTimestamp":            "2024-01-01T00:00:00Z",
+				"disks":                          []interface{}{},
 			}))
 		})
 	}))

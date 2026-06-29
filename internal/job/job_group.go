@@ -2,12 +2,8 @@ package job
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
-	"net/http"
 	"strconv"
-
-	sdk "github.com/metalsoft-io/metalcloud-sdk-go"
 
 	"github.com/metalsoft-io/metalcloud-cli/pkg/api"
 	"github.com/metalsoft-io/metalcloud-cli/pkg/formatter"
@@ -69,45 +65,26 @@ func JobGroupList(ctx context.Context, flags GroupListFlags) error {
 		request = request.SortBy([]string{"id:ASC"})
 	}
 
-	type jobGroupRaw struct {
-		Id                interface{} `json:"id"`
-		Type              *string     `json:"type"`
-		Description       *string     `json:"description"`
-		CreatedTimestamp  *string     `json:"createdTimestamp"`
-		FinishedTimestamp *string     `json:"finishedTimestamp"`
-	}
-
-	var rawItems []json.RawMessage
-	var meta sdk.PaginatedResponseMeta
-	var err error
-
 	switch {
 	case flags.Page > 0:
-		rawItems, meta, err = utils.FetchPageWindowRaw(func(p, l float32) (*http.Response, error) {
-			_, httpRes, _ := request.Page(p).Limit(l).Execute()
-			return httpRes, nil
-		}, flags.Page, flags.Limit)
+		records, meta, err := utils.FetchPageWindow(request, flags.Page, flags.Limit)
+		if err != nil {
+			return err
+		}
+		return utils.PrintAll(records, meta, len(records), &jobGroupPrintConfig)
 	case flags.Limit > 0:
-		rawItems, meta, err = utils.FetchUpToRaw(func(p, l float32) (*http.Response, error) {
-			_, httpRes, _ := request.Page(p).Limit(l).Execute()
-			return httpRes, nil
-		}, flags.Limit)
+		records, meta, err := utils.FetchUpTo(request, flags.Limit)
+		if err != nil {
+			return err
+		}
+		return utils.PrintAll(records, meta, len(records), &jobGroupPrintConfig)
 	default:
-		rawItems, meta, err = utils.FetchAllPagesRaw(func(page float32) (*http.Response, error) {
-			_, httpRes, _ := request.Page(page).Limit(100).Execute()
-			return httpRes, nil
-		})
+		records, meta, err := utils.FetchAllPages(request)
+		if err != nil {
+			return err
+		}
+		return utils.PrintAll(records, meta, len(records), &jobGroupPrintConfig)
 	}
-	if err != nil {
-		return err
-	}
-
-	records, err := utils.UnmarshalRawItems[jobGroupRaw](rawItems)
-	if err != nil {
-		return fmt.Errorf("failed to parse job groups: %w", err)
-	}
-
-	return utils.PrintAllRaw(rawItems, records, meta, len(records), &jobGroupPrintConfig)
 }
 
 func JobGroupGet(ctx context.Context, groupId string) error {
@@ -127,12 +104,12 @@ func JobGroupGet(ctx context.Context, groupId string) error {
 	return formatter.PrintResult(group, &jobGroupPrintConfig)
 }
 
-func getJobGroupId(groupId string) (float32, error) {
-	id, err := strconv.ParseFloat(groupId, 32)
+func getJobGroupId(groupId string) (int64, error) {
+	id, err := strconv.ParseInt(groupId, 10, 64)
 	if err != nil {
 		err := fmt.Errorf("invalid job group ID: '%s'", groupId)
 		logger.Get().Error().Err(err).Msg("")
 		return 0, err
 	}
-	return float32(id), nil
+	return id, nil
 }

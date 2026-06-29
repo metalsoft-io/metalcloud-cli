@@ -72,7 +72,7 @@ func TestExtensionInstanceList_HappyPath(t *testing.T) {
 	defer ts.Close()
 
 	ctx := testutils.SetupTestContext(ts.URL)
-	if err := ExtensionInstanceList(ctx, "infra-1"); err != nil {
+	if err := ExtensionInstanceList(ctx, "infra-1", nil, nil, nil, nil); err != nil {
 		t.Fatalf("expected nil error, got: %v", err)
 	}
 }
@@ -86,7 +86,7 @@ func TestExtensionInstanceList_InfraNotFound(t *testing.T) {
 	defer ts.Close()
 
 	ctx := testutils.SetupTestContext(ts.URL)
-	if err := ExtensionInstanceList(ctx, "no-such-infra"); err == nil {
+	if err := ExtensionInstanceList(ctx, "no-such-infra", nil, nil, nil, nil); err == nil {
 		t.Fatal("expected an error for missing infrastructure, got nil")
 	}
 }
@@ -100,7 +100,7 @@ func TestExtensionInstanceList_ServerError(t *testing.T) {
 	defer ts.Close()
 
 	ctx := testutils.SetupTestContext(ts.URL)
-	if err := ExtensionInstanceList(ctx, "infra-1"); err == nil {
+	if err := ExtensionInstanceList(ctx, "infra-1", nil, nil, nil, nil); err == nil {
 		t.Fatal("expected an error for HTTP 500, got nil")
 	}
 }
@@ -151,7 +151,7 @@ func TestExtensionInstanceCreate_HappyPath(t *testing.T) {
 
 	ctx := testutils.SetupTestContext(ts.URL)
 	payload := sdk.CreateExtensionInstance{
-		ExtensionId: sdk.PtrFloat32(5),
+		ExtensionId: sdk.PtrInt64(5),
 		Label:       sdk.PtrString("new-instance"),
 	}
 	if err := ExtensionInstanceCreate(ctx, "infra-1", payload); err != nil {

@@ -3,7 +3,6 @@ package firmware_binary
 import (
 	"context"
 	"fmt"
-	"net/http"
 	"strconv"
 
 	"github.com/metalsoft-io/metalcloud-cli/pkg/api"
@@ -13,20 +12,6 @@ import (
 	"github.com/metalsoft-io/metalcloud-cli/pkg/utils"
 	sdk "github.com/metalsoft-io/metalcloud-sdk-go"
 )
-
-type firmwareBinaryRaw struct {
-	Id                     interface{} `json:"id"`
-	Name                   *string     `json:"name"`
-	CatalogId              interface{} `json:"catalogId"`
-	PackageVersion         *string     `json:"packageVersion"`
-	UpdateSeverity         *string     `json:"updateSeverity"`
-	RebootRequired         interface{} `json:"rebootRequired"`
-	VendorReleaseTimestamp interface{} `json:"vendorReleaseTimestamp"`
-	PackageId              *string     `json:"packageId"`
-	ExternalId             *string     `json:"externalId"`
-	VendorDownloadUrl      *string     `json:"vendorDownloadUrl"`
-	VendorInfoUrl          *string     `json:"vendorInfoUrl"`
-}
 
 var firmwareBinaryPrintConfig = formatter.PrintConfig{
 	FieldsConfig: map[string]formatter.RecordFieldConfig{
@@ -83,19 +68,14 @@ func FirmwareBinaryList(ctx context.Context) error {
 
 	client := api.GetApiClient(ctx)
 
-	rawItems, meta, err := utils.FetchAllPagesRaw(func(p float32) (*http.Response, error) {
-		_, httpRes, _ := client.FirmwareBinaryAPI.GetFirmwareBinaries(ctx).SortBy([]string{"id:ASC"}).Page(p).Limit(100).Execute()
-		return httpRes, nil
-	})
+	request := client.FirmwareBinaryAPI.GetFirmwareBinaries(ctx).SortBy([]string{"id:ASC"})
+
+	records, meta, err := utils.FetchAllPages(request)
 	if err != nil {
 		return err
 	}
-	records, err := utils.UnmarshalRawItems[firmwareBinaryRaw](rawItems)
-	if err != nil {
-		return fmt.Errorf("failed to parse firmware binaries: %w", err)
-	}
 
-	return utils.PrintAllRaw(rawItems, records, meta, len(records), &firmwareBinaryPrintConfig)
+	return utils.PrintAll(records, meta, len(records), &firmwareBinaryPrintConfig)
 }
 
 func FirmwareBinaryGet(ctx context.Context, firmwareBinaryId string) error {
@@ -193,13 +173,13 @@ func FirmwareBinaryConfigExample(ctx context.Context) error {
 	return formatter.PrintResult(firmwareBinaryConfiguration, nil)
 }
 
-func getFirmwareBinaryId(firmwareBinaryId string) (float32, error) {
-	firmwareBinaryIdNumeric, err := strconv.ParseFloat(firmwareBinaryId, 32)
+func getFirmwareBinaryId(firmwareBinaryId string) (int64, error) {
+	firmwareBinaryIdNumeric, err := strconv.ParseInt(firmwareBinaryId, 10, 64)
 	if err != nil {
 		err := fmt.Errorf("invalid firmware binary ID: '%s'", firmwareBinaryId)
 		logger.Get().Error().Err(err).Msg("")
 		return 0, err
 	}
 
-	return float32(firmwareBinaryIdNumeric), nil
+	return firmwareBinaryIdNumeric, nil
 }

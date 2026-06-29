@@ -13,23 +13,6 @@ import (
 	sdk "github.com/metalsoft-io/metalcloud-sdk-go"
 )
 
-// VMListRaw mirrors the JSON returned by the VM list endpoints (vm-pool vms,
-// vm-type vms, cluster-host vms). It is used for table rendering of raw API
-// responses, which the SDK VM model rejects due to schema drift.
-type VMListRaw struct {
-	Id                  interface{} `json:"id"`
-	Name                *string     `json:"name"`
-	InfrastructureId    interface{} `json:"infrastructureId"`
-	Host                *string     `json:"host"`
-	CpuCores            interface{} `json:"cpuCores"`
-	RamGB               interface{} `json:"ramGB"`
-	DiskSizeGB          interface{} `json:"diskSizeGB"`
-	TypeId              interface{} `json:"typeId"`
-	PoolId              interface{} `json:"poolId"`
-	AdministrationState *string     `json:"administrationState"`
-	PowerState          *string     `json:"powerState"`
-}
-
 // VMListPrintConfig drives the table columns for VM list output.
 var VMListPrintConfig = formatter.PrintConfig{
 	FieldsConfig: map[string]formatter.RecordFieldConfig{
@@ -117,15 +100,15 @@ var vmPrintConfig = formatter.PrintConfig{
 	},
 }
 
-func GetVMId(vmId string) (float32, error) {
-	vmIdNumeric, err := strconv.ParseFloat(vmId, 32)
+func GetVMId(vmId string) (int64, error) {
+	vmIdNumeric, err := strconv.ParseInt(vmId, 10, 64)
 	if err != nil {
 		err := fmt.Errorf("invalid VM ID: '%s'", vmId)
 		logger.Get().Error().Err(err).Msg("")
 		return 0, err
 	}
 
-	return float32(vmIdNumeric), nil
+	return vmIdNumeric, nil
 }
 
 func VMGet(ctx context.Context, vmId string) error {

@@ -2,10 +2,7 @@ package event
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
-	"io"
-	"net/http"
 	"strconv"
 
 	"github.com/metalsoft-io/metalcloud-cli/pkg/api"
@@ -14,16 +11,6 @@ import (
 	"github.com/metalsoft-io/metalcloud-cli/pkg/response_inspector"
 	"github.com/metalsoft-io/metalcloud-cli/pkg/utils"
 )
-
-// eventRaw avoids SDK unmarshal failure: API may omit severity (required in SDK); id as string.
-type eventRaw struct {
-	Id                interface{} `json:"id"`
-	Type              *string     `json:"type"`
-	Severity          *string     `json:"severity"`
-	Visibility        *string     `json:"visibility"`
-	OccurredTimestamp *string     `json:"occurredTimestamp"`
-	Title             *string     `json:"title"`
-}
 
 var eventPrintConfig = formatter.PrintConfig{
 	FieldsConfig: map[string]formatter.RecordFieldConfig{
@@ -74,12 +61,6 @@ func EventList(ctx context.Context, flags ListFlags) error {
 	client := api.GetApiClient(ctx)
 	request := client.EventAPI.GetEvents(ctx)
 
-	if flags.Page > 0 {
-		request = request.Page(float32(flags.Page))
-	}
-	if flags.Limit > 0 {
-		request = request.Limit(float32(flags.Limit))
-	}
 	if len(flags.FilterId) > 0 {
 		request = request.FilterId(flags.FilterId)
 	}
@@ -87,7 +68,7 @@ func EventList(ctx context.Context, flags ListFlags) error {
 		request = request.FilterType(flags.FilterType)
 	}
 	if len(flags.FilterSeverity) > 0 {
-		request = request.FilterSeverity(flags.FilterSeverity)
+		request = request.FilterLevel(flags.FilterSeverity)
 	}
 	if len(flags.FilterVisibility) > 0 {
 		request = request.FilterVisibility(flags.FilterVisibility)
@@ -119,50 +100,28 @@ func EventList(ctx context.Context, flags ListFlags) error {
 
 	if flags.Page > 0 {
 		// Specific page requested — fetch that page window, spanning API pages when limit > 100.
-		rawItems, meta, err := utils.FetchPageWindowRaw(func(p, l float32) (*http.Response, error) {
-			_, httpRes, _ := request.Page(p).Limit(l).Execute()
-			return httpRes, nil
-		}, flags.Page, flags.Limit)
+		records, meta, err := utils.FetchPageWindow(request, flags.Page, flags.Limit)
 		if err != nil {
 			return err
 		}
-		records, err := utils.UnmarshalRawItems[eventRaw](rawItems)
-		if err != nil {
-			return fmt.Errorf("failed to parse events: %w", err)
-		}
-		return utils.PrintAllRaw(rawItems, records, meta, len(records), &eventPrintConfig)
+		return utils.PrintAll(records, meta, len(records), &eventPrintConfig)
 	}
 
 	if flags.Limit > 0 {
 		// Limit without page — fetch exactly N records, spanning pages as needed.
-		rawItems, meta, err := utils.FetchUpToRaw(func(page, limit float32) (*http.Response, error) {
-			_, httpRes, _ := request.Page(page).Limit(limit).Execute()
-			return httpRes, nil
-		}, flags.Limit)
+		records, meta, err := utils.FetchUpTo(request, flags.Limit)
 		if err != nil {
 			return err
 		}
-		records, err := utils.UnmarshalRawItems[eventRaw](rawItems)
-		if err != nil {
-			return fmt.Errorf("failed to parse events: %w", err)
-		}
-		return utils.PrintAllRaw(rawItems, records, meta, len(records), &eventPrintConfig)
+		return utils.PrintAll(records, meta, len(records), &eventPrintConfig)
 	}
 
-	rawItems, meta, err := utils.FetchAllPagesRaw(func(page float32) (*http.Response, error) {
-		_, httpRes, _ := request.Page(page).Limit(100).Execute()
-		return httpRes, nil
-	})
+	records, meta, err := utils.FetchAllPages(request)
 	if err != nil {
 		return err
 	}
 
-	records, err := utils.UnmarshalRawItems[eventRaw](rawItems)
-	if err != nil {
-		return fmt.Errorf("failed to parse events: %w", err)
-	}
-
-	return utils.PrintAllRaw(rawItems, records, meta, len(records), &eventPrintConfig)
+	return utils.PrintAll(records, meta, len(records), &eventPrintConfig)
 }
 
 func EventGet(ctx context.Context, eventId string) error {
@@ -175,35 +134,20 @@ func EventGet(ctx context.Context, eventId string) error {
 
 	client := api.GetApiClient(ctx)
 
-	// Raw-body parse: the SDK Event model requires `severity`, but the API
-	// can omit it, so SDK unmarshalling fails on valid responses.
-	_, httpRes, sdkErr := client.EventAPI.GetEvent(ctx, id).Execute()
-	if httpRes != nil && httpRes.StatusCode >= 400 {
-		return response_inspector.InspectResponse(httpRes, sdkErr)
-	}
-	if httpRes == nil {
-		return sdkErr
+	event, httpRes, err := client.EventAPI.GetEvent(ctx, id).Execute()
+	if err := response_inspector.InspectResponse(httpRes, err); err != nil {
+		return err
 	}
 
-	body, err := io.ReadAll(httpRes.Body)
-	if err != nil {
-		return fmt.Errorf("failed to read response body: %w", err)
-	}
-
-	var record eventRaw
-	if err := json.Unmarshal(body, &record); err != nil {
-		return fmt.Errorf("failed to parse event: %w", err)
-	}
-
-	return formatter.PrintResult(record, &eventPrintConfig)
+	return formatter.PrintResult(event, &eventPrintConfig)
 }
 
-func getEventId(eventId string) (float32, error) {
-	id, err := strconv.ParseFloat(eventId, 32)
+func getEventId(eventId string) (int64, error) {
+	id, err := strconv.ParseInt(eventId, 10, 64)
 	if err != nil {
 		err := fmt.Errorf("invalid event ID: '%s'", eventId)
 		logger.Get().Error().Err(err).Msg("")
 		return 0, err
 	}
-	return float32(id), nil
+	return id, nil
 }

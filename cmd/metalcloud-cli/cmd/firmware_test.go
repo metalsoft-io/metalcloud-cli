@@ -13,7 +13,6 @@ import (
 //   firmware-catalog list / ls
 //   firmware-baseline list / ls
 //   firmware-binary list / ls
-//   firmware-policy list / ls
 
 func firmwareCatalogFixture() map[string]interface{} {
 	return map[string]interface{}{
@@ -40,17 +39,6 @@ func firmwareBinaryFixture() map[string]interface{} {
 		"vendorSupportedSystems": []interface{}{},
 		"vendor":                 map[string]interface{}{},
 		"links":                  []interface{}{},
-	}
-}
-
-// Required: id, label, status, action, createdTimestamp, updatedTimestamp
-func firmwarePolicyFixture() map[string]interface{} {
-	return map[string]interface{}{
-		"id": 1, "label": "test-policy", "status": "active",
-		"action":           "upgrade",
-		"createdTimestamp": "2024-01-01T00:00:00Z",
-		"updatedTimestamp": "2024-01-01T00:00:00Z",
-		"links":            []interface{}{},
 	}
 }
 
@@ -161,40 +149,6 @@ func TestFirmwareBinaryList_NoEndpoint(t *testing.T) {
 	}
 }
 
-// --- firmware-policy ---
-
-func TestFirmwarePolicyList_HappyPath(t *testing.T) {
-	srv := httptest.NewServer(newMux(allPerms, func(mux *http.ServeMux) {
-		mux.HandleFunc("/api/v2/firmware/policies", func(w http.ResponseWriter, r *http.Request) {
-			writePagedJSON(w, firmwarePolicyFixture())
-		})
-	}))
-	defer srv.Close()
-
-	if _, err := runCLI(t, srv, "firmware-policy", "list"); err != nil {
-		t.Fatalf("expected no error, got: %v", err)
-	}
-}
-
-func TestFirmwarePolicyList_Alias(t *testing.T) {
-	srv := httptest.NewServer(newMux(allPerms, func(mux *http.ServeMux) {
-		mux.HandleFunc("/api/v2/firmware/policies", func(w http.ResponseWriter, r *http.Request) {
-			writePagedJSON(w, firmwarePolicyFixture())
-		})
-	}))
-	defer srv.Close()
-
-	if _, err := runCLI(t, srv, "firmware-policy", "ls"); err != nil {
-		t.Fatalf("alias ls: expected no error, got: %v", err)
-	}
-}
-
-func TestFirmwarePolicyList_NoEndpoint(t *testing.T) {
-	if _, err := runCLI(t, nil, "firmware-policy", "list"); err == nil {
-		t.Fatal("expected error when endpoint is empty")
-	}
-}
-
 // --- format tests ---
 
 func TestFirmwareCatalogList_Formats(t *testing.T) {
@@ -259,32 +213,6 @@ func TestFirmwareBinaryList_Formats(t *testing.T) {
 	for _, format := range []string{"json", "csv", "yaml", "text", "md"} {
 		t.Run(format, func(t *testing.T) {
 			out, err := runCLIFormat(t, srv, format, "firmware-binary", "list")
-			if err != nil {
-				t.Fatalf("format %s: %v", format, err)
-			}
-			if out == "" {
-				t.Errorf("format %s: empty output", format)
-			}
-			if format == "json" && !json.Valid([]byte(out)) {
-				t.Errorf("format json: invalid JSON: %s", out)
-			}
-			if format == "csv" && !strings.Contains(out, ",") {
-				t.Errorf("format csv: no comma: %s", out)
-			}
-		})
-	}
-}
-
-func TestFirmwarePolicyList_Formats(t *testing.T) {
-	srv := httptest.NewServer(newMux(allPerms, func(mux *http.ServeMux) {
-		mux.HandleFunc("/api/v2/firmware/policies", func(w http.ResponseWriter, r *http.Request) {
-			writePagedJSON(w, firmwarePolicyFixture())
-		})
-	}))
-	defer srv.Close()
-	for _, format := range []string{"json", "csv", "yaml", "text", "md"} {
-		t.Run(format, func(t *testing.T) {
-			out, err := runCLIFormat(t, srv, format, "firmware-policy", "list")
 			if err != nil {
 				t.Fatalf("format %s: %v", format, err)
 			}
@@ -399,52 +327,3 @@ func TestFirmwareBaselineDelete(t *testing.T) {
 	}
 }
 
-// --- firmware-policy create / delete ---
-
-func newFirmwarePolicyWriteServer() *httptest.Server {
-	return httptest.NewServer(newMux(allPerms, func(mux *http.ServeMux) {
-		mux.HandleFunc("/api/v2/firmware/policies/1", func(w http.ResponseWriter, r *http.Request) {
-			w.Header().Set("Content-Type", "application/json")
-			if r.Method == http.MethodDelete {
-				w.WriteHeader(http.StatusNoContent)
-				return
-			}
-			_ = json.NewEncoder(w).Encode(firmwarePolicyFixture())
-		})
-		mux.HandleFunc("/api/v2/firmware/policies", func(w http.ResponseWriter, r *http.Request) {
-			w.Header().Set("Content-Type", "application/json")
-			if r.Method == http.MethodPost {
-				_ = json.NewEncoder(w).Encode(firmwarePolicyFixture())
-				return
-			}
-			writePagedJSON(w, firmwarePolicyFixture())
-		})
-	}))
-}
-
-func TestFirmwarePolicyCreate(t *testing.T) {
-	srv := newFirmwarePolicyWriteServer()
-	defer srv.Close()
-
-	f, err := os.CreateTemp(t.TempDir(), "policy-*.json")
-	if err != nil {
-		t.Fatal(err)
-	}
-	_, _ = f.WriteString(`{"label":"test-policy","action":"upgrade","baselineId":1}`)
-	f.Close()
-
-	_, err = runCLI(t, srv, "firmware-policy", "create", "--config-source", f.Name())
-	if err != nil {
-		t.Fatalf("unexpected error: %v", err)
-	}
-}
-
-func TestFirmwarePolicyDelete(t *testing.T) {
-	srv := newFirmwarePolicyWriteServer()
-	defer srv.Close()
-
-	_, err := runCLI(t, srv, "firmware-policy", "delete", "1")
-	if err != nil {
-		t.Fatalf("unexpected error: %v", err)
-	}
-}

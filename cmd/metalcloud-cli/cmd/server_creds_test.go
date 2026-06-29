@@ -17,6 +17,7 @@ var serverDefaultCredentialsItem = map[string]interface{}{
 var serverCleanupPolicyItem = map[string]interface{}{
 	"id":                               1.0,
 	"label":                            "default-policy",
+	"clearTpm":                         0.0,
 	"cleanupDrivesForOobEnabledServer": 0.0,
 	"recreateRaid":                     0.0,
 	"resetRaidControllers":             0.0,

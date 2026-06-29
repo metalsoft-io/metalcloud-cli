@@ -42,7 +42,7 @@ func TestExtensionList_HappyPath(t *testing.T) {
 	defer ts.Close()
 
 	ctx := testutils.SetupTestContext(ts.URL)
-	if err := ExtensionList(ctx, nil, nil, nil, nil, ""); err != nil {
+	if err := ExtensionList(ctx, nil, nil, nil, nil); err != nil {
 		t.Fatalf("expected nil error, got: %v", err)
 	}
 }
@@ -55,7 +55,7 @@ func TestExtensionList_ServerError(t *testing.T) {
 	defer ts.Close()
 
 	ctx := testutils.SetupTestContext(ts.URL)
-	if err := ExtensionList(ctx, nil, nil, nil, nil, ""); err == nil {
+	if err := ExtensionList(ctx, nil, nil, nil, nil); err == nil {
 		t.Fatal("expected an error for HTTP 500, got nil")
 	}
 }
@@ -69,7 +69,7 @@ func TestExtensionList_EmptyList(t *testing.T) {
 	defer ts.Close()
 
 	ctx := testutils.SetupTestContext(ts.URL)
-	if err := ExtensionList(ctx, nil, nil, nil, nil, ""); err != nil {
+	if err := ExtensionList(ctx, nil, nil, nil, nil); err != nil {
 		t.Fatalf("expected nil error for empty list, got: %v", err)
 	}
 }
@@ -92,7 +92,7 @@ func TestExtensionList_Pagination(t *testing.T) {
 	defer ts.Close()
 
 	ctx := testutils.SetupTestContext(ts.URL)
-	if err := ExtensionList(ctx, nil, nil, nil, nil, ""); err != nil {
+	if err := ExtensionList(ctx, nil, nil, nil, nil); err != nil {
 		t.Fatalf("expected nil error during pagination, got: %v", err)
 	}
 }
@@ -111,7 +111,7 @@ func TestExtensionList_FilterKind(t *testing.T) {
 
 	ctx := testutils.SetupTestContext(ts.URL)
 	// Filter for "workflow" only — should not error even though items are reduced client-side.
-	if err := ExtensionList(ctx, nil, nil, nil, []string{"workflow"}, ""); err != nil {
+	if err := ExtensionList(ctx, nil, nil, nil, []string{"workflow"}); err != nil {
 		t.Fatalf("expected nil error with kind filter, got: %v", err)
 	}
 }
@@ -325,51 +325,6 @@ func TestExtensionArchive_ServerError(t *testing.T) {
 	ctx := testutils.SetupTestContext(ts.URL)
 	if err := ExtensionArchive(ctx, "3"); err == nil {
 		t.Fatal("expected error for HTTP 500 on archive, got nil")
-	}
-}
-
-// --- ExtensionMakePublic ---
-
-// TestExtensionMakePublic_HappyPath verifies successful make-public of an extension.
-func TestExtensionMakePublic_HappyPath(t *testing.T) {
-	ts := testutils.NewTestServer(map[string]http.HandlerFunc{
-		"/api/v2/extensions/3":                    testutils.RawHandler(http.StatusOK, validExtensionJSON),
-		"/api/v2/extensions/3/actions/make-public": testutils.RawHandler(http.StatusOK, "{}"),
-	})
-	defer ts.Close()
-
-	ctx := testutils.SetupTestContext(ts.URL)
-	if err := ExtensionMakePublic(ctx, "3"); err != nil {
-		t.Fatalf("expected nil error, got: %v", err)
-	}
-}
-
-// TestExtensionMakePublic_NotFound verifies that making a non-existent extension public returns an error.
-func TestExtensionMakePublic_NotFound(t *testing.T) {
-	emptyList := map[string]any{"data": []any{}, "meta": map[string]any{"itemsPerPage": 100}}
-	ts := testutils.NewTestServer(map[string]http.HandlerFunc{
-		"/api/v2/extensions/999": testutils.ErrorHandler(http.StatusNotFound, "not found"),
-		"/api/v2/extensions":     testutils.JSONHandler(http.StatusOK, emptyList),
-	})
-	defer ts.Close()
-
-	ctx := testutils.SetupTestContext(ts.URL)
-	if err := ExtensionMakePublic(ctx, "999"); err == nil {
-		t.Fatal("expected error for not-found extension, got nil")
-	}
-}
-
-// TestExtensionMakePublic_ServerError verifies that a 500 from the make-public action is surfaced.
-func TestExtensionMakePublic_ServerError(t *testing.T) {
-	ts := testutils.NewTestServer(map[string]http.HandlerFunc{
-		"/api/v2/extensions/3":                    testutils.RawHandler(http.StatusOK, validExtensionJSON),
-		"/api/v2/extensions/3/actions/make-public": testutils.ErrorHandler(http.StatusInternalServerError, "server error"),
-	})
-	defer ts.Close()
-
-	ctx := testutils.SetupTestContext(ts.URL)
-	if err := ExtensionMakePublic(ctx, "3"); err == nil {
-		t.Fatal("expected error for HTTP 500 on make-public, got nil")
 	}
 }
 

@@ -69,82 +69,44 @@ func JobList(ctx context.Context, flags ListFlags) error {
 		request = request.SortBy(flags.SortBy)
 	}
 
-	type jobRaw struct {
-		JobId            interface{} `json:"jobId"`
-		Status           *string     `json:"status"`
-		FunctionName     *string     `json:"functionName"`
-		CreatedTimestamp *string     `json:"createdTimestamp"`
-		JobGroupId       interface{} `json:"jobGroupId"`
-	}
-
-	var rawItems []json.RawMessage
-	var meta sdk.PaginatedResponseMeta
-	var err error
-
 	switch {
 	case flags.Page > 0:
-		rawItems, meta, err = utils.FetchPageWindowRaw(func(p, l float32) (*http.Response, error) {
-			_, httpRes, _ := request.Page(p).Limit(l).Execute()
-			return httpRes, nil
-		}, flags.Page, flags.Limit)
+		records, meta, err := utils.FetchPageWindow(request, flags.Page, flags.Limit)
+		if err != nil {
+			return err
+		}
+		return utils.PrintAll(records, meta, len(records), &jobPrintConfig)
 	case flags.Limit > 0:
-		rawItems, meta, err = utils.FetchUpToRaw(func(p, l float32) (*http.Response, error) {
-			_, httpRes, _ := request.Page(p).Limit(l).Execute()
-			return httpRes, nil
-		}, flags.Limit)
+		records, meta, err := utils.FetchUpTo(request, flags.Limit)
+		if err != nil {
+			return err
+		}
+		return utils.PrintAll(records, meta, len(records), &jobPrintConfig)
 	default:
-		rawItems, meta, err = utils.FetchAllPagesRaw(func(page float32) (*http.Response, error) {
-			_, httpRes, _ := request.Page(page).Limit(100).Execute()
-			return httpRes, nil
-		})
+		records, meta, err := utils.FetchAllPages(request)
+		if err != nil {
+			return err
+		}
+		return utils.PrintAll(records, meta, len(records), &jobPrintConfig)
 	}
-	if err != nil {
-		return err
-	}
-
-	records, err := utils.UnmarshalRawItems[jobRaw](rawItems)
-	if err != nil {
-		return fmt.Errorf("failed to parse jobs: %w", err)
-	}
-
-	return utils.PrintAllRaw(rawItems, records, meta, len(records), &jobPrintConfig)
 }
 
 func JobGet(ctx context.Context, jobId string) error {
 	logger.Get().Info().Msgf("Get job '%s' details", jobId)
 
-	// Validate the ID but pass the original string in the URL: the SDK's
-	// float32 jobId parameter loses precision for IDs > 16,777,216.
-	if _, err := getJobId(jobId); err != nil {
+	id, err := getJobId(jobId)
+	if err != nil {
 		return err
 	}
 
-	httpRes, err := jobRequest(ctx, http.MethodGet, fmt.Sprintf("/api/v2/jobs/%s", jobId), nil)
-	if err != nil {
-		if httpRes != nil {
-			return response_inspector.InspectResponse(httpRes, err)
-		}
+	client := api.GetApiClient(ctx)
+
+	job, httpRes, err := client.JobAPI.GetJob(ctx, id).Execute()
+	if err := response_inspector.InspectResponse(httpRes, err); err != nil {
 		return err
 	}
 
-	body, err := io.ReadAll(httpRes.Body)
-	if err != nil {
-		return fmt.Errorf("failed to read response body: %w", err)
-	}
-
-	type jobGetRaw struct {
-		JobId            interface{} `json:"jobId"`
-		Status           *string     `json:"status"`
-		FunctionName     *string     `json:"functionName"`
-		CreatedTimestamp *string     `json:"createdTimestamp"`
-		JobGroupId       interface{} `json:"jobGroupId"`
-	}
-	var record jobGetRaw
-	if err := json.Unmarshal(body, &record); err != nil {
-		return fmt.Errorf("failed to parse job: %w", err)
-	}
-
-	return formatter.PrintResult(record, &jobPrintConfig)
+	return formatter.PrintResult(job, &jobPrintConfig)
 }
 
 func JobSkip(ctx context.Context, jobId string) error {
@@ -282,12 +244,12 @@ func validateJobId(jobId string) error {
 	return nil
 }
 
-func getJobId(jobId string) (float32, error) {
-	id, err := strconv.ParseFloat(jobId, 32)
+func getJobId(jobId string) (int64, error) {
+	id, err := strconv.ParseInt(jobId, 10, 64)
 	if err != nil {
 		err := fmt.Errorf("invalid job ID: '%s'", jobId)
 		logger.Get().Error().Err(err).Msg("")
 		return 0, err
 	}
-	return float32(id), nil
+	return id, nil
 }

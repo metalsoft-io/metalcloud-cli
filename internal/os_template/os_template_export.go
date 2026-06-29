@@ -60,7 +60,7 @@ func OsTemplateExport(ctx context.Context, osTemplateId string, outputPath strin
 		} else {
 			// Content-based asset: fetch full content via individual GET
 			fullAsset, httpRes, err := client.TemplateAssetAPI.
-				GetTemplateAsset(ctx, float32(asset.Id)).
+				GetTemplateAsset(ctx, asset.Id).
 				Execute()
 			if err := response_inspector.InspectResponse(httpRes, err); err != nil {
 				return fmt.Errorf("failed to get asset %d content: %w", asset.Id, err)

@@ -3,7 +3,6 @@ package firmware_catalog
 import (
 	"context"
 	"fmt"
-	"net/http"
 	"strconv"
 
 	"github.com/metalsoft-io/metalcloud-cli/pkg/api"
@@ -13,18 +12,6 @@ import (
 	"github.com/metalsoft-io/metalcloud-cli/pkg/utils"
 	sdk "github.com/metalsoft-io/metalcloud-sdk-go"
 )
-
-type firmwareCatalogRaw struct {
-	Id                     interface{} `json:"id"`
-	Name                   *string     `json:"name"`
-	Vendor                 *string     `json:"vendor"`
-	UpdateType             *string     `json:"updateType"`
-	Description            *string     `json:"description"`
-	VendorId               *string     `json:"vendorId"`
-	VendorUrl              *string     `json:"vendorUrl"`
-	VendorReleaseTimestamp interface{} `json:"vendorReleaseTimestamp"`
-	CreatedTimestamp       interface{} `json:"createdTimestamp"`
-}
 
 var firmwareCatalogPrintConfig = formatter.PrintConfig{
 	FieldsConfig: map[string]formatter.RecordFieldConfig{
@@ -74,19 +61,14 @@ func FirmwareCatalogList(ctx context.Context) error {
 
 	client := api.GetApiClient(ctx)
 
-	rawItems, meta, err := utils.FetchAllPagesRaw(func(p float32) (*http.Response, error) {
-		_, httpRes, _ := client.FirmwareCatalogAPI.GetFirmwareCatalogs(ctx).SortBy([]string{"id:ASC"}).Page(p).Limit(100).Execute()
-		return httpRes, nil
-	})
+	request := client.FirmwareCatalogAPI.GetFirmwareCatalogs(ctx).SortBy([]string{"id:ASC"})
+
+	records, meta, err := utils.FetchAllPages(request)
 	if err != nil {
 		return err
 	}
-	records, err := utils.UnmarshalRawItems[firmwareCatalogRaw](rawItems)
-	if err != nil {
-		return fmt.Errorf("failed to parse firmware catalogs: %w", err)
-	}
 
-	return utils.PrintAllRaw(rawItems, records, meta, len(records), &firmwareCatalogPrintConfig)
+	return utils.PrintAll(records, meta, len(records), &firmwareCatalogPrintConfig)
 }
 
 func FirmwareCatalogGet(ctx context.Context, firmwareCatalogId string) error {
@@ -206,10 +188,10 @@ func FirmwareCatalogUpdate(ctx context.Context, firmwareCatalogId string, config
 
 		firmwareCatalogConfig.Name = fullCatalog.Name
 		firmwareCatalogConfig.Description = fullCatalog.Description
-		firmwareCatalogConfig.Vendor = sdk.ServerFirmwareCatalogVendor(fullCatalog.Vendor)
+		firmwareCatalogConfig.Vendor = fullCatalog.Vendor
 		firmwareCatalogConfig.VendorId = fullCatalog.VendorId
 		firmwareCatalogConfig.VendorUrl = fullCatalog.VendorUrl
-		firmwareCatalogConfig.UpdateType = sdk.CatalogUpdateType(fullCatalog.UpdateType)
+		firmwareCatalogConfig.UpdateType = fullCatalog.UpdateType
 		firmwareCatalogConfig.VendorConfiguration = fullCatalog.VendorConfiguration
 		firmwareCatalogConfig.VendorServerTypesSupported = fullCatalog.VendorServerTypesSupported
 		firmwareCatalogConfig.VendorReleaseTimestamp = fullCatalog.VendorReleaseTimestamp
@@ -251,13 +233,13 @@ func FirmwareCatalogDelete(ctx context.Context, firmwareCatalogId string) error 
 	return nil
 }
 
-func getFirmwareCatalogId(firmwareCatalogId string) (float32, error) {
-	firmwareCatalogIdNumeric, err := strconv.ParseFloat(firmwareCatalogId, 32)
+func getFirmwareCatalogId(firmwareCatalogId string) (int64, error) {
+	firmwareCatalogIdNumeric, err := strconv.ParseInt(firmwareCatalogId, 10, 64)
 	if err != nil {
 		err := fmt.Errorf("invalid firmware catalog ID: '%s'", firmwareCatalogId)
 		logger.Get().Error().Err(err).Msg("")
 		return 0, err
 	}
 
-	return float32(firmwareCatalogIdNumeric), nil
+	return firmwareCatalogIdNumeric, nil
 }

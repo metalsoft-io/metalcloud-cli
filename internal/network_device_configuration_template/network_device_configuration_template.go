@@ -3,7 +3,6 @@ package network_device_configuration_template
 import (
 	"context"
 	"fmt"
-	"net/http"
 	"strconv"
 	"strings"
 
@@ -105,32 +104,14 @@ func NetworkDeviceConfigurationTemplateList(ctx context.Context, filterId []stri
 		request = request.FilterLibraryLabel(filterLibraryLabel)
 	}
 
-	type networkDeviceConfigurationTemplateRaw struct {
-		Id                          interface{} `json:"id"`
-		NetworkType                 *string     `json:"networkType"`
-		NetworkDeviceDriver         *string     `json:"networkDeviceDriver"`
-		NetworkDevicePosition       *string     `json:"networkDevicePosition"`
-		RemoteNetworkDevicePosition *string     `json:"remoteNetworkDevicePosition"`
-		BgpNumbering                *string     `json:"bgpNumbering"`
-		BgpLinkConfiguration        *string     `json:"bgpLinkConfiguration"`
-		LibraryLabel                *string     `json:"libraryLabel"`
-	}
+	request = request.SortBy([]string{"id:ASC"})
 
-	sortedRequest := request.SortBy([]string{"id:ASC"})
-	rawItems, meta, err := utils.FetchAllPagesRaw(func(page float32) (*http.Response, error) {
-		_, httpRes, _ := sortedRequest.Page(page).Limit(100).Execute()
-		return httpRes, nil
-	})
+	records, meta, err := utils.FetchAllPages(request)
 	if err != nil {
 		return err
 	}
 
-	records, err := utils.UnmarshalRawItems[networkDeviceConfigurationTemplateRaw](rawItems)
-	if err != nil {
-		return fmt.Errorf("failed to parse network device configuration templates: %w", err)
-	}
-
-	return utils.PrintAllRaw(rawItems, records, meta, len(records), &NetworkDeviceConfigurationTemplatePrintConfig)
+	return utils.PrintAll(records, meta, len(records), &NetworkDeviceConfigurationTemplatePrintConfig)
 }
 
 func NetworkDeviceConfigurationTemplateConfigExample(ctx context.Context) error {
@@ -267,13 +248,13 @@ func NetworkDeviceConfigurationTemplateDelete(ctx context.Context, networkDevice
 	return nil
 }
 
-func getNetworkDeviceConfigurationTemplateId(networkDeviceConfigurationTemplateId string) (float32, error) {
-	networkDeviceConfigurationTemplateIdNumeric, err := strconv.ParseFloat(networkDeviceConfigurationTemplateId, 32)
+func getNetworkDeviceConfigurationTemplateId(networkDeviceConfigurationTemplateId string) (int64, error) {
+	networkDeviceConfigurationTemplateIdNumeric, err := strconv.ParseInt(networkDeviceConfigurationTemplateId, 10, 64)
 	if err != nil {
 		err := fmt.Errorf("invalid network device configuration template ID: '%s'", networkDeviceConfigurationTemplateId)
 		logger.Get().Error().Err(err).Msg("")
 		return 0, err
 	}
 
-	return float32(networkDeviceConfigurationTemplateIdNumeric), nil
+	return networkDeviceConfigurationTemplateIdNumeric, nil
 }

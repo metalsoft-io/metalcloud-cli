@@ -49,14 +49,12 @@ type VendorCatalog struct {
 }
 
 func NewVendorCatalogFromCreateOptions(options FirmwareCatalogCreateOptions) (*VendorCatalog, error) {
-	vendor := sdk.ServerFirmwareCatalogVendor(options.Vendor)
-	if !vendor.IsValid() {
-		return nil, fmt.Errorf("invalid vendor flag %s - valid options are: %v", options.Vendor, sdk.AllowedServerFirmwareCatalogVendorEnumValues)
+	if !slices.Contains(ValidVendors, options.Vendor) {
+		return nil, fmt.Errorf("invalid vendor flag %s - valid options are: %v", options.Vendor, ValidVendors)
 	}
 
-	updateType := sdk.CatalogUpdateType(options.UpdateType)
-	if !updateType.IsValid() {
-		return nil, fmt.Errorf("invalid update type flag %s - valid options are: %v", options.UpdateType, sdk.AllowedCatalogUpdateTypeEnumValues)
+	if !slices.Contains(ValidUpdateTypes, options.UpdateType) {
+		return nil, fmt.Errorf("invalid update type flag %s - valid options are: %v", options.UpdateType, ValidUpdateTypes)
 	}
 
 	vendorCatalog := VendorCatalog{
@@ -97,14 +95,14 @@ func (vc *VendorCatalog) ProcessVendorCatalog(ctx context.Context) error {
 	if len(vc.ServerTypesFilter) > 0 {
 		logger.Get().Debug().Msgf("Server types filter provided: %v", vc.ServerTypesFilter)
 
-		isHpe := sdk.ServerFirmwareCatalogVendor(vc.CatalogInfo.Vendor) == sdk.SERVERFIRMWARECATALOGVENDOR_HP
+		isHpe := vc.CatalogInfo.Vendor == VendorHp
 
 		// Lookup the system models for the requested server types
 		// and add them to the vendor systems filter
 		systemModels, systemModelsEx, err := vc.getFilteredSystemModels(ctx)
 		if err != nil {
 			// For Supermicro, skip server validation errors since firmware applies to motherboard models not vendor SKUs, and we don't use the VendorSystemsFilter anyway
-			if sdk.ServerFirmwareCatalogVendor(vc.CatalogInfo.Vendor) == sdk.SERVERFIRMWARECATALOGVENDOR_SUPERMICRO {
+			if vc.CatalogInfo.Vendor == VendorSupermicro {
 				logger.Get().Warn().Msgf("Unable to validate server types: %v. Continuing without validation (Supermicro doesn't require vendor model mapping).", err)
 			} else {
 				return fmt.Errorf("failed to lookup system models for server types: %w", err)
@@ -156,14 +154,14 @@ func (vc *VendorCatalog) ProcessVendorCatalog(ctx context.Context) error {
 		}
 	}
 
-	switch sdk.ServerFirmwareCatalogVendor(vc.CatalogInfo.Vendor) {
-	case sdk.SERVERFIRMWARECATALOGVENDOR_DELL:
+	switch vc.CatalogInfo.Vendor {
+	case VendorDell:
 		return vc.processDellCatalog(ctx)
-	case sdk.SERVERFIRMWARECATALOGVENDOR_HP:
+	case VendorHp:
 		return vc.processHpeCatalog(ctx)
-	case sdk.SERVERFIRMWARECATALOGVENDOR_LENOVO:
+	case VendorLenovo:
 		return vc.processLenovoCatalog(ctx)
-	case sdk.SERVERFIRMWARECATALOGVENDOR_SUPERMICRO:
+	case VendorSupermicro:
 		return vc.processSupermicroCatalog(ctx)
 	default:
 		return fmt.Errorf("unsupported vendor %s", vc.CatalogInfo.Vendor)
@@ -174,8 +172,8 @@ func (vc *VendorCatalog) CreateMetalsoftCatalog(ctx context.Context) error {
 	firmwareCatalogCreate := sdk.CreateFirmwareCatalog{
 		Name:                       vc.CatalogInfo.Name,
 		Description:                vc.CatalogInfo.Description,
-		Vendor:                     sdk.ServerFirmwareCatalogVendor(vc.CatalogInfo.Vendor),
-		UpdateType:                 sdk.CatalogUpdateType(vc.CatalogInfo.UpdateType),
+		Vendor:                     vc.CatalogInfo.Vendor,
+		UpdateType:                 vc.CatalogInfo.UpdateType,
 		VendorUrl:                  vc.CatalogInfo.VendorUrl,
 		VendorId:                   vc.CatalogInfo.VendorId,
 		VendorConfiguration:        vc.CatalogInfo.VendorConfiguration,
@@ -257,7 +255,7 @@ func (vc *VendorCatalog) CreateMetalsoftCatalog(ctx context.Context) error {
 		} else {
 			if vc.VendorLocalBinariesPath != "" {
 				// For Supermicro, the ExternalId is the extracted .bin file name in .extracted/ directory
-				if vc.CatalogInfo.Vendor == string(sdk.SERVERFIRMWARECATALOGVENDOR_SUPERMICRO) {
+				if vc.CatalogInfo.Vendor == VendorSupermicro {
 					localPath, err = filepath.Abs(filepath.Join(vc.VendorLocalBinariesPath, ".extracted", *binary.ExternalId))
 				} else {
 					localPath, err = filepath.Abs(filepath.Join(vc.VendorLocalBinariesPath, *binary.ExternalId))

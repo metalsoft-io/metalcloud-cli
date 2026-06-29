@@ -3,11 +3,11 @@ package extension
 import (
 	"context"
 	"fmt"
-	"net/http"
 	"slices"
 	"strconv"
 	"strings"
 
+	"github.com/metalsoft-io/metalcloud-cli/internal/site"
 	"github.com/metalsoft-io/metalcloud-cli/pkg/api"
 	"github.com/metalsoft-io/metalcloud-cli/pkg/formatter"
 	"github.com/metalsoft-io/metalcloud-cli/pkg/logger"
@@ -16,16 +16,6 @@ import (
 	sdk "github.com/metalsoft-io/metalcloud-sdk-go"
 	"github.com/spf13/viper"
 )
-
-type extensionRaw struct {
-	Id          interface{} `json:"id"`
-	Label       *string     `json:"label"`
-	Name        *string     `json:"name"`
-	Status      *string     `json:"status"`
-	IsPublic    interface{} `json:"isPublic"`
-	Kind        *string     `json:"kind"`
-	Description *string     `json:"description"`
-}
 
 var extensionPrintConfig = formatter.PrintConfig{
 	FieldsConfig: map[string]formatter.RecordFieldConfig{
@@ -46,11 +36,6 @@ var extensionPrintConfig = formatter.PrintConfig{
 			Transformer: formatter.FormatStatusValue,
 			Order:       4,
 		},
-		"IsPublic": {
-			Title:       "Public",
-			Transformer: formatter.FormatBooleanValue,
-			Order:       5,
-		},
 		"Kind": {
 			Order: 6,
 		},
@@ -61,7 +46,7 @@ var extensionPrintConfig = formatter.PrintConfig{
 	},
 }
 
-func ExtensionList(ctx context.Context, filterLabel []string, filterName []string, filterStatus []string, filterKind []string, filterPublic string) error {
+func ExtensionList(ctx context.Context, filterLabel []string, filterName []string, filterStatus []string, filterKind []string) error {
 	logger.Get().Info().Msgf("Listing extensions")
 
 	client := api.GetApiClient(ctx)
@@ -80,38 +65,16 @@ func ExtensionList(ctx context.Context, filterLabel []string, filterName []strin
 		request = request.FilterStatus(utils.ProcessFilterStringSlice(filterStatus))
 	}
 
-	// if len(filterKind) > 0 {
-	// 	request = request.FilterKind(utils.ProcessFilterStringSlice(filterKind))
-	// }
-
-	if filterPublic != "" {
-		request = request.FilterIsPublic([]string{filterPublic})
+	if len(filterKind) > 0 {
+		request = request.FilterKind(utils.ProcessFilterStringSlice(filterKind))
 	}
 
-	rawItems, meta, err := utils.FetchAllPagesRaw(func(p float32) (*http.Response, error) {
-		_, httpRes, _ := request.Page(p).Limit(100).Execute()
-		return httpRes, nil
-	})
+	extensions, meta, err := utils.FetchAllPages(request)
 	if err != nil {
 		return err
 	}
-	extensions, err := utils.UnmarshalRawItems[extensionRaw](rawItems)
-	if err != nil {
-		return fmt.Errorf("failed to parse extensions: %w", err)
-	}
 
-	// Workaround until the API supports this filter - filter out the extensions by kind, if needed
-	if len(filterKind) > 0 {
-		filtered := make([]extensionRaw, 0)
-		for _, ext := range extensions {
-			if ext.Kind != nil && slices.Contains(filterKind, *ext.Kind) {
-				filtered = append(filtered, ext)
-			}
-		}
-		extensions = filtered
-	}
-
-	return utils.PrintAllRaw(rawItems, extensions, meta, len(extensions), &extensionPrintConfig)
+	return utils.PrintAll(extensions, meta, len(extensions), &extensionPrintConfig)
 }
 
 func ExtensionGet(ctx context.Context, extensionId string) error {
@@ -284,8 +247,8 @@ func ExtensionUpdate(ctx context.Context, extensionId string, name string, descr
 	}
 
 	updateExtension := sdk.UpdateExtension{
-		Name:        name,
-		Description: description,
+		Name:        sdk.PtrString(name),
+		Description: sdk.PtrString(description),
 		Definition:  definition,
 	}
 
@@ -295,9 +258,9 @@ func ExtensionUpdate(ctx context.Context, extensionId string, name string, descr
 
 	client := api.GetApiClient(ctx)
 
-	updatedExtension, httpRes, err := client.ExtensionAPI.UpdateExtension(ctx, extension.Id).
+	updatedExtension, httpRes, err := client.ExtensionAPI.UpdateExtension(ctx, int64(extension.Id)).
 		UpdateExtension(updateExtension).
-		IfMatch(fmt.Sprintf("%.0f", extension.Revision)).
+		IfMatch(fmt.Sprintf("%d", extension.Revision)).
 		Execute()
 	if err := response_inspector.InspectResponse(httpRes, err); err != nil {
 		return err
@@ -415,8 +378,8 @@ func ExtensionPublish(ctx context.Context, extensionId string) error {
 
 	client := api.GetApiClient(ctx)
 
-	httpRes, err := client.ExtensionAPI.PublishExtension(ctx, extension.Id).
-		IfMatch(fmt.Sprintf("%.0f", extension.Revision)).
+	httpRes, err := client.ExtensionAPI.PublishExtension(ctx, int64(extension.Id)).
+		IfMatch(fmt.Sprintf("%d", extension.Revision)).
 		Execute()
 	if err := response_inspector.InspectResponse(httpRes, err); err != nil {
 		return err
@@ -436,8 +399,8 @@ func ExtensionArchive(ctx context.Context, extensionId string) error {
 
 	client := api.GetApiClient(ctx)
 
-	httpRes, err := client.ExtensionAPI.ArchiveExtension(ctx, extension.Id).
-		IfMatch(fmt.Sprintf("%.0f", extension.Revision)).
+	httpRes, err := client.ExtensionAPI.ArchiveExtension(ctx, int64(extension.Id)).
+		IfMatch(fmt.Sprintf("%d", extension.Revision)).
 		Execute()
 	if err := response_inspector.InspectResponse(httpRes, err); err != nil {
 		return err
@@ -447,8 +410,8 @@ func ExtensionArchive(ctx context.Context, extensionId string) error {
 	return nil
 }
 
-func ExtensionMakePublic(ctx context.Context, extensionId string) error {
-	logger.Get().Info().Msgf("Making extension '%s' public", extensionId)
+func ExtensionActivate(ctx context.Context, extensionId string) error {
+	logger.Get().Info().Msgf("Activating extension '%s'", extensionId)
 
 	extension, err := GetExtensionByIdOrLabel(ctx, extensionId)
 	if err != nil {
@@ -457,24 +420,87 @@ func ExtensionMakePublic(ctx context.Context, extensionId string) error {
 
 	client := api.GetApiClient(ctx)
 
-	httpRes, err := client.ExtensionAPI.MakePublicExtension(ctx, extension.Id).
-		IfMatch(fmt.Sprintf("%.0f", extension.Revision)).
+	httpRes, err := client.ExtensionAPI.ActivateExtension(ctx, int64(extension.Id)).
+		IfMatch(fmt.Sprintf("%d", extension.Revision)).
 		Execute()
 	if err := response_inspector.InspectResponse(httpRes, err); err != nil {
 		return err
 	}
 
-	logger.Get().Info().Msgf("Extension '%s' is now public", extensionId)
+	logger.Get().Info().Msgf("Extension '%s' activated successfully", extensionId)
 	return nil
 }
+
+func ExtensionSuspend(ctx context.Context, extensionId string) error {
+	logger.Get().Info().Msgf("Suspending extension '%s'", extensionId)
+
+	extension, err := GetExtensionByIdOrLabel(ctx, extensionId)
+	if err != nil {
+		return err
+	}
+
+	client := api.GetApiClient(ctx)
+
+	httpRes, err := client.ExtensionAPI.SuspendExtension(ctx, int64(extension.Id)).
+		IfMatch(fmt.Sprintf("%d", extension.Revision)).
+		Execute()
+	if err := response_inspector.InspectResponse(httpRes, err); err != nil {
+		return err
+	}
+
+	logger.Get().Info().Msgf("Extension '%s' suspended successfully", extensionId)
+	return nil
+}
+
+func ExtensionDelete(ctx context.Context, extensionId string) error {
+	logger.Get().Info().Msgf("Deleting extension '%s'", extensionId)
+
+	extension, err := GetExtensionByIdOrLabel(ctx, extensionId)
+	if err != nil {
+		return err
+	}
+
+	client := api.GetApiClient(ctx)
+
+	httpRes, err := client.ExtensionAPI.DeleteExtension(ctx, int64(extension.Id)).
+		IfMatch(fmt.Sprintf("%d", extension.Revision)).
+		Execute()
+	if err := response_inspector.InspectResponse(httpRes, err); err != nil {
+		return err
+	}
+
+	logger.Get().Info().Msgf("Extension '%s' deleted successfully", extensionId)
+	return nil
+}
+
+// func ExtensionMakePublic(ctx context.Context, extensionId string) error {
+// 	logger.Get().Info().Msgf("Making extension '%s' public", extensionId)
+
+// 	extension, err := GetExtensionByIdOrLabel(ctx, extensionId)
+// 	if err != nil {
+// 		return err
+// 	}
+
+// 	client := api.GetApiClient(ctx)
+
+// 	httpRes, err := client.ExtensionAPI.MakePublicExtension(ctx, int64(extension.Id)).
+// 		IfMatch(fmt.Sprintf("%d", extension.Revision)).
+// 		Execute()
+// 	if err := response_inspector.InspectResponse(httpRes, err); err != nil {
+// 		return err
+// 	}
+
+// 	logger.Get().Info().Msgf("Extension '%s' is now public", extensionId)
+// 	return nil
+// }
 
 func GetExtensionByIdOrLabel(ctx context.Context, extensionIdOrLabel string) (*sdk.Extension, error) {
 	client := api.GetApiClient(ctx)
 
 	// First try to get by ID
-	extensionIdFloat, err := strconv.ParseFloat(extensionIdOrLabel, 32)
+	extensionIdInt, err := strconv.ParseInt(extensionIdOrLabel, 10, 64)
 	if err == nil {
-		extensionInfo, httpRes, err := client.ExtensionAPI.GetExtension(ctx, float32(extensionIdFloat)).Execute()
+		extensionInfo, httpRes, err := client.ExtensionAPI.GetExtension(ctx, extensionIdInt).Execute()
 		logger.Get().Info().Msgf("Extension '%s' get by ID:\n err: %v\n httpRes: %v\n StatusCode: %v", extensionIdOrLabel, err, httpRes, httpRes.StatusCode)
 
 		if err == nil && httpRes != nil && httpRes.StatusCode == 200 {
@@ -502,10 +528,176 @@ func GetExtensionByIdOrLabel(ctx context.Context, extensionIdOrLabel string) (*s
 		return nil, err
 	}
 
-	extensionInfo, httpRes, err := client.ExtensionAPI.GetExtension(ctx, *extensions.Data[0].Id).Execute()
+	extensionInfo, httpRes, err := client.ExtensionAPI.GetExtension(ctx, int64(*extensions.Data[0].Id)).Execute()
 	if err = response_inspector.InspectResponse(httpRes, err); err != nil {
 		return nil, err
 	}
 
 	return extensionInfo, nil
+}
+
+var extensionSiteConfigPrintConfig = formatter.PrintConfig{
+	FieldsConfig: map[string]formatter.RecordFieldConfig{
+		"Id": {
+			Title: "Site #",
+			Order: 1,
+		},
+		"Name": {
+			MaxWidth: 30,
+			Order:    2,
+		},
+		"Slug": {
+			MaxWidth: 30,
+			Order:    3,
+		},
+	},
+}
+
+var siteExtensionConfigPrintConfig = formatter.PrintConfig{
+	FieldsConfig: map[string]formatter.RecordFieldConfig{
+		"Id": {
+			Title: "Ext #",
+			Order: 1,
+		},
+		"Name": {
+			MaxWidth: 30,
+			Order:    2,
+		},
+		"Label": {
+			MaxWidth: 30,
+			Order:    3,
+		},
+		"Version": {
+			Order: 4,
+		},
+		"Enabled": {
+			Transformer: formatter.FormatBooleanValue,
+			Order:       5,
+		},
+	},
+}
+
+var extensionConfigValuePrintConfig = formatter.PrintConfig{
+	FieldsConfig: map[string]formatter.RecordFieldConfig{
+		"Label": {
+			Order: 1,
+		},
+		"Value": {
+			Order: 2,
+		},
+	},
+}
+
+func ExtensionSiteConfigList(ctx context.Context, extensionId string) error {
+	logger.Get().Info().Msgf("Listing site configurations for extension '%s'", extensionId)
+
+	extension, err := GetExtensionByIdOrLabel(ctx, extensionId)
+	if err != nil {
+		return err
+	}
+
+	client := api.GetApiClient(ctx)
+
+	configs, httpRes, err := client.ExtensionAPI.GetExtensionSiteConfigs(ctx, int64(extension.Id)).Execute()
+	if err := response_inspector.InspectResponse(httpRes, err); err != nil {
+		return err
+	}
+
+	return formatter.PrintResult(configs, &extensionSiteConfigPrintConfig)
+}
+
+func ExtensionSiteConfigGet(ctx context.Context, extensionId string, siteIdOrLabel string) error {
+	logger.Get().Info().Msgf("Getting site configuration for extension '%s' and site '%s'", extensionId, siteIdOrLabel)
+
+	extension, err := GetExtensionByIdOrLabel(ctx, extensionId)
+	if err != nil {
+		return err
+	}
+
+	siteInfo, err := site.GetSiteByIdOrLabel(ctx, siteIdOrLabel)
+	if err != nil {
+		return err
+	}
+
+	client := api.GetApiClient(ctx)
+
+	values, httpRes, err := client.ExtensionAPI.GetExtensionSiteConfig(ctx, int64(extension.Id), int64(siteInfo.Id)).Execute()
+	if err := response_inspector.InspectResponse(httpRes, err); err != nil {
+		return err
+	}
+
+	return formatter.PrintResult(values, &extensionConfigValuePrintConfig)
+}
+
+func ExtensionSiteConfigSet(ctx context.Context, extensionId string, siteIdOrLabel string, config []byte) error {
+	logger.Get().Info().Msgf("Setting site configuration for extension '%s' and site '%s'", extensionId, siteIdOrLabel)
+
+	extension, err := GetExtensionByIdOrLabel(ctx, extensionId)
+	if err != nil {
+		return err
+	}
+
+	siteInfo, err := site.GetSiteByIdOrLabel(ctx, siteIdOrLabel)
+	if err != nil {
+		return err
+	}
+
+	var values []sdk.ExtensionConfigValue
+	if err := utils.UnmarshalContent(config, &values); err != nil {
+		return fmt.Errorf("invalid config: %w", err)
+	}
+
+	client := api.GetApiClient(ctx)
+
+	httpRes, err := client.ExtensionAPI.SetExtensionSiteConfig(ctx, int64(extension.Id), int64(siteInfo.Id)).
+		ExtensionConfigValue(values).
+		Execute()
+	if err := response_inspector.InspectResponse(httpRes, err); err != nil {
+		return err
+	}
+
+	logger.Get().Info().Msgf("Site configuration for extension '%s' and site '%s' set successfully", extensionId, siteIdOrLabel)
+	return nil
+}
+
+func ExtensionSiteConfigDelete(ctx context.Context, extensionId string, siteIdOrLabel string) error {
+	logger.Get().Info().Msgf("Deleting site configuration for extension '%s' and site '%s'", extensionId, siteIdOrLabel)
+
+	extension, err := GetExtensionByIdOrLabel(ctx, extensionId)
+	if err != nil {
+		return err
+	}
+
+	siteInfo, err := site.GetSiteByIdOrLabel(ctx, siteIdOrLabel)
+	if err != nil {
+		return err
+	}
+
+	client := api.GetApiClient(ctx)
+
+	httpRes, err := client.ExtensionAPI.DeleteExtensionSiteConfig(ctx, int64(extension.Id), int64(siteInfo.Id)).Execute()
+	if err := response_inspector.InspectResponse(httpRes, err); err != nil {
+		return err
+	}
+
+	logger.Get().Info().Msgf("Site configuration for extension '%s' and site '%s' deleted successfully", extensionId, siteIdOrLabel)
+	return nil
+}
+
+func SiteExtensionConfigList(ctx context.Context, siteIdOrLabel string) error {
+	logger.Get().Info().Msgf("Listing extension configurations for site '%s'", siteIdOrLabel)
+
+	siteInfo, err := site.GetSiteByIdOrLabel(ctx, siteIdOrLabel)
+	if err != nil {
+		return err
+	}
+
+	client := api.GetApiClient(ctx)
+
+	configs, httpRes, err := client.ExtensionAPI.GetSiteExtensionConfigs(ctx, int64(siteInfo.Id)).Execute()
+	if err := response_inspector.InspectResponse(httpRes, err); err != nil {
+		return err
+	}
+
+	return formatter.PrintResult(configs, &siteExtensionConfigPrintConfig)
 }

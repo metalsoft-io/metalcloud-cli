@@ -17,16 +17,6 @@ import (
 	sdk "github.com/metalsoft-io/metalcloud-sdk-go"
 )
 
-type userRaw struct {
-	Id                 interface{} `json:"id"`
-	DisplayName        *string     `json:"displayName"`
-	Email              *string     `json:"email"`
-	AccessLevel        *string     `json:"accessLevel"`
-	IsArchived         interface{} `json:"isArchived"`
-	CreatedTimestamp   interface{} `json:"createdTimestamp"`
-	LastLoginTimestamp interface{} `json:"lastLoginTimestamp"`
-}
-
 var userPrintConfig = formatter.PrintConfig{
 	FieldsConfig: map[string]formatter.RecordFieldConfig{
 		"Id": {
@@ -64,19 +54,37 @@ var userPrintConfig = formatter.PrintConfig{
 	},
 }
 
+// userLimitsPrintConfig formats the effective quota limits (QuotaProfileLimits)
+// returned by the quota-limits-breakdown endpoint.
 var userLimitsPrintConfig = formatter.PrintConfig{
 	FieldsConfig: map[string]formatter.RecordFieldConfig{
-		"ComputeNodesInstancesToProvisionLimit": {
-			Title: "Compute Nodes Limit",
+		"InfrastructureServerGroupMaxCount": {
+			Title: "Max Server Groups / Infra",
 			Order: 1,
 		},
-		"DrivesAttachedToInstancesLimit": {
-			Title: "Drives Limit",
+		"InfrastructureDriveMaxCount": {
+			Title: "Max Drives / Infra",
 			Order: 2,
 		},
-		"InfrastructuresLimit": {
-			Title: "Infrastructures Limit",
+		"InfrastructureVmInstanceGroupMaxCount": {
+			Title: "Max VM Groups / Infra",
 			Order: 3,
+		},
+		"ServerGroupInstancesMaxCount": {
+			Title: "Max Instances / Server Group",
+			Order: 4,
+		},
+		"VmInstanceGroupVmInstancesMaxCount": {
+			Title: "Max VMs / VM Group",
+			Order: 5,
+		},
+		"DriveMaxSizeMbytes": {
+			Title: "Max Drive Size (MB)",
+			Order: 6,
+		},
+		"UserSshKeysCountMax": {
+			Title: "Max SSH Keys",
+			Order: 7,
 		},
 	},
 }
@@ -100,27 +108,6 @@ var userSshKeysPrintConfig = formatter.PrintConfig{
 			Title:       "Created",
 			Transformer: formatter.FormatDateTimeValue,
 			Order:       4,
-		},
-	},
-}
-
-var userPermissionsPrintConfig = formatter.PrintConfig{
-	FieldsConfig: map[string]formatter.RecordFieldConfig{
-		"UserId": {
-			Title: "User ID",
-			Order: 1,
-		},
-		"ResourceType": {
-			Title: "Resource Type",
-			Order: 2,
-		},
-		"ResourceId": {
-			Title: "Resource ID",
-			Order: 3,
-		},
-		"PermissionLevel": {
-			Title: "Permission Level",
-			Order: 4,
 		},
 	},
 }
@@ -163,19 +150,12 @@ func List(ctx context.Context, archived bool, filterId, filterDisplayName, filte
 		request = request.SearchBy([]string{searchBy})
 	}
 
-	rawItems, meta, err := utils.FetchAllPagesRaw(func(p float32) (*http.Response, error) {
-		_, httpRes, _ := request.Page(p).Limit(100).Execute()
-		return httpRes, nil
-	})
+	users, meta, err := utils.FetchAllPages(request)
 	if err != nil {
 		return err
 	}
-	records, err := utils.UnmarshalRawItems[userRaw](rawItems)
-	if err != nil {
-		return fmt.Errorf("failed to parse users: %w", err)
-	}
 
-	return utils.PrintAllRaw(rawItems, records, meta, len(records), &userPrintConfig)
+	return utils.PrintAll(users, meta, len(users), &userPrintConfig)
 }
 
 func Get(ctx context.Context, userId string) error {
@@ -326,37 +306,15 @@ func GetLimits(ctx context.Context, userId string) error {
 
 	client := api.GetApiClient(ctx)
 
-	userLimits, httpRes, err := client.UsersAPI.GetUserLimits(ctx, userIdNumber).Execute()
+	// Per-user limits are no longer stored directly on the user. The effective
+	// limits are now derived from the user's role/group/account quota profiles and
+	// exposed through the quota-limits-breakdown endpoint.
+	breakdown, httpRes, err := client.UsersAPI.GetQuotaLimitsBreakdown(ctx, userIdNumber).Execute()
 	if err := response_inspector.InspectResponse(httpRes, err); err != nil {
 		return err
 	}
 
-	return formatter.PrintResult(userLimits, &userLimitsPrintConfig)
-}
-
-func UpdateLimits(ctx context.Context, userId string, config []byte) error {
-	logger.Get().Info().Msgf("Updating limits for user '%s'", userId)
-
-	userIdNumber, revision, err := getUserIdAndRevision(ctx, userId)
-	if err != nil {
-		return err
-	}
-
-	var userLimitsConfig sdk.UserLimits
-	err = utils.UnmarshalContent(config, &userLimitsConfig)
-	if err != nil {
-		return err
-	}
-
-	client := api.GetApiClient(ctx)
-
-	userLimits, httpRes, err := client.UsersAPI.UpdateUserLimits(ctx, userIdNumber).UserLimits(userLimitsConfig).IfMatch(revision).Execute()
-	if err := response_inspector.InspectResponse(httpRes, err); err != nil {
-		return err
-	}
-
-	logger.Get().Info().Msgf("Limits updated for user '%s'", userId)
-	return formatter.PrintResult(userLimits, &userLimitsPrintConfig)
+	return formatter.PrintResult(breakdown.Effective, &userLimitsPrintConfig)
 }
 
 func UpdateConfig(ctx context.Context, userId string, config []byte) error {
@@ -393,7 +351,7 @@ func ChangeAccount(ctx context.Context, userId string, accountId int) error {
 	}
 
 	changeAccount := sdk.ChangeUserAccount{
-		NewAccountId: float32(accountId),
+		NewAccountId: int64(accountId),
 	}
 
 	client := api.GetApiClient(ctx)
@@ -456,7 +414,7 @@ func DeleteSSHKey(ctx context.Context, userId string, keyId string) error {
 		return err
 	}
 
-	keyIdNumber, err := strconv.ParseFloat(keyId, 32)
+	keyIdNumber, err := strconv.ParseInt(keyId, 10, 64)
 	if err != nil {
 		err := fmt.Errorf("invalid SSH key ID: '%s'", keyId)
 		logger.Get().Error().Err(err).Msg("")
@@ -465,7 +423,7 @@ func DeleteSSHKey(ctx context.Context, userId string, keyId string) error {
 
 	client := api.GetApiClient(ctx)
 
-	httpRes, err := client.UsersAPI.DeleteUserSshKey(ctx, userIdNumber, float32(keyIdNumber)).Execute()
+	httpRes, err := client.UsersAPI.DeleteUserSshKey(ctx, userIdNumber, keyIdNumber).Execute()
 	if err := response_inspector.InspectResponse(httpRes, err); err != nil {
 		return err
 	}
@@ -514,49 +472,6 @@ func Unsuspend(ctx context.Context, userId string) error {
 
 	logger.Get().Info().Msgf("User '%s' un-suspended", userId)
 	return nil
-}
-
-func GetPermissions(ctx context.Context, userId string) error {
-	logger.Get().Info().Msgf("Getting permissions for user '%s'", userId)
-
-	userIdNumber, err := getUserId(userId)
-	if err != nil {
-		return err
-	}
-
-	client := api.GetApiClient(ctx)
-
-	permissions, httpRes, err := client.UsersAPI.GetUserPermissions(ctx, userIdNumber).Execute()
-	if err := response_inspector.InspectResponse(httpRes, err); err != nil {
-		return err
-	}
-
-	return formatter.PrintResult(permissions, &userPermissionsPrintConfig)
-}
-
-func UpdatePermissions(ctx context.Context, userId string, config []byte) error {
-	logger.Get().Info().Msgf("Updating permissions for user '%s'", userId)
-
-	userIdNumber, revision, err := getUserIdAndRevision(ctx, userId)
-	if err != nil {
-		return err
-	}
-
-	var permissionsConfig sdk.UpdateUserPermissions
-	err = utils.UnmarshalContent(config, &permissionsConfig)
-	if err != nil {
-		return err
-	}
-
-	client := api.GetApiClient(ctx)
-
-	permissions, httpRes, err := client.UsersAPI.UpdateUserPermissions(ctx, userIdNumber).UpdateUserPermissions(permissionsConfig).IfMatch(revision).Execute()
-	if err := response_inspector.InspectResponse(httpRes, err); err != nil {
-		return err
-	}
-
-	logger.Get().Info().Msgf("Permissions updated for user '%s'", userId)
-	return formatter.PrintResult(permissions, &userPermissionsPrintConfig)
 }
 
 func SetPassword(ctx context.Context, userId string, password string) error {
@@ -627,18 +542,18 @@ func SetPassword(ctx context.Context, userId string, password string) error {
 	return formatter.PrintResult(userInfo, &userPrintConfig)
 }
 
-func getUserId(userId string) (float32, error) {
-	userIdNumeric, err := strconv.ParseFloat(userId, 32)
+func getUserId(userId string) (int64, error) {
+	userIdNumeric, err := strconv.ParseInt(userId, 10, 64)
 	if err != nil {
 		err := fmt.Errorf("invalid user ID: '%s'", userId)
 		logger.Get().Error().Err(err).Msg("")
 		return 0, err
 	}
 
-	return float32(userIdNumeric), nil
+	return userIdNumeric, nil
 }
 
-func getUserIdAndRevision(ctx context.Context, userId string) (float32, string, error) {
+func getUserIdAndRevision(ctx context.Context, userId string) (int64, string, error) {
 	userIdNumeric, err := getUserId(userId)
 	if err != nil {
 		return 0, "", err
@@ -646,10 +561,10 @@ func getUserIdAndRevision(ctx context.Context, userId string) (float32, string, 
 
 	client := api.GetApiClient(ctx)
 
-	user, httpRes, err := client.UsersAPI.GetUser(ctx, float32(userIdNumeric)).Execute()
+	user, httpRes, err := client.UsersAPI.GetUser(ctx, userIdNumeric).Execute()
 	if err := response_inspector.InspectResponse(httpRes, err); err != nil {
 		return 0, "", err
 	}
 
-	return float32(userIdNumeric), strconv.Itoa(int(user.Revision)), nil
+	return userIdNumeric, strconv.Itoa(int(user.Revision)), nil
 }

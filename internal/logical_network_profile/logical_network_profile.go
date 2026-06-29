@@ -3,7 +3,6 @@ package logical_network_profile
 import (
 	"context"
 	"fmt"
-	"net/http"
 	"strconv"
 
 	"github.com/metalsoft-io/metalcloud-cli/pkg/api"
@@ -75,28 +74,12 @@ func LogicalNetworkProfileList(ctx context.Context, flags ListFlags) error {
 		request = request.SortBy([]string{"id:ASC"})
 	}
 
-	type logicalNetworkProfileRaw struct {
-		Id       interface{} `json:"id"`
-		Name     *string     `json:"name"`
-		Label    *string     `json:"label"`
-		Kind     *string     `json:"kind"`
-		FabricId interface{} `json:"fabricId"`
-	}
-
-	rawItems, meta, err := utils.FetchAllPagesRaw(func(page float32) (*http.Response, error) {
-		_, httpRes, _ := request.Page(page).Limit(100).Execute()
-		return httpRes, nil
-	})
+	records, meta, err := utils.FetchAllPages(request)
 	if err != nil {
 		return err
 	}
 
-	records, err := utils.UnmarshalRawItems[logicalNetworkProfileRaw](rawItems)
-	if err != nil {
-		return fmt.Errorf("failed to parse logical network profiles: %w", err)
-	}
-
-	return utils.PrintAllRaw(rawItems, records, meta, len(records), &logicalNetworkProfilePrintConfig)
+	return utils.PrintAll(records, meta, len(records), &logicalNetworkProfilePrintConfig)
 }
 
 func LogicalNetworkProfileGet(ctx context.Context, profileId string) error {
@@ -150,7 +133,7 @@ func LogicalNetworkProfileConfigExample(ctx context.Context, kind string) error 
 							ResourceId: 1,
 						},
 						PrefixLength:  24,
-						SubnetPoolIds: []int32{1},
+						SubnetPoolIds: []int64{1},
 					},
 				},
 			},
@@ -165,12 +148,12 @@ func LogicalNetworkProfileConfigExample(ctx context.Context, kind string) error 
 							ResourceId: 1,
 						},
 						PrefixLength:  64,
-						SubnetPoolIds: []int32{1},
+						SubnetPoolIds: []int64{1},
 					},
 				},
 			},
 		}
-		example.RouteDomainId = *sdk.NewNullableInt32(sdk.PtrInt32(1))
+		example.RouteDomainId = *sdk.NewNullableInt64(sdk.PtrInt64(1))
 	case string(sdk.LOGICALNETWORKKIND_VXLAN):
 		example.Kind = sdk.LOGICALNETWORKKIND_VXLAN
 		example.Vlan = &sdk.CreateLogicalNetworkVlanProperties{
@@ -210,7 +193,7 @@ func LogicalNetworkProfileConfigExample(ctx context.Context, kind string) error 
 							ResourceId: 1,
 						},
 						PrefixLength:  24,
-						SubnetPoolIds: []int32{1},
+						SubnetPoolIds: []int64{1},
 					},
 				},
 			},
@@ -225,12 +208,12 @@ func LogicalNetworkProfileConfigExample(ctx context.Context, kind string) error 
 							ResourceId: 1,
 						},
 						PrefixLength:  64,
-						SubnetPoolIds: []int32{1},
+						SubnetPoolIds: []int64{1},
 					},
 				},
 			},
 		}
-		example.RouteDomainId = *sdk.NewNullableInt32(sdk.PtrInt32(1))
+		example.RouteDomainId = *sdk.NewNullableInt64(sdk.PtrInt64(1))
 	default:
 		return fmt.Errorf("invalid logical network profile kind: '%s'", kind)
 	}
@@ -307,12 +290,12 @@ func LogicalNetworkProfileDelete(ctx context.Context, profileId string) error {
 	return nil
 }
 
-func getLogicalNetworkProfileId(profileId string) (float32, error) {
-	id, err := strconv.ParseFloat(profileId, 32)
+func getLogicalNetworkProfileId(profileId string) (int64, error) {
+	id, err := strconv.ParseInt(profileId, 10, 64)
 	if err != nil {
 		err := fmt.Errorf("invalid logical network profile ID: '%s'", profileId)
 		logger.Get().Error().Err(err).Msg("")
 		return 0, err
 	}
-	return float32(id), nil
+	return id, nil
 }

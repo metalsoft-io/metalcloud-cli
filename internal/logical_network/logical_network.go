@@ -3,7 +3,6 @@ package logical_network
 import (
 	"context"
 	"fmt"
-	"net/http"
 	"strconv"
 
 	"github.com/metalsoft-io/metalcloud-cli/internal/fabric"
@@ -14,17 +13,6 @@ import (
 	"github.com/metalsoft-io/metalcloud-cli/pkg/utils"
 	sdk "github.com/metalsoft-io/metalcloud-sdk-go"
 )
-
-// logicalNetworkRaw avoids SDK unmarshal failure: API may omit id (required in SDK struct).
-// ID fields are interface{} — API returns them inconsistently as number or string.
-type logicalNetworkRaw struct {
-	Id               interface{} `json:"id"`
-	Label            *string     `json:"label"`
-	Name             *string     `json:"name"`
-	Kind             *string     `json:"kind"`
-	FabricId         interface{} `json:"fabricId"`
-	InfrastructureId interface{} `json:"infrastructureId"`
-}
 
 var logicalNetworkPrintConfig = formatter.PrintConfig{
 	FieldsConfig: map[string]formatter.RecordFieldConfig{
@@ -97,12 +85,6 @@ func LogicalNetworkList(ctx context.Context, fabricIdOrLabel string, flags ListF
 	if len(flags.SortBy) > 0 {
 		request = request.SortBy(flags.SortBy)
 	}
-	if flags.Page > 0 {
-		request = request.Page(float32(flags.Page))
-	}
-	if flags.Limit > 0 {
-		request = request.Limit(float32(flags.Limit))
-	}
 
 	if fabricIdOrLabel != "" {
 		fabric, err := fabric.GetFabricByIdOrLabel(ctx, fabricIdOrLabel)
@@ -113,50 +95,26 @@ func LogicalNetworkList(ctx context.Context, fabricIdOrLabel string, flags ListF
 		request = request.FilterFabricId([]string{fabric.Id})
 	}
 
-	if flags.Page > 0 {
-		rawItems, meta, err := utils.FetchPageWindowRaw(func(p, l float32) (*http.Response, error) {
-			_, httpRes, _ := request.Page(p).Limit(l).Execute()
-			return httpRes, nil
-		}, flags.Page, flags.Limit)
+	switch {
+	case flags.Page > 0:
+		records, meta, err := utils.FetchPageWindow(request, flags.Page, flags.Limit)
 		if err != nil {
 			return err
 		}
-		records, err := utils.UnmarshalRawItems[logicalNetworkRaw](rawItems)
-		if err != nil {
-			return fmt.Errorf("failed to parse logical networks: %w", err)
-		}
-		return utils.PrintAllRaw(rawItems, records, meta, len(records), &logicalNetworkPrintConfig)
-	}
-
-	if flags.Limit > 0 {
-		rawItems, meta, err := utils.FetchUpToRaw(func(page, limit float32) (*http.Response, error) {
-			_, httpRes, _ := request.Page(page).Limit(limit).Execute()
-			return httpRes, nil
-		}, flags.Limit)
+		return utils.PrintAll(records, meta, len(records), &logicalNetworkPrintConfig)
+	case flags.Limit > 0:
+		records, meta, err := utils.FetchUpTo(request, flags.Limit)
 		if err != nil {
 			return err
 		}
-		records, err := utils.UnmarshalRawItems[logicalNetworkRaw](rawItems)
+		return utils.PrintAll(records, meta, len(records), &logicalNetworkPrintConfig)
+	default:
+		records, meta, err := utils.FetchAllPages(request)
 		if err != nil {
-			return fmt.Errorf("failed to parse logical networks: %w", err)
+			return err
 		}
-		return utils.PrintAllRaw(rawItems, records, meta, len(records), &logicalNetworkPrintConfig)
+		return utils.PrintAll(records, meta, len(records), &logicalNetworkPrintConfig)
 	}
-
-	rawItems, meta, err := utils.FetchAllPagesRaw(func(page float32) (*http.Response, error) {
-		_, httpRes, _ := request.Page(page).Limit(100).Execute()
-		return httpRes, nil
-	})
-	if err != nil {
-		return err
-	}
-
-	records, err := utils.UnmarshalRawItems[logicalNetworkRaw](rawItems)
-	if err != nil {
-		return fmt.Errorf("failed to parse logical networks: %w", err)
-	}
-
-	return utils.PrintAllRaw(rawItems, records, meta, len(records), &logicalNetworkPrintConfig)
 }
 
 func LogicalNetworkGet(ctx context.Context, logicalNetworkId string) error {
@@ -183,7 +141,7 @@ func LogicalNetworkConfigExample(ctx context.Context, kind string) error {
 	logicalNetworkConfiguration.Label = sdk.PtrString("example-logical-network")
 	logicalNetworkConfiguration.Name = sdk.PtrString("Example Logical Network")
 	logicalNetworkConfiguration.FabricId = 1
-	logicalNetworkConfiguration.InfrastructureId = *sdk.NewNullableInt32(sdk.PtrInt32(1))
+	logicalNetworkConfiguration.InfrastructureId = *sdk.NewNullableInt64(sdk.PtrInt64(1))
 
 	if kind == string(sdk.LOGICALNETWORKKIND_VLAN) {
 		logicalNetworkConfiguration.Kind = sdk.LOGICALNETWORKKIND_VLAN
@@ -211,7 +169,7 @@ func LogicalNetworkConfigExample(ctx context.Context, kind string) error {
 							ResourceId: 1,
 						},
 						PrefixLength:  24,
-						SubnetPoolIds: []int32{2, 3},
+						SubnetPoolIds: []int64{2, 3},
 					},
 				},
 			},
@@ -226,12 +184,12 @@ func LogicalNetworkConfigExample(ctx context.Context, kind string) error {
 							ResourceId: 1,
 						},
 						PrefixLength:  64,
-						SubnetPoolIds: []int32{2, 3},
+						SubnetPoolIds: []int64{2, 3},
 					},
 				},
 			},
 		}
-		logicalNetworkConfiguration.RouteDomainId = *sdk.NewNullableInt32(sdk.PtrInt32(1))
+		logicalNetworkConfiguration.RouteDomainId = *sdk.NewNullableInt64(sdk.PtrInt64(1))
 		logicalNetworkConfiguration.Annotations = &map[string]string{
 			"example": "example",
 		}
@@ -274,7 +232,7 @@ func LogicalNetworkConfigExample(ctx context.Context, kind string) error {
 							ResourceId: 1,
 						},
 						PrefixLength:  24,
-						SubnetPoolIds: []int32{2, 3},
+						SubnetPoolIds: []int64{2, 3},
 					},
 				},
 			},
@@ -289,12 +247,12 @@ func LogicalNetworkConfigExample(ctx context.Context, kind string) error {
 							ResourceId: 1,
 						},
 						PrefixLength:  64,
-						SubnetPoolIds: []int32{2, 3},
+						SubnetPoolIds: []int64{2, 3},
 					},
 				},
 			},
 		}
-		logicalNetworkConfiguration.RouteDomainId = *sdk.NewNullableInt32(sdk.PtrInt32(1))
+		logicalNetworkConfiguration.RouteDomainId = *sdk.NewNullableInt64(sdk.PtrInt64(1))
 		logicalNetworkConfiguration.Annotations = &map[string]string{
 			"example": "example",
 		}
@@ -384,13 +342,13 @@ func LogicalNetworkDelete(ctx context.Context, logicalNetworkId string) error {
 	return nil
 }
 
-func getLogicalNetworkId(logicalNetworkId string) (float32, error) {
-	logicalNetworkIdNumeric, err := strconv.ParseFloat(logicalNetworkId, 32)
+func getLogicalNetworkId(logicalNetworkId string) (int64, error) {
+	logicalNetworkIdNumeric, err := strconv.ParseInt(logicalNetworkId, 10, 64)
 	if err != nil {
 		err := fmt.Errorf("invalid logical network ID: '%s'", logicalNetworkId)
 		logger.Get().Error().Err(err).Msg("")
 		return 0, err
 	}
 
-	return float32(logicalNetworkIdNumeric), nil
+	return logicalNetworkIdNumeric, nil
 }

@@ -43,10 +43,10 @@ type lenovoSoftwareUpdate struct {
 }
 
 type lenovoCatalog struct {
-	ResultCode     *int                   `json:"ResultCode"`
-	Message        *string                `json:"Message"`
+	ResultCode     *int                    `json:"ResultCode"`
+	Message        *string                 `json:"Message"`
 	Data           []*lenovoSoftwareUpdate `json:"Data"`
-	FixIdsNotFound []string               `json:"FixIdsNotFound"`
+	FixIdsNotFound []string                `json:"FixIdsNotFound"`
 }
 
 func (vc *VendorCatalog) processLenovoCatalog(ctx context.Context) error {
@@ -153,7 +153,7 @@ func (vc *VendorCatalog) processLenovoCatalog(ctx context.Context) error {
 				PackageId:              sdk.PtrString(softwareUpdate.FixID),
 				PackageVersion:         packageVersion,
 				RebootRequired:         true,
-				UpdateSeverity:         sdk.FIRMWAREBINARYUPDATESEVERITY_UNKNOWN,
+				UpdateSeverity:         UpdateSeverityUnknown,
 				VendorSupportedDevices: supportedDevices,
 				VendorSupportedSystems: supportedSystems,
 				VendorReleaseTimestamp: nil,

@@ -14,21 +14,25 @@ func TestMain(m *testing.M) {
 
 func roleItem(id, name, label string) map[string]interface{} {
 	return map[string]interface{}{
-		"id":            id,
-		"name":          name,
-		"label":         label,
-		"type":          "custom",
-		"description":   "test role",
-		"usersWithRole": 0,
-		"permissions":   []interface{}{},
+		"id":             id,
+		"name":           name,
+		"label":          label,
+		"type":           "custom",
+		"description":    "test role",
+		"usersWithRole":  0,
+		"permissions":    []interface{}{},
+		"quotaProfileId": nil,
 	}
 }
 
 func TestRoleList_HappyPath(t *testing.T) {
 	resp := map[string]interface{}{
-		"roles": []interface{}{
+		"data": []interface{}{
 			roleItem("1", "admin", "Admin"),
 			roleItem("2", "user", "User"),
+		},
+		"meta": map[string]interface{}{
+			"currentPage": 1, "totalPages": 1, "itemsPerPage": 100, "totalItems": 2,
 		},
 	}
 	ts := testutils.NewTestServer(map[string]http.HandlerFunc{
@@ -44,7 +48,10 @@ func TestRoleList_HappyPath(t *testing.T) {
 
 func TestRoleList_Empty(t *testing.T) {
 	resp := map[string]interface{}{
-		"roles": []interface{}{},
+		"data": []interface{}{},
+		"meta": map[string]interface{}{
+			"currentPage": 1, "totalPages": 1, "itemsPerPage": 100, "totalItems": 0,
+		},
 	}
 	ts := testutils.NewTestServer(map[string]http.HandlerFunc{
 		"/api/v2/roles": testutils.JSONHandler(http.StatusOK, resp),
