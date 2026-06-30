@@ -2,10 +2,15 @@ package fabric_switch_config
 
 import (
 	"context"
+	"encoding/json"
 	"errors"
+	"fmt"
+	"io"
+	"net/http"
 	"regexp"
 	"strconv"
 
+	"github.com/metalsoft-io/metalcloud-cli/pkg/api"
 	"github.com/metalsoft-io/metalcloud-cli/pkg/response_inspector"
 	"github.com/metalsoft-io/metalcloud-cli/pkg/utils"
 	sdk "github.com/metalsoft-io/metalcloud-sdk-go"
@@ -176,21 +181,59 @@ func expectedRevision(err error) string {
 	return ""
 }
 
+// rawP2pInterface / rawP2pLink are a lenient view of the point-to-point-links
+// listing. The SDK's typed decode fails here: the ipv4 subnet-allocation
+// strategy is a oneOf whose "unnumbered" variant is just {kind, scope}, so every
+// auto/manual strategy also matches it ("data matches more than one schema in
+// oneOf"). We only need the link id/revision, the switch-interface ids, and
+// whether an ipv4 strategy exists, so parse the raw body directly.
+type rawP2pInterface struct {
+	Type        string `json:"type"`
+	InterfaceId int64  `json:"interfaceId"`
+}
+
+type rawP2pLink struct {
+	Id         int64            `json:"id"`
+	Revision   int64            `json:"revision"`
+	InterfaceA *rawP2pInterface `json:"interfaceA"`
+	InterfaceB *rawP2pInterface `json:"interfaceB"`
+	Config     struct {
+		Ipv4 *struct {
+			SubnetAllocationStrategies []json.RawMessage `json:"subnetAllocationStrategies"`
+		} `json:"ipv4"`
+	} `json:"config"`
+}
+
 func (c *sdkClient) ListP2pLinks() ([]*P2pLinkRecord, error) {
-	links, httpRes, err := c.api.PointToPointLinkAPI.GetPointToPointLinks(c.ctx).Execute()
+	httpRes, err := api.DoJSONRequest(c.ctx, http.MethodGet, "/api/v2/point-to-point-links", nil)
 	if err := response_inspector.InspectResponse(httpRes, err); err != nil {
 		return nil, err
 	}
+	defer httpRes.Body.Close()
+	body, err := io.ReadAll(httpRes.Body)
+	if err != nil {
+		return nil, fmt.Errorf("reading point-to-point links: %w", err)
+	}
+	return parseP2pLinksBody(body)
+}
+
+func parseP2pLinksBody(body []byte) ([]*P2pLinkRecord, error) {
+	var links []rawP2pLink
+	if err := json.Unmarshal(body, &links); err != nil {
+		return nil, fmt.Errorf("parsing point-to-point links: %w", err)
+	}
+
+	const neqType = string(sdk.POINTTOPOINTINTERFACETYPE_NETWORK_EQUIPMENT_INTERFACE)
 	out := make([]*P2pLinkRecord, 0, len(links))
 	for i := range links {
 		link := &links[i]
 		rec := &P2pLinkRecord{Id: link.Id, Revision: link.Revision}
-		if iface, ok := link.GetInterfaceAOk(); ok && iface != nil && iface.Type == sdk.POINTTOPOINTINTERFACETYPE_NETWORK_EQUIPMENT_INTERFACE {
-			id := iface.InterfaceId
+		if link.InterfaceA != nil && link.InterfaceA.Type == neqType {
+			id := link.InterfaceA.InterfaceId
 			rec.InterfaceAId = &id
 		}
-		if iface, ok := link.GetInterfaceBOk(); ok && iface != nil && iface.Type == sdk.POINTTOPOINTINTERFACETYPE_NETWORK_EQUIPMENT_INTERFACE {
-			id := iface.InterfaceId
+		if link.InterfaceB != nil && link.InterfaceB.Type == neqType {
+			id := link.InterfaceB.InterfaceId
 			rec.InterfaceBId = &id
 		}
 		if link.Config.Ipv4 != nil && len(link.Config.Ipv4.SubnetAllocationStrategies) > 0 {
