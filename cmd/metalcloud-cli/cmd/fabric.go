@@ -737,24 +737,39 @@ computed from the same topology/loopback plan as 'configure-switches'. The .j2
 template body is supplied via the config's freeform.templatePath and uploaded
 as-is; the engine renders it server-side.
 
+The configuration is supplied EITHER as a whole document via --config-source OR
+built from the per-property flags below (the two are mutually exclusive). The
+per-property flags cover the freeform section (--mode, --template-path,
+--template-label, --profile-priority, --apply-mode, --hgx-prefix) plus the plan
+sections it reads (--ordering, --topology-leaf-spine[-links-per-pair],
+--topology-leaf-host[-node-count|...], --p2p-pool-leaf-host, ...).
+
 Arguments:
   fabric_id    The ID or label of the fabric
 
-Required Flags:
+Input (one of):
   --config-source   'pipe' or path to the YAML/JSON config (with a 'freeform' section).
+  per-property flags as listed above and in --help.
 
-Optional Flags:
+Always available:
   --dry-run         Report the plan without writing.
   --verify-render   Render every device through the engine first; abort on any render error.
 
 Examples:
   metalcloud-cli fabric configure-freeform 5 --config-source fabric-config.l3evpn.yaml --verify-render
-  metalcloud-cli fabric configure-freeform my-fabric --config-source fabric-config.yaml --dry-run`,
+  metalcloud-cli fabric configure-freeform 5 --mode l3evpn --template-path ./freeform-device-config.j2 \
+    --topology-leaf-spine --dry-run`,
 		SilenceUsage: true,
 		Annotations:  map[string]string{system.REQUIRED_PERMISSION: system.PERMISSION_NETWORK_FABRICS_WRITE},
 		Args:         cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
-			config, err := utils.ReadConfigFromPipeOrFile(fabricFlags.configSource)
+			var config []byte
+			var err error
+			if fabricFlags.configSource != "" {
+				config, err = utils.ReadConfigFromPipeOrFile(fabricFlags.configSource)
+			} else {
+				config, err = buildFreeformConfigFromFlags(cmd)
+			}
 			if err != nil {
 				return err
 			}
@@ -776,24 +791,42 @@ the devices must already carry asn/loopbackAddress (run 'configure-switches'
 first). The .j2 template bodies are supplied via the config's bgp.*TemplatePath
 keys and uploaded as-is; the engine renders them server-side.
 
+The configuration is supplied EITHER as a whole document via --config-source OR
+built from the per-property flags below (the two are mutually exclusive). The
+per-property flags cover the bgp section (--mode, --apply-mode, --template-path
+/-label/-profile-priority, the --overlay-*, --pfc-*, --vrf-* template flags)
+plus the plan sections it reads (--ordering, --topology-leaf-spine
+[-links-per-pair], --topology-spine-super-spine[-links-per-pair],
+--topology-leaf-host[...], --p2p-pool-* , --p2p-mtu).
+
 Arguments:
   fabric_id    The ID or label of the fabric
 
-Required Flags:
+Input (one of):
   --config-source   'pipe' or path to the YAML/JSON config (with a 'bgp' section).
+  per-property flags as listed above and in --help.
 
-Optional Flags:
+Always available:
   --dry-run         Report the plan without writing.
   --verify-render   Render every device through the engine first; abort on any render error.
 
 Examples:
   metalcloud-cli fabric configure-bgp 5 --config-source fabric-config.l3evpn.yaml --verify-render
-  metalcloud-cli fabric configure-bgp my-fabric --config-source fabric-config.yaml --dry-run`,
+  metalcloud-cli fabric configure-bgp 5 --mode l3evpn \
+    --template-path ./freeform-bgp-underlay.j2 --overlay-template-path ./freeform-bgp-overlay.j2 \
+    --pfc-template-path ./freeform-qos-pfc.j2 --vrf-template-path ./switch-configure-vrf-create.j2 \
+    --topology-leaf-spine --topology-spine-super-spine --p2p-pool-leaf-spine 10.254.0.0/16 --dry-run`,
 		SilenceUsage: true,
 		Annotations:  map[string]string{system.REQUIRED_PERMISSION: system.PERMISSION_NETWORK_FABRICS_WRITE},
 		Args:         cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
-			config, err := utils.ReadConfigFromPipeOrFile(fabricFlags.configSource)
+			var config []byte
+			var err error
+			if fabricFlags.configSource != "" {
+				config, err = utils.ReadConfigFromPipeOrFile(fabricFlags.configSource)
+			} else {
+				config, err = buildBgpConfigFromFlags(cmd)
+			}
 			if err != nil {
 				return err
 			}
@@ -1116,16 +1149,22 @@ func init() {
 	fabricCmd.AddCommand(fabricConfigureSwitchesExampleCmd)
 
 	fabricCmd.AddCommand(fabricConfigureFreeformCmd)
-	fabricConfigureFreeformCmd.Flags().StringVar(&fabricFlags.configSource, "config-source", "", "Source of the configuration (with a 'freeform' section). 'pipe' or path to a YAML/JSON file.")
+	fabricConfigureFreeformCmd.Flags().StringVar(&fabricFlags.configSource, "config-source", "", "Source of the configuration (with a 'freeform' section). 'pipe' or path to a YAML/JSON file. Mutually exclusive with the per-property flags.")
 	fabricConfigureFreeformCmd.Flags().BoolVar(&fabricFlags.dryRun, "dry-run", false, "Report the plan without making changes.")
 	fabricConfigureFreeformCmd.Flags().BoolVar(&fabricFlags.verifyRender, "verify-render", false, "Render each device through the engine before writing; abort on any render error.")
-	fabricConfigureFreeformCmd.MarkFlagRequired("config-source")
+	registerConfigureFreeformFlags(fabricConfigureFreeformCmd)
+	for _, name := range freeformDetailFlags {
+		fabricConfigureFreeformCmd.MarkFlagsMutuallyExclusive("config-source", name)
+	}
 
 	fabricCmd.AddCommand(fabricConfigureBgpCmd)
-	fabricConfigureBgpCmd.Flags().StringVar(&fabricFlags.configSource, "config-source", "", "Source of the configuration (with a 'bgp' section). 'pipe' or path to a YAML/JSON file.")
+	fabricConfigureBgpCmd.Flags().StringVar(&fabricFlags.configSource, "config-source", "", "Source of the configuration (with a 'bgp' section). 'pipe' or path to a YAML/JSON file. Mutually exclusive with the per-property flags.")
 	fabricConfigureBgpCmd.Flags().BoolVar(&fabricFlags.dryRun, "dry-run", false, "Report the plan without making changes.")
 	fabricConfigureBgpCmd.Flags().BoolVar(&fabricFlags.verifyRender, "verify-render", false, "Render each device through the engine before writing; abort on any render error.")
-	fabricConfigureBgpCmd.MarkFlagRequired("config-source")
+	registerConfigureBgpFlags(fabricConfigureBgpCmd)
+	for _, name := range bgpDetailFlags {
+		fabricConfigureBgpCmd.MarkFlagsMutuallyExclusive("config-source", name)
+	}
 
 	fabricCmd.AddCommand(fabricConfigureFreeformExampleCmd)
 	fabricCmd.AddCommand(fabricConfigureBgpExampleCmd)
