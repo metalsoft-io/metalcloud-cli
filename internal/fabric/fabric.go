@@ -9,6 +9,7 @@ import (
 	"strings"
 
 	"github.com/metalsoft-io/metalcloud-cli/internal/fabric_switch_config"
+	"github.com/metalsoft-io/metalcloud-cli/internal/fabric_template_config"
 	"github.com/metalsoft-io/metalcloud-cli/internal/network_device"
 	"github.com/metalsoft-io/metalcloud-cli/internal/site"
 	"github.com/metalsoft-io/metalcloud-cli/pkg/api"
@@ -787,6 +788,54 @@ func FabricConfigureSwitches(ctx context.Context, fabricIdOrLabel string, config
 		return fmt.Errorf("fabric switch configuration completed with %d failure(s)", result.Failures)
 	}
 	return nil
+}
+
+// FabricConfigureFreeform registers the base freeform device-configuration
+// template + one profile per switch.
+func FabricConfigureFreeform(ctx context.Context, fabricIdOrLabel string, config []byte, dryRun bool, verify bool) error {
+	fabricId, err := resolveFabricNumericId(ctx, fabricIdOrLabel)
+	if err != nil {
+		return err
+	}
+	client := fabric_template_config.NewSDKClient(ctx, api.GetApiClient(ctx))
+	_, err = fabric_template_config.RunFreeform(client, config, fabricId, dryRun, verify)
+	return err
+}
+
+// FabricConfigureBgp registers the BGP underlay (+ l3evpn overlay/PFC/VRF)
+// templates and per-switch profiles, and reconciles device customVariables.
+func FabricConfigureBgp(ctx context.Context, fabricIdOrLabel string, config []byte, dryRun bool, verify bool) error {
+	fabricId, err := resolveFabricNumericId(ctx, fabricIdOrLabel)
+	if err != nil {
+		return err
+	}
+	client := fabric_template_config.NewSDKClient(ctx, api.GetApiClient(ctx))
+	_, err = fabric_template_config.RunBgp(client, config, fabricId, dryRun, verify)
+	return err
+}
+
+// FabricConfigureFreeformExample prints a ready-to-edit freeform config example.
+func FabricConfigureFreeformExample(ctx context.Context) error {
+	fmt.Print(fabric_template_config.ExampleFreeformYAML())
+	return nil
+}
+
+// FabricConfigureBgpExample prints a ready-to-edit bgp config example.
+func FabricConfigureBgpExample(ctx context.Context) error {
+	fmt.Print(fabric_template_config.ExampleBgpYAML())
+	return nil
+}
+
+func resolveFabricNumericId(ctx context.Context, fabricIdOrLabel string) (int64, error) {
+	fabricInfo, err := GetFabricByIdOrLabel(ctx, fabricIdOrLabel)
+	if err != nil {
+		return 0, err
+	}
+	fabricId, err := strconv.ParseInt(fabricInfo.Id, 10, 64)
+	if err != nil {
+		return 0, fmt.Errorf("invalid fabric ID %q: %w", fabricInfo.Id, err)
+	}
+	return fabricId, nil
 }
 
 // FabricConfigureSwitchesExample prints a commented, ready-to-edit example of

@@ -50,6 +50,10 @@ Available Commands:
 * [metalcloud-cli fabric add-device](metalcloud-cli_fabric_add-device.md)	 - Add network device(s) to a fabric
 * [metalcloud-cli fabric add-link](metalcloud-cli_fabric_add-link.md)	 - Add a network fabric link
 * [metalcloud-cli fabric config-example](metalcloud-cli_fabric_config-example.md)	 - Show example fabric configuration
+* [metalcloud-cli fabric configure-bgp](metalcloud-cli_fabric_configure-bgp.md)	 - Register the BGP underlay/overlay/PFC templates + profiles (step 8b)
+* [metalcloud-cli fabric configure-bgp-example](metalcloud-cli_fabric_configure-bgp-example.md)	 - Show an example config for configure-bgp
+* [metalcloud-cli fabric configure-freeform](metalcloud-cli_fabric_configure-freeform.md)	 - Register the base freeform template + per-switch profiles (step 8a)
+* [metalcloud-cli fabric configure-freeform-example](metalcloud-cli_fabric_configure-freeform-example.md)	 - Show an example config for configure-freeform
 * [metalcloud-cli fabric configure-switches](metalcloud-cli_fabric_configure-switches.md)	 - Configure all switches of a fabric from a declarative YAML/JSON
 * [metalcloud-cli fabric configure-switches-example](metalcloud-cli_fabric_configure-switches-example.md)	 - Show an example switch configuration for configure-switches
 * [metalcloud-cli fabric create](metalcloud-cli_fabric_create.md)	 - Create a new fabric

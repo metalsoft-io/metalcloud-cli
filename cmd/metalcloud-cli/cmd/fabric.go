@@ -25,6 +25,7 @@ var (
 		customVariables      []string
 		dryRun               bool
 		updateLLDP           bool
+		verifyRender         bool
 	}{}
 
 	// configureSwitchesFlags are the per-property alternatives to --config-source
@@ -724,6 +725,104 @@ Examples:
 		},
 	}
 
+	fabricConfigureFreeformCmd = &cobra.Command{
+		Use:   "configure-freeform fabric_id",
+		Short: "Register the base freeform template + per-switch profiles (step 8a)",
+		Long: `Register the Spectrum-X base freeform device-configuration template (hostname,
+RoCE/QoS, adaptive routing, telemetry, BFD; in l3evpn the EVPN/VXLAN data plane)
+and one variables-carrying profile per fabric switch, idempotently.
+
+Per-device variables (mode, hgx_prefix, and for l3evpn leaves nve_source) are
+computed from the same topology/loopback plan as 'configure-switches'. The .j2
+template body is supplied via the config's freeform.templatePath and uploaded
+as-is; the engine renders it server-side.
+
+Arguments:
+  fabric_id    The ID or label of the fabric
+
+Required Flags:
+  --config-source   'pipe' or path to the YAML/JSON config (with a 'freeform' section).
+
+Optional Flags:
+  --dry-run         Report the plan without writing.
+  --verify-render   Render every device through the engine first; abort on any render error.
+
+Examples:
+  metalcloud-cli fabric configure-freeform 5 --config-source fabric-config.l3evpn.yaml --verify-render
+  metalcloud-cli fabric configure-freeform my-fabric --config-source fabric-config.yaml --dry-run`,
+		SilenceUsage: true,
+		Annotations:  map[string]string{system.REQUIRED_PERMISSION: system.PERMISSION_NETWORK_FABRICS_WRITE},
+		Args:         cobra.ExactArgs(1),
+		RunE: func(cmd *cobra.Command, args []string) error {
+			config, err := utils.ReadConfigFromPipeOrFile(fabricFlags.configSource)
+			if err != nil {
+				return err
+			}
+			return fabric.FabricConfigureFreeform(cmd.Context(), args[0], config, fabricFlags.dryRun, fabricFlags.verifyRender)
+		},
+	}
+
+	fabricConfigureBgpCmd = &cobra.Command{
+		Use:   "configure-bgp fabric_id",
+		Short: "Register the BGP underlay/overlay/PFC templates + profiles (step 8b)",
+		Long: `Register the Spectrum-X BGP underlay template (and, in l3evpn, the EVPN overlay
+RR-mesh, QoS PFC defaults, and the action-bound route-domain VRF template) plus
+one variables-carrying profile per fabric switch, and reconcile each switch's
+device customVariables (aggregates / is_evpn_rr) that the tenant VRF render reads.
+
+Per-device variables (bgp_neighbors, /26 aggregates, RR selection, overlay
+neighbors) are computed from the same topology+p2p plan as 'configure-switches';
+the devices must already carry asn/loopbackAddress (run 'configure-switches'
+first). The .j2 template bodies are supplied via the config's bgp.*TemplatePath
+keys and uploaded as-is; the engine renders them server-side.
+
+Arguments:
+  fabric_id    The ID or label of the fabric
+
+Required Flags:
+  --config-source   'pipe' or path to the YAML/JSON config (with a 'bgp' section).
+
+Optional Flags:
+  --dry-run         Report the plan without writing.
+  --verify-render   Render every device through the engine first; abort on any render error.
+
+Examples:
+  metalcloud-cli fabric configure-bgp 5 --config-source fabric-config.l3evpn.yaml --verify-render
+  metalcloud-cli fabric configure-bgp my-fabric --config-source fabric-config.yaml --dry-run`,
+		SilenceUsage: true,
+		Annotations:  map[string]string{system.REQUIRED_PERMISSION: system.PERMISSION_NETWORK_FABRICS_WRITE},
+		Args:         cobra.ExactArgs(1),
+		RunE: func(cmd *cobra.Command, args []string) error {
+			config, err := utils.ReadConfigFromPipeOrFile(fabricFlags.configSource)
+			if err != nil {
+				return err
+			}
+			return fabric.FabricConfigureBgp(cmd.Context(), args[0], config, fabricFlags.dryRun, fabricFlags.verifyRender)
+		},
+	}
+
+	fabricConfigureFreeformExampleCmd = &cobra.Command{
+		Use:          "configure-freeform-example",
+		Short:        "Show an example config for configure-freeform",
+		Long:         `Print a commented, ready-to-edit example of the configuration accepted by 'fabric configure-freeform'.`,
+		SilenceUsage: true,
+		Annotations:  map[string]string{system.REQUIRED_PERMISSION: system.PERMISSION_NETWORK_FABRICS_READ},
+		RunE: func(cmd *cobra.Command, args []string) error {
+			return fabric.FabricConfigureFreeformExample(cmd.Context())
+		},
+	}
+
+	fabricConfigureBgpExampleCmd = &cobra.Command{
+		Use:          "configure-bgp-example",
+		Short:        "Show an example config for configure-bgp",
+		Long:         `Print a commented, ready-to-edit example of the configuration accepted by 'fabric configure-bgp'.`,
+		SilenceUsage: true,
+		Annotations:  map[string]string{system.REQUIRED_PERMISSION: system.PERMISSION_NETWORK_FABRICS_READ},
+		RunE: func(cmd *cobra.Command, args []string) error {
+			return fabric.FabricConfigureBgpExample(cmd.Context())
+		},
+	}
+
 	fabricConfigureSwitchesExampleCmd = &cobra.Command{
 		Use:     "configure-switches-example",
 		Aliases: []string{"configure-switches-config-example"},
@@ -1015,4 +1114,19 @@ func init() {
 	}
 
 	fabricCmd.AddCommand(fabricConfigureSwitchesExampleCmd)
+
+	fabricCmd.AddCommand(fabricConfigureFreeformCmd)
+	fabricConfigureFreeformCmd.Flags().StringVar(&fabricFlags.configSource, "config-source", "", "Source of the configuration (with a 'freeform' section). 'pipe' or path to a YAML/JSON file.")
+	fabricConfigureFreeformCmd.Flags().BoolVar(&fabricFlags.dryRun, "dry-run", false, "Report the plan without making changes.")
+	fabricConfigureFreeformCmd.Flags().BoolVar(&fabricFlags.verifyRender, "verify-render", false, "Render each device through the engine before writing; abort on any render error.")
+	fabricConfigureFreeformCmd.MarkFlagRequired("config-source")
+
+	fabricCmd.AddCommand(fabricConfigureBgpCmd)
+	fabricConfigureBgpCmd.Flags().StringVar(&fabricFlags.configSource, "config-source", "", "Source of the configuration (with a 'bgp' section). 'pipe' or path to a YAML/JSON file.")
+	fabricConfigureBgpCmd.Flags().BoolVar(&fabricFlags.dryRun, "dry-run", false, "Report the plan without making changes.")
+	fabricConfigureBgpCmd.Flags().BoolVar(&fabricFlags.verifyRender, "verify-render", false, "Render each device through the engine before writing; abort on any render error.")
+	fabricConfigureBgpCmd.MarkFlagRequired("config-source")
+
+	fabricCmd.AddCommand(fabricConfigureFreeformExampleCmd)
+	fabricCmd.AddCommand(fabricConfigureBgpExampleCmd)
 }
