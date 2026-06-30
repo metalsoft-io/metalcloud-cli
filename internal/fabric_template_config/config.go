@@ -11,7 +11,7 @@ import (
 var validModes = map[string]bool{"purel3": true, "l3evpn": true}
 var validApplyModes = map[string]bool{"once": true, "always": true}
 
-// Default labels / priorities (mirror configure_freeform.py / configure_bgp.py).
+// Default labels / priorities.
 const (
 	defaultFreeformLabel    = "spectrumx-freeform"
 	defaultFreeformPriority = 50

@@ -1,5 +1,4 @@
-// Package fabric_template_config ports the configure_freeform.py and
-// configure_bgp.py scripts: it computes the per-device freeform / BGP-underlay /
+// Package fabric_template_config computes the per-device freeform / BGP-underlay /
 // EVPN-overlay / PFC profile variables from the same topology+p2p plan the
 // fabric_switch_config engine produces, then registers the device-configuration
 // templates (from .j2 bodies) and one variables-carrying profile per switch,

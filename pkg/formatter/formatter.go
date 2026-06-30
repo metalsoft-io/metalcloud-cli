@@ -58,6 +58,16 @@ func IsTextFormat() bool {
 	return f == "" || f == "text"
 }
 
+func PrintYamlResult(result interface{}) error {
+	yamlResult, err := yaml.Marshal(result)
+	if err != nil {
+		return fmt.Errorf("failed to convert to YAML: %v", err)
+	}
+	fmt.Printf("%s", string(yamlResult))
+
+	return nil
+}
+
 func PrintResult(result interface{}, printConfig *PrintConfig) error {
 	format := strings.ToLower(viper.GetString(ConfigFormat))
 	disableColor = false

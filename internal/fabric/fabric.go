@@ -75,10 +75,10 @@ func FabricGet(ctx context.Context, fabricId string) error {
 }
 
 func FabricConfigExample(ctx context.Context, fabricType string) error {
-	var fabricConfiguration sdk.NetworkFabricFabricConfiguration
+	var fabricConfiguration interface{}
 	switch fabricType {
 	case "ethernet":
-		ethernetConfig := sdk.EthernetFabric{
+		fabricConfiguration = sdk.EthernetFabric{
 			FabricType:                 sdk.FABRICTYPE_ETHERNET,
 			SyslogMonitoringEnabled:    sdk.PtrBool(true),
 			GnmiMonitoringEnabled:      sdk.PtrBool(false),
@@ -93,11 +93,8 @@ func FabricConfigExample(ctx context.Context, fabricType string) error {
 			VrfVlanRanges:              []string{"400-450", "460-470"},
 		}
 
-		fabricConfiguration = sdk.NetworkFabricFabricConfiguration{
-			EthernetFabric: &ethernetConfig,
-		}
 	case "infiniband":
-		infinibandConfig := sdk.InfinibandFabric{
+		fabricConfiguration = sdk.InfinibandFabric{
 			FabricType:                 sdk.FABRICTYPE_INFINIBAND,
 			SyslogMonitoringEnabled:    sdk.PtrBool(true),
 			GnmiMonitoringEnabled:      sdk.PtrBool(false),
@@ -107,27 +104,25 @@ func FabricConfigExample(ctx context.Context, fabricType string) error {
 			ReservedPkeys:              []string{"1-100"},
 		}
 
-		fabricConfiguration = sdk.NetworkFabricFabricConfiguration{
-			InfinibandFabric: &infinibandConfig,
-		}
 	case "fibre_channel":
-		fcConfig := sdk.FibreChannelFabric{
+		fabricConfiguration = sdk.FibreChannelFabric{
 			FabricType:                 sdk.FABRICTYPE_FIBRE_CHANNEL,
 			SyslogMonitoringEnabled:    sdk.PtrBool(true),
 			GnmiMonitoringEnabled:      sdk.PtrBool(false),
 			ServerOnlyOperationEnabled: sdk.PtrBool(false),
 		}
 
-		fabricConfiguration = sdk.NetworkFabricFabricConfiguration{
-			FibreChannelFabric: &fcConfig,
-		}
 	default:
 		err := fmt.Errorf("invalid fabric type: '%s'", fabricType)
 		logger.Get().Error().Err(err).Msg("")
 		return err
 	}
 
-	return formatter.PrintResult(fabricConfiguration, nil)
+	if formatter.IsNativeFormat() {
+		return formatter.PrintResult(fabricConfiguration, nil)
+	} else {
+		return formatter.PrintYamlResult(fabricConfiguration)
+	}
 }
 
 func FabricCreate(ctx context.Context, siteIdOrLabel string, fabricName string, fabricType string, description string, config []byte) error {
@@ -324,10 +319,10 @@ var importRequiredFields = []string{
 }
 
 // FabricImportDevices bulk-imports switches into MetalSoft and attaches them to
-// the fabric, idempotently (the CLI port of import_switches.py). Switches that
-// already exist (matched by management address, identifier or serial) are not
-// recreated, and only devices not yet attached are attached. The switches' site
-// is derived from the fabric. --dry-run reports the plan without writing.
+// the fabric, idempotently. Switches that already exist (matched by management
+// address, identifier or serial) are not recreated, and only devices not yet
+// attached are attached. The switches' site is derived from the fabric.
+// --dry-run reports the plan without writing.
 func FabricImportDevices(ctx context.Context, fabricId string, config []byte, dryRun bool) error {
 	logger.Get().Info().Msgf("Importing switches into fabric '%s'", fabricId)
 
@@ -489,7 +484,7 @@ func FabricImportDevices(ctx context.Context, fabricId string, config []byte, dr
 }
 
 // deepMergeStringMaps returns a deep merge of base and override; override wins,
-// nested maps merge recursively (mirrors import_switches.py deep_merge).
+// nested maps merge recursively.
 func deepMergeStringMaps(base, override map[string]interface{}) map[string]interface{} {
 	out := map[string]interface{}{}
 	for k, v := range base {
