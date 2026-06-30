@@ -1,11 +1,15 @@
 package cmd
 
 import (
+	"fmt"
+	"strconv"
+
 	"github.com/metalsoft-io/metalcloud-cli/cmd/metalcloud-cli/system"
 	"github.com/metalsoft-io/metalcloud-cli/internal/fabric"
 	"github.com/metalsoft-io/metalcloud-cli/pkg/utils"
 	sdk "github.com/metalsoft-io/metalcloud-sdk-go"
 	"github.com/spf13/cobra"
+	"gopkg.in/yaml.v3"
 )
 
 var (
@@ -19,7 +23,66 @@ var (
 		bgpNumbering         string
 		bgpLinkConfiguration string
 		customVariables      []string
+		dryRun               bool
+		updateLLDP           bool
+		verifyRender         bool
 	}{}
+
+	// configureSwitchesFlags are the per-property alternatives to --config-source
+	// for the configure-switches command. A section is enabled if its enable bool
+	// is set or any of its sub-flags is provided (detected via Flags().Changed).
+	configureSwitchesFlags = struct {
+		ordering            string
+		enablePhysicalPorts bool
+		descriptionTemplate string
+
+		hostname           bool
+		hostnameLeaf       string
+		hostnameSpine      string
+		hostnameSuperSpine string
+		hostnameSkip       []string
+
+		asn                bool
+		asnLeafStart       int64
+		asnSpineStart      int64
+		asnSuperSpineStart int64
+
+		loopback       bool
+		loopbackSubnet string
+
+		topoLeafSpine          bool
+		topoLeafSpineLPP       string
+		topoSpineSuperSpine    bool
+		topoSpineSuperSpineLPP string
+
+		topoLeafHost            bool
+		topoLeafHostNodeCount   int
+		topoLeafHostNodes       []int
+		topoLeafHostPortPattern string
+		topoLeafHostNicNames    []string
+		topoLeafHostDescription string
+
+		p2p                    bool
+		p2pPoolLeafSpine       string
+		p2pPoolSpineSuperSpine string
+		p2pPoolLeafHost        string
+		p2pMtu                 int32
+	}{}
+
+	// configureSwitchesDetailFlags is every per-property flag; each is marked
+	// mutually exclusive with --config-source.
+	configureSwitchesDetailFlags = []string{
+		"ordering", "enable-physical-ports", "description-template",
+		"hostname", "hostname-leaf", "hostname-spine", "hostname-super-spine", "hostname-skip",
+		"asn", "asn-leaf-start", "asn-spine-start", "asn-super-spine-start",
+		"loopback", "loopback-subnet",
+		"topology-leaf-spine", "topology-leaf-spine-links-per-pair",
+		"topology-spine-super-spine", "topology-spine-super-spine-links-per-pair",
+		"topology-leaf-host", "topology-leaf-host-node-count", "topology-leaf-host-nodes",
+		"topology-leaf-host-port-pattern", "topology-leaf-host-nic-names",
+		"topology-leaf-host-description-template",
+		"p2p", "p2p-pool-leaf-spine", "p2p-pool-spine-super-spine", "p2p-pool-leaf-host", "p2p-mtu",
+	}
 
 	fabricCmd = &cobra.Command{
 		Use:     "fabric [command]",
@@ -287,6 +350,82 @@ Examples:
 		},
 	}
 
+	fabricRescanLinksCmd = &cobra.Command{
+		Use:     "rescan-links fabric_id",
+		Aliases: []string{"discover-links"},
+		Short:   "Re-scan (discover) the fabric's links from LLDP",
+		Long: `Re-scan the links of a network fabric, deriving the physical-link records from
+the LLDP data that flows once the ports are up. This is the "Discover links"
+action: run it after the first fabric deploy, then deploy again so the links
+become MetalSoft-managed.
+
+It is idempotent - on a fabric whose links already exist it matches rows in
+place without creating duplicates.
+
+Arguments:
+  fabric_id    The ID or label of the fabric whose links to rescan
+
+Optional Flags:
+  --update-lldp   Update LLDP information during the rescan (default true).
+
+Examples:
+  metalcloud-cli fabric rescan-links 12345
+  metalcloud-cli fabric discover-links my-fabric
+  metalcloud-cli fabric rescan-links 12345 --update-lldp=false`,
+		SilenceUsage: true,
+		Annotations:  map[string]string{system.REQUIRED_PERMISSION: system.PERMISSION_NETWORK_FABRICS_WRITE},
+		Args:         cobra.ExactArgs(1),
+		RunE: func(cmd *cobra.Command, args []string) error {
+			return fabric.FabricRescanLinks(cmd.Context(), args[0], fabricFlags.updateLLDP)
+		},
+	}
+
+	fabricImportDevicesCmd = &cobra.Command{
+		Use:     "import-devices fabric_id",
+		Aliases: []string{"import-switches"},
+		Short:   "Bulk-import switches and attach them to a fabric (idempotent)",
+		Long: `Bulk-import network devices (switches) from a declarative YAML/JSON file and
+attach them to a fabric, in one idempotent step.
+
+For each switch the command finds-or-creates the device (matched against the
+existing devices in the fabric's site by management address, identifier string,
+or serial number) and attaches any that are not yet attached to the fabric.
+Re-running it is safe: existing devices are not recreated and already-attached
+ones are left alone. The switches' site is derived from the fabric, so do not
+set siteId on the switches. No deploy is triggered.
+
+Arguments:
+  fabric_id    The ID or label of the (pre-existing) fabric to import into
+
+Required Flags:
+  --config-source   'pipe' to read from stdin, or a path to a YAML/JSON file.
+
+Optional Flags:
+  --dry-run         Report the plan (creates + attaches) without writing.
+
+Configuration format:
+  defaults:   optional map deep-merged into every switch (per-switch keys win)
+  switches:   non-empty list of switch entries. Per switch (after defaults):
+              driver, position, username, managementPassword, managementAddress,
+              managementPort, identifierString are required; tagsMap and the rest
+              are optional. tagsMap scalar values are coerced to strings.
+
+Examples:
+  metalcloud-cli fabric import-devices 5 --config-source switches.yaml --dry-run
+  metalcloud-cli fabric import-devices my-fabric --config-source switches.yaml
+  cat switches.yaml | metalcloud-cli fabric import-switches 5 --config-source pipe`,
+		SilenceUsage: true,
+		Annotations:  map[string]string{system.REQUIRED_PERMISSION: system.PERMISSION_NETWORK_FABRICS_WRITE},
+		Args:         cobra.ExactArgs(1),
+		RunE: func(cmd *cobra.Command, args []string) error {
+			config, err := utils.ReadConfigFromPipeOrFile(fabricFlags.configSource)
+			if err != nil {
+				return err
+			}
+			return fabric.FabricImportDevices(cmd.Context(), args[0], config, fabricFlags.dryRun)
+		},
+	}
+
 	fabricDevicesGetCmd = &cobra.Command{
 		Use:     "get-devices fabric_id",
 		Aliases: []string{"show-devices"},
@@ -506,7 +645,409 @@ Examples:
 			return fabric.FabricLinkRemove(cmd.Context(), args[0], args[1])
 		},
 	}
+
+	fabricConfigureSwitchesCmd = &cobra.Command{
+		Use:     "configure-switches fabric_id",
+		Aliases: []string{"configure-switch"},
+		Short:   "Configure all switches of a fabric from a declarative YAML/JSON",
+		Long: `Configure every network device attached to a fabric from one declarative
+configuration: hostnames (identifierString), ASNs, loopback IPs, physical-port
+enable + interface descriptions, and point-to-point links with deterministic
+/31 IPAM subnets.
+
+Each feature section is optional - omit one to skip that step. Every step is
+idempotent: current state is read first and only differences are written. Use
+--dry-run to compute and preview the full plan without making any changes.
+
+The configuration is supplied EITHER as a whole document via --config-source,
+OR built up from the individual per-property flags below. The two are mutually
+exclusive; provide one or the other.
+
+Arguments:
+  fabric_id    The ID or label of the fabric to configure
+
+Whole-document input:
+  --config-source   'pipe' to read from stdin, or a path to a YAML/JSON config file.
+                    Run 'fabric configure-switches-example' for a template.
+
+Per-property flags (alternative to --config-source). A feature section is
+enabled when its toggle flag is set or any of its sub-flags is provided:
+  ordering        --ordering
+  enable ports    --enable-physical-ports
+  descriptions    --description-template
+  hostname        --hostname, --hostname-leaf, --hostname-spine,
+                  --hostname-super-spine, --hostname-skip
+  asn             --asn, --asn-leaf-start, --asn-spine-start, --asn-super-spine-start
+  loopback        --loopback, --loopback-subnet
+  topology        --topology-leaf-spine[-links-per-pair],
+                  --topology-spine-super-spine[-links-per-pair],
+                  --topology-leaf-host[-node-count|-nodes|-port-pattern|
+                  -nic-names|-description-template]
+  p2p             --p2p, --p2p-pool-leaf-spine, --p2p-pool-spine-super-spine,
+                  --p2p-pool-leaf-host, --p2p-mtu
+
+Always available:
+  --dry-run         Compute the plan and report what would change, without writing.
+
+Examples:
+  # Whole-document input from a file or stdin
+  metalcloud-cli fabric configure-switches 5 --config-source fabric-config.yaml --dry-run
+  cat fabric-config.yaml | metalcloud-cli fabric configure-switches 5 --config-source pipe
+
+  # Per-property flags: hostnames + ASNs + loopbacks with the reference defaults
+  metalcloud-cli fabric configure-switches 5 --hostname --asn --loopback --dry-run
+
+  # Per-property flags: full leaf/spine fabric with links and a custom pool
+  metalcloud-cli fabric configure-switches my-fabric \
+    --hostname --asn --loopback \
+    --topology-leaf-spine --topology-leaf-host-node-count 8 \
+    --description-template "to_{peerHostname}_{peerPort}" \
+    --p2p --p2p-pool-leaf-spine 10.254.0.0/16 --p2p-mtu 9216
+
+  # Override one ASN start and skip naming the spines
+  metalcloud-cli fabric configure-switches 5 --asn --asn-leaf-start 4200001000 \
+    --hostname --hostname-skip spine`,
+		SilenceUsage: true,
+		Annotations:  map[string]string{system.REQUIRED_PERMISSION: system.PERMISSION_NETWORK_FABRICS_WRITE},
+		Args:         cobra.ExactArgs(1),
+		RunE: func(cmd *cobra.Command, args []string) error {
+			var config []byte
+			var err error
+			if fabricFlags.configSource != "" {
+				config, err = utils.ReadConfigFromPipeOrFile(fabricFlags.configSource)
+			} else {
+				config, err = buildSwitchConfigFromFlags(cmd)
+			}
+			if err != nil {
+				return err
+			}
+			return fabric.FabricConfigureSwitches(cmd.Context(), args[0], config, fabricFlags.dryRun)
+		},
+	}
+
+	fabricConfigureFreeformCmd = &cobra.Command{
+		Use:   "configure-freeform fabric_id",
+		Short: "Register the base freeform template + per-switch profiles (step 8a)",
+		Long: `Register the Spectrum-X base freeform device-configuration template (hostname,
+RoCE/QoS, adaptive routing, telemetry, BFD; in l3evpn the EVPN/VXLAN data plane)
+and one variables-carrying profile per fabric switch, idempotently.
+
+Per-device variables (mode, hgx_prefix, and for l3evpn leaves nve_source) are
+computed from the same topology/loopback plan as 'configure-switches'. The .j2
+template body is supplied via the config's freeform.templatePath and uploaded
+as-is; the engine renders it server-side.
+
+The configuration is supplied EITHER as a whole document via --config-source OR
+built from the per-property flags below (the two are mutually exclusive). The
+per-property flags cover the freeform section (--mode, --template-path,
+--template-label, --profile-priority, --apply-mode, --hgx-prefix) plus the plan
+sections it reads (--ordering, --topology-leaf-spine[-links-per-pair],
+--topology-leaf-host[-node-count|...], --p2p-pool-leaf-host, ...).
+
+Arguments:
+  fabric_id    The ID or label of the fabric
+
+Input (one of):
+  --config-source   'pipe' or path to the YAML/JSON config (with a 'freeform' section).
+  per-property flags as listed above and in --help.
+
+Always available:
+  --dry-run         Report the plan without writing.
+  --verify-render   Render every device through the engine first; abort on any render error.
+
+Examples:
+  metalcloud-cli fabric configure-freeform 5 --config-source fabric-config.l3evpn.yaml --verify-render
+  metalcloud-cli fabric configure-freeform 5 --mode l3evpn --template-path ./freeform-device-config.j2 \
+    --topology-leaf-spine --dry-run`,
+		SilenceUsage: true,
+		Annotations:  map[string]string{system.REQUIRED_PERMISSION: system.PERMISSION_NETWORK_FABRICS_WRITE},
+		Args:         cobra.ExactArgs(1),
+		RunE: func(cmd *cobra.Command, args []string) error {
+			var config []byte
+			var err error
+			if fabricFlags.configSource != "" {
+				config, err = utils.ReadConfigFromPipeOrFile(fabricFlags.configSource)
+			} else {
+				config, err = buildFreeformConfigFromFlags(cmd)
+			}
+			if err != nil {
+				return err
+			}
+			return fabric.FabricConfigureFreeform(cmd.Context(), args[0], config, fabricFlags.dryRun, fabricFlags.verifyRender)
+		},
+	}
+
+	fabricConfigureBgpCmd = &cobra.Command{
+		Use:   "configure-bgp fabric_id",
+		Short: "Register the BGP underlay/overlay/PFC templates + profiles (step 8b)",
+		Long: `Register the Spectrum-X BGP underlay template (and, in l3evpn, the EVPN overlay
+RR-mesh, QoS PFC defaults, and the action-bound route-domain VRF template) plus
+one variables-carrying profile per fabric switch, and reconcile each switch's
+device customVariables (aggregates / is_evpn_rr) that the tenant VRF render reads.
+
+Per-device variables (bgp_neighbors, /26 aggregates, RR selection, overlay
+neighbors) are computed from the same topology+p2p plan as 'configure-switches';
+the devices must already carry asn/loopbackAddress (run 'configure-switches'
+first). The .j2 template bodies are supplied via the config's bgp.*TemplatePath
+keys and uploaded as-is; the engine renders them server-side.
+
+The configuration is supplied EITHER as a whole document via --config-source OR
+built from the per-property flags below (the two are mutually exclusive). The
+per-property flags cover the bgp section (--mode, --apply-mode, --template-path
+/-label/-profile-priority, the --overlay-*, --pfc-*, --vrf-* template flags)
+plus the plan sections it reads (--ordering, --topology-leaf-spine
+[-links-per-pair], --topology-spine-super-spine[-links-per-pair],
+--topology-leaf-host[...], --p2p-pool-* , --p2p-mtu).
+
+Arguments:
+  fabric_id    The ID or label of the fabric
+
+Input (one of):
+  --config-source   'pipe' or path to the YAML/JSON config (with a 'bgp' section).
+  per-property flags as listed above and in --help.
+
+Always available:
+  --dry-run         Report the plan without writing.
+  --verify-render   Render every device through the engine first; abort on any render error.
+
+Examples:
+  metalcloud-cli fabric configure-bgp 5 --config-source fabric-config.l3evpn.yaml --verify-render
+  metalcloud-cli fabric configure-bgp 5 --mode l3evpn \
+    --template-path ./freeform-bgp-underlay.j2 --overlay-template-path ./freeform-bgp-overlay.j2 \
+    --pfc-template-path ./freeform-qos-pfc.j2 --vrf-template-path ./switch-configure-vrf-create.j2 \
+    --topology-leaf-spine --topology-spine-super-spine --p2p-pool-leaf-spine 10.254.0.0/16 --dry-run`,
+		SilenceUsage: true,
+		Annotations:  map[string]string{system.REQUIRED_PERMISSION: system.PERMISSION_NETWORK_FABRICS_WRITE},
+		Args:         cobra.ExactArgs(1),
+		RunE: func(cmd *cobra.Command, args []string) error {
+			var config []byte
+			var err error
+			if fabricFlags.configSource != "" {
+				config, err = utils.ReadConfigFromPipeOrFile(fabricFlags.configSource)
+			} else {
+				config, err = buildBgpConfigFromFlags(cmd)
+			}
+			if err != nil {
+				return err
+			}
+			return fabric.FabricConfigureBgp(cmd.Context(), args[0], config, fabricFlags.dryRun, fabricFlags.verifyRender)
+		},
+	}
+
+	fabricConfigureFreeformExampleCmd = &cobra.Command{
+		Use:          "configure-freeform-example",
+		Short:        "Show an example config for configure-freeform",
+		Long:         `Print a commented, ready-to-edit example of the configuration accepted by 'fabric configure-freeform'.`,
+		SilenceUsage: true,
+		Annotations:  map[string]string{system.REQUIRED_PERMISSION: system.PERMISSION_NETWORK_FABRICS_READ},
+		RunE: func(cmd *cobra.Command, args []string) error {
+			return fabric.FabricConfigureFreeformExample(cmd.Context())
+		},
+	}
+
+	fabricConfigureBgpExampleCmd = &cobra.Command{
+		Use:          "configure-bgp-example",
+		Short:        "Show an example config for configure-bgp",
+		Long:         `Print a commented, ready-to-edit example of the configuration accepted by 'fabric configure-bgp'.`,
+		SilenceUsage: true,
+		Annotations:  map[string]string{system.REQUIRED_PERMISSION: system.PERMISSION_NETWORK_FABRICS_READ},
+		RunE: func(cmd *cobra.Command, args []string) error {
+			return fabric.FabricConfigureBgpExample(cmd.Context())
+		},
+	}
+
+	fabricConfigureSwitchesExampleCmd = &cobra.Command{
+		Use:     "configure-switches-example",
+		Aliases: []string{"configure-switches-config-example"},
+		Short:   "Show an example switch configuration for configure-switches",
+		Long: `Print a commented, ready-to-edit example of the configuration accepted by
+'fabric configure-switches'. The output is valid YAML; redirect it to a file or
+pipe it straight into the command.
+
+Examples:
+  metalcloud-cli fabric configure-switches-example
+  metalcloud-cli fabric configure-switches-example > fabric-config.yaml
+  metalcloud-cli fabric configure-switches-example | metalcloud-cli fabric configure-switches 5 --config-source pipe --dry-run`,
+		SilenceUsage: true,
+		Annotations:  map[string]string{system.REQUIRED_PERMISSION: system.PERMISSION_NETWORK_FABRICS_READ},
+		RunE: func(cmd *cobra.Command, args []string) error {
+			return fabric.FabricConfigureSwitchesExample(cmd.Context())
+		},
+	}
 )
+
+// buildSwitchConfigFromFlags assembles a configure-switches YAML document from
+// the individual --... flags that were set, then hands it to the same loader as
+// --config-source. A section appears only if its enable flag or any of its
+// sub-flags was provided (so presence semantics match the file path exactly).
+func buildSwitchConfigFromFlags(cmd *cobra.Command) ([]byte, error) {
+	f := cmd.Flags()
+	cs := &configureSwitchesFlags
+	doc := map[string]interface{}{}
+
+	if f.Changed("ordering") {
+		doc["ordering"] = cs.ordering
+	}
+	if f.Changed("enable-physical-ports") {
+		doc["enablePhysicalPorts"] = cs.enablePhysicalPorts
+	}
+	if f.Changed("description-template") {
+		doc["descriptionTemplate"] = cs.descriptionTemplate
+	}
+
+	// hostname
+	hostname := map[string]interface{}{}
+	hostnamePresent := f.Changed("hostname") && cs.hostname
+	if f.Changed("hostname-leaf") {
+		hostname["leaf"] = cs.hostnameLeaf
+		hostnamePresent = true
+	}
+	if f.Changed("hostname-spine") {
+		hostname["spine"] = cs.hostnameSpine
+		hostnamePresent = true
+	}
+	if f.Changed("hostname-super-spine") {
+		hostname["super_spine"] = cs.hostnameSuperSpine
+		hostnamePresent = true
+	}
+	for _, position := range cs.hostnameSkip {
+		hostname[position] = nil // explicit null => skip the position
+		hostnamePresent = true
+	}
+	if hostnamePresent {
+		doc["hostname"] = hostname
+	}
+
+	// asn
+	asn := map[string]interface{}{}
+	asnPresent := f.Changed("asn") && cs.asn
+	if f.Changed("asn-leaf-start") {
+		asn["leafStart"] = cs.asnLeafStart
+		asnPresent = true
+	}
+	if f.Changed("asn-spine-start") {
+		asn["spineStart"] = cs.asnSpineStart
+		asnPresent = true
+	}
+	if f.Changed("asn-super-spine-start") {
+		asn["superSpineStart"] = cs.asnSuperSpineStart
+		asnPresent = true
+	}
+	if asnPresent {
+		doc["asn"] = asn
+	}
+
+	// loopback
+	loopback := map[string]interface{}{}
+	loopbackPresent := f.Changed("loopback") && cs.loopback
+	if f.Changed("loopback-subnet") {
+		loopback["subnet"] = cs.loopbackSubnet
+		loopbackPresent = true
+	}
+	if loopbackPresent {
+		doc["loopback"] = loopback
+	}
+
+	// topology
+	topology := map[string]interface{}{}
+	if leafSpine, present, err := buildLayerFlags(f, "topology-leaf-spine", cs.topoLeafSpine, "topology-leaf-spine-links-per-pair", cs.topoLeafSpineLPP); err != nil {
+		return nil, err
+	} else if present {
+		topology["leafSpine"] = leafSpine
+	}
+	if spineSsp, present, err := buildLayerFlags(f, "topology-spine-super-spine", cs.topoSpineSuperSpine, "topology-spine-super-spine-links-per-pair", cs.topoSpineSuperSpineLPP); err != nil {
+		return nil, err
+	} else if present {
+		topology["spineSuperSpine"] = spineSsp
+	}
+	leafHost := map[string]interface{}{}
+	leafHostPresent := f.Changed("topology-leaf-host") && cs.topoLeafHost
+	if f.Changed("topology-leaf-host-node-count") {
+		leafHost["nodeCount"] = cs.topoLeafHostNodeCount
+		leafHostPresent = true
+	}
+	if f.Changed("topology-leaf-host-nodes") {
+		leafHost["nodes"] = cs.topoLeafHostNodes
+		leafHostPresent = true
+	}
+	if f.Changed("topology-leaf-host-port-pattern") {
+		leafHost["portPattern"] = cs.topoLeafHostPortPattern
+		leafHostPresent = true
+	}
+	if f.Changed("topology-leaf-host-nic-names") {
+		leafHost["nicNames"] = cs.topoLeafHostNicNames
+		leafHostPresent = true
+	}
+	if f.Changed("topology-leaf-host-description-template") {
+		leafHost["descriptionTemplate"] = cs.topoLeafHostDescription
+		leafHostPresent = true
+	}
+	if leafHostPresent {
+		topology["leafHost"] = leafHost
+	}
+	if len(topology) > 0 {
+		doc["topology"] = topology
+	}
+
+	// p2p
+	p2p := map[string]interface{}{}
+	p2pPresent := f.Changed("p2p") && cs.p2p
+	pools := map[string]interface{}{}
+	if f.Changed("p2p-pool-leaf-spine") {
+		pools["leafSpine"] = cs.p2pPoolLeafSpine
+	}
+	if f.Changed("p2p-pool-spine-super-spine") {
+		pools["spineSuperSpine"] = cs.p2pPoolSpineSuperSpine
+	}
+	if f.Changed("p2p-pool-leaf-host") {
+		pools["leafHost"] = cs.p2pPoolLeafHost
+	}
+	if len(pools) > 0 {
+		p2p["pools"] = pools
+		p2pPresent = true
+	}
+	if f.Changed("p2p-mtu") {
+		p2p["mtu"] = cs.p2pMtu
+		p2pPresent = true
+	}
+	if p2pPresent {
+		doc["p2p"] = p2p
+	}
+
+	if len(doc) == 0 {
+		return nil, fmt.Errorf("specify --config-source or at least one configuration flag (see 'fabric configure-switches --help')")
+	}
+	return yaml.Marshal(doc)
+}
+
+// buildLayerFlags builds a topology fabric-layer (leafSpine / spineSuperSpine)
+// section from its enable flag and its links-per-pair flag.
+func buildLayerFlags(f interface{ Changed(string) bool }, enableName string, enabled bool, lppName, lpp string) (map[string]interface{}, bool, error) {
+	layer := map[string]interface{}{}
+	present := f.Changed(enableName) && enabled
+	if f.Changed(lppName) {
+		value, err := parseLinksPerPair(lpp)
+		if err != nil {
+			return nil, false, err
+		}
+		layer["linksPerPair"] = value
+		present = true
+	}
+	return layer, present, nil
+}
+
+// parseLinksPerPair maps the CLI string to what the loader expects: the literal
+// "auto", or an integer.
+func parseLinksPerPair(s string) (interface{}, error) {
+	if s == "" || s == "auto" {
+		return "auto", nil
+	}
+	n, err := strconv.Atoi(s)
+	if err != nil {
+		return nil, fmt.Errorf("links-per-pair must be 'auto' or an integer, got %q", s)
+	}
+	return n, nil
+}
 
 func init() {
 	rootCmd.AddCommand(fabricCmd)
@@ -528,6 +1069,14 @@ func init() {
 	fabricCmd.AddCommand(fabricActivateCmd)
 	fabricCmd.AddCommand(fabricDeployCmd)
 
+	fabricCmd.AddCommand(fabricRescanLinksCmd)
+	fabricRescanLinksCmd.Flags().BoolVar(&fabricFlags.updateLLDP, "update-lldp", true, "Update LLDP information during the link rescan.")
+
+	fabricCmd.AddCommand(fabricImportDevicesCmd)
+	fabricImportDevicesCmd.Flags().StringVar(&fabricFlags.configSource, "config-source", "", "Source of the switch import file. Can be 'pipe' or path to a YAML/JSON file.")
+	fabricImportDevicesCmd.Flags().BoolVar(&fabricFlags.dryRun, "dry-run", false, "Report the plan without creating or attaching anything.")
+	fabricImportDevicesCmd.MarkFlagRequired("config-source")
+
 	fabricCmd.AddCommand(fabricDevicesGetCmd)
 	fabricCmd.AddCommand(fabricDevicesAddCmd)
 	fabricCmd.AddCommand(fabricDevicesRemoveCmd)
@@ -548,4 +1097,75 @@ func init() {
 	fabricLinkAddCmd.MarkFlagsRequiredTogether("network-device-a", "interface-a", "network-device-b", "interface-b", "link-type")
 
 	fabricCmd.AddCommand(fabricLinkRemoveCmd)
+
+	fabricCmd.AddCommand(fabricConfigureSwitchesCmd)
+	csCmd := fabricConfigureSwitchesCmd
+	csCmd.Flags().StringVar(&fabricFlags.configSource, "config-source", "", "Source of the switch configuration. Can be 'pipe' or path to a YAML/JSON file. Mutually exclusive with the per-property flags below.")
+	csCmd.Flags().BoolVar(&fabricFlags.dryRun, "dry-run", false, "Compute and preview the plan without making any changes.")
+
+	cs := &configureSwitchesFlags
+	csCmd.Flags().StringVar(&cs.ordering, "ordering", "managementAddress", "Device ordering: managementAddress | identifierString | id.")
+	csCmd.Flags().BoolVar(&cs.enablePhysicalPorts, "enable-physical-ports", true, "Enable every physical port's staged config.")
+	csCmd.Flags().StringVar(&cs.descriptionTemplate, "description-template", "", "Interface description template (placeholders {peerHostname}, {peerPort}). Requires a topology section.")
+
+	csCmd.Flags().BoolVar(&cs.hostname, "hostname", false, "Enable hostname computation using the built-in reference templates.")
+	csCmd.Flags().StringVar(&cs.hostnameLeaf, "hostname-leaf", "", "Hostname template for leaf devices.")
+	csCmd.Flags().StringVar(&cs.hostnameSpine, "hostname-spine", "", "Hostname template for spine devices.")
+	csCmd.Flags().StringVar(&cs.hostnameSuperSpine, "hostname-super-spine", "", "Hostname template for super_spine devices.")
+	csCmd.Flags().StringSliceVar(&cs.hostnameSkip, "hostname-skip", nil, "Positions to skip (set to null), e.g. spine.")
+
+	csCmd.Flags().BoolVar(&cs.asn, "asn", false, "Enable ASN assignment using the default starts.")
+	csCmd.Flags().Int64Var(&cs.asnLeafStart, "asn-leaf-start", 0, "Starting ASN for leaves.")
+	csCmd.Flags().Int64Var(&cs.asnSpineStart, "asn-spine-start", 0, "Starting ASN for spine groups.")
+	csCmd.Flags().Int64Var(&cs.asnSuperSpineStart, "asn-super-spine-start", 0, "Shared ASN for superspines.")
+
+	csCmd.Flags().BoolVar(&cs.loopback, "loopback", false, "Enable loopback IP allocation using the default subnet.")
+	csCmd.Flags().StringVar(&cs.loopbackSubnet, "loopback-subnet", "", "Pool the loopback /32s are carved from.")
+
+	csCmd.Flags().BoolVar(&cs.topoLeafSpine, "topology-leaf-spine", false, "Enable leaf<->spine pairing.")
+	csCmd.Flags().StringVar(&cs.topoLeafSpineLPP, "topology-leaf-spine-links-per-pair", "", "Leaf<->spine links per pair: 'auto' or an integer.")
+	csCmd.Flags().BoolVar(&cs.topoSpineSuperSpine, "topology-spine-super-spine", false, "Enable spine<->superspine pairing (3-tier only).")
+	csCmd.Flags().StringVar(&cs.topoSpineSuperSpineLPP, "topology-spine-super-spine-links-per-pair", "", "Spine<->superspine links per pair: 'auto' or an integer.")
+
+	csCmd.Flags().BoolVar(&cs.topoLeafHost, "topology-leaf-host", false, "Enable leaf->host downlinks.")
+	csCmd.Flags().IntVar(&cs.topoLeafHostNodeCount, "topology-leaf-host-node-count", 0, "Number of host port-pairs per leaf.")
+	csCmd.Flags().IntSliceVar(&cs.topoLeafHostNodes, "topology-leaf-host-nodes", nil, "Exact 0-based node indices (mutually exclusive with node-count).")
+	csCmd.Flags().StringVar(&cs.topoLeafHostPortPattern, "topology-leaf-host-port-pattern", "", "Leaf host port pattern, e.g. swp{port}s{sub}.")
+	csCmd.Flags().StringSliceVar(&cs.topoLeafHostNicNames, "topology-leaf-host-nic-names", nil, "Remote host NIC names (even count).")
+	csCmd.Flags().StringVar(&cs.topoLeafHostDescription, "topology-leaf-host-description-template", "", "Leaf->host description template.")
+
+	csCmd.Flags().BoolVar(&cs.p2p, "p2p", false, "Enable point-to-point link creation with reference default pools.")
+	csCmd.Flags().StringVar(&cs.p2pPoolLeafSpine, "p2p-pool-leaf-spine", "", "Leaf<->spine /31 pool.")
+	csCmd.Flags().StringVar(&cs.p2pPoolSpineSuperSpine, "p2p-pool-spine-super-spine", "", "Spine<->superspine /31 pool.")
+	csCmd.Flags().StringVar(&cs.p2pPoolLeafHost, "p2p-pool-leaf-host", "", "Leaf->host /31 pool.")
+	csCmd.Flags().Int32Var(&cs.p2pMtu, "p2p-mtu", 0, "MTU applied to created links.")
+
+	// --config-source is mutually exclusive with each per-property flag; the
+	// per-property flags can be combined freely with one another.
+	for _, name := range configureSwitchesDetailFlags {
+		csCmd.MarkFlagsMutuallyExclusive("config-source", name)
+	}
+
+	fabricCmd.AddCommand(fabricConfigureSwitchesExampleCmd)
+
+	fabricCmd.AddCommand(fabricConfigureFreeformCmd)
+	fabricConfigureFreeformCmd.Flags().StringVar(&fabricFlags.configSource, "config-source", "", "Source of the configuration (with a 'freeform' section). 'pipe' or path to a YAML/JSON file. Mutually exclusive with the per-property flags.")
+	fabricConfigureFreeformCmd.Flags().BoolVar(&fabricFlags.dryRun, "dry-run", false, "Report the plan without making changes.")
+	fabricConfigureFreeformCmd.Flags().BoolVar(&fabricFlags.verifyRender, "verify-render", false, "Render each device through the engine before writing; abort on any render error.")
+	registerConfigureFreeformFlags(fabricConfigureFreeformCmd)
+	for _, name := range freeformDetailFlags {
+		fabricConfigureFreeformCmd.MarkFlagsMutuallyExclusive("config-source", name)
+	}
+
+	fabricCmd.AddCommand(fabricConfigureBgpCmd)
+	fabricConfigureBgpCmd.Flags().StringVar(&fabricFlags.configSource, "config-source", "", "Source of the configuration (with a 'bgp' section). 'pipe' or path to a YAML/JSON file. Mutually exclusive with the per-property flags.")
+	fabricConfigureBgpCmd.Flags().BoolVar(&fabricFlags.dryRun, "dry-run", false, "Report the plan without making changes.")
+	fabricConfigureBgpCmd.Flags().BoolVar(&fabricFlags.verifyRender, "verify-render", false, "Render each device through the engine before writing; abort on any render error.")
+	registerConfigureBgpFlags(fabricConfigureBgpCmd)
+	for _, name := range bgpDetailFlags {
+		fabricConfigureBgpCmd.MarkFlagsMutuallyExclusive("config-source", name)
+	}
+
+	fabricCmd.AddCommand(fabricConfigureFreeformExampleCmd)
+	fabricCmd.AddCommand(fabricConfigureBgpExampleCmd)
 }

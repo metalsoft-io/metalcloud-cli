@@ -50,13 +50,21 @@ Available Commands:
 * [metalcloud-cli fabric add-device](metalcloud-cli_fabric_add-device.md)	 - Add network device(s) to a fabric
 * [metalcloud-cli fabric add-link](metalcloud-cli_fabric_add-link.md)	 - Add a network fabric link
 * [metalcloud-cli fabric config-example](metalcloud-cli_fabric_config-example.md)	 - Show example fabric configuration
+* [metalcloud-cli fabric configure-bgp](metalcloud-cli_fabric_configure-bgp.md)	 - Register the BGP underlay/overlay/PFC templates + profiles (step 8b)
+* [metalcloud-cli fabric configure-bgp-example](metalcloud-cli_fabric_configure-bgp-example.md)	 - Show an example config for configure-bgp
+* [metalcloud-cli fabric configure-freeform](metalcloud-cli_fabric_configure-freeform.md)	 - Register the base freeform template + per-switch profiles (step 8a)
+* [metalcloud-cli fabric configure-freeform-example](metalcloud-cli_fabric_configure-freeform-example.md)	 - Show an example config for configure-freeform
+* [metalcloud-cli fabric configure-switches](metalcloud-cli_fabric_configure-switches.md)	 - Configure all switches of a fabric from a declarative YAML/JSON
+* [metalcloud-cli fabric configure-switches-example](metalcloud-cli_fabric_configure-switches-example.md)	 - Show an example switch configuration for configure-switches
 * [metalcloud-cli fabric create](metalcloud-cli_fabric_create.md)	 - Create a new fabric
 * [metalcloud-cli fabric deploy](metalcloud-cli_fabric_deploy.md)	 - Deploy a fabric
 * [metalcloud-cli fabric get](metalcloud-cli_fabric_get.md)	 - Get detailed fabric information
 * [metalcloud-cli fabric get-devices](metalcloud-cli_fabric_get-devices.md)	 - List devices in a fabric
 * [metalcloud-cli fabric get-links](metalcloud-cli_fabric_get-links.md)	 - List links in a fabric
+* [metalcloud-cli fabric import-devices](metalcloud-cli_fabric_import-devices.md)	 - Bulk-import switches and attach them to a fabric (idempotent)
 * [metalcloud-cli fabric list](metalcloud-cli_fabric_list.md)	 - List all network fabrics
 * [metalcloud-cli fabric remove-device](metalcloud-cli_fabric_remove-device.md)	 - Remove network device from a fabric
 * [metalcloud-cli fabric remove-link](metalcloud-cli_fabric_remove-link.md)	 - Remove a network fabric link
+* [metalcloud-cli fabric rescan-links](metalcloud-cli_fabric_rescan-links.md)	 - Re-scan (discover) the fabric's links from LLDP
 * [metalcloud-cli fabric update](metalcloud-cli_fabric_update.md)	 - Update fabric configuration
 
