@@ -2,7 +2,11 @@ package point_to_point_link
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
+	"io"
+	"net/http"
+	"net/url"
 	"strconv"
 
 	"github.com/metalsoft-io/metalcloud-cli/pkg/api"
@@ -42,24 +46,50 @@ var PointToPointLinkPrintConfig = formatter.PrintConfig{
 	},
 }
 
+// p2pLinkDisplay is a lenient view of a point-to-point link for output. The
+// SDK's typed decode of GetPointToPointLinks fails ("data matches more than one
+// schema in oneOf(...201Response)") whenever a link carries an ipv4 strategy -
+// the oneOf's "unnumbered" variant ({kind, scope}) also matches auto/manual
+// strategies. We parse the raw body for the displayed fields instead. JSON null
+// (e.g. an unset description) decodes into the zero value, which is fine here.
+type p2pLinkDisplay struct {
+	Id                int64  `json:"id"`
+	Label             string `json:"label"`
+	Description       string `json:"description"`
+	RoutingActivation string `json:"routingActivation"`
+	ServiceStatus     string `json:"serviceStatus"`
+	Revision          int64  `json:"revision"`
+}
+
 // PointToPointLinkList lists point-to-point links, optionally filtered by a
 // referenced interface id or route domain id.
 func PointToPointLinkList(ctx context.Context, interfaceId string, routeDomainId string) error {
 	logger.Get().Info().Msgf("Listing point-to-point links")
 
-	client := api.GetApiClient(ctx)
-
-	request := client.PointToPointLinkAPI.GetPointToPointLinks(ctx)
+	path := "/api/v2/point-to-point-links"
+	query := url.Values{}
 	if interfaceId != "" {
-		request = request.InterfaceId(interfaceId)
+		query.Set("interfaceId", interfaceId)
 	}
 	if routeDomainId != "" {
-		request = request.RouteDomainId(routeDomainId)
+		query.Set("routeDomainId", routeDomainId)
+	}
+	if len(query) > 0 {
+		path += "?" + query.Encode()
 	}
 
-	links, httpRes, err := request.Execute()
+	httpRes, err := api.DoJSONRequest(ctx, http.MethodGet, path, nil)
 	if err := response_inspector.InspectResponse(httpRes, err); err != nil {
 		return err
+	}
+	defer httpRes.Body.Close()
+	body, err := io.ReadAll(httpRes.Body)
+	if err != nil {
+		return fmt.Errorf("reading point-to-point links: %w", err)
+	}
+	var links []p2pLinkDisplay
+	if err := json.Unmarshal(body, &links); err != nil {
+		return fmt.Errorf("parsing point-to-point links: %w", err)
 	}
 
 	return formatter.PrintResult(links, &PointToPointLinkPrintConfig)
@@ -74,11 +104,18 @@ func PointToPointLinkGet(ctx context.Context, linkId string) error {
 		return err
 	}
 
-	client := api.GetApiClient(ctx)
-
-	link, httpRes, err := client.PointToPointLinkAPI.GetPointToPointLink(ctx, linkIdNumeric).Execute()
+	httpRes, err := api.DoJSONRequest(ctx, http.MethodGet, fmt.Sprintf("/api/v2/point-to-point-links/%d", int64(linkIdNumeric)), nil)
 	if err := response_inspector.InspectResponse(httpRes, err); err != nil {
 		return err
+	}
+	defer httpRes.Body.Close()
+	body, err := io.ReadAll(httpRes.Body)
+	if err != nil {
+		return fmt.Errorf("reading point-to-point link: %w", err)
+	}
+	var link p2pLinkDisplay
+	if err := json.Unmarshal(body, &link); err != nil {
+		return fmt.Errorf("parsing point-to-point link: %w", err)
 	}
 
 	return formatter.PrintResult(link, &PointToPointLinkPrintConfig)
@@ -231,11 +268,20 @@ func getPointToPointLinkIdAndRevision(ctx context.Context, linkId string) (float
 		return 0, "", err
 	}
 
-	client := api.GetApiClient(ctx)
-
-	link, httpRes, err := client.PointToPointLinkAPI.GetPointToPointLink(ctx, linkIdNumeric).Execute()
+	// Fetch the revision via a raw GET: the typed decode trips the same
+	// oneOf("...201Response") bug as the listing once the link has an ipv4 strategy.
+	httpRes, err := api.DoJSONRequest(ctx, http.MethodGet, fmt.Sprintf("/api/v2/point-to-point-links/%d", int64(linkIdNumeric)), nil)
 	if err := response_inspector.InspectResponse(httpRes, err); err != nil {
 		return 0, "", err
+	}
+	defer httpRes.Body.Close()
+	body, err := io.ReadAll(httpRes.Body)
+	if err != nil {
+		return 0, "", fmt.Errorf("reading point-to-point link: %w", err)
+	}
+	var link p2pLinkDisplay
+	if err := json.Unmarshal(body, &link); err != nil {
+		return 0, "", fmt.Errorf("parsing point-to-point link: %w", err)
 	}
 
 	return linkIdNumeric, strconv.FormatInt(link.Revision, 10), nil
