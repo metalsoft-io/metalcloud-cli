@@ -4,10 +4,12 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
+	"slices"
 	"strings"
 	"testing"
 
 	"github.com/metalsoft-io/metalcloud-cli/internal/testutils"
+	sdk "github.com/metalsoft-io/metalcloud-sdk-go"
 )
 
 // decodeItems converts a slice of JSON strings into a slice of decoded objects
@@ -432,29 +434,69 @@ func TestNetworkDeviceArchive_InvalidId(t *testing.T) {
 }
 
 // --- NetworkDeviceDiscover ---
-// The SDK requires a DiscoveryQuery body on this endpoint; the CLI does not
-// set one, so Execute() always returns an SDK-level error before reaching
-// the network. We verify the invalid-ID path (pre-SDK) and that a valid
-// numeric ID surfaces the SDK's required-field error.
 
 func TestNetworkDeviceDiscover_InvalidId(t *testing.T) {
 	ts := testutils.NewTestServer(map[string]http.HandlerFunc{})
 	defer ts.Close()
 
 	ctx := testutils.SetupTestContext(ts.URL)
-	if err := NetworkDeviceDiscover(ctx, "not-a-number"); err == nil {
+	if err := NetworkDeviceDiscover(ctx, "not-a-number", nil); err == nil {
 		t.Error("expected error for invalid ID, got nil")
 	}
 }
 
-func TestNetworkDeviceDiscover_SDKValidationError(t *testing.T) {
+func TestNetworkDeviceDiscover_InvalidTarget(t *testing.T) {
 	ts := testutils.NewTestServer(map[string]http.HandlerFunc{})
 	defer ts.Close()
 
-	// SDK rejects the call before hitting the network because no DiscoveryQuery is set.
 	ctx := testutils.SetupTestContext(ts.URL)
-	if err := NetworkDeviceDiscover(ctx, "1"); err == nil {
-		t.Error("expected SDK validation error (missing discoveryQuery), got nil")
+	if err := NetworkDeviceDiscover(ctx, "1", []string{"bogus"}); err == nil {
+		t.Error("expected error for invalid discovery target, got nil")
+	}
+}
+
+// TestNetworkDeviceDiscover_DefaultAllTargets verifies that with no targets the
+// full discovery payload (all three types, persistData=true) is sent.
+func TestNetworkDeviceDiscover_DefaultAllTargets(t *testing.T) {
+	var body sdk.DiscoveryQuery
+	ts := testutils.NewTestServer(map[string]http.HandlerFunc{
+		"/api/v2/network-devices/1/actions/discover": func(w http.ResponseWriter, r *http.Request) {
+			_ = json.NewDecoder(r.Body).Decode(&body)
+			w.WriteHeader(http.StatusOK)
+		},
+	})
+	defer ts.Close()
+
+	ctx := testutils.SetupTestContext(ts.URL)
+	if err := NetworkDeviceDiscover(ctx, "1", nil); err != nil {
+		t.Fatalf("expected nil error, got: %v", err)
+	}
+	if !slices.Equal(body.Discover, DiscoveryTargets) {
+		t.Errorf("expected discover=%v, got %v", DiscoveryTargets, body.Discover)
+	}
+	if !body.PersistData {
+		t.Error("expected persistData=true")
+	}
+}
+
+// TestNetworkDeviceDiscover_SpecificTarget verifies a single requested target is
+// forwarded verbatim.
+func TestNetworkDeviceDiscover_SpecificTarget(t *testing.T) {
+	var body sdk.DiscoveryQuery
+	ts := testutils.NewTestServer(map[string]http.HandlerFunc{
+		"/api/v2/network-devices/1/actions/discover": func(w http.ResponseWriter, r *http.Request) {
+			_ = json.NewDecoder(r.Body).Decode(&body)
+			w.WriteHeader(http.StatusOK)
+		},
+	})
+	defer ts.Close()
+
+	ctx := testutils.SetupTestContext(ts.URL)
+	if err := NetworkDeviceDiscover(ctx, "1", []string{"ports"}); err != nil {
+		t.Fatalf("expected nil error, got: %v", err)
+	}
+	if !slices.Equal(body.Discover, []string{"ports"}) {
+		t.Errorf("expected discover=[ports], got %v", body.Discover)
 	}
 }
 

@@ -14,12 +14,26 @@ detailed information about:
 - Software version and configuration
 - VLAN and networking setup
 
+By default all discovery types are run (hardware, software, ports). Use --target
+to restrict discovery to specific types; repeat the flag for more than one.
+Discovered data is persisted to the device inventory.
+
 Arguments:
   network_device_id   The unique identifier of the network device to discover
 
+Flags:
+  --target strings   Discovery type(s) to run: hardware, software, ports.
+                     Repeatable. Defaults to all three.
+
 Examples:
-  # Discover device interfaces and configuration
+  # Full discovery (hardware, software and ports)
   metalcloud-cli network-device discover 12345
+
+  # Discover only the ports
+  metalcloud-cli network-device discover 12345 --target ports
+
+  # Discover hardware and software only
+  metalcloud-cli network-device discover 12345 --target hardware --target software
 
   # Using alias
   metalcloud-cli switch discover 12345
@@ -31,7 +45,8 @@ metalcloud-cli network-device discover <network_device_id> [flags]
 ### Options
 
 ```
-  -h, --help   help for discover
+  -h, --help             help for discover
+      --target strings   Discovery type(s) to run: hardware, software, ports. Repeatable. Defaults to all three.
 ```
 
 ### Options inherited from parent commands

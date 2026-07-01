@@ -18,6 +18,7 @@ var (
 		portIpFamily     string
 		portIpAddress    string
 		portIpPrefix     int32
+		discoverTargets  []string
 	}{}
 
 	networkDeviceCmd = &cobra.Command{
@@ -328,12 +329,26 @@ detailed information about:
 - Software version and configuration
 - VLAN and networking setup
 
+By default all discovery types are run (hardware, software, ports). Use --target
+to restrict discovery to specific types; repeat the flag for more than one.
+Discovered data is persisted to the device inventory.
+
 Arguments:
   network_device_id   The unique identifier of the network device to discover
 
+Flags:
+  --target strings   Discovery type(s) to run: hardware, software, ports.
+                     Repeatable. Defaults to all three.
+
 Examples:
-  # Discover device interfaces and configuration
+  # Full discovery (hardware, software and ports)
   metalcloud-cli network-device discover 12345
+
+  # Discover only the ports
+  metalcloud-cli network-device discover 12345 --target ports
+
+  # Discover hardware and software only
+  metalcloud-cli network-device discover 12345 --target hardware --target software
 
   # Using alias
   metalcloud-cli switch discover 12345`,
@@ -341,7 +356,7 @@ Examples:
 		Annotations:  map[string]string{system.REQUIRED_PERMISSION: system.PERMISSION_SWITCHES_WRITE},
 		Args:         cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
-			return network_device.NetworkDeviceDiscover(cmd.Context(), args[0])
+			return network_device.NetworkDeviceDiscover(cmd.Context(), args[0], networkDeviceFlags.discoverTargets)
 		},
 	}
 
@@ -703,6 +718,7 @@ func init() {
 	networkDeviceCmd.AddCommand(networkDeviceArchiveCmd)
 
 	networkDeviceCmd.AddCommand(networkDeviceDiscoverCmd)
+	networkDeviceDiscoverCmd.Flags().StringSliceVar(&networkDeviceFlags.discoverTargets, "target", nil, "Discovery type(s) to run: hardware, software, ports. Repeatable. Defaults to all three.")
 
 	networkDeviceCmd.AddCommand(networkDeviceGetCredentialsCmd)
 

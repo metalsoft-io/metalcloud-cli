@@ -8,6 +8,7 @@ import (
 	"io"
 	"os"
 	"regexp"
+	"slices"
 	"strconv"
 	"strings"
 
@@ -291,18 +292,41 @@ func NetworkDeviceArchive(ctx context.Context, networkDeviceId string) error {
 	return nil
 }
 
-func NetworkDeviceDiscover(ctx context.Context, networkDeviceId string) error {
-	logger.Get().Info().Msgf("Discovering network device %s", networkDeviceId)
+// DiscoveryTargets lists the discovery types a network device supports. Passing
+// all of them (the default) performs a full discovery.
+var DiscoveryTargets = []string{"hardware", "software", "ports"}
 
+// NetworkDeviceDiscover initiates discovery for a network device. targets selects
+// which discovery types to run ("hardware", "software", "ports"); an empty slice
+// runs all of them. Discovered data is persisted to the device inventory.
+func NetworkDeviceDiscover(ctx context.Context, networkDeviceId string, targets []string) error {
 	networkDeviceIdNumeric, err := GetNetworkDeviceId(networkDeviceId)
 	if err != nil {
 		return err
+	}
+
+	if len(targets) == 0 {
+		targets = DiscoveryTargets
+	}
+	for _, target := range targets {
+		if !slices.Contains(DiscoveryTargets, target) {
+			return fmt.Errorf("invalid discovery target '%s'; valid targets are: %s",
+				target, strings.Join(DiscoveryTargets, ", "))
+		}
+	}
+
+	logger.Get().Info().Msgf("Discovering network device %s (%s)", networkDeviceId, strings.Join(targets, ", "))
+
+	discoveryQuery := sdk.DiscoveryQuery{
+		Discover:    targets,
+		PersistData: true,
 	}
 
 	client := api.GetApiClient(ctx)
 
 	httpRes, err := client.NetworkDeviceAPI.
 		DiscoverNetworkDevice(ctx, networkDeviceIdNumeric).
+		DiscoveryQuery(discoveryQuery).
 		Execute()
 	if err := response_inspector.InspectResponse(httpRes, err); err != nil {
 		return err
