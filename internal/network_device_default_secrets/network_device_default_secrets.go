@@ -17,7 +17,7 @@ import (
 var networkDeviceDefaultSecretsPrintConfig = formatter.PrintConfig{
 	FieldsConfig: map[string]formatter.RecordFieldConfig{
 		"Id": {
-			Title: "#",
+			Title: "ID",
 			Order: 1,
 		},
 		"SiteId": {

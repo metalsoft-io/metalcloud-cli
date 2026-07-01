@@ -36,7 +36,7 @@ type ServerFirmwareInventoryStatus struct {
 
 var serverFirmwareInventoryPrintConfig = formatter.PrintConfig{
 	FieldsConfig: map[string]formatter.RecordFieldConfig{
-		"Id":          {Title: "#", Order: 1},
+		"Id":          {Title: "ID", Order: 1},
 		"Name":        {Title: "Name", MaxWidth: 40, Order: 2},
 		"Description": {Title: "Description", MaxWidth: 32, Order: 3},
 		"Version":     {Title: "Version", Order: 4},
@@ -68,7 +68,7 @@ var serverFirmwareInventoryPrintConfig = formatter.PrintConfig{
 var serverComponentPrintConfig = formatter.PrintConfig{
 	FieldsConfig: map[string]formatter.RecordFieldConfig{
 		"Id": {
-			Title: "#",
+			Title: "ID",
 			Order: 1,
 		},
 		"ExternalId": {

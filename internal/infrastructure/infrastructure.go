@@ -20,7 +20,7 @@ import (
 var infrastructurePrintConfig = formatter.PrintConfig{
 	FieldsConfig: map[string]formatter.RecordFieldConfig{
 		"Id": {
-			Title: "#",
+			Title: "ID",
 			Order: 1,
 		},
 		"Label": {
@@ -330,7 +330,7 @@ func InfrastructureGetUsers(ctx context.Context, infrastructureIdOrLabel string)
 	return formatter.PrintResult(usersPaginated, &formatter.PrintConfig{
 		FieldsConfig: map[string]formatter.RecordFieldConfig{
 			"Id": {
-				Title: "#",
+				Title: "ID",
 				Order: 1,
 			},
 			"DisplayName": {

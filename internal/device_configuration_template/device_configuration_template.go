@@ -23,7 +23,7 @@ var (
 var DeviceConfigurationTemplatePrintConfig = formatter.PrintConfig{
 	FieldsConfig: map[string]formatter.RecordFieldConfig{
 		"Id": {
-			Title: "#",
+			Title: "ID",
 			Order: 1,
 		},
 		"Label": {
@@ -64,7 +64,7 @@ var DeviceConfigurationTemplatePrintConfig = formatter.PrintConfig{
 var DeviceConfigurationTemplateProfilePrintConfig = formatter.PrintConfig{
 	FieldsConfig: map[string]formatter.RecordFieldConfig{
 		"Id": {
-			Title: "#",
+			Title: "ID",
 			Order: 1,
 		},
 		"DeviceConfigurationTemplateId": {
@@ -296,11 +296,11 @@ func DeviceConfigurationTemplateRenderSaved(ctx context.Context, deviceConfigura
 
 func DeviceConfigurationTemplateConfigExample(ctx context.Context) error {
 	example := sdk.CreateDeviceConfigurationTemplate{
-		Label:         "my-device-template",
-		Name:          sdk.PtrString("My device template"),
-		Description:   sdk.PtrString("Example device configuration template"),
-		DeviceDriver:  sdk.SwitchDriver(ValidDeviceDrivers[0]),
-		ExecutionType: sdk.NetworkTemplateExecutionType(ValidExecutionTypes[0]),
+		Label:           "my-device-template",
+		Name:            sdk.PtrString("My device template"),
+		Description:     sdk.PtrString("Example device configuration template"),
+		DeviceDriver:    sdk.SwitchDriver(ValidDeviceDrivers[0]),
+		ExecutionType:   sdk.NetworkTemplateExecutionType(ValidExecutionTypes[0]),
 		TemplateContent: sdk.PtrString("hostname {{ hostname }}"),
 		CustomVariablesJson: map[string]interface{}{
 			"hostname": "switch-01",

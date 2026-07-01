@@ -17,7 +17,7 @@ import (
 var resourcePoolPrintConfig = formatter.PrintConfig{
 	FieldsConfig: map[string]formatter.RecordFieldConfig{
 		"ResourcePoolId": {
-			Title: "#",
+			Title: "ID",
 			Order: 1,
 		},
 		"ResourcePoolLabel": {

@@ -17,7 +17,7 @@ import (
 var customIsoPrintConfig = formatter.PrintConfig{
 	FieldsConfig: map[string]formatter.RecordFieldConfig{
 		"Id": {
-			Title: "#",
+			Title: "ID",
 			Order: 1,
 		},
 		"Name": {

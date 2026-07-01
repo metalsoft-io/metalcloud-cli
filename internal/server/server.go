@@ -38,7 +38,7 @@ type serverListRaw struct {
 var serverPrintConfig = formatter.PrintConfig{
 	FieldsConfig: map[string]formatter.RecordFieldConfig{
 		"ServerId": {
-			Title: "#",
+			Title: "ID",
 			Order: 1,
 		},
 		"SiteId": {
@@ -210,7 +210,7 @@ func ServerRegister(ctx context.Context, serverConfig sdk.RegisterServer) error 
 	return formatter.PrintResult(registrationInfo, &formatter.PrintConfig{
 		FieldsConfig: map[string]formatter.RecordFieldConfig{
 			"ServerId": {
-				Title: "#",
+				Title: "ID",
 				Order: 1,
 			},
 			"ServerUUID": {
@@ -256,7 +256,7 @@ func ServerReRegister(ctx context.Context, serverId string) error {
 	return formatter.PrintResult(response, &formatter.PrintConfig{
 		FieldsConfig: map[string]formatter.RecordFieldConfig{
 			"ServerId": {
-				Title: "#",
+				Title: "ID",
 				Order: 1,
 			},
 			"JobInfo": {

@@ -21,7 +21,7 @@ import (
 var jobPrintConfig = formatter.PrintConfig{
 	FieldsConfig: map[string]formatter.RecordFieldConfig{
 		"JobId": {
-			Title: "#",
+			Title: "ID",
 			Order: 1,
 		},
 		"Status": {

@@ -20,7 +20,7 @@ import (
 var userPrintConfig = formatter.PrintConfig{
 	FieldsConfig: map[string]formatter.RecordFieldConfig{
 		"Id": {
-			Title: "#",
+			Title: "ID",
 			Order: 1,
 		},
 		"DisplayName": {
@@ -92,7 +92,7 @@ var userLimitsPrintConfig = formatter.PrintConfig{
 var userSshKeysPrintConfig = formatter.PrintConfig{
 	FieldsConfig: map[string]formatter.RecordFieldConfig{
 		"Id": {
-			Title: "#",
+			Title: "ID",
 			Order: 1,
 		},
 		"SshKey": {

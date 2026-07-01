@@ -17,7 +17,7 @@ import (
 var osTemplatePrintConfig = formatter.PrintConfig{
 	FieldsConfig: map[string]formatter.RecordFieldConfig{
 		"Id": {
-			Title: "#",
+			Title: "ID",
 			Order: 1,
 		},
 		"Name": {
@@ -379,7 +379,7 @@ func OsTemplateGetAssets(ctx context.Context, osTemplateId string) error {
 	return formatter.PrintResult(templateAssetList, &formatter.PrintConfig{
 		FieldsConfig: map[string]formatter.RecordFieldConfig{
 			"Id": {
-				Title: "#",
+				Title: "ID",
 				Order: 1,
 			},
 			"Usage": {

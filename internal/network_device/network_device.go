@@ -22,7 +22,7 @@ import (
 var NetworkDevicePrintConfig = formatter.PrintConfig{
 	FieldsConfig: map[string]formatter.RecordFieldConfig{
 		"Id": {
-			Title: "#",
+			Title: "ID",
 			Order: 1,
 		},
 		"IdentifierString": {
@@ -440,7 +440,7 @@ var networkDevicePortConfigPrintConfig = formatter.PrintConfig{
 var networkDevicePortIpPrintConfig = formatter.PrintConfig{
 	FieldsConfig: map[string]formatter.RecordFieldConfig{
 		"Id": {
-			Title: "#",
+			Title: "ID",
 			Order: 1,
 		},
 		"InterfaceId": {
@@ -683,7 +683,7 @@ func NetworkDeviceGetDefaults(ctx context.Context, siteId string) error {
 	return formatter.PrintResult(defaults, &formatter.PrintConfig{
 		FieldsConfig: map[string]formatter.RecordFieldConfig{
 			"Id": {
-				Title: "#",
+				Title: "ID",
 				Order: 1,
 			},
 			"DatacenterName": {
@@ -870,7 +870,7 @@ func getNetworkDeviceIdAndRevision(ctx context.Context, networkDeviceId string) 
 var networkDeviceDefaultSecretsPrintConfig = formatter.PrintConfig{
 	FieldsConfig: map[string]formatter.RecordFieldConfig{
 		"Id": {
-			Title: "#",
+			Title: "ID",
 			Order: 1,
 		},
 		"SiteId": {

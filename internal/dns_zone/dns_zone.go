@@ -17,7 +17,7 @@ import (
 var dnsZonePrintConfig = formatter.PrintConfig{
 	FieldsConfig: map[string]formatter.RecordFieldConfig{
 		"Id": {
-			Title: "#",
+			Title: "ID",
 			Order: 1,
 		},
 		"Label": {
@@ -151,7 +151,7 @@ func DNSZoneDelete(ctx context.Context, dnsZoneId string) error {
 var dnsRecordSetPrintConfig = formatter.PrintConfig{
 	FieldsConfig: map[string]formatter.RecordFieldConfig{
 		"Id": {
-			Title: "#",
+			Title: "ID",
 			Order: 1,
 		},
 		"Name": {

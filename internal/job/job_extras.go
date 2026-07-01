@@ -14,7 +14,7 @@ import (
 var jobExceptionPrintConfig = formatter.PrintConfig{
 	FieldsConfig: map[string]formatter.RecordFieldConfig{
 		"ExceptionId": {
-			Title: "#",
+			Title: "ID",
 			Order: 1,
 		},
 		"JobId": {
@@ -41,7 +41,7 @@ var jobExceptionPrintConfig = formatter.PrintConfig{
 var jobArchivePrintConfig = formatter.PrintConfig{
 	FieldsConfig: map[string]formatter.RecordFieldConfig{
 		"JobId": {
-			Title: "#",
+			Title: "ID",
 			Order: 1,
 		},
 		"Status": {

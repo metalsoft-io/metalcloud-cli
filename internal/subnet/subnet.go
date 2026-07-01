@@ -16,7 +16,7 @@ import (
 var SubnetPrintConfig = formatter.PrintConfig{
 	FieldsConfig: map[string]formatter.RecordFieldConfig{
 		"Id": {
-			Title: "#",
+			Title: "ID",
 			Order: 1,
 		},
 		"Name": {
@@ -174,7 +174,7 @@ func SubnetConfigExample(ctx context.Context) error {
 var subnetIpPrintConfig = formatter.PrintConfig{
 	FieldsConfig: map[string]formatter.RecordFieldConfig{
 		"Id": {
-			Title: "#",
+			Title: "ID",
 			Order: 1,
 		},
 		"Name": {
@@ -197,7 +197,7 @@ var subnetIpPrintConfig = formatter.PrintConfig{
 var subnetIpRangePrintConfig = formatter.PrintConfig{
 	FieldsConfig: map[string]formatter.RecordFieldConfig{
 		"Id": {
-			Title: "#",
+			Title: "ID",
 			Order: 1,
 		},
 		"Name": {
