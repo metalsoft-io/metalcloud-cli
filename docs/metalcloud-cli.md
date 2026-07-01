@@ -60,6 +60,7 @@ metalcloud-cli [flags]
 * [metalcloud-cli quota-profile](metalcloud-cli_quota-profile.md)	 - Quota Profile management
 * [metalcloud-cli resource-pool](metalcloud-cli_resource-pool.md)	 - Manage resource pools and their associated resources
 * [metalcloud-cli role](metalcloud-cli_role.md)	 - Manage user roles and permissions
+* [metalcloud-cli route-domain](metalcloud-cli_route-domain.md)	 - Manage route domains (tenant VRFs)
 * [metalcloud-cli secret](metalcloud-cli_secret.md)	 - Manage encrypted secrets for secure credential storage
 * [metalcloud-cli server](metalcloud-cli_server.md)	 - Server management
 * [metalcloud-cli server-cleanup-policy](metalcloud-cli_server-cleanup-policy.md)	 - Manage server cleanup policies for automated server maintenance
