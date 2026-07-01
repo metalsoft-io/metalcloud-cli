@@ -3,6 +3,8 @@ package fabric_template_config
 import (
 	"encoding/json"
 	"fmt"
+	"sort"
+	"strings"
 
 	fsc "github.com/metalsoft-io/metalcloud-cli/internal/fabric_switch_config"
 	"github.com/metalsoft-io/metalcloud-cli/pkg/logger"
@@ -29,6 +31,28 @@ func (r *runner) count(key string) { r.result.Counters[key]++ }
 func (r *runner) fail(format string, args ...any) {
 	r.result.Failures++
 	logger.Get().Error().Msgf(format, args...)
+}
+
+// varSummary is a compact one-line rendering of a profile's variables for debug
+// logging: list-valued variables show their length, scalars show their value.
+func varSummary(vars map[string]interface{}) string {
+	keys := make([]string, 0, len(vars))
+	for k := range vars {
+		keys = append(keys, k)
+	}
+	sort.Strings(keys)
+	parts := make([]string, 0, len(keys))
+	for _, k := range keys {
+		switch v := vars[k].(type) {
+		case []map[string]interface{}:
+			parts = append(parts, fmt.Sprintf("%s=%d", k, len(v)))
+		case []string:
+			parts = append(parts, fmt.Sprintf("%s=%d", k, len(v)))
+		default:
+			parts = append(parts, fmt.Sprintf("%s=%v", k, v))
+		}
+	}
+	return strings.Join(parts, ", ")
 }
 
 func canonicalJSON(v interface{}) string {
@@ -143,6 +167,7 @@ func (r *runner) ensureTemplate(spec templateSpec, description string, annotatio
 	}
 
 	if existing == nil {
+		logger.Get().Debug().Msgf("template %q not found among %d existing template(s); creating (%d bytes)", spec.Label, len(templates), len(spec.Text))
 		if r.dryRun {
 			r.count("templates created")
 			return 0, false
@@ -168,6 +193,7 @@ func (r *runner) ensureTemplate(spec templateSpec, description string, annotatio
 	}
 	contentDrift := base64Decode(remoteB64) != spec.Text
 	annDrift := annotations != nil && canonicalJSON(existing.Annotations) != canonicalJSON(annotations)
+	logger.Get().Debug().Msgf("template %q found (id=%d): contentDrift=%v annotationsDrift=%v", spec.Label, existing.Id, contentDrift, annDrift)
 	if !contentDrift && !annDrift {
 		r.count("templates unchanged")
 		return existing.Id, true
@@ -219,6 +245,7 @@ func (r *runner) ensureProfiles(templateId int64, usable bool, devices []*device
 		}
 		existing := existingByDevice[dev.Id]
 		if existing == nil {
+			logger.Get().Debug().Msgf("[%s] profile (template %d): create {%s}", dev.Label(), templateId, varSummary(vars))
 			if r.dryRun {
 				r.count("profiles created")
 				continue
@@ -241,9 +268,12 @@ func (r *runner) ensureProfiles(templateId int64, usable bool, devices []*device
 		applyDrift := existing.ApplyMode != r.apply
 		enabledDrift := existing.IsEnabled == nil || !*existing.IsEnabled
 		if !varsDrift && !priorityDrift && !applyDrift && !enabledDrift {
+			logger.Get().Debug().Msgf("[%s] profile id=%s (template %d): unchanged", dev.Label(), existing.Id, templateId)
 			r.count("profiles unchanged")
 			continue
 		}
+		logger.Get().Debug().Msgf("[%s] profile id=%s: update (vars=%v priority=%v applyMode=%v enabled=%v)",
+			dev.Label(), existing.Id, varsDrift, priorityDrift, applyDrift, enabledDrift)
 		if r.dryRun {
 			r.count("profiles updated")
 			continue

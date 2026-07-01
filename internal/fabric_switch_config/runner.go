@@ -3,6 +3,8 @@ package fabric_switch_config
 import (
 	"fmt"
 	"sort"
+	"strconv"
+	"strings"
 
 	"github.com/metalsoft-io/metalcloud-cli/pkg/logger"
 )
@@ -97,7 +99,24 @@ func Configure(client Client, config *Config, fabricId int64, dryRun bool) (*Run
 		subnetIds: map[string]int64{},
 	}
 
+	logger.Get().Debug().Msgf(
+		"Computed plan: %d device target(s), %d fabric link(s), %d host downlink(s), %d port description(s)",
+		len(state.ByDevice), len(state.Links), len(state.HostLinks), len(state.PortDescriptions))
+	for _, position := range sortedGroupKeys(groups) {
+		names := make([]string, 0, len(groups[position]))
+		for _, dev := range groups[position] {
+			names = append(names, dev.Label())
+		}
+		logger.Get().Debug().Msgf("position %q: %d device(s): %s", position, len(names), strings.Join(names, ", "))
+	}
+
 	targeted := targetedPositions(config)
+	targetedNames := make([]string, 0, len(targeted))
+	for position := range targeted {
+		targetedNames = append(targetedNames, position)
+	}
+	sort.Strings(targetedNames)
+	logger.Get().Debug().Msgf("targeted positions (configure device): %s", strings.Join(targetedNames, ", "))
 	for position := range targeted {
 		if _, ok := groups[position]; !ok {
 			r.result.Warnings = append(r.result.Warnings,
@@ -220,6 +239,11 @@ func (r *runner) configureDevice(dev *DeviceRecord, desired *DeviceDesired) {
 		}
 	}
 
+	logger.Get().Debug().Msgf(
+		"[%s] device desired: hostname=%s asn=%s loopback=%s (current: hostname=%q asn=%d loopback=%s); patch={%s}",
+		label, strOrDash(desired.Hostname), int64OrDash(desired.Asn), strOrDash(desired.LoopbackIp),
+		dev.IdentifierString, dev.Asn, strOrDash(dev.LoopbackAddressIpv4), describeDeviceUpdate(body))
+
 	if body.empty() {
 		r.result.count("devices unchanged")
 		return
@@ -247,12 +271,24 @@ func (r *runner) configurePorts(dev *DeviceRecord) {
 		return
 	}
 	byName := map[string]*PortRecord{}
+	physical, loopback := 0, 0
 	for _, p := range ports {
 		if p.InterfaceName != "" {
 			byName[p.InterfaceName] = p
 		}
+		switch p.Kind {
+		case "physical":
+			physical++
+		case "loopback":
+			loopback++
+		}
 	}
 	r.ports[dev.Id] = byName
+	logger.Get().Debug().Msgf("[%s] %d port(s) discovered: %d physical, %d loopback, %d other",
+		label, len(ports), physical, loopback, len(ports)-physical-loopback)
+	if loopback == 0 && r.state.ByDevice[dev.Id] != nil && r.state.ByDevice[dev.Id].LoopbackIp != nil {
+		logger.Get().Debug().Msgf("[%s] no loopback port among the discovered interfaces; the /32 step will be skipped (have the switch interfaces been discovered yet?)", label)
+	}
 
 	enablePhysical := r.config.enablePhysicalPorts()
 	haveDescriptionTemplate := r.config.DescriptionTemplate != nil && *r.config.DescriptionTemplate != ""
@@ -278,6 +314,8 @@ func (r *runner) configurePorts(dev *DeviceRecord) {
 		if enabled == nil && description == nil {
 			continue
 		}
+		logger.Get().Debug().Msgf("[%s:%s] port config patch: enabled=%s description=%s",
+			label, port.InterfaceName, boolOrDash(enabled), strOrDash(description))
 		if r.dryRun {
 			r.result.count("port configs patched")
 			continue
@@ -316,6 +354,8 @@ func (r *runner) configureLoopbackIp(dev *DeviceRecord, ports []*PortRecord) {
 			break
 		}
 	}
+	logger.Get().Debug().Msgf("[%s] loopback interface %q (id=%d) has %d existing address(es); target %s/32",
+		label, loopback.InterfaceName, loopback.InterfaceId, len(loopback.Ipv4Addresses), *desired.LoopbackIp)
 
 	for _, addr := range loopback.Ipv4Addresses {
 		if addr.Address == *desired.LoopbackIp && addr.PrefixLength == 32 {
@@ -370,6 +410,9 @@ func (r *runner) configureLinks() {
 			r.existingLinks[ifacePairKey(ids[0], ids[1])] = link
 		}
 	}
+	logger.Get().Debug().Msgf(
+		"point-to-point links: %d existing in the system; planning %d fabric link(s) + %d host downlink(s)",
+		len(links), len(r.state.Links), len(r.state.HostLinks))
 
 	subnets, err := r.client.ListSubnetsByFabricTag(r.fabricId)
 	if err != nil {
@@ -397,6 +440,8 @@ func (r *runner) configureLink(plan *LinkPlan) {
 	label := fmt.Sprintf("%s:%s<->%s:%s", plan.DeviceA.Label(), plan.PortA, plan.DeviceB.Label(), plan.PortB)
 	tags := r.subnetTags(plan.Layer, r.endpointName(plan.DeviceA), plan.PortA, r.endpointName(plan.DeviceB), plan.PortB)
 	name := r.subnetName(plan.DeviceA.Id, plan.PortA, plan.DeviceB.Id, plan.PortB)
+	logger.Get().Debug().Msgf("[%s] %s link: ifaceA=%d ifaceB=%d /31=%s binding=%s",
+		label, plan.Layer, portA.InterfaceId, portB.InterfaceId, subnetOrDash(plan.Subnet), gatewayBinding)
 
 	if existing, ok := r.existingLinks[ifacePairKey(portA.InterfaceId, portB.InterfaceId)]; ok {
 		r.result.count("links existing")
@@ -499,8 +544,10 @@ func (r *runner) resolvePort(dev *Device, portName string) *PortRecord {
 func (r *runner) ensureSubnet(subnet *Subnet, tags map[string]string, name string) (int64, bool) {
 	key := subnetKey(subnet.NetworkAddress, subnet.PrefixLength)
 	if id, ok := r.subnetIds[key]; ok {
+		logger.Get().Debug().Msgf("subnet %s already exists (id=%d, name=%q)", subnet, id, name)
 		return id, true
 	}
+	logger.Get().Debug().Msgf("subnet %s not found; would create (name=%q, link-layer=%s)", subnet, name, tags["nvidia/link-layer"])
 	if r.dryRun {
 		r.result.count("subnets created")
 		return 0, false
@@ -581,6 +628,60 @@ func truncateName(name string) string {
 		name = name[:len(name)-1]
 	}
 	return name
+}
+
+// ---- debug formatting helpers -----------------------------------------------
+
+func strOrDash(s *string) string {
+	if s == nil {
+		return "-"
+	}
+	return *s
+}
+
+func int64OrDash(n *int64) string {
+	if n == nil {
+		return "-"
+	}
+	return strconv.FormatInt(*n, 10)
+}
+
+func boolOrDash(b *bool) string {
+	if b == nil {
+		return "-"
+	}
+	if *b {
+		return "true"
+	}
+	return "false"
+}
+
+func subnetOrDash(s *Subnet) string {
+	if s == nil {
+		return "-"
+	}
+	return s.String()
+}
+
+// describeDeviceUpdate lists the fields a device patch would change.
+func describeDeviceUpdate(body DeviceUpdate) string {
+	var parts []string
+	if body.IdentifierString != nil {
+		parts = append(parts, "identifierString="+*body.IdentifierString)
+	}
+	if body.ApplyIdentifierAsHostnameOnNextDeploy != nil {
+		parts = append(parts, "applyIdentifierAsHostnameOnNextDeploy="+boolOrDash(body.ApplyIdentifierAsHostnameOnNextDeploy))
+	}
+	if body.Asn != nil {
+		parts = append(parts, "asn="+int64OrDash(body.Asn))
+	}
+	if body.LoopbackAddress != nil {
+		parts = append(parts, "loopbackAddress="+*body.LoopbackAddress)
+	}
+	if len(parts) == 0 {
+		return "no changes"
+	}
+	return strings.Join(parts, ", ")
 }
 
 // ---- small helpers ----------------------------------------------------------

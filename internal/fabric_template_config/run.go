@@ -33,6 +33,12 @@ func RunFreeform(client TemplateClient, data []byte, fabricId int64, dryRun, ver
 		return nil, err
 	}
 
+	logger.Get().Debug().Msgf("freeform: mode=%s, hgx_prefix=%s, %d switch(es), template=%q (priority %g)",
+		freeform.Mode, hgx, len(plan.devices), freeform.Template.Label, freeform.Template.Priority)
+	for _, dev := range plan.devices {
+		logger.Get().Debug().Msgf("[%s] freeform vars: %s", dev.Label(), varSummary(variables[dev.Id]))
+	}
+
 	r := &runner{client: client, fabricId: fabricId, dryRun: dryRun, apply: freeform.ApplyMode,
 		result: &Result{Counters: map[string]int{}, Warnings: warnings}}
 
@@ -105,6 +111,13 @@ func RunBgp(client TemplateClient, data []byte, fabricId int64, dryRun, verify b
 		if pfcApplies(pfc[dev.Id]) {
 			pfcTargets = append(pfcTargets, dev)
 		}
+	}
+
+	logger.Get().Debug().Msgf("bgp: mode=%s, %d switch(es); overlay targets=%d, pfc targets=%d",
+		bgp.Mode, len(plan.devices), len(overlayTargets), len(pfcTargets))
+	for _, dev := range plan.devices {
+		logger.Get().Debug().Msgf("[%s] underlay: {%s}; overlay: {%s}", dev.Label(),
+			varSummary(variables[dev.Id]), varSummary(overlay[dev.Id]))
 	}
 
 	r := &runner{client: client, fabricId: fabricId, dryRun: dryRun, apply: bgp.ApplyMode,
