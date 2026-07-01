@@ -135,6 +135,35 @@ Examples:
 		},
 	}
 
+	endpointCreateBulkCmd = &cobra.Command{
+		Use:     "create-bulk",
+		Aliases: []string{"import"},
+		Short:   "Create multiple endpoints in one call",
+		Long: `Create multiple endpoints in a single bulk call.
+
+The configuration must be a JSON/YAML list of endpoint definitions (the same
+shape accepted by 'endpoint create --config-source', repeated). Each entry
+requires at least siteId, name, and label; endpointInterfaces and other fields
+are optional.
+
+Required Flags:
+  --config-source   'pipe' to read from stdin, or a path to a JSON/YAML file
+                    containing a list of endpoints.
+
+Examples:
+  metalcloud-cli endpoint create-bulk --config-source endpoints.yaml
+  cat endpoints.json | metalcloud-cli endpoint create-bulk --config-source pipe`,
+		SilenceUsage: true,
+		Annotations:  map[string]string{system.REQUIRED_PERMISSION: system.PERMISSION_SERVERS_WRITE},
+		RunE: func(cmd *cobra.Command, args []string) error {
+			config, err := utils.ReadConfigFromPipeOrFile(endpointFlags.configSource)
+			if err != nil {
+				return err
+			}
+			return endpoint.EndpointCreateBulk(cmd.Context(), config)
+		},
+	}
+
 	endpointUpdateCmd = &cobra.Command{
 		Use:     "update endpoint_id",
 		Aliases: []string{"edit"},
@@ -265,6 +294,10 @@ func init() {
 	endpointCreateCmd.MarkFlagsMutuallyExclusive("config-source", "label")
 	endpointCreateCmd.MarkFlagsMutuallyExclusive("config-source", "external-id")
 	endpointCreateCmd.MarkFlagsRequiredTogether("site-id", "name", "label")
+
+	endpointCmd.AddCommand(endpointCreateBulkCmd)
+	endpointCreateBulkCmd.Flags().StringVar(&endpointFlags.configSource, "config-source", "", "Source of the endpoints list. Can be 'pipe' or path to a JSON/YAML file.")
+	endpointCreateBulkCmd.MarkFlagRequired("config-source")
 
 	endpointCmd.AddCommand(endpointUpdateCmd)
 	endpointUpdateCmd.Flags().StringVar(&endpointFlags.configSource, "config-source", "", "Source of the endpoint configuration to update. Can be 'pipe' or path to a JSON file.")

@@ -29,6 +29,7 @@ Endpoint management commands.
 
 * [metalcloud-cli](metalcloud-cli.md)	 - MetalCloud CLI
 * [metalcloud-cli endpoint create](metalcloud-cli_endpoint_create.md)	 - Create a new endpoint
+* [metalcloud-cli endpoint create-bulk](metalcloud-cli_endpoint_create-bulk.md)	 - Create multiple endpoints in one call
 * [metalcloud-cli endpoint delete](metalcloud-cli_endpoint_delete.md)	 - Delete an endpoint
 * [metalcloud-cli endpoint get](metalcloud-cli_endpoint_get.md)	 - Display detailed information about a specific endpoint
 * [metalcloud-cli endpoint interfaces](metalcloud-cli_endpoint_interfaces.md)	 - List interfaces of an endpoint

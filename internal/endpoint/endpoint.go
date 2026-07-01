@@ -126,6 +126,33 @@ func EndpointCreate(ctx context.Context, endpointConfig sdk.CreateEndpoint) erro
 	return formatter.PrintResult(endpointInfo, &endpointPrintConfig)
 }
 
+// EndpointCreateBulk creates multiple endpoints in a single call from a config
+// holding a list of endpoint definitions (`[]CreateEndpoint`).
+func EndpointCreateBulk(ctx context.Context, config []byte) error {
+	logger.Get().Info().Msgf("Creating endpoints in bulk")
+
+	var endpoints []sdk.CreateEndpoint
+	if err := utils.UnmarshalContent(config, &endpoints); err != nil {
+		return err
+	}
+	if len(endpoints) == 0 {
+		return fmt.Errorf("no endpoints found in configuration")
+	}
+
+	client := api.GetApiClient(ctx)
+
+	httpRes, err := client.EndpointAPI.
+		BulkCreateEndpoints(ctx).
+		BulkCreateEndpoints(sdk.BulkCreateEndpoints{Endpoints: endpoints}).
+		Execute()
+	if err := response_inspector.InspectResponse(httpRes, err); err != nil {
+		return err
+	}
+
+	logger.Get().Info().Msgf("Created %d endpoint(s) in bulk", len(endpoints))
+	return nil
+}
+
 func EndpointUpdate(ctx context.Context, endpointId string, endpointUpdates sdk.UpdateEndpoint) error {
 	logger.Get().Info().Msgf("Updating endpoint '%s'", endpointId)
 
