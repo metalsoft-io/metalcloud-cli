@@ -826,6 +826,44 @@ func GetNetworkDeviceByName(ctx context.Context, siteName string, networkDeviceN
 	return &networkDevice.Data[0], nil
 }
 
+// GetNetworkDeviceByIdOrLabel resolves a network device by its numeric id or by
+// its identifierString (the switch hostname/label). A purely numeric ref is
+// treated as an id; anything else is matched exactly against identifierString.
+func GetNetworkDeviceByIdOrLabel(ctx context.Context, deviceRef string) (*sdk.NetworkDevice, error) {
+	client := api.GetApiClient(ctx)
+
+	if idNumeric, err := strconv.ParseInt(deviceRef, 10, 64); err == nil {
+		networkDevice, httpRes, err := client.NetworkDeviceAPI.GetNetworkDevice(ctx, idNumeric).Execute()
+		if err := response_inspector.InspectResponse(httpRes, err); err != nil {
+			return nil, err
+		}
+		return networkDevice, nil
+	}
+
+	list, httpRes, err := client.NetworkDeviceAPI.GetNetworkDevices(ctx).
+		FilterIdentifierString([]string{deviceRef}).
+		Execute()
+	if err := response_inspector.InspectResponse(httpRes, err); err != nil {
+		return nil, err
+	}
+
+	matches := make([]sdk.NetworkDevice, 0, len(list.Data))
+	for _, nd := range list.Data {
+		if nd.IdentifierString == deviceRef {
+			matches = append(matches, nd)
+		}
+	}
+
+	switch len(matches) {
+	case 0:
+		return nil, fmt.Errorf("no network device found with label '%s'", deviceRef)
+	case 1:
+		return &matches[0], nil
+	default:
+		return nil, fmt.Errorf("multiple network devices found with label '%s'; use the numeric id instead", deviceRef)
+	}
+}
+
 func GetNetworkDevicePorts(ctx context.Context, networkDeviceId float32) ([]sdk.NetworkDeviceInterface, error) {
 	client := api.GetApiClient(ctx)
 

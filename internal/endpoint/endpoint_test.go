@@ -1,6 +1,7 @@
 package endpoint
 
 import (
+	"context"
 	"net/http"
 	"testing"
 
@@ -178,6 +179,67 @@ func TestEndpointDelete_HappyPath(t *testing.T) {
 		t.Fatalf("expected nil error, got: %v", err)
 	}
 }
+
+// TestEndpointCreateBulk_NumericIds verifies bulk creation when interfaces are
+// specified by numeric networkDeviceInterfaceId (no device lookup needed).
+func TestEndpointCreateBulk_NumericIds(t *testing.T) {
+	ts := testutils.NewTestServer(map[string]http.HandlerFunc{
+		"/api/v2/endpoints/actions/bulk-create": testutils.JSONHandler(http.StatusCreated, map[string]any{}),
+	})
+	defer ts.Close()
+
+	ctx := testutils.SetupTestContext(ts.URL)
+	config := []byte(`[
+		{"name": "h08", "label": "h08", "siteId": 1, "endpointInterfaces": [{"networkDeviceInterfaceId": 111}]},
+		{"name": "h24", "label": "h24", "siteId": 1, "endpointInterfaces": [{"networkDeviceInterfaceId": 222}]}
+	]`)
+
+	if err := EndpointCreateBulk(ctx, config); err != nil {
+		t.Fatalf("expected nil error, got: %v", err)
+	}
+}
+
+// TestEndpointCreateBulk_Empty verifies an empty list is rejected.
+func TestEndpointCreateBulk_Empty(t *testing.T) {
+	ctx := testutils.SetupTestContext("http://unused")
+	if err := EndpointCreateBulk(ctx, []byte(`[]`)); err == nil {
+		t.Fatal("expected an error for an empty endpoint list, got nil")
+	}
+}
+
+// TestInterfaceResolver_NumericId verifies the numeric id fast-path returns the
+// id verbatim without any device lookup.
+func TestInterfaceResolver_NumericId(t *testing.T) {
+	r := newInterfaceResolver()
+	id := int64(4242)
+	got, err := r.resolve(context.Background(), EndpointInterfaceInput{NetworkDeviceInterfaceId: &id})
+	if err != nil {
+		t.Fatalf("expected nil error, got: %v", err)
+	}
+	if got != id {
+		t.Fatalf("expected %d, got %d", id, got)
+	}
+}
+
+// TestInterfaceResolver_MissingFields verifies an interface with neither a
+// numeric id nor a device/interface label pair is rejected.
+func TestInterfaceResolver_MissingFields(t *testing.T) {
+	r := newInterfaceResolver()
+
+	iface := "swp1"
+	cases := []EndpointInterfaceInput{
+		{},                          // nothing
+		{NetworkDevice: strPtr("")}, // device only, empty
+		{Interface: &iface},         // interface only, no device
+	}
+	for i, tc := range cases {
+		if _, err := r.resolve(context.Background(), tc); err == nil {
+			t.Fatalf("case %d: expected an error, got nil", i)
+		}
+	}
+}
+
+func strPtr(s string) *string { return &s }
 
 // TestEndpointInterfaceList_HappyPath verifies listing interfaces for an endpoint.
 func TestEndpointInterfaceList_HappyPath(t *testing.T) {

@@ -6,10 +6,18 @@ Create multiple endpoints in one call
 
 Create multiple endpoints in a single bulk call.
 
-The configuration must be a JSON/YAML list of endpoint definitions (the same
-shape accepted by 'endpoint create --config-source', repeated). Each entry
+The configuration must be a JSON/YAML list of endpoint definitions. Each entry
 requires at least siteId, name, and label; endpointInterfaces and other fields
 are optional.
+
+Each endpoint interface can be specified in one of two ways:
+  - by numeric id:    { "networkDeviceInterfaceId": 12345 }
+  - by label:         { "networkDevice": "leaf-01", "interface": "swp9s0" }
+
+When specified by label, the network device is resolved by numeric id or by its
+identifierString (switch hostname), and the interface by its name (e.g.
+"swp9s0"); each device's ports are fetched once and cached. An optional
+macAddress may be set on either form.
 
 Required Flags:
   --config-source   'pipe' to read from stdin, or a path to a JSON/YAML file
