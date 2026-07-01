@@ -2,7 +2,10 @@ package route_domain
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
+	"io"
+	"net/http"
 	"strconv"
 
 	"github.com/metalsoft-io/metalcloud-cli/pkg/api"
@@ -12,6 +15,20 @@ import (
 	"github.com/metalsoft-io/metalcloud-cli/pkg/utils"
 	sdk "github.com/metalsoft-io/metalcloud-sdk-go"
 )
+
+// routeDomainDisplay is a lenient view of a route domain for output. The SDK's
+// typed decode of GetRouteDomains/GetRouteDomain fails ("failed to unmarshal
+// VlanAllocationStrategy as AutoVlanAllocationStrategy: no value given for
+// required property granularityLevel") because the nested VLAN/VNI allocation
+// strategy oneOf treats granularityLevel as required. We only display these
+// fields, so parse the raw body directly and bypass the broken decode.
+type routeDomainDisplay struct {
+	Id       int64  `json:"id"`
+	Label    string `json:"label"`
+	Name     string `json:"name"`
+	Kind     string `json:"kind"`
+	Revision int64  `json:"revision"`
+}
 
 var RouteDomainPrintConfig = formatter.PrintConfig{
 	FieldsConfig: map[string]formatter.RecordFieldConfig{
@@ -41,16 +58,20 @@ var RouteDomainPrintConfig = formatter.PrintConfig{
 func RouteDomainList(ctx context.Context) error {
 	logger.Get().Info().Msgf("Listing all route domains")
 
-	client := api.GetApiClient(ctx)
-
-	request := client.RouteDomainAPI.GetRouteDomains(ctx).SortBy([]string{"id:ASC"})
-
-	records, meta, err := utils.FetchAllPages(request)
+	rawItems, meta, err := utils.FetchAllPagesRaw(func(page float32) (*http.Response, error) {
+		return api.DoJSONRequest(ctx, http.MethodGet,
+			fmt.Sprintf("/api/v2/route-domains?page=%.0f&limit=100&sortBy=id:ASC", page), nil)
+	})
 	if err != nil {
 		return err
 	}
 
-	return utils.PrintAll(records, meta, len(records), &RouteDomainPrintConfig)
+	records, err := utils.UnmarshalRawItems[routeDomainDisplay](rawItems)
+	if err != nil {
+		return fmt.Errorf("failed to parse route domains: %w", err)
+	}
+
+	return utils.PrintAllRaw(rawItems, records, meta, len(records), &RouteDomainPrintConfig)
 }
 
 func RouteDomainGet(ctx context.Context, routeDomainId string) error {
@@ -61,11 +82,19 @@ func RouteDomainGet(ctx context.Context, routeDomainId string) error {
 		return err
 	}
 
-	client := api.GetApiClient(ctx)
-
-	routeDomain, httpRes, err := client.RouteDomainAPI.GetRouteDomain(ctx, routeDomainIdNumeric).Execute()
+	httpRes, err := api.DoJSONRequest(ctx, http.MethodGet,
+		fmt.Sprintf("/api/v2/route-domains/%d", routeDomainIdNumeric), nil)
 	if err := response_inspector.InspectResponse(httpRes, err); err != nil {
 		return err
+	}
+	defer httpRes.Body.Close()
+	body, err := io.ReadAll(httpRes.Body)
+	if err != nil {
+		return fmt.Errorf("reading route domain: %w", err)
+	}
+	var routeDomain routeDomainDisplay
+	if err := json.Unmarshal(body, &routeDomain); err != nil {
+		return fmt.Errorf("parsing route domain: %w", err)
 	}
 
 	return formatter.PrintResult(routeDomain, &RouteDomainPrintConfig)
@@ -184,11 +213,20 @@ func getRouteDomainIdAndRevision(ctx context.Context, routeDomainId string) (int
 		return 0, "", err
 	}
 
-	client := api.GetApiClient(ctx)
-
-	routeDomain, httpRes, err := client.RouteDomainAPI.GetRouteDomain(ctx, routeDomainIdNumeric).Execute()
+	// Raw GET: the typed decode trips the same VlanAllocationStrategy oneOf bug.
+	httpRes, err := api.DoJSONRequest(ctx, http.MethodGet,
+		fmt.Sprintf("/api/v2/route-domains/%d", routeDomainIdNumeric), nil)
 	if err := response_inspector.InspectResponse(httpRes, err); err != nil {
 		return 0, "", err
+	}
+	defer httpRes.Body.Close()
+	body, err := io.ReadAll(httpRes.Body)
+	if err != nil {
+		return 0, "", fmt.Errorf("reading route domain: %w", err)
+	}
+	var routeDomain routeDomainDisplay
+	if err := json.Unmarshal(body, &routeDomain); err != nil {
+		return 0, "", fmt.Errorf("parsing route domain: %w", err)
 	}
 
 	return routeDomainIdNumeric, strconv.FormatInt(routeDomain.Revision, 10), nil
