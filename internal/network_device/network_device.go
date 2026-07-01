@@ -353,32 +353,31 @@ func NetworkDeviceGetPorts(ctx context.Context, networkDeviceId string) error {
 
 	return formatter.PrintResult(portsInfo, &formatter.PrintConfig{
 		FieldsConfig: map[string]formatter.RecordFieldConfig{
-			"PortName": {
-				Title: "Name",
+			"InterfaceId": {
+				Title: "ID",
 				Order: 1,
 			},
-			"Enabled": {
-				Title: "Enabled",
+			"InterfaceName": {
+				Title: "Name",
 				Order: 2,
 			},
-			"Active": {
-				Title: "Active",
-				Order: 3,
+			"InterfaceDescription": {
+				Title:    "Description",
+				MaxWidth: 30,
+				Order:    3,
 			},
-			"LinkSpeed": {
-				Title: "Speed",
+			"Kind": {
 				Order: 4,
 			},
-			"LinkDuplex": {
-				Title: "Duplex",
+			"MacAddress": {
+				Title: "MAC",
 				Order: 5,
 			},
-			"UtilizationIn": {
-				Title: "Utilization In",
+			"LagIdentifier": {
+				Title: "LAG",
 				Order: 6,
 			},
-			"UtilizationOut": {
-				Title: "Utilization Out",
+			"Tags": {
 				Order: 7,
 			},
 		},
