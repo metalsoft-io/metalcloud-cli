@@ -96,6 +96,13 @@ func SetApiClient(ctx context.Context, apiEndpoint string, apiKey string, debug 
 // that fail to match an empty object. `body` may be nil for bodyless requests.
 // The caller owns closing the returned response body.
 func DoJSONRequest(ctx context.Context, method, path string, body []byte) (*http.Response, error) {
+	return DoJSONRequestWithHeaders(ctx, method, path, body, nil)
+}
+
+// DoJSONRequestWithHeaders is DoJSONRequest with additional request headers
+// (e.g. If-Match for optimistic concurrency). Headers set here override the
+// defaults. The caller owns closing the returned response body.
+func DoJSONRequestWithHeaders(ctx context.Context, method, path string, body []byte, headers map[string]string) (*http.Response, error) {
 	apiClient, err := GetApiClientE(ctx)
 	if err != nil {
 		return nil, err
@@ -126,6 +133,9 @@ func DoJSONRequest(ctx context.Context, method, path string, body []byte) (*http
 	req.Header.Set("Accept", "application/json")
 	if cfg.UserAgent != "" {
 		req.Header.Set("User-Agent", cfg.UserAgent)
+	}
+	for key, value := range headers {
+		req.Header.Set(key, value)
 	}
 
 	httpClient := cfg.HTTPClient

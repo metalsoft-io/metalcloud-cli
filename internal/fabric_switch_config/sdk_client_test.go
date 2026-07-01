@@ -1,6 +1,41 @@
 package fabric_switch_config
 
-import "testing"
+import (
+	"encoding/json"
+	"strings"
+	"testing"
+)
+
+// TestManualStrategyBody guards the fix for the API rejecting a global scope with
+// resourceId:0 ("scope.resourceId must not be less than 1"). The manual strategy
+// body must carry scope {"kind":"global"} with NO resourceId key at all.
+func TestManualStrategyBody(t *testing.T) {
+	body := manualStrategyBody(7, "a_first")
+
+	if body["kind"] != "manual" || body["subnetId"] != int64(7) || body["interfaceABinding"] != "a_first" {
+		t.Fatalf("unexpected strategy body: %#v", body)
+	}
+
+	scope, ok := body["scope"].(map[string]any)
+	if !ok {
+		t.Fatalf("scope is not a map: %#v", body["scope"])
+	}
+	if scope["kind"] != "global" {
+		t.Errorf("scope kind = %v, want global", scope["kind"])
+	}
+	if _, present := scope["resourceId"]; present {
+		t.Errorf("global scope must omit resourceId, got %v", scope["resourceId"])
+	}
+
+	// Belt and suspenders: the marshaled JSON must not contain resourceId either.
+	raw, err := json.Marshal(body)
+	if err != nil {
+		t.Fatalf("marshal: %v", err)
+	}
+	if strings.Contains(string(raw), "resourceId") {
+		t.Errorf("serialized strategy must not contain resourceId: %s", raw)
+	}
+}
 
 // TestParseP2pLinksBody covers the lenient parse that replaces the SDK's typed
 // decode (which fails with "data matches more than one schema in oneOf" once a

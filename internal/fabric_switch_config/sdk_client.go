@@ -245,69 +245,86 @@ func parseP2pLinksBody(body []byte) ([]*P2pLinkRecord, error) {
 }
 
 func (c *sdkClient) CreateP2pLink(payload P2pLinkCreate) (*P2pLinkRecord, error) {
-	create := sdk.CreatePointToPointLink{}
-	create.SetInterfaceA(sdk.CreatePointToPointInterface{
-		Type:        sdk.POINTTOPOINTINTERFACETYPE_NETWORK_EQUIPMENT_INTERFACE,
-		InterfaceId: payload.InterfaceAId,
-	})
+	// Built as a raw body rather than via the SDK: a manual strategy's scope is
+	// `{"kind":"global"}` with no resourceId, but the SDK's CreateResourceScope
+	// always serializes resourceId:0, which the API rejects
+	// ("scope.resourceId must not be less than 1").
+	create := map[string]any{
+		"interfaceA": pointToPointInterface(payload.InterfaceAId),
+	}
 	if payload.InterfaceBId != nil {
-		create.SetInterfaceB(sdk.CreatePointToPointInterface{
-			Type:        sdk.POINTTOPOINTINTERFACETYPE_NETWORK_EQUIPMENT_INTERFACE,
-			InterfaceId: *payload.InterfaceBId,
-		})
+		create["interfaceB"] = pointToPointInterface(*payload.InterfaceBId)
 	}
 	if payload.Description != nil {
-		create.SetDescription(*payload.Description)
+		create["description"] = *payload.Description
 	}
 	if payload.Mtu != nil {
-		create.SetMtu(*payload.Mtu)
+		create["mtu"] = *payload.Mtu
 	}
 	if payload.RoutingActivation != "" {
-		create.SetRoutingActivation(sdk.PointToPointLinkRoutingActivation(payload.RoutingActivation))
+		create["routingActivation"] = payload.RoutingActivation
 	}
 	if payload.StagedSubnetId != nil {
-		strategy, err := manualStrategyRequest(*payload.StagedSubnetId, payload.StagedBinding)
-		if err != nil {
-			return nil, err
-		}
-		create.Ipv4 = &sdk.CreatePointToPointLinkIpv4Properties{
-			SubnetAllocationStrategies: []sdk.CreatePointToPointLinkConfigIpv4SubnetAllocationStrategyRequest{strategy},
+		create["ipv4"] = map[string]any{
+			"subnetAllocationStrategies": []map[string]any{
+				manualStrategyBody(*payload.StagedSubnetId, payload.StagedBinding),
+			},
 		}
 	}
-	link, httpRes, err := c.api.PointToPointLinkAPI.CreatePointToPointLink(c.ctx).CreatePointToPointLink(create).Execute()
+
+	body, err := json.Marshal(create)
+	if err != nil {
+		return nil, err
+	}
+
+	httpRes, err := api.DoJSONRequest(c.ctx, http.MethodPost, "/api/v2/point-to-point-links", body)
 	if err := response_inspector.InspectResponse(httpRes, err); err != nil {
 		return nil, err
+	}
+	defer httpRes.Body.Close()
+
+	var link struct {
+		Id       int64 `json:"id"`
+		Revision int64 `json:"revision"`
+	}
+	if err := json.NewDecoder(httpRes.Body).Decode(&link); err != nil {
+		return nil, fmt.Errorf("decoding created point-to-point link: %w", err)
 	}
 	return &P2pLinkRecord{Id: link.Id, Revision: link.Revision}, nil
 }
 
 func (c *sdkClient) CreateP2pIpv4Strategy(linkId, subnetId int64, binding string, linkRevision int64) error {
-	strategy, err := manualStrategyRequest(subnetId, binding)
+	// Raw request for the same scope-serialization reason as CreateP2pLink; the
+	// config endpoint additionally requires If-Match with the link's revision.
+	body, err := json.Marshal(manualStrategyBody(subnetId, binding))
 	if err != nil {
 		return err
 	}
-	_, httpRes, err := c.api.PointToPointLinkAPI.
-		CreatePointToPointLinkConfigIpv4SubnetAllocationStrategy(c.ctx, float32(linkId)).
-		CreatePointToPointLinkConfigIpv4SubnetAllocationStrategyRequest(strategy).
-		IfMatch(strconv.FormatInt(linkRevision, 10)).
-		Execute()
+
+	path := fmt.Sprintf("/api/v2/point-to-point-links/%d/config/ipv4/subnet-allocation-strategies", linkId)
+	headers := map[string]string{"If-Match": strconv.FormatInt(linkRevision, 10)}
+
+	httpRes, err := api.DoJSONRequestWithHeaders(c.ctx, http.MethodPost, path, body, headers)
 	return response_inspector.InspectResponse(httpRes, err)
 }
 
-func manualStrategyRequest(subnetId int64, binding string) (sdk.CreatePointToPointLinkConfigIpv4SubnetAllocationStrategyRequest, error) {
-	bindingValue, err := sdk.NewPointToPointInterfaceBindingFromValue(binding)
-	if err != nil {
-		return sdk.CreatePointToPointLinkConfigIpv4SubnetAllocationStrategyRequest{}, err
+func pointToPointInterface(interfaceId int64) map[string]any {
+	return map[string]any{
+		"type":        string(sdk.POINTTOPOINTINTERFACETYPE_NETWORK_EQUIPMENT_INTERFACE),
+		"interfaceId": interfaceId,
 	}
-	manual := sdk.NewCreateManualIpv4PointToPointAllocationStrategy(
-		sdk.POINTTOPOINTALLOCATIONSTRATEGYKIND_MANUAL,
-		sdk.CreateResourceScope{Kind: sdk.RESOURCESCOPEKIND_GLOBAL},
-		subnetId,
-	)
-	manual.InterfaceABinding = bindingValue
-	return sdk.CreatePointToPointLinkConfigIpv4SubnetAllocationStrategyRequest{
-		CreateManualIpv4PointToPointAllocationStrategy: manual,
-	}, nil
+}
+
+// manualStrategyBody is the manual /31 allocation-strategy body. The scope is
+// `{"kind":"global"}` with no resourceId (matching the reference implementation);
+// see CreateP2pLink for why this is built by hand rather than via the SDK.
+func manualStrategyBody(subnetId int64, binding string) map[string]any {
+	return map[string]any{
+		"kind":              string(sdk.POINTTOPOINTALLOCATIONSTRATEGYKIND_MANUAL),
+		"subnetId":          subnetId,
+		"scope":             map[string]any{"kind": string(sdk.RESOURCESCOPEKIND_GLOBAL)},
+		"interfaceABinding": binding,
+	}
 }
 
 func (c *sdkClient) ListSubnetsByFabricTag(fabricId int64) ([]*SubnetRecord, error) {

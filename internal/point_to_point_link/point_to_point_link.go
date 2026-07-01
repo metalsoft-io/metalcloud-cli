@@ -128,19 +128,32 @@ func PointToPointLinkGet(ctx context.Context, linkId string) error {
 func PointToPointLinkCreate(ctx context.Context, config []byte) error {
 	logger.Get().Info().Msgf("Creating point-to-point link")
 
-	var linkConfig sdk.CreatePointToPointLink
+	// Parse into a generic map and forward as raw JSON rather than round-tripping
+	// through sdk.CreatePointToPointLink: the SDK re-serializes a manual strategy's
+	// scope with resourceId:0, which the API rejects for a global scope. Sending
+	// the user's body verbatim preserves an omitted (global) resourceId.
+	var linkConfig map[string]interface{}
 	if err := utils.UnmarshalContent(config, &linkConfig); err != nil {
 		return err
 	}
 
-	client := api.GetApiClient(ctx)
+	body, err := json.Marshal(linkConfig)
+	if err != nil {
+		return err
+	}
 
-	link, httpRes, err := client.PointToPointLinkAPI.
-		CreatePointToPointLink(ctx).
-		CreatePointToPointLink(linkConfig).
-		Execute()
+	httpRes, err := api.DoJSONRequest(ctx, http.MethodPost, "/api/v2/point-to-point-links", body)
 	if err := response_inspector.InspectResponse(httpRes, err); err != nil {
 		return err
+	}
+	defer httpRes.Body.Close()
+	respBody, err := io.ReadAll(httpRes.Body)
+	if err != nil {
+		return fmt.Errorf("reading created point-to-point link: %w", err)
+	}
+	var link p2pLinkDisplay
+	if err := json.Unmarshal(respBody, &link); err != nil {
+		return fmt.Errorf("parsing created point-to-point link: %w", err)
 	}
 
 	return formatter.PrintResult(link, &PointToPointLinkPrintConfig)
@@ -179,70 +192,80 @@ func PointToPointLinkAddIpv4Strategy(ctx context.Context, linkId string, subnetI
 		return err
 	}
 
-	bindingValue, err := sdk.NewPointToPointInterfaceBindingFromValue(binding)
-	if err != nil {
+	if _, err := sdk.NewPointToPointInterfaceBindingFromValue(binding); err != nil {
 		return fmt.Errorf("invalid interface binding '%s': %w", binding, err)
 	}
 
-	scopeKindValue, err := sdk.NewResourceScopeKindFromValue(scopeKind)
-	if err != nil {
+	if _, err := sdk.NewResourceScopeKindFromValue(scopeKind); err != nil {
 		return fmt.Errorf("invalid scope kind '%s': %w", scopeKind, err)
 	}
 
-	manual := sdk.CreateManualIpv4PointToPointAllocationStrategy{
-		Kind: sdk.POINTTOPOINTALLOCATIONSTRATEGYKIND_MANUAL,
-		Scope: sdk.CreateResourceScope{
-			Kind:       *scopeKindValue,
-			ResourceId: scopeResourceId,
-		},
-		SubnetId:          subnetId,
-		InterfaceABinding: bindingValue,
+	// Built as a raw body: the SDK's CreateResourceScope always serializes
+	// resourceId, but a global scope must omit it (the API rejects resourceId:0
+	// with "scope.resourceId must not be less than 1"). Only non-global scopes
+	// carry a resourceId.
+	scope := map[string]any{"kind": scopeKind}
+	if scopeKind != string(sdk.RESOURCESCOPEKIND_GLOBAL) {
+		scope["resourceId"] = scopeResourceId
+	}
+	strategy := map[string]any{
+		"kind":              string(sdk.POINTTOPOINTALLOCATIONSTRATEGYKIND_MANUAL),
+		"subnetId":          subnetId,
+		"scope":             scope,
+		"interfaceABinding": binding,
 	}
 
-	strategyRequest := sdk.CreatePointToPointLinkConfigIpv4SubnetAllocationStrategyRequest{
-		CreateManualIpv4PointToPointAllocationStrategy: &manual,
-	}
-
-	client := api.GetApiClient(ctx)
-
-	result, httpRes, err := client.PointToPointLinkAPI.
-		CreatePointToPointLinkConfigIpv4SubnetAllocationStrategy(ctx, linkIdNumeric).
-		CreatePointToPointLinkConfigIpv4SubnetAllocationStrategyRequest(strategyRequest).
-		IfMatch(revision).
-		Execute()
-	if err := response_inspector.InspectResponse(httpRes, err); err != nil {
+	body, err := json.Marshal(strategy)
+	if err != nil {
 		return err
 	}
 
+	path := fmt.Sprintf("/api/v2/point-to-point-links/%d/config/ipv4/subnet-allocation-strategies", int64(linkIdNumeric))
+	httpRes, err := api.DoJSONRequestWithHeaders(ctx, http.MethodPost, path, body,
+		map[string]string{"If-Match": revision})
+	if err := response_inspector.InspectResponse(httpRes, err); err != nil {
+		return err
+	}
+	defer httpRes.Body.Close()
+
+	body, err = io.ReadAll(httpRes.Body)
+	if err != nil {
+		return fmt.Errorf("reading created strategy: %w", err)
+	}
+	// Decode into a generic map: the typed 201 response is a oneOf that fails
+	// strict decode (same schema-drift bug as the list/get paths).
+	var result map[string]interface{}
+	if err := json.Unmarshal(body, &result); err != nil {
+		return fmt.Errorf("parsing created strategy: %w", err)
+	}
 	return formatter.PrintResult(result, nil)
 }
 
 // PointToPointLinkConfigExample prints an example create body, including a staged
 // manual IPv4 /31 allocation strategy on interface A.
 func PointToPointLinkConfigExample(ctx context.Context) error {
-	example := sdk.CreatePointToPointLink{
-		Description:       sdk.PtrString("leaf-swp33s0 to spine-swp1s0"),
-		RoutingActivation: sdk.POINTTOPOINTLINKROUTINGACTIVATION_DEFAULT.Ptr(),
-		Mtu:               *sdk.NewNullableInt32(sdk.PtrInt32(9216)),
-		InterfaceA: *sdk.NewNullableCreatePointToPointInterface(&sdk.CreatePointToPointInterface{
-			Type:        sdk.POINTTOPOINTINTERFACETYPE_NETWORK_EQUIPMENT_INTERFACE,
-			InterfaceId: 1001,
-		}),
-		InterfaceB: *sdk.NewNullableCreatePointToPointInterface(&sdk.CreatePointToPointInterface{
-			Type:        sdk.POINTTOPOINTINTERFACETYPE_NETWORK_EQUIPMENT_INTERFACE,
-			InterfaceId: 2002,
-		}),
-		Ipv4: &sdk.CreatePointToPointLinkIpv4Properties{
-			SubnetAllocationStrategies: []sdk.CreatePointToPointLinkConfigIpv4SubnetAllocationStrategyRequest{
+	// Built as a map so the manual strategy's global scope prints as
+	// {"kind":"global"} with no resourceId - the shape the API expects (a global
+	// scope must omit resourceId, and the create path forwards the body verbatim).
+	example := map[string]interface{}{
+		"description":       "leaf-swp33s0 to spine-swp1s0",
+		"routingActivation": string(sdk.POINTTOPOINTLINKROUTINGACTIVATION_DEFAULT),
+		"mtu":               9216,
+		"interfaceA": map[string]interface{}{
+			"type":        string(sdk.POINTTOPOINTINTERFACETYPE_NETWORK_EQUIPMENT_INTERFACE),
+			"interfaceId": 1001,
+		},
+		"interfaceB": map[string]interface{}{
+			"type":        string(sdk.POINTTOPOINTINTERFACETYPE_NETWORK_EQUIPMENT_INTERFACE),
+			"interfaceId": 2002,
+		},
+		"ipv4": map[string]interface{}{
+			"subnetAllocationStrategies": []map[string]interface{}{
 				{
-					CreateManualIpv4PointToPointAllocationStrategy: &sdk.CreateManualIpv4PointToPointAllocationStrategy{
-						Kind: sdk.POINTTOPOINTALLOCATIONSTRATEGYKIND_MANUAL,
-						Scope: sdk.CreateResourceScope{
-							Kind: sdk.RESOURCESCOPEKIND_GLOBAL,
-						},
-						SubnetId:          12345,
-						InterfaceABinding: sdk.POINTTOPOINTINTERFACEBINDING_A_FIRST.Ptr(),
-					},
+					"kind":              string(sdk.POINTTOPOINTALLOCATIONSTRATEGYKIND_MANUAL),
+					"scope":             map[string]interface{}{"kind": string(sdk.RESOURCESCOPEKIND_GLOBAL)},
+					"subnetId":          12345,
+					"interfaceABinding": string(sdk.POINTTOPOINTINTERFACEBINDING_A_FIRST),
 				},
 			},
 		},
