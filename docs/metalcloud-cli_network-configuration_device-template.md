@@ -11,6 +11,9 @@ Available commands:
   list                List all available Network device configuration templates
   get                 Show detailed information about a specific template
   create              Create a new Network device configuration template from JSON configuration
+  import-library      Bulk-import a directory of templates as a single library
+  export-library      Export all templates of a single library to a directory
+  list-libraries      List all template libraries and their template counts
   update              Update an existing Network device configuration template
   delete              Delete a Network device configuration template
 
@@ -39,7 +42,10 @@ Available commands:
 * [metalcloud-cli network-configuration device-template config-example](metalcloud-cli_network-configuration_device-template_config-example.md)	 - Generate example configuration template for network device configuration template
 * [metalcloud-cli network-configuration device-template create](metalcloud-cli_network-configuration_device-template_create.md)	 - Create a new network device configuration template with specified configuration
 * [metalcloud-cli network-configuration device-template delete](metalcloud-cli_network-configuration_device-template_delete.md)	 - Delete a network device configuration template from the system
+* [metalcloud-cli network-configuration device-template export-library](metalcloud-cli_network-configuration_device-template_export-library.md)	 - Export all templates of a single library to a directory
 * [metalcloud-cli network-configuration device-template get](metalcloud-cli_network-configuration_device-template_get.md)	 - Get detailed information about a specific network device configuration template
+* [metalcloud-cli network-configuration device-template import-library](metalcloud-cli_network-configuration_device-template_import-library.md)	 - Bulk-import a directory of templates as a single library
 * [metalcloud-cli network-configuration device-template list](metalcloud-cli_network-configuration_device-template_list.md)	 - List network device configuration templates with optional filtering
+* [metalcloud-cli network-configuration device-template list-libraries](metalcloud-cli_network-configuration_device-template_list-libraries.md)	 - List all template libraries and their template counts
 * [metalcloud-cli network-configuration device-template update](metalcloud-cli_network-configuration_device-template_update.md)	 - Update configuration of an existing network device configuration template
 

@@ -2,7 +2,11 @@ package network_device_configuration_template
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
+	"os"
+	"path/filepath"
+	"sort"
 	"strconv"
 	"strings"
 
@@ -86,6 +90,26 @@ var NetworkDeviceConfigurationTemplatePrintConfig = formatter.PrintConfig{
 		"LibraryLabel": {
 			Title: "Library Label",
 			Order: 8,
+		},
+	},
+}
+
+// LibrarySummary is one row of the list-libraries output: a distinct library
+// label and how many templates carry it.
+type LibrarySummary struct {
+	LibraryLabel  string `json:"libraryLabel" yaml:"libraryLabel"`
+	TemplateCount int    `json:"templateCount" yaml:"templateCount"`
+}
+
+var libraryListPrintConfig = formatter.PrintConfig{
+	FieldsConfig: map[string]formatter.RecordFieldConfig{
+		"LibraryLabel": {
+			Title: "Library Label",
+			Order: 1,
+		},
+		"TemplateCount": {
+			Title: "Templates",
+			Order: 2,
 		},
 	},
 }
@@ -198,6 +222,189 @@ func NetworkDeviceConfigurationTemplateCreate(ctx context.Context, config []byte
 	}
 
 	return formatter.PrintResult(networkDeviceConfigurationTemplateInfo, &NetworkDeviceConfigurationTemplatePrintConfig)
+}
+
+// NetworkDeviceConfigurationTemplateImportLibrary bulk-imports every template
+// descriptor file found in dir as a network device configuration template,
+// forcing them all under a single libraryLabel so they form one library.
+//
+// Each file is a JSON/YAML descriptor with the same fields as `config-example`
+// (the configuration/preparation fields are base64-encoded commands); the file's
+// own libraryLabel, if any, is overridden with libraryLabel. Files are processed
+// in name order and an unreadable or invalid file is counted as a failure and
+// skipped so one bad file does not abort the rest.
+func NetworkDeviceConfigurationTemplateImportLibrary(ctx context.Context, libraryLabel string, dir string, dryRun bool) error {
+	logger.Get().Info().Msgf("Importing network device configuration template library %q from %q", libraryLabel, dir)
+
+	entries, err := os.ReadDir(dir)
+	if err != nil {
+		return fmt.Errorf("failed to read template directory %q: %w", dir, err)
+	}
+
+	files := make([]string, 0, len(entries))
+	for _, entry := range entries {
+		if entry.IsDir() {
+			continue
+		}
+		switch strings.ToLower(filepath.Ext(entry.Name())) {
+		case ".json", ".yaml", ".yml":
+			files = append(files, entry.Name())
+		}
+	}
+	sort.Strings(files)
+
+	if len(files) == 0 {
+		return fmt.Errorf("no template files (*.json, *.yaml, *.yml) found in %q", dir)
+	}
+
+	client := api.GetApiClient(ctx)
+
+	created, failed := 0, 0
+	for _, name := range files {
+		content, readErr := utils.ReadConfigFromFile(filepath.Join(dir, name))
+		if readErr != nil {
+			failed++
+			logger.Get().Error().Msgf("[%s] read failed: %s", name, readErr.Error())
+			continue
+		}
+
+		var tmpl sdk.CreateNetworkDeviceBGPConfigurationTemplate
+		if err := utils.UnmarshalContent(content, &tmpl); err != nil {
+			failed++
+			logger.Get().Error().Msgf("[%s] invalid: %s", name, err.Error())
+			continue
+		}
+		tmpl.LibraryLabel = libraryLabel // every template joins the same library
+
+		if dryRun {
+			created++
+			logger.Get().Info().Msgf("[%s] would import into library %q", name, libraryLabel)
+			continue
+		}
+
+		info, httpRes, createErr := client.NetworkDeviceBGPConfigurationTemplateAPI.
+			CreateNetworkDeviceBGPConfigurationTemplate(ctx).
+			CreateNetworkDeviceBGPConfigurationTemplate(tmpl).
+			Execute()
+		if err := response_inspector.InspectResponse(httpRes, createErr); err != nil {
+			failed++
+			logger.Get().Error().Msgf("[%s] import failed: %s", name, err.Error())
+			continue
+		}
+		created++
+		logger.Get().Info().Msgf("[%s] imported template id=%d", name, info.Id)
+	}
+
+	verb, suffix := "imported", ""
+	if dryRun {
+		verb, suffix = "would import", " (dry-run, no changes made)"
+	}
+	logger.Get().Info().Msgf("Summary: library=%q, %s=%d, failed=%d%s", libraryLabel, verb, created, failed, suffix)
+
+	if failed > 0 {
+		return fmt.Errorf("library import completed with %d failure(s)", failed)
+	}
+	return nil
+}
+
+// NetworkDeviceConfigurationTemplateExportLibrary writes every template that
+// carries libraryLabel to dir, one JSON descriptor per template. Each file is
+// the inverse of import-library's input (the create fields only, no id or
+// timestamps), so an exported directory can be re-imported as-is. dir is created
+// if it does not exist.
+func NetworkDeviceConfigurationTemplateExportLibrary(ctx context.Context, libraryLabel string, dir string) error {
+	logger.Get().Info().Msgf("Exporting network device configuration template library %q to %q", libraryLabel, dir)
+
+	templates, err := fetchAllTemplates(ctx)
+	if err != nil {
+		return err
+	}
+
+	if err := os.MkdirAll(dir, 0o755); err != nil {
+		return fmt.Errorf("failed to create output directory %q: %w", dir, err)
+	}
+
+	exported := 0
+	for _, t := range templates {
+		if t.LibraryLabel != libraryLabel {
+			continue
+		}
+
+		descriptor := sdk.CreateNetworkDeviceBGPConfigurationTemplate{
+			Action:                      t.Action,
+			NetworkType:                 t.NetworkType,
+			NetworkDeviceDriver:         t.NetworkDeviceDriver,
+			NetworkDevicePosition:       t.NetworkDevicePosition,
+			RemoteNetworkDevicePosition: t.RemoteNetworkDevicePosition,
+			BgpNumbering:                t.BgpNumbering,
+			BgpLinkConfiguration:        t.BgpLinkConfiguration,
+			ExecutionType:               t.ExecutionType,
+			LibraryLabel:                t.LibraryLabel,
+			Preparation:                 t.Preparation,
+			Configuration:               t.Configuration,
+		}
+
+		data, err := json.MarshalIndent(descriptor, "", "  ")
+		if err != nil {
+			return fmt.Errorf("template id=%d: %w", t.Id, err)
+		}
+		data = append(data, '\n')
+
+		name := fmt.Sprintf("template-%d.json", t.Id)
+		if err := os.WriteFile(filepath.Join(dir, name), data, 0o644); err != nil {
+			return fmt.Errorf("failed to write %q: %w", name, err)
+		}
+		exported++
+		logger.Get().Info().Msgf("[%s] exported template id=%d", name, t.Id)
+	}
+
+	if exported == 0 {
+		return fmt.Errorf("no templates found in library %q", libraryLabel)
+	}
+
+	logger.Get().Info().Msgf("Summary: library=%q, exported=%d, directory=%q", libraryLabel, exported, dir)
+	return nil
+}
+
+// NetworkDeviceConfigurationTemplateListLibraries prints every distinct library
+// label across all network device configuration templates, with the number of
+// templates in each.
+func NetworkDeviceConfigurationTemplateListLibraries(ctx context.Context) error {
+	logger.Get().Info().Msgf("Listing network device configuration template libraries")
+
+	templates, err := fetchAllTemplates(ctx)
+	if err != nil {
+		return err
+	}
+
+	counts := map[string]int{}
+	for _, t := range templates {
+		counts[t.LibraryLabel]++
+	}
+
+	libraries := make([]LibrarySummary, 0, len(counts))
+	for label, n := range counts {
+		libraries = append(libraries, LibrarySummary{LibraryLabel: label, TemplateCount: n})
+	}
+	sort.Slice(libraries, func(i, j int) bool { return libraries[i].LibraryLabel < libraries[j].LibraryLabel })
+
+	return formatter.PrintResult(libraries, &libraryListPrintConfig)
+}
+
+// fetchAllTemplates returns every network device configuration template. Both
+// export-library and list-libraries group/filter by libraryLabel client-side so
+// they don't depend on the server-side filter's match semantics.
+func fetchAllTemplates(ctx context.Context) ([]sdk.NetworkDeviceBGPConfigurationTemplate, error) {
+	client := api.GetApiClient(ctx)
+	request := client.NetworkDeviceBGPConfigurationTemplateAPI.
+		GetNetworkDeviceBGPConfigurationTemplates(ctx).
+		SortBy([]string{"id:ASC"})
+
+	templates, _, err := utils.FetchAllPages(request)
+	if err != nil {
+		return nil, err
+	}
+	return templates, nil
 }
 
 func NetworkDeviceConfigurationTemplateUpdate(ctx context.Context, networkDeviceConfigurationTemplateId string, config []byte) error {

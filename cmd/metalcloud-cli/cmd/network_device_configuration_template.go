@@ -15,6 +15,8 @@ var (
 		configSource       string
 		filterId           []string
 		filterLibraryLabel []string
+		dir                string
+		dryRun             bool
 	}{}
 
 	networkDeviceConfigurationTemplateCmd = &cobra.Command{
@@ -28,6 +30,9 @@ Available commands:
   list                List all available Network device configuration templates
   get                 Show detailed information about a specific template
   create              Create a new Network device configuration template from JSON configuration
+  import-library      Bulk-import a directory of templates as a single library
+  export-library      Export all templates of a single library to a directory
+  list-libraries      List all template libraries and their template counts
   update              Update an existing Network device configuration template
   delete              Delete a Network device configuration template`,
 	}
@@ -174,6 +179,102 @@ Examples:
 		},
 	}
 
+	networkDeviceConfigurationTemplateImportLibraryCmd = &cobra.Command{
+		Use:     "import-library <library_label>",
+		Aliases: []string{"import"},
+		Short:   "Bulk-import a directory of templates as a single library",
+		Long: `Bulk-import every network device configuration template descriptor found in a
+directory, grouping them all under a single library label.
+
+Each file in the directory is one template descriptor (JSON or YAML) with the
+same fields as 'config-example' - the preparation and configuration fields are
+base64-encoded commands. Files with a .json, .yaml or .yml extension are imported
+in name order; any file's own libraryLabel is overridden with <library_label> so
+the whole directory forms one library. A file that cannot be read or parsed is
+reported and skipped so one bad file does not abort the rest.
+
+Arguments:
+  library_label   The library label to assign to every imported template
+
+Required Flags:
+  --dir           Directory holding the template descriptor files
+
+Examples:
+  # Preview what would be imported
+  metalcloud-cli network-configuration device-template import-library spectrumx --dir ./templates --dry-run
+
+  # Import every descriptor in ./templates as the 'spectrumx' library
+  metalcloud-cli nc dt import-library spectrumx --dir ./templates`,
+		SilenceUsage: true,
+		Annotations:  map[string]string{system.REQUIRED_PERMISSION: system.PERMISSION_NETWORK_DEVICE_CONFIGURATION_TEMPLATES_WRITE},
+		Args:         cobra.ExactArgs(1),
+		RunE: func(cmd *cobra.Command, args []string) error {
+			return network_device_configuration_template.NetworkDeviceConfigurationTemplateImportLibrary(
+				cmd.Context(),
+				args[0],
+				networkDeviceConfigurationTemplateFlags.dir,
+				networkDeviceConfigurationTemplateFlags.dryRun,
+			)
+		},
+	}
+
+	networkDeviceConfigurationTemplateExportLibraryCmd = &cobra.Command{
+		Use:     "export-library <library_label>",
+		Aliases: []string{"export"},
+		Short:   "Export all templates of a single library to a directory",
+		Long: `Export every network device configuration template that belongs to a library to
+a directory, one descriptor file per template.
+
+Each file is the inverse of 'import-library' input - the create fields only, no
+id or timestamps - so an exported directory can be re-imported as-is (optionally
+under a different library label). The output directory is created if it does not
+exist; files are named 'template-<id>.json'.
+
+Arguments:
+  library_label   The library label whose templates should be exported
+
+Required Flags:
+  --dir           Directory to write the descriptor files into
+
+Examples:
+  # Export the 'spectrumx' library to ./spectrumx-export
+  metalcloud-cli network-configuration device-template export-library spectrumx --dir ./spectrumx-export
+
+  # Round-trip: export, then re-import under a new label
+  metalcloud-cli nc dt export-library spectrumx --dir ./lib
+  metalcloud-cli nc dt import-library spectrumx-copy --dir ./lib`,
+		SilenceUsage: true,
+		Annotations:  map[string]string{system.REQUIRED_PERMISSION: system.PERMISSION_NETWORK_DEVICE_CONFIGURATION_TEMPLATES_READ},
+		Args:         cobra.ExactArgs(1),
+		RunE: func(cmd *cobra.Command, args []string) error {
+			return network_device_configuration_template.NetworkDeviceConfigurationTemplateExportLibrary(
+				cmd.Context(),
+				args[0],
+				networkDeviceConfigurationTemplateFlags.dir,
+			)
+		},
+	}
+
+	networkDeviceConfigurationTemplateListLibrariesCmd = &cobra.Command{
+		Use:     "list-libraries",
+		Aliases: []string{"libraries", "libs"},
+		Short:   "List all template libraries and their template counts",
+		Long: `List every distinct library label across all network device configuration
+templates, with the number of templates in each library.
+
+Examples:
+  # List all libraries
+  metalcloud-cli network-configuration device-template list-libraries
+
+  # As JSON
+  metalcloud-cli nc dt list-libraries -f json`,
+		SilenceUsage: true,
+		Annotations:  map[string]string{system.REQUIRED_PERMISSION: system.PERMISSION_NETWORK_DEVICE_CONFIGURATION_TEMPLATES_READ},
+		RunE: func(cmd *cobra.Command, args []string) error {
+			return network_device_configuration_template.NetworkDeviceConfigurationTemplateListLibraries(cmd.Context())
+		},
+	}
+
 	networkDeviceConfigurationTemplateDeleteCmd = &cobra.Command{
 		Use:     "delete <network_device_configuration_template_id>",
 		Aliases: []string{"rm"},
@@ -244,6 +345,17 @@ Examples:
 	networkDeviceConfigurationTemplateCmd.AddCommand(networkDeviceConfigurationTemplateUpdateCmd)
 	networkDeviceConfigurationTemplateUpdateCmd.Flags().StringVar(&networkDeviceConfigurationTemplateFlags.configSource, "config-source", "", "Source of the network device configuration template updates. Can be 'pipe' or path to a JSON file.")
 	networkDeviceConfigurationTemplateUpdateCmd.MarkFlagsOneRequired("config-source")
+
+	networkDeviceConfigurationTemplateCmd.AddCommand(networkDeviceConfigurationTemplateImportLibraryCmd)
+	networkDeviceConfigurationTemplateImportLibraryCmd.Flags().StringVar(&networkDeviceConfigurationTemplateFlags.dir, "dir", "", "Directory holding the template descriptor files (*.json, *.yaml, *.yml).")
+	networkDeviceConfigurationTemplateImportLibraryCmd.Flags().BoolVar(&networkDeviceConfigurationTemplateFlags.dryRun, "dry-run", false, "Report what would be imported without creating anything.")
+	networkDeviceConfigurationTemplateImportLibraryCmd.MarkFlagRequired("dir")
+
+	networkDeviceConfigurationTemplateCmd.AddCommand(networkDeviceConfigurationTemplateExportLibraryCmd)
+	networkDeviceConfigurationTemplateExportLibraryCmd.Flags().StringVar(&networkDeviceConfigurationTemplateFlags.dir, "dir", "", "Directory to write the exported descriptor files into (created if missing).")
+	networkDeviceConfigurationTemplateExportLibraryCmd.MarkFlagRequired("dir")
+
+	networkDeviceConfigurationTemplateCmd.AddCommand(networkDeviceConfigurationTemplateListLibrariesCmd)
 
 	networkDeviceConfigurationTemplateCmd.AddCommand(networkDeviceConfigurationTemplateDeleteCmd)
 }

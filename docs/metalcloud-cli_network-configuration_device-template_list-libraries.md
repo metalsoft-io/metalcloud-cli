@@ -1,0 +1,43 @@
+## metalcloud-cli network-configuration device-template list-libraries
+
+List all template libraries and their template counts
+
+### Synopsis
+
+List every distinct library label across all network device configuration
+templates, with the number of templates in each library.
+
+Examples:
+  # List all libraries
+  metalcloud-cli network-configuration device-template list-libraries
+
+  # As JSON
+  metalcloud-cli nc dt list-libraries -f json
+
+```
+metalcloud-cli network-configuration device-template list-libraries [flags]
+```
+
+### Options
+
+```
+  -h, --help   help for list-libraries
+```
+
+### Options inherited from parent commands
+
+```
+  -k, --api_key string         MetalCloud API key
+  -c, --config string          Config file path
+  -d, --debug                  Set to enable debug logging
+  -e, --endpoint string        MetalCloud API endpoint
+  -f, --format string          Output format. Supported values are 'text','csv','md','json','yaml'. (default "text")
+  -i, --insecure_skip_verify   Set to allow insecure transport
+  -l, --log_file string        Log file path
+  -v, --verbosity string       Log level verbosity (default "INFO")
+```
+
+### SEE ALSO
+
+* [metalcloud-cli network-configuration device-template](metalcloud-cli_network-configuration_device-template.md)	 - Manage network devices configuration templates
+
