@@ -207,16 +207,22 @@ func (c *sdkTemplateClient) RenderTemplate(contentB64 string, variables map[stri
 	return rendered.Rendered, nil
 }
 
-func (c *sdkTemplateClient) GetDeviceCustomVariables(deviceId int64) (map[string]interface{}, string, error) {
+func (c *sdkTemplateClient) GetDeviceCustomVariables(deviceId int64) (map[string]interface{}, string, string, error) {
 	dev, httpRes, err := c.api.NetworkDeviceAPI.GetNetworkDevice(c.ctx, deviceId).Execute()
 	if err := response_inspector.InspectResponse(httpRes, err); err != nil {
-		return nil, "", err
+		return nil, "", "", err
 	}
-	return dev.CustomVariables, strconv.FormatInt(dev.Revision, 10), nil
+	return dev.CustomVariables, dev.DriftDetectionSyncStatus, strconv.FormatInt(dev.Revision, 10), nil
 }
 
-func (c *sdkTemplateClient) UpdateDeviceCustomVariables(deviceId int64, customVariables map[string]interface{}, revision string) error {
+func (c *sdkTemplateClient) UpdateDeviceCustomVariables(deviceId int64, customVariables map[string]interface{}, driftStatus string, revision string) error {
 	body := sdk.UpdateNetworkDevice{CustomVariables: customVariables}
+	// The server requires driftDetectionSyncStatus on every UpdateNetworkDevice
+	// PATCH, but the generated SDK struct omits the field. Carry the current
+	// value forward via AdditionalProperties so we don't mutate drift state.
+	if driftStatus != "" {
+		body.AdditionalProperties = map[string]interface{}{"driftDetectionSyncStatus": driftStatus}
+	}
 	_, httpRes, err := c.api.NetworkDeviceAPI.
 		UpdateNetworkDevice(c.ctx, deviceId).
 		UpdateNetworkDevice(body).

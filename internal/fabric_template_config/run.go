@@ -180,7 +180,7 @@ func (r *runner) reconcileCustomVariables(devices []*deviceRecord, variables, ov
 			"is_evpn_rr": boolStr(isRR),
 		}
 
-		current, revision, err := r.client.GetDeviceCustomVariables(dev.Id)
+		current, driftStatus, revision, err := r.client.GetDeviceCustomVariables(dev.Id)
 		if err != nil {
 			r.fail("[%s] device GET failed: %s", dev.Label(), err.Error())
 			continue
@@ -200,7 +200,7 @@ func (r *runner) reconcileCustomVariables(devices []*deviceRecord, variables, ov
 			r.count("device custom variables set")
 			continue
 		}
-		if err := r.client.UpdateDeviceCustomVariables(dev.Id, merged, revision); err != nil {
+		if err := r.client.UpdateDeviceCustomVariables(dev.Id, merged, driftStatus, revision); err != nil {
 			r.fail("[%s] customVariables PATCH failed: %s", dev.Label(), err.Error())
 			continue
 		}
