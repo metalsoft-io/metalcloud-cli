@@ -88,10 +88,10 @@ func (f *fakeTemplateClient) RenderTemplate(string, map[string]interface{}) (str
 	f.renders++
 	return "rendered", nil
 }
-func (f *fakeTemplateClient) GetDeviceCustomVariables(int64) (map[string]interface{}, string, string, error) {
-	return map[string]interface{}{}, "synced", "1", nil
+func (f *fakeTemplateClient) GetDeviceCustomVariables(int64) (map[string]interface{}, string, error) {
+	return map[string]interface{}{}, "1", nil
 }
-func (f *fakeTemplateClient) UpdateDeviceCustomVariables(int64, map[string]interface{}, string, string) error {
+func (f *fakeTemplateClient) UpdateDeviceCustomVariables(int64, map[string]interface{}, string) error {
 	f.customVarsSet++
 	return nil
 }

@@ -18,8 +18,8 @@ type TemplateClient interface {
 
 	RenderTemplate(contentB64 string, variables map[string]interface{}) (rendered string, err error)
 
-	GetDeviceCustomVariables(deviceId int64) (current map[string]interface{}, driftStatus string, revision string, err error)
-	UpdateDeviceCustomVariables(deviceId int64, customVariables map[string]interface{}, driftStatus string, revision string) error
+	GetDeviceCustomVariables(deviceId int64) (current map[string]interface{}, revision string, err error)
+	UpdateDeviceCustomVariables(deviceId int64, customVariables map[string]interface{}, revision string) error
 }
 
 type templateRecord struct {
