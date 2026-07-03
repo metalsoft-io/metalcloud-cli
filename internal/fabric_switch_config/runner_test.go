@@ -39,7 +39,7 @@ func (f *fakeClient) ListDevicesBySite(int64) ([]*DeviceRecord, error) {
 	return f.siteDevices, nil
 }
 
-func (f *fakeClient) UpdateDevice(deviceId int64, body DeviceUpdate, _ int64) error {
+func (f *fakeClient) UpdateDevice(deviceId int64, body DeviceUpdate, _ string, _ int64) error {
 	f.devicePatches++
 	d := f.devices[deviceId]
 	if body.IdentifierString != nil {

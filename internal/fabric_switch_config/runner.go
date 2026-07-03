@@ -253,7 +253,7 @@ func (r *runner) configureDevice(dev *DeviceRecord, desired *DeviceDesired) {
 		r.info("[%s] would PATCH device", label)
 		return
 	}
-	if err := r.client.UpdateDevice(dev.Id, body, dev.Revision); err != nil {
+	if err := r.client.UpdateDevice(dev.Id, body, dev.DriftDetectionSyncStatus, dev.Revision); err != nil {
 		r.fail("[%s] device PATCH failed: %s", label, err.Error())
 		return
 	}
