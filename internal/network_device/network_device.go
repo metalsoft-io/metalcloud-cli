@@ -854,6 +854,18 @@ func GetNetworkDeviceByName(ctx context.Context, siteName string, networkDeviceN
 // its identifierString (the switch hostname/label). A purely numeric ref is
 // treated as an id; anything else is matched exactly against identifierString.
 func GetNetworkDeviceByIdOrLabel(ctx context.Context, deviceRef string) (*sdk.NetworkDevice, error) {
+	return getNetworkDeviceByIdOrLabel(ctx, deviceRef, nil)
+}
+
+// GetNetworkDeviceByIdOrLabelInSite behaves like GetNetworkDeviceByIdOrLabel but
+// scopes a label lookup to a single site. Switch labels (e.g. "leaf-su00-r0")
+// are reused across sites, so scoping to the caller's site disambiguates them.
+// A numeric ref still resolves directly by id, independent of the site.
+func GetNetworkDeviceByIdOrLabelInSite(ctx context.Context, deviceRef string, siteId int64) (*sdk.NetworkDevice, error) {
+	return getNetworkDeviceByIdOrLabel(ctx, deviceRef, &siteId)
+}
+
+func getNetworkDeviceByIdOrLabel(ctx context.Context, deviceRef string, siteId *int64) (*sdk.NetworkDevice, error) {
 	client := api.GetApiClient(ctx)
 
 	if idNumeric, err := strconv.ParseInt(deviceRef, 10, 64); err == nil {
@@ -864,9 +876,13 @@ func GetNetworkDeviceByIdOrLabel(ctx context.Context, deviceRef string) (*sdk.Ne
 		return networkDevice, nil
 	}
 
-	list, httpRes, err := client.NetworkDeviceAPI.GetNetworkDevices(ctx).
-		FilterIdentifierString([]string{deviceRef}).
-		Execute()
+	request := client.NetworkDeviceAPI.GetNetworkDevices(ctx).
+		FilterIdentifierString([]string{deviceRef})
+	if siteId != nil {
+		request = request.FilterSiteId([]string{strconv.FormatInt(*siteId, 10)})
+	}
+
+	list, httpRes, err := request.Execute()
 	if err := response_inspector.InspectResponse(httpRes, err); err != nil {
 		return nil, err
 	}
@@ -878,13 +894,18 @@ func GetNetworkDeviceByIdOrLabel(ctx context.Context, deviceRef string) (*sdk.Ne
 		}
 	}
 
+	scope := ""
+	if siteId != nil {
+		scope = fmt.Sprintf(" in site %d", *siteId)
+	}
+
 	switch len(matches) {
 	case 0:
-		return nil, fmt.Errorf("no network device found with label '%s'", deviceRef)
+		return nil, fmt.Errorf("no network device found with label '%s'%s", deviceRef, scope)
 	case 1:
 		return &matches[0], nil
 	default:
-		return nil, fmt.Errorf("multiple network devices found with label '%s'; use the numeric id instead", deviceRef)
+		return nil, fmt.Errorf("multiple network devices found with label '%s'%s; use the numeric id instead", deviceRef, scope)
 	}
 }
 

@@ -212,7 +212,7 @@ func TestEndpointCreateBulk_Empty(t *testing.T) {
 func TestInterfaceResolver_NumericId(t *testing.T) {
 	r := newInterfaceResolver()
 	id := int64(4242)
-	got, err := r.resolve(context.Background(), EndpointInterfaceInput{NetworkDeviceInterfaceId: &id})
+	got, err := r.resolve(context.Background(), 0, EndpointInterfaceInput{NetworkDeviceInterfaceId: &id})
 	if err != nil {
 		t.Fatalf("expected nil error, got: %v", err)
 	}
@@ -233,7 +233,7 @@ func TestInterfaceResolver_MissingFields(t *testing.T) {
 		{Interface: &iface},         // interface only, no device
 	}
 	for i, tc := range cases {
-		if _, err := r.resolve(context.Background(), tc); err == nil {
+		if _, err := r.resolve(context.Background(), 0, tc); err == nil {
 			t.Fatalf("case %d: expected an error, got nil", i)
 		}
 	}

@@ -199,7 +199,7 @@ func (input EndpointInput) toCreateEndpoint(ctx context.Context, resolver *inter
 	}
 
 	for i, ifaceInput := range input.EndpointInterfaces {
-		interfaceId, err := resolver.resolve(ctx, ifaceInput)
+		interfaceId, err := resolver.resolve(ctx, input.SiteId, ifaceInput)
 		if err != nil {
 			return sdk.CreateEndpoint{}, fmt.Errorf("endpoint '%s' interface #%d: %w", input.Label, i+1, err)
 		}
@@ -215,9 +215,10 @@ func (input EndpointInput) toCreateEndpoint(ctx context.Context, resolver *inter
 
 // interfaceResolver resolves (network device label, interface name) pairs to
 // numeric interface ids, caching each device's port inventory so a device is
-// fetched at most once across a bulk request.
+// fetched at most once across a bulk request. Devices are cached per site
+// because switch labels are reused across sites.
 type interfaceResolver struct {
-	// deviceRef -> (interfaceName -> interfaceId)
+	// "siteId/deviceRef" -> (interfaceName -> interfaceId)
 	ports map[string]map[string]int64
 }
 
@@ -225,7 +226,7 @@ func newInterfaceResolver() *interfaceResolver {
 	return &interfaceResolver{ports: map[string]map[string]int64{}}
 }
 
-func (r *interfaceResolver) resolve(ctx context.Context, input EndpointInterfaceInput) (int64, error) {
+func (r *interfaceResolver) resolve(ctx context.Context, siteId int64, input EndpointInterfaceInput) (int64, error) {
 	// A numeric id, if given, wins and needs no lookup.
 	if input.NetworkDeviceInterfaceId != nil {
 		return *input.NetworkDeviceInterfaceId, nil
@@ -238,11 +239,12 @@ func (r *interfaceResolver) resolve(ctx context.Context, input EndpointInterface
 	deviceRef := *input.NetworkDevice
 	interfaceName := *input.Interface
 
-	ports, ok := r.ports[deviceRef]
+	cacheKey := fmt.Sprintf("%d/%s", siteId, deviceRef)
+	ports, ok := r.ports[cacheKey]
 	if !ok {
-		logger.Get().Debug().Msgf("Resolving ports for network device '%s'", deviceRef)
+		logger.Get().Debug().Msgf("Resolving ports for network device '%s' in site %d", deviceRef, siteId)
 
-		device, err := network_device.GetNetworkDeviceByIdOrLabel(ctx, deviceRef)
+		device, err := network_device.GetNetworkDeviceByIdOrLabelInSite(ctx, deviceRef, siteId)
 		if err != nil {
 			return 0, err
 		}
@@ -261,9 +263,9 @@ func (r *interfaceResolver) resolve(ctx context.Context, input EndpointInterface
 		for _, iface := range interfaces {
 			ports[iface.InterfaceName] = iface.InterfaceId
 		}
-		r.ports[deviceRef] = ports
+		r.ports[cacheKey] = ports
 
-		logger.Get().Debug().Msgf("Network device '%s' (id %s) has %d ports", deviceRef, device.Id, len(ports))
+		logger.Get().Debug().Msgf("Network device '%s' (id %s) in site %d has %d ports", deviceRef, device.Id, siteId, len(ports))
 	}
 
 	interfaceId, ok := ports[interfaceName]
