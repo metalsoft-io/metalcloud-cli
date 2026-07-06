@@ -49,7 +49,7 @@ metalcloud-cli [flags]
 * [metalcloud-cli infrastructure](metalcloud-cli_infrastructure.md)	 - Manage infrastructure resources and configurations
 * [metalcloud-cli job](metalcloud-cli_job.md)	 - Manage MetalCloud jobs and job execution
 * [metalcloud-cli job-group](metalcloud-cli_job-group.md)	 - Manage MetalCloud job groups and group operations
-* [metalcloud-cli licensed-products](metalcloud-cli_licensed-products.md)	 - Show licensed product categories
+* [metalcloud-cli license](metalcloud-cli_license.md)	 - Manage the system license
 * [metalcloud-cli logical-network](metalcloud-cli_logical-network.md)	 - Manage logical networks within fabrics
 * [metalcloud-cli logical-network-profile](metalcloud-cli_logical-network-profile.md)	 - Manage logical network profiles for network configuration templates
 * [metalcloud-cli network-configuration](metalcloud-cli_network-configuration.md)	 - Manage network configuration templates

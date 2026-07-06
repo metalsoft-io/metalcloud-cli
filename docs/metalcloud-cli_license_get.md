@@ -1,15 +1,19 @@
-## metalcloud-cli licensed-products
+## metalcloud-cli license get
 
-Show licensed product categories
+Show the installed license document
+
+### Synopsis
+
+Show the license document currently installed on the system as a Base64-encoded signed blob. In text output the raw document is printed so it can be piped or saved to a file.
 
 ```
-metalcloud-cli licensed-products [flags]
+metalcloud-cli license get [flags]
 ```
 
 ### Options
 
 ```
-  -h, --help   help for licensed-products
+  -h, --help   help for get
 ```
 
 ### Options inherited from parent commands
@@ -27,5 +31,5 @@ metalcloud-cli licensed-products [flags]
 
 ### SEE ALSO
 
-* [metalcloud-cli](metalcloud-cli.md)	 - MetalCloud CLI
+* [metalcloud-cli license](metalcloud-cli_license.md)	 - Manage the system license
 
