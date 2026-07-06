@@ -7,7 +7,7 @@ type Client interface {
 	GetFabric(fabricId int64) (*FabricInfo, error)
 	ListFabricDevices(fabricId int64) ([]*DeviceRecord, error)
 	ListDevicesBySite(siteId int64) ([]*DeviceRecord, error)
-	UpdateDevice(deviceId int64, body DeviceUpdate, driftStatus string, revision int64) error
+	UpdateDevice(deviceId int64, body DeviceUpdate, revision int64) error
 	ListPorts(deviceId int64) ([]*PortRecord, error)
 	UpdatePortConfig(deviceId, portId int64, enabled *bool, description *string, configRevision int64) error
 	AddPortIpv4(deviceId, portId int64, address string, prefixLength int32, configRevision int64) error
@@ -33,7 +33,6 @@ type DeviceRecord struct {
 	LoopbackAddressIpv4                   *string
 	ApplyIdentifierAsHostnameOnNextDeploy bool
 	Revision                              int64
-	DriftDetectionSyncStatus              string
 }
 
 // DeviceUpdate is a sparse device patch: only the non-nil fields are sent.

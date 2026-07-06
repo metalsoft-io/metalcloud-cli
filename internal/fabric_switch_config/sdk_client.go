@@ -53,7 +53,6 @@ func deviceRecordFromSDK(d *sdk.NetworkDevice) *DeviceRecord {
 		LoopbackAddressIpv4:                   d.LoopbackAddressIpv4,
 		ApplyIdentifierAsHostnameOnNextDeploy: d.ApplyIdentifierAsHostnameOnNextDeploy,
 		Revision:                              d.Revision,
-		DriftDetectionSyncStatus:              d.DriftDetectionSyncStatus,
 	}
 	return rec
 }
@@ -84,7 +83,7 @@ func (c *sdkClient) ListDevicesBySite(siteId int64) ([]*DeviceRecord, error) {
 	return out, nil
 }
 
-func (c *sdkClient) UpdateDevice(deviceId int64, body DeviceUpdate, driftStatus string, revision int64) error {
+func (c *sdkClient) UpdateDevice(deviceId int64, body DeviceUpdate, revision int64) error {
 	update := sdk.UpdateNetworkDevice{}
 	if body.IdentifierString != nil {
 		update.SetIdentifierString(*body.IdentifierString)
@@ -97,12 +96,6 @@ func (c *sdkClient) UpdateDevice(deviceId int64, body DeviceUpdate, driftStatus 
 	}
 	if body.LoopbackAddress != nil {
 		update.SetLoopbackAddress(*body.LoopbackAddress)
-	}
-	// The server requires driftDetectionSyncStatus on every UpdateNetworkDevice
-	// PATCH, but the generated SDK struct omits the field. Carry the current
-	// value forward via AdditionalProperties so we don't mutate drift state.
-	if driftStatus != "" {
-		update.AdditionalProperties = map[string]interface{}{"driftDetectionSyncStatus": driftStatus}
 	}
 	_, httpRes, err := c.api.NetworkDeviceAPI.
 		UpdateNetworkDevice(c.ctx, deviceId).
