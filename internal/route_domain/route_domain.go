@@ -108,6 +108,21 @@ func RouteDomainCreate(ctx context.Context, config []byte) error {
 		return err
 	}
 
+	// The API validates the three allocation-strategy fields as arrays and
+	// rejects the request ("... must be an array") when they are absent: a nil
+	// vrfAllocationStrategies slice serializes as null (it is a required field),
+	// and the nil l3V{lan,ni}AllocationStrategies slices are omitted entirely.
+	// Normalize nil slices to empty ones so they always marshal as [].
+	if routeDomainConfig.VrfAllocationStrategies == nil {
+		routeDomainConfig.VrfAllocationStrategies = []sdk.CreateVrfAllocationStrategy{}
+	}
+	if routeDomainConfig.L3VlanAllocationStrategies == nil {
+		routeDomainConfig.L3VlanAllocationStrategies = []sdk.CreateVlanAllocationStrategy{}
+	}
+	if routeDomainConfig.L3VniAllocationStrategies == nil {
+		routeDomainConfig.L3VniAllocationStrategies = []sdk.CreateVniAllocationStrategy{}
+	}
+
 	client := api.GetApiClient(ctx)
 
 	routeDomainInfo, httpRes, err := client.RouteDomainAPI.CreateRouteDomain(ctx).CreateRouteDomain(routeDomainConfig).Execute()
