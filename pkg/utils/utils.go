@@ -98,14 +98,14 @@ func UnmarshalContent(content []byte, destination any) error {
 			return fmt.Errorf("failed to unmarshal content: %w", err)
 		}
 	case "yaml":
-		err := yaml.Unmarshal(content, destination)
+		err := unmarshalYAML(content, destination)
 		if err != nil {
 			return fmt.Errorf("failed to unmarshal content: %w", err)
 		}
 	default:
 		err := json.Unmarshal(content, destination)
 		if err != nil {
-			err = yaml.Unmarshal(content, destination)
+			err = unmarshalYAML(content, destination)
 			if err != nil {
 				return fmt.Errorf("failed to unmarshal content: %w", err)
 			}
@@ -113,6 +113,28 @@ func UnmarshalContent(content []byte, destination any) error {
 	}
 
 	return nil
+}
+
+// unmarshalYAML decodes YAML by first converting it to JSON, then unmarshaling
+// that JSON into the destination. Destinations are typically SDK types that
+// carry only `json` tags (camelCase) plus custom UnmarshalJSON methods for
+// oneOf discrimination and required-property validation. yaml.Unmarshal ignores
+// both: it matches against lowercased Go field names, so camelCase keys (e.g.
+// vrfAllocationStrategies, resourceId) bind to nothing and are silently
+// dropped, and oneOf wrappers never populate. Routing through JSON makes YAML
+// input behave identically to JSON input.
+func unmarshalYAML(content []byte, destination any) error {
+	var intermediate interface{}
+	if err := yaml.Unmarshal(content, &intermediate); err != nil {
+		return err
+	}
+
+	jsonBytes, err := json.Marshal(intermediate)
+	if err != nil {
+		return err
+	}
+
+	return json.Unmarshal(jsonBytes, destination)
 }
 
 func ProcessFilterStringSlice(filter []string) []string {
