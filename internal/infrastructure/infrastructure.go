@@ -358,7 +358,7 @@ func InfrastructureAddUser(ctx context.Context, infrastructureIdOrLabel string, 
 	}
 
 	addUserConfig := sdk.AddUserToInfrastructure{
-		UserEmail:         userEmail,
+		UserEmail:         sdk.PtrString(userEmail),
 		CreateIfNotExists: strings.ToLower(createMissing) == "true",
 	}
 

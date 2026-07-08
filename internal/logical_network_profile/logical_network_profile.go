@@ -116,7 +116,7 @@ func LogicalNetworkProfileConfigExample(ctx context.Context, kind string) error 
 						Kind: sdk.ALLOCATIONSTRATEGYKIND_AUTO,
 						Scope: sdk.CreateResourceScope{
 							Kind:       sdk.RESOURCESCOPEKIND_FABRIC,
-							ResourceId: 1,
+							ResourceId: *sdk.NewNullableInt64(sdk.PtrInt64(1)),
 						},
 						GranularityLevel: *sdk.NewNullableVlanAllocationGranularityLevel(sdk.VLANALLOCATIONGRANULARITYLEVEL_NETWORK_DEVICE.Ptr()),
 					},
@@ -130,7 +130,7 @@ func LogicalNetworkProfileConfigExample(ctx context.Context, kind string) error 
 						Kind: sdk.ALLOCATIONSTRATEGYKIND_AUTO,
 						Scope: sdk.CreateResourceScope{
 							Kind:       sdk.RESOURCESCOPEKIND_FABRIC,
-							ResourceId: 1,
+							ResourceId: *sdk.NewNullableInt64(sdk.PtrInt64(1)),
 						},
 						PrefixLength:  24,
 						SubnetPoolIds: []int64{1},
@@ -145,7 +145,7 @@ func LogicalNetworkProfileConfigExample(ctx context.Context, kind string) error 
 						Kind: sdk.ALLOCATIONSTRATEGYKIND_AUTO,
 						Scope: sdk.CreateResourceScope{
 							Kind:       sdk.RESOURCESCOPEKIND_FABRIC,
-							ResourceId: 1,
+							ResourceId: *sdk.NewNullableInt64(sdk.PtrInt64(1)),
 						},
 						PrefixLength:  64,
 						SubnetPoolIds: []int64{1},
@@ -163,7 +163,7 @@ func LogicalNetworkProfileConfigExample(ctx context.Context, kind string) error 
 						Kind: sdk.ALLOCATIONSTRATEGYKIND_AUTO,
 						Scope: sdk.CreateResourceScope{
 							Kind:       sdk.RESOURCESCOPEKIND_FABRIC,
-							ResourceId: 1,
+							ResourceId: *sdk.NewNullableInt64(sdk.PtrInt64(1)),
 						},
 						GranularityLevel: *sdk.NewNullableVlanAllocationGranularityLevel(sdk.VLANALLOCATIONGRANULARITYLEVEL_NETWORK_DEVICE.Ptr()),
 					},
@@ -177,7 +177,7 @@ func LogicalNetworkProfileConfigExample(ctx context.Context, kind string) error 
 						Kind: sdk.ALLOCATIONSTRATEGYKIND_AUTO,
 						Scope: sdk.CreateResourceScope{
 							Kind:       sdk.RESOURCESCOPEKIND_FABRIC,
-							ResourceId: 1,
+							ResourceId: *sdk.NewNullableInt64(sdk.PtrInt64(1)),
 						},
 					},
 				},
@@ -190,7 +190,7 @@ func LogicalNetworkProfileConfigExample(ctx context.Context, kind string) error 
 						Kind: sdk.ALLOCATIONSTRATEGYKIND_AUTO,
 						Scope: sdk.CreateResourceScope{
 							Kind:       sdk.RESOURCESCOPEKIND_FABRIC,
-							ResourceId: 1,
+							ResourceId: *sdk.NewNullableInt64(sdk.PtrInt64(1)),
 						},
 						PrefixLength:  24,
 						SubnetPoolIds: []int64{1},
@@ -205,7 +205,7 @@ func LogicalNetworkProfileConfigExample(ctx context.Context, kind string) error 
 						Kind: sdk.ALLOCATIONSTRATEGYKIND_AUTO,
 						Scope: sdk.CreateResourceScope{
 							Kind:       sdk.RESOURCESCOPEKIND_FABRIC,
-							ResourceId: 1,
+							ResourceId: *sdk.NewNullableInt64(sdk.PtrInt64(1)),
 						},
 						PrefixLength:  64,
 						SubnetPoolIds: []int64{1},
