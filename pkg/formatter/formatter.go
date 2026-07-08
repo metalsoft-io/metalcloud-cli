@@ -58,8 +58,30 @@ func IsTextFormat() bool {
 	return f == "" || f == "text"
 }
 
+// marshalYAML renders a value to YAML by first marshaling it to JSON. Most
+// values printed here are SDK types that carry only `json` tags plus custom
+// MarshalJSON methods (oneOf flattening, omitempty, nullable handling).
+// yaml.Marshal ignores all of that: it lowercases field names and dumps the
+// raw oneOf wrapper structs (e.g. createManualVrfAllocationStrategy) and
+// AdditionalProperties, producing output that neither matches the API nor
+// round-trips back through create/update. Routing through JSON yields clean
+// camelCase YAML consistent with JSON output and the config parser.
+func marshalYAML(result interface{}) ([]byte, error) {
+	jsonBytes, err := json.Marshal(result)
+	if err != nil {
+		return nil, err
+	}
+
+	var intermediate interface{}
+	if err := json.Unmarshal(jsonBytes, &intermediate); err != nil {
+		return nil, err
+	}
+
+	return yaml.Marshal(intermediate)
+}
+
 func PrintYamlResult(result interface{}) error {
-	yamlResult, err := yaml.Marshal(result)
+	yamlResult, err := marshalYAML(result)
 	if err != nil {
 		return fmt.Errorf("failed to convert to YAML: %v", err)
 	}
@@ -82,7 +104,7 @@ func PrintResult(result interface{}, printConfig *PrintConfig) error {
 		fmt.Printf("%s", string(jsonResult))
 	case "yaml":
 		// Convert JSON to YAML
-		yamlResult, err := yaml.Marshal(result)
+		yamlResult, err := marshalYAML(result)
 		if err != nil {
 			return fmt.Errorf("failed to convert to YAML: %v", err)
 		}
