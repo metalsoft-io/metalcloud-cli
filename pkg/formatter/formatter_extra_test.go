@@ -3,6 +3,7 @@ package formatter
 import (
 	"fmt"
 	"reflect"
+	"strings"
 	"testing"
 
 	"github.com/spf13/viper"
@@ -152,6 +153,35 @@ func TestPrintResult_YAML(t *testing.T) {
 	err := PrintResult([]row{{"bar"}}, nil)
 	if err != nil {
 		t.Errorf("PrintResult yaml: unexpected error: %v", err)
+	}
+}
+
+// marshalYAML must honor json tags (camelCase), not lowercase Go field names,
+// so YAML output matches JSON output and round-trips back through config parsing.
+func TestMarshalYAML_UsesJSONTags(t *testing.T) {
+	type nested struct {
+		ResourceId int64 `json:"resourceId"`
+	}
+	type doc struct {
+		VrfAllocationStrategies []string `json:"vrfAllocationStrategies"`
+		Scope                   nested   `json:"scope"`
+	}
+
+	out, err := marshalYAML(doc{VrfAllocationStrategies: []string{"a"}, Scope: nested{ResourceId: 21}})
+	if err != nil {
+		t.Fatalf("marshalYAML: unexpected error: %v", err)
+	}
+
+	got := string(out)
+	for _, want := range []string{"vrfAllocationStrategies:", "resourceId: 21"} {
+		if !strings.Contains(got, want) {
+			t.Errorf("marshalYAML output missing %q; got:\n%s", want, got)
+		}
+	}
+	for _, bad := range []string{"vrfallocationstrategies", "resourceid"} {
+		if strings.Contains(got, bad) {
+			t.Errorf("marshalYAML output has lowercased key %q; got:\n%s", bad, got)
+		}
 	}
 }
 
