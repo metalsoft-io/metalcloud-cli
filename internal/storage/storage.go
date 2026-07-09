@@ -2,7 +2,10 @@ package storage
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
+	"io"
+	"net/http"
 	"strconv"
 
 	"github.com/metalsoft-io/metalcloud-cli/pkg/api"
@@ -12,6 +15,16 @@ import (
 	"github.com/metalsoft-io/metalcloud-cli/pkg/utils"
 	sdk "github.com/metalsoft-io/metalcloud-sdk-go"
 )
+
+type storageRaw struct {
+	Id           interface{} `json:"id"`
+	SiteId       interface{} `json:"siteId"`
+	Driver       *string     `json:"driver"`
+	Technologies interface{} `json:"technologies"`
+	Type         *string     `json:"type"`
+	Name         *string     `json:"name"`
+	Status       *string     `json:"status"`
+}
 
 var StoragePrintConfig = formatter.PrintConfig{
 	FieldsConfig: map[string]formatter.RecordFieldConfig{
@@ -27,7 +40,7 @@ var StoragePrintConfig = formatter.PrintConfig{
 			Title: "Driver",
 			Order: 3,
 		},
-		"Technology": {
+		"Technologies": {
 			Title: "Technology",
 			Order: 4,
 		},
@@ -58,12 +71,20 @@ func StorageList(ctx context.Context, filterTechnology []string) error {
 	}
 	request = request.SortBy([]string{"id:ASC"})
 
-	records, meta, err := utils.FetchAllPages(request)
+	rawItems, meta, err := utils.FetchAllPagesRaw(func(page float32) (*http.Response, error) {
+		_, httpRes, _ := request.Page(page).Limit(100).Execute()
+		return httpRes, nil
+	})
 	if err != nil {
 		return err
 	}
 
-	return utils.PrintAll(records, meta, len(records), &StoragePrintConfig)
+	records, err := utils.UnmarshalRawItems[storageRaw](rawItems)
+	if err != nil {
+		return fmt.Errorf("failed to parse storages: %w", err)
+	}
+
+	return utils.PrintAllRaw(rawItems, records, meta, len(records), &StoragePrintConfig)
 }
 
 func StorageGet(ctx context.Context, storageId string) error {
@@ -76,9 +97,24 @@ func StorageGet(ctx context.Context, storageId string) error {
 
 	client := api.GetApiClient(ctx)
 
-	storage, httpRes, err := client.StorageAPI.GetStorage(ctx, storageIdNumeric).Execute()
-	if err := response_inspector.InspectResponse(httpRes, err); err != nil {
-		return err
+	// Raw-body parse: see storageRaw — the options.fibreChannel* type mismatch
+	// breaks typed decoding.
+	_, httpRes, sdkErr := client.StorageAPI.GetStorage(ctx, storageIdNumeric).Execute()
+	if httpRes != nil && httpRes.StatusCode >= 400 {
+		return response_inspector.InspectResponse(httpRes, sdkErr)
+	}
+	if httpRes == nil {
+		return sdkErr
+	}
+
+	body, err := io.ReadAll(httpRes.Body)
+	if err != nil {
+		return fmt.Errorf("failed to read response body: %w", err)
+	}
+
+	var storage storageRaw
+	if err := json.Unmarshal(body, &storage); err != nil {
+		return fmt.Errorf("failed to parse storage: %w", err)
 	}
 
 	return formatter.PrintResult(storage, &StoragePrintConfig)
