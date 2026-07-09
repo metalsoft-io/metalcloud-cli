@@ -2,7 +2,10 @@ package logical_network
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
+	"io"
+	"net/http"
 	"strconv"
 
 	"github.com/metalsoft-io/metalcloud-cli/internal/fabric"
@@ -13,6 +16,15 @@ import (
 	"github.com/metalsoft-io/metalcloud-cli/pkg/utils"
 	sdk "github.com/metalsoft-io/metalcloud-sdk-go"
 )
+
+type logicalNetworkRaw struct {
+	Id               interface{} `json:"id"`
+	Label            *string     `json:"label"`
+	Name             *string     `json:"name"`
+	Kind             *string     `json:"kind"`
+	FabricId         interface{} `json:"fabricId"`
+	InfrastructureId interface{} `json:"infrastructureId"`
+}
 
 var logicalNetworkPrintConfig = formatter.PrintConfig{
 	FieldsConfig: map[string]formatter.RecordFieldConfig{
@@ -95,25 +107,42 @@ func LogicalNetworkList(ctx context.Context, fabricIdOrLabel string, flags ListF
 		request = request.FilterFabricId([]string{fabric.Id})
 	}
 
+	printRaw := func(rawItems []json.RawMessage, meta sdk.PaginatedResponseMeta) error {
+		records, err := utils.UnmarshalRawItems[logicalNetworkRaw](rawItems)
+		if err != nil {
+			return fmt.Errorf("failed to parse logical networks: %w", err)
+		}
+		return utils.PrintAllRaw(rawItems, records, meta, len(records), &logicalNetworkPrintConfig)
+	}
+
 	switch {
 	case flags.Page > 0:
-		records, meta, err := utils.FetchPageWindow(request, flags.Page, flags.Limit)
+		rawItems, meta, err := utils.FetchPageWindowRaw(func(p, l float32) (*http.Response, error) {
+			_, httpRes, _ := request.Page(p).Limit(l).Execute()
+			return httpRes, nil
+		}, flags.Page, flags.Limit)
 		if err != nil {
 			return err
 		}
-		return utils.PrintAll(records, meta, len(records), &logicalNetworkPrintConfig)
+		return printRaw(rawItems, meta)
 	case flags.Limit > 0:
-		records, meta, err := utils.FetchUpTo(request, flags.Limit)
+		rawItems, meta, err := utils.FetchUpToRaw(func(p, l float32) (*http.Response, error) {
+			_, httpRes, _ := request.Page(p).Limit(l).Execute()
+			return httpRes, nil
+		}, flags.Limit)
 		if err != nil {
 			return err
 		}
-		return utils.PrintAll(records, meta, len(records), &logicalNetworkPrintConfig)
+		return printRaw(rawItems, meta)
 	default:
-		records, meta, err := utils.FetchAllPages(request)
+		rawItems, meta, err := utils.FetchAllPagesRaw(func(page float32) (*http.Response, error) {
+			_, httpRes, _ := request.Page(page).Limit(100).Execute()
+			return httpRes, nil
+		})
 		if err != nil {
 			return err
 		}
-		return utils.PrintAll(records, meta, len(records), &logicalNetworkPrintConfig)
+		return printRaw(rawItems, meta)
 	}
 }
 
@@ -127,9 +156,24 @@ func LogicalNetworkGet(ctx context.Context, logicalNetworkId string) error {
 
 	client := api.GetApiClient(ctx)
 
-	logicalNetwork, httpRes, err := client.LogicalNetworkAPI.GetLogicalNetwork(ctx, logicalNetworkIdNumeric).Execute()
-	if err := response_inspector.InspectResponse(httpRes, err); err != nil {
-		return err
+	// Raw-body parse: see logicalNetworkRaw — the nested allocation-strategy
+	// oneOf mismatch breaks typed decoding.
+	_, httpRes, sdkErr := client.LogicalNetworkAPI.GetLogicalNetwork(ctx, logicalNetworkIdNumeric).Execute()
+	if httpRes != nil && httpRes.StatusCode >= 400 {
+		return response_inspector.InspectResponse(httpRes, sdkErr)
+	}
+	if httpRes == nil {
+		return sdkErr
+	}
+
+	body, err := io.ReadAll(httpRes.Body)
+	if err != nil {
+		return fmt.Errorf("failed to read response body: %w", err)
+	}
+
+	var logicalNetwork logicalNetworkRaw
+	if err := json.Unmarshal(body, &logicalNetwork); err != nil {
+		return fmt.Errorf("failed to parse logical network: %w", err)
 	}
 
 	return formatter.PrintResult(logicalNetwork, &logicalNetworkPrintConfig)

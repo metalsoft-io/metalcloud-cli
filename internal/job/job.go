@@ -18,6 +18,14 @@ import (
 	"github.com/metalsoft-io/metalcloud-cli/pkg/utils"
 )
 
+type jobRaw struct {
+	JobId            interface{} `json:"jobId"`
+	Status           *string     `json:"status"`
+	FunctionName     *string     `json:"functionName"`
+	CreatedTimestamp *string     `json:"createdTimestamp"`
+	JobGroupId       interface{} `json:"jobGroupId"`
+}
+
 var jobPrintConfig = formatter.PrintConfig{
 	FieldsConfig: map[string]formatter.RecordFieldConfig{
 		"JobId": {
@@ -101,9 +109,24 @@ func JobGet(ctx context.Context, jobId string) error {
 
 	client := api.GetApiClient(ctx)
 
-	job, httpRes, err := client.JobAPI.GetJob(ctx, id).Execute()
-	if err := response_inspector.InspectResponse(httpRes, err); err != nil {
-		return err
+	// Raw-body parse: see jobRaw — the missing required `links` property breaks
+	// typed decoding.
+	_, httpRes, sdkErr := client.JobAPI.GetJob(ctx, id).Execute()
+	if httpRes != nil && httpRes.StatusCode >= 400 {
+		return response_inspector.InspectResponse(httpRes, sdkErr)
+	}
+	if httpRes == nil {
+		return sdkErr
+	}
+
+	body, err := io.ReadAll(httpRes.Body)
+	if err != nil {
+		return fmt.Errorf("failed to read response body: %w", err)
+	}
+
+	var job jobRaw
+	if err := json.Unmarshal(body, &job); err != nil {
+		return fmt.Errorf("failed to parse job: %w", err)
 	}
 
 	return formatter.PrintResult(job, &jobPrintConfig)

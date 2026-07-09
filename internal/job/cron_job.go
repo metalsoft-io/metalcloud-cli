@@ -2,7 +2,10 @@ package job
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
+	"io"
+	"net/http"
 	"strconv"
 
 	"github.com/metalsoft-io/metalcloud-cli/pkg/api"
@@ -12,6 +15,15 @@ import (
 	"github.com/metalsoft-io/metalcloud-cli/pkg/utils"
 	sdk "github.com/metalsoft-io/metalcloud-sdk-go"
 )
+
+type cronJobRaw struct {
+	Id              interface{} `json:"id"`
+	Label           *string     `json:"label"`
+	FunctionName    *string     `json:"functionName"`
+	Schedule        *string     `json:"schedule"`
+	Disabled        interface{} `json:"disabled"`
+	LifetimeSeconds interface{} `json:"lifetimeSeconds"`
+}
 
 var cronJobPrintConfig = formatter.PrintConfig{
 	FieldsConfig: map[string]formatter.RecordFieldConfig{
@@ -32,6 +44,8 @@ var cronJobPrintConfig = formatter.PrintConfig{
 		"Disabled": {
 			Order: 5,
 			Transformer: func(v interface{}) string {
+				// The formatter normalizes whole numeric values to int64, so
+				// handle both float and integer representations.
 				switch val := v.(type) {
 				case float32:
 					if val == 0 {
@@ -39,6 +53,11 @@ var cronJobPrintConfig = formatter.PrintConfig{
 					}
 					return "disabled"
 				case float64:
+					if val == 0 {
+						return "enabled"
+					}
+					return "disabled"
+				case int64:
 					if val == 0 {
 						return "enabled"
 					}
@@ -61,12 +80,20 @@ func CronJobList(ctx context.Context) error {
 
 	request := client.JobAPI.GetCronJobs(ctx).SortBy([]string{"id:ASC"})
 
-	cronJobs, meta, err := utils.FetchAllPages(request)
+	rawItems, meta, err := utils.FetchAllPagesRaw(func(page float32) (*http.Response, error) {
+		_, httpRes, _ := request.Page(page).Limit(100).Execute()
+		return httpRes, nil
+	})
 	if err != nil {
 		return err
 	}
 
-	return utils.PrintAll(cronJobs, meta, len(cronJobs), &cronJobPrintConfig)
+	cronJobs, err := utils.UnmarshalRawItems[cronJobRaw](rawItems)
+	if err != nil {
+		return fmt.Errorf("failed to parse cron jobs: %w", err)
+	}
+
+	return utils.PrintAllRaw(rawItems, cronJobs, meta, len(cronJobs), &cronJobPrintConfig)
 }
 
 func CronJobGet(ctx context.Context, cronJobId string) error {
@@ -79,9 +106,23 @@ func CronJobGet(ctx context.Context, cronJobId string) error {
 
 	client := api.GetApiClient(ctx)
 
-	cronJob, httpRes, err := client.JobAPI.GetCronJob(ctx, id).Execute()
-	if err := response_inspector.InspectResponse(httpRes, err); err != nil {
-		return err
+	// Raw-body parse: see cronJobRaw — the `params` type mismatch breaks typed decoding.
+	_, httpRes, sdkErr := client.JobAPI.GetCronJob(ctx, id).Execute()
+	if httpRes != nil && httpRes.StatusCode >= 400 {
+		return response_inspector.InspectResponse(httpRes, sdkErr)
+	}
+	if httpRes == nil {
+		return sdkErr
+	}
+
+	body, err := io.ReadAll(httpRes.Body)
+	if err != nil {
+		return fmt.Errorf("failed to read response body: %w", err)
+	}
+
+	var cronJob cronJobRaw
+	if err := json.Unmarshal(body, &cronJob); err != nil {
+		return fmt.Errorf("failed to parse cron job: %w", err)
 	}
 
 	return formatter.PrintResult(cronJob, &cronJobPrintConfig)

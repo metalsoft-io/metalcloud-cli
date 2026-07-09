@@ -3,6 +3,7 @@ package server_default_credentials
 import (
 	"context"
 	"fmt"
+	"net/http"
 	"strconv"
 
 	"github.com/metalsoft-io/metalcloud-cli/pkg/api"
@@ -13,6 +14,18 @@ import (
 
 	sdk "github.com/metalsoft-io/metalcloud-sdk-go"
 )
+type serverDefaultCredentialsRaw struct {
+	Id                           interface{} `json:"id"`
+	SiteId                       interface{} `json:"siteId"`
+	ServerSerialNumber           *string     `json:"serverSerialNumber"`
+	ServerMacAddress             *string     `json:"serverMacAddress"`
+	DefaultUsername              *string     `json:"defaultUsername"`
+	DefaultRackName              *string     `json:"defaultRackName"`
+	DefaultRackPositionLowerUnit *string     `json:"defaultRackPositionLowerUnit"`
+	DefaultRackPositionUpperUnit *string     `json:"defaultRackPositionUpperUnit"`
+	DefaultInventoryId           *string     `json:"defaultInventoryId"`
+	DefaultUuid                  *string     `json:"defaultUuid"`
+}
 
 var serverDefaultCredentialsPrintConfig = formatter.PrintConfig{
 	FieldsConfig: map[string]formatter.RecordFieldConfig{
@@ -68,27 +81,49 @@ func ServerDefaultCredentialsList(ctx context.Context, page int, limit int) erro
 	req := client.ServerDefaultCredentialsAPI.GetServersDefaultCredentials(ctx)
 
 	if page > 0 {
-		records, meta, err := utils.FetchPageWindow(req, page, limit)
+		rawItems, meta, err := utils.FetchPageWindowRaw(func(p, l float32) (*http.Response, error) {
+			_, httpRes, _ := req.Page(p).Limit(l).Execute()
+			return httpRes, nil
+		}, page, limit)
 		if err != nil {
 			return err
 		}
-		return utils.PrintAll(records, meta, len(records), &serverDefaultCredentialsPrintConfig)
+		records, err := utils.UnmarshalRawItems[serverDefaultCredentialsRaw](rawItems)
+		if err != nil {
+			return fmt.Errorf("failed to parse server default credentials: %w", err)
+		}
+		return utils.PrintAllRaw(rawItems, records, meta, len(records), &serverDefaultCredentialsPrintConfig)
 	}
 
 	if limit > 0 {
-		records, meta, err := utils.FetchUpTo(req, limit)
+		rawItems, meta, err := utils.FetchUpToRaw(func(p, l float32) (*http.Response, error) {
+			_, httpRes, _ := req.Page(p).Limit(l).Execute()
+			return httpRes, nil
+		}, limit)
 		if err != nil {
 			return err
 		}
-		return utils.PrintAll(records, meta, len(records), &serverDefaultCredentialsPrintConfig)
+		records, err := utils.UnmarshalRawItems[serverDefaultCredentialsRaw](rawItems)
+		if err != nil {
+			return fmt.Errorf("failed to parse server default credentials: %w", err)
+		}
+		return utils.PrintAllRaw(rawItems, records, meta, len(records), &serverDefaultCredentialsPrintConfig)
 	}
 
-	records, meta, err := utils.FetchAllPages(req)
+	rawItems, meta, err := utils.FetchAllPagesRaw(func(p float32) (*http.Response, error) {
+		_, httpRes, _ := req.Page(p).Limit(100).Execute()
+		return httpRes, nil
+	})
 	if err != nil {
 		return err
 	}
 
-	return utils.PrintAll(records, meta, len(records), &serverDefaultCredentialsPrintConfig)
+	records, err := utils.UnmarshalRawItems[serverDefaultCredentialsRaw](rawItems)
+	if err != nil {
+		return fmt.Errorf("failed to parse server default credentials: %w", err)
+	}
+
+	return utils.PrintAllRaw(rawItems, records, meta, len(records), &serverDefaultCredentialsPrintConfig)
 }
 
 func ServerDefaultCredentialsGet(ctx context.Context, credentialsId string) error {
