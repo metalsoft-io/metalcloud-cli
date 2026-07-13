@@ -37,11 +37,11 @@ var extensionPrintConfig = formatter.PrintConfig{
 			Order:       4,
 		},
 		"Kind": {
-			Order: 6,
+			Order: 5,
 		},
 		"Description": {
 			MaxWidth: 50,
-			Order:    7,
+			Order:    6,
 		},
 	},
 }
