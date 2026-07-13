@@ -77,7 +77,9 @@ Extension kinds:
 Extension statuses:
 - draft: Extension is being developed, not yet active
 - active: Extension is published and available for use
+- suspended: Extension is suspended and not available for use
 - archived: Extension is deactivated and no longer available
+- deleted: Extension is deleted
 
 Flags:
   --filter-label strings    Filter by extension labels (can specify multiple)
