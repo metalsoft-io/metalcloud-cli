@@ -506,11 +506,9 @@ func GetExtensionByIdOrLabel(ctx context.Context, extensionIdOrLabel string) (*s
 		if err == nil && httpRes != nil && httpRes.StatusCode == 200 {
 			return extensionInfo, nil
 		}
-		/* RM: IMO
 		if err != nil && httpRes != nil && httpRes.StatusCode != 400 {
 			return nil, err
 		}
-		*/
 		// If not found by ID, continue to search by label
 	}
 
