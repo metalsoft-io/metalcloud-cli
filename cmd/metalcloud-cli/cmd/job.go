@@ -332,6 +332,7 @@ job group execution status and their constituent jobs.
 Available Commands:
   list    List job groups with optional filtering and sorting
   get     Get detailed information about a specific job group
+  wait    Wait for a job group to finish executing
 
 Use "metalcloud-cli job-group [command] --help" for more information about a command.`,
 	}
@@ -436,6 +437,38 @@ Permissions:
 			return job.JobGroupGet(cmd.Context(), args[0])
 		},
 	}
+
+	jobGroupWaitCmd = &cobra.Command{
+		Use:   "wait job_group_id",
+		Short: "Wait for a job group to finish executing",
+		Long: `Wait for a job group to finish executing.
+
+This command first displays the current status of the specified job group. If the
+job group has not finished yet, it polls the job group status every second until
+it finishes, then prints the final status.
+
+Arguments:
+  job_group_id (required)    The numeric ID of the job group to wait for. Must be
+                             a valid job group identifier that exists in the system.
+
+The command exits when:
+  - The job group has finished (final status is printed)
+  - An API error occurs while polling
+  - The command is interrupted (e.g., Ctrl+C)
+
+Examples:
+  # Wait for job group with ID 15 to finish
+  metalcloud-cli job-group wait 15
+
+Permissions:
+  Requires job queue read permissions to execute this command.`,
+		SilenceUsage: true,
+		Annotations:  map[string]string{system.REQUIRED_PERMISSION: system.PERMISSION_JOB_QUEUE_READ},
+		Args:         cobra.ExactArgs(1),
+		RunE: func(cmd *cobra.Command, args []string) error {
+			return job.JobGroupWait(cmd.Context(), args[0])
+		},
+	}
 )
 
 func init() {
@@ -482,4 +515,6 @@ func init() {
 	jobGroupListCmd.Flags().IntVar(&jobGroupFlags.limit, "limit", 0, "Number of records per page (default: return all records).")
 
 	jobGroupCmd.AddCommand(jobGroupGetCmd)
+
+	jobGroupCmd.AddCommand(jobGroupWaitCmd)
 }

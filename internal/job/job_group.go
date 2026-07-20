@@ -4,6 +4,9 @@ import (
 	"context"
 	"fmt"
 	"strconv"
+	"time"
+
+	sdk "github.com/metalsoft-io/metalcloud-sdk-go"
 
 	"github.com/metalsoft-io/metalcloud-cli/pkg/api"
 	"github.com/metalsoft-io/metalcloud-cli/pkg/formatter"
@@ -102,6 +105,56 @@ func JobGroupGet(ctx context.Context, groupId string) error {
 	}
 
 	return formatter.PrintResult(group, &jobGroupPrintConfig)
+}
+
+func JobGroupWait(ctx context.Context, groupId string) error {
+	logger.Get().Info().Msgf("Waiting for job group '%s' to finish", groupId)
+
+	id, err := getJobGroupId(groupId)
+	if err != nil {
+		return err
+	}
+
+	client := api.GetApiClient(ctx)
+
+	group, httpRes, err := client.JobAPI.GetJobGroup(ctx, id).Execute()
+	if err := response_inspector.InspectResponse(httpRes, err); err != nil {
+		return err
+	}
+
+	if err := formatter.PrintResult(group, &jobGroupPrintConfig); err != nil {
+		return err
+	}
+
+	if jobGroupFinished(group) {
+		return nil
+	}
+
+	fmt.Printf("Waiting for job group %d to finish...\n", id)
+
+	ticker := time.NewTicker(time.Second)
+	defer ticker.Stop()
+
+	for {
+		select {
+		case <-ctx.Done():
+			return ctx.Err()
+		case <-ticker.C:
+		}
+
+		group, httpRes, err = client.JobAPI.GetJobGroup(ctx, id).Execute()
+		if err := response_inspector.InspectResponse(httpRes, err); err != nil {
+			return err
+		}
+
+		if jobGroupFinished(group) {
+			return formatter.PrintResult(group, &jobGroupPrintConfig)
+		}
+	}
+}
+
+func jobGroupFinished(group *sdk.JobGroup) bool {
+	return group != nil && group.FinishedTimestamp != nil && *group.FinishedTimestamp != ""
 }
 
 func getJobGroupId(groupId string) (int64, error) {

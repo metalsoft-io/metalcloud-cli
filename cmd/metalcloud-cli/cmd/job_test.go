@@ -6,6 +6,7 @@ import (
 	"net/http/httptest"
 	"os"
 	"strings"
+	"sync/atomic"
 	"testing"
 )
 
@@ -112,6 +113,60 @@ func TestJobGroupList_Alias(t *testing.T) {
 func TestJobGroupList_NoEndpoint(t *testing.T) {
 	if _, err := runCLI(t, nil, "job-group", "list"); err == nil {
 		t.Fatal("expected error when endpoint is empty")
+	}
+}
+
+// --- job-group wait ---
+
+func TestJobGroupWait_AlreadyFinished(t *testing.T) {
+	fixture := jobGroupFixture(1)
+	fixture["finishedTimestamp"] = "2024-01-01T01:00:00Z"
+	var calls int32
+	srv := httptest.NewServer(newMux(allPerms, func(mux *http.ServeMux) {
+		mux.HandleFunc("/api/v2/job-groups/1", func(w http.ResponseWriter, r *http.Request) {
+			atomic.AddInt32(&calls, 1)
+			w.Header().Set("Content-Type", "application/json")
+			_ = json.NewEncoder(w).Encode(fixture)
+		})
+	}))
+	defer srv.Close()
+
+	if _, err := runCLI(t, srv, "job-group", "wait", "1"); err != nil {
+		t.Fatalf("expected no error, got: %v", err)
+	}
+	if got := atomic.LoadInt32(&calls); got != 1 {
+		t.Fatalf("expected a single API call for an already finished group, got %d", got)
+	}
+}
+
+func TestJobGroupWait_FinishesAfterPolling(t *testing.T) {
+	var calls int32
+	srv := httptest.NewServer(newMux(allPerms, func(mux *http.ServeMux) {
+		mux.HandleFunc("/api/v2/job-groups/1", func(w http.ResponseWriter, r *http.Request) {
+			fixture := jobGroupFixture(1)
+			if atomic.AddInt32(&calls, 1) >= 2 {
+				fixture["finishedTimestamp"] = "2024-01-01T01:00:00Z"
+			}
+			w.Header().Set("Content-Type", "application/json")
+			_ = json.NewEncoder(w).Encode(fixture)
+		})
+	}))
+	defer srv.Close()
+
+	if _, err := runCLI(t, srv, "job-group", "wait", "1"); err != nil {
+		t.Fatalf("expected no error, got: %v", err)
+	}
+	if got := atomic.LoadInt32(&calls); got < 2 {
+		t.Fatalf("expected at least 2 API calls (initial + poll), got %d", got)
+	}
+}
+
+func TestJobGroupWait_InvalidID(t *testing.T) {
+	srv := httptest.NewServer(newMux(allPerms, nil))
+	defer srv.Close()
+
+	if _, err := runCLI(t, srv, "job-group", "wait", "not-a-number"); err == nil {
+		t.Fatal("expected error for invalid job group ID")
 	}
 }
 

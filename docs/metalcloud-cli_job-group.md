@@ -13,6 +13,7 @@ job group execution status and their constituent jobs.
 Available Commands:
   list    List job groups with optional filtering and sorting
   get     Get detailed information about a specific job group
+  wait    Wait for a job group to finish executing
 
 Use "metalcloud-cli job-group [command] --help" for more information about a command.
 
@@ -40,4 +41,5 @@ Use "metalcloud-cli job-group [command] --help" for more information about a com
 * [metalcloud-cli](metalcloud-cli.md)	 - MetalCloud CLI
 * [metalcloud-cli job-group get](metalcloud-cli_job-group_get.md)	 - Get detailed information about a specific job group
 * [metalcloud-cli job-group list](metalcloud-cli_job-group_list.md)	 - List job groups with optional filtering and sorting
+* [metalcloud-cli job-group wait](metalcloud-cli_job-group_wait.md)	 - Wait for a job group to finish executing
 
