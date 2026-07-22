@@ -144,10 +144,8 @@ func JobGroupWait(ctx context.Context, groupId string) error {
 
 		group, httpRes, err = client.JobAPI.GetJobGroup(ctx, id).Execute()
 		if err := response_inspector.InspectResponse(httpRes, err); err != nil {
-			return err
-		}
-
-		if jobGroupFinished(group) {
+			fmt.Printf("Error while waiting for job group to finish: %s", err.Error())
+		} else if jobGroupFinished(group) {
 			return formatter.PrintResult(group, &jobGroupPrintConfig)
 		}
 	}
