@@ -1,16 +1,24 @@
 ## metalcloud-cli extension activate
 
-Activate a suspended extension
+Activate a draft or suspended extension
 
 ### Synopsis
 
-Activate an extension, returning it to active status so it can be used across the platform.
+Activate an extension, making it available for use across the platform.
 
-This command transitions an extension to the active status. It is typically used to
-re-enable an extension that was previously suspended.
+This command transitions an extension from draft or suspended status to active status.
+Use it both to activate a newly created draft extension and to re-enable an extension
+that was previously suspended. Only active extensions are available for use in
+workflows, applications, and actions.
+
+This command replaces the deprecated 'publish' command.
 
 Arguments:
   extension_id_or_label    The unique ID or label of the extension to activate
+
+Requirements:
+- Extension must be in draft or suspended status
+- User must have write permissions for extensions
 
 Examples:
   # Activate extension by ID

@@ -11,28 +11,30 @@ Extensions are modular components that extend the platform's functionality. They
 - applications: Provide custom application deployment logic
 - actions: Implement specific operational tasks
 
-Extension lifecycle includes draft, active, and archived states. Only published extensions
-become active and available for use across the platform.
+Extension lifecycle includes draft, active, suspended, and archived states. Only active
+extensions are available for use across the platform.
 
 Available Commands:
   list                List and filter extensions
   get                 Retrieve detailed extension information
   create              Create new extension from definition
   update              Modify existing extension properties
-  publish             Activate draft extension for platform use
-  archive             Deactivate published extension
-  activate            Return a suspended extension to active status
+  activate            Activate a draft or suspended extension
   suspend             Temporarily disable an active extension
+  archive             Deactivate an active extension
   delete              Permanently delete an extension
   site-config         Manage per-site configuration for extensions
   list-repo           List extensions available in a remote repository
   create-from-repo    Create extension by cloning from a repository
 
+Deprecated Commands:
+  publish             Deprecated - use activate instead
+
 Examples:
   metalcloud extension list --filter-kind workflow --filter-status active
   metalcloud extension create my-workflow workflow "Custom deployment workflow" --definition-source definition.json
   metalcloud extension update ext123 "Updated Name" "New description"
-  metalcloud extension publish ext123
+  metalcloud extension activate ext123
   metalcloud extension delete ext123
 
 ### Options
@@ -57,15 +59,14 @@ Examples:
 ### SEE ALSO
 
 * [metalcloud-cli](metalcloud-cli.md)	 - MetalCloud CLI
-* [metalcloud-cli extension activate](metalcloud-cli_extension_activate.md)	 - Activate a suspended extension
-* [metalcloud-cli extension archive](metalcloud-cli_extension_archive.md)	 - Deactivate published extension and make it unavailable
+* [metalcloud-cli extension activate](metalcloud-cli_extension_activate.md)	 - Activate a draft or suspended extension
+* [metalcloud-cli extension archive](metalcloud-cli_extension_archive.md)	 - Deactivate an active extension and make it unavailable
 * [metalcloud-cli extension create](metalcloud-cli_extension_create.md)	 - Create new extension from definition
 * [metalcloud-cli extension create-from-repo](metalcloud-cli_extension_create-from-repo.md)	 - Create a new extension by cloning from a repository
 * [metalcloud-cli extension delete](metalcloud-cli_extension_delete.md)	 - Permanently delete an extension
 * [metalcloud-cli extension get](metalcloud-cli_extension_get.md)	 - Retrieve detailed information about a specific extension
 * [metalcloud-cli extension list](metalcloud-cli_extension_list.md)	 - List and filter platform extensions
 * [metalcloud-cli extension list-repo](metalcloud-cli_extension_list-repo.md)	 - List available extensions from a remote repository
-* [metalcloud-cli extension publish](metalcloud-cli_extension_publish.md)	 - Activate draft extension for platform use
 * [metalcloud-cli extension site-config](metalcloud-cli_extension_site-config.md)	 - Manage per-site configuration for extensions
 * [metalcloud-cli extension suspend](metalcloud-cli_extension_suspend.md)	 - Suspend an active extension
 * [metalcloud-cli extension update](metalcloud-cli_extension_update.md)	 - Modify existing extension properties and definition

@@ -15,8 +15,8 @@ Extension kinds:
 - application: Custom application deployment logic
 - action: Specific operational tasks
 
-The newly created extension will be in draft status and must be published before
-it becomes available for use on the platform.
+The newly created extension will be in draft status and must be activated with the
+'activate' command before it becomes available for use on the platform.
 
 Arguments:
   name          The name of the extension to create

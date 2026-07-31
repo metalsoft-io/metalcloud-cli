@@ -1,10 +1,10 @@
 ## metalcloud-cli extension archive
 
-Deactivate published extension and make it unavailable
+Deactivate an active extension and make it unavailable
 
 ### Synopsis
 
-Deactivate a published extension making it unavailable for use across the platform.
+Deactivate an active extension making it unavailable for use across the platform.
 
 This command archives an active extension, changing its status from active to archived.
 Archived extensions are no longer available for use in workflows, applications, and

@@ -34,28 +34,30 @@ Extensions are modular components that extend the platform's functionality. They
 - applications: Provide custom application deployment logic
 - actions: Implement specific operational tasks
 
-Extension lifecycle includes draft, active, and archived states. Only published extensions
-become active and available for use across the platform.
+Extension lifecycle includes draft, active, suspended, and archived states. Only active
+extensions are available for use across the platform.
 
 Available Commands:
   list                List and filter extensions
   get                 Retrieve detailed extension information
   create              Create new extension from definition
   update              Modify existing extension properties
-  publish             Activate draft extension for platform use
-  archive             Deactivate published extension
-  activate            Return a suspended extension to active status
+  activate            Activate a draft or suspended extension
   suspend             Temporarily disable an active extension
+  archive             Deactivate an active extension
   delete              Permanently delete an extension
   site-config         Manage per-site configuration for extensions
   list-repo           List extensions available in a remote repository
   create-from-repo    Create extension by cloning from a repository
 
+Deprecated Commands:
+  publish             Deprecated - use activate instead
+
 Examples:
   metalcloud extension list --filter-kind workflow --filter-status active
   metalcloud extension create my-workflow workflow "Custom deployment workflow" --definition-source definition.json
   metalcloud extension update ext123 "Updated Name" "New description"
-  metalcloud extension publish ext123
+  metalcloud extension activate ext123
   metalcloud extension delete ext123`,
 	}
 
@@ -158,8 +160,8 @@ Extension kinds:
 - application: Custom application deployment logic
 - action: Specific operational tasks
 
-The newly created extension will be in draft status and must be published before
-it becomes available for use on the platform.
+The newly created extension will be in draft status and must be activated with the
+'activate' command before it becomes available for use on the platform.
 
 Arguments:
   name          The name of the extension to create
@@ -349,32 +351,29 @@ Examples:
 	}
 
 	extensionPublishCmd = &cobra.Command{
-		Use:   "publish extension_id_or_label",
-		Short: "Activate draft extension for platform use",
-		Long: `Activate a draft extension making it available for use across the platform.
+		Use:        "publish extension_id_or_label",
+		Short:      "Activate a draft or suspended extension (deprecated, use activate)",
+		Deprecated: `use "extension activate" instead.`,
+		Long: `Activate a draft or suspended extension, making it available for use across the platform.
 
-This command publishes a draft extension, changing its status from draft to active.
-Only published extensions are available for use in workflows, applications, and
-actions. Once published, an extension cannot be modified directly - you must
-create a new version or archive and recreate it.
-
-Publishing validates the extension definition and ensures it meets all platform
-requirements before making it available to users.
+DEPRECATED: The platform API deprecated its publish action in favor of the activate
+action, which performs the same transition. This command is kept for backwards
+compatibility, now runs the activate action, and will be removed in a future release.
+Use "extension activate" instead.
 
 Arguments:
-  extension_id_or_label    The unique ID or label of the draft extension to publish
+  extension_id_or_label    The unique ID or label of the extension to activate
 
 Requirements:
-- Extension must be in draft status
-- Extension definition must be valid
+- Extension must be in draft or suspended status
 - User must have write permissions for extensions
 
 Examples:
-  # Publish extension by ID
-  metalcloud extension publish 12345
-  
-  # Publish extension by label
-  metalcloud extension publish my-workflow-v1`,
+  # Preferred - activate extension by ID
+  metalcloud extension activate 12345
+
+  # Deprecated equivalent
+  metalcloud extension publish 12345`,
 		SilenceUsage: true,
 		Annotations:  map[string]string{system.REQUIRED_PERMISSION: system.PERMISSION_EXTENSIONS_WRITE},
 		Args:         cobra.ExactArgs(1),
@@ -385,8 +384,8 @@ Examples:
 
 	extensionArchiveCmd = &cobra.Command{
 		Use:   "archive extension_id_or_label",
-		Short: "Deactivate published extension and make it unavailable",
-		Long: `Deactivate a published extension making it unavailable for use across the platform.
+		Short: "Deactivate an active extension and make it unavailable",
+		Long: `Deactivate an active extension making it unavailable for use across the platform.
 
 This command archives an active extension, changing its status from active to archived.
 Archived extensions are no longer available for use in workflows, applications, and
@@ -452,14 +451,22 @@ Examples:
 
 	extensionActivateCmd = &cobra.Command{
 		Use:   "activate extension_id_or_label",
-		Short: "Activate a suspended extension",
-		Long: `Activate an extension, returning it to active status so it can be used across the platform.
+		Short: "Activate a draft or suspended extension",
+		Long: `Activate an extension, making it available for use across the platform.
 
-This command transitions an extension to the active status. It is typically used to
-re-enable an extension that was previously suspended.
+This command transitions an extension from draft or suspended status to active status.
+Use it both to activate a newly created draft extension and to re-enable an extension
+that was previously suspended. Only active extensions are available for use in
+workflows, applications, and actions.
+
+This command replaces the deprecated 'publish' command.
 
 Arguments:
   extension_id_or_label    The unique ID or label of the extension to activate
+
+Requirements:
+- Extension must be in draft or suspended status
+- User must have write permissions for extensions
 
 Examples:
   # Activate extension by ID
