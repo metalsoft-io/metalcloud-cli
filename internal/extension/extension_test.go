@@ -328,13 +328,19 @@ func TestExtensionArchive_ServerError(t *testing.T) {
 	}
 }
 
-// --- ExtensionPublish ---
+// --- ExtensionPublish (deprecated) ---
 
-// TestExtensionPublish_HappyPath verifies successful publishing of an extension.
-func TestExtensionPublish_HappyPath(t *testing.T) {
+// TestExtensionPublish_UsesActivateEndpoint verifies that the deprecated publish path
+// still activates the extension, but does so through the activate action rather than the
+// API's deprecated publish action.
+func TestExtensionPublish_UsesActivateEndpoint(t *testing.T) {
 	ts := testutils.NewTestServer(map[string]http.HandlerFunc{
-		"/api/v2/extensions/3":                 testutils.RawHandler(http.StatusOK, validExtensionJSON),
-		"/api/v2/extensions/3/actions/publish": testutils.RawHandler(http.StatusOK, "{}"),
+		"/api/v2/extensions/3":                  testutils.RawHandler(http.StatusOK, validExtensionJSON),
+		"/api/v2/extensions/3/actions/activate": testutils.RawHandler(http.StatusOK, "{}"),
+		"/api/v2/extensions/3/actions/publish": func(w http.ResponseWriter, r *http.Request) {
+			t.Error("expected the activate action, but the deprecated publish action was called")
+			w.WriteHeader(http.StatusOK)
+		},
 	})
 	defer ts.Close()
 
@@ -359,11 +365,11 @@ func TestExtensionPublish_NotFound(t *testing.T) {
 	}
 }
 
-// TestExtensionPublish_ServerError verifies that a 500 from the publish action is surfaced.
+// TestExtensionPublish_ServerError verifies that a 500 from the underlying action is surfaced.
 func TestExtensionPublish_ServerError(t *testing.T) {
 	ts := testutils.NewTestServer(map[string]http.HandlerFunc{
-		"/api/v2/extensions/3":                 testutils.RawHandler(http.StatusOK, validExtensionJSON),
-		"/api/v2/extensions/3/actions/publish": testutils.ErrorHandler(http.StatusInternalServerError, "server error"),
+		"/api/v2/extensions/3":                  testutils.RawHandler(http.StatusOK, validExtensionJSON),
+		"/api/v2/extensions/3/actions/activate": testutils.ErrorHandler(http.StatusInternalServerError, "server error"),
 	})
 	defer ts.Close()
 

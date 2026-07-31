@@ -276,3 +276,61 @@ func TestExtensionUpdate(t *testing.T) {
 		t.Fatalf("unexpected error: %v", execErr)
 	}
 }
+
+// --- extension activate / publish ---
+
+// activateSrv serves the extension lookup plus the activate action, and fails the
+// test if the API's deprecated publish action is called.
+func activateSrv(t *testing.T) *httptest.Server {
+	t.Helper()
+	return httptest.NewServer(newMux(allPerms, func(mux *http.ServeMux) {
+		mux.HandleFunc("/api/v2/extensions/1", func(w http.ResponseWriter, r *http.Request) {
+			w.Header().Set("Content-Type", "application/json")
+			_ = json.NewEncoder(w).Encode(extensionFixtureWithDefinition(1))
+		})
+		mux.HandleFunc("/api/v2/extensions/1/actions/activate", func(w http.ResponseWriter, r *http.Request) {
+			w.Header().Set("Content-Type", "application/json")
+			_, _ = w.Write([]byte("{}"))
+		})
+		mux.HandleFunc("/api/v2/extensions/1/actions/publish", func(w http.ResponseWriter, r *http.Request) {
+			t.Error("expected the activate action, but the deprecated publish action was called")
+			w.Header().Set("Content-Type", "application/json")
+			_, _ = w.Write([]byte("{}"))
+		})
+	}))
+}
+
+func TestExtensionActivate(t *testing.T) {
+	srv := activateSrv(t)
+	defer srv.Close()
+
+	if _, err := runCLI(t, srv, "extension", "activate", "1"); err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+}
+
+// TestExtensionPublish_DeprecatedStillWorks pins the backwards-compatible behaviour of
+// the deprecated publish command: it must keep succeeding, and must reach the activate
+// action rather than the API's deprecated publish action.
+func TestExtensionPublish_DeprecatedStillWorks(t *testing.T) {
+	srv := activateSrv(t)
+	defer srv.Close()
+
+	if _, err := runCLI(t, srv, "extension", "publish", "1"); err != nil {
+		t.Fatalf("deprecated publish command must remain functional, got: %v", err)
+	}
+}
+
+// TestExtensionPublish_IsMarkedDeprecated ensures the command carries a cobra
+// deprecation notice pointing at activate, which also hides it from the command list.
+func TestExtensionPublish_IsMarkedDeprecated(t *testing.T) {
+	if extensionPublishCmd.Deprecated == "" {
+		t.Fatal("extension publish must be marked Deprecated so cobra prints a notice")
+	}
+	if !strings.Contains(extensionPublishCmd.Deprecated, "activate") {
+		t.Errorf("deprecation notice should point users at activate, got: %q", extensionPublishCmd.Deprecated)
+	}
+	if extensionPublishCmd.IsAvailableCommand() {
+		t.Error("deprecated publish command should not be listed as an available command")
+	}
+}

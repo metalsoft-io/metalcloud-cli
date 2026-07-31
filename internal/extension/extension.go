@@ -368,25 +368,13 @@ func ExtensionCreateFromRepo(ctx context.Context, extensionPath string, repoUrl 
 	return formatter.PrintResult(extensionInfo, &extensionPrintConfig)
 }
 
+// Deprecated: the platform API deprecated its publish action in favor of the activate
+// action, which performs the same draft or suspended to active transition. This wrapper
+// is kept only for the equally deprecated 'extension publish' command and delegates to
+// ExtensionActivate so no caller depends on the deprecated endpoint. Use
+// ExtensionActivate instead.
 func ExtensionPublish(ctx context.Context, extensionId string) error {
-	logger.Get().Info().Msgf("Publishing extension '%s'", extensionId)
-
-	extension, err := GetExtensionByIdOrLabel(ctx, extensionId)
-	if err != nil {
-		return err
-	}
-
-	client := api.GetApiClient(ctx)
-
-	httpRes, err := client.ExtensionAPI.PublishExtension(ctx, int64(extension.Id)).
-		IfMatch(fmt.Sprintf("%d", extension.Revision)).
-		Execute()
-	if err := response_inspector.InspectResponse(httpRes, err); err != nil {
-		return err
-	}
-
-	logger.Get().Info().Msgf("Extension '%s' published successfully", extensionId)
-	return nil
+	return ExtensionActivate(ctx, extensionId)
 }
 
 func ExtensionArchive(ctx context.Context, extensionId string) error {
