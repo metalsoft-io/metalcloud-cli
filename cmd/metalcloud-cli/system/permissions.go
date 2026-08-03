@@ -10,6 +10,10 @@ import (
 
 const REQUIRED_PERMISSION = "requiredPermission"
 
+// LOCAL_COMMAND marks commands that only work with resources on the local filesystem. They need no
+// API endpoint, API key, version validation or user permissions, so they can run offline.
+const LOCAL_COMMAND = "localCommand"
+
 const (
 	PERMISSION_ADMIN_ACCESS                                                  = "admin_access"
 	PERMISSION_AI_READ                                                       = "ai_read"

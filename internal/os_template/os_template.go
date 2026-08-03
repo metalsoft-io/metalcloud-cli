@@ -415,22 +415,15 @@ func OsTemplateGetAssets(ctx context.Context, osTemplateId string) error {
 func OsTemplateListRepo(ctx context.Context, repoUrl string, repoUsername string, repoPassword string) error {
 	logger.Get().Info().Msgf("Listing all OS templates from repository")
 
-	var repoAssets map[string]RepositoryTemplateInfo
-
-	if isLocalDirectory(repoUrl) {
-		var err error
-		repoAssets, err = getLocalRepositoryTemplateAssets(repoUrl)
-		if err != nil {
-			return fmt.Errorf("failed to read local OS template directory: %w", err)
-		}
-	} else {
-		tree, err := cloneOsTemplateRepository(ctx, repoUrl, repoUsername, repoPassword)
-		if err != nil {
-			return fmt.Errorf("failed to clone OS template repository: %w", err)
-		}
-		repoAssets = getRepositoryTemplateAssets(tree)
+	repoAssets, err := getOsTemplateRepositoryAssets(ctx, repoUrl, repoUsername, repoPassword)
+	if err != nil {
+		return err
 	}
 
+	return printRepositoryTemplates(repoAssets)
+}
+
+func printRepositoryTemplates(repoAssets map[string]RepositoryTemplateInfo) error {
 	// This map stores all files for a template and will be used to check if their information is correct
 	repoMap := make(map[string]RepositoryTemplateInfo)
 	for templatePrefix, repoTemplate := range repoAssets {
@@ -512,25 +505,20 @@ func OsTemplateListRepo(ctx context.Context, repoUrl string, repoUsername string
 func OsTemplateCreateFromRepo(ctx context.Context, sourceTemplate string, repoUrl string, repoUsername string, repoPassword string, name string, label string, sourceIso string) error {
 	logger.Get().Info().Msgf("Creating OS template %s from repository", sourceTemplate)
 
-	var repoMap map[string]RepositoryTemplateInfo
-
-	if isLocalDirectory(repoUrl) {
-		var err error
-		repoMap, err = getLocalRepositoryTemplateAssets(repoUrl)
-		if err != nil {
-			return fmt.Errorf("failed to read local OS template directory: %w", err)
-		}
-	} else {
-		tree, err := cloneOsTemplateRepository(ctx, repoUrl, repoUsername, repoPassword)
-		if err != nil {
-			return fmt.Errorf("failed to clone OS template repository: %w", err)
-		}
-		repoMap = getRepositoryTemplateAssets(tree)
+	repoMap, err := getOsTemplateRepositoryAssets(ctx, repoUrl, repoUsername, repoPassword)
+	if err != nil {
+		return err
 	}
 
+	return createOsTemplateFromAssets(ctx, repoMap, sourceTemplate, "repository", name, label, sourceIso)
+}
+
+// createOsTemplateFromAssets creates the OS template identified by sourceTemplate from the templates
+// found in a repository or in a local directory. sourceLocation is only used in error messages.
+func createOsTemplateFromAssets(ctx context.Context, repoMap map[string]RepositoryTemplateInfo, sourceTemplate string, sourceLocation string, name string, label string, sourceIso string) error {
 	template, ok := repoMap[sourceTemplate]
 	if !ok {
-		return fmt.Errorf("template %s not found in repository", sourceTemplate)
+		return fmt.Errorf("template %s not found in %s", sourceTemplate, sourceLocation)
 	}
 
 	if err := processTemplateContent(&template); err != nil {
@@ -553,7 +541,13 @@ func OsTemplateCreateFromRepo(ctx context.Context, sourceTemplate string, repoUr
 
 	template.OsTemplate.Template.Visibility = sdk.PtrString("private")
 
-	return OsTemplateCreate(ctx, template.OsTemplate)
+	if err := OsTemplateCreate(ctx, template.OsTemplate); err != nil {
+		// Name the source template - the API only reports what is wrong with the definition, not which
+		// of the templates in the repository or directory it came from
+		return fmt.Errorf("failed to create template %s from %s: %w", sourceTemplate, sourceLocation, err)
+	}
+
+	return nil
 }
 
 func GetOsTemplateByIdOrLabel(ctx context.Context, osTemplateIdOrLabel string) (*sdk.OSTemplate, error) {

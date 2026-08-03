@@ -15,6 +15,7 @@ var (
 		repoUrl      string
 		repoUsername string
 		repoPassword string
+		dir          string
 		name         string
 		label        string
 		sourceIso    string
@@ -42,6 +43,9 @@ Available commands:
   get-assets          List all assets associated with a template
   list-repo           List templates available in a remote repository
   create-from-repo    Create a template by cloning from a repository
+  list-directory      List templates available in a local directory
+  create-from-directory
+                      Create a template from a local directory
   clone               Clone an existing template
   export              Export a template and its assets to a zip archive
   import              Import a template from a zip archive
@@ -549,6 +553,103 @@ Examples:
 			)
 		},
 	}
+
+	osTemplateListDirectoryCmd = &cobra.Command{
+		Use:     "list-directory",
+		Aliases: []string{"ls-directory", "list-dir", "ls-dir"},
+		Short:   "List available OS templates from a local directory",
+		Long: `List all available OS templates from a local directory.
+
+This command retrieves and displays the templates found in a local directory,
+showing their basic information and configuration. It is the offline alternative
+to 'list-repo': everything it reports is read from the local filesystem, so it
+needs no network access and no API endpoint or API key.
+
+The directory must hold the templates in the same layout used by the template
+repositories:
+
+  <directory>/<vendor>/<os>/<version>/template.yaml
+  <directory>/<vendor>/<os>/<version>/<asset files>
+
+Only templates found at that depth are listed. README.md files are ignored and
+templates using an older format are skipped with a warning.
+
+Required flags:
+  --dir             Path of the local directory holding the templates
+
+Examples:
+  # List templates from a local directory
+  metalcloud-cli os-template list-directory --dir /var/lib/os-templates
+
+  # List templates from a local directory on Windows
+  metalcloud-cli os-template list-directory --dir C:\os-templates`,
+		SilenceUsage: true,
+		// Reading the templates is entirely local, so this command needs no controller access
+		Annotations: map[string]string{system.LOCAL_COMMAND: "true"},
+		RunE: func(cmd *cobra.Command, args []string) error {
+			return os_template.OsTemplateListDirectory(cmd.Context(), osTemplateFlags.dir)
+		},
+	}
+
+	osTemplateCreateFromDirectoryCmd = &cobra.Command{
+		Use:     "create-from-directory <os_template_path>",
+		Aliases: []string{"add-from-directory", "create-from-dir", "add-from-dir"},
+		Short:   "Create a new OS template from a local directory",
+		Long: `Create a new OS template from a template stored in a local directory.
+
+This command creates an OS template based on a template definition found in a
+local directory. It is the alternative to 'create-from-repo' for air-gapped
+environments: the template and its assets are read from the local filesystem
+instead of being cloned from a repository, so no repository access is needed.
+The template itself is still created through the MetalSoft API, so an endpoint
+and an API key are required.
+
+The directory must hold the templates in the same layout used by the template
+repositories:
+
+  <directory>/<vendor>/<os>/<version>/template.yaml
+  <directory>/<vendor>/<os>/<version>/<asset files>
+
+Required arguments:
+  os_template_path  Path of the template inside the local directory
+                    Use 'list-directory' command to see available templates
+
+Required flags:
+  --dir             Path of the local directory holding the templates
+
+Optional flags:
+  --name           Custom name for the new template (overrides original)
+  --label          Custom label for the new template (overrides original)
+  --source-iso     Custom source ISO image path (overrides original)
+
+Examples:
+  # Create a template from a local directory
+  metalcloud-cli os-template create-from-directory Ubuntu/24.04/oob-u24-04-3-lts-v7 \
+    --dir /var/lib/os-templates
+
+  # Create with custom name and label
+  metalcloud-cli os-template create-from-directory ubuntu/22.04/server \
+    --dir /var/lib/os-templates \
+    --name "My Ubuntu 22.04" --label "my-ubuntu-2204"
+
+  # Create from a local directory on Windows, overriding the source ISO
+  metalcloud-cli os-template create-from-directory Ubuntu/24.04/oob-u24-04-3-lts-v7 \
+    --dir C:\os-templates \
+    --source-iso http://repo.local/isos/ubuntu-24.04.iso`,
+		SilenceUsage: true,
+		Annotations:  map[string]string{system.REQUIRED_PERMISSION: system.PERMISSION_TEMPLATES_WRITE},
+		Args:         cobra.ExactArgs(1),
+		RunE: func(cmd *cobra.Command, args []string) error {
+			return os_template.OsTemplateCreateFromDirectory(
+				cmd.Context(),
+				args[0],
+				osTemplateFlags.dir,
+				osTemplateFlags.name,
+				osTemplateFlags.label,
+				osTemplateFlags.sourceIso,
+			)
+		},
+	}
 )
 
 func init() {
@@ -598,4 +699,15 @@ func init() {
 	osTemplateCreateFromRepoCmd.Flags().StringVar(&osTemplateFlags.label, "label", "", "Label of the OS template.")
 	osTemplateCreateFromRepoCmd.Flags().StringVar(&osTemplateFlags.sourceIso, "source-iso", "", "The source ISO image path.")
 	osTemplateCreateFromRepoCmd.MarkFlagsRequiredTogether("repo-username", "repo-password")
+
+	osTemplateCmd.AddCommand(osTemplateListDirectoryCmd)
+	osTemplateListDirectoryCmd.Flags().StringVar(&osTemplateFlags.dir, "dir", "", "Local directory holding the OS templates.")
+	osTemplateListDirectoryCmd.MarkFlagRequired("dir")
+
+	osTemplateCmd.AddCommand(osTemplateCreateFromDirectoryCmd)
+	osTemplateCreateFromDirectoryCmd.Flags().StringVar(&osTemplateFlags.dir, "dir", "", "Local directory holding the OS templates.")
+	osTemplateCreateFromDirectoryCmd.Flags().StringVar(&osTemplateFlags.name, "name", "", "Name of the OS template.")
+	osTemplateCreateFromDirectoryCmd.Flags().StringVar(&osTemplateFlags.label, "label", "", "Label of the OS template.")
+	osTemplateCreateFromDirectoryCmd.Flags().StringVar(&osTemplateFlags.sourceIso, "source-iso", "", "The source ISO image path.")
+	osTemplateCreateFromDirectoryCmd.MarkFlagRequired("dir")
 }
