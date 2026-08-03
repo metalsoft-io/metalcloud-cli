@@ -91,6 +91,12 @@ func rootPersistentPreRun(cmd *cobra.Command, args []string) error {
 		return err
 	}
 
+	// Commands that only work with local resources don't talk to the controller at all, so they run
+	// without an endpoint, an API key or any network access
+	if cmd.Annotations[system.LOCAL_COMMAND] == "true" {
+		return nil
+	}
+
 	endpoint := viper.GetString(system.ConfigEndpoint)
 
 	// Commands that don't require endpoint or API key
