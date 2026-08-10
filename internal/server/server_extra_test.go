@@ -1,6 +1,7 @@
 package server
 
 import (
+	"encoding/json"
 	"fmt"
 	"net/http"
 	"net/http/httptest"
@@ -480,4 +481,60 @@ func buildServersBody(items []map[string]interface{}) string {
 	}
 	sb.WriteString(`]}`)
 	return sb.String()
+}
+
+// serverGetWithDpuJSON mirrors a real API response for a server with a DPU: the API
+// omits the password from dpuInfo entries, which the SDK's typed model rejects.
+var serverGetWithDpuJSON = strings.Replace(serverGetJSON, `"links": []`, `"dpuInfo": [
+		{
+			"macAddressOnHostOS": "00:1a:ca:ff:ff:01",
+			"managementAddress": "172.18.35.73",
+			"username": "ubuntu"
+		}
+	],
+	"links": []`, 1)
+
+func TestServerGet_DpuWithoutPassword(t *testing.T) {
+	ts := testutils.NewTestServer(map[string]http.HandlerFunc{
+		"/api/v2/servers/42": testutils.RawHandler(http.StatusOK, serverGetWithDpuJSON),
+	})
+	defer ts.Close()
+
+	ctx := setupTestContext(ts.URL)
+	if err := ServerGet(ctx, "42", false); err != nil {
+		t.Errorf("ServerGet with DPU server: expected nil error, got: %v", err)
+	}
+	if err := ServerUpdate(ctx, "42", []byte(`{}`)); err != nil {
+		t.Errorf("ServerUpdate with DPU server: expected nil error, got: %v", err)
+	}
+}
+
+// TestServerRaw_JsonRoundTrip checks that json/yaml output keeps every field of the
+// API response, and that marshalling a serverRaw without a stored body still works.
+func TestServerRaw_JsonRoundTrip(t *testing.T) {
+	var server serverRaw
+	if err := json.Unmarshal([]byte(serverGetWithDpuJSON), &server); err != nil {
+		t.Fatalf("unmarshal: %v", err)
+	}
+
+	out, err := json.Marshal(server)
+	if err != nil {
+		t.Fatalf("marshal: %v", err)
+	}
+
+	var decoded map[string]interface{}
+	if err := json.Unmarshal(out, &decoded); err != nil {
+		t.Fatalf("unmarshal output: %v", err)
+	}
+	if _, ok := decoded["dpuInfo"]; !ok {
+		t.Error("expected dpuInfo to survive the round trip")
+	}
+
+	out, err = json.Marshal(serverRaw{ServerId: 42})
+	if err != nil {
+		t.Fatalf("marshal without body: %v", err)
+	}
+	if !strings.Contains(string(out), `"serverId":42`) {
+		t.Errorf("marshal without body: got %s", out)
+	}
 }

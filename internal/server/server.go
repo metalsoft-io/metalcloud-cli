@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
+	"net/http"
 	"strconv"
 
 	"github.com/metalsoft-io/metalcloud-cli/pkg/api"
@@ -17,6 +18,8 @@ import (
 
 // serverRaw works around the SDK bug where Server.ServerMetricsMetadata is typed
 // as a map but the API returns an array, which makes typed unmarshalling fail.
+// It keeps the original response body so json/yaml output stays complete while
+// the table formatter reads the typed fields below.
 type serverRaw struct {
 	ServerId          float32     `json:"serverId"`
 	SiteId            float32     `json:"siteId"`
@@ -29,6 +32,32 @@ type serverRaw struct {
 	ServerStatus      string      `json:"serverStatus"`
 	Revision          float32     `json:"revision"`
 	Links             interface{} `json:"links,omitempty"`
+
+	body json.RawMessage
+}
+
+// serverRawFields has the same layout as serverRaw but none of its methods, so it
+// can be used for the default (un)marshalling of the typed fields.
+type serverRawFields serverRaw
+
+func (s *serverRaw) UnmarshalJSON(data []byte) error {
+	var fields serverRawFields
+	if err := json.Unmarshal(data, &fields); err != nil {
+		return err
+	}
+
+	*s = serverRaw(fields)
+	s.body = append(json.RawMessage(nil), data...)
+
+	return nil
+}
+
+func (s serverRaw) MarshalJSON() ([]byte, error) {
+	if len(s.body) > 0 {
+		return s.body, nil
+	}
+
+	return json.Marshal(serverRawFields(s))
 }
 
 type serverListRaw struct {
@@ -97,8 +126,10 @@ var serverWithCredentialsPrintConfig = formatter.PrintConfig{
 	},
 }
 
-type serversWithCredentials struct {
-	ServerInfo        sdk.Server
+// serverWithCredentials keeps the untagged field names the `server get
+// --show-credentials` json/yaml output has always used.
+type serverWithCredentials struct {
+	ServerInfo        serverRaw
 	ServerCredentials sdk.ServerCredentials
 }
 
@@ -173,12 +204,12 @@ func ServerGet(ctx context.Context, serverId string, showCredentials bool) error
 		return err
 	}
 
-	client := api.GetApiClient(ctx)
-
-	serverInfo, httpRes, err := client.ServerAPI.GetServerInfo(ctx, serverIdNumeric).Execute()
-	if err := response_inspector.InspectResponse(httpRes, err); err != nil {
+	serverInfo, err := getServerRaw(ctx, serverIdNumeric)
+	if err != nil {
 		return err
 	}
+
+	client := api.GetApiClient(ctx)
 
 	if showCredentials {
 		serverCredentials, httpRes, err := client.ServerAPI.GetServerCredentials(ctx, int64(serverInfo.ServerId)).Execute()
@@ -186,8 +217,8 @@ func ServerGet(ctx context.Context, serverId string, showCredentials bool) error
 			return err
 		}
 
-		data := serversWithCredentials{
-			ServerInfo:        *serverInfo,
+		data := serverWithCredentials{
+			ServerInfo:        serverInfo,
 			ServerCredentials: *serverCredentials,
 		}
 
@@ -408,8 +439,10 @@ func ServerUpdate(ctx context.Context, serverId string, config []byte) error {
 
 	client := api.GetApiClient(ctx)
 
-	serverInfo, httpRes, err := client.ServerAPI.UpdateServer(ctx, serverIdNumeric).UpdateServer(updateConfig).IfMatch(revision).Execute()
-	if err := response_inspector.InspectResponse(httpRes, err); err != nil {
+	_, httpRes, sdkErr := client.ServerAPI.UpdateServer(ctx, serverIdNumeric).UpdateServer(updateConfig).IfMatch(revision).Execute()
+
+	serverInfo, err := parseServerRaw(httpRes, sdkErr)
+	if err != nil {
 		return err
 	}
 
@@ -616,12 +649,46 @@ func getServerIdAndRevision(ctx context.Context, serverId string) (int64, string
 		return 0, "", err
 	}
 
-	client := api.GetApiClient(ctx)
-
-	server, httpRes, err := client.ServerAPI.GetServerInfo(ctx, int64(serverIdNumeric)).Execute()
-	if err := response_inspector.InspectResponse(httpRes, err); err != nil {
+	server, err := getServerRaw(ctx, serverIdNumeric)
+	if err != nil {
 		return 0, "", err
 	}
 
-	return int64(serverIdNumeric), strconv.Itoa(int(server.Revision)), nil
+	return serverIdNumeric, strconv.Itoa(int(server.Revision)), nil
+}
+
+// getServerRaw fetches a single server with a raw-body parse: the SDK Server model
+// fails typed unmarshalling on valid responses (ServerMetricsMetadata map vs array,
+// dpuInfo entries without a password).
+func getServerRaw(ctx context.Context, serverIdNumeric int64) (serverRaw, error) {
+	client := api.GetApiClient(ctx)
+
+	_, httpRes, sdkErr := client.ServerAPI.GetServerInfo(ctx, serverIdNumeric).Execute()
+
+	return parseServerRaw(httpRes, sdkErr)
+}
+
+// parseServerRaw turns a server response into serverRaw, ignoring the SDK's own
+// typed-decoding error while still surfacing API errors.
+func parseServerRaw(httpRes *http.Response, sdkErr error) (serverRaw, error) {
+	var server serverRaw
+
+	if httpRes != nil && httpRes.StatusCode >= 400 {
+		if err := response_inspector.InspectResponse(httpRes, sdkErr); err != nil {
+			return server, err
+		}
+	} else if httpRes == nil {
+		return server, sdkErr
+	}
+
+	body, err := io.ReadAll(httpRes.Body)
+	if err != nil {
+		return server, fmt.Errorf("failed to read response body: %w", err)
+	}
+
+	if err := json.Unmarshal(body, &server); err != nil {
+		return server, fmt.Errorf("failed to parse server: %w", err)
+	}
+
+	return server, nil
 }
