@@ -35,6 +35,7 @@ func TestVMInstanceList(t *testing.T) {
 				{
 					"id": 1,
 					"label": "vm-1",
+					"instanceType": "vm",
 					"revision": 1,
 					"infrastructureId": 123,
 					"infrastructure": {"id": 123},

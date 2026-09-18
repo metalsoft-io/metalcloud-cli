@@ -32,7 +32,6 @@ metalcloud-cli [flags]
 * [metalcloud-cli account](metalcloud-cli_account.md)	 - Manage user accounts and account-related operations
 * [metalcloud-cli auth](metalcloud-cli_auth.md)	 - Manage authentication settings
 * [metalcloud-cli bucket](metalcloud-cli_bucket.md)	 - Manage S3-compatible object storage buckets
-* [metalcloud-cli cron-job](metalcloud-cli_cron-job.md)	 - Manage scheduled cron jobs
 * [metalcloud-cli custom-iso](metalcloud-cli_custom-iso.md)	 - Manage custom ISO images for server provisioning
 * [metalcloud-cli device-config-template](metalcloud-cli_device-config-template.md)	 - Manage device configuration templates and profiles
 * [metalcloud-cli dns-zone](metalcloud-cli_dns-zone.md)	 - DNS Zone management
@@ -61,6 +60,7 @@ metalcloud-cli [flags]
 * [metalcloud-cli resource-pool](metalcloud-cli_resource-pool.md)	 - Manage resource pools and their associated resources
 * [metalcloud-cli role](metalcloud-cli_role.md)	 - Manage user roles and permissions
 * [metalcloud-cli route-domain](metalcloud-cli_route-domain.md)	 - Manage route domains (tenant VRFs)
+* [metalcloud-cli scheduled-job](metalcloud-cli_scheduled-job.md)	 - Manage scheduled jobs
 * [metalcloud-cli secret](metalcloud-cli_secret.md)	 - Manage encrypted secrets for secure credential storage
 * [metalcloud-cli server](metalcloud-cli_server.md)	 - Server management
 * [metalcloud-cli server-cleanup-policy](metalcloud-cli_server-cleanup-policy.md)	 - Manage server cleanup policies for automated server maintenance

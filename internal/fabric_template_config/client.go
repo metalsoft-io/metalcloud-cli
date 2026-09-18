@@ -43,7 +43,7 @@ type profileRecord struct {
 	TemplateId int64
 	DeviceId   int64
 	Variables  map[string]interface{}
-	Priority   *float32
+	Priority   *int32
 	ApplyMode  string
 	IsEnabled  *bool
 	Revision   string
@@ -56,13 +56,13 @@ type profileCreate struct {
 	LifecycleStage string
 	Variables      map[string]interface{}
 	IsEnabled      bool
-	Priority       float32
+	Priority       int32
 	ApplyMode      string
 }
 
 type profileUpdate struct {
 	Variables map[string]interface{}
 	IsEnabled bool
-	Priority  float32
+	Priority  int32
 	ApplyMode string
 }

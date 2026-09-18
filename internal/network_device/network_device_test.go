@@ -33,24 +33,57 @@ func TestMain(m *testing.M) {
 
 // minimal NetworkDevice JSON — only required fields
 const ndItem = `{
-	"id":"1","revision":1,"status":"active","vendorId":1,"siteId":1,
-	"identifierString":"sw-01","applyIdentifierAsHostnameOnNextDeploy":false,
-	"description":"","chassisIdentifier":"",
-	"country":"","city":"","datacenterMeta":"","datacenterRoom":"","datacenterRack":"",
-	"rackPositionUpperUnit":0,"rackPositionLowerUnit":0,
-	"managementAddress":"10.0.0.1","managementAddressPrefixLength":24,
-	"managementAddressGateway":"10.0.0.254","managementPort":22,
-	"syslogEnabled":0,"snmpServiceEnabled":false,"snmpMonitoringEnabled":false,
-	"username":"admin","managementMacAddress":"AA:BB:CC:DD:EE:01",
-	"serialNumber":"SN001","driver":"sonic_enterprise","position":"leaf",
+	"id":"1",
+	"revision":1,
+	"status":"active",
+	"vendorId":1,
+	"siteId":1,
+	"identifierString":"sw-01",
+	"applyIdentifierAsHostnameOnNextDeploy":false,
+	"description":"",
+	"chassisIdentifier":"",
+	"country":"",
+	"city":"",
+	"datacenterMeta":"",
+	"datacenterRoom":"",
+	"datacenterRack":"",
+	"rackPositionUpperUnit":0,
+	"rackPositionLowerUnit":0,
+	"managementAddress":"10.0.0.1",
+	"managementAddressPrefixLength":24,
+	"managementAddressGateway":"10.0.0.254",
+	"managementPort":22,
+	"syslogEnabled":0,
+	"snmpServiceEnabled":false,
+	"snmpMonitoringEnabled":false,
+	"username":"admin",
+	"managementMacAddress":"AA:BB:CC:DD:EE:01",
+	"serialNumber":"SN001",
+	"driver":"sonic_enterprise",
+	"position":"leaf",
 	"driftDetectionSyncStatus":"",
-	"orderIndex":1,"tags":[],"tagsMap":{},"readyForInitialConfiguration":0,
-	"bootstrapReadinessCheckInProgress":0,"subnetOobId":0,"subnetOobIndex":0,
-	"requiresOsInstall":false,"bootstrapExpectedPartnerHostname":"",
-	"loopbackAddressIpv6":"","asn":65000,"vtepAddressIpv6":"",
-	"mlagSystemMac":"","mlagDomainId":0,"quarantineVlan":0,
-	"variablesMaterializedForOSAssets":{},"secretsMaterializedForOSAssets":{},
-	"bootstrapReadinessCheckResult":{},"isGateway":false
+	"orderIndex":1,
+	"tags":[],
+	"tagsMap":{},
+	"readyForInitialConfiguration":0,
+	"bootstrapReadinessCheckInProgress":0,
+	"subnetOobId":0,
+	"subnetOobIndex":0,
+	"requiresOsInstall":false,
+	"bootstrapExpectedPartnerHostname":"",
+	"loopbackAddressIpv6":"",
+	"asn":65000,
+	"vtepAddressIpv6":"",
+	"mlagSystemMac":"",
+	"mlagDomainId":0,
+	"quarantineVlan":0,
+	"variablesMaterializedForOSAssets":{},
+	"secretsMaterializedForOSAssets":{},
+	"bootstrapReadinessCheckResult":{},
+	"isGateway":false,
+	"backupEnabled":false,
+	"driftDetectionEnabled":false,
+	"portCount":32
 }`
 
 func ndListHandler(statusCode int, items []string, currentPage, totalPages int) http.HandlerFunc {
@@ -103,24 +136,57 @@ func TestNetworkDeviceList_Pagination(t *testing.T) {
 		items := make([]string, n)
 		for i := range items {
 			items[i] = fmt.Sprintf(`{
-				"id":"%d","revision":1,"status":"active","vendorId":1,"siteId":1,
-				"identifierString":"sw-%d","applyIdentifierAsHostnameOnNextDeploy":false,
-				"description":"","chassisIdentifier":"",
-				"country":"","city":"","datacenterMeta":"","datacenterRoom":"","datacenterRack":"",
-				"rackPositionUpperUnit":0,"rackPositionLowerUnit":0,
-				"managementAddress":"10.0.0.1","managementAddressPrefixLength":24,
-				"managementAddressGateway":"10.0.0.254","managementPort":22,
-				"syslogEnabled":0,"snmpServiceEnabled":false,"snmpMonitoringEnabled":false,
-				"username":"admin","managementMacAddress":"AA:BB:CC:DD:EE:01",
-				"serialNumber":"SN%d","driver":"sonic_enterprise","position":"leaf",
+				"id":"%d",
+				"revision":1,
+				"status":"active",
+				"vendorId":1,
+				"siteId":1,
+				"identifierString":"sw-%d",
+				"applyIdentifierAsHostnameOnNextDeploy":false,
+				"description":"",
+				"chassisIdentifier":"",
+				"country":"",
+				"city":"",
+				"datacenterMeta":"",
+				"datacenterRoom":"",
+				"datacenterRack":"",
+				"rackPositionUpperUnit":0,
+				"rackPositionLowerUnit":0,
+				"managementAddress":"10.0.0.1",
+				"managementAddressPrefixLength":24,
+				"managementAddressGateway":"10.0.0.254",
+				"managementPort":22,
+				"syslogEnabled":0,
+				"snmpServiceEnabled":false,
+				"snmpMonitoringEnabled":false,
+				"username":"admin",
+				"managementMacAddress":"AA:BB:CC:DD:EE:01",
+				"serialNumber":"SN%d",
+				"driver":"sonic_enterprise",
+				"position":"leaf",
 				"driftDetectionSyncStatus":"",
-				"orderIndex":1,"tags":[],"tagsMap":{},"readyForInitialConfiguration":0,
-				"bootstrapReadinessCheckInProgress":0,"subnetOobId":0,"subnetOobIndex":0,
-				"requiresOsInstall":false,"bootstrapExpectedPartnerHostname":"",
-				"loopbackAddressIpv6":"","asn":65000,"vtepAddressIpv6":"",
-				"mlagSystemMac":"","mlagDomainId":0,"quarantineVlan":0,
-				"variablesMaterializedForOSAssets":{},"secretsMaterializedForOSAssets":{},
-				"bootstrapReadinessCheckResult":{},"isGateway":false
+				"orderIndex":1,
+				"tags":[],
+				"tagsMap":{},
+				"readyForInitialConfiguration":0,
+				"bootstrapReadinessCheckInProgress":0,
+				"subnetOobId":0,
+				"subnetOobIndex":0,
+				"requiresOsInstall":false,
+				"bootstrapExpectedPartnerHostname":"",
+				"loopbackAddressIpv6":"",
+				"asn":65000,
+				"vtepAddressIpv6":"",
+				"mlagSystemMac":"",
+				"mlagDomainId":0,
+				"quarantineVlan":0,
+				"variablesMaterializedForOSAssets":{},
+				"secretsMaterializedForOSAssets":{},
+				"bootstrapReadinessCheckResult":{},
+				"isGateway":false,
+				"backupEnabled":false,
+				"driftDetectionEnabled":false,
+				"portCount":32
 			}`, i+1, i+1, i+1)
 		}
 		return items
@@ -307,81 +373,6 @@ func ndSecretsListHandler(statusCode int, items []string, currentPage, totalPage
 	body := fmt.Sprintf(`{"data":%s,"meta":{"currentPage":%d,"totalPages":%d,"itemsPerPage":100}}`,
 		data, currentPage, totalPages)
 	return testutils.RawHandler(statusCode, body)
-}
-
-func TestNetworkDeviceDefaultSecretsList_HappyPath(t *testing.T) {
-	ts := testutils.NewTestServer(map[string]http.HandlerFunc{
-		"/api/v2/network-devices/default-secrets": ndSecretsListHandler(http.StatusOK, []string{ndSecretsItem, ndSecretsItem}, 1, 1),
-	})
-	defer ts.Close()
-
-	ctx := testutils.SetupTestContext(ts.URL)
-	if err := NetworkDeviceDefaultSecretsList(ctx, 0, 0); err != nil {
-		t.Errorf("expected nil error, got: %v", err)
-	}
-}
-
-func TestNetworkDeviceDefaultSecretsList_Error(t *testing.T) {
-	ts := testutils.NewTestServer(map[string]http.HandlerFunc{
-		"/api/v2/network-devices/default-secrets": testutils.ErrorHandler(http.StatusInternalServerError, "internal error"),
-	})
-	defer ts.Close()
-
-	ctx := testutils.SetupTestContext(ts.URL)
-	if err := NetworkDeviceDefaultSecretsList(ctx, 0, 0); err == nil {
-		t.Error("expected error for 500, got nil")
-	}
-}
-
-func TestNetworkDeviceDefaultSecretsList_Empty(t *testing.T) {
-	ts := testutils.NewTestServer(map[string]http.HandlerFunc{
-		"/api/v2/network-devices/default-secrets": ndSecretsListHandler(http.StatusOK, []string{}, 1, 1),
-	})
-	defer ts.Close()
-
-	ctx := testutils.SetupTestContext(ts.URL)
-	if err := NetworkDeviceDefaultSecretsList(ctx, 0, 0); err != nil {
-		t.Errorf("expected nil error for empty list, got: %v", err)
-	}
-}
-
-func TestNetworkDeviceDefaultSecretsList_Pagination(t *testing.T) {
-	makeItems := func(n int) []string {
-		items := make([]string, n)
-		for i := range items {
-			items[i] = fmt.Sprintf(`{
-				"id":%d,"siteId":1,"macAddressOrSerialNumber":"AA:BB:CC:DD:EE:%02d",
-				"secretName":"secret-%d","createdTimestamp":"2024-01-01T00:00:00Z",
-				"updatedTimestamp":"2024-01-01T00:00:00Z"
-			}`, i+1, i+1, i+1)
-		}
-		return items
-	}
-
-	ts := testutils.MultiPageServer("/api/v2/network-devices/default-secrets", []any{
-		decodeItems(makeItems(100)),
-		decodeItems(makeItems(100)),
-		decodeItems(makeItems(5)),
-	})
-	defer ts.Close()
-
-	ctx := testutils.SetupTestContext(ts.URL)
-	if err := NetworkDeviceDefaultSecretsList(ctx, 0, 0); err != nil {
-		t.Errorf("expected nil error across 3 pages, got: %v", err)
-	}
-}
-
-func TestNetworkDeviceDefaultSecretsList_SinglePage(t *testing.T) {
-	ts := testutils.NewTestServer(map[string]http.HandlerFunc{
-		"/api/v2/network-devices/default-secrets": ndSecretsListHandler(http.StatusOK, []string{ndSecretsItem}, 1, 2),
-	})
-	defer ts.Close()
-
-	ctx := testutils.SetupTestContext(ts.URL)
-	// page=1, limit=5: uses single-page path (no FetchAllPages)
-	if err := NetworkDeviceDefaultSecretsList(ctx, 1, 5); err != nil {
-		t.Errorf("expected nil error for page/limit path, got: %v", err)
-	}
 }
 
 // --- NetworkDeviceArchive ---
@@ -776,329 +767,6 @@ func ndDefaultsListHandler(statusCode int, items []string) http.HandlerFunc {
 	data := "[" + strings.Join(items, ",") + "]"
 	body := fmt.Sprintf(`{"data":%s,"meta":{"currentPage":1,"totalPages":1,"itemsPerPage":100}}`, data)
 	return testutils.RawHandler(statusCode, body)
-}
-
-func TestNetworkDeviceGetDefaults_HappyPath(t *testing.T) {
-	ts := testutils.NewTestServer(map[string]http.HandlerFunc{
-		"/api/v2/network-devices/defaults/1": ndDefaultsListHandler(http.StatusOK, []string{ndDefaultsItem}),
-	})
-	defer ts.Close()
-
-	ctx := testutils.SetupTestContext(ts.URL)
-	if err := NetworkDeviceGetDefaults(ctx, "1"); err != nil {
-		t.Errorf("expected nil error, got: %v", err)
-	}
-}
-
-func TestNetworkDeviceGetDefaults_Error(t *testing.T) {
-	ts := testutils.NewTestServer(map[string]http.HandlerFunc{
-		"/api/v2/network-devices/defaults/1": testutils.ErrorHandler(http.StatusNotFound, "not found"),
-	})
-	defer ts.Close()
-
-	ctx := testutils.SetupTestContext(ts.URL)
-	if err := NetworkDeviceGetDefaults(ctx, "1"); err == nil {
-		t.Error("expected error for 404, got nil")
-	}
-}
-
-func TestNetworkDeviceGetDefaults_InvalidId(t *testing.T) {
-	ts := testutils.NewTestServer(map[string]http.HandlerFunc{})
-	defer ts.Close()
-
-	ctx := testutils.SetupTestContext(ts.URL)
-	if err := NetworkDeviceGetDefaults(ctx, "not-a-number"); err == nil {
-		t.Error("expected error for invalid site ID, got nil")
-	}
-}
-
-// --- NetworkDeviceAddDefaults ---
-
-func TestNetworkDeviceAddDefaults_HappyPath(t *testing.T) {
-	ts := testutils.NewTestServer(map[string]http.HandlerFunc{
-		"/api/v2/network-devices/defaults": func(w http.ResponseWriter, r *http.Request) {
-			if r.Method != http.MethodPost {
-				http.Error(w, "method not allowed", http.StatusMethodNotAllowed)
-				return
-			}
-			w.WriteHeader(http.StatusNoContent)
-		},
-	})
-	defer ts.Close()
-
-	ctx := testutils.SetupTestContext(ts.URL)
-	config := []byte(`{"datacenterName":"site1","managementMacAddress":"AA:BB:CC:DD:EE:01"}`)
-	if err := NetworkDeviceAddDefaults(ctx, config); err != nil {
-		t.Errorf("expected nil error, got: %v", err)
-	}
-}
-
-func TestNetworkDeviceAddDefaults_MissingMac(t *testing.T) {
-	ts := testutils.NewTestServer(map[string]http.HandlerFunc{})
-	defer ts.Close()
-
-	ctx := testutils.SetupTestContext(ts.URL)
-	config := []byte(`{"datacenterName":"site1"}`)
-	if err := NetworkDeviceAddDefaults(ctx, config); err == nil {
-		t.Error("expected error for missing MAC address, got nil")
-	}
-}
-
-func TestNetworkDeviceAddDefaults_Error(t *testing.T) {
-	ts := testutils.NewTestServer(map[string]http.HandlerFunc{
-		"/api/v2/network-devices/defaults": testutils.ErrorHandler(http.StatusBadRequest, "validation error"),
-	})
-	defer ts.Close()
-
-	ctx := testutils.SetupTestContext(ts.URL)
-	config := []byte(`{"datacenterName":"site1","managementMacAddress":"AA:BB:CC:DD:EE:01"}`)
-	if err := NetworkDeviceAddDefaults(ctx, config); err == nil {
-		t.Error("expected error for 400, got nil")
-	}
-}
-
-// --- NetworkDeviceDeleteDefaults ---
-
-func TestNetworkDeviceDeleteDefaults_HappyPath(t *testing.T) {
-	ts := testutils.NewTestServer(map[string]http.HandlerFunc{
-		"/api/v2/network-devices/defaults/1/1": func(w http.ResponseWriter, r *http.Request) {
-			if r.Method != http.MethodDelete {
-				http.Error(w, "method not allowed", http.StatusMethodNotAllowed)
-				return
-			}
-			w.WriteHeader(http.StatusNoContent)
-		},
-	})
-	defer ts.Close()
-
-	ctx := testutils.SetupTestContext(ts.URL)
-	if err := NetworkDeviceDeleteDefaults(ctx, "1", "1"); err != nil {
-		t.Errorf("expected nil error, got: %v", err)
-	}
-}
-
-func TestNetworkDeviceDeleteDefaults_Error(t *testing.T) {
-	ts := testutils.NewTestServer(map[string]http.HandlerFunc{
-		"/api/v2/network-devices/defaults/1/1": testutils.ErrorHandler(http.StatusNotFound, "not found"),
-	})
-	defer ts.Close()
-
-	ctx := testutils.SetupTestContext(ts.URL)
-	if err := NetworkDeviceDeleteDefaults(ctx, "1", "1"); err == nil {
-		t.Error("expected error for 404, got nil")
-	}
-}
-
-func TestNetworkDeviceDeleteDefaults_InvalidSiteId(t *testing.T) {
-	ts := testutils.NewTestServer(map[string]http.HandlerFunc{})
-	defer ts.Close()
-
-	ctx := testutils.SetupTestContext(ts.URL)
-	if err := NetworkDeviceDeleteDefaults(ctx, "not-a-number", "1"); err == nil {
-		t.Error("expected error for invalid site ID, got nil")
-	}
-}
-
-func TestNetworkDeviceDeleteDefaults_InvalidDefaultsId(t *testing.T) {
-	ts := testutils.NewTestServer(map[string]http.HandlerFunc{})
-	defer ts.Close()
-
-	ctx := testutils.SetupTestContext(ts.URL)
-	if err := NetworkDeviceDeleteDefaults(ctx, "1", "not-a-number"); err == nil {
-		t.Error("expected error for invalid defaults ID, got nil")
-	}
-}
-
-// --- NetworkDeviceDefaultSecretsGet ---
-
-func TestNetworkDeviceDefaultSecretsGet_HappyPath(t *testing.T) {
-	ts := testutils.NewTestServer(map[string]http.HandlerFunc{
-		"/api/v2/network-devices/default-secrets/1": testutils.RawHandler(http.StatusOK, ndSecretsItem),
-	})
-	defer ts.Close()
-
-	ctx := testutils.SetupTestContext(ts.URL)
-	if err := NetworkDeviceDefaultSecretsGet(ctx, "1"); err != nil {
-		t.Errorf("expected nil error, got: %v", err)
-	}
-}
-
-func TestNetworkDeviceDefaultSecretsGet_Error(t *testing.T) {
-	ts := testutils.NewTestServer(map[string]http.HandlerFunc{
-		"/api/v2/network-devices/default-secrets/99": testutils.ErrorHandler(http.StatusNotFound, "not found"),
-	})
-	defer ts.Close()
-
-	ctx := testutils.SetupTestContext(ts.URL)
-	if err := NetworkDeviceDefaultSecretsGet(ctx, "99"); err == nil {
-		t.Error("expected error for 404, got nil")
-	}
-}
-
-func TestNetworkDeviceDefaultSecretsGet_InvalidId(t *testing.T) {
-	ts := testutils.NewTestServer(map[string]http.HandlerFunc{})
-	defer ts.Close()
-
-	ctx := testutils.SetupTestContext(ts.URL)
-	if err := NetworkDeviceDefaultSecretsGet(ctx, "not-a-number"); err == nil {
-		t.Error("expected error for invalid ID, got nil")
-	}
-}
-
-// --- NetworkDeviceDefaultSecretsGetCredentials ---
-
-func TestNetworkDeviceDefaultSecretsGetCredentials_HappyPath(t *testing.T) {
-	ts := testutils.NewTestServer(map[string]http.HandlerFunc{
-		"/api/v2/network-devices/default-secrets/1/credentials": testutils.RawHandler(http.StatusOK, `{"secretValue":"password123"}`),
-	})
-	defer ts.Close()
-
-	ctx := testutils.SetupTestContext(ts.URL)
-	if err := NetworkDeviceDefaultSecretsGetCredentials(ctx, "1"); err != nil {
-		t.Errorf("expected nil error, got: %v", err)
-	}
-}
-
-func TestNetworkDeviceDefaultSecretsGetCredentials_Error(t *testing.T) {
-	ts := testutils.NewTestServer(map[string]http.HandlerFunc{
-		"/api/v2/network-devices/default-secrets/99/credentials": testutils.ErrorHandler(http.StatusNotFound, "not found"),
-	})
-	defer ts.Close()
-
-	ctx := testutils.SetupTestContext(ts.URL)
-	if err := NetworkDeviceDefaultSecretsGetCredentials(ctx, "99"); err == nil {
-		t.Error("expected error for 404, got nil")
-	}
-}
-
-func TestNetworkDeviceDefaultSecretsGetCredentials_InvalidId(t *testing.T) {
-	ts := testutils.NewTestServer(map[string]http.HandlerFunc{})
-	defer ts.Close()
-
-	ctx := testutils.SetupTestContext(ts.URL)
-	if err := NetworkDeviceDefaultSecretsGetCredentials(ctx, "not-a-number"); err == nil {
-		t.Error("expected error for invalid ID, got nil")
-	}
-}
-
-// --- NetworkDeviceDefaultSecretsCreate ---
-
-func TestNetworkDeviceDefaultSecretsCreate_HappyPath(t *testing.T) {
-	ts := testutils.NewTestServer(map[string]http.HandlerFunc{
-		"/api/v2/network-devices/default-secrets": func(w http.ResponseWriter, r *http.Request) {
-			if r.Method != http.MethodPost {
-				http.Error(w, "method not allowed", http.StatusMethodNotAllowed)
-				return
-			}
-			w.Header().Set("Content-Type", "application/json")
-			w.WriteHeader(http.StatusCreated)
-			fmt.Fprint(w, ndSecretsItem)
-		},
-	})
-	defer ts.Close()
-
-	ctx := testutils.SetupTestContext(ts.URL)
-	if err := NetworkDeviceDefaultSecretsCreate(ctx, 1, "AA:BB:CC:DD:EE:01", "admin-password", "secret123"); err != nil {
-		t.Errorf("expected nil error, got: %v", err)
-	}
-}
-
-func TestNetworkDeviceDefaultSecretsCreate_Error(t *testing.T) {
-	ts := testutils.NewTestServer(map[string]http.HandlerFunc{
-		"/api/v2/network-devices/default-secrets": testutils.ErrorHandler(http.StatusBadRequest, "validation error"),
-	})
-	defer ts.Close()
-
-	ctx := testutils.SetupTestContext(ts.URL)
-	if err := NetworkDeviceDefaultSecretsCreate(ctx, 1, "AA:BB:CC:DD:EE:01", "admin-password", "secret123"); err == nil {
-		t.Error("expected error for 400, got nil")
-	}
-}
-
-// --- NetworkDeviceDefaultSecretsUpdate ---
-
-func TestNetworkDeviceDefaultSecretsUpdate_HappyPath(t *testing.T) {
-	ts := testutils.NewTestServer(map[string]http.HandlerFunc{
-		"/api/v2/network-devices/default-secrets/1": func(w http.ResponseWriter, r *http.Request) {
-			switch r.Method {
-			case http.MethodPatch:
-				w.Header().Set("Content-Type", "application/json")
-				fmt.Fprint(w, ndSecretsItem)
-			default:
-				http.Error(w, "method not allowed", http.StatusMethodNotAllowed)
-			}
-		},
-	})
-	defer ts.Close()
-
-	ctx := testutils.SetupTestContext(ts.URL)
-	if err := NetworkDeviceDefaultSecretsUpdate(ctx, "1", "newpassword"); err != nil {
-		t.Errorf("expected nil error, got: %v", err)
-	}
-}
-
-func TestNetworkDeviceDefaultSecretsUpdate_Error(t *testing.T) {
-	ts := testutils.NewTestServer(map[string]http.HandlerFunc{
-		"/api/v2/network-devices/default-secrets/99": testutils.ErrorHandler(http.StatusNotFound, "not found"),
-	})
-	defer ts.Close()
-
-	ctx := testutils.SetupTestContext(ts.URL)
-	if err := NetworkDeviceDefaultSecretsUpdate(ctx, "99", "newpassword"); err == nil {
-		t.Error("expected error for 404, got nil")
-	}
-}
-
-func TestNetworkDeviceDefaultSecretsUpdate_InvalidId(t *testing.T) {
-	ts := testutils.NewTestServer(map[string]http.HandlerFunc{})
-	defer ts.Close()
-
-	ctx := testutils.SetupTestContext(ts.URL)
-	if err := NetworkDeviceDefaultSecretsUpdate(ctx, "not-a-number", "newpassword"); err == nil {
-		t.Error("expected error for invalid ID, got nil")
-	}
-}
-
-// --- NetworkDeviceDefaultSecretsDelete ---
-
-func TestNetworkDeviceDefaultSecretsDelete_HappyPath(t *testing.T) {
-	ts := testutils.NewTestServer(map[string]http.HandlerFunc{
-		"/api/v2/network-devices/default-secrets/1": func(w http.ResponseWriter, r *http.Request) {
-			if r.Method != http.MethodDelete {
-				http.Error(w, "method not allowed", http.StatusMethodNotAllowed)
-				return
-			}
-			w.WriteHeader(http.StatusNoContent)
-		},
-	})
-	defer ts.Close()
-
-	ctx := testutils.SetupTestContext(ts.URL)
-	if err := NetworkDeviceDefaultSecretsDelete(ctx, "1"); err != nil {
-		t.Errorf("expected nil error, got: %v", err)
-	}
-}
-
-func TestNetworkDeviceDefaultSecretsDelete_Error(t *testing.T) {
-	ts := testutils.NewTestServer(map[string]http.HandlerFunc{
-		"/api/v2/network-devices/default-secrets/99": testutils.ErrorHandler(http.StatusNotFound, "not found"),
-	})
-	defer ts.Close()
-
-	ctx := testutils.SetupTestContext(ts.URL)
-	if err := NetworkDeviceDefaultSecretsDelete(ctx, "99"); err == nil {
-		t.Error("expected error for 404, got nil")
-	}
-}
-
-func TestNetworkDeviceDefaultSecretsDelete_InvalidId(t *testing.T) {
-	ts := testutils.NewTestServer(map[string]http.HandlerFunc{})
-	defer ts.Close()
-
-	ctx := testutils.SetupTestContext(ts.URL)
-	if err := NetworkDeviceDefaultSecretsDelete(ctx, "not-a-number"); err == nil {
-		t.Error("expected error for invalid ID, got nil")
-	}
 }
 
 func TestNetworkDeviceConfigExample(t *testing.T) {

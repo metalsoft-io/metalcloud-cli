@@ -193,7 +193,7 @@ func LogicalNetworkConfigExample(ctx context.Context, kind string) error {
 			VlanAllocationStrategies: []sdk.CreateVlanAllocationStrategy{
 				{
 					CreateAutoVlanAllocationStrategy: &sdk.CreateAutoVlanAllocationStrategy{
-						Kind: sdk.ALLOCATIONSTRATEGYKIND_AUTO,
+						Kind: "auto",
 						Scope: sdk.CreateResourceScope{
 							Kind:       sdk.RESOURCESCOPEKIND_FABRIC,
 							ResourceId: *sdk.NewNullableInt64(sdk.PtrInt64(1)),
@@ -207,7 +207,7 @@ func LogicalNetworkConfigExample(ctx context.Context, kind string) error {
 			SubnetAllocationStrategies: []sdk.CreateIpv4SubnetAllocationStrategy{
 				{
 					CreateAutoIpv4SubnetAllocationStrategy: &sdk.CreateAutoIpv4SubnetAllocationStrategy{
-						Kind: sdk.ALLOCATIONSTRATEGYKIND_AUTO,
+						Kind: "auto",
 						Scope: sdk.CreateResourceScope{
 							Kind:       sdk.RESOURCESCOPEKIND_FABRIC,
 							ResourceId: *sdk.NewNullableInt64(sdk.PtrInt64(1)),
@@ -222,7 +222,7 @@ func LogicalNetworkConfigExample(ctx context.Context, kind string) error {
 			SubnetAllocationStrategies: []sdk.CreateIpv6SubnetAllocationStrategy{
 				{
 					CreateAutoIpv6SubnetAllocationStrategy: &sdk.CreateAutoIpv6SubnetAllocationStrategy{
-						Kind: sdk.ALLOCATIONSTRATEGYKIND_AUTO,
+						Kind: "auto",
 						Scope: sdk.CreateResourceScope{
 							Kind:       sdk.RESOURCESCOPEKIND_FABRIC,
 							ResourceId: *sdk.NewNullableInt64(sdk.PtrInt64(1)),
@@ -243,7 +243,7 @@ func LogicalNetworkConfigExample(ctx context.Context, kind string) error {
 			VlanAllocationStrategies: []sdk.CreateVlanAllocationStrategy{
 				{
 					CreateAutoVlanAllocationStrategy: &sdk.CreateAutoVlanAllocationStrategy{
-						Kind: sdk.ALLOCATIONSTRATEGYKIND_AUTO,
+						Kind: "auto",
 						Scope: sdk.CreateResourceScope{
 							Kind:       sdk.RESOURCESCOPEKIND_FABRIC,
 							ResourceId: *sdk.NewNullableInt64(sdk.PtrInt64(1)),
@@ -257,7 +257,7 @@ func LogicalNetworkConfigExample(ctx context.Context, kind string) error {
 			VniAllocationStrategies: []sdk.CreateVniAllocationStrategy{
 				{
 					CreateAutoVniAllocationStrategy: &sdk.CreateAutoVniAllocationStrategy{
-						Kind: sdk.ALLOCATIONSTRATEGYKIND_AUTO,
+						Kind: "auto",
 						Scope: sdk.CreateResourceScope{
 							Kind:       sdk.RESOURCESCOPEKIND_FABRIC,
 							ResourceId: *sdk.NewNullableInt64(sdk.PtrInt64(1)),
@@ -270,7 +270,7 @@ func LogicalNetworkConfigExample(ctx context.Context, kind string) error {
 			SubnetAllocationStrategies: []sdk.CreateIpv4SubnetAllocationStrategy{
 				{
 					CreateAutoIpv4SubnetAllocationStrategy: &sdk.CreateAutoIpv4SubnetAllocationStrategy{
-						Kind: sdk.ALLOCATIONSTRATEGYKIND_AUTO,
+						Kind: "auto",
 						Scope: sdk.CreateResourceScope{
 							Kind:       sdk.RESOURCESCOPEKIND_FABRIC,
 							ResourceId: *sdk.NewNullableInt64(sdk.PtrInt64(1)),
@@ -285,7 +285,7 @@ func LogicalNetworkConfigExample(ctx context.Context, kind string) error {
 			SubnetAllocationStrategies: []sdk.CreateIpv6SubnetAllocationStrategy{
 				{
 					CreateAutoIpv6SubnetAllocationStrategy: &sdk.CreateAutoIpv6SubnetAllocationStrategy{
-						Kind: sdk.ALLOCATIONSTRATEGYKIND_AUTO,
+						Kind: "auto",
 						Scope: sdk.CreateResourceScope{
 							Kind:       sdk.RESOURCESCOPEKIND_FABRIC,
 							ResourceId: *sdk.NewNullableInt64(sdk.PtrInt64(1)),

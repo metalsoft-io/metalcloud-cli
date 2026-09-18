@@ -79,7 +79,7 @@ func FabricConfigExample(ctx context.Context, fabricType string) error {
 	switch fabricType {
 	case "ethernet":
 		fabricConfiguration = sdk.EthernetFabric{
-			FabricType:                 sdk.FABRICTYPE_ETHERNET,
+			FabricType:                 "ethernet",
 			SyslogMonitoringEnabled:    sdk.PtrBool(true),
 			GnmiMonitoringEnabled:      sdk.PtrBool(false),
 			ServerOnlyOperationEnabled: sdk.PtrBool(false),
@@ -95,7 +95,7 @@ func FabricConfigExample(ctx context.Context, fabricType string) error {
 
 	case "infiniband":
 		fabricConfiguration = sdk.InfinibandFabric{
-			FabricType:                 sdk.FABRICTYPE_INFINIBAND,
+			FabricType:                 "infiniband",
 			SyslogMonitoringEnabled:    sdk.PtrBool(true),
 			GnmiMonitoringEnabled:      sdk.PtrBool(false),
 			ServerOnlyOperationEnabled: sdk.PtrBool(false),
@@ -106,7 +106,7 @@ func FabricConfigExample(ctx context.Context, fabricType string) error {
 
 	case "fibre_channel":
 		fabricConfiguration = sdk.FibreChannelFabric{
-			FabricType:                 sdk.FABRICTYPE_FIBRE_CHANNEL,
+			FabricType:                 "fibre_channel",
 			SyslogMonitoringEnabled:    sdk.PtrBool(true),
 			GnmiMonitoringEnabled:      sdk.PtrBool(false),
 			ServerOnlyOperationEnabled: sdk.PtrBool(false),

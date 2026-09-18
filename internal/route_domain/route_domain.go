@@ -192,14 +192,14 @@ func RouteDomainConfigExample(ctx context.Context) error {
 		Kind:  sdk.ROUTEDOMAINKIND_EVPN_L3VPN,
 		VrfAllocationStrategies: []sdk.CreateVrfAllocationStrategy{
 			sdk.CreateManualVrfAllocationStrategyAsCreateVrfAllocationStrategy(&sdk.CreateManualVrfAllocationStrategy{
-				Kind:  sdk.ALLOCATIONSTRATEGYKIND_MANUAL,
+				Kind:  "manual",
 				Scope: sdk.CreateResourceScope{Kind: sdk.RESOURCESCOPEKIND_FABRIC, ResourceId: *sdk.NewNullableInt64(sdk.PtrInt64(1))},
 				Name:  "tenant1",
 			}),
 		},
 		L3VniAllocationStrategies: []sdk.CreateVniAllocationStrategy{
 			sdk.CreateAutoVniAllocationStrategyAsCreateVniAllocationStrategy(&sdk.CreateAutoVniAllocationStrategy{
-				Kind:             sdk.ALLOCATIONSTRATEGYKIND_AUTO,
+				Kind:             "auto",
 				Scope:            sdk.CreateResourceScope{Kind: sdk.RESOURCESCOPEKIND_FABRIC, ResourceId: *sdk.NewNullableInt64(sdk.PtrInt64(1))},
 				GranularityLevel: *sdk.NewNullableVniAllocationGranularityLevel(sdk.VNIALLOCATIONGRANULARITYLEVEL_FABRIC.Ptr()),
 			}),

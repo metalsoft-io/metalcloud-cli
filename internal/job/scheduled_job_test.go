@@ -26,7 +26,7 @@ func init() {
 	viper.Set(formatter.ConfigFormat, "text")
 }
 
-const cronJobListResponseLinksArray = `{
+const scheduledJobListResponseLinksArray = `{
 	"data": [
 		{
 			"id": 1,
@@ -49,7 +49,7 @@ const cronJobListResponseLinksArray = `{
 	}
 }`
 
-const cronJobListResponseLinksMap = `{
+const scheduledJobListResponseLinksMap = `{
 	"data": [
 		{
 			"id": 1,
@@ -61,7 +61,7 @@ const cronJobListResponseLinksMap = `{
 			"waitForCompletion": 0,
 			"lifetimeSeconds": 3600,
 			"disabled": 0,
-			"links": [{"rel": "self", "href": "http://example.com/cron-jobs/1"}]
+			"links": [{"rel": "self", "href": "http://example.com/scheduled-jobs/1"}]
 		}
 	],
 	"meta": {
@@ -72,7 +72,7 @@ const cronJobListResponseLinksMap = `{
 	}
 }`
 
-const cronJobSingleResponseLinksArray = `{
+const scheduledJobSingleResponseLinksArray = `{
 	"id": 1,
 	"label": "test-cron",
 	"description": "test description",
@@ -85,26 +85,26 @@ const cronJobSingleResponseLinksArray = `{
 	"links": []
 }`
 
-// isCronJobListPath returns true when the path ends at /cron-jobs with no
+// isScheduledJobListPath returns true when the path ends at /scheduled-jobs with no
 // further segments (i.e. it is the collection endpoint, not a single-item
-// endpoint like /cron-jobs/1).
-func isCronJobListPath(path string) bool {
-	idx := strings.LastIndex(path, "/cron-jobs")
+// endpoint like /scheduled-jobs/1).
+func isScheduledJobListPath(path string) bool {
+	idx := strings.LastIndex(path, "/scheduled-jobs")
 	if idx == -1 {
 		return false
 	}
-	// Everything after "/cron-jobs" must be empty (possibly a trailing slash).
-	suffix := strings.TrimSuffix(path[idx+len("/cron-jobs"):], "/")
+	// Everything after "/scheduled-jobs" must be empty (possibly a trailing slash).
+	suffix := strings.TrimSuffix(path[idx+len("/scheduled-jobs"):], "/")
 	return suffix == ""
 }
 
-func TestCronJobList(t *testing.T) {
+func TestScheduledJobList(t *testing.T) {
 	t.Run("LinksAsArray", func(t *testing.T) {
 		ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-			if strings.Contains(r.URL.Path, "/cron-jobs") && isCronJobListPath(r.URL.Path) {
+			if strings.Contains(r.URL.Path, "/scheduled-jobs") && isScheduledJobListPath(r.URL.Path) {
 				w.Header().Set("Content-Type", "application/json")
 				w.WriteHeader(http.StatusOK)
-				_, _ = w.Write([]byte(cronJobListResponseLinksArray))
+				_, _ = w.Write([]byte(scheduledJobListResponseLinksArray))
 				return
 			}
 			http.NotFound(w, r)
@@ -112,7 +112,7 @@ func TestCronJobList(t *testing.T) {
 		defer ts.Close()
 
 		ctx := setupTestContext(ts.URL)
-		err := CronJobList(ctx)
+		err := ScheduledJobList(ctx)
 		if err != nil {
 			t.Errorf("expected nil error, got: %v", err)
 		}
@@ -120,10 +120,10 @@ func TestCronJobList(t *testing.T) {
 
 	t.Run("LinksAsMap", func(t *testing.T) {
 		ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-			if strings.Contains(r.URL.Path, "/cron-jobs") && isCronJobListPath(r.URL.Path) {
+			if strings.Contains(r.URL.Path, "/scheduled-jobs") && isScheduledJobListPath(r.URL.Path) {
 				w.Header().Set("Content-Type", "application/json")
 				w.WriteHeader(http.StatusOK)
-				_, _ = w.Write([]byte(cronJobListResponseLinksMap))
+				_, _ = w.Write([]byte(scheduledJobListResponseLinksMap))
 				return
 			}
 			http.NotFound(w, r)
@@ -131,7 +131,7 @@ func TestCronJobList(t *testing.T) {
 		defer ts.Close()
 
 		ctx := setupTestContext(ts.URL)
-		err := CronJobList(ctx)
+		err := ScheduledJobList(ctx)
 		if err != nil {
 			t.Errorf("expected nil error, got: %v", err)
 		}
@@ -139,7 +139,7 @@ func TestCronJobList(t *testing.T) {
 
 	t.Run("HttpError", func(t *testing.T) {
 		ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-			if strings.Contains(r.URL.Path, "/cron-jobs") {
+			if strings.Contains(r.URL.Path, "/scheduled-jobs") {
 				w.Header().Set("Content-Type", "application/json")
 				w.WriteHeader(http.StatusInternalServerError)
 				_, _ = w.Write([]byte(`{"error": "internal server error"}`))
@@ -150,20 +150,20 @@ func TestCronJobList(t *testing.T) {
 		defer ts.Close()
 
 		ctx := setupTestContext(ts.URL)
-		err := CronJobList(ctx)
+		err := ScheduledJobList(ctx)
 		if err == nil {
 			t.Error("expected an error for HTTP 500, got nil")
 		}
 	})
 }
 
-func TestCronJobGet(t *testing.T) {
+func TestScheduledJobGet(t *testing.T) {
 	t.Run("LinksAsArray", func(t *testing.T) {
 		ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-			if strings.Contains(r.URL.Path, "/cron-jobs/1") {
+			if strings.Contains(r.URL.Path, "/scheduled-jobs/1") {
 				w.Header().Set("Content-Type", "application/json")
 				w.WriteHeader(http.StatusOK)
-				_, _ = w.Write([]byte(cronJobSingleResponseLinksArray))
+				_, _ = w.Write([]byte(scheduledJobSingleResponseLinksArray))
 				return
 			}
 			http.NotFound(w, r)
@@ -171,7 +171,7 @@ func TestCronJobGet(t *testing.T) {
 		defer ts.Close()
 
 		ctx := setupTestContext(ts.URL)
-		err := CronJobGet(ctx, "1")
+		err := ScheduledJobGet(ctx, "1")
 		if err != nil {
 			t.Errorf("expected nil error, got: %v", err)
 		}

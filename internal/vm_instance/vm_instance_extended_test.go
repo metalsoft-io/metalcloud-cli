@@ -11,6 +11,7 @@ func makeVMInstance(id int) map[string]any {
 	return map[string]any{
 		"id":               id,
 		"label":            "vm-1",
+		"instanceType":     "vm",
 		"infrastructureId": float64(123),
 		"groupId":          float64(10),
 		"serviceStatus":    "active",

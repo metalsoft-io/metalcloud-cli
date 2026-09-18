@@ -32,21 +32,16 @@ monitor network devices.
 ### SEE ALSO
 
 * [metalcloud-cli](metalcloud-cli.md)	 - MetalCloud CLI
-* [metalcloud-cli network-device add-defaults](metalcloud-cli_network-device_add-defaults.md)	 - Add network device default configuration
 * [metalcloud-cli network-device add-port-ip](metalcloud-cli_network-device_add-port-ip.md)	 - Add an IP address to a network device port
 * [metalcloud-cli network-device archive](metalcloud-cli_network-device_archive.md)	 - Archive a network device (soft delete with history preservation)
 * [metalcloud-cli network-device config-example](metalcloud-cli_network-device_config-example.md)	 - Generate example configuration template for network devices
 * [metalcloud-cli network-device create](metalcloud-cli_network-device_create.md)	 - Create a new network device with specified configuration
 * [metalcloud-cli network-device create-bulk](metalcloud-cli_network-device_create-bulk.md)	 - Create multiple network devices in a single operation
-* [metalcloud-cli network-device default-secrets](metalcloud-cli_network-device_default-secrets.md)	 - Manage network device default secrets
 * [metalcloud-cli network-device delete](metalcloud-cli_network-device_delete.md)	 - Delete a network device from the infrastructure
-* [metalcloud-cli network-device delete-defaults](metalcloud-cli_network-device_delete-defaults.md)	 - Remove network device default configuration for a site
 * [metalcloud-cli network-device discover](metalcloud-cli_network-device_discover.md)	 - Discover and inventory network device interfaces and configuration
 * [metalcloud-cli network-device enable-syslog](metalcloud-cli_network-device_enable-syslog.md)	 - Enable remote syslog forwarding on the network device
-* [metalcloud-cli network-device example-defaults](metalcloud-cli_network-device_example-defaults.md)	 - Network device default configuration example
 * [metalcloud-cli network-device get](metalcloud-cli_network-device_get.md)	 - Get detailed information about a specific network device
 * [metalcloud-cli network-device get-credentials](metalcloud-cli_network-device_get-credentials.md)	 - Retrieve management credentials for a network device
-* [metalcloud-cli network-device get-defaults](metalcloud-cli_network-device_get-defaults.md)	 - Get default network device configuration settings for a site
 * [metalcloud-cli network-device get-ports](metalcloud-cli_network-device_get-ports.md)	 - Get real-time port statistics directly from the network device
 * [metalcloud-cli network-device list](metalcloud-cli_network-device_list.md)	 - List network devices with optional status filtering
 * [metalcloud-cli network-device reset](metalcloud-cli_network-device_reset.md)	 - Reset network device to factory defaults (destructive operation)

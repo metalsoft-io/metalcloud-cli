@@ -152,7 +152,7 @@ func valueOf(defaultValue *sdk.ExtensionInputStringDefaultValue) any {
 type extensionInput struct {
 	Label        string
 	Name         string
-	InputType    sdk.ExtensionInputType
+	InputType    string
 	DefaultValue any
 }
 

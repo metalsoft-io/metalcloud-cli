@@ -547,7 +547,7 @@ func DeviceConfigurationTemplateProfileConfigExample(ctx context.Context) error 
 			"hostname": "switch-01",
 		},
 		IsEnabled: sdk.PtrBool(true),
-		Priority:  sdk.PtrFloat32(100),
+		Priority:  sdk.PtrInt32(100),
 		ApplyMode: ptrApplyMode(ValidApplyModes[0]),
 		Tags:      []string{"example"},
 	}

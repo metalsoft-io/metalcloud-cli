@@ -59,9 +59,9 @@ func Enable2FA(ctx context.Context, token string) error {
 
 	client := api.GetApiClient(ctx)
 
-	httpRes, err := client.UserAPI.EnableUser2FA(ctx).
+	recoveryCodes, httpRes, err := client.UserAPI.EnableUser2FA(ctx).
 		TwoFactorAuthenticationToken(sdk.TwoFactorAuthenticationToken{
-			Token: token,
+			Token: sdk.PtrString(token),
 		}).
 		IfMatch(revision).
 		Execute()
@@ -69,7 +69,7 @@ func Enable2FA(ctx context.Context, token string) error {
 		return err
 	}
 
-	fmt.Println("Two-factor authentication enabled successfully.")
+	fmt.Printf("Two-factor authentication enabled successfully. Recovery codes: %s\n", strings.Join(recoveryCodes.RecoveryCodes, ", "))
 	return nil
 }
 

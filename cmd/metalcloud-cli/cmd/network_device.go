@@ -592,103 +592,6 @@ Examples:
 			return network_device.NetworkDeviceEnableSyslog(cmd.Context(), args[0])
 		},
 	}
-
-	networkDeviceGetDefaultsCmd = &cobra.Command{
-		Use:   "get-defaults <site_id>",
-		Short: "Get default network device configuration settings for a site",
-		Long: `Retrieve the default configuration settings and templates that are applied
-to new network devices when they are added to a specific site.
-
-These defaults include standard configurations for:
-- Management network settings
-- VLAN configurations
-- Security policies
-- Monitoring settings
-- Device-specific parameters
-
-Arguments:
-  site_id   The unique identifier of the site
-
-Examples:
-  # Get defaults for site
-  metalcloud-cli network-device get-defaults site-123
-
-  # View defaults for current site
-  metalcloud-cli nd get-defaults my-datacenter`,
-		SilenceUsage: true,
-		Annotations:  map[string]string{system.REQUIRED_PERMISSION: system.PERMISSION_SWITCHES_READ},
-		Args:         cobra.ExactArgs(1),
-		RunE: func(cmd *cobra.Command, args []string) error {
-			return network_device.NetworkDeviceGetDefaults(cmd.Context(), args[0])
-		},
-	}
-
-	networkDeviceAddDefaultsCmd = &cobra.Command{
-		Use:   "add-defaults",
-		Short: "Add network device default configuration",
-		Long: `Add network device default configuration that will be applied to new
-devices when they are added to sites. These defaults provide consistent
-baseline configurations across your infrastructure.
-
-Default configurations can include:
-- Management network settings and credentials
-- Standard VLAN configurations
-- Security policies and access controls
-- Monitoring and logging settings
-- Device-specific operational parameters
-- Network topology preferences
-
-The configuration is provided via JSON file or pipe input and will be merged
-with existing defaults, allowing for incremental updates.
-
-Required Flags:
-  --config-source   Source of default configuration data (required)
-                   Values: 'pipe' for stdin input, or path to JSON file
-
-Use the 'example-defaults' command to see the configuration format:
-
-Examples:
-  # Add defaults from JSON file
-  metalcloud-cli network-device add-defaults --config-source defaults.json
-
-  # Add defaults from pipe input
-  cat site-defaults.json | metalcloud-cli network-device add-defaults --config-source pipe
-
-  # Update specific default settings
-  echo '{"syslogEnabled": true, "managementPort": 22}' | metalcloud-cli nd add-defaults --config-source pipe`,
-		SilenceUsage: true,
-		Annotations:  map[string]string{system.REQUIRED_PERMISSION: system.PERMISSION_SWITCHES_WRITE},
-		RunE: func(cmd *cobra.Command, args []string) error {
-			config, err := utils.ReadConfigFromPipeOrFile(networkDeviceFlags.configSource)
-			if err != nil {
-				return err
-			}
-
-			return network_device.NetworkDeviceAddDefaults(cmd.Context(), config)
-		},
-	}
-
-	networkDeviceDeleteDefaultsCmd = &cobra.Command{
-		Use:          "delete-defaults <site_id> <id>",
-		Aliases:      []string{"rm-defaults"},
-		Short:        "Remove network device default configuration for a site",
-		SilenceUsage: true,
-		Annotations:  map[string]string{system.REQUIRED_PERMISSION: system.PERMISSION_SWITCHES_WRITE},
-		Args:         cobra.ExactArgs(2),
-		RunE: func(cmd *cobra.Command, args []string) error {
-			return network_device.NetworkDeviceDeleteDefaults(cmd.Context(), args[0], args[1])
-		},
-	}
-
-	networkDeviceExampleDefaultsCmd = &cobra.Command{
-		Use:          "example-defaults",
-		Short:        "Network device default configuration example",
-		SilenceUsage: true,
-		Annotations:  map[string]string{system.REQUIRED_PERMISSION: system.PERMISSION_SWITCHES_WRITE},
-		RunE: func(cmd *cobra.Command, args []string) error {
-			return network_device.NetworkDeviceExampleDefaults(cmd.Context())
-		},
-	}
 )
 
 func init() {
@@ -750,14 +653,4 @@ func init() {
 	networkDeviceCmd.AddCommand(networkDeviceSetAsFailedCmd)
 
 	networkDeviceCmd.AddCommand(networkDeviceEnableSyslogCmd)
-
-	networkDeviceCmd.AddCommand(networkDeviceGetDefaultsCmd)
-
-	networkDeviceCmd.AddCommand(networkDeviceAddDefaultsCmd)
-	networkDeviceAddDefaultsCmd.Flags().StringVar(&networkDeviceFlags.configSource, "config-source", "", "Source of the network device default configuration. Can be 'pipe' or path to a JSON file.")
-	networkDeviceAddDefaultsCmd.MarkFlagRequired("config-source")
-
-	networkDeviceCmd.AddCommand(networkDeviceDeleteDefaultsCmd)
-
-	networkDeviceCmd.AddCommand(networkDeviceExampleDefaultsCmd)
 }

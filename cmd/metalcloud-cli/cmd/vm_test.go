@@ -9,36 +9,37 @@ import (
 )
 
 var vmPoolItem = map[string]interface{}{
-	"id":             1.0,
-	"siteId":         1.0,
-	"datacenterName": "dc1",
-	"managementHost": "vcenter.example.com",
-	"managementPort": 443.0,
-	"name":           "test-vm-pool",
-	"type":           "vmware",
-	"status":         "active",
-	"networkFabricId": 1.0,
+	"id":               1.0,
+	"siteId":           1.0,
+	"datacenterName":   "dc1",
+	"managementHost":   "vcenter.example.com",
+	"managementPort":   443.0,
+	"name":             "test-vm-pool",
+	"type":             "vmware",
+	"status":           "active",
+	"networkFabricId":  1.0,
 	"createdTimestamp": "2024-01-01T00:00:00Z",
 	"updatedTimestamp": "2024-01-01T00:00:00Z",
 }
 
 var vmTypeItem = map[string]interface{}{
-	"id":     1.0,
-	"name":   "test-vm-type",
+	"id":       1.0,
+	"name":     "test-vm-type",
 	"cpuCores": 4.0,
-	"ramGB":  8.0,
+	"ramGB":    8.0,
 }
 
 var vmInstanceGroupItem = map[string]interface{}{
-	"id":               1.0,
-	"revision":         1.0,
-	"label":            "test-vmig",
-	"infrastructureId": 1.0,
-	"infrastructure":   map[string]interface{}{"id": 1.0},
-	"serviceStatus":    "active",
-	"diskSizeGB":       20.0,
-	"createdTimestamp": "2024-01-01T00:00:00Z",
-	"updatedTimestamp": "2024-01-01T00:00:00Z",
+	"id":                1.0,
+	"revision":          1.0,
+	"label":             "test-vmig",
+	"instanceGroupType": "vm",
+	"infrastructureId":  1.0,
+	"infrastructure":    map[string]interface{}{"id": 1.0},
+	"serviceStatus":     "active",
+	"diskSizeGB":        20.0,
+	"createdTimestamp":  "2024-01-01T00:00:00Z",
+	"updatedTimestamp":  "2024-01-01T00:00:00Z",
 	"config": map[string]interface{}{
 		"revision":         1.0,
 		"label":            "test-vmig",

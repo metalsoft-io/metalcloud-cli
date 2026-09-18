@@ -209,7 +209,7 @@ func PointToPointLinkAddIpv4Strategy(ctx context.Context, linkId string, subnetI
 		scope["resourceId"] = scopeResourceId
 	}
 	strategy := map[string]any{
-		"kind":              string(sdk.POINTTOPOINTALLOCATIONSTRATEGYKIND_MANUAL),
+		"kind":              "manual",
 		"subnetId":          subnetId,
 		"scope":             scope,
 		"interfaceABinding": binding,
@@ -262,7 +262,7 @@ func PointToPointLinkConfigExample(ctx context.Context) error {
 		"ipv4": map[string]interface{}{
 			"subnetAllocationStrategies": []map[string]interface{}{
 				{
-					"kind":              string(sdk.POINTTOPOINTALLOCATIONSTRATEGYKIND_MANUAL),
+					"kind":              "manual",
 					"scope":             map[string]interface{}{"kind": string(sdk.RESOURCESCOPEKIND_GLOBAL)},
 					"subnetId":          12345,
 					"interfaceABinding": string(sdk.POINTTOPOINTINTERFACEBINDING_A_FIRST),

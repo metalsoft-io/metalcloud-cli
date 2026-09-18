@@ -320,7 +320,7 @@ func pointToPointInterface(interfaceId int64) map[string]any {
 // see CreateP2pLink for why this is built by hand rather than via the SDK.
 func manualStrategyBody(subnetId int64, binding string) map[string]any {
 	return map[string]any{
-		"kind":              string(sdk.POINTTOPOINTALLOCATIONSTRATEGYKIND_MANUAL),
+		"kind":              "manual",
 		"subnetId":          subnetId,
 		"scope":             map[string]any{"kind": string(sdk.RESOURCESCOPEKIND_GLOBAL)},
 		"interfaceABinding": binding,

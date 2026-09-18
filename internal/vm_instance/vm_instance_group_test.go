@@ -20,10 +20,10 @@ func infraHandler() http.HandlerFunc {
 				"id": float64(123), "label": "test-infra",
 				"serviceStatus": "active", "revision": float64(1),
 				"datacenterName": "dc1", "siteId": float64(1),
-				"designIsLocked": float64(0),
+				"designIsLocked":   float64(0),
 				"createdTimestamp": "2024-01-01T00:00:00Z",
 				"updatedTimestamp": "2024-01-01T00:00:00Z",
-				"config": map[string]any{}, "links": []any{},
+				"config":           map[string]any{}, "links": []any{},
 			},
 		},
 		"meta": map[string]any{"currentPage": 1, "totalPages": 1, "itemsPerPage": 100},
@@ -32,19 +32,25 @@ func infraHandler() http.HandlerFunc {
 
 func makeVMGroup(id int) map[string]any {
 	return map[string]any{
-		"id": id, "label": "vmg-1",
-		"infrastructureId": float64(123), "serviceStatus": "active",
-		"diskSizeGB": float64(50), "revision": float64(1),
-		"instanceCount": float64(2),
-		"createdTimestamp": "2024-01-01T00:00:00Z",
-		"updatedTimestamp": "2024-01-01T00:00:00Z",
-		"infrastructure": map[string]any{"id": float64(123)},
+		"id":                id,
+		"label":             "vmg-1",
+		"instanceGroupType": "vm",
+		"infrastructureId":  float64(123),
+		"serviceStatus":     "active",
+		"diskSizeGB":        float64(50),
+		"revision":          float64(1),
+		"instanceCount":     float64(2),
+		"createdTimestamp":  "2024-01-01T00:00:00Z",
+		"updatedTimestamp":  "2024-01-01T00:00:00Z",
+		"infrastructure":    map[string]any{"id": float64(123)},
 		"config": map[string]any{
-			"revision": float64(1), "label": "vmg-1",
+			"revision":         float64(1),
+			"label":            "vmg-1",
 			"updatedTimestamp": "2024-01-01T00:00:00Z",
-			"deployType": "deploy", "deployStatus": "not_started",
+			"deployType":       "deploy",
+			"deployStatus":     "not_started",
 		},
-		"meta": map[string]any{},
+		"meta":  map[string]any{},
 		"links": []any{},
 	}
 }
@@ -55,8 +61,8 @@ func TestVMInstanceGroupList_HappyPath(t *testing.T) {
 		"meta": map[string]any{"currentPage": 1, "totalPages": 1, "itemsPerPage": 100},
 	}
 	ts := testutils.NewTestServer(map[string]http.HandlerFunc{
-		"/api/v2/infrastructures":                          infraHandler(),
-		"/api/v2/infrastructures/123/vm-instance-groups":  testutils.JSONHandler(200, body),
+		"/api/v2/infrastructures":                        infraHandler(),
+		"/api/v2/infrastructures/123/vm-instance-groups": testutils.JSONHandler(200, body),
 	})
 	defer ts.Close()
 
@@ -68,7 +74,7 @@ func TestVMInstanceGroupList_HappyPath(t *testing.T) {
 
 func TestVMInstanceGroupList_500(t *testing.T) {
 	ts := testutils.NewTestServer(map[string]http.HandlerFunc{
-		"/api/v2/infrastructures":                         infraHandler(),
+		"/api/v2/infrastructures":                        infraHandler(),
 		"/api/v2/infrastructures/123/vm-instance-groups": testutils.ErrorHandler(500, "internal server error"),
 	})
 	defer ts.Close()
@@ -85,7 +91,7 @@ func TestVMInstanceGroupList_Empty(t *testing.T) {
 		"meta": map[string]any{"currentPage": 1, "totalPages": 1, "itemsPerPage": 100},
 	}
 	ts := testutils.NewTestServer(map[string]http.HandlerFunc{
-		"/api/v2/infrastructures":                         infraHandler(),
+		"/api/v2/infrastructures":                        infraHandler(),
 		"/api/v2/infrastructures/123/vm-instance-groups": testutils.JSONHandler(200, body),
 	})
 	defer ts.Close()
@@ -98,7 +104,7 @@ func TestVMInstanceGroupList_Empty(t *testing.T) {
 
 func TestVMInstanceGroupGet_HappyPath(t *testing.T) {
 	ts := testutils.NewTestServer(map[string]http.HandlerFunc{
-		"/api/v2/infrastructures":                           infraHandler(),
+		"/api/v2/infrastructures":                          infraHandler(),
 		"/api/v2/infrastructures/123/vm-instance-groups/1": testutils.JSONHandler(200, makeVMGroup(1)),
 	})
 	defer ts.Close()
@@ -111,7 +117,7 @@ func TestVMInstanceGroupGet_HappyPath(t *testing.T) {
 
 func TestVMInstanceGroupGet_404(t *testing.T) {
 	ts := testutils.NewTestServer(map[string]http.HandlerFunc{
-		"/api/v2/infrastructures":                             infraHandler(),
+		"/api/v2/infrastructures":                            infraHandler(),
 		"/api/v2/infrastructures/123/vm-instance-groups/999": testutils.ErrorHandler(404, "not found"),
 	})
 	defer ts.Close()

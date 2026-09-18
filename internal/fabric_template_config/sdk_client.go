@@ -176,7 +176,7 @@ func (c *sdkTemplateClient) CreateProfile(p profileCreate) error {
 		LifecycleStage:                lifecycleStagePtr(p.LifecycleStage),
 		Variables:                     p.Variables,
 		IsEnabled:                     sdk.PtrBool(p.IsEnabled),
-		Priority:                      sdk.PtrFloat32(p.Priority),
+		Priority:                      sdk.PtrInt32(p.Priority),
 		ApplyMode:                     applyModePtr(p.ApplyMode),
 	}
 	_, httpRes, err := c.api.DeviceConfigurationTemplateAPI.CreateDeviceConfigurationTemplateProfile(c.ctx).CreateDeviceConfigurationTemplateProfile(body).Execute()
@@ -187,7 +187,7 @@ func (c *sdkTemplateClient) UpdateProfile(id int64, p profileUpdate, revision st
 	body := sdk.UpdateDeviceConfigurationTemplateProfile{
 		Variables: p.Variables,
 		IsEnabled: sdk.PtrBool(p.IsEnabled),
-		Priority:  sdk.PtrFloat32(p.Priority),
+		Priority:  sdk.PtrInt32(p.Priority),
 		ApplyMode: applyModePtr(p.ApplyMode),
 	}
 	_, httpRes, err := c.api.DeviceConfigurationTemplateAPI.

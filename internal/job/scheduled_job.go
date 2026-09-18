@@ -16,7 +16,7 @@ import (
 	sdk "github.com/metalsoft-io/metalcloud-sdk-go"
 )
 
-type cronJobRaw struct {
+type scheduledJobRaw struct {
 	Id              interface{} `json:"id"`
 	Label           *string     `json:"label"`
 	FunctionName    *string     `json:"functionName"`
@@ -25,7 +25,7 @@ type cronJobRaw struct {
 	LifetimeSeconds interface{} `json:"lifetimeSeconds"`
 }
 
-var cronJobPrintConfig = formatter.PrintConfig{
+var scheduledJobPrintConfig = formatter.PrintConfig{
 	FieldsConfig: map[string]formatter.RecordFieldConfig{
 		"Id": {
 			Title: "ID",
@@ -73,12 +73,12 @@ var cronJobPrintConfig = formatter.PrintConfig{
 	},
 }
 
-func CronJobList(ctx context.Context) error {
-	logger.Get().Info().Msg("Listing cron jobs")
+func ScheduledJobList(ctx context.Context) error {
+	logger.Get().Info().Msg("Listing scheduled jobs")
 
 	client := api.GetApiClient(ctx)
 
-	request := client.JobAPI.GetCronJobs(ctx).SortBy([]string{"id:ASC"})
+	request := client.JobAPI.GetScheduledJobs(ctx).SortBy([]string{"id:ASC"})
 
 	rawItems, meta, err := utils.FetchAllPagesRaw(func(page float32) (*http.Response, error) {
 		_, httpRes, _ := request.Page(page).Limit(100).Execute()
@@ -88,26 +88,26 @@ func CronJobList(ctx context.Context) error {
 		return err
 	}
 
-	cronJobs, err := utils.UnmarshalRawItems[cronJobRaw](rawItems)
+	scheduledJobs, err := utils.UnmarshalRawItems[scheduledJobRaw](rawItems)
 	if err != nil {
-		return fmt.Errorf("failed to parse cron jobs: %w", err)
+		return fmt.Errorf("failed to parse scheduled jobs: %w", err)
 	}
 
-	return utils.PrintAllRaw(rawItems, cronJobs, meta, len(cronJobs), &cronJobPrintConfig)
+	return utils.PrintAllRaw(rawItems, scheduledJobs, meta, len(scheduledJobs), &scheduledJobPrintConfig)
 }
 
-func CronJobGet(ctx context.Context, cronJobId string) error {
-	logger.Get().Info().Msgf("Getting cron job '%s'", cronJobId)
+func ScheduledJobGet(ctx context.Context, scheduledJobId string) error {
+	logger.Get().Info().Msgf("Getting scheduled job '%s'", scheduledJobId)
 
-	id, err := getCronJobId(cronJobId)
+	id, err := getScheduledJobId(scheduledJobId)
 	if err != nil {
 		return err
 	}
 
 	client := api.GetApiClient(ctx)
 
-	// Raw-body parse: see cronJobRaw — the `params` type mismatch breaks typed decoding.
-	_, httpRes, sdkErr := client.JobAPI.GetCronJob(ctx, id).Execute()
+	// Raw-body parse: see scheduledJobRaw — the `params` type mismatch breaks typed decoding.
+	_, httpRes, sdkErr := client.JobAPI.GetScheduledJob(ctx, id).Execute()
 	if httpRes != nil && httpRes.StatusCode >= 400 {
 		return response_inspector.InspectResponse(httpRes, sdkErr)
 	}
@@ -120,80 +120,80 @@ func CronJobGet(ctx context.Context, cronJobId string) error {
 		return fmt.Errorf("failed to read response body: %w", err)
 	}
 
-	var cronJob cronJobRaw
-	if err := json.Unmarshal(body, &cronJob); err != nil {
-		return fmt.Errorf("failed to parse cron job: %w", err)
+	var scheduledJob scheduledJobRaw
+	if err := json.Unmarshal(body, &scheduledJob); err != nil {
+		return fmt.Errorf("failed to parse scheduled job: %w", err)
 	}
 
-	return formatter.PrintResult(cronJob, &cronJobPrintConfig)
+	return formatter.PrintResult(scheduledJob, &scheduledJobPrintConfig)
 }
 
-func CronJobCreate(ctx context.Context, configBytes []byte) error {
-	logger.Get().Info().Msg("Creating cron job")
+func ScheduledJobCreate(ctx context.Context, configBytes []byte) error {
+	logger.Get().Info().Msg("Creating scheduled job")
 
-	var cronJobConfig sdk.CreateCronJob
-	if err := utils.UnmarshalContent(configBytes, &cronJobConfig); err != nil {
+	var scheduledJobConfig sdk.ScheduledCronJob
+	if err := utils.UnmarshalContent(configBytes, &scheduledJobConfig); err != nil {
 		return err
 	}
 
 	client := api.GetApiClient(ctx)
 
-	_, httpRes, err := client.JobAPI.CreateCronJob(ctx).CreateCronJob(cronJobConfig).Execute()
+	_, httpRes, err := client.JobAPI.CreateScheduledJob(ctx).ScheduledCronJob(scheduledJobConfig).Execute()
 	if err := response_inspector.InspectResponse(httpRes, err); err != nil {
 		return err
 	}
 
-	fmt.Println("Cron job created successfully.")
+	fmt.Println("Scheduled job created successfully.")
 	return nil
 }
 
-func CronJobUpdate(ctx context.Context, cronJobId string, configBytes []byte) error {
-	logger.Get().Info().Msgf("Updating cron job '%s'", cronJobId)
+func ScheduledJobUpdate(ctx context.Context, scheduledJobId string, configBytes []byte) error {
+	logger.Get().Info().Msgf("Updating scheduled job '%s'", scheduledJobId)
 
-	id, err := getCronJobId(cronJobId)
+	id, err := getScheduledJobId(scheduledJobId)
 	if err != nil {
 		return err
 	}
 
-	var cronJobConfig sdk.UpdateCronJob
-	if err := utils.UnmarshalContent(configBytes, &cronJobConfig); err != nil {
+	var scheduledJobConfig sdk.UpdateScheduledJob
+	if err := utils.UnmarshalContent(configBytes, &scheduledJobConfig); err != nil {
 		return err
 	}
 
 	client := api.GetApiClient(ctx)
 
-	_, httpRes, err := client.JobAPI.UpdateCronJob(ctx, float32(id)).UpdateCronJob(cronJobConfig).Execute()
+	_, httpRes, err := client.JobAPI.UpdateScheduledJob(ctx, float32(id)).UpdateScheduledJob(scheduledJobConfig).Execute()
 	if err := response_inspector.InspectResponse(httpRes, err); err != nil {
 		return err
 	}
 
-	fmt.Println("Cron job updated successfully.")
+	fmt.Println("Scheduled job updated successfully.")
 	return nil
 }
 
-func CronJobDelete(ctx context.Context, cronJobId string) error {
-	logger.Get().Info().Msgf("Deleting cron job '%s'", cronJobId)
+func ScheduledJobDelete(ctx context.Context, scheduledJobId string) error {
+	logger.Get().Info().Msgf("Deleting scheduled job '%s'", scheduledJobId)
 
-	id, err := getCronJobId(cronJobId)
+	id, err := getScheduledJobId(scheduledJobId)
 	if err != nil {
 		return err
 	}
 
 	client := api.GetApiClient(ctx)
 
-	httpRes, err := client.JobAPI.DeleteCronJob(ctx, id).Execute()
+	httpRes, err := client.JobAPI.DeleteScheduledJob(ctx, id).Execute()
 	if err := response_inspector.InspectResponse(httpRes, err); err != nil {
 		return err
 	}
 
-	fmt.Println("Cron job deleted.")
+	fmt.Println("Scheduled job deleted.")
 	return nil
 }
 
-func getCronJobId(cronJobId string) (int64, error) {
-	id, err := strconv.ParseInt(cronJobId, 10, 64)
+func getScheduledJobId(scheduledJobId string) (int64, error) {
+	id, err := strconv.ParseInt(scheduledJobId, 10, 64)
 	if err != nil {
-		return 0, fmt.Errorf("invalid cron job ID '%s': %w", cronJobId, err)
+		return 0, fmt.Errorf("invalid scheduled job ID '%s': %w", scheduledJobId, err)
 	}
 	return id, nil
 }

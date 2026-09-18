@@ -20,6 +20,7 @@ var vmInstanceItem = map[string]interface{}{
 	"id":               1.0,
 	"revision":         1.0,
 	"label":            "test-vm-instance",
+	"instanceType":     "vm",
 	"infrastructureId": 1.0,
 	"infrastructure":   map[string]interface{}{"id": 1.0},
 	"groupId":          1.0,

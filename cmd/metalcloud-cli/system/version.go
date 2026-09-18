@@ -11,9 +11,9 @@ import (
 )
 
 const minMajor = 7
-const minMinor = 4
+const minMinor = 5
 const maxMajor = 7
-const maxMinor = 4
+const maxMinor = 5
 
 var AllowDevelop bool
 

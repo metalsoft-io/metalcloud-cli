@@ -23,14 +23,14 @@ func userCoreFields() map[string]any {
 		"isSuspended": false, "authenticatorEnabled": false,
 		"passwordChangeRequired": false, "authenticatorMustChange": false,
 		"authenticatorCreatedTimestamp": "",
-		"excludeFromReports": false, "isTestAccount": false,
+		"excludeFromReports":            false, "isTestAccount": false,
 		"isDatastorePublisher": false, "isBrandManager": false,
 		"provider": "local", "franchise": "default",
 		"planType": "default", "lastLoginType": "password",
-		"lastLoginTimestamp": "2024-01-01T00:00:00Z",
+		"lastLoginTimestamp":           "2024-01-01T00:00:00Z",
 		"passwordLastChangedTimestamp": "2024-01-01T00:00:00Z",
-		"createdTimestamp": "2024-01-01T00:00:00Z",
-		"revision": float64(1),
+		"createdTimestamp":             "2024-01-01T00:00:00Z",
+		"revision":                     float64(1),
 	}
 }
 
@@ -329,35 +329,39 @@ func TestUnsuspend_500(t *testing.T) {
 // or typed unmarshalling fails.
 func makeUserLimits() map[string]any {
 	effective := map[string]any{
-		"infrastructureServerGroupMaxCount":     float64(10),
-		"infrastructureDriveMaxCount":           float64(10),
-		"infrastructureFileShareMaxCount":       float64(10),
-		"infrastructureBucketMaxCount":          float64(10),
-		"infrastructureVmInstanceGroupMaxCount": float64(10),
-		"serverGroupInstancesMaxCount":          float64(10),
-		"serverGroupInstancesMinCount":          float64(1),
-		"vmInstanceGroupVmInstancesMaxCount":    float64(10),
-		"vmInstanceMaxDiskSizeMbytes":           float64(1048576),
-		"driveMaxSizeMbytes":                    float64(1048576),
-		"driveMinSizeMbytes":                    float64(1024),
-		"fileShareMinSizeGb":                    float64(1),
-		"fileShareMaxSizeGb":                    float64(1024),
-		"bucketMinSizeGb":                       float64(1),
-		"bucketMaxSizeGb":                       float64(1024),
-		"showOperatingSystemImagesTab":          true,
-		"showTemplateAssetsView":                true,
-		"userResourceServerTypeNameToMaxCount":  map[string]any{},
-		"userSshKeysCountMax":                   float64(10),
-		"showLegacyPages":                       false,
-		"showEliChatBot":                        false,
-		"enableCustomRaidConfiguration":         true,
-		"enableInfrastructureVmInstance":        true,
-		"enableInfrastructureExtensions":        true,
-		"allowedInfrastructureExtensions":       []any{},
-		"allowedServerTypes":                    []any{},
-		"allowedSites":                          []any{},
-		"allowedLogicalNetworkProfiles":         []any{},
-		"allowedPreCreatedLogicalNetworks":      []any{},
+		"infrastructureServerGroupMaxCount":                float64(10),
+		"infrastructureDriveMaxCount":                      float64(10),
+		"infrastructureFileShareMaxCount":                  float64(10),
+		"infrastructureBucketMaxCount":                     float64(10),
+		"infrastructureVmInstanceGroupMaxCount":            float64(10),
+		"infrastructureContainerInstanceGroupMaxCount":     float64(10),
+		"serverGroupInstancesMaxCount":                     float64(10),
+		"serverGroupInstancesMinCount":                     float64(1),
+		"vmInstanceGroupVmInstancesMaxCount":               float64(10),
+		"containerInstanceGroupContainerInstancesMaxCount": float64(10),
+		"vmInstanceMaxDiskSizeMbytes":                      float64(1048576),
+		"containerInstanceMaxDiskSizeMbytes":               float64(1048576),
+		"driveMaxSizeMbytes":                               float64(1048576),
+		"driveMinSizeMbytes":                               float64(1024),
+		"fileShareMinSizeGb":                               float64(1),
+		"fileShareMaxSizeGb":                               float64(1024),
+		"bucketMinSizeGb":                                  float64(1),
+		"bucketMaxSizeGb":                                  float64(1024),
+		"showOperatingSystemImagesTab":                     true,
+		"showTemplateAssetsView":                           true,
+		"userResourceServerTypeNameToMaxCount":             map[string]any{},
+		"userSshKeysCountMax":                              float64(10),
+		"showLegacyPages":                                  false,
+		"showEliChatBot":                                   false,
+		"enableCustomRaidConfiguration":                    true,
+		"enableInfrastructureVmInstance":                   true,
+		"enableInfrastructureContainerInstance":            true,
+		"enableInfrastructureExtensions":                   true,
+		"allowedInfrastructureExtensions":                  []any{},
+		"allowedServerTypes":                               []any{},
+		"allowedSites":                                     []any{},
+		"allowedLogicalNetworkProfiles":                    []any{},
+		"allowedPreCreatedLogicalNetworks":                 []any{},
 	}
 	return map[string]any{
 		"effective": effective,
@@ -402,8 +406,8 @@ func TestGetLimits_InvalidId(t *testing.T) {
 
 func TestSetPassword_HappyPath(t *testing.T) {
 	routes := map[string]http.HandlerFunc{
-		"/api/v2/users/1":                        testutils.JSONHandler(200, makeUser(1)),
-		"/api/v2/users/1/actions/set-password":   testutils.JSONHandler(200, makeUser(1)),
+		"/api/v2/users/1":                      testutils.JSONHandler(200, makeUser(1)),
+		"/api/v2/users/1/actions/set-password": testutils.JSONHandler(200, makeUser(1)),
 	}
 	ts := testutils.NewTestServer(routes)
 	defer ts.Close()
@@ -416,8 +420,8 @@ func TestSetPassword_HappyPath(t *testing.T) {
 
 func TestSetPassword_500(t *testing.T) {
 	routes := map[string]http.HandlerFunc{
-		"/api/v2/users/1":                       testutils.JSONHandler(200, makeUser(1)),
-		"/api/v2/users/1/actions/set-password":  testutils.ErrorHandler(500, "internal server error"),
+		"/api/v2/users/1":                      testutils.JSONHandler(200, makeUser(1)),
+		"/api/v2/users/1/actions/set-password": testutils.ErrorHandler(500, "internal server error"),
 	}
 	ts := testutils.NewTestServer(routes)
 	defer ts.Close()
@@ -442,8 +446,8 @@ func TestSetPassword_InvalidId(t *testing.T) {
 
 func TestChangeAccount_HappyPath(t *testing.T) {
 	routes := map[string]http.HandlerFunc{
-		"/api/v2/users/1":                         testutils.JSONHandler(200, makeUser(1)),
-		"/api/v2/users/1/actions/change-account":  testutils.JSONHandler(200, makeUser(1)),
+		"/api/v2/users/1":                        testutils.JSONHandler(200, makeUser(1)),
+		"/api/v2/users/1/actions/change-account": testutils.JSONHandler(200, makeUser(1)),
 	}
 	ts := testutils.NewTestServer(routes)
 	defer ts.Close()
