@@ -32,12 +32,18 @@ metalcloud-cli [flags]
 * [metalcloud-cli account](metalcloud-cli_account.md)	 - Manage user accounts and account-related operations
 * [metalcloud-cli auth](metalcloud-cli_auth.md)	 - Manage authentication settings
 * [metalcloud-cli bucket](metalcloud-cli_bucket.md)	 - Manage S3-compatible object storage buckets
+* [metalcloud-cli container](metalcloud-cli_container.md)	 - Manage provisioned containers
+* [metalcloud-cli container-instance](metalcloud-cli_container-instance.md)	 - Manage container instances within infrastructures
+* [metalcloud-cli container-instance-group](metalcloud-cli_container-instance-group.md)	 - Manage container instance groups within infrastructures
+* [metalcloud-cli container-type](metalcloud-cli_container-type.md)	 - Manage container types
 * [metalcloud-cli custom-iso](metalcloud-cli_custom-iso.md)	 - Manage custom ISO images for server provisioning
 * [metalcloud-cli device-config-template](metalcloud-cli_device-config-template.md)	 - Manage device configuration templates and profiles
 * [metalcloud-cli dhcp-reservation](metalcloud-cli_dhcp-reservation.md)	 - Manage site DHCP reservations
 * [metalcloud-cli dns-zone](metalcloud-cli_dns-zone.md)	 - DNS Zone management
 * [metalcloud-cli drive](metalcloud-cli_drive.md)	 - Manage drives within infrastructures
 * [metalcloud-cli endpoint](metalcloud-cli_endpoint.md)	 - Endpoint management
+* [metalcloud-cli endpoint-instance](metalcloud-cli_endpoint-instance.md)	 - Endpoint instance management
+* [metalcloud-cli endpoint-instance-group](metalcloud-cli_endpoint-instance-group.md)	 - Endpoint instance group management
 * [metalcloud-cli event](metalcloud-cli_event.md)	 - Manage and monitor system events
 * [metalcloud-cli extension](metalcloud-cli_extension.md)	 - Manage platform extensions for workflows, applications, and actions
 * [metalcloud-cli extension-instance](metalcloud-cli_extension-instance.md)	 - Manage extension instances within infrastructure deployments
