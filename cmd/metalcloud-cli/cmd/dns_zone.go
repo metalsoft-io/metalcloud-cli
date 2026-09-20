@@ -36,7 +36,7 @@ managed individually with their associated record sets.
 
 Available command categories:
   - Basic operations: list, get, create, update, delete
-  - Record management: list-records, get-record
+  - Record management: records (one zone or all zones), record
   - Information: nameservers
 
 Use "metalcloud-cli dns-zone [command] --help" for detailed information about each command.
@@ -214,14 +214,81 @@ Examples:
 	}
 
 	dnsZoneRecordsCmd = &cobra.Command{
-		Use:          "records zone_id",
-		Aliases:      []string{"record-sets"},
-		Short:        "List DNS record sets in a zone",
+		Use:     "records [zone_id]",
+		Aliases: []string{"record-sets"},
+		Short:   "List DNS record sets",
+		Long: `List DNS record sets.
+
+Called with a zone ID the command lists the record sets of that zone. Called
+without an argument it lists every record set of every zone through the global
+record set endpoint.
+
+Optional Arguments:
+  zone_id    The ID of the DNS zone. When omitted, the record sets of all zones
+             are listed.
+
+Examples:
+  # List the record sets of zone 123
+  metalcloud-cli dns-zone records 123
+
+  # List the record sets of all zones
+  metalcloud-cli dns-zone records
+`,
+		SilenceUsage: true,
+		Annotations:  map[string]string{system.REQUIRED_PERMISSION: system.PERMISSION_GLOBAL_CONFIGURATIONS_READ},
+		Args:         cobra.MaximumNArgs(1),
+		RunE: func(cmd *cobra.Command, args []string) error {
+			if len(args) == 0 {
+				return dns_zone.DNSZoneRecords(cmd.Context(), "")
+			}
+
+			return dns_zone.DNSZoneRecords(cmd.Context(), args[0])
+		},
+	}
+
+	dnsZoneRecordCmd = &cobra.Command{
+		Use:     "record zone_id record_set_id",
+		Aliases: []string{"record-set", "get-record"},
+		Short:   "Get a single DNS record set",
+		Long: `Get the details of a single DNS record set of a zone.
+
+Required Arguments:
+  zone_id          The ID of the DNS zone
+  record_set_id    The ID of the DNS record set
+
+Examples:
+  # Get record set 456 of zone 123
+  metalcloud-cli dns-zone record 123 456
+`,
+		SilenceUsage: true,
+		Annotations:  map[string]string{system.REQUIRED_PERMISSION: system.PERMISSION_GLOBAL_CONFIGURATIONS_READ},
+		Args:         cobra.ExactArgs(2),
+		RunE: func(cmd *cobra.Command, args []string) error {
+			return dns_zone.DNSZoneRecord(cmd.Context(), args[0], args[1])
+		},
+	}
+
+	dnsZoneNameserversCmd = &cobra.Command{
+		Use:     "nameservers dns_zone_id",
+		Aliases: []string{"ns"},
+		Short:   "List the nameservers of a DNS zone",
+		Long: `List the nameservers configured for a DNS zone.
+
+Required Arguments:
+  dns_zone_id    The ID of the DNS zone
+
+Examples:
+  # List the nameservers of zone 123
+  metalcloud-cli dns-zone nameservers 123
+
+  # List them as JSON
+  metalcloud-cli dns-zone nameservers 123 -f json
+`,
 		SilenceUsage: true,
 		Annotations:  map[string]string{system.REQUIRED_PERMISSION: system.PERMISSION_GLOBAL_CONFIGURATIONS_READ},
 		Args:         cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
-			return dns_zone.DNSZoneRecords(cmd.Context(), args[0])
+			return dns_zone.DNSZoneNameservers(cmd.Context(), args[0])
 		},
 	}
 
@@ -283,4 +350,8 @@ func init() {
 	dnsZoneCmd.AddCommand(dnsZoneDeleteCmd)
 
 	dnsZoneCmd.AddCommand(dnsZoneRecordsCmd)
+
+	dnsZoneCmd.AddCommand(dnsZoneRecordCmd)
+
+	dnsZoneCmd.AddCommand(dnsZoneNameserversCmd)
 }

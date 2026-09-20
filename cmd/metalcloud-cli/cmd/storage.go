@@ -17,6 +17,14 @@ var (
 		page             string
 	}{}
 
+	storageUpdateFlags = struct {
+		configSource string
+	}{}
+
+	storageInterfaceFlags = struct {
+		configSource string
+	}{}
+
 	storageCmd = &cobra.Command{
 		Use:     "storage [command]",
 		Aliases: []string{"storage-pool"},
@@ -38,6 +46,15 @@ Available commands:
   file-shares      List file shares in a storage pool
   buckets          List object storage buckets in a storage pool
   network-configs  List network device configurations for a storage pool
+  update           Update an existing storage pool
+  interfaces       List the interfaces of a storage pool
+  interface        Get one interface of a storage pool
+  update-interface Update one interface of a storage pool
+  statistics       Show capacity statistics for one or for all storage pools
+
+  scoped-access-users             List the scoped access users of a storage pool
+  scoped-access-user              Get one scoped access user of a storage pool
+  scoped-access-user-credentials  Get the credentials of a scoped access user
 
 Use "metalcloud storage [command] --help" for more information about a command.`,
 	}
@@ -355,6 +372,225 @@ Examples:
 			return storage.StorageGetBuckets(cmd.Context(), args[0], limit, page)
 		},
 	}
+
+	storageUpdateCmd = &cobra.Command{
+		Use:     "update storage_id",
+		Aliases: []string{"edit"},
+		Short:   "Update an existing storage pool",
+		Long: `Update an existing storage pool from a JSON or YAML configuration.
+
+Only the mutable properties of a storage pool can be changed (maintenance and
+experimental flags, drive priorities, tags, network fabric, options and
+credentials). The current revision of the storage pool is read first and sent
+back as the If-Match entity tag, so a concurrent change is rejected by the API
+instead of being silently overwritten.
+
+Required Arguments:
+  storage_id    The numeric ID of the storage pool to update
+
+Required Flags:
+  --config-source   Source of the storage update configuration. Can be 'pipe' or path to a JSON/YAML file.
+
+Examples:
+  # Update a storage pool from a file
+  metalcloud-cli storage update 123 --config-source ./storage-update.json
+
+  # Put a storage pool in maintenance from piped input
+  echo '{"inMaintenance": 1}' | metalcloud-cli storage update 123 --config-source pipe`,
+		SilenceUsage: true,
+		Annotations:  map[string]string{system.REQUIRED_PERMISSION: system.PERMISSION_STORAGE_WRITE},
+		Args:         cobra.ExactArgs(1),
+		RunE: func(cmd *cobra.Command, args []string) error {
+			config, err := utils.ReadConfigFromPipeOrFile(storageUpdateFlags.configSource)
+			if err != nil {
+				return err
+			}
+
+			return storage.StorageUpdate(cmd.Context(), args[0], config)
+		},
+	}
+
+	storageGetInterfacesCmd = &cobra.Command{
+		Use:     "interfaces storage_id",
+		Aliases: []string{"list-interfaces"},
+		Short:   "List the interfaces of a storage pool",
+		Long: `List all interfaces of a storage pool.
+
+The output shows each interface ID, its name, the protocols it serves, the
+storage nodes it belongs to, whether it is an uplink, whether it is used for
+deploys and the network device interface it is linked to.
+
+Required Arguments:
+  storage_id    The numeric ID of the storage pool
+
+Examples:
+  # List the interfaces of storage pool 123
+  metalcloud-cli storage interfaces 123`,
+		SilenceUsage: true,
+		Annotations:  map[string]string{system.REQUIRED_PERMISSION: system.PERMISSION_STORAGE_READ},
+		Args:         cobra.ExactArgs(1),
+		RunE: func(cmd *cobra.Command, args []string) error {
+			return storage.StorageGetInterfaces(cmd.Context(), args[0])
+		},
+	}
+
+	storageGetInterfaceCmd = &cobra.Command{
+		Use:     "interface storage_id interface_id",
+		Aliases: []string{"get-interface"},
+		Short:   "Get one interface of a storage pool",
+		Long: `Get the details of a single storage pool interface.
+
+Required Arguments:
+  storage_id      The numeric ID of the storage pool
+  interface_id    The numeric ID of the storage interface
+
+Examples:
+  # Get interface 7 of storage pool 123
+  metalcloud-cli storage interface 123 7`,
+		SilenceUsage: true,
+		Annotations:  map[string]string{system.REQUIRED_PERMISSION: system.PERMISSION_STORAGE_READ},
+		Args:         cobra.ExactArgs(2),
+		RunE: func(cmd *cobra.Command, args []string) error {
+			return storage.StorageGetInterface(cmd.Context(), args[0], args[1])
+		},
+	}
+
+	storageUpdateInterfaceCmd = &cobra.Command{
+		Use:   "update-interface storage_id interface_id",
+		Short: "Update one interface of a storage pool",
+		Long: `Update a storage pool interface from a JSON or YAML configuration.
+
+The updatable properties are isUplink, useForDeploys and
+networkEquipmentInterfaceId. The current revision of the interface is read
+first and sent back as the If-Match entity tag.
+
+Required Arguments:
+  storage_id      The numeric ID of the storage pool
+  interface_id    The numeric ID of the storage interface
+
+Required Flags:
+  --config-source   Source of the interface update configuration. Can be 'pipe' or path to a JSON/YAML file.
+
+Examples:
+  # Mark an interface as the one used for deploys
+  echo '{"useForDeploys": true}' | metalcloud-cli storage update-interface 123 7 --config-source pipe
+
+  # Update an interface from a file
+  metalcloud-cli storage update-interface 123 7 --config-source ./interface.json`,
+		SilenceUsage: true,
+		Annotations:  map[string]string{system.REQUIRED_PERMISSION: system.PERMISSION_STORAGE_WRITE},
+		Args:         cobra.ExactArgs(2),
+		RunE: func(cmd *cobra.Command, args []string) error {
+			config, err := utils.ReadConfigFromPipeOrFile(storageInterfaceFlags.configSource)
+			if err != nil {
+				return err
+			}
+
+			return storage.StorageUpdateInterface(cmd.Context(), args[0], args[1], config)
+		},
+	}
+
+	storageGetScopedAccessUsersCmd = &cobra.Command{
+		Use:     "scoped-access-users storage_id",
+		Aliases: []string{"list-scoped-access-users"},
+		Short:   "List the scoped access users of a storage pool",
+		Long: `List the scoped access users provisioned on a storage pool.
+
+Scoped access users are per-infrastructure accounts created on the storage
+system so that an infrastructure can only access its own storage resources.
+
+Required Arguments:
+  storage_id    The numeric ID of the storage pool
+
+Examples:
+  # List the scoped access users of storage pool 123
+  metalcloud-cli storage scoped-access-users 123`,
+		SilenceUsage: true,
+		Annotations:  map[string]string{system.REQUIRED_PERMISSION: system.PERMISSION_STORAGE_READ},
+		Args:         cobra.ExactArgs(1),
+		RunE: func(cmd *cobra.Command, args []string) error {
+			return storage.StorageGetScopedAccessUsers(cmd.Context(), args[0])
+		},
+	}
+
+	storageGetScopedAccessUserCmd = &cobra.Command{
+		Use:     "scoped-access-user storage_id user_id",
+		Aliases: []string{"get-scoped-access-user"},
+		Short:   "Get one scoped access user of a storage pool",
+		Long: `Get the details of a single scoped access user of a storage pool.
+
+Required Arguments:
+  storage_id    The numeric ID of the storage pool
+  user_id       The numeric ID of the scoped access user
+
+Examples:
+  # Get scoped access user 42 of storage pool 123
+  metalcloud-cli storage scoped-access-user 123 42`,
+		SilenceUsage: true,
+		Annotations:  map[string]string{system.REQUIRED_PERMISSION: system.PERMISSION_STORAGE_READ},
+		Args:         cobra.ExactArgs(2),
+		RunE: func(cmd *cobra.Command, args []string) error {
+			return storage.StorageGetScopedAccessUser(cmd.Context(), args[0], args[1])
+		},
+	}
+
+	storageGetScopedAccessUserCredentialsCmd = &cobra.Command{
+		Use:     "scoped-access-user-credentials storage_id user_id",
+		Aliases: []string{"scoped-access-user-creds"},
+		Short:   "Get the credentials of a scoped access user",
+		Long: `Get the credentials (username, password and/or API token) of a scoped access
+user of a storage pool.
+
+Required Arguments:
+  storage_id    The numeric ID of the storage pool
+  user_id       The numeric ID of the scoped access user
+
+Examples:
+  # Get the credentials of scoped access user 42 of storage pool 123
+  metalcloud-cli storage scoped-access-user-credentials 123 42
+
+  # Save the credentials as JSON
+  metalcloud-cli storage scoped-access-user-credentials 123 42 -f json > creds.json`,
+		SilenceUsage: true,
+		Annotations:  map[string]string{system.REQUIRED_PERMISSION: system.PERMISSION_STORAGE_READ},
+		Args:         cobra.ExactArgs(2),
+		RunE: func(cmd *cobra.Command, args []string) error {
+			return storage.StorageGetScopedAccessUserCredentials(cmd.Context(), args[0], args[1])
+		},
+	}
+
+	storageStatisticsCmd = &cobra.Command{
+		Use:     "statistics [storage_id]",
+		Aliases: []string{"stats"},
+		Short:   "Show capacity statistics for one or for all storage pools",
+		Long: `Show storage capacity statistics.
+
+Called without an argument the command returns the global statistics of all
+storage pools (counts per state and per type, total used and free space).
+Called with a storage pool ID it returns the total, used and free capacity of
+that single storage pool.
+
+Optional Arguments:
+  storage_id    The numeric ID of a storage pool. When omitted, global
+                statistics for all storage pools are returned.
+
+Examples:
+  # Global statistics for all storage pools
+  metalcloud-cli storage statistics
+
+  # Statistics for storage pool 123
+  metalcloud-cli storage statistics 123`,
+		SilenceUsage: true,
+		Annotations:  map[string]string{system.REQUIRED_PERMISSION: system.PERMISSION_STORAGE_READ},
+		Args:         cobra.MaximumNArgs(1),
+		RunE: func(cmd *cobra.Command, args []string) error {
+			if len(args) == 0 {
+				return storage.StoragesGetStatistics(cmd.Context())
+			}
+
+			return storage.StorageGetStatistics(cmd.Context(), args[0])
+		},
+	}
 )
 
 func init() {
@@ -389,4 +625,24 @@ func init() {
 	storageCmd.AddCommand(storageGetBucketsCmd)
 	storageGetBucketsCmd.Flags().StringVar(&storageFlags.limit, "limit", "", "Number of records per page")
 	storageGetBucketsCmd.Flags().StringVar(&storageFlags.page, "page", "", "Page number")
+
+	storageCmd.AddCommand(storageUpdateCmd)
+	storageUpdateCmd.Flags().StringVar(&storageUpdateFlags.configSource, "config-source", "", "Source of the storage update configuration. Can be 'pipe' or path to a JSON file.")
+	storageUpdateCmd.MarkFlagsOneRequired("config-source")
+
+	storageCmd.AddCommand(storageGetInterfacesCmd)
+
+	storageCmd.AddCommand(storageGetInterfaceCmd)
+
+	storageCmd.AddCommand(storageUpdateInterfaceCmd)
+	storageUpdateInterfaceCmd.Flags().StringVar(&storageInterfaceFlags.configSource, "config-source", "", "Source of the storage interface update configuration. Can be 'pipe' or path to a JSON file.")
+	storageUpdateInterfaceCmd.MarkFlagsOneRequired("config-source")
+
+	storageCmd.AddCommand(storageGetScopedAccessUsersCmd)
+
+	storageCmd.AddCommand(storageGetScopedAccessUserCmd)
+
+	storageCmd.AddCommand(storageGetScopedAccessUserCredentialsCmd)
+
+	storageCmd.AddCommand(storageStatisticsCmd)
 }

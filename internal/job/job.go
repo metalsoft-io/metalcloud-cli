@@ -1,12 +1,10 @@
 package job
 
 import (
-	"bytes"
 	"context"
 	"encoding/json"
 	"fmt"
 	"io"
-	"net/http"
 	"strconv"
 
 	sdk "github.com/metalsoft-io/metalcloud-sdk-go"
@@ -135,11 +133,14 @@ func JobGet(ctx context.Context, jobId string) error {
 func JobSkip(ctx context.Context, jobId string) error {
 	logger.Get().Info().Msgf("Skipping job '%s'", jobId)
 
-	if err := validateJobId(jobId); err != nil {
+	id, err := getJobId(jobId)
+	if err != nil {
 		return err
 	}
 
-	httpRes, err := jobAction(ctx, jobId, "skip", nil)
+	client := api.GetApiClient(ctx)
+
+	httpRes, err := client.JobAPI.SkipJob(ctx, id).Execute()
 	if err := response_inspector.InspectResponse(httpRes, err); err != nil {
 		return err
 	}
@@ -151,7 +152,8 @@ func JobSkip(ctx context.Context, jobId string) error {
 func JobRetry(ctx context.Context, jobId string, retryEvenIfSuccessful bool) error {
 	logger.Get().Info().Msgf("Retrying job '%s'", jobId)
 
-	if err := validateJobId(jobId); err != nil {
+	id, err := getJobId(jobId)
+	if err != nil {
 		return err
 	}
 
@@ -160,7 +162,11 @@ func JobRetry(ctx context.Context, jobId string, retryEvenIfSuccessful bool) err
 		retryInfo.SetRetryEvenIfSuccessful(retryEvenIfSuccessful)
 	}
 
-	httpRes, err := jobAction(ctx, jobId, "retry", retryInfo)
+	client := api.GetApiClient(ctx)
+
+	// The retry body is mandatory for the SDK request: leaving it unset sends a
+	// literal `null` body which the API rejects with 400.
+	httpRes, err := client.JobAPI.RetryJob(ctx, id).JobRetryInfo(*retryInfo).Execute()
 	if err := response_inspector.InspectResponse(httpRes, err); err != nil {
 		return err
 	}
@@ -172,16 +178,11 @@ func JobRetry(ctx context.Context, jobId string, retryEvenIfSuccessful bool) err
 func JobKill(ctx context.Context, jobId string) error {
 	logger.Get().Info().Msgf("Killing job '%s'", jobId)
 
-	if err := validateJobId(jobId); err != nil {
-		return err
-	}
-
 	commandInfo := sdk.NewJobCommandInfo()
 	commandInfo.SetCommand("kill")
 	commandInfo.SetExecuteImmediately(true)
 
-	httpRes, err := jobAction(ctx, jobId, "issue-command", commandInfo)
-	if err := response_inspector.InspectResponse(httpRes, err); err != nil {
+	if err := JobIssueCommand(ctx, jobId, *commandInfo); err != nil {
 		return err
 	}
 
@@ -189,81 +190,24 @@ func JobKill(ctx context.Context, jobId string) error {
 	return nil
 }
 
-// jobAction performs a POST to /api/v2/jobs/{jobId}/actions/{action} bypassing
-// the SDK's float32 jobId parameter which loses precision for IDs > 16,777,216.
-func jobAction(ctx context.Context, jobId string, action string, body interface{}) (*http.Response, error) {
-	return jobRequest(ctx, http.MethodPost, fmt.Sprintf("/api/v2/jobs/%s/actions/%s", jobId, action), body)
-}
+// JobIssueCommand issues an operational command (e.g. "kill") for a job.
+func JobIssueCommand(ctx context.Context, jobId string, commandInfo sdk.JobCommandInfo) error {
+	logger.Get().Info().Msgf("Issuing command for job '%s'", jobId)
 
-// jobRequest performs a direct HTTP request against the API, bypassing the
-// SDK's float32 jobId path parameter which loses precision for IDs > 16,777,216.
-func jobRequest(ctx context.Context, method string, path string, body interface{}) (*http.Response, error) {
-	client := api.GetApiClient(ctx)
-	cfg := client.GetConfig()
-
-	baseURL, err := cfg.ServerURL(0, nil)
+	id, err := getJobId(jobId)
 	if err != nil {
-		return nil, err
-	}
-
-	url := baseURL + path
-
-	var reqBody *bytes.Buffer
-	if body != nil {
-		data, err := json.Marshal(body)
-		if err != nil {
-			return nil, err
-		}
-		reqBody = bytes.NewBuffer(data)
-	} else {
-		reqBody = &bytes.Buffer{}
-	}
-
-	req, err := http.NewRequestWithContext(ctx, method, url, reqBody)
-	if err != nil {
-		return nil, err
-	}
-
-	if body != nil {
-		req.Header.Set("Content-Type", "application/json")
-	}
-
-	if auth, ok := ctx.Value(sdk.ContextAccessToken).(string); ok {
-		req.Header.Set("Authorization", "Bearer "+auth)
-	}
-
-	httpClient := cfg.HTTPClient
-	if httpClient == nil {
-		httpClient = http.DefaultClient
-	}
-
-	resp, err := httpClient.Do(req)
-	if err != nil {
-		return resp, err
-	}
-
-	// Read and re-wrap the body so that response_inspector.InspectResponse
-	// can format it properly (it uses %s on httpRes.Body).
-	respBody, err := io.ReadAll(resp.Body)
-	resp.Body.Close()
-	resp.Body = io.NopCloser(bytes.NewBuffer(respBody))
-	if err != nil {
-		return resp, err
-	}
-
-	if resp.StatusCode >= 300 {
-		return resp, fmt.Errorf("%s - %s", resp.Status, string(respBody))
-	}
-
-	return resp, nil
-}
-
-func validateJobId(jobId string) error {
-	if _, err := strconv.Atoi(jobId); err != nil {
-		err := fmt.Errorf("invalid job ID: '%s'", jobId)
-		logger.Get().Error().Err(err).Msg("")
 		return err
 	}
+
+	client := api.GetApiClient(ctx)
+
+	// The command body is mandatory for the SDK request: leaving it unset sends
+	// a literal `null` body which the API rejects with 400.
+	httpRes, err := client.JobAPI.IssueCommandForJob(ctx, id).JobCommandInfo(commandInfo).Execute()
+	if err := response_inspector.InspectResponse(httpRes, err); err != nil {
+		return err
+	}
+
 	return nil
 }
 
