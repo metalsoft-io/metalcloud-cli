@@ -7,12 +7,14 @@ import (
 	"fmt"
 	"image"
 	_ "image/png"
+	"net/http"
 	"strings"
 
 	"github.com/metalsoft-io/metalcloud-cli/pkg/api"
 	"github.com/metalsoft-io/metalcloud-cli/pkg/formatter"
 	"github.com/metalsoft-io/metalcloud-cli/pkg/logger"
 	"github.com/metalsoft-io/metalcloud-cli/pkg/response_inspector"
+	"github.com/metalsoft-io/metalcloud-cli/pkg/utils"
 	sdk "github.com/metalsoft-io/metalcloud-sdk-go"
 )
 
@@ -292,4 +294,195 @@ func getCurrentUserRevision(ctx context.Context) (string, error) {
 	}
 
 	return fmt.Sprintf("%d", int(userInfo.Revision)), nil
+}
+
+// userPermissionsPrintConfig formats the permission keys of the current user.
+var userPermissionsPrintConfig = formatter.PrintConfig{
+	FieldsConfig: map[string]formatter.RecordFieldConfig{
+		"Permission": {
+			Title: "Permission",
+			Order: 1,
+		},
+	},
+}
+
+// userPermissionRecord wraps a permission key so that the tabular formatters
+// have a named column to render.
+type userPermissionRecord struct {
+	Permission string `json:"permission"`
+}
+
+// GetPermissions lists the permissions of the user owning the API key.
+func GetPermissions(ctx context.Context) error {
+	logger.Get().Info().Msgf("Getting permissions for current user")
+
+	client := api.GetApiClient(ctx)
+
+	// The response is inspected by hand here: a failed typed decode is expected
+	// often enough that it must not be logged as an error before the fallback.
+	permissions, httpRes, err := client.UserAPI.GetUserPermissions(ctx).Execute()
+	if err == nil && httpRes != nil && httpRes.StatusCode < 400 &&
+		permissions != nil && len(permissions.Permissions) > 0 {
+		records := make([]userPermissionRecord, 0, len(permissions.Permissions))
+		for _, permission := range permissions.Permissions {
+			records = append(records, userPermissionRecord{Permission: string(permission)})
+		}
+
+		return formatter.PrintResult(records, &userPermissionsPrintConfig)
+	}
+
+	// The SDK models the permission keys as a strict enum generated from the
+	// OpenAPI definition, so a single permission the SDK does not know about
+	// makes the whole typed response fail to decode. Read the raw payload
+	// instead, which also surfaces the real HTTP error when there is one.
+	logger.Get().Debug().Msg("Reading the user permissions from the raw response")
+
+	body, err := api.RawJSONRequest(ctx, http.MethodGet, "/api/v2/user/permissions", nil, nil)
+	if err != nil {
+		return err
+	}
+
+	rawPermissions, err := utils.DecodeRawObject(body)
+	if err != nil {
+		return err
+	}
+
+	permissionList, ok := rawPermissions["permissions"].([]any)
+	if !ok {
+		return formatter.PrintResult(rawPermissions, nil)
+	}
+
+	records := make([]userPermissionRecord, 0, len(permissionList))
+	for _, permission := range permissionList {
+		records = append(records, userPermissionRecord{Permission: fmt.Sprintf("%v", permission)})
+	}
+
+	return formatter.PrintResult(records, &userPermissionsPrintConfig)
+}
+
+// ChangePassword updates the password of the user owning the API key.
+func ChangePassword(ctx context.Context, config []byte) error {
+	logger.Get().Info().Msgf("Changing password for current user")
+
+	var passwordUpdate sdk.UserUpdatePassword
+	if err := utils.UnmarshalContent(config, &passwordUpdate); err != nil {
+		return err
+	}
+
+	revision, err := getCurrentUserRevision(ctx)
+	if err != nil {
+		return err
+	}
+
+	client := api.GetApiClient(ctx)
+
+	userInfo, httpRes, err := client.UserAPI.UpdateUserPassword(ctx).
+		UserUpdatePassword(passwordUpdate).
+		IfMatch(revision).
+		Execute()
+	if err := response_inspector.InspectResponse(httpRes, err); err != nil {
+		return err
+	}
+
+	fmt.Println("Password changed.")
+	return formatter.PrintResult(userInfo, &userPrintConfig)
+}
+
+// InitiatePasswordReset sends a password reset e-mail to the given address.
+func InitiatePasswordReset(ctx context.Context, email string, redirectUrl string) error {
+	logger.Get().Info().Msgf("Initiating password reset for '%s'", email)
+
+	requestBody := sdk.PasswordReset{
+		Email: email,
+	}
+	if redirectUrl != "" {
+		requestBody.RedirectUrl = sdk.PtrString(redirectUrl)
+	}
+
+	client := api.GetApiClient(ctx)
+
+	httpRes, err := client.UserAPI.InitiatePasswordReset(ctx).PasswordReset(requestBody).Execute()
+	if err := response_inspector.InspectResponse(httpRes, err); err != nil {
+		return err
+	}
+
+	fmt.Printf("Password reset e-mail sent to '%s'.\n", email)
+	return nil
+}
+
+// InitiateEmailChange starts the e-mail change flow for the current user. The
+// new address becomes active only after the verification link is followed.
+func InitiateEmailChange(ctx context.Context, email string, redirectUrl string) error {
+	logger.Get().Info().Msgf("Initiating e-mail change to '%s' for current user", email)
+
+	requestBody := sdk.ChangeUserEmail{
+		Email: email,
+	}
+	if redirectUrl != "" {
+		requestBody.RedirectUrl = sdk.PtrString(redirectUrl)
+	}
+
+	client := api.GetApiClient(ctx)
+
+	userInfo, httpRes, err := client.UserAPI.InitiateEmailChange(ctx).ChangeUserEmail(requestBody).Execute()
+	if err := response_inspector.InspectResponse(httpRes, err); err != nil {
+		return err
+	}
+
+	fmt.Printf("Verification e-mail sent to '%s'. The address changes once the link is followed.\n", email)
+	return formatter.PrintResult(userInfo, &userPrintConfig)
+}
+
+// RegenerateJwtSalt rotates the JWT salt of the current user, which invalidates
+// every session and token issued so far.
+func RegenerateJwtSalt(ctx context.Context) error {
+	logger.Get().Info().Msgf("Regenerating JWT salt for current user")
+
+	revision, err := getCurrentUserRevision(ctx)
+	if err != nil {
+		return err
+	}
+
+	client := api.GetApiClient(ctx)
+
+	userInfo, httpRes, err := client.UserAPI.RegenerateUserJwtSalt(ctx).IfMatch(revision).Execute()
+	if err := response_inspector.InspectResponse(httpRes, err); err != nil {
+		return err
+	}
+
+	fmt.Println("JWT salt regenerated. All existing sessions and tokens are now invalid.")
+	return formatter.PrintResult(userInfo, &userPrintConfig)
+}
+
+// VerifyEmail consumes the e-mail verification token sent by the platform. It
+// is the programmatic equivalent of following the link from the e-mail.
+func VerifyEmail(ctx context.Context, token string) error {
+	logger.Get().Info().Msgf("Verifying e-mail address with the provided token")
+
+	client := api.GetApiClient(ctx)
+
+	httpRes, err := client.UserAPI.UserControllerHandleEmailVerify(ctx).Token(token).Execute()
+	if err := response_inspector.InspectResponse(httpRes, err); err != nil {
+		return err
+	}
+
+	fmt.Println("E-mail address verified.")
+	return nil
+}
+
+// ResetPassword consumes the password reset token sent by the platform. It is
+// the programmatic equivalent of following the link from the e-mail; the new
+// password itself is set through the web page the token redirects to.
+func ResetPassword(ctx context.Context, token string) error {
+	logger.Get().Info().Msgf("Handling password reset with the provided token")
+
+	client := api.GetApiClient(ctx)
+
+	httpRes, err := client.UserAPI.UserControllerHandleUserResetPassword(ctx).Token(token).Execute()
+	if err := response_inspector.InspectResponse(httpRes, err); err != nil {
+		return err
+	}
+
+	fmt.Println("Password reset token accepted.")
+	return nil
 }

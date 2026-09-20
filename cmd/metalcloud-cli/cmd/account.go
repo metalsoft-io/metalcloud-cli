@@ -14,6 +14,7 @@ var (
 		roleLevel    string
 		reason       string
 		archived     bool
+		includeUsage bool
 	}{}
 
 	accountCmd = &cobra.Command{
@@ -255,6 +256,107 @@ Examples:
 			return account.AccountGetUsers(cmd.Context(), args[0])
 		},
 	}
+
+	accountUnarchiveCmd = &cobra.Command{
+		Use:     "unarchive account_id",
+		Aliases: []string{"restore", "unar"},
+		Short:   "Restore a previously archived account",
+		Long: `Restore a previously archived account in the MetalCloud platform.
+
+This command reverses 'account archive': the account becomes usable again while all
+its data and configuration are preserved. The account is identified by its unique
+account ID.
+
+Required Permissions:
+  - users:write
+
+Arguments:
+  account_id    The unique identifier of the account to restore
+
+Examples:
+  # Restore an account by ID
+  metalcloud-cli account unarchive 1234
+
+  # Using aliases
+  metalcloud-cli account restore 1234
+  metalcloud-cli account unar 1234`,
+		SilenceUsage: true,
+		Annotations:  map[string]string{system.REQUIRED_PERMISSION: system.PERMISSION_USERS_WRITE},
+		Args:         cobra.ExactArgs(1),
+		RunE: func(cmd *cobra.Command, args []string) error {
+			return account.AccountUnarchive(cmd.Context(), args[0])
+		},
+	}
+
+	accountQuotaBreakdownCmd = &cobra.Command{
+		Use:     "quota-breakdown account_id",
+		Aliases: []string{"quota", "quota-limits"},
+		Short:   "Show how the quota limits of an account are derived",
+		Long: `Show the quota limits breakdown of an account in the MetalCloud platform.
+
+The breakdown lists, for every quota limit, the effective value together with the
+value contributed by the quota profile of the account and by the quota profile of its
+parent account. The effective value is the most restrictive of the two; individual
+users may still be further restricted by their role or group quota profiles.
+
+Text, CSV and Markdown output flatten the breakdown into one row per limit. JSON and
+YAML output keep the original nested object returned by the API.
+
+Required Permissions:
+  - users:read
+
+Arguments:
+  account_id    The unique identifier of the account
+
+Optional Flags:
+  --include-usage    Also report the aggregate resource counts of the account and of
+                     the parent account (adds two columns to the table)
+
+Examples:
+  # Show the quota breakdown of an account
+  metalcloud-cli account quota-breakdown 1234
+
+  # Include the current usage
+  metalcloud-cli account quota-breakdown 1234 --include-usage
+
+  # Keep the raw object
+  metalcloud-cli account quota 1234 -f json`,
+		SilenceUsage: true,
+		Annotations:  map[string]string{system.REQUIRED_PERMISSION: system.PERMISSION_USERS_READ},
+		Args:         cobra.ExactArgs(1),
+		RunE: func(cmd *cobra.Command, args []string) error {
+			return account.AccountQuotaBreakdown(cmd.Context(), args[0], accountFlags.includeUsage)
+		},
+	}
+
+	accountConfigGetCmd = &cobra.Command{
+		Use:     "config account_id",
+		Aliases: []string{"get-config"},
+		Short:   "Display the configuration of an account",
+		Long: `Display the configuration object of a specific account.
+
+The configuration holds the properties written by 'account update': name, code, fiscal
+number, contacts, parent account, quota profile and API key validity duration.
+
+Required Permissions:
+  - users:read
+
+Arguments:
+  account_id    The unique identifier of the account
+
+Examples:
+  # Show the configuration of an account
+  metalcloud-cli account config 1234
+
+  # Using alias
+  metalcloud-cli account get-config 1234`,
+		SilenceUsage: true,
+		Annotations:  map[string]string{system.REQUIRED_PERMISSION: system.PERMISSION_USERS_READ},
+		Args:         cobra.ExactArgs(1),
+		RunE: func(cmd *cobra.Command, args []string) error {
+			return account.AccountGetConfig(cmd.Context(), args[0])
+		},
+	}
 )
 
 func init() {
@@ -275,7 +377,15 @@ func init() {
 	accountUpdateCmd.MarkFlagsOneRequired("config-source")
 
 	accountCmd.AddCommand(accountArchiveCmd)
+	accountCmd.AddCommand(accountUnarchiveCmd)
 
 	// Account users
 	accountCmd.AddCommand(accountGetUsersCmd)
+
+	// Account quota limits breakdown
+	accountCmd.AddCommand(accountQuotaBreakdownCmd)
+	accountQuotaBreakdownCmd.Flags().BoolVar(&accountFlags.includeUsage, "include-usage", false, "Also report the aggregate resource usage of the account and of its parent account.")
+
+	// Account configuration
+	accountCmd.AddCommand(accountConfigGetCmd)
 }

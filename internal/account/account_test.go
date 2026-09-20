@@ -2,14 +2,15 @@ package account
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"net/http"
 	"strings"
 	"testing"
 
+	"github.com/metalsoft-io/metalcloud-cli/internal/testutils"
 	"github.com/metalsoft-io/metalcloud-cli/pkg/api"
 	sdk "github.com/metalsoft-io/metalcloud-sdk-go"
-	"github.com/metalsoft-io/metalcloud-cli/internal/testutils"
 	"github.com/spf13/viper"
 )
 
@@ -190,4 +191,267 @@ func TestAccountArchive_NotFound(t *testing.T) {
 	if err := AccountArchive(ctx, "99"); err == nil {
 		t.Error("expected error for 404, got nil")
 	}
+}
+
+// ---------------------------------------------------------------------------
+// Unarchive / config / quota breakdown
+// ---------------------------------------------------------------------------
+
+// accountQuotaLimits returns a QuotaProfileLimits payload with every required
+// property populated.
+func accountQuotaLimits(serverGroups float64) map[string]any {
+	return map[string]any{
+		"infrastructureServerGroupMaxCount":                serverGroups,
+		"infrastructureDriveMaxCount":                      10,
+		"infrastructureFileShareMaxCount":                  10,
+		"infrastructureBucketMaxCount":                     10,
+		"infrastructureVmInstanceGroupMaxCount":            10,
+		"infrastructureContainerInstanceGroupMaxCount":     10,
+		"serverGroupInstancesMaxCount":                     10,
+		"serverGroupInstancesMinCount":                     1,
+		"vmInstanceGroupVmInstancesMaxCount":               10,
+		"containerInstanceGroupContainerInstancesMaxCount": 10,
+		"vmInstanceMaxDiskSizeMbytes":                      1024,
+		"containerInstanceMaxDiskSizeMbytes":               1024,
+		"driveMaxSizeMbytes":                               1024,
+		"driveMinSizeMbytes":                               1,
+		"fileShareMinSizeGb":                               1,
+		"fileShareMaxSizeGb":                               100,
+		"bucketMinSizeGb":                                  1,
+		"bucketMaxSizeGb":                                  100,
+		"showOperatingSystemImagesTab":                     true,
+		"showTemplateAssetsView":                           true,
+		"userResourceServerTypeNameToMaxCount":             map[string]any{"M.8.8.2": 4},
+		"userSshKeysCountMax":                              5,
+		"showLegacyPages":                                  false,
+		"showEliChatBot":                                   false,
+		"enableCustomRaidConfiguration":                    false,
+		"enableInfrastructureVmInstance":                   true,
+		"enableInfrastructureContainerInstance":            true,
+		"enableInfrastructureExtensions":                   true,
+		"allowedInfrastructureExtensions":                  []any{},
+		"allowedServerTypes":                               []any{"M.8.8.2"},
+		"allowedSites":                                     []any{},
+		"allowedLogicalNetworkProfiles":                    []any{},
+		"allowedPreCreatedLogicalNetworks":                 []any{},
+	}
+}
+
+func TestAccountUnarchive_HappyPath(t *testing.T) {
+	ts := testutils.NewTestServer(map[string]http.HandlerFunc{
+		"/api/v2/accounts/1":                   testutils.RawHandler(http.StatusOK, accountJSON),
+		"/api/v2/accounts/1/actions/unarchive": testutils.RawHandler(http.StatusOK, accountJSON),
+	})
+	defer ts.Close()
+
+	ctx := setupTestContext(ts.URL)
+	if err := AccountUnarchive(ctx, "1"); err != nil {
+		t.Fatalf("expected nil error, got: %v", err)
+	}
+}
+
+// TestAccountUnarchive_SendsIfMatch verifies the optimistic concurrency header
+// is taken from the account fetched first.
+func TestAccountUnarchive_SendsIfMatch(t *testing.T) {
+	gotIfMatch := ""
+	gotMethod := ""
+	ts := testutils.NewTestServer(map[string]http.HandlerFunc{
+		"/api/v2/accounts/1": testutils.RawHandler(http.StatusOK, accountJSON),
+		"/api/v2/accounts/1/actions/unarchive": func(w http.ResponseWriter, r *http.Request) {
+			gotIfMatch = r.Header.Get("If-Match")
+			gotMethod = r.Method
+			testutils.RawHandler(http.StatusOK, accountJSON)(w, r)
+		},
+	})
+	defer ts.Close()
+
+	ctx := setupTestContext(ts.URL)
+	if err := AccountUnarchive(ctx, "1"); err != nil {
+		t.Fatalf("expected nil error, got: %v", err)
+	}
+
+	if gotIfMatch != "1" {
+		t.Errorf("expected If-Match 1, got %q", gotIfMatch)
+	}
+	if gotMethod != http.MethodPost {
+		t.Errorf("expected POST, got %s", gotMethod)
+	}
+}
+
+func TestAccountUnarchive_500(t *testing.T) {
+	ts := testutils.NewTestServer(map[string]http.HandlerFunc{
+		"/api/v2/accounts/1":                   testutils.RawHandler(http.StatusOK, accountJSON),
+		"/api/v2/accounts/1/actions/unarchive": testutils.ErrorHandler(500, "internal server error"),
+	})
+	defer ts.Close()
+
+	ctx := setupTestContext(ts.URL)
+	if err := AccountUnarchive(ctx, "1"); err == nil {
+		t.Fatal("expected error on 500, got nil")
+	}
+}
+
+func TestAccountUnarchive_InvalidId(t *testing.T) {
+	ts := testutils.NewTestServer(map[string]http.HandlerFunc{})
+	defer ts.Close()
+
+	ctx := setupTestContext(ts.URL)
+	if err := AccountUnarchive(ctx, "bad"); err == nil {
+		t.Fatal("expected error on invalid ID, got nil")
+	}
+}
+
+func TestAccountGetConfig_HappyPath(t *testing.T) {
+	ts := testutils.NewTestServer(map[string]http.HandlerFunc{
+		"/api/v2/accounts/1/config": testutils.RawHandler(http.StatusOK, `{"revision":1,"name":"acme","code":"ACME"}`),
+	})
+	defer ts.Close()
+
+	ctx := setupTestContext(ts.URL)
+	if err := AccountGetConfig(ctx, "1"); err != nil {
+		t.Fatalf("expected nil error, got: %v", err)
+	}
+}
+
+func TestAccountGetConfig_404(t *testing.T) {
+	ts := testutils.NewTestServer(map[string]http.HandlerFunc{
+		"/api/v2/accounts/1/config": testutils.ErrorHandler(404, "not found"),
+	})
+	defer ts.Close()
+
+	ctx := setupTestContext(ts.URL)
+	if err := AccountGetConfig(ctx, "1"); err == nil {
+		t.Fatal("expected error on 404, got nil")
+	}
+}
+
+func TestAccountQuotaBreakdown_HappyPath(t *testing.T) {
+	ts := testutils.NewTestServer(map[string]http.HandlerFunc{
+		"/api/v2/accounts/1/quota-limits-breakdown": testutils.JSONHandler(http.StatusOK, map[string]any{
+			"effective": accountQuotaLimits(5),
+			"account":   accountQuotaLimits(7),
+		}),
+	})
+	defer ts.Close()
+
+	ctx := setupTestContext(ts.URL)
+	if err := AccountQuotaBreakdown(ctx, "1", false); err != nil {
+		t.Fatalf("expected nil error, got: %v", err)
+	}
+}
+
+// TestAccountQuotaBreakdown_IncludeUsage checks that the flag reaches the API
+// as the documented query parameter.
+func TestAccountQuotaBreakdown_IncludeUsage(t *testing.T) {
+	gotIncludeUsage := ""
+	ts := testutils.NewTestServer(map[string]http.HandlerFunc{
+		"/api/v2/accounts/1/quota-limits-breakdown": func(w http.ResponseWriter, r *http.Request) {
+			gotIncludeUsage = r.URL.Query().Get("includeUsage")
+			testutils.JSONHandler(http.StatusOK, map[string]any{
+				"effective":    accountQuotaLimits(5),
+				"accountUsage": map[string]any{"infrastructureDriveMaxCount": 2},
+			})(w, r)
+		},
+	})
+	defer ts.Close()
+
+	ctx := setupTestContext(ts.URL)
+
+	if err := AccountQuotaBreakdown(ctx, "1", false); err != nil {
+		t.Fatalf("expected nil error, got: %v", err)
+	}
+	if gotIncludeUsage != "" {
+		t.Errorf("expected no includeUsage parameter, got %q", gotIncludeUsage)
+	}
+
+	if err := AccountQuotaBreakdown(ctx, "1", true); err != nil {
+		t.Fatalf("expected nil error, got: %v", err)
+	}
+	if gotIncludeUsage != "true" {
+		t.Errorf("expected includeUsage=true, got %q", gotIncludeUsage)
+	}
+}
+
+// TestAccountQuotaBreakdown_Flattened verifies the text formats get one row per
+// limit instead of an unreadable nested object.
+func TestAccountQuotaBreakdown_Flattened(t *testing.T) {
+	viper.Set("format", "csv")
+	defer viper.Set("format", "json")
+
+	ts := testutils.NewTestServer(map[string]http.HandlerFunc{
+		"/api/v2/accounts/1/quota-limits-breakdown": testutils.JSONHandler(http.StatusOK, map[string]any{
+			"effective": accountQuotaLimits(5),
+			"account":   accountQuotaLimits(7),
+		}),
+	})
+	defer ts.Close()
+
+	ctx := setupTestContext(ts.URL)
+	out := testutils.CaptureStdout(t, func() {
+		if err := AccountQuotaBreakdown(ctx, "1", false); err != nil {
+			t.Errorf("expected nil error, got: %v", err)
+		}
+	})
+
+	if !strings.Contains(out, "infrastructureServerGroupMaxCount") {
+		t.Errorf("expected one row per limit, got: %s", out)
+	}
+	// The effective value wins over the less restrictive account value.
+	if !strings.Contains(out, "5,7") {
+		t.Errorf("expected the effective and account columns, got: %s", out)
+	}
+}
+
+// TestAccountQuotaBreakdown_NullScope covers the scopes the API returns as null
+// when no quota profile applies.
+func TestAccountQuotaBreakdown_NullScope(t *testing.T) {
+	viper.Set("format", "csv")
+	defer viper.Set("format", "json")
+
+	ts := testutils.NewTestServer(map[string]http.HandlerFunc{
+		"/api/v2/accounts/1/quota-limits-breakdown": testutils.RawHandler(http.StatusOK,
+			`{"effective":`+quotaLimitsJSON()+`,"account":null,"parentAccount":null}`),
+	})
+	defer ts.Close()
+
+	ctx := setupTestContext(ts.URL)
+	out := testutils.CaptureStdout(t, func() {
+		if err := AccountQuotaBreakdown(ctx, "1", false); err != nil {
+			t.Errorf("expected nil error, got: %v", err)
+		}
+	})
+
+	if !strings.Contains(out, "-") {
+		t.Errorf("expected unset scopes to render as '-', got: %s", out)
+	}
+}
+
+func TestAccountQuotaBreakdown_500(t *testing.T) {
+	ts := testutils.NewTestServer(map[string]http.HandlerFunc{
+		"/api/v2/accounts/1/quota-limits-breakdown": testutils.ErrorHandler(500, "internal server error"),
+	})
+	defer ts.Close()
+
+	ctx := setupTestContext(ts.URL)
+	if err := AccountQuotaBreakdown(ctx, "1", false); err == nil {
+		t.Fatal("expected error on 500, got nil")
+	}
+}
+
+func TestAccountQuotaBreakdown_InvalidId(t *testing.T) {
+	ts := testutils.NewTestServer(map[string]http.HandlerFunc{})
+	defer ts.Close()
+
+	ctx := setupTestContext(ts.URL)
+	if err := AccountQuotaBreakdown(ctx, "bad", false); err == nil {
+		t.Fatal("expected error on invalid ID, got nil")
+	}
+}
+
+func quotaLimitsJSON() string {
+	encoded, err := json.Marshal(accountQuotaLimits(5))
+	if err != nil {
+		panic(err)
+	}
+	return string(encoded)
 }

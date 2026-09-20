@@ -568,3 +568,444 @@ func getUserIdAndRevision(ctx context.Context, userId string) (int64, string, er
 
 	return userIdNumeric, strconv.Itoa(int(user.Revision)), nil
 }
+
+// userConfigurationPrintConfig formats the user configuration object returned
+// by the /users/{userId}/config endpoint.
+var userConfigurationPrintConfig = formatter.PrintConfig{
+	FieldsConfig: map[string]formatter.RecordFieldConfig{
+		"DisplayName": {
+			Title:    "Name",
+			MaxWidth: 30,
+			Order:    1,
+		},
+		"AccessLevel": {
+			Title: "Role",
+			Order: 2,
+		},
+		"EmailStatus": {
+			Title: "E-mail Status",
+			Order: 3,
+		},
+		"Language": {
+			Title: "Language",
+			Order: 4,
+		},
+		"Brand": {
+			Title: "Brand",
+			Order: 5,
+		},
+		"IsBlocked": {
+			Title: "Blocked",
+			Order: 6,
+		},
+		"PasswordChangeRequired": {
+			Title: "Password Change Required",
+			Order: 7,
+		},
+		"LastLoginTimestamp": {
+			Title:       "Last Login",
+			Transformer: formatter.FormatDateTimeValue,
+			Order:       8,
+		},
+		"Revision": {
+			Title: "Revision",
+			Order: 9,
+		},
+	},
+}
+
+// userSuspendReasonsPrintConfig formats the suspend reason history of a user.
+var userSuspendReasonsPrintConfig = formatter.PrintConfig{
+	FieldsConfig: map[string]formatter.RecordFieldConfig{
+		"Id": {
+			Title: "ID",
+			Order: 1,
+		},
+		"UserId": {
+			Title: "User ID",
+			Order: 2,
+		},
+		"Type": {
+			Title: "Type",
+			Order: 3,
+		},
+		"PublicComment": {
+			Title:    "Public Comment",
+			MaxWidth: 40,
+			Order:    4,
+		},
+		"PrivateComment": {
+			Title:    "Private Comment",
+			MaxWidth: 40,
+			Order:    5,
+		},
+		"CreatedTimestamp": {
+			Title:       "Created",
+			Transformer: formatter.FormatDateTimeValue,
+			Order:       6,
+		},
+		"EndTimestamp": {
+			Title:       "Ended",
+			Transformer: formatter.FormatDateTimeValue,
+			Order:       7,
+		},
+	},
+}
+
+// userDelegatesPrintConfig formats the UserInfo records returned by the
+// parent/child delegate endpoints.
+var userDelegatesPrintConfig = formatter.PrintConfig{
+	FieldsConfig: map[string]formatter.RecordFieldConfig{
+		"Id": {
+			Title: "ID",
+			Order: 1,
+		},
+		"DisplayName": {
+			Title:    "Name",
+			MaxWidth: 30,
+			Order:    2,
+		},
+		"Email": {
+			Title:    "E-mail",
+			MaxWidth: 50,
+			Order:    3,
+		},
+		"AccessLevel": {
+			Title: "Role",
+			Order: 4,
+		},
+		"AccountId": {
+			Title: "Account ID",
+			Order: 5,
+		},
+		"IsArchived": {
+			Title: "Archived",
+			Order: 6,
+		},
+		"CreatedTimestamp": {
+			Title:       "Created",
+			Transformer: formatter.FormatDateTimeValue,
+			Order:       7,
+		},
+	},
+}
+
+// GetConfiguration retrieves the configuration object of a user.
+func GetConfiguration(ctx context.Context, userId string) error {
+	logger.Get().Info().Msgf("Get configuration for user '%s'", userId)
+
+	userIdNumber, err := getUserId(userId)
+	if err != nil {
+		return err
+	}
+
+	client := api.GetApiClient(ctx)
+
+	userConfiguration, httpRes, err := client.UsersAPI.GetUserConfiguration(ctx, userIdNumber).Execute()
+	if err := response_inspector.InspectResponse(httpRes, err); err != nil {
+		return err
+	}
+
+	return formatter.PrintResult(userConfiguration, &userConfigurationPrintConfig)
+}
+
+// UpdateMeta replaces the metadata (GUI settings) of a user.
+func UpdateMeta(ctx context.Context, userId string, config []byte) error {
+	logger.Get().Info().Msgf("Updating metadata for user '%s'", userId)
+
+	userIdNumber, err := getUserId(userId)
+	if err != nil {
+		return err
+	}
+
+	var userMeta sdk.UserMeta
+	if err := utils.UnmarshalContent(config, &userMeta); err != nil {
+		return err
+	}
+
+	client := api.GetApiClient(ctx)
+
+	updatedMeta, httpRes, err := client.UsersAPI.UpdateUserMeta(ctx, userIdNumber).UserMeta(userMeta).Execute()
+	if err := response_inspector.InspectResponse(httpRes, err); err != nil {
+		return err
+	}
+
+	logger.Get().Info().Msgf("Metadata updated for user '%s'", userId)
+	return formatter.PrintResult(updatedMeta, nil)
+}
+
+// GetSSHKey retrieves a single SSH key of a user.
+func GetSSHKey(ctx context.Context, userId string, keyId string) error {
+	logger.Get().Info().Msgf("Get SSH key '%s' of user '%s'", keyId, userId)
+
+	userIdNumber, err := getUserId(userId)
+	if err != nil {
+		return err
+	}
+
+	keyIdNumber, err := getSshKeyId(keyId)
+	if err != nil {
+		return err
+	}
+
+	client := api.GetApiClient(ctx)
+
+	sshKey, httpRes, err := client.UsersAPI.GetUserSshKey(ctx, userIdNumber, keyIdNumber).Execute()
+	if err := response_inspector.InspectResponse(httpRes, err); err != nil {
+		return err
+	}
+
+	return formatter.PrintResult(sshKey, &userSshKeysPrintConfig)
+}
+
+// GetSuspendReasons lists the suspend reasons recorded for a user.
+func GetSuspendReasons(ctx context.Context, userId string) error {
+	logger.Get().Info().Msgf("Get suspend reasons for user '%s'", userId)
+
+	userIdNumber, err := getUserId(userId)
+	if err != nil {
+		return err
+	}
+
+	client := api.GetApiClient(ctx)
+
+	suspendReasons, httpRes, err := client.UsersAPI.GetUserSuspendReasons(ctx, userIdNumber).Execute()
+	if err := response_inspector.InspectResponse(httpRes, err); err != nil {
+		return err
+	}
+
+	if suspendReasons == nil {
+		return formatter.PrintResult([]sdk.UserSuspendReason{}, &userSuspendReasonsPrintConfig)
+	}
+
+	return formatter.PrintResult(suspendReasons.Data, &userSuspendReasonsPrintConfig)
+}
+
+// AddDelegate grants a delegate user access to the resources of a user.
+func AddDelegate(ctx context.Context, userId string, delegateId string) error {
+	logger.Get().Info().Msgf("Adding delegate '%s' to user '%s'", delegateId, userId)
+
+	userIdNumber, err := getUserId(userId)
+	if err != nil {
+		return err
+	}
+
+	delegateIdNumber, err := getDelegateId(delegateId)
+	if err != nil {
+		return err
+	}
+
+	client := api.GetApiClient(ctx)
+
+	userInfo, httpRes, err := client.UsersAPI.AddUserDelegate(ctx, userIdNumber, delegateIdNumber).Execute()
+	if err := response_inspector.InspectResponse(httpRes, err); err != nil {
+		return err
+	}
+
+	logger.Get().Info().Msgf("Delegate '%s' added to user '%s'", delegateId, userId)
+	return formatter.PrintResult(userInfo, &userPrintConfig)
+}
+
+// RemoveDelegate revokes the delegate access previously granted to a user.
+func RemoveDelegate(ctx context.Context, userId string, delegateId string) error {
+	logger.Get().Info().Msgf("Removing delegate '%s' from user '%s'", delegateId, userId)
+
+	userIdNumber, err := getUserId(userId)
+	if err != nil {
+		return err
+	}
+
+	delegateIdNumber, err := getDelegateId(delegateId)
+	if err != nil {
+		return err
+	}
+
+	client := api.GetApiClient(ctx)
+
+	userInfo, httpRes, err := client.UsersAPI.RemoveUserDelegate(ctx, userIdNumber, delegateIdNumber).Execute()
+	if err := response_inspector.InspectResponse(httpRes, err); err != nil {
+		return err
+	}
+
+	logger.Get().Info().Msgf("Delegate '%s' removed from user '%s'", delegateId, userId)
+	return formatter.PrintResult(userInfo, &userPrintConfig)
+}
+
+// GetParentDelegates lists the users that delegated access to the given user.
+func GetParentDelegates(ctx context.Context, userId string) error {
+	logger.Get().Info().Msgf("Get parent delegates of user '%s'", userId)
+
+	userIdNumber, err := getUserId(userId)
+	if err != nil {
+		return err
+	}
+
+	client := api.GetApiClient(ctx)
+
+	delegates, httpRes, err := client.UsersAPI.GetUserParentDelegates(ctx, userIdNumber).Execute()
+	if err := response_inspector.InspectResponse(httpRes, err); err != nil {
+		return err
+	}
+
+	return printDelegates(delegates)
+}
+
+// GetChildDelegates lists the users the given user delegated access to.
+func GetChildDelegates(ctx context.Context, userId string) error {
+	logger.Get().Info().Msgf("Get child delegates of user '%s'", userId)
+
+	userIdNumber, err := getUserId(userId)
+	if err != nil {
+		return err
+	}
+
+	client := api.GetApiClient(ctx)
+
+	delegates, httpRes, err := client.UsersAPI.GetUserChildDelegates(ctx, userIdNumber).Execute()
+	if err := response_inspector.InspectResponse(httpRes, err); err != nil {
+		return err
+	}
+
+	return printDelegates(delegates)
+}
+
+// ResendEmailVerification sends the e-mail verification message again.
+func ResendEmailVerification(ctx context.Context, userId string, redirectUrl string) error {
+	logger.Get().Info().Msgf("Resending e-mail verification for user '%s'", userId)
+
+	userIdNumber, err := getUserId(userId)
+	if err != nil {
+		return err
+	}
+
+	// The body is optional in the API definition, but the SDK sends a literal
+	// `null` payload when it is not set, which the API rejects with 400.
+	requestBody := sdk.ResendUserVerificationEmail{}
+	if redirectUrl != "" {
+		requestBody.RedirectUrl = sdk.PtrString(redirectUrl)
+	}
+
+	client := api.GetApiClient(ctx)
+
+	userInfo, httpRes, err := client.UsersAPI.ResendEmailVerification(ctx, userIdNumber).
+		ResendUserVerificationEmail(requestBody).
+		Execute()
+	if err := response_inspector.InspectResponse(httpRes, err); err != nil {
+		return err
+	}
+
+	logger.Get().Info().Msgf("E-mail verification resent for user '%s'", userId)
+	return formatter.PrintResult(userInfo, &userPrintConfig)
+}
+
+// ResendInvitation sends the account invitation message again.
+func ResendInvitation(ctx context.Context, userId string, redirectUrl string) error {
+	logger.Get().Info().Msgf("Resending invitation for user '%s'", userId)
+
+	userIdNumber, err := getUserId(userId)
+	if err != nil {
+		return err
+	}
+
+	requestBody := sdk.ResendUserInvitation{}
+	if redirectUrl != "" {
+		requestBody.RedirectUrl = sdk.PtrString(redirectUrl)
+	}
+
+	client := api.GetApiClient(ctx)
+
+	userInfo, httpRes, err := client.UsersAPI.ResendUserInvitation(ctx, userIdNumber).
+		ResendUserInvitation(requestBody).
+		Execute()
+	if err := response_inspector.InspectResponse(httpRes, err); err != nil {
+		return err
+	}
+
+	logger.Get().Info().Msgf("Invitation resent for user '%s'", userId)
+	return formatter.PrintResult(userInfo, &userPrintConfig)
+}
+
+// SendPasswordReset sends a password reset message to a user as administrator.
+func SendPasswordReset(ctx context.Context, userId string, redirectUrl string) error {
+	logger.Get().Info().Msgf("Sending password reset for user '%s'", userId)
+
+	userIdNumber, err := getUserId(userId)
+	if err != nil {
+		return err
+	}
+
+	requestBody := sdk.PasswordResetByAdmin{}
+	if redirectUrl != "" {
+		requestBody.RedirectUrl = sdk.PtrString(redirectUrl)
+	}
+
+	client := api.GetApiClient(ctx)
+
+	userInfo, httpRes, err := client.UsersAPI.SendPasswordResetByAdmin(ctx, userIdNumber).
+		PasswordResetByAdmin(requestBody).
+		Execute()
+	if err := response_inspector.InspectResponse(httpRes, err); err != nil {
+		return err
+	}
+
+	logger.Get().Info().Msgf("Password reset sent for user '%s'", userId)
+	return formatter.PrintResult(userInfo, &userPrintConfig)
+}
+
+// Delete archives a user and irreversibly removes their personal information.
+// Unlike Archive, this operation cannot be undone.
+func Delete(ctx context.Context, userId string) error {
+	logger.Get().Info().Msgf("Deleting user '%s'", userId)
+
+	userIdNumber, revision, err := getUserIdAndRevision(ctx, userId)
+	if err != nil {
+		return err
+	}
+
+	client := api.GetApiClient(ctx)
+
+	userInfo, httpRes, err := client.UsersAPI.DeleteUser(ctx, userIdNumber).IfMatch(revision).Execute()
+	if err := response_inspector.InspectResponse(httpRes, err); err != nil {
+		return err
+	}
+
+	logger.Get().Info().Msgf("User '%s' deleted", userId)
+
+	// The endpoint may answer with an empty body once the personal information
+	// has been removed.
+	if userInfo == nil {
+		return nil
+	}
+
+	return formatter.PrintResult(userInfo, &userPrintConfig)
+}
+
+func printDelegates(delegates *sdk.UserList) error {
+	if delegates == nil {
+		return formatter.PrintResult([]sdk.UserInfo{}, &userDelegatesPrintConfig)
+	}
+
+	return formatter.PrintResult(delegates.Data, &userDelegatesPrintConfig)
+}
+
+func getSshKeyId(keyId string) (int64, error) {
+	keyIdNumeric, err := utils.GetInt64FromString(keyId)
+	if err != nil {
+		err := fmt.Errorf("invalid SSH key ID: '%s'", keyId)
+		logger.Get().Error().Err(err).Msg("")
+		return 0, err
+	}
+
+	return keyIdNumeric, nil
+}
+
+func getDelegateId(delegateId string) (int64, error) {
+	delegateIdNumeric, err := utils.GetInt64FromString(delegateId)
+	if err != nil {
+		err := fmt.Errorf("invalid delegate user ID: '%s'", delegateId)
+		logger.Get().Error().Err(err).Msg("")
+		return 0, err
+	}
+
+	return delegateIdNumeric, nil
+}
