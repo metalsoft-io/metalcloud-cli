@@ -226,3 +226,161 @@ func getRegistrationProfileIdAndRevision(ctx context.Context, registrationProfil
 
 	return registrationProfileIdNumeric, registrationProfile.Revision, nil
 }
+
+// registrationProfileSettingsPrintConfig renders a bare settings object, as
+// returned by the system-defaults endpoint (the profile print config addresses
+// the same fields through the nested "Settings." prefix).
+var registrationProfileSettingsPrintConfig = formatter.PrintConfig{
+	FieldsConfig: map[string]formatter.RecordFieldConfig{
+		"RegisterCredentials": {
+			Title: "Register Credentials",
+			Order: 1,
+		},
+		"MinimumNumberOfConnectedInterfaces": {
+			Title: "Min Number Connected Interfaces",
+			Order: 2,
+		},
+		"AlwaysDiscoverInterfacesWithBDK": {
+			Title:       "Always Use BDK",
+			Transformer: formatter.FormatBooleanValue,
+			Order:       3,
+		},
+		"EnableTpm": {
+			Title:       "Enable TPM",
+			Transformer: formatter.FormatBooleanValue,
+			Order:       4,
+		},
+		"EnableIntelTxt": {
+			Title:       "Enable Intel Txt",
+			Transformer: formatter.FormatBooleanValue,
+			Order:       5,
+		},
+		"EnableSyslogMonitoring": {
+			Title:       "Enable Syslog",
+			Transformer: formatter.FormatBooleanValue,
+			Order:       6,
+		},
+		"DisableTpmAfterRegistration": {
+			Title:       "Disable TPM After Reg",
+			Transformer: formatter.FormatBooleanValue,
+			Order:       7,
+		},
+		"DefaultVirtualMediaProtocol": {
+			Title: "Default Virt Media Protocol",
+			Order: 8,
+		},
+		"ResetRaidControllers": {
+			Title:       "Reset RAID Controllers",
+			Transformer: formatter.FormatBooleanValue,
+			Order:       9,
+		},
+		"CleanupDrives": {
+			Title:       "Cleanup Drives",
+			Transformer: formatter.FormatBooleanValue,
+			Order:       10,
+		},
+		"RecreateRaid": {
+			Title:       "Recreate RAID",
+			Transformer: formatter.FormatBooleanValue,
+			Order:       11,
+		},
+		"DisableEmbeddedNics": {
+			Title:       "Disable Embedded NICs",
+			Transformer: formatter.FormatBooleanValue,
+			Order:       12,
+		},
+		"RaidOneDrive": {
+			Title: "RAID One Drive",
+			Order: 13,
+		},
+		"RaidTwoDrives": {
+			Title: "RAID Two Drives",
+			Order: 14,
+		},
+		"RaidEvenNumberMoreThanTwoDrives": {
+			Title: "RAID Even 4+ Drives",
+			Order: 15,
+		},
+		"RaidOddNumberMoreThanOneDrive": {
+			Title: "RAID Odd 3+ Drives",
+			Order: 16,
+		},
+		"DpuMode": {
+			Title: "DPU Mode",
+			Order: 17,
+		},
+	},
+}
+
+// RegistrationProfileSearch resolves the registration profile that applies to a
+// site, falling back to the system-wide default when the site has none. The
+// site ID is mandatory: the SDK rejects the call without it.
+func RegistrationProfileSearch(ctx context.Context, siteId int) error {
+	logger.Get().Info().Msgf("Searching for the server registration profile of site %d", siteId)
+
+	client := api.GetApiClient(ctx)
+
+	registrationProfile, httpRes, err := client.ServerRegistrationProfileAPI.
+		SearchServerRegistrationProfileInfo(ctx).
+		SiteId(float32(siteId)).
+		Execute()
+	if err := response_inspector.InspectResponse(httpRes, err); err != nil {
+		return err
+	}
+
+	if registrationProfile == nil {
+		logger.Get().Info().Msgf("No server registration profile matched the search")
+		return nil
+	}
+
+	return formatter.PrintResult(registrationProfile, &registrationProfilePrintConfig)
+}
+
+// RegistrationProfileForServer shows the registration profile a server was, or
+// would be, registered with.
+func RegistrationProfileForServer(ctx context.Context, serverId string) error {
+	logger.Get().Info().Msgf("Get the server registration profile of server '%s'", serverId)
+
+	serverIdNumeric, err := utils.GetInt64FromString(serverId)
+	if err != nil {
+		return err
+	}
+
+	client := api.GetApiClient(ctx)
+
+	registrationProfile, httpRes, err := client.ServerRegistrationProfileAPI.
+		GetServerRegistrationProfileInfoForServer(ctx, serverIdNumeric).
+		Execute()
+	if err := response_inspector.InspectResponse(httpRes, err); err != nil {
+		return err
+	}
+
+	if registrationProfile == nil {
+		logger.Get().Info().Msgf("Server '%s' has no server registration profile", serverId)
+		return nil
+	}
+
+	return formatter.PrintResult(registrationProfile, &registrationProfilePrintConfig)
+}
+
+// RegistrationProfileSystemDefaults shows the built-in registration settings
+// used when no profile applies.
+func RegistrationProfileSystemDefaults(ctx context.Context) error {
+	logger.Get().Info().Msgf("Get the system default server registration settings")
+
+	client := api.GetApiClient(ctx)
+
+	settings, httpRes, err := client.ServerRegistrationProfileAPI.
+		GetServerRegistrationProfileSystemDefaults(ctx).
+		Execute()
+	if err := response_inspector.InspectResponse(httpRes, err); err != nil {
+		return err
+	}
+
+	if settings == nil {
+		logger.Get().Info().Msgf("No system default server registration settings returned")
+		return nil
+	}
+
+	return formatter.PrintResult(settings, &registrationProfileSettingsPrintConfig)
+}

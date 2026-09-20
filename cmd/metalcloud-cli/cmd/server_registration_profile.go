@@ -13,6 +13,8 @@ var (
 	serverRegistrationProfileFlags = struct {
 		name         string
 		configSource string
+
+		searchSiteId int
 	}{}
 
 	serverRegistrationProfileCmd = &cobra.Command{
@@ -29,6 +31,10 @@ Available Commands:
   create    Create a new server registration profile
   update    Update an existing server registration profile
   delete    Delete a server registration profile
+
+  search           Find the registration profile that applies to a site
+  for-server       Show the registration profile of a server
+  system-defaults  Show the built-in registration settings
 
 Examples:
   # List all server registration profiles
@@ -378,6 +384,69 @@ Examples:
 			return server_registration_profile.RegistrationProfileDelete(cmd.Context(), args[0])
 		},
 	}
+
+	serverRegistrationProfileSearchCmd = &cobra.Command{
+		Use:   "search",
+		Short: "Find the registration profile that applies to a site",
+		Long: `Find the server registration profile that applies to a site.
+
+The profile assigned to the site is returned when there is one; otherwise the
+system-wide default profile is returned.
+
+Required Flags:
+  --site-id    The ID of the site to search the registration profile for
+
+Examples:
+  # Find the registration profile used by site 1
+  metalcloud-cli server-registration-profile search --site-id 1
+`,
+		SilenceUsage: true,
+		Annotations:  map[string]string{system.REQUIRED_PERMISSION: system.PERMISSION_SERVER_CLEANUP_POLICIES_READ},
+		RunE: func(cmd *cobra.Command, args []string) error {
+			return server_registration_profile.RegistrationProfileSearch(cmd.Context(),
+				serverRegistrationProfileFlags.searchSiteId)
+		},
+	}
+
+	serverRegistrationProfileForServerCmd = &cobra.Command{
+		Use:   "for-server server_id",
+		Short: "Show the registration profile of a server",
+		Long: `Show the server registration profile a server was, or would be, registered with.
+
+Required Arguments:
+  server_id    The numeric ID of the server
+
+Examples:
+  # Show the registration profile of server 123
+  metalcloud-cli server-registration-profile for-server 123
+`,
+		SilenceUsage: true,
+		Annotations:  map[string]string{system.REQUIRED_PERMISSION: system.PERMISSION_SERVER_CLEANUP_POLICIES_READ},
+		Args:         cobra.ExactArgs(1),
+		RunE: func(cmd *cobra.Command, args []string) error {
+			return server_registration_profile.RegistrationProfileForServer(cmd.Context(), args[0])
+		},
+	}
+
+	serverRegistrationProfileSystemDefaultsCmd = &cobra.Command{
+		Use:   "system-defaults",
+		Short: "Show the built-in server registration settings",
+		Long: `Show the built-in server registration settings that are used when no server
+registration profile applies.
+
+These settings are a useful starting point for the "settings" section of a new
+server registration profile.
+
+Examples:
+  # Show the system default registration settings
+  metalcloud-cli server-registration-profile system-defaults
+`,
+		SilenceUsage: true,
+		Annotations:  map[string]string{system.REQUIRED_PERMISSION: system.PERMISSION_SERVER_CLEANUP_POLICIES_READ},
+		RunE: func(cmd *cobra.Command, args []string) error {
+			return server_registration_profile.RegistrationProfileSystemDefaults(cmd.Context())
+		},
+	}
 )
 
 func init() {
@@ -399,4 +468,12 @@ func init() {
 	serverRegistrationProfileUpdateCmd.MarkFlagsOneRequired("name", "config-source")
 
 	serverRegistrationProfileCmd.AddCommand(serverRegistrationProfileDeleteCmd)
+
+	serverRegistrationProfileCmd.AddCommand(serverRegistrationProfileSearchCmd)
+	serverRegistrationProfileSearchCmd.Flags().IntVar(&serverRegistrationProfileFlags.searchSiteId, "site-id", 0, "The ID of the site to search the registration profile for.")
+	serverRegistrationProfileSearchCmd.MarkFlagRequired("site-id")
+
+	serverRegistrationProfileCmd.AddCommand(serverRegistrationProfileForServerCmd)
+
+	serverRegistrationProfileCmd.AddCommand(serverRegistrationProfileSystemDefaultsCmd)
 }
