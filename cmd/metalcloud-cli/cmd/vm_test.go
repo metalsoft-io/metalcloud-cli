@@ -161,6 +161,107 @@ func TestVMTypeList_Formats(t *testing.T) {
 	}
 }
 
+// ---------------------------------------------------------------------------
+// vm list
+// ---------------------------------------------------------------------------
+
+// vmlsItem is shaped like a live VM payload: "hosts" comes back as a plain
+// string, which the strict sdk.VM model rejects — the command decodes raw
+// bodies instead.
+var vmlsItem = map[string]interface{}{
+	"id": 1.0, "name": "test-vm", "siteId": 1.0, "infrastructureId": 1664.0,
+	"userId": 1.0, "instanceId": 1.0, "vmInstanceId": 1.0,
+	"host": "host-1.example.local", "hosts": "host-1.example.local",
+	"cpuCores": 1.0, "ramGB": 2.0, "diskSizeGB": 10.0,
+	"typeId": 111.0, "poolId": 70.0,
+	"administrationState": "managed", "powerState": "on",
+	"powerStateLastUpdatedTimestamp": "2024-01-01T00:00:00Z",
+	"createdTimestamp":               "2024-01-01T00:00:00Z",
+	"allocationTimestamp":            "2024-01-01T00:00:00Z",
+	"disks":                          []interface{}{},
+}
+
+func newVMListTestServer(lastQuery *string) *httptest.Server {
+	mux := newMux(allPerms, func(mux *http.ServeMux) {
+		mux.HandleFunc("/api/v2/vms", func(w http.ResponseWriter, r *http.Request) {
+			if lastQuery != nil {
+				*lastQuery = r.URL.RawQuery
+			}
+			w.Header().Set("Content-Type", "application/json")
+			_ = json.NewEncoder(w).Encode(paginatedList(vmlsItem))
+		})
+		mux.HandleFunc("/api/v2/vms/1", func(w http.ResponseWriter, r *http.Request) {
+			w.Header().Set("Content-Type", "application/json")
+			_ = json.NewEncoder(w).Encode(vmlsItem)
+		})
+	})
+	return httptest.NewServer(mux)
+}
+
+func TestVMList(t *testing.T) {
+	srv := newVMListTestServer(nil)
+	defer srv.Close()
+
+	for _, name := range []string{"list", "ls"} {
+		out, err := runCLI(t, srv, "vm", name)
+		if err != nil {
+			t.Fatalf("vm %s: unexpected error: %v", name, err)
+		}
+		if !strings.Contains(out, "test-vm") {
+			t.Errorf("vm %s: expected output to contain 'test-vm', got: %s", name, out)
+		}
+	}
+}
+
+func TestVMListFilters(t *testing.T) {
+	var query string
+	srv := newVMListTestServer(&query)
+	defer srv.Close()
+
+	_, err := runCLI(t, srv, "vm", "list", "--filter-pool-id", "70")
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if !strings.Contains(query, "filter.poolId=70") {
+		t.Errorf("expected query to carry the pool filter, got: %s", query)
+	}
+}
+
+func TestVMGetRawDecode(t *testing.T) {
+	srv := newVMListTestServer(nil)
+	defer srv.Close()
+
+	out, err := runCLI(t, srv, "vm", "get", "1")
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if !strings.Contains(out, "test-vm") {
+		t.Errorf("expected output to contain 'test-vm', got: %s", out)
+	}
+}
+
+func TestVMList_Formats(t *testing.T) {
+	for _, format := range []string{"json", "csv", "yaml", "text", "md"} {
+		t.Run(format, func(t *testing.T) {
+			srv := newVMListTestServer(nil)
+			defer srv.Close()
+			out, err := runCLIFormat(t, srv, format, "vm", "list")
+			if err != nil {
+				t.Fatalf("format %s: %v", format, err)
+			}
+			if out == "" {
+				t.Errorf("format %s: empty output", format)
+			}
+			if format == "json" && !json.Valid([]byte(out)) {
+				t.Errorf("format json: invalid JSON: %s", out)
+			}
+			if format == "csv" && !strings.Contains(out, ",") {
+				t.Errorf("format csv: no comma: %s", out)
+			}
+		})
+	}
+}
+
 func TestVMInstanceGroupList_Formats(t *testing.T) {
 	for _, format := range []string{"json", "csv", "yaml", "text", "md"} {
 		t.Run(format, func(t *testing.T) {

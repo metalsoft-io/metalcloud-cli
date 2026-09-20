@@ -20,6 +20,15 @@ var (
 		page             string
 		infrastructureId string
 		vmNames          string
+		// Each write command that takes --config-source keeps its own field:
+		// runCLI resets the shared root command between test runs and flags
+		// registered on different sub-commands must not share state.
+		updateConfigSource             string
+		clusterHostConfigSource        string
+		hostInterfaceConfigSource      string
+		networkDeviceConfigSource      string
+		networkDeviceRef               string
+		networkDeviceInterfaceNameFlag string
 	}{}
 
 	vmPoolCmd = &cobra.Command{
@@ -35,7 +44,21 @@ VM pools provide centralized management of virtualization infrastructure, allowi
 - Control maintenance and experimental modes
 
 Available commands support full lifecycle management from initial configuration
-to ongoing monitoring and resource inspection.`,
+to ongoing monitoring and resource inspection.
+
+Pool level commands:
+  list, get, create, update, delete, config-example, update-config-example,
+  credentials, statistics, containers, vms, sync, refresh, import-vms
+
+Cluster host commands (flat, one command per operation):
+  cluster-hosts, cluster-host, update-cluster-host, cluster-host-statistics,
+  cluster-host-containers, cluster-host-vms, cluster-host-interfaces,
+  cluster-host-interface, update-cluster-host-interface
+
+Cluster host interface network device assignments live in their own sub-group,
+because they are a full CRUD set of their own:
+  cluster-host-interface-network-device (alias: chi-network-device, chind)
+    list | get | add | remove | config-example`,
 	}
 
 	vmPoolListCmd = &cobra.Command{
@@ -477,6 +500,522 @@ EXAMPLES:
 			return vm_pool.VMPoolImportVMs(cmd.Context(), args[0], importVMs)
 		},
 	}
+
+	vmPoolUpdateCmd = &cobra.Command{
+		Use:   "update vm_pool_id",
+		Short: "Update a VM pool from a configuration file or pipe",
+		Long: `Update an existing virtual machine pool from a JSON or YAML configuration.
+
+Only the fields present in the configuration are changed; everything else keeps
+its current value. The endpoint does not use optimistic concurrency, so no
+revision needs to be fetched first.
+
+Required Arguments:
+  vm_pool_id       The numeric ID of the VM pool to update
+
+Required Flags:
+  --config-source  Source of the VM pool update configuration.
+                   Values: 'pipe' for stdin input, or path to a JSON/YAML file.
+
+Configuration Fields (all optional):
+  description, managementHost, managementPort, certificate, privateKey,
+  username, password, inMaintenance, isExperimental, tags, options,
+  networkFabricId
+
+Examples:
+  # Update from a file
+  metalcloud-cli vm-pool update 123 --config-source update.json
+
+  # Put a pool into maintenance mode
+  echo '{"inMaintenance": 1}' | metalcloud-cli vm-pool update 123 --config-source pipe
+
+  # Start from the generated example
+  metalcloud-cli vm-pool update-config-example > update.json`,
+		SilenceUsage: true,
+		Annotations:  map[string]string{system.REQUIRED_PERMISSION: system.PERMISSION_VM_POOLS_WRITE},
+		Args:         cobra.ExactArgs(1),
+		RunE: func(cmd *cobra.Command, args []string) error {
+			config, err := utils.ReadConfigFromPipeOrFile(vmPoolFlags.updateConfigSource)
+			if err != nil {
+				return err
+			}
+
+			return vm_pool.VMPoolUpdate(cmd.Context(), args[0], config)
+		},
+	}
+
+	vmPoolUpdateConfigExampleCmd = &cobra.Command{
+		Use:   "update-config-example",
+		Short: "Display a VM pool update configuration example",
+		Long: `Display a sample VM pool update payload showing the fields accepted by
+'vm-pool update'. Every field is optional - delete the ones you do not want to
+change.
+
+Examples:
+  # Display the example
+  metalcloud-cli vm-pool update-config-example
+
+  # Save it for editing
+  metalcloud-cli vm-pool update-config-example > update.json
+
+  # Change one field and apply it
+  metalcloud-cli vm-pool update-config-example | jq '{description}' | metalcloud-cli vm-pool update 123 --config-source pipe`,
+		SilenceUsage: true,
+		Annotations:  map[string]string{system.REQUIRED_PERMISSION: system.PERMISSION_VM_POOLS_WRITE},
+		RunE: func(cmd *cobra.Command, args []string) error {
+			return vm_pool.VMPoolUpdateConfigExample(cmd.Context())
+		},
+	}
+
+	vmPoolSyncCmd = &cobra.Command{
+		Use:   "sync vm_pool_id",
+		Short: "Sync a VM pool with its hypervisor",
+		Long: `Start a synchronization job for a VM pool.
+
+The sync discovers objects that were created directly on the hypervisor. On
+VMware VCF, for example, it discovers new Virtual Distributed Switches. The
+command returns the job information of the job that was started; use
+'metalcloud-cli job get <job_id>' to follow it.
+
+Required Arguments:
+  vm_pool_id       The numeric ID of the VM pool to sync
+
+Examples:
+  # Sync VM pool 123
+  metalcloud-cli vm-pool sync 123`,
+		SilenceUsage: true,
+		Annotations:  map[string]string{system.REQUIRED_PERMISSION: system.PERMISSION_VM_POOLS_WRITE},
+		Args:         cobra.ExactArgs(1),
+		RunE: func(cmd *cobra.Command, args []string) error {
+			return vm_pool.VMPoolSync(cmd.Context(), args[0])
+		},
+	}
+
+	vmPoolRefreshCmd = &cobra.Command{
+		Use:   "refresh vm_pool_id",
+		Short: "Refresh the information of a VM pool",
+		Long: `Refresh the cached information MetalSoft holds about a VM pool.
+
+On VMware VCF this reports any new datastores. The refreshed VM pool is printed
+when the operation completes.
+
+Required Arguments:
+  vm_pool_id       The numeric ID of the VM pool to refresh
+
+Examples:
+  # Refresh VM pool 123
+  metalcloud-cli vm-pool refresh 123`,
+		SilenceUsage: true,
+		Annotations:  map[string]string{system.REQUIRED_PERMISSION: system.PERMISSION_VM_POOLS_WRITE},
+		Args:         cobra.ExactArgs(1),
+		RunE: func(cmd *cobra.Command, args []string) error {
+			return vm_pool.VMPoolRefresh(cmd.Context(), args[0])
+		},
+	}
+
+	vmPoolStatisticsCmd = &cobra.Command{
+		Use:     "statistics vm_pool_id",
+		Aliases: []string{"stats"},
+		Short:   "Show the resource usage statistics of a VM pool",
+		Long: `Show the aggregated RAM, disk and GPU usage of a VM pool.
+
+In the tabular formats (text, csv, md) the GPU list is flattened into a single
+column; json and yaml return the full statistics object.
+
+Required Arguments:
+  vm_pool_id       The numeric ID of the VM pool
+
+Examples:
+  # Show statistics for VM pool 123
+  metalcloud-cli vm-pool statistics 123
+
+  # Get the raw statistics object
+  metalcloud-cli vm-pool stats 123 -f json`,
+		SilenceUsage: true,
+		Annotations:  map[string]string{system.REQUIRED_PERMISSION: system.PERMISSION_VM_POOLS_READ},
+		Args:         cobra.ExactArgs(1),
+		RunE: func(cmd *cobra.Command, args []string) error {
+			return vm_pool.VMPoolGetStatistics(cmd.Context(), args[0])
+		},
+	}
+
+	vmPoolContainersCmd = &cobra.Command{
+		Use:   "containers vm_pool_id",
+		Short: "List the containers running in a VM pool",
+		Long: `List all containers deployed on the hosts of a VM pool.
+
+The listing walks every page transparently.
+
+Required Arguments:
+  vm_pool_id       The numeric ID of the VM pool
+
+Examples:
+  # List containers of VM pool 123
+  metalcloud-cli vm-pool containers 123`,
+		SilenceUsage: true,
+		Annotations:  map[string]string{system.REQUIRED_PERMISSION: system.PERMISSION_VM_POOLS_READ},
+		Args:         cobra.ExactArgs(1),
+		RunE: func(cmd *cobra.Command, args []string) error {
+			return vm_pool.VMPoolGetContainers(cmd.Context(), args[0])
+		},
+	}
+
+	vmPoolGetClusterHostCmd = &cobra.Command{
+		Use:   "cluster-host vm_pool_id host_id",
+		Short: "Get details of one cluster host of a VM pool",
+		Long: `Get the full details of a single cluster host (ESXi host, Hyper-V server, ...)
+that belongs to a VM pool, including its health status, roles and the flags that
+control whether VMs and containers may be created on it.
+
+Required Arguments:
+  vm_pool_id       The numeric ID of the VM pool
+  host_id          The numeric ID of the cluster host
+
+Examples:
+  # Get cluster host 456 of VM pool 123
+  metalcloud-cli vm-pool cluster-host 123 456`,
+		SilenceUsage: true,
+		Annotations:  map[string]string{system.REQUIRED_PERMISSION: system.PERMISSION_VM_POOLS_READ},
+		Args:         cobra.ExactArgs(2),
+		RunE: func(cmd *cobra.Command, args []string) error {
+			return vm_pool.VMPoolGetClusterHost(cmd.Context(), args[0], args[1])
+		},
+	}
+
+	vmPoolUpdateClusterHostCmd = &cobra.Command{
+		Use:   "update-cluster-host vm_pool_id host_id",
+		Short: "Update one cluster host of a VM pool",
+		Long: `Update a cluster host of a VM pool from a JSON or YAML configuration.
+
+Required Arguments:
+  vm_pool_id       The numeric ID of the VM pool
+  host_id          The numeric ID of the cluster host
+
+Required Flags:
+  --config-source  Source of the cluster host update configuration.
+                   Values: 'pipe' for stdin input, or path to a JSON/YAML file.
+
+Configuration Fields (all optional):
+  allowVMsToBeCreated         Allow new VMs to be created on this host
+  allowContainersToBeCreated  Allow new containers to be created on this host
+
+Examples:
+  # Stop scheduling new VMs on a host
+  echo '{"allowVMsToBeCreated": false}' | metalcloud-cli vm-pool update-cluster-host 123 456 --config-source pipe
+
+  # Update from a file
+  metalcloud-cli vm-pool update-cluster-host 123 456 --config-source host.json`,
+		SilenceUsage: true,
+		Annotations:  map[string]string{system.REQUIRED_PERMISSION: system.PERMISSION_VM_POOLS_WRITE},
+		Args:         cobra.ExactArgs(2),
+		RunE: func(cmd *cobra.Command, args []string) error {
+			config, err := utils.ReadConfigFromPipeOrFile(vmPoolFlags.clusterHostConfigSource)
+			if err != nil {
+				return err
+			}
+
+			return vm_pool.VMPoolUpdateClusterHost(cmd.Context(), args[0], args[1], config)
+		},
+	}
+
+	vmPoolUpdateClusterHostConfigExampleCmd = &cobra.Command{
+		Use:   "update-cluster-host-config-example",
+		Short: "Display a cluster host update configuration example",
+		Long: `Display a sample payload for 'vm-pool update-cluster-host'.
+
+Examples:
+  # Display the example
+  metalcloud-cli vm-pool update-cluster-host-config-example
+
+  # Save it for editing
+  metalcloud-cli vm-pool update-cluster-host-config-example > host.json`,
+		SilenceUsage: true,
+		Annotations:  map[string]string{system.REQUIRED_PERMISSION: system.PERMISSION_VM_POOLS_WRITE},
+		RunE: func(cmd *cobra.Command, args []string) error {
+			return vm_pool.VMPoolUpdateClusterHostConfigExample(cmd.Context())
+		},
+	}
+
+	vmPoolClusterHostStatisticsCmd = &cobra.Command{
+		Use:     "cluster-host-statistics vm_pool_id host_id",
+		Aliases: []string{"cluster-host-stats"},
+		Short:   "Show the resource usage statistics of one cluster host",
+		Long: `Show the RAM, disk and GPU usage of a single cluster host of a VM pool.
+
+In the tabular formats (text, csv, md) the GPU list is flattened into a single
+column; json and yaml return the full statistics object.
+
+Required Arguments:
+  vm_pool_id       The numeric ID of the VM pool
+  host_id          The numeric ID of the cluster host
+
+Examples:
+  # Show statistics for cluster host 456 of VM pool 123
+  metalcloud-cli vm-pool cluster-host-statistics 123 456`,
+		SilenceUsage: true,
+		Annotations:  map[string]string{system.REQUIRED_PERMISSION: system.PERMISSION_VM_POOLS_READ},
+		Args:         cobra.ExactArgs(2),
+		RunE: func(cmd *cobra.Command, args []string) error {
+			return vm_pool.VMPoolGetClusterHostStatistics(cmd.Context(), args[0], args[1])
+		},
+	}
+
+	vmPoolClusterHostContainersCmd = &cobra.Command{
+		Use:   "cluster-host-containers vm_pool_id host_id",
+		Short: "List the containers running on one cluster host",
+		Long: `List all containers deployed on a single cluster host of a VM pool.
+
+The listing walks every page transparently.
+
+Required Arguments:
+  vm_pool_id       The numeric ID of the VM pool
+  host_id          The numeric ID of the cluster host
+
+Examples:
+  # List containers on cluster host 456 of VM pool 123
+  metalcloud-cli vm-pool cluster-host-containers 123 456`,
+		SilenceUsage: true,
+		Annotations:  map[string]string{system.REQUIRED_PERMISSION: system.PERMISSION_VM_POOLS_READ},
+		Args:         cobra.ExactArgs(2),
+		RunE: func(cmd *cobra.Command, args []string) error {
+			return vm_pool.VMPoolGetClusterHostContainers(cmd.Context(), args[0], args[1])
+		},
+	}
+
+	vmPoolGetClusterHostInterfaceCmd = &cobra.Command{
+		Use:   "cluster-host-interface vm_pool_id host_id interface_id",
+		Short: "Get one network interface of a cluster host",
+		Long: `Get the details of a single network interface of a cluster host, including its
+MAC address, management status, fabric and network device assignments.
+
+Required Arguments:
+  vm_pool_id       The numeric ID of the VM pool
+  host_id          The numeric ID of the cluster host
+  interface_id     The numeric ID of the cluster host interface
+
+Examples:
+  # Get interface 789 of cluster host 456 in VM pool 123
+  metalcloud-cli vm-pool cluster-host-interface 123 456 789`,
+		SilenceUsage: true,
+		Annotations:  map[string]string{system.REQUIRED_PERMISSION: system.PERMISSION_VM_POOLS_READ},
+		Args:         cobra.ExactArgs(3),
+		RunE: func(cmd *cobra.Command, args []string) error {
+			return vm_pool.VMPoolGetClusterHostInterface(cmd.Context(), args[0], args[1], args[2])
+		},
+	}
+
+	vmPoolUpdateClusterHostInterfaceCmd = &cobra.Command{
+		Use:   "update-cluster-host-interface vm_pool_id host_id interface_id",
+		Short: "Update one network interface of a cluster host",
+		Long: `Update a cluster host network interface from a JSON or YAML configuration.
+
+Required Arguments:
+  vm_pool_id       The numeric ID of the VM pool
+  host_id          The numeric ID of the cluster host
+  interface_id     The numeric ID of the cluster host interface
+
+Required Flags:
+  --config-source  Source of the interface update configuration.
+                   Values: 'pipe' for stdin input, or path to a JSON/YAML file.
+
+Configuration Fields:
+  status           Required. One of 'managed', 'unmanaged', 'inactive'.
+
+Examples:
+  # Take an interface under management
+  echo '{"status":"managed"}' | metalcloud-cli vm-pool update-cluster-host-interface 123 456 789 --config-source pipe
+
+  # Update from a file
+  metalcloud-cli vm-pool update-cluster-host-interface 123 456 789 --config-source interface.json`,
+		SilenceUsage: true,
+		Annotations:  map[string]string{system.REQUIRED_PERMISSION: system.PERMISSION_VM_POOLS_WRITE},
+		Args:         cobra.ExactArgs(3),
+		RunE: func(cmd *cobra.Command, args []string) error {
+			config, err := utils.ReadConfigFromPipeOrFile(vmPoolFlags.hostInterfaceConfigSource)
+			if err != nil {
+				return err
+			}
+
+			return vm_pool.VMPoolUpdateClusterHostInterface(cmd.Context(), args[0], args[1], args[2], config)
+		},
+	}
+
+	vmPoolUpdateClusterHostInterfaceConfigExampleCmd = &cobra.Command{
+		Use:   "update-cluster-host-interface-config-example",
+		Short: "Display a cluster host interface update configuration example",
+		Long: `Display a sample payload for 'vm-pool update-cluster-host-interface'.
+
+Examples:
+  # Display the example
+  metalcloud-cli vm-pool update-cluster-host-interface-config-example
+
+  # Save it for editing
+  metalcloud-cli vm-pool update-cluster-host-interface-config-example > interface.json`,
+		SilenceUsage: true,
+		Annotations:  map[string]string{system.REQUIRED_PERMISSION: system.PERMISSION_VM_POOLS_WRITE},
+		RunE: func(cmd *cobra.Command, args []string) error {
+			return vm_pool.VMPoolUpdateClusterHostInterfaceConfigExample(cmd.Context())
+		},
+	}
+
+	vmPoolHostInterfaceNetworkDeviceCmd = &cobra.Command{
+		Use:     "cluster-host-interface-network-device [command]",
+		Aliases: []string{"chi-network-device", "chind"},
+		Short:   "Manage the network device assignments of a cluster host interface",
+		Long: `Manage the links between a VM pool cluster host interface and the interfaces of
+the network devices (switches) it is cabled to.
+
+Every command takes the VM pool, cluster host and cluster host interface as
+positional arguments; 'get' and 'remove' additionally take the numeric ID of the
+assignment itself (not the network device ID).
+
+Available Commands:
+  list            List the network device assignments of an interface
+  get             Get one network device assignment
+  add             Link an interface to a network device interface
+  remove          Delete one network device assignment
+  config-example  Display an example 'add' payload`,
+	}
+
+	vmPoolHostInterfaceNetworkDeviceListCmd = &cobra.Command{
+		Use:     "list vm_pool_id host_id interface_id",
+		Aliases: []string{"ls"},
+		Short:   "List the network device assignments of a cluster host interface",
+		Long: `List every network device (switch) interface a VM pool cluster host interface is
+linked to.
+
+Required Arguments:
+  vm_pool_id       The numeric ID of the VM pool
+  host_id          The numeric ID of the cluster host
+  interface_id     The numeric ID of the cluster host interface
+
+Examples:
+  # List the assignments of interface 789
+  metalcloud-cli vm-pool cluster-host-interface-network-device list 123 456 789
+
+  # Using the group alias
+  metalcloud-cli vm-pool chind ls 123 456 789`,
+		SilenceUsage: true,
+		Annotations:  map[string]string{system.REQUIRED_PERMISSION: system.PERMISSION_VM_POOLS_READ},
+		Args:         cobra.ExactArgs(3),
+		RunE: func(cmd *cobra.Command, args []string) error {
+			return vm_pool.VMPoolGetClusterHostInterfaceNetworkDevices(cmd.Context(), args[0], args[1], args[2])
+		},
+	}
+
+	vmPoolHostInterfaceNetworkDeviceGetCmd = &cobra.Command{
+		Use:     "get vm_pool_id host_id interface_id assignment_id",
+		Aliases: []string{"show"},
+		Short:   "Get one network device assignment of a cluster host interface",
+		Long: `Get one link between a VM pool cluster host interface and a network device
+(switch) interface.
+
+Required Arguments:
+  vm_pool_id       The numeric ID of the VM pool
+  host_id          The numeric ID of the cluster host
+  interface_id     The numeric ID of the cluster host interface
+  assignment_id    The numeric ID of the network device assignment
+
+Examples:
+  # Get assignment 5 of interface 789
+  metalcloud-cli vm-pool cluster-host-interface-network-device get 123 456 789 5`,
+		SilenceUsage: true,
+		Annotations:  map[string]string{system.REQUIRED_PERMISSION: system.PERMISSION_VM_POOLS_READ},
+		Args:         cobra.ExactArgs(4),
+		RunE: func(cmd *cobra.Command, args []string) error {
+			return vm_pool.VMPoolGetClusterHostInterfaceNetworkDevice(cmd.Context(), args[0], args[1], args[2], args[3])
+		},
+	}
+
+	vmPoolHostInterfaceNetworkDeviceAddCmd = &cobra.Command{
+		Use:     "add vm_pool_id host_id interface_id",
+		Aliases: []string{"create", "new"},
+		Short:   "Link a cluster host interface to a network device interface",
+		Long: `Link a VM pool cluster host interface to an interface of a network device
+(switch). The network device must be active and in a leaf position.
+
+Required Arguments:
+  vm_pool_id       The numeric ID of the VM pool
+  host_id          The numeric ID of the cluster host
+  interface_id     The numeric ID of the cluster host interface
+
+Required Flags (either the pair of flags, or --config-source):
+  --network-device            ID or label of the network device (switch)
+  --network-device-interface  Name of the interface on the network device
+  --config-source             Source of the assignment configuration.
+                              Values: 'pipe' for stdin input, or path to a
+                              JSON/YAML file. Mutually exclusive with the flags
+                              above; the file carries a numeric networkDeviceId.
+
+Examples:
+  # Link by network device label
+  metalcloud-cli vm-pool chind add 123 456 789 --network-device leaf-su00-r0 --network-device-interface Ethernet1/1
+
+  # Link by network device ID
+  metalcloud-cli vm-pool chind add 123 456 789 --network-device 42 --network-device-interface Ethernet1/1
+
+  # Link from a configuration file
+  metalcloud-cli vm-pool chind add 123 456 789 --config-source assignment.json`,
+		SilenceUsage: true,
+		Annotations:  map[string]string{system.REQUIRED_PERMISSION: system.PERMISSION_VM_POOLS_WRITE},
+		Args:         cobra.ExactArgs(3),
+		RunE: func(cmd *cobra.Command, args []string) error {
+			var config []byte
+			if vmPoolFlags.networkDeviceConfigSource != "" {
+				var err error
+				config, err = utils.ReadConfigFromPipeOrFile(vmPoolFlags.networkDeviceConfigSource)
+				if err != nil {
+					return err
+				}
+			}
+
+			return vm_pool.VMPoolAddClusterHostInterfaceNetworkDevice(cmd.Context(), args[0], args[1], args[2],
+				vmPoolFlags.networkDeviceRef, vmPoolFlags.networkDeviceInterfaceNameFlag, config)
+		},
+	}
+
+	vmPoolHostInterfaceNetworkDeviceRemoveCmd = &cobra.Command{
+		Use:     "remove vm_pool_id host_id interface_id assignment_id",
+		Aliases: []string{"delete", "rm"},
+		Short:   "Delete one network device assignment of a cluster host interface",
+		Long: `Delete the link between a VM pool cluster host interface and a network device
+(switch) interface.
+
+Required Arguments:
+  vm_pool_id       The numeric ID of the VM pool
+  host_id          The numeric ID of the cluster host
+  interface_id     The numeric ID of the cluster host interface
+  assignment_id    The numeric ID of the network device assignment
+
+Examples:
+  # Remove assignment 5 of interface 789
+  metalcloud-cli vm-pool cluster-host-interface-network-device remove 123 456 789 5`,
+		SilenceUsage: true,
+		Annotations:  map[string]string{system.REQUIRED_PERMISSION: system.PERMISSION_VM_POOLS_WRITE},
+		Args:         cobra.ExactArgs(4),
+		RunE: func(cmd *cobra.Command, args []string) error {
+			return vm_pool.VMPoolRemoveClusterHostInterfaceNetworkDevice(cmd.Context(), args[0], args[1], args[2], args[3])
+		},
+	}
+
+	vmPoolHostInterfaceNetworkDeviceConfigExampleCmd = &cobra.Command{
+		Use:   "config-example",
+		Short: "Display a network device assignment configuration example",
+		Long: `Display a sample payload for
+'vm-pool cluster-host-interface-network-device add --config-source'.
+
+Examples:
+  # Display the example
+  metalcloud-cli vm-pool chind config-example
+
+  # Save it for editing
+  metalcloud-cli vm-pool chind config-example > assignment.json`,
+		SilenceUsage: true,
+		Annotations:  map[string]string{system.REQUIRED_PERMISSION: system.PERMISSION_VM_POOLS_WRITE},
+		RunE: func(cmd *cobra.Command, args []string) error {
+			return vm_pool.VMPoolAddClusterHostInterfaceNetworkDeviceConfigExample(cmd.Context())
+		},
+	}
 )
 
 func init() {
@@ -529,4 +1068,70 @@ func init() {
 	vmPoolImportVMsCmd.MarkFlagsOneRequired("config-source", "vm-names")
 	vmPoolImportVMsCmd.MarkFlagsMutuallyExclusive("config-source", "vm-names")
 	vmPoolImportVMsCmd.MarkFlagsMutuallyExclusive("config-source", "infrastructure-id")
+
+	// Update command
+	vmPoolCmd.AddCommand(vmPoolUpdateCmd)
+	vmPoolUpdateCmd.Flags().StringVar(&vmPoolFlags.updateConfigSource, "config-source", "", "Source of the VM pool update configuration. Can be 'pipe' or path to a JSON file.")
+	vmPoolUpdateCmd.MarkFlagsOneRequired("config-source")
+
+	// Update config example command
+	vmPoolCmd.AddCommand(vmPoolUpdateConfigExampleCmd)
+
+	// Sync command
+	vmPoolCmd.AddCommand(vmPoolSyncCmd)
+
+	// Refresh command
+	vmPoolCmd.AddCommand(vmPoolRefreshCmd)
+
+	// Statistics command
+	vmPoolCmd.AddCommand(vmPoolStatisticsCmd)
+
+	// Containers command
+	vmPoolCmd.AddCommand(vmPoolContainersCmd)
+
+	// Get cluster host command
+	vmPoolCmd.AddCommand(vmPoolGetClusterHostCmd)
+
+	// Update cluster host command
+	vmPoolCmd.AddCommand(vmPoolUpdateClusterHostCmd)
+	vmPoolUpdateClusterHostCmd.Flags().StringVar(&vmPoolFlags.clusterHostConfigSource, "config-source", "", "Source of the cluster host update configuration. Can be 'pipe' or path to a JSON file.")
+	vmPoolUpdateClusterHostCmd.MarkFlagsOneRequired("config-source")
+
+	vmPoolCmd.AddCommand(vmPoolUpdateClusterHostConfigExampleCmd)
+
+	// Cluster host statistics command
+	vmPoolCmd.AddCommand(vmPoolClusterHostStatisticsCmd)
+
+	// Cluster host containers command
+	vmPoolCmd.AddCommand(vmPoolClusterHostContainersCmd)
+
+	// Get cluster host interface command
+	vmPoolCmd.AddCommand(vmPoolGetClusterHostInterfaceCmd)
+
+	// Update cluster host interface command
+	vmPoolCmd.AddCommand(vmPoolUpdateClusterHostInterfaceCmd)
+	vmPoolUpdateClusterHostInterfaceCmd.Flags().StringVar(&vmPoolFlags.hostInterfaceConfigSource, "config-source", "", "Source of the cluster host interface update configuration. Can be 'pipe' or path to a JSON file.")
+	vmPoolUpdateClusterHostInterfaceCmd.MarkFlagsOneRequired("config-source")
+
+	vmPoolCmd.AddCommand(vmPoolUpdateClusterHostInterfaceConfigExampleCmd)
+
+	// Cluster host interface network device sub-group
+	vmPoolCmd.AddCommand(vmPoolHostInterfaceNetworkDeviceCmd)
+
+	vmPoolHostInterfaceNetworkDeviceCmd.AddCommand(vmPoolHostInterfaceNetworkDeviceListCmd)
+
+	vmPoolHostInterfaceNetworkDeviceCmd.AddCommand(vmPoolHostInterfaceNetworkDeviceGetCmd)
+
+	vmPoolHostInterfaceNetworkDeviceCmd.AddCommand(vmPoolHostInterfaceNetworkDeviceAddCmd)
+	vmPoolHostInterfaceNetworkDeviceAddCmd.Flags().StringVar(&vmPoolFlags.networkDeviceConfigSource, "config-source", "", "Source of the network device assignment configuration. Can be 'pipe' or path to a JSON file.")
+	vmPoolHostInterfaceNetworkDeviceAddCmd.Flags().StringVar(&vmPoolFlags.networkDeviceRef, "network-device", "", "ID or label of the network device (switch) to link the interface to.")
+	vmPoolHostInterfaceNetworkDeviceAddCmd.Flags().StringVar(&vmPoolFlags.networkDeviceInterfaceNameFlag, "network-device-interface", "", "Name of the interface on the network device.")
+	vmPoolHostInterfaceNetworkDeviceAddCmd.MarkFlagsOneRequired("config-source", "network-device")
+	vmPoolHostInterfaceNetworkDeviceAddCmd.MarkFlagsRequiredTogether("network-device", "network-device-interface")
+	vmPoolHostInterfaceNetworkDeviceAddCmd.MarkFlagsMutuallyExclusive("config-source", "network-device")
+	vmPoolHostInterfaceNetworkDeviceAddCmd.MarkFlagsMutuallyExclusive("config-source", "network-device-interface")
+
+	vmPoolHostInterfaceNetworkDeviceCmd.AddCommand(vmPoolHostInterfaceNetworkDeviceRemoveCmd)
+
+	vmPoolHostInterfaceNetworkDeviceCmd.AddCommand(vmPoolHostInterfaceNetworkDeviceConfigExampleCmd)
 }
