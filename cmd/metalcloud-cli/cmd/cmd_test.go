@@ -6,10 +6,13 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"os"
+	"strings"
 	"testing"
 
 	"github.com/metalsoft-io/metalcloud-cli/cmd/metalcloud-cli/system"
 	"github.com/metalsoft-io/metalcloud-cli/pkg/formatter"
+	"github.com/spf13/cobra"
+	"github.com/spf13/pflag"
 	"github.com/spf13/viper"
 )
 
@@ -242,6 +245,9 @@ func captureStdout(t *testing.T, fn func()) string {
 // with args. Returns captured stdout and the execution error.
 func runCLI(t *testing.T, srv *httptest.Server, args ...string) (string, error) {
 	t.Helper()
+	// Reset before configuring: resetting afterwards would clear the bound
+	// allow_develop flag (system.AllowDevelop) that is set below.
+	resetFlags(rootCmd)
 
 	if srv != nil {
 		viper.Set(system.ConfigEndpoint, srv.URL)
@@ -261,6 +267,26 @@ func runCLI(t *testing.T, srv *httptest.Server, args ...string) (string, error) 
 		execErr = rootCmd.Execute()
 	})
 	return out, execErr
+}
+
+// resetFlags clears the flag state cobra keeps on the shared rootCmd tree so
+// that one runCLI invocation cannot leak --flags (and their "Changed" marker,
+// which drives MarkFlagsOneRequired & co.) into the next one. Slice/map flag
+// values are left alone because re-setting their default string would append.
+func resetFlags(cmd *cobra.Command) {
+	reset := func(f *pflag.Flag) {
+		f.Changed = false
+		typ := f.Value.Type()
+		if strings.Contains(typ, "Slice") || strings.Contains(typ, "Array") || strings.Contains(typ, "Map") {
+			return
+		}
+		_ = f.Value.Set(f.DefValue)
+	}
+	cmd.Flags().VisitAll(reset)
+	cmd.PersistentFlags().VisitAll(reset)
+	for _, sub := range cmd.Commands() {
+		resetFlags(sub)
+	}
 }
 
 // execCLI is an alias used by subnet_test.go and similar files that were

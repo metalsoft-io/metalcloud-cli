@@ -53,6 +53,7 @@ metalcloud-cli [flags]
 * [metalcloud-cli logical-network-profile](metalcloud-cli_logical-network-profile.md)	 - Manage logical network profiles for network configuration templates
 * [metalcloud-cli network-configuration](metalcloud-cli_network-configuration.md)	 - Manage network configuration templates
 * [metalcloud-cli network-device](metalcloud-cli_network-device.md)	 - Manage network devices (switches) in the infrastructure
+* [metalcloud-cli network-fabric-interconnect](metalcloud-cli_network-fabric-interconnect.md)	 - Network fabric interconnect management
 * [metalcloud-cli os-template](metalcloud-cli_os-template.md)	 - Manage OS templates for server deployments
 * [metalcloud-cli permission](metalcloud-cli_permission.md)	 - Permission management
 * [metalcloud-cli point-to-point-link](metalcloud-cli_point-to-point-link.md)	 - Manage point-to-point links between network interfaces

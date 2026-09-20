@@ -788,7 +788,7 @@ func FabricConfigureSwitches(ctx context.Context, fabricIdOrLabel string, config
 // FabricConfigureFreeform registers the base freeform device-configuration
 // template + one profile per switch.
 func FabricConfigureFreeform(ctx context.Context, fabricIdOrLabel string, config []byte, dryRun bool, verify bool) error {
-	fabricId, err := resolveFabricNumericId(ctx, fabricIdOrLabel)
+	fabricId, err := ResolveFabricNumericId(ctx, fabricIdOrLabel)
 	if err != nil {
 		return err
 	}
@@ -800,7 +800,7 @@ func FabricConfigureFreeform(ctx context.Context, fabricIdOrLabel string, config
 // FabricConfigureBgp registers the BGP underlay (+ l3evpn overlay/PFC/VRF)
 // templates and per-switch profiles, and reconciles device customVariables.
 func FabricConfigureBgp(ctx context.Context, fabricIdOrLabel string, config []byte, dryRun bool, verify bool) error {
-	fabricId, err := resolveFabricNumericId(ctx, fabricIdOrLabel)
+	fabricId, err := ResolveFabricNumericId(ctx, fabricIdOrLabel)
 	if err != nil {
 		return err
 	}
@@ -821,7 +821,14 @@ func FabricConfigureBgpExample(ctx context.Context) error {
 	return nil
 }
 
-func resolveFabricNumericId(ctx context.Context, fabricIdOrLabel string) (int64, error) {
+// PrintConfig exposes the fabric table layout so other packages that list
+// fabrics (e.g. network fabric interconnects) render them identically.
+func PrintConfig() *formatter.PrintConfig {
+	return &fabricPrintConfig
+}
+
+// ResolveFabricNumericId resolves a fabric ID or label to its numeric ID.
+func ResolveFabricNumericId(ctx context.Context, fabricIdOrLabel string) (int64, error) {
 	fabricInfo, err := GetFabricByIdOrLabel(ctx, fabricIdOrLabel)
 	if err != nil {
 		return 0, err

@@ -39,6 +39,20 @@ func GetFloat32FromString(input string) (float32, error) {
 	return float32(result), nil
 }
 
+// GetInt64SliceFromStrings parses each element of inputs as an int64,
+// failing on the first value that is not a valid integer.
+func GetInt64SliceFromStrings(inputs []string) ([]int64, error) {
+	result := make([]int64, 0, len(inputs))
+	for _, input := range inputs {
+		value, err := GetInt64FromString(input)
+		if err != nil {
+			return nil, err
+		}
+		result = append(result, value)
+	}
+	return result, nil
+}
+
 func GetInt64FromString(input string) (int64, error) {
 	result, err := strconv.ParseInt(input, 10, 64)
 	if err != nil {

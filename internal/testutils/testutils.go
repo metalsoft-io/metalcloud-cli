@@ -2,12 +2,16 @@
 package testutils
 
 import (
+	"bytes"
 	"context"
 	"encoding/json"
 	"fmt"
+	"io"
 	"net/http"
 	"net/http/httptest"
+	"os"
 	"sync/atomic"
+	"testing"
 
 	"github.com/metalsoft-io/metalcloud-cli/pkg/api"
 	"github.com/metalsoft-io/metalcloud-cli/pkg/formatter"
@@ -99,4 +103,63 @@ func MultiPageServer(path string, pages []any) *httptest.Server {
 // ErrorHandler returns an http.HandlerFunc that returns an API error response.
 func ErrorHandler(statusCode int, message string) http.HandlerFunc {
 	return RawHandler(statusCode, fmt.Sprintf(`{"message":%q,"statusCode":%d}`, message, statusCode))
+}
+
+// CaptureStdout runs fn and returns everything it wrote to os.Stdout. Use it to
+// assert on formatter output, which is printed rather than returned.
+func CaptureStdout(t *testing.T, fn func()) string {
+	t.Helper()
+	old := os.Stdout
+	r, w, err := os.Pipe()
+	if err != nil {
+		t.Fatalf("os.Pipe: %v", err)
+	}
+	os.Stdout = w
+
+	done := make(chan string)
+	go func() {
+		var buf bytes.Buffer
+		_, _ = io.Copy(&buf, r)
+		done <- buf.String()
+	}()
+
+	fn()
+	_ = w.Close()
+	os.Stdout = old
+	return <-done
+}
+
+// NoContentHandler returns an http.HandlerFunc that replies with an empty
+// 204 response. Use it for action endpoints that return no body; a JSON
+// encoder would panic writing a body on a 204.
+func NoContentHandler() http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(http.StatusNoContent)
+	}
+}
+
+// NetworkDeviceFixture returns a JSON-shaped network device that satisfies
+// every required property of sdk.NetworkDevice, so the strict SDK unmarshaller
+// accepts it. Callers may override or add keys on the returned map.
+func NetworkDeviceFixture(id string, siteId int, identifierString string) map[string]any {
+	return map[string]any{
+		"id": id, "revision": 1, "status": "active", "vendorId": 1, "siteId": siteId,
+		"identifierString": identifierString, "applyIdentifierAsHostnameOnNextDeploy": false,
+		"description": "", "chassisIdentifier": "", "country": "", "city": "",
+		"datacenterMeta": "", "datacenterRoom": "", "datacenterRack": "",
+		"rackPositionUpperUnit": 1, "rackPositionLowerUnit": 1,
+		"managementAddress": "10.0.0.100", "managementAddressPrefixLength": 24,
+		"managementAddressGateway": "10.0.0.1", "managementPort": 22,
+		"syslogEnabled": 0, "snmpServiceEnabled": false, "snmpMonitoringEnabled": false,
+		"username": "admin", "managementMacAddress": "00:11:22:33:44:55", "serialNumber": "SN-1",
+		"driver": "sonic_enterprise", "position": "leaf", "backupEnabled": false,
+		"driftDetectionEnabled": false, "driftDetectionSyncStatus": "not_supported",
+		"orderIndex": 0, "tags": []any{}, "tagsMap": map[string]any{},
+		"readyForInitialConfiguration": 0, "bootstrapReadinessCheckInProgress": 0,
+		"subnetOobId": 0, "subnetOobIndex": 0, "requiresOsInstall": false,
+		"bootstrapExpectedPartnerHostname": "", "loopbackAddressIpv6": "", "asn": 0,
+		"vtepAddressIpv6": "", "mlagSystemMac": "", "mlagDomainId": 0, "quarantineVlan": 0,
+		"variablesMaterializedForOSAssets": map[string]any{}, "secretsMaterializedForOSAssets": map[string]any{},
+		"bootstrapReadinessCheckResult": map[string]any{}, "isGateway": false, "portCount": 0,
+	}
 }
