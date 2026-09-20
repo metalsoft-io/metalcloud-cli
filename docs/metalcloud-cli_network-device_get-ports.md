@@ -1,17 +1,16 @@
 ## metalcloud-cli network-device get-ports
 
-Get real-time port statistics directly from the network device
+List the interface inventory of a network device
 
 ### Synopsis
 
-Retrieve real-time port statistics and status information directly from
-the network device. This provides current operational data including:
-- Port status (up/down)
-- Traffic statistics (bytes, packets)
-- Error counters
-- Link speed and duplex settings
+List the interfaces of a network device as MetalSoft has them inventoried:
+interface id, name, kind, description, MAC address, LAG membership and tags.
 
-This data is fetched directly from the device rather than cached information.
+The interface ids reported here are the ones the 'network-device port'
+sub-commands take. For the operational state read from the device itself
+(link state, negotiated speed, utilization) use
+'network-device port live-status' instead.
 
 Arguments:
   network_device_id   The unique identifier of the network device

@@ -1,0 +1,42 @@
+## metalcloud-cli logical-network-profile allocation-strategy list
+
+List allocation strategies of one family
+
+### Synopsis
+
+List the allocation strategies of one family on a logical network profile.
+
+Required Arguments:
+  logical_network_profile_id The ID of the logical network profile
+  family       One of: ipv4, ipv6, vlan, vni, pkey, zone
+
+Examples:
+  metalcloud logical-network-profile allocation-strategy list 12 ipv4
+
+```
+metalcloud-cli logical-network-profile allocation-strategy list logical_network_profile_id family [flags]
+```
+
+### Options
+
+```
+  -h, --help   help for list
+```
+
+### Options inherited from parent commands
+
+```
+  -k, --api_key string         MetalCloud API key
+  -c, --config string          Config file path
+  -d, --debug                  Set to enable debug logging
+  -e, --endpoint string        MetalCloud API endpoint
+  -f, --format string          Output format. Supported values are 'text','csv','md','json','yaml'. (default "text")
+  -i, --insecure_skip_verify   Set to allow insecure transport
+  -l, --log_file string        Log file path
+  -v, --verbosity string       Log level verbosity (default "INFO")
+```
+
+### SEE ALSO
+
+* [metalcloud-cli logical-network-profile allocation-strategy](metalcloud-cli_logical-network-profile_allocation-strategy.md)	 - Manage logical network profile allocation strategies
+

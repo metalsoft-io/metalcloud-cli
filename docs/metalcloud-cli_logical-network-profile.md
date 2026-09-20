@@ -43,6 +43,7 @@ Examples:
 ### SEE ALSO
 
 * [metalcloud-cli](metalcloud-cli.md)	 - MetalCloud CLI
+* [metalcloud-cli logical-network-profile allocation-strategy](metalcloud-cli_logical-network-profile_allocation-strategy.md)	 - Manage logical network profile allocation strategies
 * [metalcloud-cli logical-network-profile config-example](metalcloud-cli_logical-network-profile_config-example.md)	 - Get example configuration for a specific profile kind
 * [metalcloud-cli logical-network-profile create](metalcloud-cli_logical-network-profile_create.md)	 - Create a new logical network profile from configuration
 * [metalcloud-cli logical-network-profile delete](metalcloud-cli_logical-network-profile_delete.md)	 - Delete a logical network profile

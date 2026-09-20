@@ -10,6 +10,12 @@ A route domain is a tenant VRF: an EVPN-L3VPN / VRF-Lite routing instance that L
 logical networks attach to (via a logical network profile's routeDomainId). Use
 these commands to list, create, update, and delete route domains.
 
+Available Commands:
+  list, get, create, update, delete, config-example
+  get-config           Get the config sub-resource of a route domain
+  update-config        Update the global settings of a route domain config
+  allocation-strategy  Manage the config's allocation strategies
+
 ### Options
 
 ```
@@ -32,10 +38,13 @@ these commands to list, create, update, and delete route domains.
 ### SEE ALSO
 
 * [metalcloud-cli](metalcloud-cli.md)	 - MetalCloud CLI
+* [metalcloud-cli route-domain allocation-strategy](metalcloud-cli_route-domain_allocation-strategy.md)	 - Manage route domain allocation strategies
 * [metalcloud-cli route-domain config-example](metalcloud-cli_route-domain_config-example.md)	 - Display a route domain configuration example
 * [metalcloud-cli route-domain create](metalcloud-cli_route-domain_create.md)	 - Create a new route domain
 * [metalcloud-cli route-domain delete](metalcloud-cli_route-domain_delete.md)	 - Delete a route domain
 * [metalcloud-cli route-domain get](metalcloud-cli_route-domain_get.md)	 - Get details about a specific route domain
+* [metalcloud-cli route-domain get-config](metalcloud-cli_route-domain_get-config.md)	 - Get the config of a route domain
 * [metalcloud-cli route-domain list](metalcloud-cli_route-domain_list.md)	 - List all route domains
 * [metalcloud-cli route-domain update](metalcloud-cli_route-domain_update.md)	 - Update an existing route domain
+* [metalcloud-cli route-domain update-config](metalcloud-cli_route-domain_update-config.md)	 - Update the global settings of a route domain config
 

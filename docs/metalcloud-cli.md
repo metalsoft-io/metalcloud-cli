@@ -34,12 +34,14 @@ metalcloud-cli [flags]
 * [metalcloud-cli bucket](metalcloud-cli_bucket.md)	 - Manage S3-compatible object storage buckets
 * [metalcloud-cli custom-iso](metalcloud-cli_custom-iso.md)	 - Manage custom ISO images for server provisioning
 * [metalcloud-cli device-config-template](metalcloud-cli_device-config-template.md)	 - Manage device configuration templates and profiles
+* [metalcloud-cli dhcp-reservation](metalcloud-cli_dhcp-reservation.md)	 - Manage site DHCP reservations
 * [metalcloud-cli dns-zone](metalcloud-cli_dns-zone.md)	 - DNS Zone management
 * [metalcloud-cli drive](metalcloud-cli_drive.md)	 - Manage drives within infrastructures
 * [metalcloud-cli endpoint](metalcloud-cli_endpoint.md)	 - Endpoint management
 * [metalcloud-cli event](metalcloud-cli_event.md)	 - Manage and monitor system events
 * [metalcloud-cli extension](metalcloud-cli_extension.md)	 - Manage platform extensions for workflows, applications, and actions
 * [metalcloud-cli extension-instance](metalcloud-cli_extension-instance.md)	 - Manage extension instances within infrastructure deployments
+* [metalcloud-cli external-connection](metalcloud-cli_external-connection.md)	 - External connection management
 * [metalcloud-cli fabric](metalcloud-cli_fabric.md)	 - Manage network fabrics
 * [metalcloud-cli file-share](metalcloud-cli_file-share.md)	 - Manage file shares for infrastructure resources
 * [metalcloud-cli firmware-baseline](metalcloud-cli_firmware-baseline.md)	 - Manage firmware baselines for consistent hardware configurations
@@ -50,9 +52,12 @@ metalcloud-cli [flags]
 * [metalcloud-cli job-group](metalcloud-cli_job-group.md)	 - Manage MetalCloud job groups and group operations
 * [metalcloud-cli license](metalcloud-cli_license.md)	 - Manage the system license
 * [metalcloud-cli logical-network](metalcloud-cli_logical-network.md)	 - Manage logical networks within fabrics
+* [metalcloud-cli logical-network-interconnect](metalcloud-cli_logical-network-interconnect.md)	 - Logical network interconnect management
 * [metalcloud-cli logical-network-profile](metalcloud-cli_logical-network-profile.md)	 - Manage logical network profiles for network configuration templates
 * [metalcloud-cli network-configuration](metalcloud-cli_network-configuration.md)	 - Manage network configuration templates
 * [metalcloud-cli network-device](metalcloud-cli_network-device.md)	 - Manage network devices (switches) in the infrastructure
+* [metalcloud-cli network-device-controller](metalcloud-cli_network-device-controller.md)	 - Network device controller management
+* [metalcloud-cli network-endpoint-group](metalcloud-cli_network-endpoint-group.md)	 - Network endpoint group management
 * [metalcloud-cli network-fabric-interconnect](metalcloud-cli_network-fabric-interconnect.md)	 - Network fabric interconnect management
 * [metalcloud-cli os-template](metalcloud-cli_os-template.md)	 - Manage OS templates for server deployments
 * [metalcloud-cli permission](metalcloud-cli_permission.md)	 - Permission management
