@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"net/http"
 	"sort"
 	"strconv"
 	"strings"
@@ -302,6 +303,123 @@ func FabricDeploy(ctx context.Context, fabricId string) error {
 	}
 
 	return formatter.PrintResult(jobInfo, nil)
+}
+
+// FabricAcceptDeploy accepts a fabric deployment that is waiting for confirmation.
+func FabricAcceptDeploy(ctx context.Context, fabricId string) error {
+	return fabricDeployDecision(ctx, fabricId, true)
+}
+
+// FabricRejectDeploy rejects a fabric deployment that is waiting for confirmation.
+func FabricRejectDeploy(ctx context.Context, fabricId string) error {
+	return fabricDeployDecision(ctx, fabricId, false)
+}
+
+// fabricDeployDecision accepts or rejects a pending fabric deploy. Both
+// endpoints take no body and return no content.
+func fabricDeployDecision(ctx context.Context, fabricId string, accept bool) error {
+	action, outcome := "Rejecting", "rejected"
+	if accept {
+		action, outcome = "Accepting", "accepted"
+	}
+	logger.Get().Info().Msgf("%s deploy of fabric '%s'", action, fabricId)
+
+	fabricIdNumeric, err := ResolveFabricNumericId(ctx, fabricId)
+	if err != nil {
+		return err
+	}
+
+	client := api.GetApiClient(ctx)
+
+	var httpRes *http.Response
+	if accept {
+		httpRes, err = client.NetworkFabricAPI.AcceptNetworkFabricDeploy(ctx, fabricIdNumeric).Execute()
+	} else {
+		httpRes, err = client.NetworkFabricAPI.RejectNetworkFabricDeploy(ctx, fabricIdNumeric).Execute()
+	}
+	if err := response_inspector.InspectResponse(httpRes, err); err != nil {
+		return err
+	}
+
+	logger.Get().Info().Msgf("Deploy of fabric '%s' %s", fabricId, outcome)
+	return nil
+}
+
+// FabricDelete deletes a fabric. The endpoint takes no If-Match revision.
+func FabricDelete(ctx context.Context, fabricId string) error {
+	logger.Get().Info().Msgf("Deleting fabric '%s'", fabricId)
+
+	fabricIdNumeric, err := ResolveFabricNumericId(ctx, fabricId)
+	if err != nil {
+		return err
+	}
+
+	client := api.GetApiClient(ctx)
+
+	httpRes, err := client.NetworkFabricAPI.DeleteNetworkFabric(ctx, fabricIdNumeric).Execute()
+	if err := response_inspector.InspectResponse(httpRes, err); err != nil {
+		return err
+	}
+
+	logger.Get().Info().Msgf("Fabric '%s' deleted", fabricId)
+	return nil
+}
+
+// interconnectSummary is a lenient view of a network fabric interconnect, used
+// when the strict SDK model rejects a live payload (schema drift). The field
+// names match the interconnect print config, so the same table layout applies.
+type interconnectSummary struct {
+	Id                         string  `json:"id"`
+	Label                      string  `json:"label"`
+	Name                       *string `json:"name,omitempty"`
+	InterconnectType           string  `json:"interconnectType"`
+	BgpConfigurationTemplateId *int64  `json:"bgpConfigurationTemplateId,omitempty"`
+	TransportId                *int64  `json:"transportId,omitempty"`
+	Status                     *string `json:"status,omitempty"`
+	DeployId                   *int64  `json:"deployId,omitempty"`
+	CreatedTimestamp           *string `json:"createdTimestamp,omitempty"`
+}
+
+// FabricInterconnectsGet lists the network fabric interconnects a fabric takes
+// part in. printConfig is supplied by the caller (the cmd layer passes the
+// interconnect package's layout) because internal/network_fabric_interconnect
+// already imports this package, so importing it back would be a cycle.
+func FabricInterconnectsGet(ctx context.Context, fabricId string, printConfig *formatter.PrintConfig) error {
+	logger.Get().Info().Msgf("Listing network fabric interconnects of fabric '%s'", fabricId)
+
+	fabricIdNumeric, err := ResolveFabricNumericId(ctx, fabricId)
+	if err != nil {
+		return err
+	}
+
+	client := api.GetApiClient(ctx)
+
+	request := client.NetworkFabricAPI.
+		GetFabricsNetworkFabricInterconnects(ctx, fabricIdNumeric).
+		SortBy([]string{"id:ASC"})
+
+	records, meta, err := utils.FetchAllPages(request)
+	if err == nil {
+		return utils.PrintAll(records, meta, len(records), printConfig)
+	}
+	logger.Get().Debug().Err(err).Msg("typed interconnect decode failed, falling back to raw parsing")
+
+	rawItems, meta, rawErr := utils.FetchAllPagesRaw(func(page float32) (*http.Response, error) {
+		return api.DoJSONRequest(ctx, http.MethodGet,
+			fmt.Sprintf("/api/v2/network-fabrics/%d/network-fabric-interconnects?page=%.0f&limit=100&sortBy=id:ASC", fabricIdNumeric, page), nil)
+	})
+	if rawErr != nil {
+		// Report the original error: the raw retry only exists to work around a
+		// strict decode, so its failure is not the interesting one.
+		return err
+	}
+
+	summaries, rawErr := utils.UnmarshalRawItems[interconnectSummary](rawItems)
+	if rawErr != nil {
+		return err
+	}
+
+	return utils.PrintAllRaw(rawItems, summaries, meta, len(summaries), printConfig)
 }
 
 // switchImportConfig is the YAML/JSON shape consumed by FabricImportDevices:
