@@ -365,6 +365,195 @@ func EndpointInterfaceList(ctx context.Context, endpointId string) error {
 	return formatter.PrintResult(endpointInterfacesList, &endpointInterfacePrintConfig)
 }
 
+// networkDeviceEndpointInterfacePrintConfig renders the switch ports of a
+// network device together with the endpoint interface occupying each one.
+var networkDeviceEndpointInterfacePrintConfig = formatter.PrintConfig{
+	FieldsConfig: map[string]formatter.RecordFieldConfig{
+		"NetworkDeviceInterfaceId": {
+			Title: "Port ID",
+			Order: 1,
+		},
+		"NetworkDeviceInterfaceName": {
+			Title: "Port",
+			Order: 2,
+		},
+		"NetworkDeviceId": {
+			Title: "Switch",
+			Order: 3,
+		},
+		"EndpointId": {
+			Title: "Endpoint",
+			Order: 4,
+		},
+		"EndpointInterfaceId": {
+			Title: "Endpoint Interface",
+			Order: 5,
+		},
+	},
+}
+
+// endpointInterfaceRecordPrintConfig renders a single endpoint interface as
+// returned by the API (the list command projects a narrower view).
+var endpointInterfaceRecordPrintConfig = formatter.PrintConfig{
+	FieldsConfig: map[string]formatter.RecordFieldConfig{
+		"Id": {
+			Title: "ID",
+			Order: 1,
+		},
+		"MacAddress": {
+			Title: "MAC Address",
+			Order: 2,
+		},
+		"NetworkDeviceId": {
+			Title: "Switch",
+			Order: 3,
+		},
+		"NetworkDeviceInterfaceId": {
+			Title: "Switch Port ID",
+			Order: 4,
+		},
+		"NetworkDeviceInterfaceName": {
+			Title: "Switch Port",
+			Order: 5,
+		},
+		"Revision": {
+			Title: "Revision",
+			Order: 6,
+		},
+	},
+}
+
+func EndpointInterfaceGet(ctx context.Context, endpointId string, endpointInterfaceId string) error {
+	logger.Get().Info().Msgf("Get interface '%s' of endpoint '%s'", endpointInterfaceId, endpointId)
+
+	endpointInterface, _, _, err := getEndpointInterface(ctx, endpointId, endpointInterfaceId)
+	if err != nil {
+		return err
+	}
+
+	return formatter.PrintResult(endpointInterface, &endpointInterfaceRecordPrintConfig)
+}
+
+func EndpointInterfaceCreate(ctx context.Context, endpointId string, createConfig sdk.CreateEndpointInterface) error {
+	logger.Get().Info().Msgf("Adding interface to endpoint '%s'", endpointId)
+
+	endpointIdNumeric, err := GetEndpointId(endpointId)
+	if err != nil {
+		return err
+	}
+
+	client := api.GetApiClient(ctx)
+
+	endpointInterface, httpRes, err := client.EndpointAPI.
+		CreateEndpointInterface(ctx, endpointIdNumeric).
+		CreateEndpointInterface(createConfig).
+		Execute()
+	if err := response_inspector.InspectResponse(httpRes, err); err != nil {
+		return err
+	}
+
+	return formatter.PrintResult(endpointInterface, &endpointInterfaceRecordPrintConfig)
+}
+
+func EndpointInterfaceUpdate(ctx context.Context, endpointId string, endpointInterfaceId string, updateConfig sdk.UpdateEndpointInterface) error {
+	logger.Get().Info().Msgf("Updating interface '%s' of endpoint '%s'", endpointInterfaceId, endpointId)
+
+	current, endpointIdNumeric, endpointInterfaceIdNumeric, err := getEndpointInterface(ctx, endpointId, endpointInterfaceId)
+	if err != nil {
+		return err
+	}
+
+	client := api.GetApiClient(ctx)
+
+	endpointInterface, httpRes, err := client.EndpointAPI.
+		UpdateEndpointInterface(ctx, endpointIdNumeric, endpointInterfaceIdNumeric).
+		UpdateEndpointInterface(updateConfig).
+		IfMatch(current.Revision).
+		Execute()
+	if err := response_inspector.InspectResponse(httpRes, err); err != nil {
+		return err
+	}
+
+	return formatter.PrintResult(endpointInterface, &endpointInterfaceRecordPrintConfig)
+}
+
+func EndpointInterfaceDelete(ctx context.Context, endpointId string, endpointInterfaceId string) error {
+	logger.Get().Info().Msgf("Removing interface '%s' from endpoint '%s'", endpointInterfaceId, endpointId)
+
+	current, endpointIdNumeric, endpointInterfaceIdNumeric, err := getEndpointInterface(ctx, endpointId, endpointInterfaceId)
+	if err != nil {
+		return err
+	}
+
+	client := api.GetApiClient(ctx)
+
+	httpRes, err := client.EndpointAPI.
+		DeleteEndpointInterface(ctx, endpointIdNumeric, endpointInterfaceIdNumeric).
+		IfMatch(current.Revision).
+		Execute()
+	if err := response_inspector.InspectResponse(httpRes, err); err != nil {
+		return err
+	}
+
+	logger.Get().Info().Msgf("Interface '%s' removed from endpoint '%s'", endpointInterfaceId, endpointId)
+	return nil
+}
+
+// EndpointNetworkDeviceInterfaces lists every interface of a network device
+// together with the endpoint (if any) attached to it.
+func EndpointNetworkDeviceInterfaces(ctx context.Context, networkDeviceIdOrLabel string) error {
+	logger.Get().Info().Msgf("Listing interfaces and endpoints of network device '%s'", networkDeviceIdOrLabel)
+
+	device, err := network_device.GetNetworkDeviceByIdOrLabel(ctx, networkDeviceIdOrLabel)
+	if err != nil {
+		return err
+	}
+
+	deviceIdNumeric, err := utils.GetFloat32FromString(device.Id)
+	if err != nil {
+		return fmt.Errorf("invalid network device id '%s': %w", device.Id, err)
+	}
+
+	client := api.GetApiClient(ctx)
+
+	result, httpRes, err := client.EndpointAPI.
+		GetNetworkDeviceInterfacesAndEndpoints(ctx, deviceIdNumeric).
+		Execute()
+	if err := response_inspector.InspectResponse(httpRes, err); err != nil {
+		return err
+	}
+
+	return formatter.PrintResult(result.Data, &networkDeviceEndpointInterfacePrintConfig)
+}
+
+// getEndpointInterface fetches one endpoint interface and returns it together
+// with the numeric endpoint and interface ids. The interface's own revision
+// is the entity tag the update/delete endpoints expect in If-Match.
+func getEndpointInterface(ctx context.Context, endpointId string, endpointInterfaceId string) (*sdk.EndpointInterface, int64, int64, error) {
+	endpointIdNumeric, err := GetEndpointId(endpointId)
+	if err != nil {
+		return nil, 0, 0, err
+	}
+
+	endpointInterfaceIdNumeric, err := utils.GetInt64FromString(endpointInterfaceId)
+	if err != nil {
+		err = fmt.Errorf("invalid endpoint interface ID: '%s'", endpointInterfaceId)
+		logger.Get().Error().Err(err).Msg("")
+		return nil, 0, 0, err
+	}
+
+	client := api.GetApiClient(ctx)
+
+	endpointInterface, httpRes, err := client.EndpointAPI.
+		GetEndpointInterfaceById(ctx, endpointIdNumeric, endpointInterfaceIdNumeric).
+		Execute()
+	if err := response_inspector.InspectResponse(httpRes, err); err != nil {
+		return nil, 0, 0, err
+	}
+
+	return endpointInterface, endpointIdNumeric, endpointInterfaceIdNumeric, nil
+}
+
 func GetEndpointId(endpointId string) (int64, error) {
 	endpointIdNumeric, err := strconv.ParseInt(endpointId, 10, 64)
 	if err != nil {

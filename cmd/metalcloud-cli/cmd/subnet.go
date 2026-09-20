@@ -10,6 +10,7 @@ import (
 var (
 	subnetFlags = struct {
 		configSource string
+		prefixLength int
 	}{}
 
 	subnetCmd = &cobra.Command{
@@ -22,7 +23,15 @@ Subnets define network segments with specific IP address ranges and can be confi
 - Regular subnets: Fixed network segments with defined address ranges
 - IP pools: Dynamic address pools for automatic IP allocation
 
-Available commands allow you to list, create, update, delete subnets and view configuration examples.`,
+Available commands allow you to list, create, update, delete subnets and view configuration examples.
+
+Available Commands:
+  list, get, create, update, delete, config-example
+  ips              List the allocated IPs of a subnet
+  ip-ranges        List the IP ranges of a subnet
+  capacity         Show how much of a subnet is still available
+  remove-ip        Remove an allocated IP from a subnet
+  remove-ip-range  Remove an IP range from a subnet`,
 	}
 
 	subnetListCmd = &cobra.Command{
@@ -251,6 +260,81 @@ Examples:
 			return subnet.SubnetDelete(cmd.Context(), args[0])
 		},
 	}
+
+	subnetCapacityCmd = &cobra.Command{
+		Use:     "capacity subnet_id",
+		Aliases: []string{"usage"},
+		Short:   "Show how much of a subnet is still available",
+		Long: `Report how much of a subnet is still available.
+
+A subnet that is not a pool reports IP counts (total, free, used); a pool
+reports its free blocks instead, in largest-block CIDR form. Counts are decimal
+strings because a large IPv6 subnet holds more addresses than a JSON number can
+carry exactly.
+
+Required Arguments:
+  subnet_id    The ID of the subnet
+
+Optional Flags:
+  --prefix-length  Pools only: also report how many blocks of this prefix length
+                   still fit. Must not be shorter than the pool prefix itself.
+
+Examples:
+  metalcloud-cli subnet capacity 123
+  metalcloud-cli subnet capacity 123 --prefix-length 26`,
+		SilenceUsage: true,
+		Annotations:  map[string]string{system.REQUIRED_PERMISSION: system.PERMISSION_SUBNETS_READ},
+		Args:         cobra.ExactArgs(1),
+		RunE: func(cmd *cobra.Command, args []string) error {
+			return subnet.SubnetCapacity(cmd.Context(), args[0], subnetFlags.prefixLength)
+		},
+	}
+
+	subnetRemoveIpCmd = &cobra.Command{
+		Use:     "remove-ip subnet_id ip_id",
+		Aliases: []string{"rm-ip", "delete-ip"},
+		Short:   "Remove an allocated IP from a subnet",
+		Long: `Remove one allocated IP from a subnet.
+
+The subnet's current revision is sent as the If-Match entity tag, so a
+concurrent change is rejected instead of being overwritten.
+
+Required Arguments:
+  subnet_id    The ID of the subnet
+  ip_id        The ID of the IP to remove (see 'subnet ips subnet_id')
+
+Examples:
+  metalcloud-cli subnet remove-ip 123 456`,
+		SilenceUsage: true,
+		Annotations:  map[string]string{system.REQUIRED_PERMISSION: system.PERMISSION_SUBNETS_WRITE},
+		Args:         cobra.ExactArgs(2),
+		RunE: func(cmd *cobra.Command, args []string) error {
+			return subnet.SubnetIpRemove(cmd.Context(), args[0], args[1])
+		},
+	}
+
+	subnetRemoveIpRangeCmd = &cobra.Command{
+		Use:     "remove-ip-range subnet_id range_id",
+		Aliases: []string{"rm-ip-range", "delete-ip-range"},
+		Short:   "Remove an IP range from a subnet",
+		Long: `Remove one IP range from a subnet.
+
+The subnet's current revision is sent as the If-Match entity tag, so a
+concurrent change is rejected instead of being overwritten.
+
+Required Arguments:
+  subnet_id    The ID of the subnet
+  range_id     The ID of the IP range to remove (see 'subnet ip-ranges subnet_id')
+
+Examples:
+  metalcloud-cli subnet remove-ip-range 123 7`,
+		SilenceUsage: true,
+		Annotations:  map[string]string{system.REQUIRED_PERMISSION: system.PERMISSION_SUBNETS_WRITE},
+		Args:         cobra.ExactArgs(2),
+		RunE: func(cmd *cobra.Command, args []string) error {
+			return subnet.SubnetIpRangeRemove(cmd.Context(), args[0], args[1])
+		},
+	}
 )
 
 func init() {
@@ -272,4 +356,10 @@ func init() {
 
 	subnetCmd.AddCommand(subnetIpsCmd)
 	subnetCmd.AddCommand(subnetIpRangesCmd)
+
+	subnetCmd.AddCommand(subnetCapacityCmd)
+	subnetCapacityCmd.Flags().IntVar(&subnetFlags.prefixLength, "prefix-length", 0, "Pools only: also report how many blocks of this prefix length still fit.")
+
+	subnetCmd.AddCommand(subnetRemoveIpCmd)
+	subnetCmd.AddCommand(subnetRemoveIpRangeCmd)
 }
