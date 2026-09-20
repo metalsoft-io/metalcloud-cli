@@ -66,6 +66,12 @@ func TestVMInstanceList(t *testing.T) {
 		}`
 
 		ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			// The infrastructure is resolved by ID or label before the
+			// instances are listed.
+			if r.URL.Path == "/api/v2/infrastructures" {
+				infraHandler()(w, r)
+				return
+			}
 			if strings.Contains(r.URL.Path, "/infrastructures/") && strings.Contains(r.URL.Path, "/vm-instances") {
 				w.Header().Set("Content-Type", "application/json")
 				w.WriteHeader(http.StatusOK)
@@ -109,6 +115,10 @@ func TestVMInstanceGetCredentials(t *testing.T) {
 		}`
 
 		ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			if r.URL.Path == "/api/v2/infrastructures" {
+				infraHandler()(w, r)
+				return
+			}
 			if strings.Contains(r.URL.Path, "/credentials") {
 				w.Header().Set("Content-Type", "application/json")
 				w.WriteHeader(http.StatusOK)
