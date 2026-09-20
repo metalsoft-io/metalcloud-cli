@@ -211,6 +211,116 @@ func RouteDomainConfigExample(ctx context.Context) error {
 	return formatter.PrintResult(example, nil)
 }
 
+// routeDomainConfigPrintConfig renders the scalar fields of a route domain
+// config. Its allocation-strategy collections are managed by the
+// 'route-domain allocation-strategy' commands and are only rendered in the
+// json/yaml output.
+var routeDomainConfigPrintConfig = formatter.PrintConfig{
+	FieldsConfig: map[string]formatter.RecordFieldConfig{
+		"Id": {
+			Title: "#",
+			Order: 1,
+		},
+		"Kind": {
+			Title: "Kind",
+			Order: 2,
+		},
+		"DeployType": {
+			Title: "Deploy Type",
+			Order: 3,
+		},
+		"DeployStatus": {
+			Title:       "Deploy Status",
+			Transformer: formatter.FormatStatusValue,
+			Order:       4,
+		},
+		"AutoRouteDistinguisher": {
+			Title: "Auto RD",
+			Order: 5,
+		},
+		"AutoRouteTarget": {
+			Title: "Auto RT",
+			Order: 6,
+		},
+		"Revision": {
+			Title: "Revision",
+			Order: 7,
+		},
+		"UpdatedAt": {
+			Title:       "Updated",
+			Transformer: formatter.FormatDateTimeValue,
+			Order:       8,
+		},
+	},
+}
+
+func RouteDomainConfigGet(ctx context.Context, routeDomainId string) error {
+	logger.Get().Info().Msgf("Get route domain %s config", routeDomainId)
+
+	config, _, err := getRouteDomainConfig(ctx, routeDomainId)
+	if err != nil {
+		return err
+	}
+
+	return formatter.PrintResult(config, &routeDomainConfigPrintConfig)
+}
+
+func RouteDomainConfigUpdate(ctx context.Context, routeDomainId string, config []byte) error {
+	logger.Get().Info().Msgf("Updating route domain %s config", routeDomainId)
+
+	var settings sdk.UpdateRouteDomainConfigGlobalSettings
+	if err := utils.UnmarshalContent(config, &settings); err != nil {
+		return err
+	}
+
+	routeDomainIdNumeric, revision, err := getRouteDomainConfigRevision(ctx, routeDomainId)
+	if err != nil {
+		return err
+	}
+
+	client := api.GetApiClient(ctx)
+
+	updated, httpRes, err := client.RouteDomainAPI.
+		UpdateRouteDomainConfig(ctx, routeDomainIdNumeric).
+		UpdateRouteDomainConfigGlobalSettings(settings).
+		IfMatch(revision).
+		Execute()
+	if err := response_inspector.InspectResponse(httpRes, err); err != nil {
+		return err
+	}
+
+	return formatter.PrintResult(updated, &routeDomainConfigPrintConfig)
+}
+
+// getRouteDomainConfig fetches a route domain's config object and its numeric
+// id. The config carries its own revision, which differs from the route
+// domain's and is the entity tag the config endpoints expect in If-Match
+// (without it they answer 428, with the entity's revision 409).
+func getRouteDomainConfig(ctx context.Context, routeDomainId string) (*sdk.RouteDomainConfig, int64, error) {
+	routeDomainIdNumeric, err := getRouteDomainId(routeDomainId)
+	if err != nil {
+		return nil, 0, err
+	}
+
+	client := api.GetApiClient(ctx)
+
+	config, httpRes, err := client.RouteDomainAPI.GetRouteDomainConfig(ctx, routeDomainIdNumeric).Execute()
+	if err := response_inspector.InspectResponse(httpRes, err); err != nil {
+		return nil, 0, err
+	}
+
+	return config, routeDomainIdNumeric, nil
+}
+
+func getRouteDomainConfigRevision(ctx context.Context, routeDomainId string) (int64, string, error) {
+	config, routeDomainIdNumeric, err := getRouteDomainConfig(ctx, routeDomainId)
+	if err != nil {
+		return 0, "", err
+	}
+
+	return routeDomainIdNumeric, strconv.FormatInt(config.Revision, 10), nil
+}
+
 func getRouteDomainId(routeDomainId string) (int64, error) {
 	routeDomainIdNumeric, err := strconv.ParseInt(routeDomainId, 10, 64)
 	if err != nil {

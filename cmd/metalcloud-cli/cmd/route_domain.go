@@ -20,7 +20,13 @@ var (
 
 A route domain is a tenant VRF: an EVPN-L3VPN / VRF-Lite routing instance that L3
 logical networks attach to (via a logical network profile's routeDomainId). Use
-these commands to list, create, update, and delete route domains.`,
+these commands to list, create, update, and delete route domains.
+
+Available Commands:
+  list, get, create, update, delete, config-example
+  get-config           Get the config sub-resource of a route domain
+  update-config        Update the global settings of a route domain config
+  allocation-strategy  Manage the config's allocation strategies`,
 	}
 
 	routeDomainListCmd = &cobra.Command{
@@ -111,6 +117,64 @@ Examples:
 			return route_domain.RouteDomainDelete(cmd.Context(), args[0])
 		},
 	}
+
+	routeDomainGetConfigCmd = &cobra.Command{
+		Use:     "get-config route_domain_id",
+		Aliases: []string{"config", "show-config"},
+		Short:   "Get the config of a route domain",
+		Long: `Display the config object of a route domain.
+
+The config is a separate sub-resource holding the desired state of the route
+domain: its kind, the auto route distinguisher / route target settings, and the
+allocation strategies that the 'route-domain allocation-strategy' commands
+manage. It carries its own revision, distinct from the route domain's.
+
+Required Arguments:
+  route_domain_id  The ID of the route domain
+
+Examples:
+  metalcloud-cli route-domain get-config 2
+  metalcloud-cli route-domain get-config 2 -f json`,
+		SilenceUsage: true,
+		Annotations:  map[string]string{system.REQUIRED_PERMISSION: system.PERMISSION_NETWORK_PROFILES_READ},
+		Args:         cobra.ExactArgs(1),
+		RunE: func(cmd *cobra.Command, args []string) error {
+			return route_domain.RouteDomainConfigGet(cmd.Context(), args[0])
+		},
+	}
+
+	routeDomainUpdateConfigCmd = &cobra.Command{
+		Use:     "update-config route_domain_id",
+		Aliases: []string{"edit-config"},
+		Short:   "Update the global settings of a route domain config",
+		Long: `Update the global settings of a route domain's config.
+
+Only the config's global settings are updated here (autoRouteDistinguisher and
+autoRouteTarget); the allocation strategies are managed with the 'route-domain
+allocation-strategy' commands. The config's own revision is sent as the
+If-Match entity tag, so a concurrent change is rejected instead of being
+overwritten.
+
+Required Arguments:
+  route_domain_id  The ID of the route domain
+
+Required Flags:
+  --config-source  'pipe' to read from stdin, or a path to a JSON/YAML file
+
+Examples:
+  metalcloud-cli route-domain update-config 2 --config-source settings.json
+  echo '{"autoRouteTarget":true}' | metalcloud-cli route-domain update-config 2 --config-source pipe`,
+		SilenceUsage: true,
+		Annotations:  map[string]string{system.REQUIRED_PERMISSION: system.PERMISSION_NETWORK_PROFILES_WRITE},
+		Args:         cobra.ExactArgs(1),
+		RunE: func(cmd *cobra.Command, args []string) error {
+			config, err := utils.ReadConfigFromPipeOrFile(routeDomainFlags.configSource)
+			if err != nil {
+				return err
+			}
+			return route_domain.RouteDomainConfigUpdate(cmd.Context(), args[0], config)
+		},
+	}
 )
 
 func init() {
@@ -129,4 +193,10 @@ func init() {
 	routeDomainUpdateCmd.MarkFlagRequired("config-source")
 
 	routeDomainCmd.AddCommand(routeDomainDeleteCmd)
+
+	routeDomainCmd.AddCommand(routeDomainGetConfigCmd)
+
+	routeDomainCmd.AddCommand(routeDomainUpdateConfigCmd)
+	routeDomainUpdateConfigCmd.Flags().StringVar(&routeDomainFlags.configSource, "config-source", "", "Source of the route domain config updates. Can be 'pipe' or path to a JSON/YAML file.")
+	routeDomainUpdateConfigCmd.MarkFlagsOneRequired("config-source")
 }

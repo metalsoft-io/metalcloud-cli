@@ -258,6 +258,181 @@ func SubnetIpRanges(ctx context.Context, subnetId string) error {
 	return formatter.PrintResult(result, &subnetIpRangePrintConfig)
 }
 
+// subnetCapacityPrintConfig renders the capacity report of a subnet. The
+// counts are decimal strings because a large IPv6 subnet holds more addresses
+// than a JSON number can carry exactly.
+var subnetCapacityPrintConfig = formatter.PrintConfig{
+	FieldsConfig: map[string]formatter.RecordFieldConfig{
+		"SubnetId": {
+			Title: "Subnet",
+			Order: 1,
+		},
+		"Prefix": {
+			Title: "Prefix",
+			Order: 2,
+		},
+		"IsPool": {
+			Title: "Pool",
+			Order: 3,
+		},
+		"TotalIpCount": {
+			Title: "Total IPs",
+			Order: 4,
+		},
+		"FreeIpCount": {
+			Title: "Free IPs",
+			Order: 5,
+		},
+		"UsedIpCount": {
+			Title: "Used IPs",
+			Order: 6,
+		},
+		"FreePrefixes": {
+			Title:    "Free Prefixes",
+			MaxWidth: 60,
+			Order:    7,
+		},
+		"RequestedPrefixLength": {
+			Title: "Requested Prefix",
+			Order: 8,
+		},
+		"AllocatablePrefixCount": {
+			Title: "Allocatable Blocks",
+			Order: 9,
+		},
+	},
+}
+
+// subnetCapacityDisplay is the table view of a subnet capacity report. The SDK
+// model stores the counts in NullableString/NullableInt32 wrappers, which the
+// table formatter renders as empty cells, so the wrappers are unwrapped here.
+// The json/yaml output keeps the untouched SDK object.
+type subnetCapacityDisplay struct {
+	SubnetId               int64
+	Prefix                 string
+	IsPool                 bool
+	TotalIpCount           string
+	FreeIpCount            string
+	UsedIpCount            string
+	FreePrefixes           []string
+	RequestedPrefixLength  string
+	AllocatablePrefixCount string
+}
+
+func toSubnetCapacityDisplay(capacity *sdk.SubnetCapacity) subnetCapacityDisplay {
+	display := subnetCapacityDisplay{
+		SubnetId:     capacity.SubnetId,
+		Prefix:       capacity.Prefix,
+		IsPool:       capacity.IsPool,
+		FreePrefixes: capacity.FreePrefixes,
+	}
+
+	if value := capacity.TotalIpCount.Get(); value != nil {
+		display.TotalIpCount = *value
+	}
+	if value := capacity.FreeIpCount.Get(); value != nil {
+		display.FreeIpCount = *value
+	}
+	if value := capacity.UsedIpCount.Get(); value != nil {
+		display.UsedIpCount = *value
+	}
+	if value := capacity.AllocatablePrefixCount.Get(); value != nil {
+		display.AllocatablePrefixCount = *value
+	}
+	if value := capacity.RequestedPrefixLength.Get(); value != nil {
+		display.RequestedPrefixLength = strconv.FormatInt(int64(*value), 10)
+	}
+
+	return display
+}
+
+// SubnetCapacity reports how much of a subnet is still available. For a pool,
+// prefixLength (when > 0) also asks how many blocks of that size still fit.
+func SubnetCapacity(ctx context.Context, subnetId string, prefixLength int) error {
+	logger.Get().Info().Msgf("Getting capacity of subnet '%s'", subnetId)
+
+	subnetIdNumeric, err := getSubnetId(subnetId)
+	if err != nil {
+		return err
+	}
+
+	client := api.GetApiClient(ctx)
+
+	request := client.SubnetAPI.GetSubnetCapacity(ctx, subnetIdNumeric)
+	if prefixLength > 0 {
+		request = request.PrefixLength(int32(prefixLength))
+	}
+
+	capacity, httpRes, err := request.Execute()
+	if err := response_inspector.InspectResponse(httpRes, err); err != nil {
+		return err
+	}
+
+	if formatter.IsNativeFormat() {
+		return formatter.PrintResult(capacity, &subnetCapacityPrintConfig)
+	}
+
+	return formatter.PrintResult(toSubnetCapacityDisplay(capacity), &subnetCapacityPrintConfig)
+}
+
+func SubnetIpRemove(ctx context.Context, subnetId string, ipId string) error {
+	logger.Get().Info().Msgf("Removing IP '%s' from subnet '%s'", ipId, subnetId)
+
+	subnetIdNumeric, revision, err := getSubnetIdAndRevision(ctx, subnetId)
+	if err != nil {
+		return err
+	}
+
+	ipIdNumeric, err := utils.GetInt64FromString(ipId)
+	if err != nil {
+		err = fmt.Errorf("invalid IP ID: '%s'", ipId)
+		logger.Get().Error().Err(err).Msg("")
+		return err
+	}
+
+	client := api.GetApiClient(ctx)
+
+	httpRes, err := client.SubnetAPI.
+		DeleteSubnetIp(ctx, subnetIdNumeric, ipIdNumeric).
+		IfMatch(revision).
+		Execute()
+	if err := response_inspector.InspectResponse(httpRes, err); err != nil {
+		return err
+	}
+
+	logger.Get().Info().Msgf("IP '%s' removed from subnet '%s'", ipId, subnetId)
+	return nil
+}
+
+func SubnetIpRangeRemove(ctx context.Context, subnetId string, ipRangeId string) error {
+	logger.Get().Info().Msgf("Removing IP range '%s' from subnet '%s'", ipRangeId, subnetId)
+
+	subnetIdNumeric, revision, err := getSubnetIdAndRevision(ctx, subnetId)
+	if err != nil {
+		return err
+	}
+
+	ipRangeIdNumeric, err := utils.GetInt64FromString(ipRangeId)
+	if err != nil {
+		err = fmt.Errorf("invalid IP range ID: '%s'", ipRangeId)
+		logger.Get().Error().Err(err).Msg("")
+		return err
+	}
+
+	client := api.GetApiClient(ctx)
+
+	httpRes, err := client.SubnetAPI.
+		DeleteSubnetIpRange(ctx, subnetIdNumeric, ipRangeIdNumeric).
+		IfMatch(revision).
+		Execute()
+	if err := response_inspector.InspectResponse(httpRes, err); err != nil {
+		return err
+	}
+
+	logger.Get().Info().Msgf("IP range '%s' removed from subnet '%s'", ipRangeId, subnetId)
+	return nil
+}
+
 func getSubnetId(subnetId string) (int64, error) {
 	subnetIdNumeric, err := strconv.ParseInt(subnetId, 10, 64)
 	if err != nil {
