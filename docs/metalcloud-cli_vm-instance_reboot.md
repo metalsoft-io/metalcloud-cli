@@ -10,19 +10,19 @@ This command initiates a restart process for a running VM instance. The instance
 will be gracefully shutdown and then automatically restarted. This is useful
 for applying configuration changes or recovering from software issues.
 
-ARGUMENTS:
-  infrastructure_id  The ID of the infrastructure containing the VM instance
-  vm_instance_id     The ID of the VM instance to reboot
+Required Arguments:
+  infrastructure_id_or_label  The ID or the label of the infrastructure
+  vm_instance_id              The numeric ID of the VM instance to reboot
 
-EXAMPLES:
+Examples:
   # Reboot VM instance 67890 in infrastructure 12345
   metalcloud-cli vm-instance reboot 12345 67890
-  
+
   # Reboot instance using alias
-  metalcloud-cli vm reboot 12345 67890
+  metalcloud-cli vm reboot my-infra 67890
 
 ```
-metalcloud-cli vm-instance reboot infrastructure_id vm_instance_id [flags]
+metalcloud-cli vm-instance reboot infrastructure_id_or_label vm_instance_id [flags]
 ```
 
 ### Options

@@ -1,30 +1,37 @@
-## metalcloud-cli vm-instance credentials
+## metalcloud-cli vm-instance variables
 
-Get login credentials for a VM instance
+Show the variables of a VM instance
 
 ### Synopsis
 
-Get the login credentials of a VM instance.
+Show the variables a VM instance exposes to extensions and OS templates.
+
+The response is a deeply nested document, so every non native output format is
+rendered as YAML.
 
 Required Arguments:
   infrastructure_id_or_label  The ID or the label of the infrastructure
   vm_instance_id              The numeric ID of the VM instance
 
-Examples:
-  # Show the credentials of VM instance 67890
-  metalcloud-cli vm-instance credentials 12345 67890
+Optional Flags:
+  --usage string  Restrict the variables to one usage type.
 
-  # Using the alias
-  metalcloud-cli vmi creds my-infra 67890
+Examples:
+  # Show the variables of VM instance 67890
+  metalcloud-cli vm-instance variables my-infra 67890
+
+  # Show only the variables used by Ansible bundles
+  metalcloud-cli vmi vars 12345 67890 --usage AnsibleBundle
 
 ```
-metalcloud-cli vm-instance credentials infrastructure_id_or_label vm_instance_id [flags]
+metalcloud-cli vm-instance variables infrastructure_id_or_label vm_instance_id [flags]
 ```
 
 ### Options
 
 ```
-  -h, --help   help for credentials
+  -h, --help           help for variables
+      --usage string   Restrict the variables to one usage type (HTTPRequest, JavaScript, APICall, AnsibleBundle, SSHExec, Copy, OSAsset).
 ```
 
 ### Options inherited from parent commands

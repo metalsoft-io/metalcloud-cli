@@ -1,35 +1,35 @@
-## metalcloud-cli vm-instance shutdown
+## metalcloud-cli vm-instance apply-type
 
-Shutdown a VM instance
+Apply a VM type on a VM instance
 
 ### Synopsis
 
-Shutdown a VM instance gracefully.
+Apply a VM type on a VM instance.
 
-This command initiates a graceful shutdown process for a running VM instance.
-The instance will receive a shutdown signal and will attempt to properly
-terminate all running processes before powering off. This is the recommended
-way to stop a VM instance to prevent data loss.
+The instance is reconfigured with the CPU, memory and GPU specification of the
+given VM type. The current instance revision is fetched automatically and sent
+as the If-Match header.
 
 Required Arguments:
   infrastructure_id_or_label  The ID or the label of the infrastructure
-  vm_instance_id              The numeric ID of the VM instance to shutdown
+  vm_instance_id              The numeric ID of the VM instance
+  vm_type_id                  The numeric ID of the VM type to apply
 
 Examples:
-  # Shutdown VM instance 67890 in infrastructure 12345
-  metalcloud-cli vm-instance shutdown 12345 67890
+  # Apply VM type 5 on VM instance 67890
+  metalcloud-cli vm-instance apply-type my-infra 67890 5
 
-  # Shutdown instance using alias
-  metalcloud-cli vm shutdown my-infra 67890
+  # Using the alias
+  metalcloud-cli vmi set-type 12345 67890 5
 
 ```
-metalcloud-cli vm-instance shutdown infrastructure_id_or_label vm_instance_id [flags]
+metalcloud-cli vm-instance apply-type infrastructure_id_or_label vm_instance_id vm_type_id [flags]
 ```
 
 ### Options
 
 ```
-  -h, --help   help for shutdown
+  -h, --help   help for apply-type
 ```
 
 ### Options inherited from parent commands

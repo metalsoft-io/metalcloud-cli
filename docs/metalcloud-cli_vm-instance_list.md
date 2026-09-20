@@ -8,23 +8,20 @@ List all VM instances in an infrastructure.
 
 This command retrieves and displays all VM instances that exist within the
 specified infrastructure. The output includes instance details such as ID,
-status, VM type, IP addresses, and other relevant information for each instance.
+status, VM type, disk size and other relevant information for each instance.
 
-ARGUMENTS:
-  infrastructure_id  The ID of the infrastructure to list instances from
+Required Arguments:
+  infrastructure_id_or_label  The ID or the label of the infrastructure
 
-EXAMPLES:
+Examples:
   # List all VM instances in infrastructure 12345
   metalcloud-cli vm-instance list 12345
-  
-  # List instances using alias
-  metalcloud-cli vmi ls 12345
-  
-  # List instances using short alias
-  metalcloud-cli vm list 12345
+
+  # List instances by infrastructure label
+  metalcloud-cli vmi ls my-infra
 
 ```
-metalcloud-cli vm-instance list infrastructure_id [flags]
+metalcloud-cli vm-instance list infrastructure_id_or_label [flags]
 ```
 
 ### Options

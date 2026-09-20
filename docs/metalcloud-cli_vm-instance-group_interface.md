@@ -1,33 +1,31 @@
-## metalcloud-cli vm-instance-group get
+## metalcloud-cli vm-instance-group interface
 
-Get details of a specific VM instance group
+Get one network interface of a VM instance group
 
 ### Synopsis
 
-Get detailed information about a specific VM instance group.
-
-This command retrieves comprehensive information about a VM instance group
-including its configuration, current status, instances, and associated metadata.
+Get detailed information about one network interface of a VM instance group.
 
 Required Arguments:
   infrastructure_id_or_label  The ID or the label of the infrastructure
   vm_instance_group_id        The numeric ID of the VM instance group
+  interface_id                The numeric ID of the interface
 
 Examples:
-  # Get details of VM instance group 67890 in infrastructure 12345
-  metalcloud-cli vm-instance-group get 12345 67890
+  # Get interface 2 of group 67890
+  metalcloud-cli vm-instance-group interface my-infra 67890 2
 
-  # Get group details using alias
-  metalcloud-cli vmg show my-infra 67890
+  # Using the alias
+  metalcloud-cli vmg get-interface 12345 67890 2
 
 ```
-metalcloud-cli vm-instance-group get infrastructure_id_or_label vm_instance_group_id [flags]
+metalcloud-cli vm-instance-group interface infrastructure_id_or_label vm_instance_group_id interface_id [flags]
 ```
 
 ### Options
 
 ```
-  -h, --help   help for get
+  -h, --help   help for interface
 ```
 
 ### Options inherited from parent commands

@@ -1,35 +1,35 @@
-## metalcloud-cli vm-instance shutdown
+## metalcloud-cli vm-instance update-meta
 
-Shutdown a VM instance
+Update the metadata of a VM instance
 
 ### Synopsis
 
-Shutdown a VM instance gracefully.
-
-This command initiates a graceful shutdown process for a running VM instance.
-The instance will receive a shutdown signal and will attempt to properly
-terminate all running processes before powering off. This is the recommended
-way to stop a VM instance to prevent data loss.
+Update the metadata (tags) of a VM instance.
 
 Required Arguments:
   infrastructure_id_or_label  The ID or the label of the infrastructure
-  vm_instance_id              The numeric ID of the VM instance to shutdown
+  vm_instance_id              The numeric ID of the VM instance
+
+Required Flags:
+  --config-source string  Source of the VM instance metadata updates.
+                          Can be 'pipe' or path to a JSON/YAML file.
 
 Examples:
-  # Shutdown VM instance 67890 in infrastructure 12345
-  metalcloud-cli vm-instance shutdown 12345 67890
+  # Update the tags from a file
+  metalcloud-cli vm-instance update-meta my-infra 67890 --config-source meta.json
 
-  # Shutdown instance using alias
-  metalcloud-cli vm shutdown my-infra 67890
+  # Update the tags from stdin
+  echo '{"tags":["prod"]}' | metalcloud-cli vmi edit-meta 12345 67890 --config-source pipe
 
 ```
-metalcloud-cli vm-instance shutdown infrastructure_id_or_label vm_instance_id [flags]
+metalcloud-cli vm-instance update-meta infrastructure_id_or_label vm_instance_id [flags]
 ```
 
 ### Options
 
 ```
-  -h, --help   help for shutdown
+      --config-source string   Source of the VM instance metadata updates. Can be 'pipe' or path to a JSON/YAML file.
+  -h, --help                   help for update-meta
 ```
 
 ### Options inherited from parent commands

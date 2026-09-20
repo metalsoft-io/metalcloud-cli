@@ -8,25 +8,21 @@ Get detailed information about a specific VM instance.
 
 This command retrieves comprehensive information about a VM instance including
 its current status, configuration, network details, disk information, and
-associated metadata. This is useful for debugging, monitoring, and understanding
-the current state of a virtual machine.
+associated metadata.
 
-ARGUMENTS:
-  infrastructure_id  The ID of the infrastructure containing the VM instance
-  vm_instance_id     The ID of the VM instance to retrieve details for
+Required Arguments:
+  infrastructure_id_or_label  The ID or the label of the infrastructure
+  vm_instance_id              The numeric ID of the VM instance
 
-EXAMPLES:
+Examples:
   # Get details of VM instance 67890 in infrastructure 12345
   metalcloud-cli vm-instance get 12345 67890
-  
+
   # Get instance details using alias
-  metalcloud-cli vmi show 12345 67890
-  
-  # Get instance details using short alias
-  metalcloud-cli vm get 12345 67890
+  metalcloud-cli vmi show my-infra 67890
 
 ```
-metalcloud-cli vm-instance get infrastructure_id vm_instance_id [flags]
+metalcloud-cli vm-instance get infrastructure_id_or_label vm_instance_id [flags]
 ```
 
 ### Options

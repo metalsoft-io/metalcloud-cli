@@ -13,19 +13,19 @@ terminate all running instances within the group.
 WARNING: This operation cannot be undone. All data on the VM instances
 will be permanently lost unless backed up elsewhere.
 
-ARGUMENTS:
-  infrastructure_id     The ID of the infrastructure containing the group
-  vm_instance_group_id  The ID of the VM instance group to delete
+Required Arguments:
+  infrastructure_id_or_label  The ID or the label of the infrastructure
+  vm_instance_group_id        The numeric ID of the VM instance group
 
-EXAMPLES:
+Examples:
   # Delete VM instance group 67890 from infrastructure 12345
   metalcloud-cli vm-instance-group delete 12345 67890
-  
+
   # Delete group using alias
-  metalcloud-cli vmg rm 12345 67890
+  metalcloud-cli vmg rm my-infra 67890
 
 ```
-metalcloud-cli vm-instance-group delete infrastructure_id vm_instance_group_id [flags]
+metalcloud-cli vm-instance-group delete infrastructure_id_or_label vm_instance_group_id [flags]
 ```
 
 ### Options

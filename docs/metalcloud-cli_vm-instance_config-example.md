@@ -1,30 +1,29 @@
-## metalcloud-cli vm-instance credentials
+## metalcloud-cli vm-instance config-example
 
-Get login credentials for a VM instance
+Print a VM instance configuration example
 
 ### Synopsis
 
-Get the login credentials of a VM instance.
+Print a VM instance configuration example.
 
-Required Arguments:
-  infrastructure_id_or_label  The ID or the label of the infrastructure
-  vm_instance_id              The numeric ID of the VM instance
+The printed document lists every field accepted by the create command and can be
+saved to a file, edited and passed back through the --config-source flag.
 
 Examples:
-  # Show the credentials of VM instance 67890
-  metalcloud-cli vm-instance credentials 12345 67890
+  # Show the example configuration
+  metalcloud-cli vm-instance config-example
 
-  # Using the alias
-  metalcloud-cli vmi creds my-infra 67890
+  # Save the example to a file
+  metalcloud-cli vmi config-example > vm-instance.json
 
 ```
-metalcloud-cli vm-instance credentials infrastructure_id_or_label vm_instance_id [flags]
+metalcloud-cli vm-instance config-example [flags]
 ```
 
 ### Options
 
 ```
-  -h, --help   help for credentials
+  -h, --help   help for config-example
 ```
 
 ### Options inherited from parent commands
