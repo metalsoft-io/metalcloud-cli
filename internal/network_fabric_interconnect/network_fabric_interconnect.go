@@ -121,6 +121,12 @@ func formatJSONValue(value interface{}) string {
 	return string(encoded)
 }
 
+// PrintConfig exposes the interconnect table layout so other packages that list
+// interconnects (e.g. the fabric command group) render them identically.
+func PrintConfig() *formatter.PrintConfig {
+	return &interconnectPrintConfig
+}
+
 func InterconnectList(ctx context.Context, filterStatus []string) error {
 	logger.Get().Info().Msgf("Listing network fabric interconnects")
 

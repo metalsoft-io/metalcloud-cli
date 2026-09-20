@@ -289,6 +289,25 @@ func FabricLinkAddEx(ctx context.Context, fabricId string,
 	return FabricLinkAdd(ctx, fabricId, createLink)
 }
 
+// FabricLinkGet shows one link of a fabric.
+func FabricLinkGet(ctx context.Context, fabricId string, linkId string) error {
+	logger.Get().Info().Msgf("Get link '%s' of fabric '%s'", linkId, fabricId)
+
+	fabricIdNumeric, linkIdNumeric, err := resolveFabricAndChildId(ctx, fabricId, linkId, "fabric link")
+	if err != nil {
+		return err
+	}
+
+	client := api.GetApiClient(ctx)
+
+	linkInfo, httpRes, err := client.NetworkFabricAPI.GetNetworkFabricLink(ctx, fabricIdNumeric, linkIdNumeric).Execute()
+	if err := response_inspector.InspectResponse(httpRes, err); err != nil {
+		return err
+	}
+
+	return formatter.PrintResult(linkInfo, &fabricLinkPrintConfig)
+}
+
 func FabricLinkRemove(ctx context.Context, fabricId string, linkId string) error {
 	logger.Get().Info().Msgf("Removing link '%s' from fabric '%s'", linkId, fabricId)
 
