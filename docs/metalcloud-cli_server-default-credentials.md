@@ -15,7 +15,9 @@ Available commands:
   get            Get detailed information about specific credentials
   get-credentials Retrieve unencrypted password for credentials
   create         Create new server default credentials
+  update         Update existing server default credentials
   delete         Delete existing server default credentials
+  config-example Show an update configuration example
 
 Examples:
   # List all server default credentials
@@ -49,9 +51,11 @@ Examples:
 ### SEE ALSO
 
 * [metalcloud-cli](metalcloud-cli.md)	 - MetalCloud CLI
+* [metalcloud-cli server-default-credentials config-example](metalcloud-cli_server-default-credentials_config-example.md)	 - Show a server default credentials update configuration example
 * [metalcloud-cli server-default-credentials create](metalcloud-cli_server-default-credentials_create.md)	 - Create new server default credentials
 * [metalcloud-cli server-default-credentials delete](metalcloud-cli_server-default-credentials_delete.md)	 - Delete server default credentials
 * [metalcloud-cli server-default-credentials get](metalcloud-cli_server-default-credentials_get.md)	 - Get detailed information about specific server default credentials
 * [metalcloud-cli server-default-credentials get-credentials](metalcloud-cli_server-default-credentials_get-credentials.md)	 - Retrieve unencrypted password for server default credentials
 * [metalcloud-cli server-default-credentials list](metalcloud-cli_server-default-credentials_list.md)	 - List all server default credentials
+* [metalcloud-cli server-default-credentials update](metalcloud-cli_server-default-credentials_update.md)	 - Update existing server default credentials
 

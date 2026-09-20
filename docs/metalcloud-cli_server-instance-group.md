@@ -16,8 +16,11 @@ Available commands include:
 - create: Create a new instance group with specified parameters
 - update: Modify existing instance group properties
 - delete: Remove an instance group from the infrastructure
+- update-meta: Update the metadata (tags) of an instance group
 - instances: List all server instances within a group
-- network: Manage network connections for instance groups
+- drive-groups: List the drive groups attached to an instance group
+- interfaces / interface: List or inspect the network interfaces of an instance group
+- network: Manage the network configuration, connections and security rules of instance groups
 
 Use "metalcloud-cli server-instance-group [command] --help" for detailed information about each command.
 
@@ -45,9 +48,13 @@ Use "metalcloud-cli server-instance-group [command] --help" for detailed informa
 * [metalcloud-cli](metalcloud-cli.md)	 - MetalCloud CLI
 * [metalcloud-cli server-instance-group create](metalcloud-cli_server-instance-group_create.md)	 - Create a new server instance group in an infrastructure
 * [metalcloud-cli server-instance-group delete](metalcloud-cli_server-instance-group_delete.md)	 - Delete a server instance group from an infrastructure
+* [metalcloud-cli server-instance-group drive-groups](metalcloud-cli_server-instance-group_drive-groups.md)	 - List the drive groups of a server instance group
 * [metalcloud-cli server-instance-group get](metalcloud-cli_server-instance-group_get.md)	 - Get detailed information about a server instance group
 * [metalcloud-cli server-instance-group instances](metalcloud-cli_server-instance-group_instances.md)	 - List all server instances within a server instance group
+* [metalcloud-cli server-instance-group interface](metalcloud-cli_server-instance-group_interface.md)	 - Get one interface of a server instance group
+* [metalcloud-cli server-instance-group interfaces](metalcloud-cli_server-instance-group_interfaces.md)	 - List the interfaces of a server instance group
 * [metalcloud-cli server-instance-group list](metalcloud-cli_server-instance-group_list.md)	 - List all server instance groups in an infrastructure
 * [metalcloud-cli server-instance-group network](metalcloud-cli_server-instance-group_network.md)	 - Manage network connections for server instance groups
 * [metalcloud-cli server-instance-group update](metalcloud-cli_server-instance-group_update.md)	 - Update server instance group configuration
+* [metalcloud-cli server-instance-group update-meta](metalcloud-cli_server-instance-group_update-meta.md)	 - Update the metadata of a server instance group
 

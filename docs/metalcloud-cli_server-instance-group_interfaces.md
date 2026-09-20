@@ -1,33 +1,26 @@
-## metalcloud-cli server-instance list
+## metalcloud-cli server-instance-group interfaces
 
-List server instances
+List the interfaces of a server instance group
 
 ### Synopsis
 
-List server instances.
+List all network interfaces of a server instance group.
 
-Without an argument every server instance visible to the user is listed. Pass an
-infrastructure ID or label to restrict the listing to a single infrastructure.
-
-Optional Arguments:
-  infrastructure_id_or_label  List only the server instances of this infrastructure
+Required Arguments:
+  server_instance_group_id  The numeric ID of the server instance group
 
 Optional Flags:
   --filter-infrastructure-id strings     Filter by infrastructure ID. Repeatable or comma-separated.
-  --filter-group-id strings              Filter by server instance group ID.
-  --filter-server-id strings             Filter by server ID.
   --filter-service-status strings        Filter by service status.
-  --filter-config-server-id strings      Filter by the server ID of the pending configuration.
   --filter-config-deploy-status strings  Filter by the deploy status of the pending configuration.
   --filter-config-deploy-type strings    Filter by the deploy type of the pending configuration.
 
 Examples:
-  metalcloud-cli server-instance list
-  metalcloud-cli server-instance list 1234
-  metalcloud-cli inst ls prod-env --filter-service-status active
+  metalcloud-cli server-instance-group interfaces 1234
+  metalcloud-cli ig ifaces 1234 --filter-service-status active
 
 ```
-metalcloud-cli server-instance list [infrastructure_id_or_label] [flags]
+metalcloud-cli server-instance-group interfaces server_instance_group_id [flags]
 ```
 
 ### Options
@@ -35,12 +28,9 @@ metalcloud-cli server-instance list [infrastructure_id_or_label] [flags]
 ```
       --filter-config-deploy-status strings   Filter by the deploy status of the pending configuration.
       --filter-config-deploy-type strings     Filter by the deploy type of the pending configuration.
-      --filter-config-server-id strings       Filter by the server ID of the pending configuration.
-      --filter-group-id strings               Filter by server instance group ID.
       --filter-infrastructure-id strings      Filter by infrastructure ID.
-      --filter-server-id strings              Filter by server ID.
       --filter-service-status strings         Filter by service status.
-  -h, --help                                  help for list
+  -h, --help                                  help for interfaces
 ```
 
 ### Options inherited from parent commands
@@ -58,5 +48,5 @@ metalcloud-cli server-instance list [infrastructure_id_or_label] [flags]
 
 ### SEE ALSO
 
-* [metalcloud-cli server-instance](metalcloud-cli_server-instance.md)	 - Manage individual server instances
+* [metalcloud-cli server-instance-group](metalcloud-cli_server-instance-group.md)	 - Manage server instance groups within infrastructures
 

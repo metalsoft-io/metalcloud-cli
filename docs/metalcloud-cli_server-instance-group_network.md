@@ -11,11 +11,14 @@ server instance groups and networks. You can list, view, create, update, and
 delete network connections.
 
 Available commands:
+- config: Get the network configuration (network endpoint group) of an instance group
+- replace: Create or replace the network configuration of an instance group
 - list: List all network connections for a server instance group
 - get: Get details of a specific network connection
 - connect: Connect a server instance group to a network
 - update: Update an existing network connection
 - disconnect: Remove a network connection
+- acl: Manage the security rules of a network connection
 
 Use "metalcloud-cli server-instance-group network [command] --help" for detailed information about each command.
 
@@ -41,9 +44,12 @@ Use "metalcloud-cli server-instance-group network [command] --help" for detailed
 ### SEE ALSO
 
 * [metalcloud-cli server-instance-group](metalcloud-cli_server-instance-group.md)	 - Manage server instance groups within infrastructures
+* [metalcloud-cli server-instance-group network acl](metalcloud-cli_server-instance-group_network_acl.md)	 - Manage the security rules of a network connection
+* [metalcloud-cli server-instance-group network config](metalcloud-cli_server-instance-group_network_config.md)	 - Get the network configuration of a server instance group
 * [metalcloud-cli server-instance-group network connect](metalcloud-cli_server-instance-group_network_connect.md)	 - Connect a server instance group to a network
 * [metalcloud-cli server-instance-group network disconnect](metalcloud-cli_server-instance-group_network_disconnect.md)	 - Remove a network connection from a server instance group
 * [metalcloud-cli server-instance-group network get](metalcloud-cli_server-instance-group_network_get.md)	 - Get network connection details for a server instance group
 * [metalcloud-cli server-instance-group network list](metalcloud-cli_server-instance-group_network_list.md)	 - List all network connections for a server instance group
+* [metalcloud-cli server-instance-group network replace](metalcloud-cli_server-instance-group_network_replace.md)	 - Create or replace the network configuration of a server instance group
 * [metalcloud-cli server-instance-group network update](metalcloud-cli_server-instance-group_network_update.md)	 - Update network connection for a server instance group
 
