@@ -23,6 +23,52 @@ var (
 		serialNumber      string
 		model             string
 		vendor            string
+
+		// snapshots
+		snapshotKind string
+
+		// hardware-rescan
+		rebootAllowed bool
+
+		// register-production
+		registerProductionConfigSource   string
+		registerProductionSiteId         int
+		registerProductionInfrastructure int
+		registerProductionOsTemplateId   int
+		registerProductionAddress        string
+		registerProductionUsername       string
+		registerProductionPassword       string
+		registerProductionSerialNumber   string
+		registerProductionUuid           string
+		registerProductionBmcMacAddress  string
+		registerProductionVendor         string
+		registerProductionModel          string
+		registerProductionProfileId      int
+
+		// connect-interface
+		connectInterfaceConfigSource string
+		connectInterfaceId           int
+		connectInterfacePortId       string
+		connectInterfaceHostname     string
+
+		// set-interfaces-default-fabric
+		defaultFabricConfigSource string
+		defaultFabricInterfaceIds []string
+		defaultFabricId           int
+		defaultFabricClear        bool
+
+		// set-interfaces-redundancy-group
+		redundancyGroupConfigSource string
+		redundancyGroupInterfaceIds []string
+		redundancyGroupIndex        int
+		redundancyGroupClear        bool
+
+		// import-unmanaged
+		importUnmanagedConfigSource string
+
+		// firmware schedule-upgrade-batch
+		firmwareBatchScheduleTimestamp    string
+		firmwareBatchConfirmationRequired bool
 	}{}
 
 	serverCmd = &cobra.Command{
@@ -42,7 +88,11 @@ Available command categories:
   - Security: update-ipmi-credentials, enable-snmp, enable-syslog
   - Remote access: vnc-info, console-info
   - Firmware: firmware subcommands for component management and upgrades
-  - Information: capabilities
+  - Information: capabilities, statistics
+  - Drift detection: drift subcommands, snapshots, sync-target-snapshot
+  - Hardware: hardware-rescan, connect-interface, set-interfaces-default-fabric,
+    set-interfaces-redundancy-group
+  - Onboarding: register-production, import-unmanaged, config-example
 
 Use "metalcloud-cli server [command] --help" for detailed information about each command.
 `,
@@ -858,6 +908,608 @@ Examples:
 			return server.ServerFirmwareGenerateAudit(cmd.Context(), config)
 		},
 	}
+
+	// --- drift & snapshots --------------------------------------------------
+
+	serverDriftCmd = &cobra.Command{
+		Use:   "drift [command]",
+		Short: "Inspect the configuration drift of a server",
+		Long: `Inspect and acknowledge the configuration drift detected between the running
+configuration of a server and its target snapshot.
+
+Use "metalcloud-cli server drift [command] --help" for detailed information about each command.
+`,
+	}
+
+	serverDriftListCmd = &cobra.Command{
+		Use:     "list server_id",
+		Aliases: []string{"ls"},
+		Short:   "List the configuration drift of a server",
+		Long: `List the configuration drift entries recorded for a server.
+
+Required Arguments:
+  server_id              The ID of the server
+
+Examples:
+  # List the drift history of server 123
+  metalcloud-cli server drift list 123
+`,
+		SilenceUsage: true,
+		Annotations:  map[string]string{system.REQUIRED_PERMISSION: system.PERMISSION_SERVERS_READ},
+		Args:         cobra.ExactArgs(1),
+		RunE: func(cmd *cobra.Command, args []string) error {
+			return server.ServerDriftList(cmd.Context(), args[0])
+		},
+	}
+
+	serverDriftGetCmd = &cobra.Command{
+		Use:     "get server_id drift_id",
+		Aliases: []string{"show"},
+		Short:   "Get one configuration drift entry of a server",
+		Long: `Display one configuration drift entry of a server, including the configuration
+difference that was detected.
+
+Required Arguments:
+  server_id              The ID of the server
+  drift_id               The ID of the drift entry
+
+Examples:
+  # Show drift entry 9 of server 123
+  metalcloud-cli server drift get 123 9
+`,
+		SilenceUsage: true,
+		Annotations:  map[string]string{system.REQUIRED_PERMISSION: system.PERMISSION_SERVERS_READ},
+		Args:         cobra.ExactArgs(2),
+		RunE: func(cmd *cobra.Command, args []string) error {
+			return server.ServerDriftGet(cmd.Context(), args[0], args[1])
+		},
+	}
+
+	serverDriftAcknowledgeCmd = &cobra.Command{
+		Use:     "acknowledge server_id drift_id",
+		Aliases: []string{"ack"},
+		Short:   "Acknowledge a configuration drift entry of a server",
+		Long: `Mark one configuration drift entry of a server as reviewed, recording who
+acknowledged it and when.
+
+Required Arguments:
+  server_id              The ID of the server
+  drift_id               The ID of the drift entry
+
+Examples:
+  # Acknowledge drift entry 9 of server 123
+  metalcloud-cli server drift acknowledge 123 9
+`,
+		SilenceUsage: true,
+		Annotations:  map[string]string{system.REQUIRED_PERMISSION: system.PERMISSION_SERVERS_WRITE},
+		Args:         cobra.ExactArgs(2),
+		RunE: func(cmd *cobra.Command, args []string) error {
+			return server.ServerDriftAcknowledge(cmd.Context(), args[0], args[1])
+		},
+	}
+
+	serverSnapshotsCmd = &cobra.Command{
+		Use:     "snapshots server_id",
+		Aliases: []string{"snapshot"},
+		Short:   "List the configuration snapshots of a server",
+		Long: `List the configuration snapshots stored for a server.
+
+Required Arguments:
+  server_id              The ID of the server
+
+Optional Flags:
+  --kind                 Restrict the listing to one snapshot class
+
+Examples:
+  # List all snapshots of server 123
+  metalcloud-cli server snapshots 123
+
+  # List only the backup snapshots of server 123
+  metalcloud-cli server snapshots 123 --kind backup
+`,
+		SilenceUsage: true,
+		Annotations:  map[string]string{system.REQUIRED_PERMISSION: system.PERMISSION_SERVERS_READ},
+		Args:         cobra.ExactArgs(1),
+		RunE: func(cmd *cobra.Command, args []string) error {
+			return server.ServerSnapshotList(cmd.Context(), args[0], serverFlags.snapshotKind)
+		},
+	}
+
+	serverSyncTargetSnapshotCmd = &cobra.Command{
+		Use:   "sync-target-snapshot server_id",
+		Short: "Accept the current configuration of a server as the drift target",
+		Long: `Point the drift detection target snapshot of a server at its latest snapshot,
+clearing the drift currently reported for the server.
+
+Required Arguments:
+  server_id              The ID of the server
+
+Examples:
+  # Accept the current configuration of server 123 as the new target
+  metalcloud-cli server sync-target-snapshot 123
+`,
+		SilenceUsage: true,
+		Annotations:  map[string]string{system.REQUIRED_PERMISSION: system.PERMISSION_SERVERS_WRITE},
+		Args:         cobra.ExactArgs(1),
+		RunE: func(cmd *cobra.Command, args []string) error {
+			return server.ServerSyncTargetSnapshot(cmd.Context(), args[0])
+		},
+	}
+
+	// --- hardware -----------------------------------------------------------
+
+	serverHardwareRescanCmd = &cobra.Command{
+		Use:   "hardware-rescan server_id",
+		Short: "Re-read the hardware inventory of a server",
+		Long: `Re-read the hardware inventory of a server.
+
+The rescan updates the recorded hardware configuration of the server. By default
+the server is not rebooted, which preserves the existing switch connections; pass
+--reboot-allowed to let MetalSoft reboot the server and run a full LLDP interface
+discovery.
+
+Required Arguments:
+  server_id              The ID of the server to rescan
+
+Optional Flags:
+  --reboot-allowed       Allow the server to be rebooted for full LLDP interface discovery
+
+Examples:
+  # Rescan the hardware of server 123 without rebooting it
+  metalcloud-cli server hardware-rescan 123
+
+  # Rescan the hardware of server 123, allowing a reboot
+  metalcloud-cli server hardware-rescan 123 --reboot-allowed
+`,
+		SilenceUsage: true,
+		Annotations:  map[string]string{system.REQUIRED_PERMISSION: system.PERMISSION_SERVERS_WRITE},
+		Args:         cobra.ExactArgs(1),
+		RunE: func(cmd *cobra.Command, args []string) error {
+			return server.ServerHardwareRescan(cmd.Context(), args[0], serverFlags.rebootAllowed)
+		},
+	}
+
+	serverStatisticsCmd = &cobra.Command{
+		Use:     "statistics",
+		Aliases: []string{"stats"},
+		Short:   "Get aggregated server statistics",
+		Long: `Get the aggregated server counts, grouped by server status and by site.
+
+Examples:
+  # Show the server statistics
+  metalcloud-cli server statistics
+
+  # Show the server statistics as JSON
+  metalcloud-cli server statistics -f json
+`,
+		SilenceUsage: true,
+		Annotations:  map[string]string{system.REQUIRED_PERMISSION: system.PERMISSION_SERVERS_READ},
+		RunE: func(cmd *cobra.Command, args []string) error {
+			return server.ServerStatistics(cmd.Context())
+		},
+	}
+
+	serverConnectInterfaceCmd = &cobra.Command{
+		Use:   "connect-interface server_id",
+		Short: "Record the network device port a server interface is cabled to",
+		Long: `Record the network device port a server interface is cabled to.
+
+You can provide the connection either via command-line flags or by specifying a
+configuration source using the --config-source flag. The configuration source can
+be a path to a JSON file or 'pipe' to read from standard input.
+
+Required Arguments:
+  server_id              The ID of the server
+
+Required Flags (when not using --config-source):
+  --interface-id         The ID of the server interface to connect
+  --port-id              The network device port name (e.g. Ethernet0)
+  --hostname             The network device hostname
+
+Optional Flags:
+  --config-source        Source of the connection configuration. Can be 'pipe' or path to a JSON file.
+
+Flag Dependencies:
+  --config-source and --interface-id are mutually exclusive
+  --interface-id, --port-id and --hostname must be used together
+
+Examples:
+  # Connect interface 1 of server 123 to port Ethernet0 of leaf-01
+  metalcloud-cli server connect-interface 123 --interface-id 1 --port-id Ethernet0 --hostname leaf-01
+
+  # Connect using a JSON configuration file
+  metalcloud-cli server connect-interface 123 --config-source ./connect.json
+
+  # Show the expected configuration
+  metalcloud-cli server config-example connect-interface
+`,
+		SilenceUsage: true,
+		Annotations:  map[string]string{system.REQUIRED_PERMISSION: system.PERMISSION_SERVERS_WRITE},
+		Args:         cobra.ExactArgs(1),
+		RunE: func(cmd *cobra.Command, args []string) error {
+			var connectConfig sdk.ServerConnectInterface
+
+			if serverFlags.connectInterfaceConfigSource != "" {
+				config, err := utils.ReadConfigFromPipeOrFile(serverFlags.connectInterfaceConfigSource)
+				if err != nil {
+					return err
+				}
+				if err := utils.UnmarshalContent(config, &connectConfig); err != nil {
+					return err
+				}
+			} else {
+				connectConfig = sdk.ServerConnectInterface{
+					ServerInterfaceId:     int64(serverFlags.connectInterfaceId),
+					NetworkDevicePortId:   serverFlags.connectInterfacePortId,
+					NetworkDeviceHostname: serverFlags.connectInterfaceHostname,
+				}
+			}
+
+			return server.ServerConnectInterface(cmd.Context(), args[0], connectConfig)
+		},
+	}
+
+	serverSetInterfacesDefaultFabricCmd = &cobra.Command{
+		Use:   "set-interfaces-default-fabric server_id",
+		Short: "Set the default fabric of some server interfaces",
+		Long: `Assign the default fabric of the given server interfaces, or clear it.
+
+You can provide the configuration either via command-line flags or by specifying a
+configuration source using the --config-source flag. The configuration source can
+be a path to a JSON file or 'pipe' to read from standard input.
+
+Required Arguments:
+  server_id              The ID of the server
+
+Required Flags (when not using --config-source):
+  --interface-id         ID of a server interface; repeat or comma-separate for several
+  --fabric-id            The ID of the fabric to set as default (or use --clear-fabric)
+
+Optional Flags:
+  --config-source        Source of the configuration. Can be 'pipe' or path to a JSON file.
+  --clear-fabric         Clear the default fabric of the given interfaces
+
+Flag Dependencies:
+  --config-source and --interface-id are mutually exclusive
+  --fabric-id and --clear-fabric are mutually exclusive
+
+Examples:
+  # Set fabric 10 as the default fabric of interfaces 1 and 2 of server 123
+  metalcloud-cli server set-interfaces-default-fabric 123 --interface-id 1,2 --fabric-id 10
+
+  # Clear the default fabric of interface 1 of server 123
+  metalcloud-cli server set-interfaces-default-fabric 123 --interface-id 1 --clear-fabric
+
+  # Use a JSON configuration file
+  metalcloud-cli server set-interfaces-default-fabric 123 --config-source ./fabric.json
+`,
+		SilenceUsage: true,
+		Annotations:  map[string]string{system.REQUIRED_PERMISSION: system.PERMISSION_SERVERS_WRITE},
+		Args:         cobra.ExactArgs(1),
+		RunE: func(cmd *cobra.Command, args []string) error {
+			var fabricConfig sdk.ServerInterfacesDefaultFabric
+
+			if serverFlags.defaultFabricConfigSource != "" {
+				config, err := utils.ReadConfigFromPipeOrFile(serverFlags.defaultFabricConfigSource)
+				if err != nil {
+					return err
+				}
+				if err := utils.UnmarshalContent(config, &fabricConfig); err != nil {
+					return err
+				}
+			} else {
+				interfaceIds, err := utils.GetInt64SliceFromStrings(serverFlags.defaultFabricInterfaceIds)
+				if err != nil {
+					return err
+				}
+
+				fabricConfig = sdk.ServerInterfacesDefaultFabric{
+					ServerInterfaceIds: interfaceIds,
+				}
+
+				if serverFlags.defaultFabricClear {
+					fabricConfig.DefaultFabricId.Set(nil)
+				} else {
+					fabricConfig.DefaultFabricId.Set(sdk.PtrInt64(int64(serverFlags.defaultFabricId)))
+				}
+			}
+
+			return server.ServerSetInterfacesDefaultFabric(cmd.Context(), args[0], fabricConfig)
+		},
+	}
+
+	serverSetInterfacesRedundancyGroupCmd = &cobra.Command{
+		Use:   "set-interfaces-redundancy-group server_id",
+		Short: "Set the redundancy group of some server interfaces",
+		Long: `Group the given server interfaces into a redundancy group, or remove them from one.
+
+You can provide the configuration either via command-line flags or by specifying a
+configuration source using the --config-source flag. The configuration source can
+be a path to a JSON file or 'pipe' to read from standard input.
+
+Required Arguments:
+  server_id              The ID of the server
+
+Required Flags (when not using --config-source):
+  --interface-id         ID of a server interface; repeat or comma-separate for several
+  --group-index          The redundancy group index (or use --clear-group)
+
+Optional Flags:
+  --config-source        Source of the configuration. Can be 'pipe' or path to a JSON file.
+  --clear-group          Remove the given interfaces from their redundancy group
+
+Flag Dependencies:
+  --config-source and --interface-id are mutually exclusive
+  --group-index and --clear-group are mutually exclusive
+
+Examples:
+  # Put interfaces 1 and 2 of server 123 in redundancy group 1
+  metalcloud-cli server set-interfaces-redundancy-group 123 --interface-id 1,2 --group-index 1
+
+  # Remove interface 1 of server 123 from its redundancy group
+  metalcloud-cli server set-interfaces-redundancy-group 123 --interface-id 1 --clear-group
+
+  # Use a JSON configuration file
+  metalcloud-cli server set-interfaces-redundancy-group 123 --config-source ./redundancy.json
+`,
+		SilenceUsage: true,
+		Annotations:  map[string]string{system.REQUIRED_PERMISSION: system.PERMISSION_SERVERS_WRITE},
+		Args:         cobra.ExactArgs(1),
+		RunE: func(cmd *cobra.Command, args []string) error {
+			var redundancyConfig sdk.ServerInterfacesRedundancyGroup
+
+			if serverFlags.redundancyGroupConfigSource != "" {
+				config, err := utils.ReadConfigFromPipeOrFile(serverFlags.redundancyGroupConfigSource)
+				if err != nil {
+					return err
+				}
+				if err := utils.UnmarshalContent(config, &redundancyConfig); err != nil {
+					return err
+				}
+			} else {
+				interfaceIds, err := utils.GetInt64SliceFromStrings(serverFlags.redundancyGroupInterfaceIds)
+				if err != nil {
+					return err
+				}
+
+				redundancyConfig = sdk.ServerInterfacesRedundancyGroup{
+					ServerInterfaceIds: interfaceIds,
+				}
+
+				if serverFlags.redundancyGroupClear {
+					redundancyConfig.RedundancyGroupIndex.Set(nil)
+				} else {
+					redundancyConfig.RedundancyGroupIndex.Set(sdk.PtrFloat32(float32(serverFlags.redundancyGroupIndex)))
+				}
+			}
+
+			return server.ServerSetInterfacesRedundancyGroup(cmd.Context(), args[0], redundancyConfig)
+		},
+	}
+
+	// --- onboarding ---------------------------------------------------------
+
+	serverRegisterProductionCmd = &cobra.Command{
+		Use:   "register-production",
+		Short: "Register a server that is already running a production workload",
+		Long: `Register a server that is already running a production workload, keeping the
+workload in place.
+
+The server is attached to an existing infrastructure instead of being wiped and
+re-provisioned. You can provide the configuration either via command-line flags
+or by specifying a configuration source using the --config-source flag. The
+configuration source can be a path to a JSON file or 'pipe' to read from
+standard input.
+
+Required Flags (when not using --config-source):
+  --site-id              Site ID where the server is located
+  --infrastructure-id    ID of the infrastructure the server belongs to
+
+Optional Flags:
+  --config-source        Source of the configuration. Can be 'pipe' or path to a JSON file.
+  --os-template-id       ID of the OS template already installed on the server
+  --management-address   IPMI/BMC management IP address
+  --username             IPMI/BMC username
+  --password             IPMI/BMC password
+  --serial-number        Server serial number
+  --uuid                 Server UUID
+  --bmc-mac-address      BMC MAC address
+  --vendor               Server vendor
+  --model                Server model
+  --registration-profile-id  ID of the server registration profile to use
+
+Flag Dependencies:
+  --config-source and --site-id are mutually exclusive
+  --site-id and --infrastructure-id must be used together
+
+Examples:
+  # Register a production server with its interface connections from a JSON file
+  metalcloud-cli server register-production --config-source ./production-server.json
+
+  # Register a production server using flags
+  metalcloud-cli server register-production --site-id 1 --infrastructure-id 100 \
+    --management-address 10.0.0.1 --username admin --password secret
+
+  # Show the expected configuration
+  metalcloud-cli server config-example register-production
+`,
+		SilenceUsage: true,
+		Annotations:  map[string]string{system.REQUIRED_PERMISSION: system.PERMISSION_SERVERS_WRITE},
+		RunE: func(cmd *cobra.Command, args []string) error {
+			var serverConfig sdk.RegisterProductionServer
+
+			if serverFlags.registerProductionConfigSource != "" {
+				config, err := utils.ReadConfigFromPipeOrFile(serverFlags.registerProductionConfigSource)
+				if err != nil {
+					return err
+				}
+				if err := utils.UnmarshalContent(config, &serverConfig); err != nil {
+					return err
+				}
+			} else {
+				serverConfig = sdk.RegisterProductionServer{
+					SiteId: int64(serverFlags.registerProductionSiteId),
+					Settings: sdk.RegisterProductionServerSettings{
+						InfrastructureId: int64(serverFlags.registerProductionInfrastructure),
+					},
+				}
+
+				if serverFlags.registerProductionOsTemplateId > 0 {
+					serverConfig.Settings.OsTemplateId = sdk.PtrInt64(int64(serverFlags.registerProductionOsTemplateId))
+				}
+				if serverFlags.registerProductionAddress != "" {
+					serverConfig.ManagementAddress = sdk.PtrString(serverFlags.registerProductionAddress)
+				}
+				if serverFlags.registerProductionUsername != "" {
+					serverConfig.Username = sdk.PtrString(serverFlags.registerProductionUsername)
+				}
+				if serverFlags.registerProductionPassword != "" {
+					serverConfig.Password = sdk.PtrString(serverFlags.registerProductionPassword)
+				}
+				if serverFlags.registerProductionSerialNumber != "" {
+					serverConfig.SerialNumber = sdk.PtrString(serverFlags.registerProductionSerialNumber)
+				}
+				if serverFlags.registerProductionUuid != "" {
+					serverConfig.ServerUUID = sdk.PtrString(serverFlags.registerProductionUuid)
+				}
+				if serverFlags.registerProductionBmcMacAddress != "" {
+					serverConfig.BmcMacAddress = sdk.PtrString(serverFlags.registerProductionBmcMacAddress)
+				}
+				if serverFlags.registerProductionVendor != "" {
+					serverConfig.Vendor = sdk.PtrString(serverFlags.registerProductionVendor)
+				}
+				if serverFlags.registerProductionModel != "" {
+					serverConfig.Model = sdk.PtrString(serverFlags.registerProductionModel)
+				}
+				if serverFlags.registerProductionProfileId > 0 {
+					serverConfig.RegistrationProfileId = sdk.PtrInt64(int64(serverFlags.registerProductionProfileId))
+				}
+			}
+
+			return server.ServerRegisterProduction(cmd.Context(), serverConfig)
+		},
+	}
+
+	serverImportUnmanagedCmd = &cobra.Command{
+		Use:   "import-unmanaged",
+		Short: "Import a server whose lifecycle MetalSoft does not manage",
+		Long: `Import a server that MetalSoft does not manage the lifecycle of, using an
+externally supplied hardware description.
+
+The configuration must describe the site, the server type and the server
+interfaces together with the network device ports they are cabled to.
+
+Required Flags:
+  --config-source        Source of the import configuration. Can be 'pipe' or path to a JSON file.
+
+Examples:
+  # Import an unmanaged server from a JSON file
+  metalcloud-cli server import-unmanaged --config-source ./unmanaged-server.json
+
+  # Import an unmanaged server from piped configuration
+  metalcloud-cli server config-example import-unmanaged | metalcloud-cli server import-unmanaged --config-source pipe
+`,
+		SilenceUsage: true,
+		Annotations:  map[string]string{system.REQUIRED_PERMISSION: system.PERMISSION_SERVERS_WRITE},
+		RunE: func(cmd *cobra.Command, args []string) error {
+			config, err := utils.ReadConfigFromPipeOrFile(serverFlags.importUnmanagedConfigSource)
+			if err != nil {
+				return err
+			}
+			return server.ServerImportUnmanaged(cmd.Context(), config)
+		},
+	}
+
+	serverConfigExampleCmd = &cobra.Command{
+		Use:     "config-example kind",
+		Aliases: []string{"example"},
+		Short:   "Show a server configuration example",
+		Long: `Show an example of the configuration accepted by the server sub-commands that
+take a --config-source flag.
+
+Required Arguments:
+  kind                   The configuration kind. One of:
+                           register-production
+                           import-unmanaged
+                           connect-interface
+                           set-interfaces-default-fabric
+                           set-interfaces-redundancy-group
+
+Examples:
+  # Show the production server registration configuration
+  metalcloud-cli server config-example register-production
+
+  # Save the unmanaged server import configuration for editing
+  metalcloud-cli server config-example import-unmanaged > unmanaged-server.json
+`,
+		SilenceUsage: true,
+		Annotations:  map[string]string{system.REQUIRED_PERMISSION: system.PERMISSION_SERVERS_READ},
+		Args:         cobra.ExactArgs(1),
+		RunE: func(cmd *cobra.Command, args []string) error {
+			return server.ServerConfigExample(cmd.Context(), args[0])
+		},
+	}
+
+	// --- firmware batch operations -----------------------------------------
+
+	serverFirmwareUpgradeBatchCmd = &cobra.Command{
+		Use:   "upgrade-batch server_id...",
+		Short: "Upgrade the firmware of several servers at once",
+		Long: `Upgrade the firmware of several servers at once.
+
+A firmware upgrade job is started for each of the given servers. The result lists
+the job started for every server that could be upgraded and the error reported for
+every server that could not.
+
+Required Arguments:
+  server_id...           The IDs of the servers to upgrade
+
+Examples:
+  # Upgrade the firmware of servers 123, 124 and 125
+  metalcloud-cli server firmware upgrade-batch 123 124 125
+`,
+		SilenceUsage: true,
+		Annotations:  map[string]string{system.REQUIRED_PERMISSION: system.PERMISSION_SERVERS_WRITE},
+		Args:         cobra.MinimumNArgs(1),
+		RunE: func(cmd *cobra.Command, args []string) error {
+			return server.ServerFirmwareUpgradeBatch(cmd.Context(), args)
+		},
+	}
+
+	serverFirmwareScheduleUpgradeBatchCmd = &cobra.Command{
+		Use:   "schedule-upgrade-batch server_id...",
+		Short: "Schedule a firmware upgrade for several servers at once",
+		Long: `Schedule a firmware upgrade for several servers at once.
+
+The API models this as an action on a single server, so the first server ID given
+is used to address the endpoint while the full list of servers is sent in the
+request body. The result lists the error reported for every server that could not
+be scheduled.
+
+Required Arguments:
+  server_id...           The IDs of the servers to schedule the upgrade for
+
+Optional Flags:
+  --schedule-timestamp       When the firmware upgrade should run (RFC 3339 timestamp)
+  --confirmation-required    Require a confirmation before the scheduled upgrade runs
+
+Examples:
+  # Schedule an upgrade for servers 123 and 124 as soon as possible
+  metalcloud-cli server firmware schedule-upgrade-batch 123 124
+
+  # Schedule an upgrade for a maintenance window, with confirmation
+  metalcloud-cli server firmware schedule-upgrade-batch 123 124 \
+    --schedule-timestamp 2024-01-01T10:00:00Z --confirmation-required
+`,
+		SilenceUsage: true,
+		Annotations:  map[string]string{system.REQUIRED_PERMISSION: system.PERMISSION_SERVERS_WRITE},
+		Args:         cobra.MinimumNArgs(1),
+		RunE: func(cmd *cobra.Command, args []string) error {
+			return server.ServerFirmwareScheduleUpgradeBatch(cmd.Context(), args,
+				serverFlags.firmwareBatchScheduleTimestamp,
+				serverFlags.firmwareBatchConfirmationRequired)
+		},
+	}
 )
 
 func init() {
@@ -954,4 +1606,87 @@ func init() {
 	serverFirmwareCmd.AddCommand(serverFirmwareGenerateAuditCmd)
 	serverFirmwareGenerateAuditCmd.Flags().StringVar(&serverFlags.configSource, "config-source", "", "Source of the audit configuration. Can be 'pipe' or path to a JSON file.")
 	serverFirmwareGenerateAuditCmd.MarkFlagsOneRequired("config-source")
+
+	// Batch firmware operations
+	serverFirmwareCmd.AddCommand(serverFirmwareUpgradeBatchCmd)
+
+	serverFirmwareCmd.AddCommand(serverFirmwareScheduleUpgradeBatchCmd)
+	serverFirmwareScheduleUpgradeBatchCmd.Flags().StringVar(&serverFlags.firmwareBatchScheduleTimestamp, "schedule-timestamp", "", "When the firmware upgrade should run (RFC 3339 timestamp).")
+	serverFirmwareScheduleUpgradeBatchCmd.Flags().BoolVar(&serverFlags.firmwareBatchConfirmationRequired, "confirmation-required", false, "Require a confirmation before the scheduled upgrade runs.")
+
+	// Drift detection
+	serverCmd.AddCommand(serverDriftCmd)
+	serverDriftCmd.AddCommand(serverDriftListCmd)
+	serverDriftCmd.AddCommand(serverDriftGetCmd)
+	serverDriftCmd.AddCommand(serverDriftAcknowledgeCmd)
+
+	serverCmd.AddCommand(serverSnapshotsCmd)
+	serverSnapshotsCmd.Flags().StringVar(&serverFlags.snapshotKind, "kind", "", "Restrict the listing to one snapshot class.")
+
+	serverCmd.AddCommand(serverSyncTargetSnapshotCmd)
+
+	// Hardware
+	serverCmd.AddCommand(serverHardwareRescanCmd)
+	serverHardwareRescanCmd.Flags().BoolVar(&serverFlags.rebootAllowed, "reboot-allowed", false, "Allow the server to be rebooted for full LLDP interface discovery.")
+
+	serverCmd.AddCommand(serverStatisticsCmd)
+
+	serverCmd.AddCommand(serverConnectInterfaceCmd)
+	serverConnectInterfaceCmd.Flags().StringVar(&serverFlags.connectInterfaceConfigSource, "config-source", "", "Source of the connection configuration. Can be 'pipe' or path to a JSON file.")
+	serverConnectInterfaceCmd.Flags().IntVar(&serverFlags.connectInterfaceId, "interface-id", 0, "The ID of the server interface to connect.")
+	serverConnectInterfaceCmd.Flags().StringVar(&serverFlags.connectInterfacePortId, "port-id", "", "The network device port name.")
+	serverConnectInterfaceCmd.Flags().StringVar(&serverFlags.connectInterfaceHostname, "hostname", "", "The network device hostname.")
+	serverConnectInterfaceCmd.MarkFlagsOneRequired("config-source", "interface-id")
+	serverConnectInterfaceCmd.MarkFlagsMutuallyExclusive("config-source", "interface-id")
+	serverConnectInterfaceCmd.MarkFlagsMutuallyExclusive("config-source", "port-id")
+	serverConnectInterfaceCmd.MarkFlagsMutuallyExclusive("config-source", "hostname")
+	serverConnectInterfaceCmd.MarkFlagsRequiredTogether("interface-id", "port-id", "hostname")
+
+	serverCmd.AddCommand(serverSetInterfacesDefaultFabricCmd)
+	serverSetInterfacesDefaultFabricCmd.Flags().StringVar(&serverFlags.defaultFabricConfigSource, "config-source", "", "Source of the configuration. Can be 'pipe' or path to a JSON file.")
+	serverSetInterfacesDefaultFabricCmd.Flags().StringSliceVar(&serverFlags.defaultFabricInterfaceIds, "interface-id", nil, "IDs of the server interfaces to change.")
+	serverSetInterfacesDefaultFabricCmd.Flags().IntVar(&serverFlags.defaultFabricId, "fabric-id", 0, "The ID of the fabric to set as default.")
+	serverSetInterfacesDefaultFabricCmd.Flags().BoolVar(&serverFlags.defaultFabricClear, "clear-fabric", false, "Clear the default fabric of the given interfaces.")
+	serverSetInterfacesDefaultFabricCmd.MarkFlagsOneRequired("config-source", "interface-id")
+	serverSetInterfacesDefaultFabricCmd.MarkFlagsMutuallyExclusive("config-source", "interface-id")
+	serverSetInterfacesDefaultFabricCmd.MarkFlagsMutuallyExclusive("config-source", "fabric-id")
+	serverSetInterfacesDefaultFabricCmd.MarkFlagsMutuallyExclusive("config-source", "clear-fabric")
+	serverSetInterfacesDefaultFabricCmd.MarkFlagsMutuallyExclusive("fabric-id", "clear-fabric")
+
+	serverCmd.AddCommand(serverSetInterfacesRedundancyGroupCmd)
+	serverSetInterfacesRedundancyGroupCmd.Flags().StringVar(&serverFlags.redundancyGroupConfigSource, "config-source", "", "Source of the configuration. Can be 'pipe' or path to a JSON file.")
+	serverSetInterfacesRedundancyGroupCmd.Flags().StringSliceVar(&serverFlags.redundancyGroupInterfaceIds, "interface-id", nil, "IDs of the server interfaces to change.")
+	serverSetInterfacesRedundancyGroupCmd.Flags().IntVar(&serverFlags.redundancyGroupIndex, "group-index", 0, "The redundancy group index.")
+	serverSetInterfacesRedundancyGroupCmd.Flags().BoolVar(&serverFlags.redundancyGroupClear, "clear-group", false, "Remove the given interfaces from their redundancy group.")
+	serverSetInterfacesRedundancyGroupCmd.MarkFlagsOneRequired("config-source", "interface-id")
+	serverSetInterfacesRedundancyGroupCmd.MarkFlagsMutuallyExclusive("config-source", "interface-id")
+	serverSetInterfacesRedundancyGroupCmd.MarkFlagsMutuallyExclusive("config-source", "group-index")
+	serverSetInterfacesRedundancyGroupCmd.MarkFlagsMutuallyExclusive("config-source", "clear-group")
+	serverSetInterfacesRedundancyGroupCmd.MarkFlagsMutuallyExclusive("group-index", "clear-group")
+
+	// Onboarding
+	serverCmd.AddCommand(serverRegisterProductionCmd)
+	serverRegisterProductionCmd.Flags().StringVar(&serverFlags.registerProductionConfigSource, "config-source", "", "Source of the production server configuration. Can be 'pipe' or path to a JSON file.")
+	serverRegisterProductionCmd.Flags().IntVar(&serverFlags.registerProductionSiteId, "site-id", 0, "Site ID where the server is located.")
+	serverRegisterProductionCmd.Flags().IntVar(&serverFlags.registerProductionInfrastructure, "infrastructure-id", 0, "ID of the infrastructure the server belongs to.")
+	serverRegisterProductionCmd.Flags().IntVar(&serverFlags.registerProductionOsTemplateId, "os-template-id", 0, "ID of the OS template already installed on the server.")
+	serverRegisterProductionCmd.Flags().StringVar(&serverFlags.registerProductionAddress, "management-address", "", "IPMI/BMC management IP address.")
+	serverRegisterProductionCmd.Flags().StringVar(&serverFlags.registerProductionUsername, "username", "", "IPMI/BMC username.")
+	serverRegisterProductionCmd.Flags().StringVar(&serverFlags.registerProductionPassword, "password", "", "IPMI/BMC password.")
+	serverRegisterProductionCmd.Flags().StringVar(&serverFlags.registerProductionSerialNumber, "serial-number", "", "Server serial number.")
+	serverRegisterProductionCmd.Flags().StringVar(&serverFlags.registerProductionUuid, "uuid", "", "Server UUID.")
+	serverRegisterProductionCmd.Flags().StringVar(&serverFlags.registerProductionBmcMacAddress, "bmc-mac-address", "", "BMC MAC address.")
+	serverRegisterProductionCmd.Flags().StringVar(&serverFlags.registerProductionVendor, "vendor", "", "Server vendor.")
+	serverRegisterProductionCmd.Flags().StringVar(&serverFlags.registerProductionModel, "model", "", "Server model.")
+	serverRegisterProductionCmd.Flags().IntVar(&serverFlags.registerProductionProfileId, "registration-profile-id", 0, "ID of the server registration profile to use.")
+	serverRegisterProductionCmd.MarkFlagsOneRequired("config-source", "site-id")
+	serverRegisterProductionCmd.MarkFlagsMutuallyExclusive("config-source", "site-id")
+	serverRegisterProductionCmd.MarkFlagsMutuallyExclusive("config-source", "infrastructure-id")
+	serverRegisterProductionCmd.MarkFlagsRequiredTogether("site-id", "infrastructure-id")
+
+	serverCmd.AddCommand(serverImportUnmanagedCmd)
+	serverImportUnmanagedCmd.Flags().StringVar(&serverFlags.importUnmanagedConfigSource, "config-source", "", "Source of the import configuration. Can be 'pipe' or path to a JSON file.")
+	serverImportUnmanagedCmd.MarkFlagsOneRequired("config-source")
+
+	serverCmd.AddCommand(serverConfigExampleCmd)
 }

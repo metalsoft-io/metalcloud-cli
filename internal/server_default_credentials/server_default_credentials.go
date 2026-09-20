@@ -14,6 +14,7 @@ import (
 
 	sdk "github.com/metalsoft-io/metalcloud-sdk-go"
 )
+
 type serverDefaultCredentialsRaw struct {
 	Id                           interface{} `json:"id"`
 	SiteId                       interface{} `json:"siteId"`
@@ -209,6 +210,52 @@ func ServerDefaultCredentialsCreate(ctx context.Context, siteId float32, serialN
 	}
 
 	return formatter.PrintResult(credentials, &serverDefaultCredentialsPrintConfig)
+}
+
+// ServerDefaultCredentialsUpdate changes the default credentials and rack
+// placement recorded for a not-yet-registered server. The update endpoint takes
+// no If-Match header, so no revision is fetched first.
+func ServerDefaultCredentialsUpdate(ctx context.Context, credentialsId string, config []byte) error {
+	logger.Get().Info().Msgf("Updating server default credentials '%s'", credentialsId)
+
+	credentialsIdNumber, err := strconv.ParseInt(credentialsId, 10, 64)
+	if err != nil {
+		err := fmt.Errorf("invalid server default credentials ID: '%s'", credentialsId)
+		logger.Get().Error().Err(err).Msg("")
+		return err
+	}
+
+	var updateConfig sdk.UpdateServerDefaultCredentials
+	if err := utils.UnmarshalContent(config, &updateConfig); err != nil {
+		return err
+	}
+
+	client := api.GetApiClient(ctx)
+
+	credentials, httpRes, err := client.ServerDefaultCredentialsAPI.
+		UpdateServerDefaultCredentials(ctx, credentialsIdNumber).
+		UpdateServerDefaultCredentials(updateConfig).
+		Execute()
+	if err := response_inspector.InspectResponse(httpRes, err); err != nil {
+		return err
+	}
+
+	return formatter.PrintResult(credentials, &serverDefaultCredentialsPrintConfig)
+}
+
+func ServerDefaultCredentialsUpdateConfigExample(ctx context.Context) error {
+	updateConfig := sdk.UpdateServerDefaultCredentials{
+		DefaultUsername:              sdk.PtrString("admin"),
+		DefaultPassword:              sdk.PtrString("password"),
+		DefaultRackName:              sdk.PtrString("rack-01"),
+		DefaultRackPositionLowerUnit: sdk.PtrString("10"),
+		DefaultRackPositionUpperUnit: sdk.PtrString("11"),
+		DefaultInventoryId:           sdk.PtrString("INV-001"),
+		DefaultUuid:                  sdk.PtrString("00000000-0000-0000-0000-000000000000"),
+		DefaultRegistrationProfileId: sdk.PtrInt64(1),
+	}
+
+	return formatter.PrintResult(updateConfig, nil)
 }
 
 func ServerDefaultCredentialsDelete(ctx context.Context, credentialsId string) error {

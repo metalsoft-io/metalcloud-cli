@@ -4,6 +4,8 @@ import (
 	"encoding/json"
 	"net/http"
 	"net/http/httptest"
+	"os"
+	"strings"
 	"testing"
 )
 
@@ -69,5 +71,52 @@ func TestServerDefaultCredentialsDeleteRequiresArg(t *testing.T) {
 	_, err := runCLI(t, srv, "server-default-credentials", "delete")
 	if err == nil {
 		t.Fatal("expected error when no arg provided, got nil")
+	}
+}
+
+func TestServerDefaultCredentialsUpdate(t *testing.T) {
+	srv := newServerDefaultCredentialsWriteServer()
+	defer srv.Close()
+
+	f, err := os.CreateTemp(t.TempDir(), "sdc-update-*.json")
+	if err != nil {
+		t.Fatalf("create temp file: %v", err)
+	}
+	_, _ = f.WriteString(`{"defaultPassword":"new-secret"}`)
+	f.Close()
+
+	if _, execErr := runCLI(t, srv, "server-default-credentials", "update", "1", "--config-source", f.Name()); execErr != nil {
+		t.Fatalf("unexpected error: %v", execErr)
+	}
+}
+
+func TestServerDefaultCredentialsUpdateRequiresArg(t *testing.T) {
+	srv := newServerDefaultCredentialsWriteServer()
+	defer srv.Close()
+
+	if _, err := runCLI(t, srv, "server-default-credentials", "update"); err == nil {
+		t.Fatal("expected an error when no credentials ID is given")
+	}
+}
+
+func TestServerDefaultCredentialsUpdateRequiresConfigSource(t *testing.T) {
+	srv := newServerDefaultCredentialsWriteServer()
+	defer srv.Close()
+
+	if _, err := runCLI(t, srv, "server-default-credentials", "update", "1"); err == nil {
+		t.Fatal("expected an error when --config-source is missing")
+	}
+}
+
+func TestServerDefaultCredentialsConfigExample(t *testing.T) {
+	srv := newServerDefaultCredentialsWriteServer()
+	defer srv.Close()
+
+	out, err := runCLI(t, srv, "server-default-credentials", "config-example")
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if !strings.Contains(out, "defaultUsername") {
+		t.Fatalf("expected the update example, got: %s", out)
 	}
 }

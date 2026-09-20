@@ -2,7 +2,9 @@ package server_default_credentials
 
 import (
 	"fmt"
+	"io"
 	"net/http"
+	"strings"
 	"sync/atomic"
 	"testing"
 
@@ -201,4 +203,78 @@ func TestServerDefaultCredentialsDelete(t *testing.T) {
 			t.Errorf("expected nil error, got: %v", err)
 		}
 	})
+}
+
+func TestServerDefaultCredentialsUpdate(t *testing.T) {
+	t.Run("HappyPath", func(t *testing.T) {
+		var method, body string
+		ts := testutils.NewTestServer(map[string]http.HandlerFunc{
+			"/api/v2/servers/default-credentials/1": func(w http.ResponseWriter, r *http.Request) {
+				method = r.Method
+				raw, _ := io.ReadAll(r.Body)
+				body = string(raw)
+				testutils.RawHandler(http.StatusOK, credentialsItem)(w, r)
+			},
+		})
+		defer ts.Close()
+
+		ctx := testutils.SetupTestContext(ts.URL)
+
+		out := testutils.CaptureStdout(t, func() {
+			err := ServerDefaultCredentialsUpdate(ctx, "1", []byte(`{"defaultPassword":"new-secret","defaultRackName":"rack-2"}`))
+			if err != nil {
+				t.Fatalf("expected nil error, got: %v", err)
+			}
+		})
+
+		if method != http.MethodPatch && method != http.MethodPut {
+			t.Errorf("unexpected update method: %s", method)
+		}
+		if !strings.Contains(body, `"defaultRackName":"rack-2"`) {
+			t.Errorf("expected the update body to be sent, got %q", body)
+		}
+		if !strings.Contains(out, "SN123") {
+			t.Errorf("expected the updated credentials in the output, got: %s", out)
+		}
+	})
+
+	t.Run("InvalidId", func(t *testing.T) {
+		ctx := testutils.SetupTestContext("http://127.0.0.1:1")
+		if err := ServerDefaultCredentialsUpdate(ctx, "abc", []byte(`{}`)); err == nil {
+			t.Fatal("expected an error for an invalid credentials ID")
+		}
+	})
+
+	t.Run("InvalidConfig", func(t *testing.T) {
+		ctx := testutils.SetupTestContext("http://127.0.0.1:1")
+		if err := ServerDefaultCredentialsUpdate(ctx, "1", []byte("not json")); err == nil {
+			t.Fatal("expected an error for an invalid configuration")
+		}
+	})
+
+	t.Run("HttpError404", func(t *testing.T) {
+		ts := testutils.NewTestServer(map[string]http.HandlerFunc{
+			"/api/v2/servers/default-credentials/9": testutils.ErrorHandler(http.StatusNotFound, "not found"),
+		})
+		defer ts.Close()
+
+		ctx := testutils.SetupTestContext(ts.URL)
+		if err := ServerDefaultCredentialsUpdate(ctx, "9", []byte(`{}`)); err == nil {
+			t.Fatal("expected an error for HTTP 404")
+		}
+	})
+}
+
+func TestServerDefaultCredentialsUpdateConfigExample(t *testing.T) {
+	ctx := testutils.SetupTestContext("http://127.0.0.1:1")
+
+	out := testutils.CaptureStdout(t, func() {
+		if err := ServerDefaultCredentialsUpdateConfigExample(ctx); err != nil {
+			t.Fatalf("expected nil error, got: %v", err)
+		}
+	})
+
+	if !strings.Contains(out, "defaultUsername") {
+		t.Errorf("expected the update example, got: %s", out)
+	}
 }
