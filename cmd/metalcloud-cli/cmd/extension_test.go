@@ -279,9 +279,9 @@ func TestExtensionUpdate(t *testing.T) {
 
 // --- extension activate / publish ---
 
-// activateSrv serves the extension lookup plus the activate action, and fails the
-// test if the API's deprecated publish action is called.
-func activateSrv(t *testing.T) *httptest.Server {
+// extensionActionSrv serves the extension lookup plus both the activate and publish
+// actions, recording which one was called.
+func extensionActionSrv(t *testing.T, called *string) *httptest.Server {
 	t.Helper()
 	return httptest.NewServer(newMux(allPerms, func(mux *http.ServeMux) {
 		mux.HandleFunc("/api/v2/extensions/1", func(w http.ResponseWriter, r *http.Request) {
@@ -289,11 +289,12 @@ func activateSrv(t *testing.T) *httptest.Server {
 			_ = json.NewEncoder(w).Encode(extensionFixtureWithDefinition(1))
 		})
 		mux.HandleFunc("/api/v2/extensions/1/actions/activate", func(w http.ResponseWriter, r *http.Request) {
+			*called = "activate"
 			w.Header().Set("Content-Type", "application/json")
 			_, _ = w.Write([]byte("{}"))
 		})
 		mux.HandleFunc("/api/v2/extensions/1/actions/publish", func(w http.ResponseWriter, r *http.Request) {
-			t.Error("expected the activate action, but the deprecated publish action was called")
+			*called = "publish"
 			w.Header().Set("Content-Type", "application/json")
 			_, _ = w.Write([]byte("{}"))
 		})
@@ -301,23 +302,65 @@ func activateSrv(t *testing.T) *httptest.Server {
 }
 
 func TestExtensionActivate(t *testing.T) {
-	srv := activateSrv(t)
+	var called string
+	srv := extensionActionSrv(t, &called)
 	defer srv.Close()
 
 	if _, err := runCLI(t, srv, "extension", "activate", "1"); err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}
+	if called != "activate" {
+		t.Errorf("activate should call the activate action, got %q", called)
+	}
 }
 
 // TestExtensionPublish_DeprecatedStillWorks pins the backwards-compatible behaviour of
-// the deprecated publish command: it must keep succeeding, and must reach the activate
-// action rather than the API's deprecated publish action.
+// the deprecated publish command: it must keep succeeding and now calls the API's own
+// (equally deprecated) publish action through the typed PublishExtension SDK method.
 func TestExtensionPublish_DeprecatedStillWorks(t *testing.T) {
-	srv := activateSrv(t)
+	var called string
+	srv := extensionActionSrv(t, &called)
 	defer srv.Close()
 
 	if _, err := runCLI(t, srv, "extension", "publish", "1"); err != nil {
 		t.Fatalf("deprecated publish command must remain functional, got: %v", err)
+	}
+	if called != "publish" {
+		t.Errorf("publish should call the publish action, got %q", called)
+	}
+}
+
+// --- extension site-config credentials ---
+
+// TestExtensionSiteConfigCredentials verifies the new sub-command resolves the
+// extension and the site and hits the credentials endpoint.
+func TestExtensionSiteConfigCredentials(t *testing.T) {
+	extCredSite := map[string]interface{}{"id": 7, "revision": 1, "slug": "my-site", "name": "my-site"}
+	var extCredPath string
+
+	srv := httptest.NewServer(newMux(allPerms, func(mux *http.ServeMux) {
+		mux.HandleFunc("/api/v2/extensions/1", func(w http.ResponseWriter, r *http.Request) {
+			jsonResponse(w, http.StatusOK, extensionFixtureWithDefinition(1))
+		})
+		mux.HandleFunc("/api/v2/sites", func(w http.ResponseWriter, r *http.Request) {
+			jsonResponse(w, http.StatusOK, paginatedList(extCredSite))
+		})
+		mux.HandleFunc("/api/v2/extensions/1/siteConfig/7/credentials", func(w http.ResponseWriter, r *http.Request) {
+			extCredPath = r.URL.Path
+			jsonResponse(w, http.StatusOK, map[string]interface{}{"username": "svc-account"})
+		})
+	}))
+	defer srv.Close()
+
+	out, err := runCLI(t, srv, "extension", "site-config", "credentials", "1", "my-site")
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if extCredPath != "/api/v2/extensions/1/siteConfig/7/credentials" {
+		t.Errorf("unexpected credentials path %q", extCredPath)
+	}
+	if !strings.Contains(out, "svc-account") {
+		t.Errorf("output missing the credentials: %s", out)
 	}
 }
 
