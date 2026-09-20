@@ -3,6 +3,8 @@ package cmd
 import (
 	"github.com/metalsoft-io/metalcloud-cli/cmd/metalcloud-cli/system"
 	"github.com/metalsoft-io/metalcloud-cli/internal/job"
+	"github.com/metalsoft-io/metalcloud-cli/pkg/utils"
+	sdk "github.com/metalsoft-io/metalcloud-sdk-go"
 	"github.com/spf13/cobra"
 )
 
@@ -28,6 +30,12 @@ var (
 		retryEvenIfSuccessful bool
 	}{}
 
+	jobCommandFlags = struct {
+		configSource       string
+		command            string
+		executeImmediately bool
+	}{}
+
 	jobCmd = &cobra.Command{
 		Use:   "job [command]",
 		Short: "Manage MetalCloud jobs and job execution",
@@ -42,9 +50,12 @@ Available Commands:
   skip           Skip a pending or running job
   retry          Retry a failed job
   kill           Kill a running job
+  issue-command  Issue an operational command for a job
   exceptions     Get exceptions for a specific job
   statistics     Get job queue statistics
   list-archived  List archived jobs
+  get-archived   Get a single archived job
+  scheduled-job-functions  List the functions supported by scheduled jobs
 
 Use "metalcloud-cli job [command] --help" for more information about a command.`,
 	}
@@ -317,6 +328,124 @@ Examples:
 			})
 		},
 	}
+
+	jobGetArchivedCmd = &cobra.Command{
+		Use:     "get-archived job_id",
+		Aliases: []string{"show-archived"},
+		Short:   "Get a single archived job",
+		Long: `Get the details of a single job that has been moved to the job archive.
+
+This is the single-record counterpart of 'job list-archived': once a job has
+been archived it is no longer returned by 'job get'.
+
+Required Arguments:
+  job_id    The numeric ID of the archived job
+
+Examples:
+  # Get archived job 12345
+  metalcloud-cli job get-archived 12345
+
+  # Get the full archived record as JSON
+  metalcloud-cli job get-archived 12345 -f json
+
+Permissions:
+  Requires job queue read permissions to execute this command.`,
+		SilenceUsage: true,
+		Annotations:  map[string]string{system.REQUIRED_PERMISSION: system.PERMISSION_JOB_QUEUE_READ},
+		Args:         cobra.ExactArgs(1),
+		RunE: func(cmd *cobra.Command, args []string) error {
+			return job.JobGetArchived(cmd.Context(), args[0])
+		},
+	}
+
+	jobIssueCommandCmd = &cobra.Command{
+		Use:   "issue-command job_id",
+		Short: "Issue an operational command for a job",
+		Long: `Issue a command that changes the operational state of a job.
+
+The command can be described either with individual flags (--command,
+--execute-immediately) or with a JSON/YAML configuration (--config-source).
+The 'job kill' command is a shortcut for issuing the "kill" command with
+--execute-immediately.
+
+Required Arguments:
+  job_id    The numeric ID of the job
+
+Required Flags (one of):
+  --config-source string   Source of the command configuration. Can be 'pipe' or path to a JSON/YAML file.
+  --command string         The command to issue (e.g. kill)
+
+Optional Flags (when not using --config-source):
+  --execute-immediately    Execute the command immediately instead of queueing it.
+
+Examples:
+  # Mark a job for death and execute immediately
+  metalcloud-cli job issue-command 12345 --command kill --execute-immediately
+
+  # Issue a command described in a file
+  metalcloud-cli job issue-command 12345 --config-source ./command.json
+
+  # Issue a command from piped input
+  echo '{"command":"kill","executeImmediately":true}' | metalcloud-cli job issue-command 12345 --config-source pipe
+
+Permissions:
+  Requires job queue write permissions to execute this command.`,
+		SilenceUsage: true,
+		Annotations:  map[string]string{system.REQUIRED_PERMISSION: system.PERMISSION_JOB_QUEUE_WRITE},
+		Args:         cobra.ExactArgs(1),
+		RunE: func(cmd *cobra.Command, args []string) error {
+			var commandInfo sdk.JobCommandInfo
+
+			if jobCommandFlags.configSource != "" {
+				config, err := utils.ReadConfigFromPipeOrFile(jobCommandFlags.configSource)
+				if err != nil {
+					return err
+				}
+				if err := utils.UnmarshalContent(config, &commandInfo); err != nil {
+					return err
+				}
+			} else {
+				commandInfo.Command = sdk.PtrString(jobCommandFlags.command)
+				if cmd.Flags().Changed("execute-immediately") {
+					commandInfo.ExecuteImmediately = sdk.PtrBool(jobCommandFlags.executeImmediately)
+				}
+			}
+
+			if err := job.JobIssueCommand(cmd.Context(), args[0], commandInfo); err != nil {
+				return err
+			}
+
+			cmd.Printf("Command issued for job %s.\n", args[0])
+			return nil
+		},
+	}
+
+	jobScheduledJobFunctionsCmd = &cobra.Command{
+		Use:     "scheduled-job-functions",
+		Aliases: []string{"scheduled-job-supported-functions"},
+		Short:   "List the functions supported by scheduled jobs",
+		Long: `List the functions that can be referenced when creating a scheduled job,
+together with their description and the names of their parameters.
+
+This command lives under 'job' rather than under 'scheduled-job' because the
+scheduled-job command group is wired in a separate file.
+
+Examples:
+  # List the supported scheduled job functions
+  metalcloud-cli job scheduled-job-functions
+
+  # Show the full parameter schemas
+  metalcloud-cli job scheduled-job-functions -f json
+
+Permissions:
+  Requires job queue read permissions to execute this command.`,
+		SilenceUsage: true,
+		Annotations:  map[string]string{system.REQUIRED_PERMISSION: system.PERMISSION_JOB_QUEUE_READ},
+		Args:         cobra.NoArgs,
+		RunE: func(cmd *cobra.Command, args []string) error {
+			return job.ScheduledJobSupportedFunctions(cmd.Context())
+		},
+	}
 )
 
 var (
@@ -330,9 +459,10 @@ as part of a larger operation. These commands allow you to list, view, and monit
 job group execution status and their constituent jobs.
 
 Available Commands:
-  list    List job groups with optional filtering and sorting
-  get     Get detailed information about a specific job group
-  wait    Wait for a job group to finish executing
+  list        List job groups with optional filtering and sorting
+  get         Get detailed information about a specific job group
+  wait        Wait for a job group to finish executing
+  statistics  Get the job counters of a specific job group
 
 Use "metalcloud-cli job-group [command] --help" for more information about a command.`,
 	}
@@ -469,6 +599,34 @@ Permissions:
 			return job.JobGroupWait(cmd.Context(), args[0])
 		},
 	}
+
+	jobGroupStatisticsCmd = &cobra.Command{
+		Use:     "statistics job_group_id",
+		Aliases: []string{"stats"},
+		Short:   "Get the job counters of a specific job group",
+		Long: `Get the execution counters of a job group: total number of jobs, how many
+completed and how many threw an error, together with the group type and its
+creation and completion timestamps.
+
+Required Arguments:
+  job_group_id    The numeric ID of the job group
+
+Examples:
+  # Get the statistics of job group 15
+  metalcloud-cli job-group statistics 15
+
+  # Using the alias
+  metalcloud-cli job-group stats 15
+
+Permissions:
+  Requires job queue read permissions to execute this command.`,
+		SilenceUsage: true,
+		Annotations:  map[string]string{system.REQUIRED_PERMISSION: system.PERMISSION_JOB_QUEUE_READ},
+		Args:         cobra.ExactArgs(1),
+		RunE: func(cmd *cobra.Command, args []string) error {
+			return job.JobGroupStatistics(cmd.Context(), args[0])
+		},
+	}
 )
 
 func init() {
@@ -504,6 +662,17 @@ func init() {
 	jobListArchivedCmd.Flags().IntVar(&jobArchiveFlags.page, "page", 0, "Page number to retrieve (default: return all records).")
 	jobListArchivedCmd.Flags().IntVar(&jobArchiveFlags.limit, "limit", 0, "Maximum number of records to return (default: all).")
 
+	jobCmd.AddCommand(jobGetArchivedCmd)
+
+	jobCmd.AddCommand(jobIssueCommandCmd)
+	jobIssueCommandCmd.Flags().StringVar(&jobCommandFlags.configSource, "config-source", "", "Source of the job command configuration. Can be 'pipe' or path to a JSON file.")
+	jobIssueCommandCmd.Flags().StringVar(&jobCommandFlags.command, "command", "", "The command to issue for the job (e.g. kill).")
+	jobIssueCommandCmd.Flags().BoolVar(&jobCommandFlags.executeImmediately, "execute-immediately", false, "Execute the command immediately.")
+	jobIssueCommandCmd.MarkFlagsOneRequired("config-source", "command")
+	jobIssueCommandCmd.MarkFlagsMutuallyExclusive("config-source", "command")
+
+	jobCmd.AddCommand(jobScheduledJobFunctionsCmd)
+
 	// Job group commands
 	rootCmd.AddCommand(jobGroupCmd)
 
@@ -517,4 +686,6 @@ func init() {
 	jobGroupCmd.AddCommand(jobGroupGetCmd)
 
 	jobGroupCmd.AddCommand(jobGroupWaitCmd)
+
+	jobGroupCmd.AddCommand(jobGroupStatisticsCmd)
 }

@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
+	"net/http"
 	"strconv"
 	"strings"
 
@@ -362,4 +363,129 @@ func SiteUpdateConfig(ctx context.Context, siteIdOrName string, config []byte) e
 	}
 
 	return formatter.PrintResult(updatedConfig, &siteConfigPrintConfig)
+}
+
+var siteStatisticsPrintConfig = formatter.PrintConfig{
+	FieldsConfig: map[string]formatter.RecordFieldConfig{
+		"SitesTotalCount": {
+			Title: "Total Sites",
+			Order: 1,
+		},
+		"SitesActiveCount": {
+			Title: "Active Sites",
+			Order: 2,
+		},
+		"ControllersOnline": {
+			Title: "Controllers Online",
+			Order: 3,
+		},
+		"ControllersMayBeOffline": {
+			Title: "Controllers May Be Offline",
+			Order: 4,
+		},
+		"ControllersOffline": {
+			Title: "Controllers Offline",
+			Order: 5,
+		},
+	},
+}
+
+// siteStatisticsRow is the table projection of the site statistics: the nested
+// site-controller status object is flattened into its three counters because
+// the tabular formatter renders nested objects as empty cells. The json and
+// yaml formats keep the full response, including sitesResourceCount.
+type siteStatisticsRow struct {
+	SitesTotalCount         float32
+	SitesActiveCount        float32
+	ControllersOnline       float32
+	ControllersMayBeOffline float32
+	ControllersOffline      float32
+}
+
+var siteRegistryUrlPrintConfig = formatter.PrintConfig{
+	FieldsConfig: map[string]formatter.RecordFieldConfig{
+		"Url": {
+			Title:    "Registry URL",
+			MaxWidth: 100,
+			Order:    1,
+		},
+	},
+}
+
+// siteRegistryUrlRow is the table projection of one registry URL: the endpoint
+// returns a bare list of strings, which the tabular formatter cannot render on
+// its own. The json and yaml formats keep the plain list.
+type siteRegistryUrlRow struct {
+	Url string
+}
+
+// SiteStatistics shows the aggregated statistics of all sites.
+//
+// The response body is parsed raw because the typed SDK SiteStatistics model
+// is out of sync with the API: it declares sitesResourceCount as a list of
+// site-controller status objects, while the API returns per-site resource
+// counters ({id, serversCount, infrastructuresCount, ...}). Decoding the live
+// payload into the typed model fails with "no value given for required
+// property may_be_offline".
+func SiteStatistics(ctx context.Context) error {
+	logger.Get().Info().Msg("Getting site statistics")
+
+	body, err := api.RawJSONRequest(ctx, http.MethodGet, "/api/v2/sites/statistics", nil, nil)
+	if err != nil {
+		return err
+	}
+
+	if formatter.IsNativeFormat() {
+		return utils.PrintRawObject(body, nil)
+	}
+
+	statistics, err := utils.DecodeRawObject(body)
+	if err != nil {
+		return err
+	}
+
+	controllers, _ := statistics["siteControllerSeenAliveStatus"].(map[string]any)
+
+	row := siteStatisticsRow{
+		SitesTotalCount:         rawFloat(statistics, "sitesTotalCount"),
+		SitesActiveCount:        rawFloat(statistics, "sitesActiveCount"),
+		ControllersOnline:       rawFloat(controllers, "was_seen_connected_very_recently"),
+		ControllersMayBeOffline: rawFloat(controllers, "may_be_offline"),
+		ControllersOffline:      rawFloat(controllers, "offline"),
+	}
+
+	return formatter.PrintResult(row, &siteStatisticsPrintConfig)
+}
+
+// rawFloat reads a numeric field out of a raw-decoded JSON object.
+func rawFloat(object map[string]any, key string) float32 {
+	if object == nil {
+		return 0
+	}
+	value, _ := object[key].(float64)
+	return float32(value)
+}
+
+// SiteRegistryUrls lists the container registry URLs that site agents can be
+// deployed from.
+func SiteRegistryUrls(ctx context.Context) error {
+	logger.Get().Info().Msg("Getting site registry URLs")
+
+	client := api.GetApiClient(ctx)
+
+	urls, httpRes, err := client.SiteAPI.GetRegistryUrls(ctx).Execute()
+	if err := response_inspector.InspectResponse(httpRes, err); err != nil {
+		return err
+	}
+
+	if formatter.IsNativeFormat() {
+		return formatter.PrintResult(urls, nil)
+	}
+
+	rows := make([]siteRegistryUrlRow, 0, len(urls))
+	for _, url := range urls {
+		rows = append(rows, siteRegistryUrlRow{Url: url})
+	}
+
+	return formatter.PrintResult(rows, &siteRegistryUrlPrintConfig)
 }

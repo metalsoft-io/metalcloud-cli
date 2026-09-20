@@ -5,6 +5,7 @@ import (
 
 	"github.com/metalsoft-io/metalcloud-cli/cmd/metalcloud-cli/system"
 	"github.com/metalsoft-io/metalcloud-cli/internal/infrastructure"
+	"github.com/metalsoft-io/metalcloud-cli/pkg/utils"
 	"github.com/spf13/cobra"
 )
 
@@ -33,6 +34,19 @@ var (
 		showDrives        bool
 	}{}
 
+	// Separate flag storage from infrastructureUtilFlags: runCLI does not reset
+	// slice flags between runs, so the two commands must not share them.
+	infrastructureUtilSummaryFlags = struct {
+		userId            int
+		startTime         time.Time
+		endTime           time.Time
+		infrastructureIds []int
+	}{}
+
+	infrastructureMetadataFlags = struct {
+		configSource string
+	}{}
+
 	infrastructureCmd = &cobra.Command{
 		Use:     "infrastructure [command]",
 		Aliases: []string{"infra"},
@@ -55,6 +69,8 @@ Available Commands:
   users        Manage user access to infrastructures
   statistics   View infrastructure deployment and job statistics
   utilization  Generate resource utilization reports
+  utilization-summary  Generate summarized resource utilization reports
+  update-metadata      Update infrastructure name, description and tags
 
 Use "metalcloud-cli infrastructure [command] --help" for more information about a specific command.`,
 	}
@@ -581,6 +597,83 @@ Examples:
 				infrastructureUtilFlags.showAll || infrastructureUtilFlags.showSubnets)
 		},
 	}
+
+	infrastructureUtilizationSummaryCmd = &cobra.Command{
+		Use:     "utilization-summary",
+		Aliases: []string{"get-utilization-summary"},
+		Short:   "Get a summarized resource utilization report for infrastructures",
+		Long: `Get a summarized utilization report for infrastructure resources within a specified time range.
+
+Unlike 'infrastructure utilization', which returns every metered resource of every
+infrastructure, this command returns the aggregated quantity per resource type plus the
+internet upload/download totals. Use --format json or yaml to get the full response,
+including the metered waypoints and the reservation and license installments.
+
+Required flags:
+  --user-id       ID of the user the report is generated for
+  --start-time    Start time for the report (RFC3339 or date format)
+  --end-time      End time for the report (RFC3339 or date format)
+
+Optional flags:
+  --infrastructure-id  Infrastructure IDs to include in the report (can be specified multiple times)
+
+Examples:
+  # Summarized utilization for user 123 over a week
+  metalcloud-cli infrastructure utilization-summary --user-id 123 --start-time 2025-08-01 --end-time 2025-08-08
+
+  # Summarized utilization for specific infrastructures, as JSON
+  metalcloud-cli infrastructure utilization-summary --user-id 123 --start-time 2025-08-01T00:00:00Z --end-time 2025-08-08T23:59:59Z --infrastructure-id 100 --infrastructure-id 101 -f json`,
+		SilenceUsage: true,
+		Annotations:  map[string]string{system.REQUIRED_PERMISSION: system.PERMISSION_UTILIZATION_REPORTS_READ},
+		RunE: func(cmd *cobra.Command, args []string) error {
+			return infrastructure.InfrastructureGetUtilizationSummary(
+				cmd.Context(),
+				infrastructureUtilSummaryFlags.userId,
+				infrastructureUtilSummaryFlags.startTime.UTC(),
+				infrastructureUtilSummaryFlags.endTime.UTC(),
+				infrastructureUtilSummaryFlags.infrastructureIds)
+		},
+	}
+
+	infrastructureUpdateMetadataCmd = &cobra.Command{
+		Use:     "update-metadata infrastructure_id_or_label",
+		Aliases: []string{"update-meta"},
+		Short:   "Update infrastructure name, description and tags",
+		Long: `Update the metadata of an infrastructure: its name, its description and its tags.
+
+The metadata is not part of the infrastructure configuration, so it is updated
+independently of 'infrastructure update' and is applied immediately (no deploy is
+needed). The API does not use an entity tag for this endpoint, so no revision is sent.
+
+Required Arguments:
+  infrastructure_id_or_label   The ID or label of the infrastructure
+
+Required Flags:
+  --config-source   Source of the metadata configuration. Can be 'pipe' or path to a JSON/YAML file.
+
+The configuration accepts the following properties:
+  name         (required) the display name of the infrastructure
+  description  (optional) a free-text description
+  tags         (optional) a list of tags
+
+Examples:
+  # Update the metadata from a file
+  metalcloud-cli infrastructure update-metadata my-infra --config-source ./meta.json
+
+  # Update the metadata from piped input
+  echo '{"name":"Production","description":"prod stack","tags":["prod"]}' | metalcloud-cli infrastructure update-metadata 123 --config-source pipe`,
+		SilenceUsage: true,
+		Annotations:  map[string]string{system.REQUIRED_PERMISSION: system.PERMISSION_INFRASTRUCTURES_WRITE},
+		Args:         cobra.ExactArgs(1),
+		RunE: func(cmd *cobra.Command, args []string) error {
+			config, err := utils.ReadConfigFromPipeOrFile(infrastructureMetadataFlags.configSource)
+			if err != nil {
+				return err
+			}
+
+			return infrastructure.InfrastructureUpdateMetadata(cmd.Context(), args[0], config)
+		},
+	}
 )
 
 func init() {
@@ -636,4 +729,17 @@ func init() {
 	infrastructureUtilizationCmd.MarkFlagRequired("user-id")
 	infrastructureUtilizationCmd.MarkFlagRequired("start-time")
 	infrastructureUtilizationCmd.MarkFlagRequired("end-time")
+
+	infrastructureCmd.AddCommand(infrastructureUtilizationSummaryCmd)
+	infrastructureUtilizationSummaryCmd.Flags().IntVar(&infrastructureUtilSummaryFlags.userId, "user-id", 0, "ID of the user to include in the report.")
+	infrastructureUtilizationSummaryCmd.Flags().TimeVar(&infrastructureUtilSummaryFlags.startTime, "start-time", time.Now().Add(-time.Duration(time.Now().Day())), []string{time.RFC3339, time.DateOnly}, "Start time for the report.")
+	infrastructureUtilizationSummaryCmd.Flags().TimeVar(&infrastructureUtilSummaryFlags.endTime, "end-time", time.Now(), []string{time.RFC3339, time.DateOnly}, "End time for the report.")
+	infrastructureUtilizationSummaryCmd.Flags().IntSliceVar(&infrastructureUtilSummaryFlags.infrastructureIds, "infrastructure-id", []int{}, "Infrastructure IDs to include in the report.")
+	infrastructureUtilizationSummaryCmd.MarkFlagRequired("user-id")
+	infrastructureUtilizationSummaryCmd.MarkFlagRequired("start-time")
+	infrastructureUtilizationSummaryCmd.MarkFlagRequired("end-time")
+
+	infrastructureCmd.AddCommand(infrastructureUpdateMetadataCmd)
+	infrastructureUpdateMetadataCmd.Flags().StringVar(&infrastructureMetadataFlags.configSource, "config-source", "", "Source of the infrastructure metadata configuration. Can be 'pipe' or path to a JSON file.")
+	infrastructureUpdateMetadataCmd.MarkFlagsOneRequired("config-source")
 }
