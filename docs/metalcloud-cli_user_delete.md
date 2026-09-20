@@ -1,26 +1,31 @@
-## metalcloud-cli user permissions
+## metalcloud-cli user delete
 
-List the permissions of the current user
+Delete a user and erase their personal information
 
 ### Synopsis
 
-List the permissions of the user owning the API key in use.
+Delete a user account and irreversibly erase their personal information.
 
-The permissions come from the roles assigned to the user and determine which API
-operations, and therefore which CLI commands, are available.
+WARNING: this is NOT the same as 'user archive'. Archiving only marks the account as
+inactive and can be undone with 'user unarchive'. Deleting archives the user AND
+permanently removes their personally identifiable information; it cannot be undone
+and 'user unarchive' will not bring the information back.
+
+Required Arguments:
+  user_id                 The numeric ID of the user to delete
 
 Examples:
-  metalcloud-cli user permissions
-  metalcloud-cli user permissions -f json
+  metalcloud-cli user delete 12345
+  metalcloud-cli user rm 12345
 
 ```
-metalcloud-cli user permissions [flags]
+metalcloud-cli user delete user_id [flags]
 ```
 
 ### Options
 
 ```
-  -h, --help   help for permissions
+  -h, --help   help for delete
 ```
 
 ### Options inherited from parent commands

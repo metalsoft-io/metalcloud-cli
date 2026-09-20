@@ -1,26 +1,25 @@
-## metalcloud-cli user permissions
+## metalcloud-cli user delegate parents
 
-List the permissions of the current user
+List the users that delegated access to a user
 
 ### Synopsis
 
-List the permissions of the user owning the API key in use.
+List the users that delegated their resources to a specific user.
 
-The permissions come from the roles assigned to the user and determine which API
-operations, and therefore which CLI commands, are available.
+Required Arguments:
+  user_id                 The numeric ID of the delegate user
 
 Examples:
-  metalcloud-cli user permissions
-  metalcloud-cli user permissions -f json
+  metalcloud-cli user delegate parents 12345
 
 ```
-metalcloud-cli user permissions [flags]
+metalcloud-cli user delegate parents user_id [flags]
 ```
 
 ### Options
 
 ```
-  -h, --help   help for permissions
+  -h, --help   help for parents
 ```
 
 ### Options inherited from parent commands
@@ -38,5 +37,5 @@ metalcloud-cli user permissions [flags]
 
 ### SEE ALSO
 
-* [metalcloud-cli user](metalcloud-cli_user.md)	 - Manage user accounts and their properties
+* [metalcloud-cli user delegate](metalcloud-cli_user_delegate.md)	 - Manage user delegates
 

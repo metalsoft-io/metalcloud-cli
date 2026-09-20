@@ -39,9 +39,12 @@ All account operations require appropriate permissions to perform user managemen
 
 * [metalcloud-cli](metalcloud-cli.md)	 - MetalCloud CLI
 * [metalcloud-cli account archive](metalcloud-cli_account_archive.md)	 - Archive an account to disable it
+* [metalcloud-cli account config](metalcloud-cli_account_config.md)	 - Display the configuration of an account
 * [metalcloud-cli account create](metalcloud-cli_account_create.md)	 - Create a new account with custom configuration
 * [metalcloud-cli account get](metalcloud-cli_account_get.md)	 - Get detailed information about a specific account
 * [metalcloud-cli account list](metalcloud-cli_account_list.md)	 - List all accounts in the system
+* [metalcloud-cli account quota-breakdown](metalcloud-cli_account_quota-breakdown.md)	 - Show how the quota limits of an account are derived
+* [metalcloud-cli account unarchive](metalcloud-cli_account_unarchive.md)	 - Restore a previously archived account
 * [metalcloud-cli account update](metalcloud-cli_account_update.md)	 - Update an existing account configuration
 * [metalcloud-cli account users](metalcloud-cli_account_users.md)	 - List all users associated with a specific account
 

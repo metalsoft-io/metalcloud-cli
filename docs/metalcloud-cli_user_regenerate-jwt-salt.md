@@ -1,26 +1,25 @@
-## metalcloud-cli user permissions
+## metalcloud-cli user regenerate-jwt-salt
 
-List the permissions of the current user
+Regenerate the JWT salt of the current user
 
 ### Synopsis
 
-List the permissions of the user owning the API key in use.
+Regenerate the JWT salt of the user owning the API key in use.
 
-The permissions come from the roles assigned to the user and determine which API
-operations, and therefore which CLI commands, are available.
+WARNING: this invalidates every session and token issued so far for this user, on
+every device and in every browser. You will have to log in again.
 
 Examples:
-  metalcloud-cli user permissions
-  metalcloud-cli user permissions -f json
+  metalcloud-cli user regenerate-jwt-salt
 
 ```
-metalcloud-cli user permissions [flags]
+metalcloud-cli user regenerate-jwt-salt [flags]
 ```
 
 ### Options
 
 ```
-  -h, --help   help for permissions
+  -h, --help   help for regenerate-jwt-salt
 ```
 
 ### Options inherited from parent commands

@@ -1,26 +1,29 @@
-## metalcloud-cli user permissions
+## metalcloud-cli user ssh-key
 
-List the permissions of the current user
+Display a single SSH key of a user
 
 ### Synopsis
 
-List the permissions of the user owning the API key in use.
+Display one SSH key of a specific user account.
 
-The permissions come from the roles assigned to the user and determine which API
-operations, and therefore which CLI commands, are available.
+Use 'user ssh-keys' to list the SSH keys of the user and obtain their IDs.
+
+Required Arguments:
+  user_id                 The numeric ID of the user owning the SSH key
+  key_id                  The numeric ID of the SSH key to display
 
 Examples:
-  metalcloud-cli user permissions
-  metalcloud-cli user permissions -f json
+  metalcloud-cli user ssh-key 12345 67890
+  metalcloud-cli user get-ssh-key 12345 67890
 
 ```
-metalcloud-cli user permissions [flags]
+metalcloud-cli user ssh-key user_id key_id [flags]
 ```
 
 ### Options
 
 ```
-  -h, --help   help for permissions
+  -h, --help   help for ssh-key
 ```
 
 ### Options inherited from parent commands

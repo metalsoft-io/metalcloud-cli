@@ -44,17 +44,33 @@ the user ID as a parameter. Use 'metalcloud-cli user list' to find user IDs.
 * [metalcloud-cli user api-key-regenerate](metalcloud-cli_user_api-key-regenerate.md)	 - Regenerate the current user's API key
 * [metalcloud-cli user archive](metalcloud-cli_user_archive.md)	 - Archive a user account to mark it as inactive
 * [metalcloud-cli user change-account](metalcloud-cli_user_change-account.md)	 - Move a user to a different account
+* [metalcloud-cli user change-password](metalcloud-cli_user_change-password.md)	 - Change the password of the current user
+* [metalcloud-cli user config](metalcloud-cli_user_config.md)	 - Display the configuration of a user
 * [metalcloud-cli user config-update](metalcloud-cli_user_config-update.md)	 - Update comprehensive user configuration settings
 * [metalcloud-cli user create](metalcloud-cli_user_create.md)	 - Create a new user account with specified properties
 * [metalcloud-cli user create-bulk](metalcloud-cli_user_create-bulk.md)	 - Create multiple users in a single operation
+* [metalcloud-cli user delegate](metalcloud-cli_user_delegate.md)	 - Manage user delegates
+* [metalcloud-cli user delete](metalcloud-cli_user_delete.md)	 - Delete a user and erase their personal information
 * [metalcloud-cli user get](metalcloud-cli_user_get.md)	 - Display detailed information for a specific user
+* [metalcloud-cli user initiate-email-change](metalcloud-cli_user_initiate-email-change.md)	 - Start changing the e-mail address of the current user
+* [metalcloud-cli user initiate-password-reset](metalcloud-cli_user_initiate-password-reset.md)	 - Send a password reset message to an e-mail address
 * [metalcloud-cli user limits](metalcloud-cli_user_limits.md)	 - Display resource limits for a specific user
 * [metalcloud-cli user list](metalcloud-cli_user_list.md)	 - List users with filtering and search options
+* [metalcloud-cli user permissions](metalcloud-cli_user_permissions.md)	 - List the permissions of the current user
+* [metalcloud-cli user regenerate-jwt-salt](metalcloud-cli_user_regenerate-jwt-salt.md)	 - Regenerate the JWT salt of the current user
+* [metalcloud-cli user resend-email-verification](metalcloud-cli_user_resend-email-verification.md)	 - Resend the e-mail verification message to a user
+* [metalcloud-cli user resend-invitation](metalcloud-cli_user_resend-invitation.md)	 - Resend the platform invitation to a user
+* [metalcloud-cli user reset-password](metalcloud-cli_user_reset-password.md)	 - Consume a password reset token
+* [metalcloud-cli user send-password-reset](metalcloud-cli_user_send-password-reset.md)	 - Send a password reset message to a user (admin)
 * [metalcloud-cli user set-password](metalcloud-cli_user_set-password.md)	 - Set the password for a user (admin only)
+* [metalcloud-cli user ssh-key](metalcloud-cli_user_ssh-key.md)	 - Display a single SSH key of a user
 * [metalcloud-cli user ssh-key-add](metalcloud-cli_user_ssh-key-add.md)	 - Add an SSH key to a user account
 * [metalcloud-cli user ssh-key-delete](metalcloud-cli_user_ssh-key-delete.md)	 - Delete an SSH key from a user account
 * [metalcloud-cli user ssh-keys](metalcloud-cli_user_ssh-keys.md)	 - Display SSH keys for a specific user
 * [metalcloud-cli user suspend](metalcloud-cli_user_suspend.md)	 - Suspend a user account temporarily
+* [metalcloud-cli user suspend-reasons](metalcloud-cli_user_suspend-reasons.md)	 - List the suspend reasons recorded for a user
 * [metalcloud-cli user unarchive](metalcloud-cli_user_unarchive.md)	 - Unarchive a user account to restore access
 * [metalcloud-cli user unsuspend](metalcloud-cli_user_unsuspend.md)	 - Unsuspend a user account to restore access
+* [metalcloud-cli user update-meta](metalcloud-cli_user_update-meta.md)	 - Update the metadata of a user
+* [metalcloud-cli user verify-email](metalcloud-cli_user_verify-email.md)	 - Verify an e-mail address with a verification token
 

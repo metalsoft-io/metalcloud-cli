@@ -1,26 +1,29 @@
-## metalcloud-cli user permissions
+## metalcloud-cli user verify-email
 
-List the permissions of the current user
+Verify an e-mail address with a verification token
 
 ### Synopsis
 
-List the permissions of the user owning the API key in use.
+Consume an e-mail verification token, as following the link from the e-mail would.
 
-The permissions come from the roles assigned to the user and determine which API
-operations, and therefore which CLI commands, are available.
+The token is the value of the 'token' query parameter of the verification link that
+the platform sent by e-mail.
+
+Required Flags:
+  --token                 The e-mail verification token
 
 Examples:
-  metalcloud-cli user permissions
-  metalcloud-cli user permissions -f json
+  metalcloud-cli user verify-email --token eyJhbGciOi...
 
 ```
-metalcloud-cli user permissions [flags]
+metalcloud-cli user verify-email [flags]
 ```
 
 ### Options
 
 ```
-  -h, --help   help for permissions
+  -h, --help           help for verify-email
+      --token string   The e-mail verification token.
 ```
 
 ### Options inherited from parent commands

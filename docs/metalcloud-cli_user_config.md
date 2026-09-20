@@ -1,26 +1,29 @@
-## metalcloud-cli user permissions
+## metalcloud-cli user config
 
-List the permissions of the current user
+Display the configuration of a user
 
 ### Synopsis
 
-List the permissions of the user owning the API key in use.
+Display the configuration object of a specific user account.
 
-The permissions come from the roles assigned to the user and determine which API
-operations, and therefore which CLI commands, are available.
+The configuration holds the settings written by 'user config-update': display name,
+access level, language, brand, login state and password policy flags.
+
+Required Arguments:
+  user_id                 The numeric ID of the user whose configuration to display
 
 Examples:
-  metalcloud-cli user permissions
-  metalcloud-cli user permissions -f json
+  metalcloud-cli user config 12345
+  metalcloud-cli user get-config 12345
 
 ```
-metalcloud-cli user permissions [flags]
+metalcloud-cli user config user_id [flags]
 ```
 
 ### Options
 
 ```
-  -h, --help   help for permissions
+  -h, --help   help for config
 ```
 
 ### Options inherited from parent commands

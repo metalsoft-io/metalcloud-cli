@@ -1,26 +1,29 @@
-## metalcloud-cli user permissions
+## metalcloud-cli user suspend-reasons
 
-List the permissions of the current user
+List the suspend reasons recorded for a user
 
 ### Synopsis
 
-List the permissions of the user owning the API key in use.
+List the suspend reasons recorded for a specific user account.
 
-The permissions come from the roles assigned to the user and determine which API
-operations, and therefore which CLI commands, are available.
+Each entry shows the type of the suspension, the public and private comments left by
+the administrator and the interval during which the suspension was active.
+
+Required Arguments:
+  user_id                 The numeric ID of the user whose suspend reasons to list
 
 Examples:
-  metalcloud-cli user permissions
-  metalcloud-cli user permissions -f json
+  metalcloud-cli user suspend-reasons 12345
+  metalcloud-cli user get-suspend-reasons 12345
 
 ```
-metalcloud-cli user permissions [flags]
+metalcloud-cli user suspend-reasons user_id [flags]
 ```
 
 ### Options
 
 ```
-  -h, --help   help for permissions
+  -h, --help   help for suspend-reasons
 ```
 
 ### Options inherited from parent commands

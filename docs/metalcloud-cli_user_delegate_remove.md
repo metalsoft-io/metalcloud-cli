@@ -1,26 +1,27 @@
-## metalcloud-cli user permissions
+## metalcloud-cli user delegate remove
 
-List the permissions of the current user
+Revoke the delegate access of a user
 
 ### Synopsis
 
-List the permissions of the user owning the API key in use.
+Revoke the delegate access previously granted to a user.
 
-The permissions come from the roles assigned to the user and determine which API
-operations, and therefore which CLI commands, are available.
+Required Arguments:
+  user_id                 The numeric ID of the user whose resources were delegated
+  delegate_id             The numeric ID of the user losing the delegate access
 
 Examples:
-  metalcloud-cli user permissions
-  metalcloud-cli user permissions -f json
+  metalcloud-cli user delegate remove 12345 67890
+  metalcloud-cli user delegate rm 12345 67890
 
 ```
-metalcloud-cli user permissions [flags]
+metalcloud-cli user delegate remove user_id delegate_id [flags]
 ```
 
 ### Options
 
 ```
-  -h, --help   help for permissions
+  -h, --help   help for remove
 ```
 
 ### Options inherited from parent commands
@@ -38,5 +39,5 @@ metalcloud-cli user permissions [flags]
 
 ### SEE ALSO
 
-* [metalcloud-cli user](metalcloud-cli_user.md)	 - Manage user accounts and their properties
+* [metalcloud-cli user delegate](metalcloud-cli_user_delegate.md)	 - Manage user delegates
 
