@@ -21,6 +21,15 @@ Available commands:
   file-shares      List file shares in a storage pool
   buckets          List object storage buckets in a storage pool
   network-configs  List network device configurations for a storage pool
+  update           Update an existing storage pool
+  interfaces       List the interfaces of a storage pool
+  interface        Get one interface of a storage pool
+  update-interface Update one interface of a storage pool
+  statistics       Show capacity statistics for one or for all storage pools
+
+  scoped-access-users             List the scoped access users of a storage pool
+  scoped-access-user              Get one scoped access user of a storage pool
+  scoped-access-user-credentials  Get the credentials of a scoped access user
 
 Use "metalcloud storage [command] --help" for more information about a command.
 
@@ -54,5 +63,13 @@ Use "metalcloud storage [command] --help" for more information about a command.
 * [metalcloud-cli storage drives](metalcloud-cli_storage_drives.md)	 - List drives available in a storage pool
 * [metalcloud-cli storage file-shares](metalcloud-cli_storage_file-shares.md)	 - List file shares in a storage pool
 * [metalcloud-cli storage get](metalcloud-cli_storage_get.md)	 - Get detailed information about a specific storage pool
+* [metalcloud-cli storage interface](metalcloud-cli_storage_interface.md)	 - Get one interface of a storage pool
+* [metalcloud-cli storage interfaces](metalcloud-cli_storage_interfaces.md)	 - List the interfaces of a storage pool
 * [metalcloud-cli storage list](metalcloud-cli_storage_list.md)	 - List all storage pools
+* [metalcloud-cli storage scoped-access-user](metalcloud-cli_storage_scoped-access-user.md)	 - Get one scoped access user of a storage pool
+* [metalcloud-cli storage scoped-access-user-credentials](metalcloud-cli_storage_scoped-access-user-credentials.md)	 - Get the credentials of a scoped access user
+* [metalcloud-cli storage scoped-access-users](metalcloud-cli_storage_scoped-access-users.md)	 - List the scoped access users of a storage pool
+* [metalcloud-cli storage statistics](metalcloud-cli_storage_statistics.md)	 - Show capacity statistics for one or for all storage pools
+* [metalcloud-cli storage update](metalcloud-cli_storage_update.md)	 - Update an existing storage pool
+* [metalcloud-cli storage update-interface](metalcloud-cli_storage_update-interface.md)	 - Update one interface of a storage pool
 

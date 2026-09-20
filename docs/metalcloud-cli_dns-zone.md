@@ -12,7 +12,7 @@ managed individually with their associated record sets.
 
 Available command categories:
   - Basic operations: list, get, create, update, delete
-  - Record management: list-records, get-record
+  - Record management: records (one zone or all zones), record
   - Information: nameservers
 
 Use "metalcloud-cli dns-zone [command] --help" for detailed information about each command.
@@ -44,6 +44,8 @@ Use "metalcloud-cli dns-zone [command] --help" for detailed information about ea
 * [metalcloud-cli dns-zone delete](metalcloud-cli_dns-zone_delete.md)	 - Delete a DNS zone
 * [metalcloud-cli dns-zone get](metalcloud-cli_dns-zone_get.md)	 - Get detailed DNS zone information
 * [metalcloud-cli dns-zone list](metalcloud-cli_dns-zone_list.md)	 - List DNS zones
-* [metalcloud-cli dns-zone records](metalcloud-cli_dns-zone_records.md)	 - List DNS record sets in a zone
+* [metalcloud-cli dns-zone nameservers](metalcloud-cli_dns-zone_nameservers.md)	 - List the nameservers of a DNS zone
+* [metalcloud-cli dns-zone record](metalcloud-cli_dns-zone_record.md)	 - Get a single DNS record set
+* [metalcloud-cli dns-zone records](metalcloud-cli_dns-zone_records.md)	 - List DNS record sets
 * [metalcloud-cli dns-zone update](metalcloud-cli_dns-zone_update.md)	 - Update DNS zone information
 

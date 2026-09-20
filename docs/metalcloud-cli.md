@@ -30,8 +30,10 @@ metalcloud-cli [flags]
 ### SEE ALSO
 
 * [metalcloud-cli account](metalcloud-cli_account.md)	 - Manage user accounts and account-related operations
+* [metalcloud-cli ai](metalcloud-cli_ai.md)	 - MetalSoft AI assistant
 * [metalcloud-cli auth](metalcloud-cli_auth.md)	 - Manage authentication settings
 * [metalcloud-cli bucket](metalcloud-cli_bucket.md)	 - Manage S3-compatible object storage buckets
+* [metalcloud-cli configuration](metalcloud-cli_configuration.md)	 - Global platform configuration management
 * [metalcloud-cli container](metalcloud-cli_container.md)	 - Manage provisioned containers
 * [metalcloud-cli container-instance](metalcloud-cli_container-instance.md)	 - Manage container instances within infrastructures
 * [metalcloud-cli container-instance-group](metalcloud-cli_container-instance-group.md)	 - Manage container instance groups within infrastructures
@@ -41,6 +43,7 @@ metalcloud-cli [flags]
 * [metalcloud-cli dhcp-reservation](metalcloud-cli_dhcp-reservation.md)	 - Manage site DHCP reservations
 * [metalcloud-cli dns-zone](metalcloud-cli_dns-zone.md)	 - DNS Zone management
 * [metalcloud-cli drive](metalcloud-cli_drive.md)	 - Manage drives within infrastructures
+* [metalcloud-cli email-template](metalcloud-cli_email-template.md)	 - Email template management
 * [metalcloud-cli endpoint](metalcloud-cli_endpoint.md)	 - Endpoint management
 * [metalcloud-cli endpoint-instance](metalcloud-cli_endpoint-instance.md)	 - Endpoint instance management
 * [metalcloud-cli endpoint-instance-group](metalcloud-cli_endpoint-instance-group.md)	 - Endpoint instance group management
@@ -48,6 +51,7 @@ metalcloud-cli [flags]
 * [metalcloud-cli extension](metalcloud-cli_extension.md)	 - Manage platform extensions for workflows, applications, and actions
 * [metalcloud-cli extension-instance](metalcloud-cli_extension-instance.md)	 - Manage extension instances within infrastructure deployments
 * [metalcloud-cli external-connection](metalcloud-cli_external-connection.md)	 - External connection management
+* [metalcloud-cli external-system](metalcloud-cli_external-system.md)	 - External system management
 * [metalcloud-cli fabric](metalcloud-cli_fabric.md)	 - Manage network fabrics
 * [metalcloud-cli file-share](metalcloud-cli_file-share.md)	 - Manage file shares for infrastructure resources
 * [metalcloud-cli firmware-baseline](metalcloud-cli_firmware-baseline.md)	 - Manage firmware baselines for consistent hardware configurations

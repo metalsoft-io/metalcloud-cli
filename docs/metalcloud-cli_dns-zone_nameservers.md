@@ -1,35 +1,30 @@
-## metalcloud-cli dns-zone records
+## metalcloud-cli dns-zone nameservers
 
-List DNS record sets
+List the nameservers of a DNS zone
 
 ### Synopsis
 
-List DNS record sets.
+List the nameservers configured for a DNS zone.
 
-Called with a zone ID the command lists the record sets of that zone. Called
-without an argument it lists every record set of every zone through the global
-record set endpoint.
-
-Optional Arguments:
-  zone_id    The ID of the DNS zone. When omitted, the record sets of all zones
-             are listed.
+Required Arguments:
+  dns_zone_id    The ID of the DNS zone
 
 Examples:
-  # List the record sets of zone 123
-  metalcloud-cli dns-zone records 123
+  # List the nameservers of zone 123
+  metalcloud-cli dns-zone nameservers 123
 
-  # List the record sets of all zones
-  metalcloud-cli dns-zone records
+  # List them as JSON
+  metalcloud-cli dns-zone nameservers 123 -f json
 
 
 ```
-metalcloud-cli dns-zone records [zone_id] [flags]
+metalcloud-cli dns-zone nameservers dns_zone_id [flags]
 ```
 
 ### Options
 
 ```
-  -h, --help   help for records
+  -h, --help   help for nameservers
 ```
 
 ### Options inherited from parent commands
