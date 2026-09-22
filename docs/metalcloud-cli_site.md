@@ -18,6 +18,8 @@ Available Commands:
   agents         List all agents deployed in a specific site
   get-config     Retrieve the configuration settings for a site
   update-config  Update site configuration using JSON input
+  statistics     Show aggregated statistics for all sites
+  registry-urls  List the container registry URLs available for site agents
 
 Examples:
   # List all sites
@@ -64,6 +66,8 @@ Examples:
 * [metalcloud-cli site get-config](metalcloud-cli_site_get-config.md)	 - Retrieve the configuration settings for a site
 * [metalcloud-cli site list](metalcloud-cli_site_list.md)	 - List all sites with their basic information
 * [metalcloud-cli site one-liner](metalcloud-cli_site_one-liner.md)	 - Get the site controller agent install script
+* [metalcloud-cli site registry-urls](metalcloud-cli_site_registry-urls.md)	 - List the container registry URLs available for site agents
+* [metalcloud-cli site statistics](metalcloud-cli_site_statistics.md)	 - Show aggregated statistics for all sites
 * [metalcloud-cli site update](metalcloud-cli_site_update.md)	 - Update site properties like label/name
 * [metalcloud-cli site update-config](metalcloud-cli_site_update-config.md)	 - Update site configuration using JSON input
 

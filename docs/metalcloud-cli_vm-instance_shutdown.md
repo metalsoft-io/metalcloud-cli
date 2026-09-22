@@ -11,19 +11,19 @@ The instance will receive a shutdown signal and will attempt to properly
 terminate all running processes before powering off. This is the recommended
 way to stop a VM instance to prevent data loss.
 
-ARGUMENTS:
-  infrastructure_id  The ID of the infrastructure containing the VM instance
-  vm_instance_id     The ID of the VM instance to shutdown
+Required Arguments:
+  infrastructure_id_or_label  The ID or the label of the infrastructure
+  vm_instance_id              The numeric ID of the VM instance to shutdown
 
-EXAMPLES:
+Examples:
   # Shutdown VM instance 67890 in infrastructure 12345
   metalcloud-cli vm-instance shutdown 12345 67890
-  
+
   # Shutdown instance using alias
-  metalcloud-cli vm shutdown 12345 67890
+  metalcloud-cli vm shutdown my-infra 67890
 
 ```
-metalcloud-cli vm-instance shutdown infrastructure_id vm_instance_id [flags]
+metalcloud-cli vm-instance shutdown infrastructure_id_or_label vm_instance_id [flags]
 ```
 
 ### Options

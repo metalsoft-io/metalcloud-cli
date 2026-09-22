@@ -9,6 +9,7 @@ configuration updates, and monitoring. Supports operations like start, stop, reb
 status checking, and configuration updates through JSON files or pipes.
 
 Available Commands:
+  list           List all VMs with optional filtering
   get            Retrieve detailed VM information and configuration
   power-status   Check current power state of a VM
   start          Power on a VM
@@ -18,6 +19,7 @@ Available Commands:
   console-info   Get remote console connection details
 
 Examples:
+  metalcloud-cli vm list
   metalcloud-cli vm get 12345
   metalcloud-cli vm start 12345
   metalcloud-cli vm update 12345 --config-source config.json
@@ -47,6 +49,7 @@ Examples:
 * [metalcloud-cli](metalcloud-cli.md)	 - MetalCloud CLI
 * [metalcloud-cli vm console-info](metalcloud-cli_vm_console-info.md)	 - Get VM remote console connection details
 * [metalcloud-cli vm get](metalcloud-cli_vm_get.md)	 - Retrieve detailed VM information and configuration
+* [metalcloud-cli vm list](metalcloud-cli_vm_list.md)	 - List all virtual machines with optional filtering
 * [metalcloud-cli vm power-status](metalcloud-cli_vm_power-status.md)	 - Check current power state of a VM
 * [metalcloud-cli vm reboot](metalcloud-cli_vm_reboot.md)	 - Restart a virtual machine
 * [metalcloud-cli vm shutdown](metalcloud-cli_vm_shutdown.md)	 - Gracefully shutdown or force stop a VM

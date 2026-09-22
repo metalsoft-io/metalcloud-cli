@@ -35,7 +35,7 @@ var vrfTemplateAnnotations = map[string]string{"action": "switch-configure-vrf-c
 // priority, and the (decoded) template body read from its .j2 file.
 type templateSpec struct {
 	Label    string
-	Priority float32
+	Priority int32
 	Text     string
 }
 
@@ -109,14 +109,14 @@ func resolveLabel(value, def string) string {
 	return def
 }
 
-func resolvePriority(value *int, def int) (float32, error) {
+func resolvePriority(value *int, def int) (int32, error) {
 	if value == nil {
-		return float32(def), nil
+		return int32(def), nil
 	}
 	if *value < 0 {
 		return 0, fmt.Errorf("profile priority must be a non-negative integer")
 	}
-	return float32(*value), nil
+	return int32(*value), nil
 }
 
 func resolveApplyMode(value string) (string, error) {

@@ -2,8 +2,23 @@
 
 Get login credentials for a VM instance
 
+### Synopsis
+
+Get the login credentials of a VM instance.
+
+Required Arguments:
+  infrastructure_id_or_label  The ID or the label of the infrastructure
+  vm_instance_id              The numeric ID of the VM instance
+
+Examples:
+  # Show the credentials of VM instance 67890
+  metalcloud-cli vm-instance credentials 12345 67890
+
+  # Using the alias
+  metalcloud-cli vmi creds my-infra 67890
+
 ```
-metalcloud-cli vm-instance credentials infrastructure_id vm_instance_id [flags]
+metalcloud-cli vm-instance credentials infrastructure_id_or_label vm_instance_id [flags]
 ```
 
 ### Options

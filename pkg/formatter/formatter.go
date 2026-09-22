@@ -13,7 +13,6 @@ import (
 
 	"github.com/jedib0t/go-pretty/v6/table"
 	"github.com/jedib0t/go-pretty/v6/text"
-	sdk "github.com/metalsoft-io/metalcloud-sdk-go"
 	"github.com/spf13/viper"
 	"golang.org/x/text/language"
 	"golang.org/x/text/message"
@@ -443,17 +442,8 @@ func extractValue(value reflect.Value) interface{} {
 		if t, ok := value.Interface().(time.Time); ok {
 			return t
 		}
-		if i, ok := value.Interface().(sdk.NullableInt32); ok {
-			if !i.IsSet() || i.Get() == nil {
-				return ""
-			}
-			return *i.Get()
-		}
-		if i, ok := value.Interface().(sdk.NullableFloat32); ok {
-			if !i.IsSet() || i.Get() == nil {
-				return ""
-			}
-			return *i.Get()
+		if inner, ok := unwrapNullable(value); ok {
+			return extractValue(inner)
 		}
 		return ""
 	case reflect.Invalid:
@@ -461,6 +451,26 @@ func extractValue(value reflect.Value) interface{} {
 	default:
 		return fmt.Sprint(value.Interface())
 	}
+}
+
+// unwrapNullable unwraps any SDK Nullable* wrapper (NullableString,
+// NullableInt64, NullableBool, generated Nullable<Enum> types, ...). They all
+// expose IsSet() bool and Get() *T, so reflection covers every variant without
+// enumerating them. The second result is false when value is not a nullable.
+func unwrapNullable(value reflect.Value) (reflect.Value, bool) {
+	isSet := value.MethodByName("IsSet")
+	get := value.MethodByName("Get")
+	if !isSet.IsValid() || !get.IsValid() || isSet.Type().NumIn() != 0 || get.Type().NumIn() != 0 || get.Type().NumOut() != 1 {
+		return reflect.Value{}, false
+	}
+	if !isSet.Call(nil)[0].Bool() {
+		return reflect.Value{}, true
+	}
+	inner := get.Call(nil)[0]
+	if inner.Kind() == reflect.Pointer && inner.IsNil() {
+		return reflect.Value{}, true
+	}
+	return inner, true
 }
 
 func FormatStatusValue(value interface{}) string {

@@ -3,6 +3,7 @@ package cmd
 import (
 	"github.com/metalsoft-io/metalcloud-cli/cmd/metalcloud-cli/system"
 	"github.com/metalsoft-io/metalcloud-cli/internal/server_default_credentials"
+	"github.com/metalsoft-io/metalcloud-cli/pkg/utils"
 	"github.com/spf13/cobra"
 )
 
@@ -20,6 +21,8 @@ var (
 		rackPositionUpperFlag  string
 		inventoryIdFlag        string
 		uuidFlag               string
+
+		updateConfigSourceFlag string
 	}{}
 
 	serverDefaultCredentialsCmd = &cobra.Command{
@@ -37,7 +40,9 @@ Available commands:
   get            Get detailed information about specific credentials
   get-credentials Retrieve unencrypted password for credentials
   create         Create new server default credentials
+  update         Update existing server default credentials
   delete         Delete existing server default credentials
+  config-example Show an update configuration example
 
 Examples:
   # List all server default credentials
@@ -242,6 +247,58 @@ Examples:
 			return server_default_credentials.ServerDefaultCredentialsDelete(cmd.Context(), args[0])
 		},
 	}
+
+	serverDefaultCredentialsUpdateCmd = &cobra.Command{
+		Use:   "update credentials_id",
+		Short: "Update existing server default credentials",
+		Long: `Update existing server default credentials from a JSON or YAML configuration.
+
+The configuration may change the default username and password as well as the
+rack placement, inventory ID, UUID and registration profile recorded for the
+not-yet-registered server. Only the fields present in the configuration are
+changed. The site ID, serial number and MAC address that identify the entry
+cannot be updated.
+
+Required Arguments:
+  credentials_id     The numeric ID of the server default credentials to update
+
+Required Flags:
+  --config-source    Source of the update configuration. Can be 'pipe' or path to a JSON file.
+
+Examples:
+  # Update credentials from a JSON file
+  metalcloud-cli server-default-credentials update 123 --config-source ./credentials.json
+
+  # Update the default password from piped configuration
+  echo '{"defaultPassword":"new-secret"}' | metalcloud-cli sdc update 123 --config-source pipe
+`,
+		SilenceUsage: true,
+		Annotations:  map[string]string{system.REQUIRED_PERMISSION: system.PERMISSION_SERVER_DEFAULT_CREDENTIALS_WRITE},
+		Args:         cobra.ExactArgs(1),
+		RunE: func(cmd *cobra.Command, args []string) error {
+			config, err := utils.ReadConfigFromPipeOrFile(serverDefaultCredentialsFlags.updateConfigSourceFlag)
+			if err != nil {
+				return err
+			}
+			return server_default_credentials.ServerDefaultCredentialsUpdate(cmd.Context(), args[0], config)
+		},
+	}
+
+	serverDefaultCredentialsConfigExampleCmd = &cobra.Command{
+		Use:   "config-example",
+		Short: "Show a server default credentials update configuration example",
+		Long: `Show an example of the configuration accepted by 'server-default-credentials update'.
+
+Examples:
+  # Write the example to a file and edit it
+  metalcloud-cli server-default-credentials config-example > credentials.json
+`,
+		SilenceUsage: true,
+		Annotations:  map[string]string{system.REQUIRED_PERMISSION: system.PERMISSION_SERVER_DEFAULT_CREDENTIALS_READ},
+		RunE: func(cmd *cobra.Command, args []string) error {
+			return server_default_credentials.ServerDefaultCredentialsUpdateConfigExample(cmd.Context())
+		},
+	}
 )
 
 func init() {
@@ -270,6 +327,12 @@ func init() {
 	serverDefaultCredentialsCreateCmd.MarkFlagRequired("mac")
 	serverDefaultCredentialsCreateCmd.MarkFlagRequired("username")
 	serverDefaultCredentialsCreateCmd.MarkFlagRequired("password")
+
+	serverDefaultCredentialsCmd.AddCommand(serverDefaultCredentialsUpdateCmd)
+	serverDefaultCredentialsUpdateCmd.Flags().StringVar(&serverDefaultCredentialsFlags.updateConfigSourceFlag, "config-source", "", "Source of the update configuration. Can be 'pipe' or path to a JSON file.")
+	serverDefaultCredentialsUpdateCmd.MarkFlagsOneRequired("config-source")
+
+	serverDefaultCredentialsCmd.AddCommand(serverDefaultCredentialsConfigExampleCmd)
 
 	serverDefaultCredentialsCmd.AddCommand(serverDefaultCredentialsDeleteCmd)
 }

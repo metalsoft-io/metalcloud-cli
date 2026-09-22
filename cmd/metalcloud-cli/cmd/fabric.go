@@ -6,6 +6,7 @@ import (
 
 	"github.com/metalsoft-io/metalcloud-cli/cmd/metalcloud-cli/system"
 	"github.com/metalsoft-io/metalcloud-cli/internal/fabric"
+	"github.com/metalsoft-io/metalcloud-cli/internal/network_fabric_interconnect"
 	"github.com/metalsoft-io/metalcloud-cli/pkg/utils"
 	sdk "github.com/metalsoft-io/metalcloud-sdk-go"
 	"github.com/spf13/cobra"
@@ -26,6 +27,16 @@ var (
 		dryRun               bool
 		updateLLDP           bool
 		verifyRender         bool
+	}{}
+
+	// fabricBgpSessionFlags and fabricLinkAggregationFlags keep the nested
+	// sub-groups' --config-source separate from the fabric-level one.
+	fabricBgpSessionFlags = struct {
+		configSource string
+	}{}
+
+	fabricLinkAggregationFlags = struct {
+		configSource string
 	}{}
 
 	// configureSwitchesFlags are the per-property alternatives to --config-source
@@ -94,19 +105,26 @@ Fabrics are logical network constructs that group network devices and define how
 This command provides operations to create, configure, activate, and manage fabric devices.
 
 Available Commands:
-  list           List all fabrics
-  get            Get fabric details
-  create         Create a new fabric
-  update         Update fabric configuration
-  activate       Activate a fabric
-  deploy         Deploy a fabric
-  config-example Show configuration example
-  get-devices    List fabric devices
-  add-device     Add devices to fabric
-  remove-device  Remove device from fabric
-  get-links      List fabric links
-  add-link       Add fabric link
-  remove-link    Remove fabric link`,
+  list              List all fabrics
+  get               Get fabric details
+  create            Create a new fabric
+  update            Update fabric configuration
+  delete            Delete a fabric
+  activate          Activate a fabric
+  deploy            Deploy a fabric
+  accept-deploy     Accept a pending fabric deployment
+  reject-deploy     Reject a pending fabric deployment
+  config-example    Show configuration example
+  get-devices       List fabric devices
+  add-device        Add devices to fabric
+  remove-device     Remove device from fabric
+  get-links         List fabric links
+  get-link          Get one fabric link
+  add-link          Add fabric link
+  remove-link       Remove fabric link
+  get-interconnects List the fabric's network fabric interconnects
+  bgp-session       Manage the fabric's BGP sessions
+  link-aggregation  Manage the fabric's link aggregations`,
 	}
 
 	fabricListCmd = &cobra.Command{
@@ -874,6 +892,429 @@ Examples:
 			return fabric.FabricConfigureSwitchesExample(cmd.Context())
 		},
 	}
+
+	fabricAcceptDeployCmd = &cobra.Command{
+		Use:   "accept-deploy fabric_id",
+		Short: "Accept a pending fabric deployment",
+		Long: `Accept a fabric deployment that is waiting for confirmation.
+
+A deploy started with confirmation required stays pending until it is accepted
+or rejected. Accepting it lets the deploy job continue.
+
+Required Arguments:
+  fabric_id    The ID or name of the fabric
+
+Examples:
+  metalcloud-cli fabric accept-deploy 12345
+  metalcloud-cli fabric accept-deploy my-fabric`,
+		SilenceUsage: true,
+		Annotations:  map[string]string{system.REQUIRED_PERMISSION: system.PERMISSION_NETWORK_FABRICS_WRITE},
+		Args:         cobra.ExactArgs(1),
+		RunE: func(cmd *cobra.Command, args []string) error {
+			return fabric.FabricAcceptDeploy(cmd.Context(), args[0])
+		},
+	}
+
+	fabricRejectDeployCmd = &cobra.Command{
+		Use:   "reject-deploy fabric_id",
+		Short: "Reject a pending fabric deployment",
+		Long: `Reject a fabric deployment that is waiting for confirmation.
+
+Required Arguments:
+  fabric_id    The ID or name of the fabric
+
+Examples:
+  metalcloud-cli fabric reject-deploy 12345
+  metalcloud-cli fabric reject-deploy my-fabric`,
+		SilenceUsage: true,
+		Annotations:  map[string]string{system.REQUIRED_PERMISSION: system.PERMISSION_NETWORK_FABRICS_WRITE},
+		Args:         cobra.ExactArgs(1),
+		RunE: func(cmd *cobra.Command, args []string) error {
+			return fabric.FabricRejectDeploy(cmd.Context(), args[0])
+		},
+	}
+
+	fabricDeleteCmd = &cobra.Command{
+		Use:     "delete fabric_id",
+		Aliases: []string{"rm"},
+		Short:   "Delete a fabric",
+		Long: `Delete a network fabric.
+
+The fabric must no longer have devices attached to it. Deleting a fabric cannot
+be undone.
+
+Required Arguments:
+  fabric_id    The ID or name of the fabric to delete
+
+Examples:
+  metalcloud-cli fabric delete 12345
+  metalcloud-cli fabric rm my-fabric`,
+		SilenceUsage: true,
+		Annotations:  map[string]string{system.REQUIRED_PERMISSION: system.PERMISSION_NETWORK_FABRICS_WRITE},
+		Args:         cobra.ExactArgs(1),
+		RunE: func(cmd *cobra.Command, args []string) error {
+			return fabric.FabricDelete(cmd.Context(), args[0])
+		},
+	}
+
+	fabricLinkGetCmd = &cobra.Command{
+		Use:     "get-link fabric_id link_id",
+		Aliases: []string{"show-link"},
+		Short:   "Get one fabric link",
+		Long: `Get the details of a single link of a fabric.
+
+Use 'fabric get-links' to list the links and their IDs.
+
+Required Arguments:
+  fabric_id    The ID or name of the fabric
+  link_id      The ID of the link
+
+Examples:
+  metalcloud-cli fabric get-link 12345 67890
+  metalcloud-cli fabric show-link my-fabric 67890`,
+		SilenceUsage: true,
+		Annotations:  map[string]string{system.REQUIRED_PERMISSION: system.PERMISSION_NETWORK_FABRICS_READ},
+		Args:         cobra.ExactArgs(2),
+		RunE: func(cmd *cobra.Command, args []string) error {
+			return fabric.FabricLinkGet(cmd.Context(), args[0], args[1])
+		},
+	}
+
+	fabricInterconnectsGetCmd = &cobra.Command{
+		Use:     "get-interconnects fabric_id",
+		Aliases: []string{"list-interconnects", "interconnects"},
+		Short:   "List the network fabric interconnects of a fabric",
+		Long: `List the network fabric interconnects this fabric takes part in.
+
+Required Arguments:
+  fabric_id    The ID or name of the fabric
+
+Examples:
+  metalcloud-cli fabric get-interconnects 12345
+  metalcloud-cli fabric interconnects my-fabric`,
+		SilenceUsage: true,
+		Annotations:  map[string]string{system.REQUIRED_PERMISSION: system.PERMISSION_NETWORK_FABRICS_READ},
+		Args:         cobra.ExactArgs(1),
+		RunE: func(cmd *cobra.Command, args []string) error {
+			return fabric.FabricInterconnectsGet(cmd.Context(), args[0], network_fabric_interconnect.PrintConfig())
+		},
+	}
+
+	fabricBgpSessionCmd = &cobra.Command{
+		Use:     "bgp-session [command]",
+		Aliases: []string{"bgp"},
+		Short:   "Manage the BGP sessions of a fabric",
+		Long: `Manage the BGP sessions of a network fabric.
+
+A BGP session attaches a BGP numbering and link configuration to one fabric
+link or link aggregation, and carries the custom variables exposed to the
+device configuration templates as bgp_session_custom_variables.
+
+Commands:
+  list, get, create, update, delete, config-example`,
+	}
+
+	fabricBgpSessionListCmd = &cobra.Command{
+		Use:     "list fabric_id",
+		Aliases: []string{"ls"},
+		Short:   "List the BGP sessions of a fabric",
+		Long: `List all BGP sessions of a network fabric.
+
+Required Arguments:
+  fabric_id    The ID or name of the fabric
+
+Examples:
+  metalcloud-cli fabric bgp-session list 12345
+  metalcloud-cli fabric bgp ls my-fabric`,
+		SilenceUsage: true,
+		Annotations:  map[string]string{system.REQUIRED_PERMISSION: system.PERMISSION_NETWORK_FABRICS_READ},
+		Args:         cobra.ExactArgs(1),
+		RunE: func(cmd *cobra.Command, args []string) error {
+			return fabric.BgpSessionList(cmd.Context(), args[0])
+		},
+	}
+
+	fabricBgpSessionGetCmd = &cobra.Command{
+		Use:     "get fabric_id bgp_session_id",
+		Aliases: []string{"show"},
+		Short:   "Get one BGP session of a fabric",
+		Long: `Get the details of one BGP session of a network fabric.
+
+Required Arguments:
+  fabric_id         The ID or name of the fabric
+  bgp_session_id    The ID of the BGP session
+
+Examples:
+  metalcloud-cli fabric bgp-session get 12345 7
+  metalcloud-cli fabric bgp show my-fabric 7`,
+		SilenceUsage: true,
+		Annotations:  map[string]string{system.REQUIRED_PERMISSION: system.PERMISSION_NETWORK_FABRICS_READ},
+		Args:         cobra.ExactArgs(2),
+		RunE: func(cmd *cobra.Command, args []string) error {
+			return fabric.BgpSessionGet(cmd.Context(), args[0], args[1])
+		},
+	}
+
+	fabricBgpSessionCreateCmd = &cobra.Command{
+		Use:     "create fabric_id",
+		Aliases: []string{"new"},
+		Short:   "Create a BGP session on a fabric",
+		Long: `Create a BGP session on a network fabric from a JSON/YAML configuration.
+
+The configuration contains:
+- bgpNumbering: inherited, numbered or unnumbered
+- bgpLinkConfiguration: disabled, active or passive
+- linkId or linkAggregationId: the link (or link aggregation) the session runs on
+- customVariables: optional map exposed to the configuration templates
+
+Required Arguments:
+  fabric_id    The ID or name of the fabric
+
+Required Flags:
+  --config-source   'pipe' to read from stdin, or a path to a JSON/YAML file.
+
+Examples:
+  metalcloud-cli fabric bgp-session config-example > session.yaml
+  metalcloud-cli fabric bgp-session create 12345 --config-source session.yaml
+  cat session.yaml | metalcloud-cli fabric bgp create 12345 --config-source pipe`,
+		SilenceUsage: true,
+		Annotations:  map[string]string{system.REQUIRED_PERMISSION: system.PERMISSION_NETWORK_FABRICS_WRITE},
+		Args:         cobra.ExactArgs(1),
+		RunE: func(cmd *cobra.Command, args []string) error {
+			config, err := utils.ReadConfigFromPipeOrFile(fabricBgpSessionFlags.configSource)
+			if err != nil {
+				return err
+			}
+
+			return fabric.BgpSessionCreate(cmd.Context(), args[0], config)
+		},
+	}
+
+	fabricBgpSessionUpdateCmd = &cobra.Command{
+		Use:   "update fabric_id bgp_session_id",
+		Short: "Update a BGP session of a fabric",
+		Long: `Update a BGP session of a network fabric from a JSON/YAML configuration.
+
+Only the custom variables of a BGP session can be updated; the numbering, link
+configuration and the link it runs on are fixed at creation time.
+
+Required Arguments:
+  fabric_id         The ID or name of the fabric
+  bgp_session_id    The ID of the BGP session
+
+Required Flags:
+  --config-source   'pipe' to read from stdin, or a path to a JSON/YAML file.
+
+Examples:
+  metalcloud-cli fabric bgp-session update 12345 7 --config-source session.yaml
+  echo '{"customVariables":{"asn":65000}}' | metalcloud-cli fabric bgp update 12345 7 --config-source pipe`,
+		SilenceUsage: true,
+		Annotations:  map[string]string{system.REQUIRED_PERMISSION: system.PERMISSION_NETWORK_FABRICS_WRITE},
+		Args:         cobra.ExactArgs(2),
+		RunE: func(cmd *cobra.Command, args []string) error {
+			config, err := utils.ReadConfigFromPipeOrFile(fabricBgpSessionFlags.configSource)
+			if err != nil {
+				return err
+			}
+
+			return fabric.BgpSessionUpdate(cmd.Context(), args[0], args[1], config)
+		},
+	}
+
+	fabricBgpSessionDeleteCmd = &cobra.Command{
+		Use:     "delete fabric_id bgp_session_id",
+		Aliases: []string{"rm"},
+		Short:   "Delete a BGP session of a fabric",
+		Long: `Remove a BGP session from a network fabric.
+
+Required Arguments:
+  fabric_id         The ID or name of the fabric
+  bgp_session_id    The ID of the BGP session
+
+Examples:
+  metalcloud-cli fabric bgp-session delete 12345 7
+  metalcloud-cli fabric bgp rm my-fabric 7`,
+		SilenceUsage: true,
+		Annotations:  map[string]string{system.REQUIRED_PERMISSION: system.PERMISSION_NETWORK_FABRICS_WRITE},
+		Args:         cobra.ExactArgs(2),
+		RunE: func(cmd *cobra.Command, args []string) error {
+			return fabric.BgpSessionDelete(cmd.Context(), args[0], args[1])
+		},
+	}
+
+	fabricBgpSessionConfigExampleCmd = &cobra.Command{
+		Use:   "config-example",
+		Short: "Show a BGP session configuration example",
+		Long: `Print an example BGP session create body. Edit it and pass it to
+'fabric bgp-session create' via --config-source.
+
+Examples:
+  metalcloud-cli fabric bgp-session config-example
+  metalcloud-cli fabric bgp-session config-example -f yaml > session.yaml`,
+		SilenceUsage: true,
+		Annotations:  map[string]string{system.REQUIRED_PERMISSION: system.PERMISSION_NETWORK_FABRICS_READ},
+		RunE: func(cmd *cobra.Command, args []string) error {
+			return fabric.BgpSessionConfigExample(cmd.Context())
+		},
+	}
+
+	fabricLinkAggregationCmd = &cobra.Command{
+		Use:     "link-aggregation [command]",
+		Aliases: []string{"lag"},
+		Short:   "Manage the link aggregations of a fabric",
+		Long: `Manage the link aggregations (LAG / MLAG) of a network fabric.
+
+A link aggregation groups several fabric links into one logical link and
+carries the custom variables exposed to the device configuration templates as
+link_aggregation_custom_variables.
+
+Commands:
+  list, get, create, update, delete, config-example`,
+	}
+
+	fabricLinkAggregationListCmd = &cobra.Command{
+		Use:     "list fabric_id",
+		Aliases: []string{"ls"},
+		Short:   "List the link aggregations of a fabric",
+		Long: `List all link aggregations of a network fabric.
+
+Required Arguments:
+  fabric_id    The ID or name of the fabric
+
+Examples:
+  metalcloud-cli fabric link-aggregation list 12345
+  metalcloud-cli fabric lag ls my-fabric`,
+		SilenceUsage: true,
+		Annotations:  map[string]string{system.REQUIRED_PERMISSION: system.PERMISSION_NETWORK_FABRICS_READ},
+		Args:         cobra.ExactArgs(1),
+		RunE: func(cmd *cobra.Command, args []string) error {
+			return fabric.LinkAggregationList(cmd.Context(), args[0])
+		},
+	}
+
+	fabricLinkAggregationGetCmd = &cobra.Command{
+		Use:     "get fabric_id link_aggregation_id",
+		Aliases: []string{"show"},
+		Short:   "Get one link aggregation of a fabric",
+		Long: `Get the details of one link aggregation of a network fabric.
+
+Required Arguments:
+  fabric_id              The ID or name of the fabric
+  link_aggregation_id    The ID of the link aggregation
+
+Examples:
+  metalcloud-cli fabric link-aggregation get 12345 3
+  metalcloud-cli fabric lag show my-fabric 3`,
+		SilenceUsage: true,
+		Annotations:  map[string]string{system.REQUIRED_PERMISSION: system.PERMISSION_NETWORK_FABRICS_READ},
+		Args:         cobra.ExactArgs(2),
+		RunE: func(cmd *cobra.Command, args []string) error {
+			return fabric.LinkAggregationGet(cmd.Context(), args[0], args[1])
+		},
+	}
+
+	fabricLinkAggregationCreateCmd = &cobra.Command{
+		Use:     "create fabric_id",
+		Aliases: []string{"new"},
+		Short:   "Create a link aggregation on a fabric",
+		Long: `Create a link aggregation on a network fabric from a JSON/YAML configuration.
+
+The configuration contains:
+- type: the link aggregation type (e.g. lag, mlag, mlag-peer-link)
+- linkIds: the IDs of the fabric links to aggregate (see 'fabric get-links')
+- mlagDomainIdentifier: only for the mlag-peer-link type
+- customVariables / options: optional
+
+Required Arguments:
+  fabric_id    The ID or name of the fabric
+
+Required Flags:
+  --config-source   'pipe' to read from stdin, or a path to a JSON/YAML file.
+
+Examples:
+  metalcloud-cli fabric link-aggregation config-example > lag.yaml
+  metalcloud-cli fabric link-aggregation create 12345 --config-source lag.yaml
+  cat lag.yaml | metalcloud-cli fabric lag create 12345 --config-source pipe`,
+		SilenceUsage: true,
+		Annotations:  map[string]string{system.REQUIRED_PERMISSION: system.PERMISSION_NETWORK_FABRICS_WRITE},
+		Args:         cobra.ExactArgs(1),
+		RunE: func(cmd *cobra.Command, args []string) error {
+			config, err := utils.ReadConfigFromPipeOrFile(fabricLinkAggregationFlags.configSource)
+			if err != nil {
+				return err
+			}
+
+			return fabric.LinkAggregationCreate(cmd.Context(), args[0], config)
+		},
+	}
+
+	fabricLinkAggregationUpdateCmd = &cobra.Command{
+		Use:   "update fabric_id link_aggregation_id",
+		Short: "Update a link aggregation of a fabric",
+		Long: `Update a link aggregation of a network fabric from a JSON/YAML configuration.
+
+The body replaces the aggregated links (linkIds), the options and the custom
+variables; the aggregation type is fixed at creation time.
+
+Required Arguments:
+  fabric_id              The ID or name of the fabric
+  link_aggregation_id    The ID of the link aggregation
+
+Required Flags:
+  --config-source   'pipe' to read from stdin, or a path to a JSON/YAML file.
+
+Examples:
+  metalcloud-cli fabric link-aggregation update 12345 3 --config-source lag.yaml
+  echo '{"linkIds":[1,2,3]}' | metalcloud-cli fabric lag update 12345 3 --config-source pipe`,
+		SilenceUsage: true,
+		Annotations:  map[string]string{system.REQUIRED_PERMISSION: system.PERMISSION_NETWORK_FABRICS_WRITE},
+		Args:         cobra.ExactArgs(2),
+		RunE: func(cmd *cobra.Command, args []string) error {
+			config, err := utils.ReadConfigFromPipeOrFile(fabricLinkAggregationFlags.configSource)
+			if err != nil {
+				return err
+			}
+
+			return fabric.LinkAggregationUpdate(cmd.Context(), args[0], args[1], config)
+		},
+	}
+
+	fabricLinkAggregationDeleteCmd = &cobra.Command{
+		Use:     "delete fabric_id link_aggregation_id",
+		Aliases: []string{"rm"},
+		Short:   "Delete a link aggregation of a fabric",
+		Long: `Remove a link aggregation from a network fabric.
+
+Required Arguments:
+  fabric_id              The ID or name of the fabric
+  link_aggregation_id    The ID of the link aggregation
+
+Examples:
+  metalcloud-cli fabric link-aggregation delete 12345 3
+  metalcloud-cli fabric lag rm my-fabric 3`,
+		SilenceUsage: true,
+		Annotations:  map[string]string{system.REQUIRED_PERMISSION: system.PERMISSION_NETWORK_FABRICS_WRITE},
+		Args:         cobra.ExactArgs(2),
+		RunE: func(cmd *cobra.Command, args []string) error {
+			return fabric.LinkAggregationDelete(cmd.Context(), args[0], args[1])
+		},
+	}
+
+	fabricLinkAggregationConfigExampleCmd = &cobra.Command{
+		Use:   "config-example",
+		Short: "Show a link aggregation configuration example",
+		Long: `Print an example link aggregation create body. Edit it and pass it to
+'fabric link-aggregation create' via --config-source.
+
+Examples:
+  metalcloud-cli fabric link-aggregation config-example
+  metalcloud-cli fabric link-aggregation config-example -f yaml > lag.yaml`,
+		SilenceUsage: true,
+		Annotations:  map[string]string{system.REQUIRED_PERMISSION: system.PERMISSION_NETWORK_FABRICS_READ},
+		RunE: func(cmd *cobra.Command, args []string) error {
+			return fabric.LinkAggregationConfigExample(cmd.Context())
+		},
+	}
 )
 
 // buildSwitchConfigFromFlags assembles a configure-switches YAML document from
@@ -1168,4 +1609,40 @@ func init() {
 
 	fabricCmd.AddCommand(fabricConfigureFreeformExampleCmd)
 	fabricCmd.AddCommand(fabricConfigureBgpExampleCmd)
+
+	fabricCmd.AddCommand(fabricDeleteCmd)
+	fabricCmd.AddCommand(fabricAcceptDeployCmd)
+	fabricCmd.AddCommand(fabricRejectDeployCmd)
+	fabricCmd.AddCommand(fabricLinkGetCmd)
+	fabricCmd.AddCommand(fabricInterconnectsGetCmd)
+
+	fabricCmd.AddCommand(fabricBgpSessionCmd)
+	fabricBgpSessionCmd.AddCommand(fabricBgpSessionListCmd)
+	fabricBgpSessionCmd.AddCommand(fabricBgpSessionGetCmd)
+	fabricBgpSessionCmd.AddCommand(fabricBgpSessionConfigExampleCmd)
+
+	fabricBgpSessionCmd.AddCommand(fabricBgpSessionCreateCmd)
+	fabricBgpSessionCreateCmd.Flags().StringVar(&fabricBgpSessionFlags.configSource, "config-source", "", "Source of the BGP session configuration. Can be 'pipe' or path to a JSON/YAML file.")
+	fabricBgpSessionCreateCmd.MarkFlagsOneRequired("config-source")
+
+	fabricBgpSessionCmd.AddCommand(fabricBgpSessionUpdateCmd)
+	fabricBgpSessionUpdateCmd.Flags().StringVar(&fabricBgpSessionFlags.configSource, "config-source", "", "Source of the BGP session configuration. Can be 'pipe' or path to a JSON/YAML file.")
+	fabricBgpSessionUpdateCmd.MarkFlagsOneRequired("config-source")
+
+	fabricBgpSessionCmd.AddCommand(fabricBgpSessionDeleteCmd)
+
+	fabricCmd.AddCommand(fabricLinkAggregationCmd)
+	fabricLinkAggregationCmd.AddCommand(fabricLinkAggregationListCmd)
+	fabricLinkAggregationCmd.AddCommand(fabricLinkAggregationGetCmd)
+	fabricLinkAggregationCmd.AddCommand(fabricLinkAggregationConfigExampleCmd)
+
+	fabricLinkAggregationCmd.AddCommand(fabricLinkAggregationCreateCmd)
+	fabricLinkAggregationCreateCmd.Flags().StringVar(&fabricLinkAggregationFlags.configSource, "config-source", "", "Source of the link aggregation configuration. Can be 'pipe' or path to a JSON/YAML file.")
+	fabricLinkAggregationCreateCmd.MarkFlagsOneRequired("config-source")
+
+	fabricLinkAggregationCmd.AddCommand(fabricLinkAggregationUpdateCmd)
+	fabricLinkAggregationUpdateCmd.Flags().StringVar(&fabricLinkAggregationFlags.configSource, "config-source", "", "Source of the link aggregation configuration. Can be 'pipe' or path to a JSON/YAML file.")
+	fabricLinkAggregationUpdateCmd.MarkFlagsOneRequired("config-source")
+
+	fabricLinkAggregationCmd.AddCommand(fabricLinkAggregationDeleteCmd)
 }

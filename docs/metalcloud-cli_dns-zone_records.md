@@ -1,9 +1,29 @@
 ## metalcloud-cli dns-zone records
 
-List DNS record sets in a zone
+List DNS record sets
+
+### Synopsis
+
+List DNS record sets.
+
+Called with a zone ID the command lists the record sets of that zone. Called
+without an argument it lists every record set of every zone through the global
+record set endpoint.
+
+Optional Arguments:
+  zone_id    The ID of the DNS zone. When omitted, the record sets of all zones
+             are listed.
+
+Examples:
+  # List the record sets of zone 123
+  metalcloud-cli dns-zone records 123
+
+  # List the record sets of all zones
+  metalcloud-cli dns-zone records
+
 
 ```
-metalcloud-cli dns-zone records zone_id [flags]
+metalcloud-cli dns-zone records [zone_id] [flags]
 ```
 
 ### Options

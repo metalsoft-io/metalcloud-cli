@@ -22,6 +22,8 @@ Available Commands:
   users        Manage user access to infrastructures
   statistics   View infrastructure deployment and job statistics
   utilization  Generate resource utilization reports
+  utilization-summary  Generate summarized resource utilization reports
+  update-metadata      Update infrastructure name, description and tags
 
 Use "metalcloud-cli infrastructure [command] --help" for more information about a specific command.
 
@@ -60,6 +62,8 @@ Use "metalcloud-cli infrastructure [command] --help" for more information about 
 * [metalcloud-cli infrastructure revert](metalcloud-cli_infrastructure_revert.md)	 - Revert infrastructure to the last deployed state
 * [metalcloud-cli infrastructure statistics](metalcloud-cli_infrastructure_statistics.md)	 - Get deployment statistics for an infrastructure
 * [metalcloud-cli infrastructure update](metalcloud-cli_infrastructure_update.md)	 - Update infrastructure configuration and metadata
+* [metalcloud-cli infrastructure update-metadata](metalcloud-cli_infrastructure_update-metadata.md)	 - Update infrastructure name, description and tags
 * [metalcloud-cli infrastructure users](metalcloud-cli_infrastructure_users.md)	 - List users with access to an infrastructure
 * [metalcloud-cli infrastructure utilization](metalcloud-cli_infrastructure_utilization.md)	 - Get resource utilization report for infrastructures
+* [metalcloud-cli infrastructure utilization-summary](metalcloud-cli_infrastructure_utilization-summary.md)	 - Get a summarized resource utilization report for infrastructures
 

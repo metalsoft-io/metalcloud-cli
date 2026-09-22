@@ -2,7 +2,11 @@ package endpoint
 
 import (
 	"context"
+	"io"
 	"net/http"
+	"net/http/httptest"
+	"strings"
+	"sync"
 	"testing"
 
 	"github.com/metalsoft-io/metalcloud-cli/internal/testutils"
@@ -252,5 +256,199 @@ func TestEndpointInterfaceList_HappyPath(t *testing.T) {
 	ctx := testutils.SetupTestContext(ts.URL)
 	if err := EndpointInterfaceList(ctx, "10"); err != nil {
 		t.Fatalf("expected nil error, got: %v", err)
+	}
+}
+
+// ---------------------------------------------------------------------------
+// Endpoint interface CRUD and network device interfaces
+// ---------------------------------------------------------------------------
+
+type endpointRecorder struct {
+	mu   sync.Mutex
+	reqs []endpointRecordedRequest
+}
+
+type endpointRecordedRequest struct {
+	Method string
+	Path   string
+	Header http.Header
+	Body   string
+}
+
+func (r *endpointRecorder) wrap(next http.HandlerFunc) http.HandlerFunc {
+	return func(w http.ResponseWriter, req *http.Request) {
+		body, _ := io.ReadAll(req.Body)
+		r.mu.Lock()
+		r.reqs = append(r.reqs, endpointRecordedRequest{Method: req.Method, Path: req.URL.Path, Header: req.Header.Clone(), Body: string(body)})
+		r.mu.Unlock()
+		next(w, req)
+	}
+}
+
+func (r *endpointRecorder) last() endpointRecordedRequest {
+	r.mu.Lock()
+	defer r.mu.Unlock()
+	return r.reqs[len(r.reqs)-1]
+}
+
+var endpointDeviceInterfaces = map[string]any{
+	"data": []any{
+		map[string]any{
+			"networkDeviceId": 10, "networkDeviceInterfaceId": 20,
+			"networkDeviceInterfaceName": "swp1", "endpointId": 10, "endpointInterfaceId": 3,
+		},
+		map[string]any{
+			"networkDeviceId": 10, "networkDeviceInterfaceId": 21,
+			"networkDeviceInterfaceName": "swp2",
+		},
+	},
+}
+
+func newEndpointInterfaceServer(t *testing.T, rec *endpointRecorder) *httptest.Server {
+	t.Helper()
+	routes := map[string]http.HandlerFunc{
+		"/api/v2/endpoints/10/interfaces": func(w http.ResponseWriter, r *http.Request) {
+			if r.Method == http.MethodPost {
+				testutils.JSONHandler(http.StatusCreated, makeEndpointInterface(3))(w, r)
+				return
+			}
+			testutils.JSONHandler(http.StatusOK, testutils.PaginatedResponse([]any{makeEndpointInterface(3)}, 1, 1))(w, r)
+		},
+		"/api/v2/endpoints/10/interfaces/3": func(w http.ResponseWriter, r *http.Request) {
+			if r.Method == http.MethodDelete {
+				testutils.NoContentHandler()(w, r)
+				return
+			}
+			testutils.JSONHandler(http.StatusOK, makeEndpointInterface(3))(w, r)
+		},
+		"/api/v2/network-devices/10":                      testutils.JSONHandler(http.StatusOK, testutils.NetworkDeviceFixture("10", 1, "leaf-01")),
+		"/api/v2/endpoints/network-devices/10/interfaces": testutils.JSONHandler(http.StatusOK, endpointDeviceInterfaces),
+	}
+	wrapped := make(map[string]http.HandlerFunc, len(routes))
+	for path, handler := range routes {
+		wrapped[path] = rec.wrap(handler)
+	}
+	return testutils.NewTestServer(wrapped)
+}
+
+func TestEndpointInterfaceGet(t *testing.T) {
+	rec := &endpointRecorder{}
+	ts := newEndpointInterfaceServer(t, rec)
+	defer ts.Close()
+
+	ctx := testutils.SetupTestContext(ts.URL)
+	out := testutils.CaptureStdout(t, func() {
+		if err := EndpointInterfaceGet(ctx, "10", "3"); err != nil {
+			t.Errorf("unexpected error: %v", err)
+		}
+	})
+
+	if !strings.Contains(out, `"networkDeviceInterfaceName":"eth0"`) {
+		t.Errorf("get output missing the interface name: %s", out)
+	}
+	if rec.last().Path != "/api/v2/endpoints/10/interfaces/3" {
+		t.Errorf("unexpected path %s", rec.last().Path)
+	}
+}
+
+func TestEndpointInterfaceCreate(t *testing.T) {
+	rec := &endpointRecorder{}
+	ts := newEndpointInterfaceServer(t, rec)
+	defer ts.Close()
+
+	ctx := testutils.SetupTestContext(ts.URL)
+	testutils.CaptureStdout(t, func() {
+		err := EndpointInterfaceCreate(ctx, "10", sdk.CreateEndpointInterface{
+			NetworkDeviceInterfaceId: 20,
+			MacAddress:               sdk.PtrString("AA:BB:CC:DD:EE:FF"),
+		})
+		if err != nil {
+			t.Errorf("unexpected error: %v", err)
+		}
+	})
+
+	req := rec.last()
+	if req.Method != http.MethodPost || req.Path != "/api/v2/endpoints/10/interfaces" {
+		t.Fatalf("unexpected request %s %s", req.Method, req.Path)
+	}
+	for _, want := range []string{`"networkDeviceInterfaceId":20`, `"macAddress":"AA:BB:CC:DD:EE:FF"`} {
+		if !strings.Contains(req.Body, want) {
+			t.Errorf("create body missing %s: %s", want, req.Body)
+		}
+	}
+}
+
+func TestEndpointInterfaceUpdate_SendsIfMatch(t *testing.T) {
+	rec := &endpointRecorder{}
+	ts := newEndpointInterfaceServer(t, rec)
+	defer ts.Close()
+
+	ctx := testutils.SetupTestContext(ts.URL)
+	testutils.CaptureStdout(t, func() {
+		err := EndpointInterfaceUpdate(ctx, "10", "3", sdk.UpdateEndpointInterface{
+			MacAddress: sdk.PtrString("11:22:33:44:55:66"),
+		})
+		if err != nil {
+			t.Errorf("unexpected error: %v", err)
+		}
+	})
+
+	req := rec.last()
+	if req.Method != http.MethodPatch || req.Path != "/api/v2/endpoints/10/interfaces/3" {
+		t.Fatalf("unexpected request %s %s", req.Method, req.Path)
+	}
+	if got := req.Header.Get("If-Match"); got != "1" {
+		t.Errorf("expected If-Match 1 (the interface revision), got %q", got)
+	}
+	if !strings.Contains(req.Body, `"macAddress":"11:22:33:44:55:66"`) {
+		t.Errorf("update body missing the MAC address: %s", req.Body)
+	}
+}
+
+func TestEndpointInterfaceDelete_SendsIfMatch(t *testing.T) {
+	rec := &endpointRecorder{}
+	ts := newEndpointInterfaceServer(t, rec)
+	defer ts.Close()
+
+	ctx := testutils.SetupTestContext(ts.URL)
+	if err := EndpointInterfaceDelete(ctx, "10", "3"); err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+
+	req := rec.last()
+	if req.Method != http.MethodDelete || req.Path != "/api/v2/endpoints/10/interfaces/3" {
+		t.Fatalf("unexpected request %s %s", req.Method, req.Path)
+	}
+	if got := req.Header.Get("If-Match"); got != "1" {
+		t.Errorf("expected If-Match 1 (the interface revision), got %q", got)
+	}
+}
+
+func TestEndpointInterface_InvalidInterfaceId(t *testing.T) {
+	ctx := testutils.SetupTestContext("http://localhost")
+	if err := EndpointInterfaceGet(ctx, "10", "not-a-number"); err == nil {
+		t.Fatal("expected an error for an invalid interface ID, got nil")
+	}
+}
+
+func TestEndpointNetworkDeviceInterfaces(t *testing.T) {
+	rec := &endpointRecorder{}
+	ts := newEndpointInterfaceServer(t, rec)
+	defer ts.Close()
+
+	ctx := testutils.SetupTestContext(ts.URL)
+	out := testutils.CaptureStdout(t, func() {
+		if err := EndpointNetworkDeviceInterfaces(ctx, "10"); err != nil {
+			t.Errorf("unexpected error: %v", err)
+		}
+	})
+
+	for _, want := range []string{"swp1", "swp2"} {
+		if !strings.Contains(out, want) {
+			t.Errorf("output missing %s: %s", want, out)
+		}
+	}
+	if rec.last().Path != "/api/v2/endpoints/network-devices/10/interfaces" {
+		t.Errorf("unexpected path %s", rec.last().Path)
 	}
 }

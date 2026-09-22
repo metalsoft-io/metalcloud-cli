@@ -220,7 +220,7 @@ func (r *runner) ensureTemplate(spec templateSpec, description string, annotatio
 
 // ensureProfiles reconciles one profile per targeted device (POST missing, PATCH
 // drifted, leave matches). Devices absent from variables are skipped.
-func (r *runner) ensureProfiles(templateId int64, usable bool, devices []*deviceRecord, variables map[int64]map[string]interface{}, priority float32) {
+func (r *runner) ensureProfiles(templateId int64, usable bool, devices []*deviceRecord, variables map[int64]map[string]interface{}, priority int32) {
 	if !usable && !r.dryRun {
 		return
 	}

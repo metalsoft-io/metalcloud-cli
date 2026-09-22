@@ -16,25 +16,59 @@ const siteListBody = `{"data":[` + siteItem + `],"meta":{"currentPage":1,"totalP
 
 // ndItem2: minimal NetworkDevice for fabric tests (siteId=10 to match siteItem).
 const ndItem2 = `{
-	"id":"5","revision":1,"status":"active","vendorId":1,"siteId":10,
-	"identifierString":"switch-a","applyIdentifierAsHostnameOnNextDeploy":false,
-	"description":"","chassisIdentifier":"",
-	"country":"","city":"","datacenterMeta":"","datacenterRoom":"","datacenterRack":"",
-	"rackPositionUpperUnit":0,"rackPositionLowerUnit":0,
-	"managementAddress":"10.0.0.1","managementAddressPrefixLength":24,
-	"managementAddressGateway":"10.0.0.254","managementPort":22,
-	"syslogEnabled":0,"snmpServiceEnabled":false,"snmpMonitoringEnabled":false,
-	"username":"admin","managementMacAddress":"AA:BB:CC:DD:EE:01",
-	"serialNumber":"SN001","driver":"sonic_enterprise","position":"leaf",
+	"id":"5",
+	"revision":1,
+	"status":"active",
+	"vendorId":1,
+	"siteId":10,
+	"identifierString":"switch-a",
+	"applyIdentifierAsHostnameOnNextDeploy":false,
+	"description":"",
+	"chassisIdentifier":"",
+	"country":"",
+	"city":"",
+	"datacenterMeta":"",
+	"datacenterRoom":"",
+	"datacenterRack":"",
+	"rackPositionUpperUnit":0,
+	"rackPositionLowerUnit":0,
+	"managementAddress":"10.0.0.1",
+	"managementAddressPrefixLength":24,
+	"managementAddressGateway":"10.0.0.254",
+	"managementPort":22,
+	"syslogEnabled":0,
+	"snmpServiceEnabled":false,
+	"snmpMonitoringEnabled":false,
+	"username":"admin",
+	"managementMacAddress":"AA:BB:CC:DD:EE:01",
+	"serialNumber":"SN001",
+	"driver":"sonic_enterprise",
+	"position":"leaf",
 	"driftDetectionSyncStatus":"",
-	"orderIndex":1,"tags":[],"tagsMap":{},"readyForInitialConfiguration":0,
-	"bootstrapReadinessCheckInProgress":0,"subnetOobId":0,"subnetOobIndex":0,
-	"requiresOsInstall":false,"bootstrapExpectedPartnerHostname":"",
-	"loopbackAddressIpv6":"","asn":65000,"vtepAddressIpv6":"",
-	"mlagSystemMac":"","mlagDomainId":0,"quarantineVlan":0,
-	"variablesMaterializedForOSAssets":{},"secretsMaterializedForOSAssets":{},
-	"bootstrapReadinessCheckResult":{},"isGateway":false
+	"orderIndex":1,
+	"tags":[],
+	"tagsMap":{},
+	"readyForInitialConfiguration":0,
+	"bootstrapReadinessCheckInProgress":0,
+	"subnetOobId":0,
+	"subnetOobIndex":0,
+	"requiresOsInstall":false,
+	"bootstrapExpectedPartnerHostname":"",
+	"loopbackAddressIpv6":"",
+	"asn":65000,
+	"vtepAddressIpv6":"",
+	"mlagSystemMac":"",
+	"mlagDomainId":0,
+	"quarantineVlan":0,
+	"variablesMaterializedForOSAssets":{},
+	"secretsMaterializedForOSAssets":{},
+	"bootstrapReadinessCheckResult":{},
+	"isGateway":false,
+	"backupEnabled":false,
+	"driftDetectionEnabled":false,
+	"portCount":32
 }`
+
 const ndListBody = `{"data":[` + ndItem2 + `],"meta":{"currentPage":1,"totalPages":1,"itemsPerPage":100}}`
 
 // fabricLinkItem: minimal NetworkFabricLink with all SDK-required fields.
@@ -384,8 +418,8 @@ func TestFabricDevicesAdd_FabricNotFound(t *testing.T) {
 
 func TestFabricDevicesAdd_DeviceNotFound(t *testing.T) {
 	routes := map[string]http.HandlerFunc{
-		"/api/v2/network-fabrics/1": testutils.RawHandler(http.StatusOK, fabricWithSite),
-		"/api/v2/network-fabrics":   testutils.RawHandler(http.StatusOK, `{"data":[`+fabricWithSite+`],"meta":{"currentPage":1,"totalPages":1,"itemsPerPage":100}}`),
+		"/api/v2/network-fabrics/1":  testutils.RawHandler(http.StatusOK, fabricWithSite),
+		"/api/v2/network-fabrics":    testutils.RawHandler(http.StatusOK, `{"data":[`+fabricWithSite+`],"meta":{"currentPage":1,"totalPages":1,"itemsPerPage":100}}`),
 		"/api/v2/network-devices/99": testutils.ErrorHandler(http.StatusNotFound, "not found"),
 		"/api/v2/network-devices":    testutils.RawHandler(http.StatusOK, `{"data":[],"meta":{"currentPage":1,"totalPages":1,"itemsPerPage":100}}`),
 	}
@@ -402,10 +436,10 @@ func TestFabricDevicesAdd_DeviceNotFound(t *testing.T) {
 
 func TestFabricDevicesRemove_HappyPath(t *testing.T) {
 	routes := map[string]http.HandlerFunc{
-		"/api/v2/network-fabrics/1":             testutils.RawHandler(http.StatusOK, fabricWithSite),
-		"/api/v2/network-fabrics":               testutils.RawHandler(http.StatusOK, `{"data":[`+fabricWithSite+`],"meta":{"currentPage":1,"totalPages":1,"itemsPerPage":100}}`),
-		"/api/v2/network-devices/5":             testutils.RawHandler(http.StatusOK, ndItem2),
-		"/api/v2/network-devices":               testutils.RawHandler(http.StatusOK, ndListBody),
+		"/api/v2/network-fabrics/1":                   testutils.RawHandler(http.StatusOK, fabricWithSite),
+		"/api/v2/network-fabrics":                     testutils.RawHandler(http.StatusOK, `{"data":[`+fabricWithSite+`],"meta":{"currentPage":1,"totalPages":1,"itemsPerPage":100}}`),
+		"/api/v2/network-devices/5":                   testutils.RawHandler(http.StatusOK, ndItem2),
+		"/api/v2/network-devices":                     testutils.RawHandler(http.StatusOK, ndListBody),
 		"/api/v2/network-fabrics/1/network-devices/5": testutils.RawHandler(http.StatusOK, fabricWithSite),
 	}
 	ts := testutils.NewTestServer(routes)

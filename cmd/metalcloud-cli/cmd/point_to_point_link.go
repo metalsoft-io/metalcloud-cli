@@ -27,7 +27,20 @@ var (
 A point-to-point link connects two interfaces (or a single interface, for a
 half-connected link) and can carry IPv4/IPv6 subnet allocation strategies that
 assign the link's addresses. Links can be created fully staged (interfaces plus
-a manual /31 strategy) in one call via the create command's config source.`,
+a manual /31 strategy) in one call via the create command's config source.
+
+Available Commands:
+  list                  List point-to-point links
+  get                   Get link details
+  create                Create a link
+  update                Update a link's properties
+  delete                Delete a link
+  get-config            Get the link's staged configuration
+  update-config         Update the link's staged configuration (MTU)
+  config-example        Show a create configuration example
+  add-ipv4-strategy     Attach a manual IPv4 allocation strategy
+  allocation-strategy   Manage the link's allocation strategies
+  static-route          Manage the link's staged static routes`,
 	}
 
 	pointToPointLinkListCmd = &cobra.Command{
@@ -138,6 +151,216 @@ Examples:
 		},
 	}
 
+	pointToPointLinkUpdateCmd = &cobra.Command{
+		Use:   "update link_id",
+		Short: "Update a point-to-point link",
+		Long: `Update the properties of a point-to-point link (label, name, description,
+annotations) from a JSON/YAML configuration. The link's current revision is
+sent as If-Match, so a concurrent change is rejected rather than overwritten.
+
+Use 'update-config' for the staged configuration (MTU) and the
+'allocation-strategy' / 'static-route' sub-commands for the config collections.
+
+Required Arguments:
+  link_id            The ID of the point-to-point link
+
+Required Flags:
+  --config-source    'pipe' to read from stdin, or a path to a JSON/YAML file.
+
+Examples:
+  metalcloud-cli point-to-point-link update-example > update.yaml
+  metalcloud-cli point-to-point-link update 42 --config-source update.yaml
+  echo '{"description":"leaf01 uplink"}' | metalcloud-cli p2p update 42 --config-source pipe`,
+		SilenceUsage: true,
+		Annotations:  map[string]string{system.REQUIRED_PERMISSION: system.PERMISSION_NETWORK_FABRICS_WRITE},
+		Args:         cobra.ExactArgs(1),
+		RunE: func(cmd *cobra.Command, args []string) error {
+			config, err := utils.ReadConfigFromPipeOrFile(pointToPointLinkFlags.configSource)
+			if err != nil {
+				return err
+			}
+
+			return point_to_point_link.PointToPointLinkUpdate(cmd.Context(), args[0], config)
+		},
+	}
+
+	pointToPointLinkUpdateExampleCmd = &cobra.Command{
+		Use:          "update-example",
+		Short:        "Display a point-to-point link update example",
+		Long:         `Print an example body for 'point-to-point-link update'.`,
+		SilenceUsage: true,
+		Annotations:  map[string]string{system.REQUIRED_PERMISSION: system.PERMISSION_NETWORK_FABRICS_READ},
+		RunE: func(cmd *cobra.Command, args []string) error {
+			return point_to_point_link.PointToPointLinkConfigExampleUpdate(cmd.Context())
+		},
+	}
+
+	pointToPointLinkGetConfigCmd = &cobra.Command{
+		Use:     "get-config link_id",
+		Aliases: []string{"show-config"},
+		Short:   "Get the staged configuration of a point-to-point link",
+		Long: `Get the staged configuration object of a point-to-point link: its MTU, the
+IPv4/IPv6 subnet allocation strategies and the staged static routes.
+
+The configuration object carries its own revision, which is the one that guards
+the config sub-resources (static routes, allocation strategies).
+
+Required Arguments:
+  link_id            The ID of the point-to-point link
+
+Examples:
+  metalcloud-cli point-to-point-link get-config 42
+  metalcloud-cli p2p show-config 42 -f yaml`,
+		SilenceUsage: true,
+		Annotations:  map[string]string{system.REQUIRED_PERMISSION: system.PERMISSION_NETWORK_FABRICS_READ},
+		Args:         cobra.ExactArgs(1),
+		RunE: func(cmd *cobra.Command, args []string) error {
+			return point_to_point_link.PointToPointLinkConfigGet(cmd.Context(), args[0])
+		},
+	}
+
+	pointToPointLinkUpdateConfigCmd = &cobra.Command{
+		Use:   "update-config link_id",
+		Short: "Update the staged configuration of a point-to-point link",
+		Long: `Update the staged configuration of a point-to-point link (currently its MTU)
+from a JSON/YAML configuration. The configuration object's own revision is sent
+as If-Match - not the link's.
+
+Required Arguments:
+  link_id            The ID of the point-to-point link
+
+Required Flags:
+  --config-source    'pipe' to read from stdin, or a path to a JSON/YAML file.
+
+Examples:
+  metalcloud-cli point-to-point-link update-config-example > config.yaml
+  metalcloud-cli point-to-point-link update-config 42 --config-source config.yaml
+  echo '{"mtu":9216}' | metalcloud-cli p2p update-config 42 --config-source pipe`,
+		SilenceUsage: true,
+		Annotations:  map[string]string{system.REQUIRED_PERMISSION: system.PERMISSION_NETWORK_FABRICS_WRITE},
+		Args:         cobra.ExactArgs(1),
+		RunE: func(cmd *cobra.Command, args []string) error {
+			config, err := utils.ReadConfigFromPipeOrFile(pointToPointLinkFlags.configSource)
+			if err != nil {
+				return err
+			}
+
+			return point_to_point_link.PointToPointLinkConfigUpdate(cmd.Context(), args[0], config)
+		},
+	}
+
+	pointToPointLinkUpdateConfigExampleCmd = &cobra.Command{
+		Use:          "update-config-example",
+		Short:        "Display a point-to-point link config update example",
+		Long:         `Print an example body for 'point-to-point-link update-config'.`,
+		SilenceUsage: true,
+		Annotations:  map[string]string{system.REQUIRED_PERMISSION: system.PERMISSION_NETWORK_FABRICS_READ},
+		RunE: func(cmd *cobra.Command, args []string) error {
+			return point_to_point_link.PointToPointLinkConfigExampleConfig(cmd.Context())
+		},
+	}
+
+	pointToPointLinkStaticRouteCmd = &cobra.Command{
+		Use:     "static-route [command]",
+		Aliases: []string{"static-routes", "route"},
+		Short:   "Manage the staged static routes of a point-to-point link",
+		Long: `Manage the static routes staged on a point-to-point link's configuration.
+
+Static routes live under the link's config, one collection per address family
+(ipv4 / ipv6), and are guarded by the config object's revision.
+
+Commands:
+  list, get, add, remove`,
+	}
+
+	pointToPointLinkStaticRouteListCmd = &cobra.Command{
+		Use:     "list link_id family",
+		Aliases: []string{"ls"},
+		Short:   "List the staged static routes of one address family",
+		Long: `List the static routes staged on a point-to-point link for one address family.
+
+Required Arguments:
+  link_id    The ID of the point-to-point link
+  family     One of: ipv4, ipv6
+
+Examples:
+  metalcloud-cli point-to-point-link static-route list 42 ipv4
+  metalcloud-cli p2p route ls 42 ipv6`,
+		SilenceUsage: true,
+		Annotations:  map[string]string{system.REQUIRED_PERMISSION: system.PERMISSION_NETWORK_FABRICS_READ},
+		Args:         cobra.ExactArgs(2),
+		RunE: func(cmd *cobra.Command, args []string) error {
+			return point_to_point_link.StaticRouteList(cmd.Context(), args[0], args[1])
+		},
+	}
+
+	pointToPointLinkStaticRouteGetCmd = &cobra.Command{
+		Use:     "get link_id family route_id",
+		Aliases: []string{"show"},
+		Short:   "Get one staged static route",
+		Long: `Get one static route staged on a point-to-point link.
+
+Required Arguments:
+  link_id    The ID of the point-to-point link
+  family     One of: ipv4, ipv6
+  route_id   The ID of the static route
+
+Examples:
+  metalcloud-cli point-to-point-link static-route get 42 ipv4 3`,
+		SilenceUsage: true,
+		Annotations:  map[string]string{system.REQUIRED_PERMISSION: system.PERMISSION_NETWORK_FABRICS_READ},
+		Args:         cobra.ExactArgs(3),
+		RunE: func(cmd *cobra.Command, args []string) error {
+			return point_to_point_link.StaticRouteGet(cmd.Context(), args[0], args[1], args[2])
+		},
+	}
+
+	pointToPointLinkStaticRouteAddCmd = &cobra.Command{
+		Use:     "add link_id family destination_prefix",
+		Aliases: []string{"create", "new"},
+		Short:   "Stage a static route on a point-to-point link",
+		Long: `Stage a static route on one address family of a point-to-point link's
+configuration. The destination prefix's address family must match the
+collection it is added to.
+
+Required Arguments:
+  link_id               The ID of the point-to-point link
+  family                One of: ipv4, ipv6
+  destination_prefix    Destination prefix in CIDR notation
+
+Examples:
+  metalcloud-cli point-to-point-link static-route add 42 ipv4 10.0.0.0/24
+  metalcloud-cli p2p route add 42 ipv6 2001:db8::/64`,
+		SilenceUsage: true,
+		Annotations:  map[string]string{system.REQUIRED_PERMISSION: system.PERMISSION_NETWORK_FABRICS_WRITE},
+		Args:         cobra.ExactArgs(3),
+		RunE: func(cmd *cobra.Command, args []string) error {
+			return point_to_point_link.StaticRouteAdd(cmd.Context(), args[0], args[1], args[2])
+		},
+	}
+
+	pointToPointLinkStaticRouteRemoveCmd = &cobra.Command{
+		Use:     "remove link_id family route_id",
+		Aliases: []string{"delete", "rm"},
+		Short:   "Remove a staged static route",
+		Long: `Remove one static route from a point-to-point link's configuration.
+
+Required Arguments:
+  link_id    The ID of the point-to-point link
+  family     One of: ipv4, ipv6
+  route_id   The ID of the static route
+
+Examples:
+  metalcloud-cli point-to-point-link static-route remove 42 ipv4 3
+  metalcloud-cli p2p route rm 42 ipv6 4`,
+		SilenceUsage: true,
+		Annotations:  map[string]string{system.REQUIRED_PERMISSION: system.PERMISSION_NETWORK_FABRICS_WRITE},
+		Args:         cobra.ExactArgs(3),
+		RunE: func(cmd *cobra.Command, args []string) error {
+			return point_to_point_link.StaticRouteRemove(cmd.Context(), args[0], args[1], args[2])
+		},
+	}
+
 	pointToPointLinkDeleteCmd = &cobra.Command{
 		Use:          "delete link_id",
 		Aliases:      []string{"rm"},
@@ -174,4 +397,24 @@ func init() {
 	pointToPointLinkAddIpv4StrategyCmd.MarkFlagRequired("subnet-id")
 
 	pointToPointLinkCmd.AddCommand(pointToPointLinkDeleteCmd)
+
+	pointToPointLinkCmd.AddCommand(pointToPointLinkUpdateCmd)
+	pointToPointLinkUpdateCmd.Flags().StringVar(&pointToPointLinkFlags.configSource, "config-source", "", "Source of the updated link configuration. Can be 'pipe' or path to a JSON/YAML file.")
+	pointToPointLinkUpdateCmd.MarkFlagsOneRequired("config-source")
+
+	pointToPointLinkCmd.AddCommand(pointToPointLinkUpdateExampleCmd)
+
+	pointToPointLinkCmd.AddCommand(pointToPointLinkGetConfigCmd)
+
+	pointToPointLinkCmd.AddCommand(pointToPointLinkUpdateConfigCmd)
+	pointToPointLinkUpdateConfigCmd.Flags().StringVar(&pointToPointLinkFlags.configSource, "config-source", "", "Source of the updated link config. Can be 'pipe' or path to a JSON/YAML file.")
+	pointToPointLinkUpdateConfigCmd.MarkFlagsOneRequired("config-source")
+
+	pointToPointLinkCmd.AddCommand(pointToPointLinkUpdateConfigExampleCmd)
+
+	pointToPointLinkCmd.AddCommand(pointToPointLinkStaticRouteCmd)
+	pointToPointLinkStaticRouteCmd.AddCommand(pointToPointLinkStaticRouteListCmd)
+	pointToPointLinkStaticRouteCmd.AddCommand(pointToPointLinkStaticRouteGetCmd)
+	pointToPointLinkStaticRouteCmd.AddCommand(pointToPointLinkStaticRouteAddCmd)
+	pointToPointLinkStaticRouteCmd.AddCommand(pointToPointLinkStaticRouteRemoveCmd)
 }

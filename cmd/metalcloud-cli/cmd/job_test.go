@@ -11,8 +11,9 @@ import (
 )
 
 // Required: jobId, type, status, functionName, callCount, retryMax, retryCount,
-//           retryMinSeconds, requiresConfirmation, options, createdTimestamp,
-//           updatedTimestamp, links
+//
+//	retryMinSeconds, requiresConfirmation, options, createdTimestamp,
+//	updatedTimestamp, links
 func jobFixture(id int) map[string]interface{} {
 	return map[string]interface{}{
 		"jobId": id, "type": "deploy", "status": "finished",
@@ -34,13 +35,20 @@ func jobGroupFixture(id int) map[string]interface{} {
 }
 
 // Required: id, label, functionName, params, schedule, waitForCompletion (float32),
-//           lifetimeSeconds, disabled (float32)
-func cronJobFixture(id int) map[string]interface{} {
+//
+//	lifetimeSeconds, disabled (float32)
+func scheduledJobFixture(id int) map[string]interface{} {
 	return map[string]interface{}{
-		"id": id, "label": "nightly-task", "functionName": "CleanupFunc",
-		"params": []interface{}{}, "schedule": "0 2 * * *",
-		"waitForCompletion": 0, "lifetimeSeconds": 3600, "disabled": 0,
-		"links": []interface{}{},
+		"id":                id,
+		"label":             "nightly-task",
+		"functionName":      "CleanupFunc",
+		"params":            []interface{}{},
+		"schedule":          "0 2 * * *",
+		"waitForCompletion": 0,
+		"lifetimeSeconds":   3600,
+		"disabled":          0,
+		"systemDefined":     false,
+		"links":             []interface{}{},
 	}
 }
 
@@ -170,38 +178,38 @@ func TestJobGroupWait_InvalidID(t *testing.T) {
 	}
 }
 
-// --- cron-job list ---
+// --- scheduled-job list ---
 
-func TestCronJobList_HappyPath(t *testing.T) {
+func TestScheduledJobList_HappyPath(t *testing.T) {
 	srv := httptest.NewServer(newMux(allPerms, func(mux *http.ServeMux) {
-		mux.HandleFunc("/api/v2/cron-jobs", func(w http.ResponseWriter, r *http.Request) {
+		mux.HandleFunc("/api/v2/scheduled-jobs", func(w http.ResponseWriter, r *http.Request) {
 			w.Header().Set("Content-Type", "application/json")
-			_ = json.NewEncoder(w).Encode(paginatedList(cronJobFixture(1)))
+			_ = json.NewEncoder(w).Encode(paginatedList(scheduledJobFixture(1)))
 		})
 	}))
 	defer srv.Close()
 
-	if _, err := runCLI(t, srv, "cron-job", "list"); err != nil {
+	if _, err := runCLI(t, srv, "scheduled-job", "list"); err != nil {
 		t.Fatalf("expected no error, got: %v", err)
 	}
 }
 
-func TestCronJobList_Alias(t *testing.T) {
+func TestScheduledJobList_Alias(t *testing.T) {
 	srv := httptest.NewServer(newMux(allPerms, func(mux *http.ServeMux) {
-		mux.HandleFunc("/api/v2/cron-jobs", func(w http.ResponseWriter, r *http.Request) {
+		mux.HandleFunc("/api/v2/scheduled-jobs", func(w http.ResponseWriter, r *http.Request) {
 			w.Header().Set("Content-Type", "application/json")
-			_ = json.NewEncoder(w).Encode(paginatedList(cronJobFixture(1)))
+			_ = json.NewEncoder(w).Encode(paginatedList(scheduledJobFixture(1)))
 		})
 	}))
 	defer srv.Close()
 
-	if _, err := runCLI(t, srv, "cron-job", "ls"); err != nil {
+	if _, err := runCLI(t, srv, "scheduled-job", "ls"); err != nil {
 		t.Fatalf("alias ls: expected no error, got: %v", err)
 	}
 }
 
-func TestCronJobList_NoEndpoint(t *testing.T) {
-	if _, err := runCLI(t, nil, "cron-job", "list"); err == nil {
+func TestScheduledJobList_NoEndpoint(t *testing.T) {
+	if _, err := runCLI(t, nil, "scheduled-job", "list"); err == nil {
 		t.Fatal("expected error when endpoint is empty")
 	}
 }
@@ -262,17 +270,17 @@ func TestJobGroupList_Formats(t *testing.T) {
 	}
 }
 
-func TestCronJobList_Formats(t *testing.T) {
+func TestScheduledJobList_Formats(t *testing.T) {
 	srv := httptest.NewServer(newMux(allPerms, func(mux *http.ServeMux) {
-		mux.HandleFunc("/api/v2/cron-jobs", func(w http.ResponseWriter, r *http.Request) {
+		mux.HandleFunc("/api/v2/scheduled-jobs", func(w http.ResponseWriter, r *http.Request) {
 			w.Header().Set("Content-Type", "application/json")
-			_ = json.NewEncoder(w).Encode(paginatedList(cronJobFixture(1)))
+			_ = json.NewEncoder(w).Encode(paginatedList(scheduledJobFixture(1)))
 		})
 	}))
 	defer srv.Close()
 	for _, format := range []string{"json", "csv", "yaml", "text", "md"} {
 		t.Run(format, func(t *testing.T) {
-			out, err := runCLIFormat(t, srv, format, "cron-job", "list")
+			out, err := runCLIFormat(t, srv, format, "scheduled-job", "list")
 			if err != nil {
 				t.Fatalf("format %s: %v", format, err)
 			}
@@ -289,40 +297,40 @@ func TestCronJobList_Formats(t *testing.T) {
 	}
 }
 
-// --- cron-job create ---
+// --- scheduled-job create ---
 
-func TestCronJobCreate(t *testing.T) {
+func TestScheduledJobCreate(t *testing.T) {
 	srv := httptest.NewServer(newMux(allPerms, func(mux *http.ServeMux) {
-		mux.HandleFunc("/api/v2/cron-jobs", func(w http.ResponseWriter, r *http.Request) {
+		mux.HandleFunc("/api/v2/scheduled-jobs", func(w http.ResponseWriter, r *http.Request) {
 			w.Header().Set("Content-Type", "application/json")
-			_ = json.NewEncoder(w).Encode(cronJobFixture(1))
+			_ = json.NewEncoder(w).Encode(scheduledJobFixture(1))
 		})
 	}))
 	defer srv.Close()
 
-	f, err := os.CreateTemp(t.TempDir(), "cronjob-*.json")
+	f, err := os.CreateTemp(t.TempDir(), "scheduledjob-*.json")
 	if err != nil {
 		t.Fatalf("create temp file: %v", err)
 	}
 	_, _ = f.WriteString(`{"label":"nightly","functionName":"CleanupFunc","params":[],"schedule":"0 2 * * *","waitForCompletion":0,"lifetimeSeconds":3600,"disabled":0}`)
 	f.Close()
 
-	if _, execErr := runCLI(t, srv, "cron-job", "create", "--config-source", f.Name()); execErr != nil {
+	if _, execErr := runCLI(t, srv, "scheduled-job", "create", "--config-source", f.Name()); execErr != nil {
 		t.Fatalf("unexpected error: %v", execErr)
 	}
 }
 
-// --- cron-job delete ---
+// --- scheduled-job delete ---
 
-func TestCronJobDelete(t *testing.T) {
+func TestScheduledJobDelete(t *testing.T) {
 	srv := httptest.NewServer(newMux(allPerms, func(mux *http.ServeMux) {
-		mux.HandleFunc("/api/v2/cron-jobs/1", func(w http.ResponseWriter, r *http.Request) {
+		mux.HandleFunc("/api/v2/scheduled-jobs/1", func(w http.ResponseWriter, r *http.Request) {
 			w.WriteHeader(http.StatusNoContent)
 		})
 	}))
 	defer srv.Close()
 
-	if _, execErr := runCLI(t, srv, "cron-job", "delete", "1"); execErr != nil {
+	if _, execErr := runCLI(t, srv, "scheduled-job", "delete", "1"); execErr != nil {
 		t.Fatalf("unexpected error: %v", execErr)
 	}
 }

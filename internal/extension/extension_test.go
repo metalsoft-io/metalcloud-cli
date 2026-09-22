@@ -3,6 +3,7 @@ package extension
 import (
 	"context"
 	"net/http"
+	"strings"
 	"testing"
 
 	"github.com/metalsoft-io/metalcloud-cli/internal/testutils"
@@ -330,15 +331,19 @@ func TestExtensionArchive_ServerError(t *testing.T) {
 
 // --- ExtensionPublish (deprecated) ---
 
-// TestExtensionPublish_UsesActivateEndpoint verifies that the deprecated publish path
-// still activates the extension, but does so through the activate action rather than the
-// API's deprecated publish action.
-func TestExtensionPublish_UsesActivateEndpoint(t *testing.T) {
+// TestExtensionPublish_UsesPublishEndpoint verifies that the deprecated publish path
+// calls the typed PublishExtension SDK method (the API's publish action) and carries
+// the extension revision as the If-Match entity tag.
+func TestExtensionPublish_UsesPublishEndpoint(t *testing.T) {
+	var ifMatch string
 	ts := testutils.NewTestServer(map[string]http.HandlerFunc{
-		"/api/v2/extensions/3":                  testutils.RawHandler(http.StatusOK, validExtensionJSON),
-		"/api/v2/extensions/3/actions/activate": testutils.RawHandler(http.StatusOK, "{}"),
+		"/api/v2/extensions/3": testutils.RawHandler(http.StatusOK, validExtensionJSON),
 		"/api/v2/extensions/3/actions/publish": func(w http.ResponseWriter, r *http.Request) {
-			t.Error("expected the activate action, but the deprecated publish action was called")
+			ifMatch = r.Header.Get("If-Match")
+			testutils.RawHandler(http.StatusOK, "{}")(w, r)
+		},
+		"/api/v2/extensions/3/actions/activate": func(w http.ResponseWriter, r *http.Request) {
+			t.Error("expected the publish action, but the activate action was called")
 			w.WriteHeader(http.StatusOK)
 		},
 	})
@@ -347,6 +352,9 @@ func TestExtensionPublish_UsesActivateEndpoint(t *testing.T) {
 	ctx := testutils.SetupTestContext(ts.URL)
 	if err := ExtensionPublish(ctx, "3"); err != nil {
 		t.Fatalf("expected nil error, got: %v", err)
+	}
+	if ifMatch == "" {
+		t.Error("publish should send the extension revision as If-Match")
 	}
 }
 
@@ -368,14 +376,64 @@ func TestExtensionPublish_NotFound(t *testing.T) {
 // TestExtensionPublish_ServerError verifies that a 500 from the underlying action is surfaced.
 func TestExtensionPublish_ServerError(t *testing.T) {
 	ts := testutils.NewTestServer(map[string]http.HandlerFunc{
-		"/api/v2/extensions/3":                  testutils.RawHandler(http.StatusOK, validExtensionJSON),
-		"/api/v2/extensions/3/actions/activate": testutils.ErrorHandler(http.StatusInternalServerError, "server error"),
+		"/api/v2/extensions/3":                 testutils.RawHandler(http.StatusOK, validExtensionJSON),
+		"/api/v2/extensions/3/actions/publish": testutils.ErrorHandler(http.StatusInternalServerError, "server error"),
 	})
 	defer ts.Close()
 
 	ctx := testutils.SetupTestContext(ts.URL)
 	if err := ExtensionPublish(ctx, "3"); err == nil {
 		t.Fatal("expected error for HTTP 500 on publish, got nil")
+	}
+}
+
+// --- ExtensionSiteConfigCredentials ---
+
+// siteSearchResponse is the /api/v2/sites search envelope used to resolve a site
+// by name; Site requires id, revision, slug and name.
+func siteSearchResponse(id int, name string) map[string]any {
+	return testutils.PaginatedResponse([]any{
+		map[string]any{"id": id, "revision": 1, "slug": name, "name": name},
+	}, 1, 1)
+}
+
+// TestExtensionSiteConfigCredentials_HappyPath verifies that the credentials of an
+// extension's site configuration are fetched through the extension and site resolvers.
+func TestExtensionSiteConfigCredentials_HappyPath(t *testing.T) {
+	ts := testutils.NewTestServer(map[string]http.HandlerFunc{
+		"/api/v2/extensions/3": testutils.RawHandler(http.StatusOK, validExtensionJSON),
+		"/api/v2/sites":        testutils.JSONHandler(http.StatusOK, siteSearchResponse(7, "my-site")),
+		"/api/v2/extensions/3/siteConfig/7/credentials": testutils.JSONHandler(http.StatusOK, map[string]any{
+			"username": "svc-account", "password": "secret",
+		}),
+	})
+	defer ts.Close()
+
+	ctx := testutils.SetupTestContext(ts.URL)
+
+	var err error
+	out := testutils.CaptureStdout(t, func() {
+		err = ExtensionSiteConfigCredentials(ctx, "3", "my-site")
+	})
+	if err != nil {
+		t.Fatalf("expected nil error, got: %v", err)
+	}
+	if !strings.Contains(out, "svc-account") {
+		t.Errorf("credentials output missing the username: %s", out)
+	}
+}
+
+// TestExtensionSiteConfigCredentials_SiteNotFound verifies the site resolver error is surfaced.
+func TestExtensionSiteConfigCredentials_SiteNotFound(t *testing.T) {
+	ts := testutils.NewTestServer(map[string]http.HandlerFunc{
+		"/api/v2/extensions/3": testutils.RawHandler(http.StatusOK, validExtensionJSON),
+		"/api/v2/sites":        testutils.JSONHandler(http.StatusOK, testutils.PaginatedResponse([]any{}, 1, 1)),
+	})
+	defer ts.Close()
+
+	ctx := testutils.SetupTestContext(ts.URL)
+	if err := ExtensionSiteConfigCredentials(ctx, "3", "nope"); err == nil {
+		t.Fatal("expected an error for an unknown site, got nil")
 	}
 }
 

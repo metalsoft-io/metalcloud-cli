@@ -8,35 +8,33 @@ Update VM instance group configuration.
 
 This command allows you to modify the configuration of an existing VM instance
 group. You can update the label or custom variables associated with the group.
-At least one of the available flags must be specified.
+The current configuration revision is fetched automatically and sent as the
+If-Match header, so concurrent modifications are rejected by the API.
 
-ARGUMENTS:
-  infrastructure_id     The ID of the infrastructure containing the group
-  vm_instance_group_id  The ID of the VM instance group to update
+Required Arguments:
+  infrastructure_id_or_label  The ID or the label of the infrastructure
+  vm_instance_group_id        The numeric ID of the VM instance group
 
-FLAGS:
-  --label string                      Set or update the VM instance group label
-  --custom-variables-source string    Source of custom variables to apply
-                                     Can be 'pipe' for stdin or path to a JSON file
+Optional Flags:
+  --label string                    Set or update the VM instance group label
+  --custom-variables-source string  Source of the custom variables.
+                                    Can be 'pipe' or path to a JSON file.
 
-FLAG DEPENDENCIES:
+Flag Dependencies:
   At least one of --label or --custom-variables-source must be provided
 
-EXAMPLES:
+Examples:
   # Update the label of a VM instance group
   metalcloud-cli vm-instance-group update 12345 67890 --label "Web Servers"
-  
+
   # Update custom variables from a JSON file
-  metalcloud-cli vmg edit 12345 67890 --custom-variables-source /path/to/vars.json
-  
+  metalcloud-cli vmg edit my-infra 67890 --custom-variables-source /path/to/vars.json
+
   # Update custom variables from stdin
   echo '{"env": "production"}' | metalcloud-cli vm-group update 12345 67890 --custom-variables-source pipe
-  
-  # Update both label and custom variables
-  metalcloud-cli vm-instance-group update 12345 67890 --label "Production Web" --custom-variables-source vars.json
 
 ```
-metalcloud-cli vm-instance-group update infrastructure_id vm_instance_group_id [flags]
+metalcloud-cli vm-instance-group update infrastructure_id_or_label vm_instance_group_id [flags]
 ```
 
 ### Options

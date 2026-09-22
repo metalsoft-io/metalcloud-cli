@@ -12,7 +12,7 @@ import (
 var subnetItem = map[string]interface{}{
 	"id": 1.0, "label": "test-subnet", "name": "test-subnet",
 	"annotations": map[string]interface{}{},
-	"createdAt": "2024-01-01T00:00:00Z", "updatedAt": "2024-01-01T00:00:00Z",
+	"createdAt":   "2024-01-01T00:00:00Z", "updatedAt": "2024-01-01T00:00:00Z",
 	"revision": 1.0, "tags": map[string]interface{}{},
 	"parentSubnetId": 0.0, "ipVersion": "ipv4",
 	"networkAddress": "10.0.0.0", "prefixLength": 24.0,
@@ -179,6 +179,88 @@ func TestSubnetDelete(t *testing.T) {
 	_, execErr := runCLI(t, srv, "subnet", "delete", "1")
 	if execErr != nil {
 		t.Fatalf("unexpected error: %v", execErr)
+	}
+}
+
+// --- subnet capacity, remove-ip and remove-ip-range ---
+
+var subnetCapacityItem = map[string]interface{}{
+	"subnetId": 1, "prefix": "10.0.0.0/24", "isPool": false,
+	"totalIpCount": "254", "freeIpCount": "200", "usedIpCount": "54",
+	"freePrefixes": nil, "freePrefixCounts": nil,
+	"requestedPrefixLength": nil, "allocatablePrefixCount": nil,
+}
+
+// newSubnetSubResourceServer serves the subnet plus its capacity and the two
+// deletable sub-resources, recording the If-Match of the last delete.
+func newSubnetSubResourceServer(lastIfMatch *string) *httptest.Server {
+	return httptest.NewServer(newMux(allPerms, func(mux *http.ServeMux) {
+		mux.HandleFunc("/api/v2/subnets/1", func(w http.ResponseWriter, r *http.Request) {
+			jsonResponse(w, http.StatusOK, subnetItem)
+		})
+		mux.HandleFunc("/api/v2/subnets/1/capacity", func(w http.ResponseWriter, r *http.Request) {
+			jsonResponse(w, http.StatusOK, subnetCapacityItem)
+		})
+		mux.HandleFunc("/api/v2/subnets/1/ips/7", func(w http.ResponseWriter, r *http.Request) {
+			*lastIfMatch = r.Header.Get("If-Match")
+			w.WriteHeader(http.StatusNoContent)
+		})
+		mux.HandleFunc("/api/v2/subnets/1/ip-ranges/9", func(w http.ResponseWriter, r *http.Request) {
+			*lastIfMatch = r.Header.Get("If-Match")
+			w.WriteHeader(http.StatusNoContent)
+		})
+	}))
+}
+
+func TestSubnetCapacity(t *testing.T) {
+	var ifMatch string
+	srv := newSubnetSubResourceServer(&ifMatch)
+	defer srv.Close()
+
+	out, err := runCLI(t, srv, "subnet", "capacity", "1")
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if !strings.Contains(out, "10.0.0.0/24") {
+		t.Errorf("expected the prefix in output, got: %s", out)
+	}
+
+	if _, err := runCLI(t, srv, "subnet", "capacity"); err == nil {
+		t.Error("expected an error when no subnet id is given")
+	}
+}
+
+func TestSubnetRemoveIp(t *testing.T) {
+	var ifMatch string
+	srv := newSubnetSubResourceServer(&ifMatch)
+	defer srv.Close()
+
+	if _, err := runCLI(t, srv, "subnet", "remove-ip", "1", "7"); err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if ifMatch != "1" {
+		t.Errorf("expected If-Match 1 (the subnet revision), got %q", ifMatch)
+	}
+
+	if _, err := runCLI(t, srv, "subnet", "remove-ip", "1"); err == nil {
+		t.Error("expected an error when the ip id is missing")
+	}
+}
+
+func TestSubnetRemoveIpRange(t *testing.T) {
+	var ifMatch string
+	srv := newSubnetSubResourceServer(&ifMatch)
+	defer srv.Close()
+
+	if _, err := runCLI(t, srv, "subnet", "remove-ip-range", "1", "9"); err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if ifMatch != "1" {
+		t.Errorf("expected If-Match 1 (the subnet revision), got %q", ifMatch)
+	}
+
+	if _, err := runCLI(t, srv, "subnet", "remove-ip-range", "1"); err == nil {
+		t.Error("expected an error when the range id is missing")
 	}
 }
 

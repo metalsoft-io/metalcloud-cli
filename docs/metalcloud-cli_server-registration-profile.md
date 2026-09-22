@@ -15,6 +15,10 @@ Available Commands:
   update    Update an existing server registration profile
   delete    Delete a server registration profile
 
+  search           Find the registration profile that applies to a site
+  for-server       Show the registration profile of a server
+  system-defaults  Show the built-in registration settings
+
 Examples:
   # List all server registration profiles
   metalcloud-cli server-registration-profile list
@@ -59,7 +63,10 @@ Examples:
 * [metalcloud-cli](metalcloud-cli.md)	 - MetalCloud CLI
 * [metalcloud-cli server-registration-profile create](metalcloud-cli_server-registration-profile_create.md)	 - Create a new server registration profile
 * [metalcloud-cli server-registration-profile delete](metalcloud-cli_server-registration-profile_delete.md)	 - Delete a server registration profile
+* [metalcloud-cli server-registration-profile for-server](metalcloud-cli_server-registration-profile_for-server.md)	 - Show the registration profile of a server
 * [metalcloud-cli server-registration-profile get](metalcloud-cli_server-registration-profile_get.md)	 - Get detailed information about a specific server registration profile
 * [metalcloud-cli server-registration-profile list](metalcloud-cli_server-registration-profile_list.md)	 - List all server registration profiles
+* [metalcloud-cli server-registration-profile search](metalcloud-cli_server-registration-profile_search.md)	 - Find the registration profile that applies to a site
+* [metalcloud-cli server-registration-profile system-defaults](metalcloud-cli_server-registration-profile_system-defaults.md)	 - Show the built-in server registration settings
 * [metalcloud-cli server-registration-profile update](metalcloud-cli_server-registration-profile_update.md)	 - Update an existing server registration profile
 

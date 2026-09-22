@@ -1,24 +1,20 @@
 ## metalcloud-cli user permissions
 
-Display permissions for a specific user
+List the permissions of the current user
 
 ### Synopsis
 
-Retrieve and display all permissions associated with a specific user account.
+List the permissions of the user owning the API key in use.
 
-This command shows the user's permission configuration including resource types,
-resource IDs, and permission levels. Permissions control what resources the user
-can access and what operations they can perform.
-
-Arguments:
-  user_id                 The numeric ID of the user whose permissions to display
+The permissions come from the roles assigned to the user and determine which API
+operations, and therefore which CLI commands, are available.
 
 Examples:
-  metalcloud-cli user permissions 12345
-  metalcloud-cli user get-permissions 12345
+  metalcloud-cli user permissions
+  metalcloud-cli user permissions -f json
 
 ```
-metalcloud-cli user permissions user_id [flags]
+metalcloud-cli user permissions [flags]
 ```
 
 ### Options

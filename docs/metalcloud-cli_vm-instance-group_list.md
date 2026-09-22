@@ -10,18 +10,18 @@ This command retrieves and displays all VM instance groups that exist within
 the specified infrastructure. The output includes group details such as ID,
 label, instance count, VM type, and current status.
 
-ARGUMENTS:
-  infrastructure_id  The ID of the infrastructure to list groups from
+Required Arguments:
+  infrastructure_id_or_label  The ID or the label of the infrastructure
 
-EXAMPLES:
+Examples:
   # List all VM instance groups in infrastructure 12345
   metalcloud-cli vm-instance-group list 12345
-  
-  # List groups using alias
-  metalcloud-cli vmg ls 12345
+
+  # List groups by infrastructure label
+  metalcloud-cli vmg ls my-infra
 
 ```
-metalcloud-cli vm-instance-group list infrastructure_id [flags]
+metalcloud-cli vm-instance-group list infrastructure_id_or_label [flags]
 ```
 
 ### Options

@@ -10,20 +10,31 @@ import (
 
 var (
 	endpointFlags = struct {
-		filterSite       []string
-		filterExternalId []string
-		configSource     string
-		siteId           int
-		name             string
-		label            string
-		externalId       string
+		filterSite               []string
+		filterExternalId         []string
+		configSource             string
+		siteId                   int
+		name                     string
+		label                    string
+		externalId               string
+		networkDeviceInterfaceId int
+		macAddress               string
 	}{}
 
 	endpointCmd = &cobra.Command{
 		Use:     "endpoint [command]",
 		Aliases: []string{"ep", "endpoints"},
 		Short:   "Endpoint management",
-		Long:    `Endpoint management commands.`,
+		Long: `Endpoint management commands.
+
+An endpoint represents a device attached to the fabric. Its interfaces bind the
+endpoint to individual switch ports.
+
+Available Commands:
+  list, get, create, create-bulk, update, delete
+  interfaces                      List the interfaces of an endpoint
+  interface                       Get, add, update or remove one interface
+  get-network-device-interfaces   List a switch's ports and their endpoints`,
 	}
 
 	endpointListCmd = &cobra.Command{
@@ -280,6 +291,188 @@ Examples:
 			return endpoint.EndpointInterfaceList(cmd.Context(), args[0])
 		},
 	}
+
+	endpointInterfaceCmd = &cobra.Command{
+		Use:     "interface [command]",
+		Aliases: []string{"iface", "if"},
+		Short:   "Endpoint interface management",
+		Long: `Manage the individual network interfaces of an endpoint.
+
+Each endpoint interface binds the endpoint to one switch port
+(networkDeviceInterfaceId), optionally with the MAC address seen on it.
+
+Available Commands:
+  get      Get one endpoint interface
+  add      Add an interface to an endpoint
+  update   Update an existing endpoint interface
+  remove   Remove an interface from an endpoint
+
+Use 'endpoint interfaces endpoint_id' to list all interfaces of an endpoint.`,
+	}
+
+	endpointInterfaceGetCmd = &cobra.Command{
+		Use:     "get endpoint_id interface_id",
+		Aliases: []string{"show"},
+		Short:   "Get one interface of an endpoint",
+		Long: `Display the details of a single endpoint interface.
+
+Required Arguments:
+  endpoint_id    The ID of the endpoint
+  interface_id   The ID of the endpoint interface
+
+Examples:
+  metalcloud-cli endpoint interface get 12 3`,
+		SilenceUsage: true,
+		Annotations:  map[string]string{system.REQUIRED_PERMISSION: system.PERMISSION_SERVERS_READ},
+		Args:         cobra.ExactArgs(2),
+		RunE: func(cmd *cobra.Command, args []string) error {
+			return endpoint.EndpointInterfaceGet(cmd.Context(), args[0], args[1])
+		},
+	}
+
+	endpointInterfaceAddCmd = &cobra.Command{
+		Use:     "add endpoint_id",
+		Aliases: []string{"create", "new"},
+		Short:   "Add an interface to an endpoint",
+		Long: `Add a new interface to an existing endpoint.
+
+The interface can be described either by individual flags or by a JSON/YAML
+configuration passed with --config-source.
+
+Required Arguments:
+  endpoint_id  The ID of the endpoint
+
+Required Flags (one of):
+  --network-device-interface-id  The numeric ID of the switch port to attach
+  --config-source                'pipe' to read from stdin, or a path to a JSON/YAML file
+
+Optional Flags:
+  --mac-address  The MAC address seen on the interface
+
+Examples:
+  metalcloud-cli endpoint interface add 12 --network-device-interface-id 4567
+  metalcloud-cli endpoint interface add 12 --network-device-interface-id 4567 --mac-address AA:BB:CC:DD:EE:FF
+  metalcloud-cli endpoint interface add 12 --config-source interface.json`,
+		SilenceUsage: true,
+		Annotations:  map[string]string{system.REQUIRED_PERMISSION: system.PERMISSION_SERVERS_WRITE},
+		Args:         cobra.ExactArgs(1),
+		RunE: func(cmd *cobra.Command, args []string) error {
+			var createConfig sdk.CreateEndpointInterface
+
+			if endpointFlags.configSource != "" {
+				config, err := utils.ReadConfigFromPipeOrFile(endpointFlags.configSource)
+				if err != nil {
+					return err
+				}
+				if err := utils.UnmarshalContent(config, &createConfig); err != nil {
+					return err
+				}
+			} else {
+				createConfig.NetworkDeviceInterfaceId = int64(endpointFlags.networkDeviceInterfaceId)
+				if endpointFlags.macAddress != "" {
+					createConfig.MacAddress = &endpointFlags.macAddress
+				}
+			}
+
+			return endpoint.EndpointInterfaceCreate(cmd.Context(), args[0], createConfig)
+		},
+	}
+
+	endpointInterfaceUpdateCmd = &cobra.Command{
+		Use:     "update endpoint_id interface_id",
+		Aliases: []string{"edit"},
+		Short:   "Update an interface of an endpoint",
+		Long: `Update an existing endpoint interface.
+
+The updates can be described either by individual flags or by a JSON/YAML
+configuration passed with --config-source. The interface's current revision is
+sent as the If-Match entity tag.
+
+Required Arguments:
+  endpoint_id    The ID of the endpoint
+  interface_id   The ID of the endpoint interface
+
+Optional Flags:
+  --network-device-interface-id  Move the interface to another switch port
+  --mac-address                  The new MAC address of the interface
+  --config-source                'pipe' to read from stdin, or a path to a JSON/YAML file
+
+Examples:
+  metalcloud-cli endpoint interface update 12 3 --mac-address AA:BB:CC:DD:EE:FF
+  metalcloud-cli endpoint interface update 12 3 --config-source interface.json`,
+		SilenceUsage: true,
+		Annotations:  map[string]string{system.REQUIRED_PERMISSION: system.PERMISSION_SERVERS_WRITE},
+		Args:         cobra.ExactArgs(2),
+		RunE: func(cmd *cobra.Command, args []string) error {
+			var updateConfig sdk.UpdateEndpointInterface
+
+			if endpointFlags.configSource != "" {
+				config, err := utils.ReadConfigFromPipeOrFile(endpointFlags.configSource)
+				if err != nil {
+					return err
+				}
+				if err := utils.UnmarshalContent(config, &updateConfig); err != nil {
+					return err
+				}
+			} else {
+				if endpointFlags.networkDeviceInterfaceId != 0 {
+					interfaceId := int64(endpointFlags.networkDeviceInterfaceId)
+					updateConfig.NetworkDeviceInterfaceId = &interfaceId
+				}
+				if endpointFlags.macAddress != "" {
+					updateConfig.MacAddress = &endpointFlags.macAddress
+				}
+			}
+
+			return endpoint.EndpointInterfaceUpdate(cmd.Context(), args[0], args[1], updateConfig)
+		},
+	}
+
+	endpointInterfaceRemoveCmd = &cobra.Command{
+		Use:     "remove endpoint_id interface_id",
+		Aliases: []string{"delete", "rm", "del"},
+		Short:   "Remove an interface from an endpoint",
+		Long: `Remove an interface from an endpoint.
+
+The interface's current revision is sent as the If-Match entity tag, so a
+concurrent change is rejected instead of being overwritten.
+
+Required Arguments:
+  endpoint_id    The ID of the endpoint
+  interface_id   The ID of the endpoint interface
+
+Examples:
+  metalcloud-cli endpoint interface remove 12 3`,
+		SilenceUsage: true,
+		Annotations:  map[string]string{system.REQUIRED_PERMISSION: system.PERMISSION_SERVERS_WRITE},
+		Args:         cobra.ExactArgs(2),
+		RunE: func(cmd *cobra.Command, args []string) error {
+			return endpoint.EndpointInterfaceDelete(cmd.Context(), args[0], args[1])
+		},
+	}
+
+	endpointNetworkDeviceInterfacesCmd = &cobra.Command{
+		Use:     "get-network-device-interfaces network_device_id",
+		Aliases: []string{"device-interfaces"},
+		Short:   "List a network device's interfaces and their endpoints",
+		Long: `List every interface of a network device together with the endpoint attached to it.
+
+Interfaces with no endpoint are listed with empty endpoint columns, so this is
+the command to use when looking for a free switch port.
+
+Required Arguments:
+  network_device_id  The ID or label (identifier string) of the network device
+
+Examples:
+  metalcloud-cli endpoint get-network-device-interfaces 45
+  metalcloud-cli endpoint get-network-device-interfaces leaf-01`,
+		SilenceUsage: true,
+		Annotations:  map[string]string{system.REQUIRED_PERMISSION: system.PERMISSION_SERVERS_READ},
+		Args:         cobra.ExactArgs(1),
+		RunE: func(cmd *cobra.Command, args []string) error {
+			return endpoint.EndpointNetworkDeviceInterfaces(cmd.Context(), args[0])
+		},
+	}
 )
 
 func init() {
@@ -319,4 +512,28 @@ func init() {
 	endpointCmd.AddCommand(endpointDeleteCmd)
 
 	endpointCmd.AddCommand(endpointInterfaceListCmd)
+
+	endpointCmd.AddCommand(endpointInterfaceCmd)
+
+	endpointInterfaceCmd.AddCommand(endpointInterfaceGetCmd)
+
+	endpointInterfaceCmd.AddCommand(endpointInterfaceAddCmd)
+	endpointInterfaceAddCmd.Flags().StringVar(&endpointFlags.configSource, "config-source", "", "Source of the new endpoint interface configuration. Can be 'pipe' or path to a JSON file.")
+	endpointInterfaceAddCmd.Flags().IntVar(&endpointFlags.networkDeviceInterfaceId, "network-device-interface-id", 0, "The network device interface (switch port) ID to attach.")
+	endpointInterfaceAddCmd.Flags().StringVar(&endpointFlags.macAddress, "mac-address", "", "The MAC address of the endpoint interface.")
+	endpointInterfaceAddCmd.MarkFlagsOneRequired("config-source", "network-device-interface-id")
+	endpointInterfaceAddCmd.MarkFlagsMutuallyExclusive("config-source", "network-device-interface-id")
+	endpointInterfaceAddCmd.MarkFlagsMutuallyExclusive("config-source", "mac-address")
+
+	endpointInterfaceCmd.AddCommand(endpointInterfaceUpdateCmd)
+	endpointInterfaceUpdateCmd.Flags().StringVar(&endpointFlags.configSource, "config-source", "", "Source of the endpoint interface updates. Can be 'pipe' or path to a JSON file.")
+	endpointInterfaceUpdateCmd.Flags().IntVar(&endpointFlags.networkDeviceInterfaceId, "network-device-interface-id", 0, "The new network device interface (switch port) ID.")
+	endpointInterfaceUpdateCmd.Flags().StringVar(&endpointFlags.macAddress, "mac-address", "", "The new MAC address of the endpoint interface.")
+	endpointInterfaceUpdateCmd.MarkFlagsOneRequired("config-source", "network-device-interface-id", "mac-address")
+	endpointInterfaceUpdateCmd.MarkFlagsMutuallyExclusive("config-source", "network-device-interface-id")
+	endpointInterfaceUpdateCmd.MarkFlagsMutuallyExclusive("config-source", "mac-address")
+
+	endpointInterfaceCmd.AddCommand(endpointInterfaceRemoveCmd)
+
+	endpointCmd.AddCommand(endpointNetworkDeviceInterfacesCmd)
 }

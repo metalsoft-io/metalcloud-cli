@@ -152,7 +152,7 @@ func valueOf(defaultValue *sdk.ExtensionInputStringDefaultValue) any {
 type extensionInput struct {
 	Label        string
 	Name         string
-	InputType    sdk.ExtensionInputType
+	InputType    string
 	DefaultValue any
 }
 
@@ -368,13 +368,30 @@ func ExtensionCreateFromRepo(ctx context.Context, extensionPath string, repoUrl 
 	return formatter.PrintResult(extensionInfo, &extensionPrintConfig)
 }
 
-// Deprecated: the platform API deprecated its publish action in favor of the activate
-// action, which performs the same draft or suspended to active transition. This wrapper
-// is kept only for the equally deprecated 'extension publish' command and delegates to
-// ExtensionActivate so no caller depends on the deprecated endpoint. Use
-// ExtensionActivate instead.
+// Deprecated: the platform API deprecated POST /extensions/{id}/actions/publish in
+// favor of the activate action, which performs the same draft or suspended to active
+// transition. This function is kept for the equally deprecated 'extension publish'
+// command and calls the typed PublishExtension SDK method so the command keeps
+// exercising the endpoint it names. Use ExtensionActivate instead.
 func ExtensionPublish(ctx context.Context, extensionId string) error {
-	return ExtensionActivate(ctx, extensionId)
+	logger.Get().Info().Msgf("Publishing extension '%s'", extensionId)
+
+	extension, err := GetExtensionByIdOrLabel(ctx, extensionId)
+	if err != nil {
+		return err
+	}
+
+	client := api.GetApiClient(ctx)
+
+	httpRes, err := client.ExtensionAPI.PublishExtension(ctx, int64(extension.Id)).
+		IfMatch(fmt.Sprintf("%d", extension.Revision)).
+		Execute()
+	if err := response_inspector.InspectResponse(httpRes, err); err != nil {
+		return err
+	}
+
+	logger.Get().Info().Msgf("Extension '%s' published successfully", extensionId)
+	return nil
 }
 
 func ExtensionArchive(ctx context.Context, extensionId string) error {
@@ -613,6 +630,32 @@ func ExtensionSiteConfigGet(ctx context.Context, extensionId string, siteIdOrLab
 	}
 
 	return formatter.PrintResult(values, &extensionConfigValuePrintConfig)
+}
+
+// ExtensionSiteConfigCredentials returns the credentials stored with an
+// extension's site configuration. The endpoint answers with a free-form object
+// whose keys depend on the extension, so no PrintConfig is applied.
+func ExtensionSiteConfigCredentials(ctx context.Context, extensionId string, siteIdOrLabel string) error {
+	logger.Get().Info().Msgf("Getting site configuration credentials for extension '%s' and site '%s'", extensionId, siteIdOrLabel)
+
+	extension, err := GetExtensionByIdOrLabel(ctx, extensionId)
+	if err != nil {
+		return err
+	}
+
+	siteInfo, err := site.GetSiteByIdOrLabel(ctx, siteIdOrLabel)
+	if err != nil {
+		return err
+	}
+
+	client := api.GetApiClient(ctx)
+
+	credentials, httpRes, err := client.ExtensionAPI.GetExtensionSiteCredentials(ctx, int64(extension.Id), int64(siteInfo.Id)).Execute()
+	if err := response_inspector.InspectResponse(httpRes, err); err != nil {
+		return err
+	}
+
+	return formatter.PrintResult(credentials, nil)
 }
 
 func ExtensionSiteConfigSet(ctx context.Context, extensionId string, siteIdOrLabel string, config []byte) error {

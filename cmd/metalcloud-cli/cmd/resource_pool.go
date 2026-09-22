@@ -3,6 +3,7 @@ package cmd
 import (
 	"github.com/metalsoft-io/metalcloud-cli/cmd/metalcloud-cli/system"
 	"github.com/metalsoft-io/metalcloud-cli/internal/resource_pool"
+	"github.com/metalsoft-io/metalcloud-cli/pkg/utils"
 	"github.com/spf13/cobra"
 )
 
@@ -13,6 +14,10 @@ var (
 		searchFlag      string
 		labelFlag       string
 		descriptionFlag string
+	}{}
+
+	resourcePoolUpdateFlags = struct {
+		configSource string
 	}{}
 
 	resourcePoolCmd = &cobra.Command{
@@ -28,7 +33,9 @@ Available commands:
   list              List all resource pools
   get               Get detailed information about a specific resource pool
   create            Create a new resource pool
+  update            Update an existing resource pool
   delete            Delete a resource pool
+  list-for-user     List the resource pools a user has access to
   get-users         List users with access to a resource pool
   add-user          Grant a user access to a resource pool
   remove-user       Revoke user access from a resource pool
@@ -414,6 +421,70 @@ Examples:
 			return resource_pool.ResourcePoolRemoveSubnetPool(cmd.Context(), args[0], args[1])
 		},
 	}
+
+	resourcePoolUpdateCmd = &cobra.Command{
+		Use:     "update pool_id",
+		Aliases: []string{"edit"},
+		Short:   "Update an existing resource pool",
+		Long: `Update the label and/or the description of an existing resource pool.
+
+The new values are read from a JSON or YAML configuration. Resource pools are not
+under optimistic concurrency control, so no revision has to be supplied.
+
+Required Arguments:
+  pool_id           The numeric ID of the resource pool to update
+
+Required Flags:
+  --config-source   Source of the resource pool update configuration. Can be 'pipe' or path to a JSON/YAML file.
+
+The configuration accepts the following properties:
+  resourcePoolLabel        (optional) the new label
+  resourcePoolDescription  (optional) the new description
+
+Examples:
+  # Update a resource pool from a file
+  metalcloud-cli resource-pool update 123 --config-source ./pool.json
+
+  # Rename a resource pool from piped input
+  echo '{"resourcePoolLabel":"Production Pool"}' | metalcloud-cli resource-pool update 123 --config-source pipe`,
+		SilenceUsage: true,
+		Annotations:  map[string]string{system.REQUIRED_PERMISSION: system.PERMISSION_RESOURCE_POOLS_WRITE},
+		Args:         cobra.ExactArgs(1),
+		RunE: func(cmd *cobra.Command, args []string) error {
+			config, err := utils.ReadConfigFromPipeOrFile(resourcePoolUpdateFlags.configSource)
+			if err != nil {
+				return err
+			}
+
+			return resource_pool.ResourcePoolUpdate(cmd.Context(), args[0], config)
+		},
+	}
+
+	resourcePoolListForUserCmd = &cobra.Command{
+		Use:     "list-for-user user_id",
+		Aliases: []string{"ls-for-user", "user-pools"},
+		Short:   "List the resource pools a user has access to",
+		Long: `List all resource pools that a given user has been granted access to.
+
+This is the user-centric counterpart of 'resource-pool get-users', which lists the
+users of one pool.
+
+Required Arguments:
+  user_id    The numeric ID of the user
+
+Examples:
+  # List the resource pools of user 42
+  metalcloud-cli resource-pool list-for-user 42
+
+  # Using an alias
+  metalcloud-cli rp user-pools 42`,
+		SilenceUsage: true,
+		Annotations:  map[string]string{system.REQUIRED_PERMISSION: system.PERMISSION_RESOURCE_POOLS_READ},
+		Args:         cobra.ExactArgs(1),
+		RunE: func(cmd *cobra.Command, args []string) error {
+			return resource_pool.ResourcePoolListForUser(cmd.Context(), args[0])
+		},
+	}
 )
 
 func init() {
@@ -433,6 +504,8 @@ func init() {
 	resourcePoolCmd.AddCommand(resourcePoolGetSubnetPoolsCmd)
 	resourcePoolCmd.AddCommand(resourcePoolAddSubnetPoolCmd)
 	resourcePoolCmd.AddCommand(resourcePoolRemoveSubnetPoolCmd)
+	resourcePoolCmd.AddCommand(resourcePoolUpdateCmd)
+	resourcePoolCmd.AddCommand(resourcePoolListForUserCmd)
 
 	// Add flags for list command
 	resourcePoolListCmd.Flags().IntVar(&resourcePoolFlags.pageFlag, "page", 0, "Page number")
@@ -446,4 +519,8 @@ func init() {
 	// Required flags
 	resourcePoolCreateCmd.MarkFlagRequired("label")
 	resourcePoolCreateCmd.MarkFlagRequired("description")
+
+	// Add flags for update command
+	resourcePoolUpdateCmd.Flags().StringVar(&resourcePoolUpdateFlags.configSource, "config-source", "", "Source of the resource pool update configuration. Can be 'pipe' or path to a JSON file.")
+	resourcePoolUpdateCmd.MarkFlagsOneRequired("config-source")
 }

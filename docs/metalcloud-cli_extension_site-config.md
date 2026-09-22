@@ -12,6 +12,7 @@ variables, controlling how the extension behaves on that site.
 Available Commands:
   list             List the site configurations for an extension
   get              Get the configuration values for an extension on a site
+  credentials      Get the credentials stored with an extension's site configuration
   set              Set the configuration values for an extension on a site
   delete           Remove an extension's configuration for a site
   list-for-site    List the extension configurations defined for a site
@@ -38,6 +39,7 @@ Available Commands:
 ### SEE ALSO
 
 * [metalcloud-cli extension](metalcloud-cli_extension.md)	 - Manage platform extensions for workflows, applications, and actions
+* [metalcloud-cli extension site-config credentials](metalcloud-cli_extension_site-config_credentials.md)	 - Get the credentials stored with an extension's site configuration
 * [metalcloud-cli extension site-config delete](metalcloud-cli_extension_site-config_delete.md)	 - Remove an extension's configuration for a site
 * [metalcloud-cli extension site-config get](metalcloud-cli_extension_site-config_get.md)	 - Get the configuration values for an extension on a site
 * [metalcloud-cli extension site-config list](metalcloud-cli_extension_site-config_list.md)	 - List the site configurations for an extension

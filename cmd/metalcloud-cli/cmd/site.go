@@ -19,13 +19,13 @@ var (
 	}{}
 
 	siteOneLinerFlags = struct {
-		registry    string
-		gitHubTag   string
-		sslHostname string
-		imagesTag   string
+		registry     string
+		gitHubTag    string
+		sslHostname  string
+		imagesTag    string
 		tunnelSecret string
-		usePodman   bool
-		inbandMode  bool
+		usePodman    bool
+		inbandMode   bool
 	}{}
 
 	siteCmd = &cobra.Command{
@@ -46,6 +46,8 @@ Available Commands:
   agents         List all agents deployed in a specific site
   get-config     Retrieve the configuration settings for a site
   update-config  Update site configuration using JSON input
+  statistics     Show aggregated statistics for all sites
+  registry-urls  List the container registry URLs available for site agents
 
 Examples:
   # List all sites
@@ -399,6 +401,58 @@ Examples:
 			return site.SiteUpdateConfig(cmd.Context(), args[0], config)
 		},
 	}
+
+	siteStatisticsCmd = &cobra.Command{
+		Use:     "statistics",
+		Aliases: []string{"stats"},
+		Short:   "Show aggregated statistics for all sites",
+		Long: `Show aggregated statistics for all sites: how many sites exist, how many are
+active, and how many site controllers were seen online, may be offline or are offline.
+
+Use --format json or yaml to also get the per-site resource counts.
+
+Required Permissions:
+  sites:read - Permission to view site information
+
+Examples:
+  # Show the site statistics
+  metalcloud-cli site statistics
+
+  # Show the full statistics as JSON
+  metalcloud-cli site stats -f json`,
+		SilenceUsage: true,
+		Annotations:  map[string]string{system.REQUIRED_PERMISSION: system.PERMISSION_SITES_READ},
+		Args:         cobra.NoArgs,
+		RunE: func(cmd *cobra.Command, args []string) error {
+			return site.SiteStatistics(cmd.Context())
+		},
+	}
+
+	siteRegistryUrlsCmd = &cobra.Command{
+		Use:     "registry-urls",
+		Aliases: []string{"registries"},
+		Short:   "List the container registry URLs available for site agents",
+		Long: `List the container registry URLs that site agents can be deployed from.
+
+The returned values are the ones accepted by the --registry flag of
+'metalcloud-cli site one-liner'.
+
+Required Permissions:
+  sites:read - Permission to view site information
+
+Examples:
+  # List the available registry URLs
+  metalcloud-cli site registry-urls
+
+  # List them as JSON
+  metalcloud-cli site registry-urls -f json`,
+		SilenceUsage: true,
+		Annotations:  map[string]string{system.REQUIRED_PERMISSION: system.PERMISSION_SITES_READ},
+		Args:         cobra.NoArgs,
+		RunE: func(cmd *cobra.Command, args []string) error {
+			return site.SiteRegistryUrls(cmd.Context())
+		},
+	}
 )
 
 func init() {
@@ -461,4 +515,8 @@ func init() {
 	siteCmd.AddCommand(siteUpdateConfigCmd)
 	siteUpdateConfigCmd.Flags().StringVar(&siteFlags.configSource, "config-source", "", "Source of the site configuration. Can be 'pipe' for stdin or path to a JSON file (required).")
 	siteUpdateConfigCmd.MarkFlagRequired("config-source")
+
+	siteCmd.AddCommand(siteStatisticsCmd)
+
+	siteCmd.AddCommand(siteRegistryUrlsCmd)
 }

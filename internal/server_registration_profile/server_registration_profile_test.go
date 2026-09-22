@@ -3,6 +3,7 @@ package server_registration_profile
 import (
 	"fmt"
 	"net/http"
+	"strings"
 	"sync/atomic"
 	"testing"
 
@@ -148,6 +149,114 @@ func TestRegistrationProfileGet(t *testing.T) {
 		ctx := testutils.SetupTestContext(ts.URL)
 		if err := RegistrationProfileGet(ctx, "99"); err == nil {
 			t.Error("expected error for HTTP 404, got nil")
+		}
+	})
+}
+
+func TestRegistrationProfileSearch(t *testing.T) {
+	t.Run("WithSiteId", func(t *testing.T) {
+		var query string
+		ts := testutils.NewTestServer(map[string]http.HandlerFunc{
+			"/api/v2/servers/registration-profiles/search": func(w http.ResponseWriter, r *http.Request) {
+				query = r.URL.RawQuery
+				testutils.RawHandler(http.StatusOK, registrationProfileItem)(w, r)
+			},
+		})
+		defer ts.Close()
+
+		ctx := testutils.SetupTestContext(ts.URL)
+
+		out := testutils.CaptureStdout(t, func() {
+			if err := RegistrationProfileSearch(ctx, 7); err != nil {
+				t.Fatalf("expected nil error, got: %v", err)
+			}
+		})
+
+		if !strings.Contains(out, "profile-1") {
+			t.Errorf("expected the profile in the output, got: %s", out)
+		}
+		if !strings.Contains(query, "siteId=7") {
+			t.Errorf("expected the site filter to be sent, got query: %s", query)
+		}
+	})
+
+	t.Run("HttpError500", func(t *testing.T) {
+		ts := testutils.NewTestServer(map[string]http.HandlerFunc{
+			"/api/v2/servers/registration-profiles/search": testutils.ErrorHandler(http.StatusInternalServerError, "boom"),
+		})
+		defer ts.Close()
+
+		ctx := testutils.SetupTestContext(ts.URL)
+		if err := RegistrationProfileSearch(ctx, 1); err == nil {
+			t.Fatal("expected an error for HTTP 500")
+		}
+	})
+}
+
+func TestRegistrationProfileForServer(t *testing.T) {
+	t.Run("HappyPath", func(t *testing.T) {
+		ts := testutils.NewTestServer(map[string]http.HandlerFunc{
+			"/api/v2/servers/registration-profiles/search/for-server/12": testutils.RawHandler(http.StatusOK, registrationProfileItem),
+		})
+		defer ts.Close()
+
+		ctx := testutils.SetupTestContext(ts.URL)
+
+		out := testutils.CaptureStdout(t, func() {
+			if err := RegistrationProfileForServer(ctx, "12"); err != nil {
+				t.Fatalf("expected nil error, got: %v", err)
+			}
+		})
+		if !strings.Contains(out, "profile-1") {
+			t.Errorf("expected the profile in the output, got: %s", out)
+		}
+	})
+
+	t.Run("InvalidServerId", func(t *testing.T) {
+		ctx := testutils.SetupTestContext("http://127.0.0.1:1")
+		if err := RegistrationProfileForServer(ctx, "abc"); err == nil {
+			t.Fatal("expected an error for an invalid server ID")
+		}
+	})
+}
+
+func TestRegistrationProfileSystemDefaults(t *testing.T) {
+	const settingsJSON = `{
+		"registerCredentials": "user",
+		"minimumNumberOfConnectedInterfaces": 1,
+		"enableTpm": true,
+		"defaultVirtualMediaProtocol": "HTTPS",
+		"raidOneDrive": "RAID0",
+		"dpuMode": "dpu"
+	}`
+
+	t.Run("HappyPath", func(t *testing.T) {
+		ts := testutils.NewTestServer(map[string]http.HandlerFunc{
+			"/api/v2/servers/registration-profiles/system-defaults": testutils.RawHandler(http.StatusOK, settingsJSON),
+		})
+		defer ts.Close()
+
+		ctx := testutils.SetupTestContext(ts.URL)
+
+		out := testutils.CaptureStdout(t, func() {
+			if err := RegistrationProfileSystemDefaults(ctx); err != nil {
+				t.Fatalf("expected nil error, got: %v", err)
+			}
+		})
+		if !strings.Contains(out, "HTTPS") {
+			t.Errorf("expected the default settings in the output, got: %s", out)
+		}
+	})
+
+	t.Run("HttpError500", func(t *testing.T) {
+		ts := testutils.NewTestServer(map[string]http.HandlerFunc{
+			"/api/v2/servers/registration-profiles/system-defaults": testutils.ErrorHandler(http.StatusInternalServerError, "boom"),
+		})
+		defer ts.Close()
+
+		ctx := testutils.SetupTestContext(ts.URL)
+		if err := RegistrationProfileSystemDefaults(ctx); err == nil {
+			t.Fatal("expected an error for HTTP 500")
 		}
 	})
 }

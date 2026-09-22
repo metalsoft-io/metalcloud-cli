@@ -1,32 +1,28 @@
 ## metalcloud-cli vm-instance config
 
-Get VM instance configuration
+Show the pending configuration of a VM instance
 
 ### Synopsis
 
-Get VM instance configuration details.
+Show the pending configuration of a VM instance.
 
 This command retrieves the current configuration of a VM instance including
-hardware specifications, network settings, disk configuration, and other
-system parameters. This is useful for auditing, troubleshooting, and
-understanding the VM's current setup.
+hardware specifications, disk configuration and other system parameters,
+together with the revision that guards concurrent updates.
 
-ARGUMENTS:
-  infrastructure_id  The ID of the infrastructure containing the VM instance
-  vm_instance_id     The ID of the VM instance to retrieve configuration for
+Required Arguments:
+  infrastructure_id_or_label  The ID or the label of the infrastructure
+  vm_instance_id              The numeric ID of the VM instance
 
-EXAMPLES:
+Examples:
   # Get configuration for VM instance 67890 in infrastructure 12345
   metalcloud-cli vm-instance config 12345 67890
-  
+
   # Get configuration using alias
-  metalcloud-cli vmi get-config 12345 67890
-  
-  # Get configuration using short alias
-  metalcloud-cli vm config 12345 67890
+  metalcloud-cli vmi get-config my-infra 67890
 
 ```
-metalcloud-cli vm-instance config infrastructure_id vm_instance_id [flags]
+metalcloud-cli vm-instance config infrastructure_id_or_label vm_instance_id [flags]
 ```
 
 ### Options

@@ -33,7 +33,7 @@ func RunFreeform(client TemplateClient, data []byte, fabricId int64, dryRun, ver
 		return nil, err
 	}
 
-	logger.Get().Debug().Msgf("freeform: mode=%s, hgx_prefix=%s, %d switch(es), template=%q (priority %g)",
+	logger.Get().Debug().Msgf("freeform: mode=%s, hgx_prefix=%s, %d switch(es), template=%q (priority %d)",
 		freeform.Mode, hgx, len(plan.devices), freeform.Template.Label, freeform.Template.Priority)
 	for _, dev := range plan.devices {
 		logger.Get().Debug().Msgf("[%s] freeform vars: %s", dev.Label(), varSummary(variables[dev.Id]))

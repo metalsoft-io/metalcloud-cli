@@ -33,6 +33,10 @@ var (
 		emailVerified          bool
 		createWithAccount      bool
 		twoFAToken             string
+		redirectUrl            string
+		newPassword            string
+		currentPassword        string
+		callbackToken          string
 	}{}
 
 	userCmd = &cobra.Command{
@@ -651,6 +655,502 @@ Examples:
 			return user.GenerateUser2FASecret(cmd.Context())
 		},
 	}
+
+	userConfigGetCmd = &cobra.Command{
+		Use:     "config user_id",
+		Aliases: []string{"get-config"},
+		Short:   "Display the configuration of a user",
+		Long: `Display the configuration object of a specific user account.
+
+The configuration holds the settings written by 'user config-update': display name,
+access level, language, brand, login state and password policy flags.
+
+Required Arguments:
+  user_id                 The numeric ID of the user whose configuration to display
+
+Examples:
+  metalcloud-cli user config 12345
+  metalcloud-cli user get-config 12345`,
+		SilenceUsage: true,
+		Annotations:  map[string]string{system.REQUIRED_PERMISSION: system.PERMISSION_USERS_READ},
+		Args:         cobra.ExactArgs(1),
+		RunE: func(cmd *cobra.Command, args []string) error {
+			return user.GetConfiguration(cmd.Context(), args[0])
+		},
+	}
+
+	userUpdateMetaCmd = &cobra.Command{
+		Use:     "update-meta user_id",
+		Aliases: []string{"meta-update"},
+		Short:   "Update the metadata of a user",
+		Long: `Update the metadata of a specific user account.
+
+User metadata carries the GUI settings of the user. The payload replaces the stored
+metadata, so provide the complete object.
+
+Required Arguments:
+  user_id                 The numeric ID of the user whose metadata to update
+
+Required Flags:
+  --config-source         Source of the metadata (JSON/YAML file path or 'pipe')
+
+Configuration File Format (JSON):
+  {
+    "guiSettings": {
+      "defaultPage": "infrastructures"
+    }
+  }
+
+Examples:
+  metalcloud-cli user update-meta 12345 --config-source meta.json
+  echo '{"guiSettings":{}}' | metalcloud-cli user update-meta 12345 --config-source pipe`,
+		SilenceUsage: true,
+		Annotations:  map[string]string{system.REQUIRED_PERMISSION: system.PERMISSION_USERS_WRITE},
+		Args:         cobra.ExactArgs(1),
+		RunE: func(cmd *cobra.Command, args []string) error {
+			config, err := utils.ReadConfigFromPipeOrFile(userFlags.configSource)
+			if err != nil {
+				return err
+			}
+
+			return user.UpdateMeta(cmd.Context(), args[0], config)
+		},
+	}
+
+	userSshKeyGetCmd = &cobra.Command{
+		Use:     "ssh-key user_id key_id",
+		Aliases: []string{"get-ssh-key"},
+		Short:   "Display a single SSH key of a user",
+		Long: `Display one SSH key of a specific user account.
+
+Use 'user ssh-keys' to list the SSH keys of the user and obtain their IDs.
+
+Required Arguments:
+  user_id                 The numeric ID of the user owning the SSH key
+  key_id                  The numeric ID of the SSH key to display
+
+Examples:
+  metalcloud-cli user ssh-key 12345 67890
+  metalcloud-cli user get-ssh-key 12345 67890`,
+		SilenceUsage: true,
+		Annotations:  map[string]string{system.REQUIRED_PERMISSION: system.PERMISSION_USERS_READ},
+		Args:         cobra.ExactArgs(2),
+		RunE: func(cmd *cobra.Command, args []string) error {
+			return user.GetSSHKey(cmd.Context(), args[0], args[1])
+		},
+	}
+
+	userSuspendReasonsCmd = &cobra.Command{
+		Use:     "suspend-reasons user_id",
+		Aliases: []string{"get-suspend-reasons"},
+		Short:   "List the suspend reasons recorded for a user",
+		Long: `List the suspend reasons recorded for a specific user account.
+
+Each entry shows the type of the suspension, the public and private comments left by
+the administrator and the interval during which the suspension was active.
+
+Required Arguments:
+  user_id                 The numeric ID of the user whose suspend reasons to list
+
+Examples:
+  metalcloud-cli user suspend-reasons 12345
+  metalcloud-cli user get-suspend-reasons 12345`,
+		SilenceUsage: true,
+		Annotations:  map[string]string{system.REQUIRED_PERMISSION: system.PERMISSION_USERS_READ},
+		Args:         cobra.ExactArgs(1),
+		RunE: func(cmd *cobra.Command, args []string) error {
+			return user.GetSuspendReasons(cmd.Context(), args[0])
+		},
+	}
+
+	userDelegateCmd = &cobra.Command{
+		Use:     "delegate [command]",
+		Aliases: []string{"delegates"},
+		Short:   "Manage user delegates",
+		Long: `Manage the delegation relationships between user accounts.
+
+A delegate user can act on the resources of the user that delegated access to them.
+These commands allow you to:
+- Grant delegate access to another user (add)
+- Revoke delegate access (remove)
+- List the users that delegated access to a user (parents)
+- List the users a user delegated access to (children)`,
+	}
+
+	userDelegateAddCmd = &cobra.Command{
+		Use:     "add user_id delegate_id",
+		Aliases: []string{"new"},
+		Short:   "Grant a user delegate access to another user",
+		Long: `Grant a delegate user access to the resources of a user.
+
+After this command the delegate user can operate on the resources owned by the user
+identified by user_id.
+
+Required Arguments:
+  user_id                 The numeric ID of the user whose resources are delegated
+  delegate_id             The numeric ID of the user receiving the delegate access
+
+Examples:
+  metalcloud-cli user delegate add 12345 67890`,
+		SilenceUsage: true,
+		Annotations:  map[string]string{system.REQUIRED_PERMISSION: system.PERMISSION_USERS_WRITE},
+		Args:         cobra.ExactArgs(2),
+		RunE: func(cmd *cobra.Command, args []string) error {
+			return user.AddDelegate(cmd.Context(), args[0], args[1])
+		},
+	}
+
+	userDelegateRemoveCmd = &cobra.Command{
+		Use:     "remove user_id delegate_id",
+		Aliases: []string{"rm", "delete"},
+		Short:   "Revoke the delegate access of a user",
+		Long: `Revoke the delegate access previously granted to a user.
+
+Required Arguments:
+  user_id                 The numeric ID of the user whose resources were delegated
+  delegate_id             The numeric ID of the user losing the delegate access
+
+Examples:
+  metalcloud-cli user delegate remove 12345 67890
+  metalcloud-cli user delegate rm 12345 67890`,
+		SilenceUsage: true,
+		Annotations:  map[string]string{system.REQUIRED_PERMISSION: system.PERMISSION_USERS_WRITE},
+		Args:         cobra.ExactArgs(2),
+		RunE: func(cmd *cobra.Command, args []string) error {
+			return user.RemoveDelegate(cmd.Context(), args[0], args[1])
+		},
+	}
+
+	userDelegateParentsCmd = &cobra.Command{
+		Use:     "parents user_id",
+		Aliases: []string{"parent-delegates"},
+		Short:   "List the users that delegated access to a user",
+		Long: `List the users that delegated their resources to a specific user.
+
+Required Arguments:
+  user_id                 The numeric ID of the delegate user
+
+Examples:
+  metalcloud-cli user delegate parents 12345`,
+		SilenceUsage: true,
+		Annotations:  map[string]string{system.REQUIRED_PERMISSION: system.PERMISSION_USERS_READ},
+		Args:         cobra.ExactArgs(1),
+		RunE: func(cmd *cobra.Command, args []string) error {
+			return user.GetParentDelegates(cmd.Context(), args[0])
+		},
+	}
+
+	userDelegateChildrenCmd = &cobra.Command{
+		Use:     "children user_id",
+		Aliases: []string{"child-delegates"},
+		Short:   "List the users a user delegated access to",
+		Long: `List the delegate users that can act on the resources of a specific user.
+
+Required Arguments:
+  user_id                 The numeric ID of the user whose delegates to list
+
+Examples:
+  metalcloud-cli user delegate children 12345`,
+		SilenceUsage: true,
+		Annotations:  map[string]string{system.REQUIRED_PERMISSION: system.PERMISSION_USERS_READ},
+		Args:         cobra.ExactArgs(1),
+		RunE: func(cmd *cobra.Command, args []string) error {
+			return user.GetChildDelegates(cmd.Context(), args[0])
+		},
+	}
+
+	userResendEmailVerificationCmd = &cobra.Command{
+		Use:     "resend-email-verification user_id",
+		Aliases: []string{"resend-verification"},
+		Short:   "Resend the e-mail verification message to a user",
+		Long: `Resend the e-mail address verification message to a specific user.
+
+The user receives a new verification link. Use --redirect-url to control where the
+user lands after following the link.
+
+Required Arguments:
+  user_id                 The numeric ID of the user to notify
+
+Optional Flags:
+  --redirect-url          URL the user is redirected to after verifying the address
+
+Examples:
+  metalcloud-cli user resend-email-verification 12345
+  metalcloud-cli user resend-email-verification 12345 --redirect-url https://metalsoft.io/welcome`,
+		SilenceUsage: true,
+		Annotations:  map[string]string{system.REQUIRED_PERMISSION: system.PERMISSION_USERS_WRITE},
+		Args:         cobra.ExactArgs(1),
+		RunE: func(cmd *cobra.Command, args []string) error {
+			return user.ResendEmailVerification(cmd.Context(), args[0], userFlags.redirectUrl)
+		},
+	}
+
+	userResendInvitationCmd = &cobra.Command{
+		Use:     "resend-invitation user_id",
+		Aliases: []string{"resend-user-invitation"},
+		Short:   "Resend the platform invitation to a user",
+		Long: `Resend the platform invitation message to a specific user.
+
+The user receives a new invitation link. Use --redirect-url to control where the user
+lands after accepting the invitation.
+
+Required Arguments:
+  user_id                 The numeric ID of the user to invite again
+
+Optional Flags:
+  --redirect-url          URL the user is redirected to after accepting the invitation
+
+Examples:
+  metalcloud-cli user resend-invitation 12345
+  metalcloud-cli user resend-invitation 12345 --redirect-url https://metalsoft.io/welcome`,
+		SilenceUsage: true,
+		Annotations:  map[string]string{system.REQUIRED_PERMISSION: system.PERMISSION_USERS_WRITE},
+		Args:         cobra.ExactArgs(1),
+		RunE: func(cmd *cobra.Command, args []string) error {
+			return user.ResendInvitation(cmd.Context(), args[0], userFlags.redirectUrl)
+		},
+	}
+
+	userSendPasswordResetCmd = &cobra.Command{
+		Use:     "send-password-reset user_id",
+		Aliases: []string{"password-reset-send"},
+		Short:   "Send a password reset message to a user (admin)",
+		Long: `Send a password reset message to a specific user as an administrator.
+
+The user receives a link that lets them choose a new password. Use 'user set-password'
+instead to set a password directly without involving the user.
+
+Required Arguments:
+  user_id                 The numeric ID of the user to notify
+
+Optional Flags:
+  --redirect-url          URL the user is redirected to after resetting the password
+
+Examples:
+  metalcloud-cli user send-password-reset 12345
+  metalcloud-cli user send-password-reset 12345 --redirect-url https://metalsoft.io/login`,
+		SilenceUsage: true,
+		Annotations:  map[string]string{system.REQUIRED_PERMISSION: system.PERMISSION_USERS_WRITE},
+		Args:         cobra.ExactArgs(1),
+		RunE: func(cmd *cobra.Command, args []string) error {
+			return user.SendPasswordReset(cmd.Context(), args[0], userFlags.redirectUrl)
+		},
+	}
+
+	userDeleteCmd = &cobra.Command{
+		Use:     "delete user_id",
+		Aliases: []string{"rm"},
+		Short:   "Delete a user and erase their personal information",
+		Long: `Delete a user account and irreversibly erase their personal information.
+
+WARNING: this is NOT the same as 'user archive'. Archiving only marks the account as
+inactive and can be undone with 'user unarchive'. Deleting archives the user AND
+permanently removes their personally identifiable information; it cannot be undone
+and 'user unarchive' will not bring the information back.
+
+Required Arguments:
+  user_id                 The numeric ID of the user to delete
+
+Examples:
+  metalcloud-cli user delete 12345
+  metalcloud-cli user rm 12345`,
+		SilenceUsage: true,
+		Annotations:  map[string]string{system.REQUIRED_PERMISSION: system.PERMISSION_USERS_WRITE},
+		Args:         cobra.ExactArgs(1),
+		RunE: func(cmd *cobra.Command, args []string) error {
+			return user.Delete(cmd.Context(), args[0])
+		},
+	}
+
+	userChangePasswordCmd = &cobra.Command{
+		Use:     "change-password",
+		Aliases: []string{"password-change"},
+		Short:   "Change the password of the current user",
+		Long: `Change the password of the user owning the API key in use.
+
+The new password can be supplied through flags or through a JSON/YAML payload. The
+current password is required unless the platform policy allows changing it without.
+
+Required Flags (when not using --config-source):
+  --new-password          The new password
+
+Optional Flags:
+  --current-password      The password currently in use
+  --config-source         Source of the password change payload (JSON/YAML file or 'pipe')
+
+Configuration File Format (JSON):
+  {
+    "newPassword": "newSecret123",
+    "oldPassword": "oldSecret123"
+  }
+
+Examples:
+  metalcloud-cli user change-password --current-password oldSecret123 --new-password newSecret123
+  echo '{"newPassword":"newSecret123","oldPassword":"oldSecret123"}' | metalcloud-cli user change-password --config-source pipe`,
+		SilenceUsage: true,
+		Annotations:  map[string]string{system.REQUIRED_PERMISSION: system.PERMISSION_USERS_WRITE},
+		Args:         cobra.NoArgs,
+		RunE: func(cmd *cobra.Command, args []string) error {
+			if userFlags.configSource != "" {
+				config, err := utils.ReadConfigFromPipeOrFile(userFlags.configSource)
+				if err != nil {
+					return err
+				}
+
+				return user.ChangePassword(cmd.Context(), config)
+			}
+
+			passwordUpdate := sdk.UserUpdatePassword{
+				NewPassword: userFlags.newPassword,
+			}
+			if userFlags.currentPassword != "" {
+				passwordUpdate.OldPassword = sdk.PtrString(userFlags.currentPassword)
+			}
+
+			configBytes, err := json.Marshal(passwordUpdate)
+			if err != nil {
+				return fmt.Errorf("could not marshal password change payload: %s", err)
+			}
+
+			return user.ChangePassword(cmd.Context(), configBytes)
+		},
+	}
+
+	userInitiatePasswordResetCmd = &cobra.Command{
+		Use:     "initiate-password-reset",
+		Aliases: []string{"password-reset"},
+		Short:   "Send a password reset message to an e-mail address",
+		Long: `Start the self-service password reset flow for an e-mail address.
+
+The owner of the address receives a link that lets them choose a new password.
+
+Required Flags:
+  --email                 The e-mail address of the account to reset
+
+Optional Flags:
+  --redirect-url          URL the user is redirected to after resetting the password
+
+Examples:
+  metalcloud-cli user initiate-password-reset --email user@company.com
+  metalcloud-cli user initiate-password-reset --email user@company.com --redirect-url https://metalsoft.io/login`,
+		SilenceUsage: true,
+		Annotations:  map[string]string{system.REQUIRED_PERMISSION: system.PERMISSION_USERS_WRITE},
+		Args:         cobra.NoArgs,
+		RunE: func(cmd *cobra.Command, args []string) error {
+			return user.InitiatePasswordReset(cmd.Context(), userFlags.email, userFlags.redirectUrl)
+		},
+	}
+
+	userInitiateEmailChangeCmd = &cobra.Command{
+		Use:     "initiate-email-change",
+		Aliases: []string{"email-change"},
+		Short:   "Start changing the e-mail address of the current user",
+		Long: `Start the e-mail address change flow for the user owning the API key in use.
+
+A verification message is sent to the new address; the change takes effect only after
+the link in that message is followed.
+
+Required Flags:
+  --email                 The new e-mail address
+
+Optional Flags:
+  --redirect-url          URL the user is redirected to after verifying the address
+
+Examples:
+  metalcloud-cli user initiate-email-change --email new.address@company.com`,
+		SilenceUsage: true,
+		Annotations:  map[string]string{system.REQUIRED_PERMISSION: system.PERMISSION_USERS_WRITE},
+		Args:         cobra.NoArgs,
+		RunE: func(cmd *cobra.Command, args []string) error {
+			return user.InitiateEmailChange(cmd.Context(), userFlags.email, userFlags.redirectUrl)
+		},
+	}
+
+	userRegenerateJwtSaltCmd = &cobra.Command{
+		Use:     "regenerate-jwt-salt",
+		Aliases: []string{"jwt-salt-regenerate"},
+		Short:   "Regenerate the JWT salt of the current user",
+		Long: `Regenerate the JWT salt of the user owning the API key in use.
+
+WARNING: this invalidates every session and token issued so far for this user, on
+every device and in every browser. You will have to log in again.
+
+Examples:
+  metalcloud-cli user regenerate-jwt-salt`,
+		SilenceUsage: true,
+		Annotations:  map[string]string{system.REQUIRED_PERMISSION: system.PERMISSION_USERS_WRITE},
+		Args:         cobra.NoArgs,
+		RunE: func(cmd *cobra.Command, args []string) error {
+			return user.RegenerateJwtSalt(cmd.Context())
+		},
+	}
+
+	userPermissionsCmd = &cobra.Command{
+		Use:     "permissions",
+		Aliases: []string{"my-permissions"},
+		Short:   "List the permissions of the current user",
+		Long: `List the permissions of the user owning the API key in use.
+
+The permissions come from the roles assigned to the user and determine which API
+operations, and therefore which CLI commands, are available.
+
+Examples:
+  metalcloud-cli user permissions
+  metalcloud-cli user permissions -f json`,
+		SilenceUsage: true,
+		Annotations:  map[string]string{system.REQUIRED_PERMISSION: system.PERMISSION_USERS_READ},
+		Args:         cobra.NoArgs,
+		RunE: func(cmd *cobra.Command, args []string) error {
+			return user.GetPermissions(cmd.Context())
+		},
+	}
+
+	userVerifyEmailCmd = &cobra.Command{
+		Use:     "verify-email",
+		Aliases: []string{"email-verify"},
+		Short:   "Verify an e-mail address with a verification token",
+		Long: `Consume an e-mail verification token, as following the link from the e-mail would.
+
+The token is the value of the 'token' query parameter of the verification link that
+the platform sent by e-mail.
+
+Required Flags:
+  --token                 The e-mail verification token
+
+Examples:
+  metalcloud-cli user verify-email --token eyJhbGciOi...`,
+		SilenceUsage: true,
+		Annotations:  map[string]string{system.REQUIRED_PERMISSION: system.PERMISSION_USERS_WRITE},
+		Args:         cobra.NoArgs,
+		RunE: func(cmd *cobra.Command, args []string) error {
+			return user.VerifyEmail(cmd.Context(), userFlags.callbackToken)
+		},
+	}
+
+	userResetPasswordCmd = &cobra.Command{
+		Use:     "reset-password",
+		Aliases: []string{"handle-password-reset"},
+		Short:   "Consume a password reset token",
+		Long: `Consume a password reset token, as following the link from the e-mail would.
+
+The token is the value of the 'token' query parameter of the password reset link that
+the platform sent by e-mail. The API exposes no password parameter on this endpoint:
+it only validates the token and redirects to the page where the new password is
+chosen. Use 'user change-password' to set a password from the CLI, or
+'user set-password' to set the password of another user as an administrator.
+
+Required Flags:
+  --token                 The password reset token
+
+Examples:
+  metalcloud-cli user reset-password --token eyJhbGciOi...`,
+		SilenceUsage: true,
+		Annotations:  map[string]string{system.REQUIRED_PERMISSION: system.PERMISSION_USERS_WRITE},
+		Args:         cobra.NoArgs,
+		RunE: func(cmd *cobra.Command, args []string) error {
+			return user.ResetPassword(cmd.Context(), userFlags.callbackToken)
+		},
+	}
 )
 
 func init() {
@@ -726,6 +1226,72 @@ func init() {
 	userCmd.AddCommand(userSetPasswordCmd)
 	userSetPasswordCmd.Flags().StringVar(&userFlags.password, "password", "", "The new password to set for the user.")
 	userSetPasswordCmd.MarkFlagRequired("password")
+
+	// User configuration and metadata
+	userCmd.AddCommand(userConfigGetCmd)
+
+	userCmd.AddCommand(userUpdateMetaCmd)
+	userUpdateMetaCmd.Flags().StringVar(&userFlags.configSource, "config-source", "", "Source of the user metadata. Can be 'pipe' or path to a JSON/YAML file.")
+	userUpdateMetaCmd.MarkFlagsOneRequired("config-source")
+
+	// Single SSH key
+	userCmd.AddCommand(userSshKeyGetCmd)
+
+	// Suspend reasons
+	userCmd.AddCommand(userSuspendReasonsCmd)
+
+	// Delegates
+	userCmd.AddCommand(userDelegateCmd)
+	userDelegateCmd.AddCommand(userDelegateAddCmd)
+	userDelegateCmd.AddCommand(userDelegateRemoveCmd)
+	userDelegateCmd.AddCommand(userDelegateParentsCmd)
+	userDelegateCmd.AddCommand(userDelegateChildrenCmd)
+
+	// Notifications
+	userCmd.AddCommand(userResendEmailVerificationCmd)
+	userResendEmailVerificationCmd.Flags().StringVar(&userFlags.redirectUrl, "redirect-url", "", "URL the user is redirected to after verifying the e-mail address.")
+
+	userCmd.AddCommand(userResendInvitationCmd)
+	userResendInvitationCmd.Flags().StringVar(&userFlags.redirectUrl, "redirect-url", "", "URL the user is redirected to after accepting the invitation.")
+
+	userCmd.AddCommand(userSendPasswordResetCmd)
+	userSendPasswordResetCmd.Flags().StringVar(&userFlags.redirectUrl, "redirect-url", "", "URL the user is redirected to after resetting the password.")
+
+	// Delete (archives the user and erases their personal information)
+	userCmd.AddCommand(userDeleteCmd)
+
+	// Self-service: password
+	userCmd.AddCommand(userChangePasswordCmd)
+	userChangePasswordCmd.Flags().StringVar(&userFlags.newPassword, "new-password", "", "The new password of the current user.")
+	userChangePasswordCmd.Flags().StringVar(&userFlags.currentPassword, "current-password", "", "The password currently in use.")
+	userChangePasswordCmd.Flags().StringVar(&userFlags.configSource, "config-source", "", "Source of the password change payload. Can be 'pipe' or path to a JSON/YAML file.")
+	userChangePasswordCmd.MarkFlagsOneRequired("new-password", "config-source")
+	userChangePasswordCmd.MarkFlagsMutuallyExclusive("new-password", "config-source")
+	userChangePasswordCmd.MarkFlagsMutuallyExclusive("current-password", "config-source")
+
+	userCmd.AddCommand(userInitiatePasswordResetCmd)
+	userInitiatePasswordResetCmd.Flags().StringVar(&userFlags.email, "email", "", "The e-mail address of the account to reset.")
+	userInitiatePasswordResetCmd.Flags().StringVar(&userFlags.redirectUrl, "redirect-url", "", "URL the user is redirected to after resetting the password.")
+	userInitiatePasswordResetCmd.MarkFlagRequired("email")
+
+	// Self-service: e-mail address
+	userCmd.AddCommand(userInitiateEmailChangeCmd)
+	userInitiateEmailChangeCmd.Flags().StringVar(&userFlags.email, "email", "", "The new e-mail address of the current user.")
+	userInitiateEmailChangeCmd.Flags().StringVar(&userFlags.redirectUrl, "redirect-url", "", "URL the user is redirected to after verifying the e-mail address.")
+	userInitiateEmailChangeCmd.MarkFlagRequired("email")
+
+	// Self-service: sessions and permissions
+	userCmd.AddCommand(userRegenerateJwtSaltCmd)
+	userCmd.AddCommand(userPermissionsCmd)
+
+	// Self-service: e-mail verification and password reset callbacks
+	userCmd.AddCommand(userVerifyEmailCmd)
+	userVerifyEmailCmd.Flags().StringVar(&userFlags.callbackToken, "token", "", "The e-mail verification token.")
+	userVerifyEmailCmd.MarkFlagRequired("token")
+
+	userCmd.AddCommand(userResetPasswordCmd)
+	userResetPasswordCmd.Flags().StringVar(&userFlags.callbackToken, "token", "", "The password reset token.")
+	userResetPasswordCmd.MarkFlagRequired("token")
 
 	// Self-service: API key
 	userCmd.AddCommand(userApiKeyGetCmd)

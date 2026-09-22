@@ -11,6 +11,7 @@ func makeVMInstance(id int) map[string]any {
 	return map[string]any{
 		"id":               id,
 		"label":            "vm-1",
+		"instanceType":     "vm",
 		"infrastructureId": float64(123),
 		"groupId":          float64(10),
 		"serviceStatus":    "active",
@@ -42,6 +43,7 @@ func makeVMInstance(id int) map[string]any {
 
 func TestVMInstanceGet_HappyPath(t *testing.T) {
 	ts := testutils.NewTestServer(map[string]http.HandlerFunc{
+		"/api/v2/infrastructures":                    infraHandler(),
 		"/api/v2/infrastructures/123/vm-instances/1": testutils.JSONHandler(200, makeVMInstance(1)),
 	})
 	defer ts.Close()
@@ -74,6 +76,7 @@ func TestVMInstanceGet_InvalidVMId(t *testing.T) {
 
 func TestVMInstanceGet_404(t *testing.T) {
 	ts := testutils.NewTestServer(map[string]http.HandlerFunc{
+		"/api/v2/infrastructures":                      infraHandler(),
 		"/api/v2/infrastructures/123/vm-instances/999": testutils.ErrorHandler(404, "not found"),
 	})
 	defer ts.Close()
@@ -99,6 +102,7 @@ func TestVMInstanceGetConfig_HappyPath(t *testing.T) {
 		"updatedTimestamp": "2024-01-01T00:00:00Z",
 	}
 	ts := testutils.NewTestServer(map[string]http.HandlerFunc{
+		"/api/v2/infrastructures":                           infraHandler(),
 		"/api/v2/infrastructures/123/vm-instances/1/config": testutils.JSONHandler(200, config),
 	})
 	defer ts.Close()
@@ -124,6 +128,7 @@ func TestVMInstanceGetConfig_InvalidIds(t *testing.T) {
 
 func TestVMInstanceGetConfig_Error(t *testing.T) {
 	ts := testutils.NewTestServer(map[string]http.HandlerFunc{
+		"/api/v2/infrastructures":                           infraHandler(),
 		"/api/v2/infrastructures/123/vm-instances/1/config": testutils.ErrorHandler(500, "internal error"),
 	})
 	defer ts.Close()
@@ -138,6 +143,7 @@ func TestVMInstanceGetConfig_Error(t *testing.T) {
 
 func TestVMInstanceGetPowerStatus_HappyPath(t *testing.T) {
 	ts := testutils.NewTestServer(map[string]http.HandlerFunc{
+		"/api/v2/infrastructures":                                 infraHandler(),
 		"/api/v2/infrastructures/123/vm-instances/1/power-status": testutils.RawHandler(200, `"on"`),
 	})
 	defer ts.Close()
@@ -163,6 +169,7 @@ func TestVMInstanceGetPowerStatus_InvalidIds(t *testing.T) {
 
 func TestVMInstanceGetPowerStatus_Error(t *testing.T) {
 	ts := testutils.NewTestServer(map[string]http.HandlerFunc{
+		"/api/v2/infrastructures":                                 infraHandler(),
 		"/api/v2/infrastructures/123/vm-instances/1/power-status": testutils.ErrorHandler(500, "internal error"),
 	})
 	defer ts.Close()
@@ -177,6 +184,7 @@ func TestVMInstanceGetPowerStatus_Error(t *testing.T) {
 
 func TestVMInstanceStart_HappyPath(t *testing.T) {
 	ts := testutils.NewTestServer(map[string]http.HandlerFunc{
+		"/api/v2/infrastructures":                          infraHandler(),
 		"/api/v2/infrastructures/123/vm-instances/1/start": testutils.RawHandler(204, ""),
 	})
 	defer ts.Close()
@@ -189,6 +197,7 @@ func TestVMInstanceStart_HappyPath(t *testing.T) {
 
 func TestVMInstanceShutdown_HappyPath(t *testing.T) {
 	ts := testutils.NewTestServer(map[string]http.HandlerFunc{
+		"/api/v2/infrastructures":                             infraHandler(),
 		"/api/v2/infrastructures/123/vm-instances/1/shutdown": testutils.RawHandler(204, ""),
 	})
 	defer ts.Close()
@@ -201,6 +210,7 @@ func TestVMInstanceShutdown_HappyPath(t *testing.T) {
 
 func TestVMInstanceReboot_HappyPath(t *testing.T) {
 	ts := testutils.NewTestServer(map[string]http.HandlerFunc{
+		"/api/v2/infrastructures":                           infraHandler(),
 		"/api/v2/infrastructures/123/vm-instances/1/reboot": testutils.RawHandler(204, ""),
 	})
 	defer ts.Close()
@@ -236,6 +246,7 @@ func TestVMInstancePowerControl_InvalidIds(t *testing.T) {
 
 func TestVMInstancePowerControl_Error(t *testing.T) {
 	ts := testutils.NewTestServer(map[string]http.HandlerFunc{
+		"/api/v2/infrastructures":                          infraHandler(),
 		"/api/v2/infrastructures/123/vm-instances/1/start": testutils.ErrorHandler(500, "internal error"),
 	})
 	defer ts.Close()
@@ -270,6 +281,7 @@ func TestVMInstanceGetCredentials_InvalidVMId(t *testing.T) {
 
 func TestVMInstanceGetCredentials_Error(t *testing.T) {
 	ts := testutils.NewTestServer(map[string]http.HandlerFunc{
+		"/api/v2/infrastructures":                                infraHandler(),
 		"/api/v2/infrastructures/123/vm-instances/1/credentials": testutils.ErrorHandler(404, "not found"),
 	})
 	defer ts.Close()
@@ -284,6 +296,7 @@ func TestVMInstanceGetCredentials_Error(t *testing.T) {
 
 func TestVMInstanceGroupCreate_HappyPath(t *testing.T) {
 	ts := testutils.NewTestServer(map[string]http.HandlerFunc{
+		"/api/v2/infrastructures":                        infraHandler(),
 		"/api/v2/infrastructures/123/vm-instance-groups": testutils.JSONHandler(201, makeVMGroup(2)),
 	})
 	defer ts.Close()
@@ -306,6 +319,7 @@ func TestVMInstanceGroupCreate_InvalidInfraId(t *testing.T) {
 
 func TestVMInstanceGroupCreate_Error(t *testing.T) {
 	ts := testutils.NewTestServer(map[string]http.HandlerFunc{
+		"/api/v2/infrastructures":                        infraHandler(),
 		"/api/v2/infrastructures/123/vm-instance-groups": testutils.ErrorHandler(500, "internal error"),
 	})
 	defer ts.Close()
@@ -329,6 +343,7 @@ func TestVMInstanceGroupUpdate_HappyPath(t *testing.T) {
 		"updatedTimestamp": "2024-01-01T00:00:00Z",
 	}
 	ts := testutils.NewTestServer(map[string]http.HandlerFunc{
+		"/api/v2/infrastructures":                                 infraHandler(),
 		"/api/v2/infrastructures/123/vm-instance-groups/1":        testutils.JSONHandler(200, makeVMGroup(1)),
 		"/api/v2/infrastructures/123/vm-instance-groups/1/config": testutils.JSONHandler(200, groupConfig),
 	})
@@ -342,6 +357,7 @@ func TestVMInstanceGroupUpdate_HappyPath(t *testing.T) {
 
 func TestVMInstanceGroupUpdate_GetError(t *testing.T) {
 	ts := testutils.NewTestServer(map[string]http.HandlerFunc{
+		"/api/v2/infrastructures":                          infraHandler(),
 		"/api/v2/infrastructures/123/vm-instance-groups/1": testutils.ErrorHandler(404, "not found"),
 	})
 	defer ts.Close()
@@ -366,6 +382,7 @@ func TestVMInstanceGroupDelete_InvalidInfraId(t *testing.T) {
 
 func TestVMInstanceGroupDelete_404(t *testing.T) {
 	ts := testutils.NewTestServer(map[string]http.HandlerFunc{
+		"/api/v2/infrastructures":                          infraHandler(),
 		"/api/v2/infrastructures/123/vm-instance-groups/1": testutils.ErrorHandler(404, "not found"),
 	})
 	defer ts.Close()

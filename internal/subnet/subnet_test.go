@@ -2,6 +2,7 @@ package subnet
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"net/http"
 	"net/http/httptest"
@@ -98,5 +99,128 @@ func TestSubnetIpRanges(t *testing.T) {
 	ctx := setupTestContext(ts.URL)
 	if err := SubnetIpRanges(ctx, "1"); err != nil {
 		t.Errorf("expected nil error, got: %v", err)
+	}
+}
+
+// ---------------------------------------------------------------------------
+// capacity, remove-ip and remove-ip-range
+// ---------------------------------------------------------------------------
+
+// subnetItem satisfies the required properties of sdk.Subnet. Its revision (4)
+// is the entity tag the remove commands must echo back in If-Match.
+var subnetItem = map[string]any{
+	"id": 1, "label": "subnet-1", "name": "subnet-1", "revision": 4,
+	"ipVersion": "ipv4", "networkAddress": "10.0.0.0", "prefixLength": 24,
+	"netmask": "255.255.255.0", "isPool": false,
+	"parentSubnetId": nil, "defaultGatewayAddress": "10.0.0.1",
+	"allocationDenylist": []any{}, "childOverlapAllowRules": []any{},
+	"annotations": map[string]any{}, "tags": map[string]any{},
+	"createdAt": "2024-01-01T00:00:00Z", "updatedAt": "2024-01-01T00:00:00Z",
+}
+
+var subnetCapacityItem = map[string]any{
+	"subnetId": 1, "prefix": "10.0.0.0/24", "isPool": false,
+	"totalIpCount": "254", "freeIpCount": "200", "usedIpCount": "54",
+	"freePrefixes": nil, "freePrefixCounts": nil,
+	"requestedPrefixLength": nil, "allocatablePrefixCount": nil,
+}
+
+type subnetRecordedRequest struct {
+	Method string
+	Path   string
+	Header http.Header
+}
+
+// newSubnetCapacityServer serves the subnet, its capacity and the two delete
+// sub-resources, recording every request for assertions.
+func newSubnetCapacityServer(reqs *[]subnetRecordedRequest) *httptest.Server {
+	return httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		*reqs = append(*reqs, subnetRecordedRequest{Method: r.Method, Path: r.URL.Path, Header: r.Header.Clone()})
+		w.Header().Set("Content-Type", "application/json")
+		switch r.URL.Path {
+		case "/api/v2/subnets/1/capacity":
+			_ = json.NewEncoder(w).Encode(subnetCapacityItem)
+		case "/api/v2/subnets/1/ips/7", "/api/v2/subnets/1/ip-ranges/9":
+			w.WriteHeader(http.StatusNoContent)
+		case "/api/v2/subnets/1":
+			_ = json.NewEncoder(w).Encode(subnetItem)
+		default:
+			http.NotFound(w, r)
+		}
+	}))
+}
+
+func TestSubnetCapacity(t *testing.T) {
+	var reqs []subnetRecordedRequest
+	ts := newSubnetCapacityServer(&reqs)
+	defer ts.Close()
+
+	ctx := setupTestContext(ts.URL)
+	if err := SubnetCapacity(ctx, "1", 0); err != nil {
+		t.Fatalf("expected nil error, got: %v", err)
+	}
+
+	last := reqs[len(reqs)-1]
+	if last.Method != http.MethodGet || last.Path != "/api/v2/subnets/1/capacity" {
+		t.Fatalf("unexpected request %s %s", last.Method, last.Path)
+	}
+}
+
+func TestSubnetCapacity_InvalidId(t *testing.T) {
+	ctx := setupTestContext("http://localhost")
+	if err := SubnetCapacity(ctx, "not-a-number", 0); err == nil {
+		t.Fatal("expected an error for an invalid subnet ID, got nil")
+	}
+}
+
+func TestSubnetIpRemove_SendsIfMatch(t *testing.T) {
+	var reqs []subnetRecordedRequest
+	ts := newSubnetCapacityServer(&reqs)
+	defer ts.Close()
+
+	ctx := setupTestContext(ts.URL)
+	if err := SubnetIpRemove(ctx, "1", "7"); err != nil {
+		t.Fatalf("expected nil error, got: %v", err)
+	}
+
+	last := reqs[len(reqs)-1]
+	if last.Method != http.MethodDelete || last.Path != "/api/v2/subnets/1/ips/7" {
+		t.Fatalf("unexpected request %s %s", last.Method, last.Path)
+	}
+	if got := last.Header.Get("If-Match"); got != "4" {
+		t.Errorf("expected If-Match 4 (the subnet revision), got %q", got)
+	}
+}
+
+func TestSubnetIpRangeRemove_SendsIfMatch(t *testing.T) {
+	var reqs []subnetRecordedRequest
+	ts := newSubnetCapacityServer(&reqs)
+	defer ts.Close()
+
+	ctx := setupTestContext(ts.URL)
+	if err := SubnetIpRangeRemove(ctx, "1", "9"); err != nil {
+		t.Fatalf("expected nil error, got: %v", err)
+	}
+
+	last := reqs[len(reqs)-1]
+	if last.Method != http.MethodDelete || last.Path != "/api/v2/subnets/1/ip-ranges/9" {
+		t.Fatalf("unexpected request %s %s", last.Method, last.Path)
+	}
+	if got := last.Header.Get("If-Match"); got != "4" {
+		t.Errorf("expected If-Match 4 (the subnet revision), got %q", got)
+	}
+}
+
+func TestSubnetIpRemove_InvalidIpId(t *testing.T) {
+	var reqs []subnetRecordedRequest
+	ts := newSubnetCapacityServer(&reqs)
+	defer ts.Close()
+
+	ctx := setupTestContext(ts.URL)
+	if err := SubnetIpRemove(ctx, "1", "not-a-number"); err == nil {
+		t.Fatal("expected an error for an invalid IP ID, got nil")
+	}
+	if err := SubnetIpRangeRemove(ctx, "1", "not-a-number"); err == nil {
+		t.Fatal("expected an error for an invalid IP range ID, got nil")
 	}
 }

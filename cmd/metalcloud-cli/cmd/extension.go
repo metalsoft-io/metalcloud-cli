@@ -520,6 +520,7 @@ variables, controlling how the extension behaves on that site.
 Available Commands:
   list             List the site configurations for an extension
   get              Get the configuration values for an extension on a site
+  credentials      Get the credentials stored with an extension's site configuration
   set              Set the configuration values for an extension on a site
   delete           Remove an extension's configuration for a site
   list-for-site    List the extension configurations defined for a site`,
@@ -563,6 +564,29 @@ Examples:
 		Args:         cobra.ExactArgs(2),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			return extension.ExtensionSiteConfigGet(cmd.Context(), args[0], args[1])
+		},
+	}
+
+	extensionSiteConfigCredentialsCmd = &cobra.Command{
+		Use:     "credentials extension_id_or_label site_id_or_label",
+		Aliases: []string{"creds", "get-credentials"},
+		Short:   "Get the credentials stored with an extension's site configuration",
+		Long: `Get the credentials of the configuration an extension has on a specific site.
+
+The returned object is free-form: its keys depend on what the extension stores.
+
+Arguments:
+  extension_id_or_label    The unique ID or label of the extension
+  site_id_or_label         The unique ID or label of the site
+
+Examples:
+  metalcloud extension site-config credentials 12345 1
+  metalcloud extension site-config creds my-workflow-v1 my-site -f json`,
+		SilenceUsage: true,
+		Annotations:  map[string]string{system.REQUIRED_PERMISSION: system.PERMISSION_EXTENSIONS_READ},
+		Args:         cobra.ExactArgs(2),
+		RunE: func(cmd *cobra.Command, args []string) error {
+			return extension.ExtensionSiteConfigCredentials(cmd.Context(), args[0], args[1])
 		},
 	}
 
@@ -689,6 +713,7 @@ func init() {
 	extensionCmd.AddCommand(extensionSiteConfigCmd)
 	extensionSiteConfigCmd.AddCommand(extensionSiteConfigListCmd)
 	extensionSiteConfigCmd.AddCommand(extensionSiteConfigGetCmd)
+	extensionSiteConfigCmd.AddCommand(extensionSiteConfigCredentialsCmd)
 
 	extensionSiteConfigCmd.AddCommand(extensionSiteConfigSetCmd)
 	extensionSiteConfigSetCmd.Flags().StringVar(&extensionFlags.configSource, "config-source", "", "Source of the site configuration values. Can be 'pipe' or path to a JSON file.")

@@ -13,7 +13,9 @@ Available commands:
   list              List all resource pools
   get               Get detailed information about a specific resource pool
   create            Create a new resource pool
+  update            Update an existing resource pool
   delete            Delete a resource pool
+  list-for-user     List the resource pools a user has access to
   get-users         List users with access to a resource pool
   add-user          Grant a user access to a resource pool
   remove-user       Revoke user access from a resource pool
@@ -66,7 +68,9 @@ Examples:
 * [metalcloud-cli resource-pool get-subnet-pools](metalcloud-cli_resource-pool_get-subnet-pools.md)	 - List subnet pools assigned to a resource pool
 * [metalcloud-cli resource-pool get-users](metalcloud-cli_resource-pool_get-users.md)	 - List users with access to a resource pool
 * [metalcloud-cli resource-pool list](metalcloud-cli_resource-pool_list.md)	 - List all resource pools with optional filtering and pagination
+* [metalcloud-cli resource-pool list-for-user](metalcloud-cli_resource-pool_list-for-user.md)	 - List the resource pools a user has access to
 * [metalcloud-cli resource-pool remove-server](metalcloud-cli_resource-pool_remove-server.md)	 - Remove a server from a resource pool
 * [metalcloud-cli resource-pool remove-subnet-pool](metalcloud-cli_resource-pool_remove-subnet-pool.md)	 - Remove a subnet pool from a resource pool
 * [metalcloud-cli resource-pool remove-user](metalcloud-cli_resource-pool_remove-user.md)	 - Revoke user access from a resource pool
+* [metalcloud-cli resource-pool update](metalcloud-cli_resource-pool_update.md)	 - Update an existing resource pool
 

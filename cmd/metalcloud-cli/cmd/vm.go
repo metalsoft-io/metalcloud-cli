@@ -14,6 +14,23 @@ var (
 		powerAction  string
 	}{}
 
+	// vmListFlags holds the `vm list` filters. Slice flags are not reset
+	// between runs, so they get their own struct and are never shared with
+	// another sub-command.
+	vmListFlags = struct {
+		filterId                  []string
+		filterSiteId              []string
+		filterName                []string
+		filterAddress             []string
+		filterHost                []string
+		filterHosts               []string
+		filterTypeId              []string
+		filterPoolId              []string
+		filterAdministrationState []string
+		filterNumaNodes           []string
+		filterInfrastructureId    []string
+	}{}
+
 	vmCmd = &cobra.Command{
 		Use:     "vm [command]",
 		Aliases: []string{"vms", "virtual-machine"},
@@ -23,6 +40,7 @@ configuration updates, and monitoring. Supports operations like start, stop, reb
 status checking, and configuration updates through JSON files or pipes.
 
 Available Commands:
+  list           List all VMs with optional filtering
   get            Retrieve detailed VM information and configuration
   power-status   Check current power state of a VM
   start          Power on a VM
@@ -32,10 +50,67 @@ Available Commands:
   console-info   Get remote console connection details
 
 Examples:
+  metalcloud-cli vm list
   metalcloud-cli vm get 12345
   metalcloud-cli vm start 12345
   metalcloud-cli vm update 12345 --config-source config.json
   cat vm-config.json | metalcloud-cli vm update 12345 --config-source pipe`,
+	}
+
+	vmListCmd = &cobra.Command{
+		Use:     "list",
+		Aliases: []string{"ls"},
+		Short:   "List all virtual machines with optional filtering",
+		Long: `List every virtual machine visible to the current user, across all VM pools and
+infrastructures. Results are paginated transparently - the command walks every
+page and prints the combined list.
+
+Optional Flags:
+  --filter-id                     Filter by VM ID.
+  --filter-site-id                Filter by site ID.
+  --filter-name                   Filter by VM name.
+  --filter-address                Filter by VM address.
+  --filter-host                   Filter by host name.
+  --filter-hosts                  Filter by hosts list.
+  --filter-type-id                Filter by VM type ID.
+  --filter-pool-id                Filter by VM pool ID.
+  --filter-administration-state   Filter by administration state.
+  --filter-numa-nodes             Filter by NUMA node.
+  --filter-infrastructure-id      Filter by infrastructure ID.
+
+Every filter accepts the API filter DSL ('$eq:value', '$not:$eq:value',
+'$contains:value', ...); a bare value is treated as '$eq:value'. Repeat a flag
+or pass a comma-separated list to combine several values.
+
+Examples:
+  # List all VMs
+  metalcloud-cli vm list
+
+  # List the VMs of one pool
+  metalcloud-cli vm list --filter-pool-id 70
+
+  # List the running VMs of one infrastructure
+  metalcloud-cli vm list --filter-infrastructure-id 123 --filter-administration-state active
+
+  # List VMs whose name contains 'prod'
+  metalcloud-cli vm list --filter-name '$contains:prod'`,
+		SilenceUsage: true,
+		Annotations:  map[string]string{system.REQUIRED_PERMISSION: system.PERMISSION_VMS_READ},
+		RunE: func(cmd *cobra.Command, args []string) error {
+			return vm.VMList(cmd.Context(), vm.VMFilters{
+				Id:                  vmListFlags.filterId,
+				SiteId:              vmListFlags.filterSiteId,
+				Name:                vmListFlags.filterName,
+				Address:             vmListFlags.filterAddress,
+				Host:                vmListFlags.filterHost,
+				Hosts:               vmListFlags.filterHosts,
+				TypeId:              vmListFlags.filterTypeId,
+				PoolId:              vmListFlags.filterPoolId,
+				AdministrationState: vmListFlags.filterAdministrationState,
+				NumaNodes:           vmListFlags.filterNumaNodes,
+				InfrastructureId:    vmListFlags.filterInfrastructureId,
+			})
+		},
 	}
 
 	vmGetCmd = &cobra.Command{
@@ -244,6 +319,19 @@ func init() {
 	rootCmd.AddCommand(vmCmd)
 
 	// VM commands
+	vmCmd.AddCommand(vmListCmd)
+	vmListCmd.Flags().StringSliceVar(&vmListFlags.filterId, "filter-id", nil, "Filter the result by VM ID.")
+	vmListCmd.Flags().StringSliceVar(&vmListFlags.filterSiteId, "filter-site-id", nil, "Filter the result by site ID.")
+	vmListCmd.Flags().StringSliceVar(&vmListFlags.filterName, "filter-name", nil, "Filter the result by VM name.")
+	vmListCmd.Flags().StringSliceVar(&vmListFlags.filterAddress, "filter-address", nil, "Filter the result by VM address.")
+	vmListCmd.Flags().StringSliceVar(&vmListFlags.filterHost, "filter-host", nil, "Filter the result by host name.")
+	vmListCmd.Flags().StringSliceVar(&vmListFlags.filterHosts, "filter-hosts", nil, "Filter the result by hosts list.")
+	vmListCmd.Flags().StringSliceVar(&vmListFlags.filterTypeId, "filter-type-id", nil, "Filter the result by VM type ID.")
+	vmListCmd.Flags().StringSliceVar(&vmListFlags.filterPoolId, "filter-pool-id", nil, "Filter the result by VM pool ID.")
+	vmListCmd.Flags().StringSliceVar(&vmListFlags.filterAdministrationState, "filter-administration-state", nil, "Filter the result by administration state.")
+	vmListCmd.Flags().StringSliceVar(&vmListFlags.filterNumaNodes, "filter-numa-nodes", nil, "Filter the result by NUMA node.")
+	vmListCmd.Flags().StringSliceVar(&vmListFlags.filterInfrastructureId, "filter-infrastructure-id", nil, "Filter the result by infrastructure ID.")
+
 	vmCmd.AddCommand(vmGetCmd)
 
 	vmCmd.AddCommand(vmPowerStatusCmd)

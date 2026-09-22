@@ -8,22 +8,20 @@ Get VM instance power status.
 
 This command retrieves the current power state of a VM instance, indicating
 whether it is running, stopped, starting, stopping, or in another power state.
-This is useful for monitoring and understanding the operational status of
-virtual machines.
 
-ARGUMENTS:
-  infrastructure_id  The ID of the infrastructure containing the VM instance
-  vm_instance_id     The ID of the VM instance to check power status for
+Required Arguments:
+  infrastructure_id_or_label  The ID or the label of the infrastructure
+  vm_instance_id              The numeric ID of the VM instance
 
-EXAMPLES:
+Examples:
   # Get power status of VM instance 67890 in infrastructure 12345
   metalcloud-cli vm-instance power-status 12345 67890
-  
+
   # Get power status using alias
-  metalcloud-cli vm power-status 12345 67890
+  metalcloud-cli vm power-status my-infra 67890
 
 ```
-metalcloud-cli vm-instance power-status infrastructure_id vm_instance_id [flags]
+metalcloud-cli vm-instance power-status infrastructure_id_or_label vm_instance_id [flags]
 ```
 
 ### Options

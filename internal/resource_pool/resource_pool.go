@@ -365,3 +365,57 @@ func ResourcePoolRemoveSubnetPool(ctx context.Context, poolId string, subnetPool
 	logger.Get().Info().Msgf("Subnet pool '%s' successfully removed from resource pool '%s'", subnetPoolId, poolId)
 	return nil
 }
+
+// ResourcePoolUpdate updates the label and description of a resource pool from
+// a JSON/YAML configuration.
+//
+// The endpoint is a PUT and the SDK request exposes no If-Match setter, so no
+// entity tag is sent - resource pools are not under optimistic concurrency
+// control.
+func ResourcePoolUpdate(ctx context.Context, poolId string, config []byte) error {
+	logger.Get().Info().Msgf("Updating resource pool '%s'", poolId)
+
+	poolIdNumber, err := strconv.ParseInt(poolId, 10, 64)
+	if err != nil {
+		err := fmt.Errorf("invalid resource pool ID: '%s'", poolId)
+		logger.Get().Error().Err(err).Msg("")
+		return err
+	}
+
+	var updateResourcePool sdk.UpdateResourcePool
+	if err := utils.UnmarshalContent(config, &updateResourcePool); err != nil {
+		return err
+	}
+
+	client := api.GetApiClient(ctx)
+
+	pool, httpRes, err := client.ResourcePoolAPI.UpdateResourcePool(ctx, poolIdNumber).
+		UpdateResourcePool(updateResourcePool).
+		Execute()
+	if err := response_inspector.InspectResponse(httpRes, err); err != nil {
+		return err
+	}
+
+	return formatter.PrintResult(pool, &resourcePoolPrintConfig)
+}
+
+// ResourcePoolListForUser lists the resource pools a user has access to.
+func ResourcePoolListForUser(ctx context.Context, userId string) error {
+	logger.Get().Info().Msgf("Listing resource pools for user '%s'", userId)
+
+	userIdNumber, err := strconv.ParseInt(userId, 10, 64)
+	if err != nil {
+		err := fmt.Errorf("invalid user ID: '%s'", userId)
+		logger.Get().Error().Err(err).Msg("")
+		return err
+	}
+
+	client := api.GetApiClient(ctx)
+
+	pools, httpRes, err := client.ResourcePoolAPI.GetUserResourcePools(ctx, userIdNumber).Execute()
+	if err := response_inspector.InspectResponse(httpRes, err); err != nil {
+		return err
+	}
+
+	return formatter.PrintResult(pools, &resourcePoolPrintConfig)
+}

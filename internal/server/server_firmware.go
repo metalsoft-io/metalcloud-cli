@@ -389,3 +389,100 @@ func ServerFirmwareGenerateAudit(ctx context.Context, config []byte) error {
 
 	return formatter.PrintResult(audit, nil)
 }
+
+var serverFirmwareBatchUpgradePrintConfig = formatter.PrintConfig{
+	FieldsConfig: map[string]formatter.RecordFieldConfig{
+		"Successful": {
+			Title:    "Successful",
+			MaxWidth: 60,
+			Order:    1,
+		},
+		"Failed": {
+			Title:    "Failed",
+			MaxWidth: 60,
+			Order:    2,
+		},
+	},
+}
+
+// ServerFirmwareUpgradeBatch upgrades the firmware of several servers at once.
+func ServerFirmwareUpgradeBatch(ctx context.Context, serverIds []string) error {
+	logger.Get().Info().Msgf("Upgrading firmware for %d servers", len(serverIds))
+
+	serverIdsNumeric, err := utils.GetInt64SliceFromStrings(serverIds)
+	if err != nil {
+		return err
+	}
+
+	client := api.GetApiClient(ctx)
+
+	// The body is always sent: skipping the optional setter would serialize a
+	// literal null, which the API rejects with 400.
+	upgradeConfig := sdk.BatchServerFirmwareUpgrade{
+		ServerIds: serverIdsNumeric,
+	}
+
+	result, httpRes, err := client.ServerFirmwareAPI.
+		UpgradeFirmwareOfServersBatch(ctx).
+		BatchServerFirmwareUpgrade(upgradeConfig).
+		Execute()
+	if err := response_inspector.InspectResponse(httpRes, err); err != nil {
+		return err
+	}
+
+	return formatter.PrintResult(result, &serverFirmwareBatchUpgradePrintConfig)
+}
+
+// ServerFirmwareScheduleUpgradeBatch schedules a firmware upgrade for a batch of
+// servers. The API models this as an action on one server (the first id given),
+// with the full list of servers to schedule carried in the request body.
+func ServerFirmwareScheduleUpgradeBatch(ctx context.Context, serverIds []string, scheduleTimestamp string, confirmationRequired bool) error {
+	if len(serverIds) == 0 {
+		err := fmt.Errorf("at least one server ID is required")
+		logger.Get().Error().Err(err).Msg("")
+		return err
+	}
+
+	logger.Get().Info().Msgf("Scheduling batch firmware upgrade for %d servers", len(serverIds))
+
+	serverIdNumeric, err := GetServerId(serverIds[0])
+	if err != nil {
+		return err
+	}
+
+	serverIdsNumeric, err := utils.GetInt64SliceFromStrings(serverIds)
+	if err != nil {
+		return err
+	}
+
+	// The body is always sent: skipping the optional setter would serialize a
+	// literal null, which the API rejects with 400.
+	scheduleConfig := sdk.BatchScheduleServerFirmwareUpgrade{
+		ServerIds:            serverIdsNumeric,
+		ConfirmationRequired: sdk.PtrBool(confirmationRequired),
+	}
+
+	if scheduleTimestamp != "" {
+		scheduleConfig.ScheduleUpdateTimestamp = sdk.PtrString(scheduleTimestamp)
+	}
+
+	client := api.GetApiClient(ctx)
+
+	result, httpRes, err := client.ServerFirmwareAPI.
+		BatchScheduleServerFirmwareUpgrade(ctx, serverIdNumeric).
+		BatchScheduleServerFirmwareUpgrade(scheduleConfig).
+		Execute()
+	if err := response_inspector.InspectResponse(httpRes, err); err != nil {
+		return err
+	}
+
+	return formatter.PrintResult(result, &formatter.PrintConfig{
+		FieldsConfig: map[string]formatter.RecordFieldConfig{
+			"Failed": {
+				Title:    "Failed",
+				MaxWidth: 60,
+				Order:    1,
+			},
+		},
+	})
+}
