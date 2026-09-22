@@ -615,12 +615,12 @@ func TestNetworkDeviceReset_InvalidId(t *testing.T) {
 	}
 }
 
-// --- NetworkDeviceSetFailed ---
+// --- NetworkDeviceSetDefective ---
 
-func TestNetworkDeviceSetFailed_HappyPath(t *testing.T) {
+func TestNetworkDeviceSetDefective_HappyPath(t *testing.T) {
 	ts := testutils.NewTestServer(map[string]http.HandlerFunc{
 		"/api/v2/network-devices/1": testutils.RawHandler(http.StatusOK, ndItem),
-		"/api/v2/network-devices/1/actions/set-as-failed": func(w http.ResponseWriter, r *http.Request) {
+		"/api/v2/network-devices/1/actions/set-as-defective": func(w http.ResponseWriter, r *http.Request) {
 			w.Header().Set("Content-Type", "application/json")
 			fmt.Fprint(w, ndItem)
 		},
@@ -628,29 +628,29 @@ func TestNetworkDeviceSetFailed_HappyPath(t *testing.T) {
 	defer ts.Close()
 
 	ctx := testutils.SetupTestContext(ts.URL)
-	if err := NetworkDeviceSetFailed(ctx, "1"); err != nil {
+	if err := NetworkDeviceSetDefective(ctx, "1"); err != nil {
 		t.Errorf("expected nil error, got: %v", err)
 	}
 }
 
-func TestNetworkDeviceSetFailed_NotFound(t *testing.T) {
+func TestNetworkDeviceSetDefective_NotFound(t *testing.T) {
 	ts := testutils.NewTestServer(map[string]http.HandlerFunc{
 		"/api/v2/network-devices/99": testutils.ErrorHandler(http.StatusNotFound, "not found"),
 	})
 	defer ts.Close()
 
 	ctx := testutils.SetupTestContext(ts.URL)
-	if err := NetworkDeviceSetFailed(ctx, "99"); err == nil {
+	if err := NetworkDeviceSetDefective(ctx, "99"); err == nil {
 		t.Error("expected error for 404, got nil")
 	}
 }
 
-func TestNetworkDeviceSetFailed_InvalidId(t *testing.T) {
+func TestNetworkDeviceSetDefective_InvalidId(t *testing.T) {
 	ts := testutils.NewTestServer(map[string]http.HandlerFunc{})
 	defer ts.Close()
 
 	ctx := testutils.SetupTestContext(ts.URL)
-	if err := NetworkDeviceSetFailed(ctx, "not-a-number"); err == nil {
+	if err := NetworkDeviceSetDefective(ctx, "not-a-number"); err == nil {
 		t.Error("expected error for invalid ID, got nil")
 	}
 }

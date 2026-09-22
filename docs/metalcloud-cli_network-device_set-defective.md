@@ -1,19 +1,19 @@
-## metalcloud-cli network-device set-failed
+## metalcloud-cli network-device set-defective
 
-Set the network device as failed
+Set the network device as defective
 
 ### Synopsis
 
-Change the operational status of a network device to failed.
+Change the operational status of a network device to defective.
 
 ```
-metalcloud-cli network-device set-failed <network_device_id> [flags]
+metalcloud-cli network-device set-defective <network_device_id> [flags]
 ```
 
 ### Options
 
 ```
-  -h, --help   help for set-failed
+  -h, --help   help for set-defective
 ```
 
 ### Options inherited from parent commands

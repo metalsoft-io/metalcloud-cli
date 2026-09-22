@@ -1,27 +1,27 @@
-## metalcloud-cli network-device revert-failed-state
+## metalcloud-cli network-device revert-defective-state
 
-Take a network device out of the failed state
+Take a network device out of the defective state
 
 ### Synopsis
 
-Take a network device out of the failed state and back to its previous status,
-the counterpart of 'set-failed'.
+Take a network device out of the defective state and back to its previous status,
+the counterpart of 'set-defective'.
 
 Required Arguments:
   network_device_id   The numeric id or label of the network device
 
 Examples:
-  # Revert the failed state of device 12345
-  metalcloud-cli network-device revert-failed-state 12345
+  # Revert the defective state of device 12345
+  metalcloud-cli network-device revert-defective-state 12345
 
 ```
-metalcloud-cli network-device revert-failed-state <network_device_id> [flags]
+metalcloud-cli network-device revert-defective-state <network_device_id> [flags]
 ```
 
 ### Options
 
 ```
-  -h, --help   help for revert-failed-state
+  -h, --help   help for revert-defective-state
 ```
 
 ### Options inherited from parent commands

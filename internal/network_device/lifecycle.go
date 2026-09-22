@@ -2,6 +2,8 @@ package network_device
 
 import (
 	"context"
+	"fmt"
+	"net/http"
 
 	"github.com/metalsoft-io/metalcloud-cli/pkg/api"
 	"github.com/metalsoft-io/metalcloud-cli/pkg/formatter"
@@ -105,27 +107,25 @@ func NetworkDeviceReturnToPlannedConfigExample(ctx context.Context) error {
 	return formatter.PrintResult(returnConfig, nil)
 }
 
-// NetworkDeviceRevertFailedState takes a network device out of the failed
-// state and back to its previous status.
-func NetworkDeviceRevertFailedState(ctx context.Context, networkDeviceRef string) error {
-	logger.Get().Info().Msgf("Reverting failed state of network device '%s'", networkDeviceRef)
+// NetworkDeviceRevertDefectiveState takes a network device out of the
+// defective state and back to its previous status. The API action was renamed
+// from revert-failed-state to revert-defective-state and the generated SDK
+// still carries the old path, so the request is issued directly.
+func NetworkDeviceRevertDefectiveState(ctx context.Context, networkDeviceRef string) error {
+	logger.Get().Info().Msgf("Reverting defective state of network device '%s'", networkDeviceRef)
 
 	networkDeviceIdNumeric, revision, err := resolveNetworkDeviceIdAndRevision(ctx, networkDeviceRef)
 	if err != nil {
 		return err
 	}
 
-	client := api.GetApiClient(ctx)
-
-	networkDevice, httpRes, err := client.NetworkDeviceAPI.
-		RevertNetworkDeviceFailedState(ctx, networkDeviceIdNumeric).
-		IfMatch(revision).
-		Execute()
-	if err := response_inspector.InspectResponse(httpRes, err); err != nil {
+	path := fmt.Sprintf("/api/v2/network-devices/%d/actions/revert-defective-state", networkDeviceIdNumeric)
+	body, err := api.RawJSONRequest(ctx, http.MethodPost, path, nil, api.IfMatchHeader(revision))
+	if err != nil {
 		return err
 	}
 
-	return formatter.PrintResult(networkDevice, &NetworkDevicePrintConfig)
+	return utils.PrintRawObject(body, &NetworkDevicePrintConfig)
 }
 
 // NetworkDeviceStartRegistration starts the onboarding registration of a

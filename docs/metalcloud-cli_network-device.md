@@ -56,11 +56,11 @@ monitor network devices.
 * [metalcloud-cli network-device reset](metalcloud-cli_network-device_reset.md)	 - Reset network device to factory defaults (destructive operation)
 * [metalcloud-cli network-device return-to-planned](metalcloud-cli_network-device_return-to-planned.md)	 - Move an archived network device back to planned
 * [metalcloud-cli network-device return-to-planned-config-example](metalcloud-cli_network-device_return-to-planned-config-example.md)	 - Example configuration for the return-to-planned command
-* [metalcloud-cli network-device revert-failed-state](metalcloud-cli_network-device_revert-failed-state.md)	 - Take a network device out of the failed state
+* [metalcloud-cli network-device revert-defective-state](metalcloud-cli_network-device_revert-defective-state.md)	 - Take a network device out of the defective state
 * [metalcloud-cli network-device run-extension](metalcloud-cli_network-device_run-extension.md)	 - Run an extension against a network device
 * [metalcloud-cli network-device run-extension-config-example](metalcloud-cli_network-device_run-extension-config-example.md)	 - Example configuration for the run-extension command
 * [metalcloud-cli network-device secret](metalcloud-cli_network-device_secret.md)	 - Manage the secrets of a network device
-* [metalcloud-cli network-device set-failed](metalcloud-cli_network-device_set-failed.md)	 - Set the network device as failed
+* [metalcloud-cli network-device set-defective](metalcloud-cli_network-device_set-defective.md)	 - Set the network device as defective
 * [metalcloud-cli network-device set-health-monitoring-filter](metalcloud-cli_network-device_set-health-monitoring-filter.md)	 - Set the network device filter of a health monitoring socket
 * [metalcloud-cli network-device set-port-status](metalcloud-cli_network-device_set-port-status.md)	 - Enable or disable a specific port on the network device
 * [metalcloud-cli network-device snapshot](metalcloud-cli_network-device_snapshot.md)	 - Inspect the configuration snapshots of a network device

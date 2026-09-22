@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"net/http"
 	"regexp"
 	"slices"
 	"strconv"
@@ -640,25 +641,24 @@ func NetworkDeviceReset(ctx context.Context, networkDeviceId string) error {
 	return nil
 }
 
-func NetworkDeviceSetFailed(ctx context.Context, networkDeviceId string) error {
-	logger.Get().Info().Msgf("Changing network device %s status to failed", networkDeviceId)
+// NetworkDeviceSetDefective changes the operational status of a network device
+// to defective. The API action was renamed from set-as-failed to
+// set-as-defective (with the status enum value renamed accordingly) and the
+// generated SDK still carries the old path, so the request is issued directly.
+func NetworkDeviceSetDefective(ctx context.Context, networkDeviceId string) error {
+	logger.Get().Info().Msgf("Changing network device %s status to defective", networkDeviceId)
 
 	networkDeviceIdNumeric, eTag, err := getNetworkDeviceIdAndRevision(ctx, networkDeviceId)
 	if err != nil {
 		return err
 	}
 
-	client := api.GetApiClient(ctx)
-
-	_, httpRes, err := client.NetworkDeviceAPI.
-		SetNetworkDeviceAsFailed(ctx, networkDeviceIdNumeric).
-		IfMatch(eTag).
-		Execute()
-	if err := response_inspector.InspectResponse(httpRes, err); err != nil {
+	path := fmt.Sprintf("/api/v2/network-devices/%d/actions/set-as-defective", networkDeviceIdNumeric)
+	if _, err := api.RawJSONRequest(ctx, http.MethodPost, path, nil, api.IfMatchHeader(eTag)); err != nil {
 		return err
 	}
 
-	logger.Get().Info().Msgf("Network device %s status changed to failed", networkDeviceId)
+	logger.Get().Info().Msgf("Network device %s status changed to defective", networkDeviceId)
 	return nil
 }
 

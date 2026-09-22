@@ -239,7 +239,7 @@ func ndNewServer(t *testing.T, rec *ndRecorder) *httptest.Server {
 		"/api/v2/network-devices/1/replace":                         testutils.JSONHandler(200, map[string]any{"status": "ok"}),
 		"/api/v2/network-devices/1/re-provision":                    testutils.JSONHandler(200, ndJobInfo),
 		"/api/v2/network-devices/1/actions/return-to-planned":       testutils.JSONHandler(200, ndDeviceItem),
-		"/api/v2/network-devices/1/actions/revert-failed-state":     testutils.JSONHandler(200, ndDeviceItem),
+		"/api/v2/network-devices/1/actions/revert-defective-state":  testutils.JSONHandler(200, ndDeviceItem),
 		"/api/v2/network-devices/1/actions/start-registration":      testutils.JSONHandler(200, ndDeviceItem),
 		"/api/v2/network-devices/1/actions/mark-installation-ready": testutils.JSONHandler(200, ndDeviceItem),
 		"/api/v2/network-devices/1/actions/run-extension":           testutils.JSONHandler(200, ndJobInfo),
@@ -609,8 +609,11 @@ func TestNetworkDeviceLifecycleCommands(t *testing.T) {
 		t.Errorf("expected object body and If-Match 1, got: %+v", got)
 	}
 
-	if err := NetworkDeviceRevertFailedState(ctx, "1"); err != nil {
-		t.Errorf("NetworkDeviceRevertFailedState: %v", err)
+	if err := NetworkDeviceRevertDefectiveState(ctx, "1"); err != nil {
+		t.Errorf("NetworkDeviceRevertDefectiveState: %v", err)
+	}
+	if got := rec.last(); got.Method != http.MethodPost || got.Header.Get("If-Match") != "1" {
+		t.Errorf("expected POST with If-Match 1, got: %+v", got)
 	}
 	if err := NetworkDeviceStartRegistration(ctx, "1"); err != nil {
 		t.Errorf("NetworkDeviceStartRegistration: %v", err)

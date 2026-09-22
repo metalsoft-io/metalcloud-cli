@@ -550,15 +550,16 @@ Examples:
 		},
 	}
 
-	networkDeviceSetAsFailedCmd = &cobra.Command{
-		Use:          "set-failed <network_device_id>",
-		Short:        "Set the network device as failed",
-		Long:         `Change the operational status of a network device to failed.`,
+	networkDeviceSetAsDefectiveCmd = &cobra.Command{
+		Use:          "set-defective <network_device_id>",
+		Aliases:      []string{"set-failed"},
+		Short:        "Set the network device as defective",
+		Long:         `Change the operational status of a network device to defective.`,
 		SilenceUsage: true,
 		Annotations:  map[string]string{system.REQUIRED_PERMISSION: system.PERMISSION_SWITCHES_WRITE},
 		Args:         cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
-			return network_device.NetworkDeviceSetFailed(cmd.Context(), args[0])
+			return network_device.NetworkDeviceSetDefective(cmd.Context(), args[0])
 		},
 	}
 
@@ -649,7 +650,7 @@ func init() {
 
 	networkDeviceCmd.AddCommand(networkDeviceResetCmd)
 
-	networkDeviceCmd.AddCommand(networkDeviceSetAsFailedCmd)
+	networkDeviceCmd.AddCommand(networkDeviceSetAsDefectiveCmd)
 
 	networkDeviceCmd.AddCommand(networkDeviceEnableSyslogCmd)
 }
@@ -1836,23 +1837,24 @@ Examples:
 		},
 	}
 
-	networkDeviceRevertFailedStateCmd = &cobra.Command{
-		Use:   "revert-failed-state <network_device_id>",
-		Short: "Take a network device out of the failed state",
-		Long: `Take a network device out of the failed state and back to its previous status,
-the counterpart of 'set-failed'.
+	networkDeviceRevertDefectiveStateCmd = &cobra.Command{
+		Use:     "revert-defective-state <network_device_id>",
+		Aliases: []string{"revert-failed-state"},
+		Short:   "Take a network device out of the defective state",
+		Long: `Take a network device out of the defective state and back to its previous status,
+the counterpart of 'set-defective'.
 
 Required Arguments:
   network_device_id   The numeric id or label of the network device
 
 Examples:
-  # Revert the failed state of device 12345
-  metalcloud-cli network-device revert-failed-state 12345`,
+  # Revert the defective state of device 12345
+  metalcloud-cli network-device revert-defective-state 12345`,
 		SilenceUsage: true,
 		Annotations:  map[string]string{system.REQUIRED_PERMISSION: system.PERMISSION_SWITCHES_WRITE},
 		Args:         cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
-			return network_device.NetworkDeviceRevertFailedState(cmd.Context(), args[0])
+			return network_device.NetworkDeviceRevertDefectiveState(cmd.Context(), args[0])
 		},
 	}
 
@@ -2183,7 +2185,7 @@ func init() {
 	networkDeviceReturnToPlannedCmd.Flags().StringVar(&networkDeviceSubFlags.configSource, "config-source", "", "Source of the return configuration. Can be 'pipe' or path to a JSON file.")
 
 	networkDeviceCmd.AddCommand(networkDeviceReturnToPlannedConfigExampleCmd)
-	networkDeviceCmd.AddCommand(networkDeviceRevertFailedStateCmd)
+	networkDeviceCmd.AddCommand(networkDeviceRevertDefectiveStateCmd)
 	networkDeviceCmd.AddCommand(networkDeviceStartRegistrationCmd)
 	networkDeviceCmd.AddCommand(networkDeviceMarkInstallationReadyCmd)
 
