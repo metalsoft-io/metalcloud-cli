@@ -11,7 +11,7 @@ This command displays comprehensive information about a firmware binary includin
 - Hardware compatibility information (vendorSupportedDevices, vendorSupportedSystems)
 - Binary file details (vendorDownloadUrl, cacheDownloadUrl, externalId)
 - Installation requirements (rebootRequired, updateSeverity)
-- Vendor information and release timestamp
+- Vendor release timestamp
 - Creation and modification timestamps
 - Associated links and resources
 

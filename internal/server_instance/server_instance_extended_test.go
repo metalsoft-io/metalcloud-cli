@@ -83,7 +83,7 @@ func TestServerInstanceGroupUpdate_Success(t *testing.T) {
 	})
 	defer ts.Close()
 	ctx := setupTestContext(ts.URL)
-	if err := ServerInstanceGroupUpdate(ctx, "10", "new-label", 2, 0); err != nil {
+	if err := ServerInstanceGroupUpdate(ctx, "10", "new-label", 2, 0, nil); err != nil {
 		t.Errorf("ServerInstanceGroupUpdate: expected nil error, got: %v", err)
 	}
 }
@@ -94,7 +94,7 @@ func TestServerInstanceGroupUpdate_Error(t *testing.T) {
 	})
 	defer ts.Close()
 	ctx := setupTestContext(ts.URL)
-	if err := ServerInstanceGroupUpdate(ctx, "10", "new-label", 2, 0); err == nil {
+	if err := ServerInstanceGroupUpdate(ctx, "10", "new-label", 2, 0, nil); err == nil {
 		t.Error("ServerInstanceGroupUpdate with 500: expected error, got nil")
 	}
 }

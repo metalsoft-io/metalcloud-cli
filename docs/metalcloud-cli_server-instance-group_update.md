@@ -16,8 +16,16 @@ Flags:
   --label string           Set the instance group label
   --instance-count int     Set the count of instance group instances (must be > 0)
   --os-template-id int     Set the instance group OS template ID (must be > 0)
+  --server-id strings            Pin the group to a specific server (can be repeated). Shorthand for
+                                 --server-filter-rule server_id:equals:<id>
+  --server-filter-rule strings   Restrict the servers the group may use, as property:operator[:value]
+                                 (can be repeated). Properties: tags, rack, server_id, inventory_ID.
+                                 Operators: equals, contains, does_not_contain, starts_with,
+                                 does_not_starts_with, matches_regexp, affinity, anti_affinity.
 
-Note: At least one of the flags (--label, --instance-count, --os-template-id) must be provided.
+Note: At least one of the flags (--label, --instance-count, --os-template-id, --server-id,
+--server-filter-rule) must be provided. When given, the server filter rules replace the group's
+existing rules.
 
 Examples:
   # Update the label of instance group 1234
@@ -28,6 +36,9 @@ Examples:
 
   # Change OS template
   metalcloud-cli server-instance-group update 1234 --os-template-id 25
+
+  # Pin the group to server 236
+  metalcloud-cli server-instance-group update 1234 --server-id 236
 
   # Update multiple properties at once
   metalcloud-cli server-instance-group update 1234 --label "updated-servers" --instance-count 3
@@ -42,10 +53,12 @@ metalcloud-cli server-instance-group update server_instance_group_id [flags]
 ### Options
 
 ```
-  -h, --help                 help for update
-      --instance-count int   Set the count of instance group instances.
-      --label string         Set the instance group label.
-      --os-template-id int   Set the instance group OS template Id.
+  -h, --help                             help for update
+      --instance-count int               Set the count of instance group instances.
+      --label string                     Set the instance group label.
+      --os-template-id int               Set the instance group OS template Id.
+      --server-filter-rule stringArray   Restrict the servers the group may use, as property:operator[:value]. Replaces the existing rules. Can be repeated.
+      --server-id strings                Pin the group to a specific server ID. Replaces the existing rules. Can be repeated.
 ```
 
 ### Options inherited from parent commands

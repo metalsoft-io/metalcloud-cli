@@ -153,7 +153,7 @@ func TestCleanupPolicyCreate(t *testing.T) {
 		defer ts.Close()
 
 		ctx := testutils.SetupTestContext(ts.URL)
-		if err := CleanupPolicyCreate(ctx, "policy-1", true, false, false, "raid1", "raid1", "raid5", "raid5", ""); err != nil {
+		if err := CleanupPolicyCreate(ctx, "policy-1", true, false, false, false, false, "raid1", "raid1", "raid5", "raid5", ""); err != nil {
 			t.Errorf("expected nil error, got: %v", err)
 		}
 	})

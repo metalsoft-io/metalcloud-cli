@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"net/http"
 	"strconv"
+	"strings"
 
 	"github.com/metalsoft-io/metalcloud-cli/internal/infrastructure"
 	"github.com/metalsoft-io/metalcloud-cli/internal/os_template"
@@ -312,7 +313,44 @@ func ServerInstanceGroupGet(ctx context.Context, serverInstanceGroupId string) e
 	return formatter.PrintResult(serverInstanceGroup, &serverInstanceGroupPrintConfig)
 }
 
-func ServerInstanceGroupCreate(ctx context.Context, infrastructureIdOrLabel string, label string, serverTypeId string, instanceCount string, osTemplateId string) error {
+// BuildServerFilterRules turns the --server-filter-rule and --server-id flag values into the
+// serverFilteringRules sent to the API. A rule is "property:operator[:value]" (the value may
+// itself contain colons, e.g. a regular expression, and is optional for the affinity operators).
+// Each server ID becomes a rule pinning the group to that server (server_id equals ID).
+func BuildServerFilterRules(rules []string, serverIds []string) ([]sdk.ServerFilterRule, error) {
+	result := make([]sdk.ServerFilterRule, 0, len(rules)+len(serverIds))
+
+	for _, rule := range rules {
+		parts := strings.SplitN(rule, ":", 3)
+		if len(parts) < 2 || strings.TrimSpace(parts[0]) == "" || strings.TrimSpace(parts[1]) == "" {
+			return nil, fmt.Errorf("invalid server filter rule '%s': expected property:operator[:value]", rule)
+		}
+
+		var value *string
+		if len(parts) == 3 {
+			value = &parts[2]
+		}
+
+		result = append(result, *sdk.NewServerFilterRule(
+			strings.TrimSpace(parts[0]),
+			strings.TrimSpace(parts[1]),
+			*sdk.NewNullableString(value),
+		))
+	}
+
+	for _, serverId := range serverIds {
+		serverId = strings.TrimSpace(serverId)
+		if _, err := strconv.ParseInt(serverId, 10, 64); err != nil {
+			return nil, fmt.Errorf("invalid server ID: '%s'", serverId)
+		}
+
+		result = append(result, *sdk.NewServerFilterRule("server_id", "equals", *sdk.NewNullableString(&serverId)))
+	}
+
+	return result, nil
+}
+
+func ServerInstanceGroupCreate(ctx context.Context, infrastructureIdOrLabel string, label string, serverTypeId string, instanceCount string, osTemplateId string, serverFilteringRules []sdk.ServerFilterRule) error {
 	logger.Get().Info().Msgf("Create new server instance group in infrastructure %s", infrastructureIdOrLabel)
 
 	serverInstanceCountNumerical, err := utils.GetFloat32FromString(instanceCount)
@@ -336,6 +374,10 @@ func ServerInstanceGroupCreate(ctx context.Context, infrastructureIdOrLabel stri
 		InstanceCount:       sdk.PtrInt32(int32(serverInstanceCountNumerical)),
 	}
 
+	if len(serverFilteringRules) > 0 {
+		payload.ServerFilteringRules = serverFilteringRules
+	}
+
 	if osTemplateId != "" {
 		osTemplate, err := os_template.GetOsTemplateByIdOrLabel(ctx, osTemplateId)
 		if err != nil {
@@ -355,7 +397,7 @@ func ServerInstanceGroupCreate(ctx context.Context, infrastructureIdOrLabel stri
 	return formatter.PrintResult(serverInstanceGroupInfo, &serverInstanceGroupPrintConfig)
 }
 
-func ServerInstanceGroupUpdate(ctx context.Context, serverInstanceGroupId string, label string, instanceCount int, osTemplateId int) error {
+func ServerInstanceGroupUpdate(ctx context.Context, serverInstanceGroupId string, label string, instanceCount int, osTemplateId int, serverFilteringRules []sdk.ServerFilterRule) error {
 	logger.Get().Info().Msgf("Update server instance group %s", serverInstanceGroupId)
 
 	serverInstanceGroupIdNumerical, err := GetServerInstanceGroupId(serverInstanceGroupId)
@@ -375,6 +417,10 @@ func ServerInstanceGroupUpdate(ctx context.Context, serverInstanceGroupId string
 
 	if osTemplateId > 0 {
 		payload.OsTemplateId = sdk.PtrInt64(int64(osTemplateId))
+	}
+
+	if len(serverFilteringRules) > 0 {
+		payload.ServerFilteringRules = serverFilteringRules
 	}
 
 	client := api.GetApiClient(ctx)

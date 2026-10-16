@@ -8,20 +8,22 @@ import (
 
 var (
 	eventFlags = struct {
-		filterId               []string
-		filterType             []string
-		filterSeverity         []string
-		filterVisibility       []string
-		filterInfrastructureId []string
-		filterUserId           []string
-		filterServerId         []string
-		filterJobId            []string
-		filterSiteId           []string
-		sortBy                 []string
-		page                   int
-		limit                  int
-		search                 string
-		searchBy               []string
+		filterId                  []string
+		filterType                []string
+		filterSeverity            []string
+		filterVisibility          []string
+		filterInfrastructureId    []string
+		filterUserId              []string
+		filterUserIdAuthenticated []string
+		filterServerId            []string
+		filterNetworkDeviceId     []string
+		filterJobId               []string
+		filterSiteId              []string
+		sortBy                    []string
+		page                      int
+		limit                     int
+		search                    string
+		searchBy                  []string
 	}{}
 
 	eventCmd = &cobra.Command{
@@ -61,13 +63,23 @@ with support for multiple filtering options, sorting, pagination, and text searc
 FILTERING OPTIONS:
   --filter-id                  Filter by specific event IDs (supports multiple values)
   --filter-type               Filter by event type (e.g., deployment, server_provision, job_execution)
-  --filter-severity           Filter by severity level (e.g., info, warning, error, critical)
+  --filter-severity           Filter by event level (info, warn, error, debug)
   --filter-visibility         Filter by visibility scope (e.g., public, private, internal)
   --filter-infrastructure-id  Filter by infrastructure ID (supports multiple values)
   --filter-user-id            Filter by user ID who triggered the event (supports multiple values)
+  --filter-user-id-authenticated  Filter by the ID of the authenticated user (supports multiple values)
   --filter-server-id          Filter by server ID associated with the event (supports multiple values)
+  --filter-network-device-id  Filter by network device ID (supports multiple values)
   --filter-job-id             Filter by job ID (supports multiple values)
   --filter-site-id            Filter by site/datacenter ID (supports multiple values)
+
+OUTPUT:
+  The table, CSV and markdown formats include, besides the event ID, type, level, visibility, time
+  and title: the message, the user and authenticated user IDs, and the IDs of the entities the
+  event belongs to (infrastructure, server, network device, network device controller, storage,
+  VM pool, site and job). In the text and markdown tables, the ID columns that are empty for every
+  event shown are left out; CSV always carries all of them. Use -f json or -f yaml for the full
+  record, including the context, the authenticated user's email and the remote IP address.
 
 SEARCH AND SORTING:
   --search                    Free-text search across event content
@@ -92,7 +104,7 @@ Examples:
   metalcloud event list --search "failed deployment" --search-by title,description
 
   # Combine multiple filters
-  metalcloud event list --filter-type server_provision --filter-severity warning,error --filter-site-id 5678
+  metalcloud event list --filter-type server_provision --filter-severity warn,error --filter-site-id 5678
 
   # Paginated results
   metalcloud event list --page 2 --limit 50
@@ -104,20 +116,22 @@ Examples:
 		Args:         cobra.NoArgs,
 		RunE: func(cmd *cobra.Command, args []string) error {
 			return event.EventList(cmd.Context(), event.ListFlags{
-				FilterId:               eventFlags.filterId,
-				FilterType:             eventFlags.filterType,
-				FilterSeverity:         eventFlags.filterSeverity,
-				FilterVisibility:       eventFlags.filterVisibility,
-				FilterInfrastructureId: eventFlags.filterInfrastructureId,
-				FilterUserId:           eventFlags.filterUserId,
-				FilterServerId:         eventFlags.filterServerId,
-				FilterJobId:            eventFlags.filterJobId,
-				FilterSiteId:           eventFlags.filterSiteId,
-				SortBy:                 eventFlags.sortBy,
-				Page:                   eventFlags.page,
-				Limit:                  eventFlags.limit,
-				Search:                 eventFlags.search,
-				SearchBy:               eventFlags.searchBy,
+				FilterId:                  eventFlags.filterId,
+				FilterType:                eventFlags.filterType,
+				FilterSeverity:            eventFlags.filterSeverity,
+				FilterVisibility:          eventFlags.filterVisibility,
+				FilterInfrastructureId:    eventFlags.filterInfrastructureId,
+				FilterUserId:              eventFlags.filterUserId,
+				FilterUserIdAuthenticated: eventFlags.filterUserIdAuthenticated,
+				FilterServerId:            eventFlags.filterServerId,
+				FilterNetworkDeviceId:     eventFlags.filterNetworkDeviceId,
+				FilterJobId:               eventFlags.filterJobId,
+				FilterSiteId:              eventFlags.filterSiteId,
+				SortBy:                    eventFlags.sortBy,
+				Page:                      eventFlags.page,
+				Limit:                     eventFlags.limit,
+				Search:                    eventFlags.search,
+				SearchBy:                  eventFlags.searchBy,
 			})
 		},
 	}
@@ -129,7 +143,7 @@ Examples:
 		Long: `Retrieve detailed information about a specific event by its ID.
 
 This command displays comprehensive information about a single event, including
-its metadata, timestamp, severity, type, associated resources, and full description.
+its metadata, timestamp, level, type, associated resources, and full description.
 
 REQUIRED ARGUMENTS:
   event_id                    The unique identifier of the event to retrieve
@@ -143,7 +157,7 @@ Examples:
 
 The output includes:
 - Event ID and timestamp
-- Event type and severity level
+- Event type and level
 - Associated infrastructure, server, job, or site information
 - Full event description and metadata
 - User who triggered the event (if applicable)`,
@@ -162,11 +176,13 @@ func init() {
 	eventCmd.AddCommand(eventListCmd)
 	eventListCmd.Flags().StringSliceVar(&eventFlags.filterId, "filter-id", nil, "Filter by event ID.")
 	eventListCmd.Flags().StringSliceVar(&eventFlags.filterType, "filter-type", nil, "Filter by event type.")
-	eventListCmd.Flags().StringSliceVar(&eventFlags.filterSeverity, "filter-severity", nil, "Filter by event severity.")
+	eventListCmd.Flags().StringSliceVar(&eventFlags.filterSeverity, "filter-severity", nil, "Filter by event level (info, warn, error, debug).")
 	eventListCmd.Flags().StringSliceVar(&eventFlags.filterVisibility, "filter-visibility", nil, "Filter by event visibility.")
 	eventListCmd.Flags().StringSliceVar(&eventFlags.filterInfrastructureId, "filter-infrastructure-id", nil, "Filter by infrastructure ID.")
 	eventListCmd.Flags().StringSliceVar(&eventFlags.filterUserId, "filter-user-id", nil, "Filter by user ID.")
+	eventListCmd.Flags().StringSliceVar(&eventFlags.filterUserIdAuthenticated, "filter-user-id-authenticated", nil, "Filter by the ID of the authenticated user.")
 	eventListCmd.Flags().StringSliceVar(&eventFlags.filterServerId, "filter-server-id", nil, "Filter by server ID.")
+	eventListCmd.Flags().StringSliceVar(&eventFlags.filterNetworkDeviceId, "filter-network-device-id", nil, "Filter by network device ID.")
 	eventListCmd.Flags().StringSliceVar(&eventFlags.filterJobId, "filter-job-id", nil, "Filter by job ID.")
 	eventListCmd.Flags().StringSliceVar(&eventFlags.filterSiteId, "filter-site-id", nil, "Filter by site ID.")
 	eventListCmd.Flags().StringSliceVar(&eventFlags.sortBy, "sort-by", nil, "Sort by fields (e.g., id:ASC, createdAt:DESC).")

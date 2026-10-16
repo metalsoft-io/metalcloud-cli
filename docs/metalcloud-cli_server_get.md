@@ -9,6 +9,10 @@ Get detailed information for a specific server.
 This command retrieves comprehensive information about a server including its configuration,
 status, hardware details, and optionally IPMI credentials.
 
+The table output also shows the operational fields: health state, details and last check, firmware
+baseline compliance and target/current baselines, drift detection status, backup, drift detection and
+health monitoring settings, and tags. These are independent of the lifecycle status.
+
 Required Arguments:
   server_id              The ID of the server to retrieve information for
 

@@ -31,7 +31,6 @@ Optional configuration includes:
 - Package identification (packageId, packageVersion)
 - External references (externalId, vendorInfoUrl, cacheDownloadUrl)
 - Release information (vendorReleaseTimestamp)
-- Vendor details
 
 Examples:
   metalcloud-cli firmware-binary create --config-source ./bios-update.json
@@ -61,11 +60,7 @@ Configuration file example (bios-update.json):
       "os": "any",
       "version": "any"
     }
-  ],
-  "vendor": {
-    "name": "Dell Inc.",
-    "contact": "support@dell.com"
-  }
+  ]
 }
 
 ```
