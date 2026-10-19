@@ -340,16 +340,6 @@ func TestProcessLenovoCatalog_BinaryFields(t *testing.T) {
 		t.Errorf("UpdateSeverity = %v, want UNKNOWN", binary.UpdateSeverity)
 	}
 
-	// Check vendor configuration (requisites)
-	vendorConfig := binary.Vendor
-	requisites, ok := vendorConfig["requires"].([]string)
-	if !ok {
-		t.Fatalf("Vendor['requires'] should be []string, got %T", vendorConfig["requires"])
-	}
-	if len(requisites) != 2 || requisites[0] != "prereq-1" || requisites[1] != "prereq-2" {
-		t.Errorf("Vendor requisites = %v, want [prereq-1 prereq-2]", requisites)
-	}
-
 	// Check supported devices
 	devices := binary.VendorSupportedDevices
 	if len(devices) != 1 || devices[0]["id"] != lenovoSoftwareUpdateComponentXcc || devices[0]["model"] != lenovoSoftwareUpdateComponentXcc {

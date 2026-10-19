@@ -312,6 +312,17 @@ type userPermissionRecord struct {
 	Permission string `json:"permission"`
 }
 
+// hasUnknownPermission reports whether the SDK replaced a permission it does not
+// know about with its generic "unknown" enum value.
+func hasUnknownPermission(permissions []sdk.MetalsoftPermissions) bool {
+	for _, permission := range permissions {
+		if permission == sdk.METALSOFTPERMISSIONS_UNKNOWN_DEFAULT_OPEN_API {
+			return true
+		}
+	}
+	return false
+}
+
 // GetPermissions lists the permissions of the user owning the API key.
 func GetPermissions(ctx context.Context) error {
 	logger.Get().Info().Msgf("Getting permissions for current user")
@@ -322,7 +333,7 @@ func GetPermissions(ctx context.Context) error {
 	// often enough that it must not be logged as an error before the fallback.
 	permissions, httpRes, err := client.UserAPI.GetUserPermissions(ctx).Execute()
 	if err == nil && httpRes != nil && httpRes.StatusCode < 400 &&
-		permissions != nil && len(permissions.Permissions) > 0 {
+		permissions != nil && len(permissions.Permissions) > 0 && !hasUnknownPermission(permissions.Permissions) {
 		records := make([]userPermissionRecord, 0, len(permissions.Permissions))
 		for _, permission := range permissions.Permissions {
 			records = append(records, userPermissionRecord{Permission: string(permission)})
@@ -331,10 +342,11 @@ func GetPermissions(ctx context.Context) error {
 		return formatter.PrintResult(records, &userPermissionsPrintConfig)
 	}
 
-	// The SDK models the permission keys as a strict enum generated from the
-	// OpenAPI definition, so a single permission the SDK does not know about
-	// makes the whole typed response fail to decode. Read the raw payload
-	// instead, which also surfaces the real HTTP error when there is one.
+	// The SDK models the permission keys as an enum generated from the OpenAPI
+	// definition. A permission it does not know about is either rejected (the
+	// typed response fails to decode) or collapsed into a generic "unknown"
+	// value that hides its real name. Read the raw payload instead, which keeps
+	// the real names and also surfaces the real HTTP error when there is one.
 	logger.Get().Debug().Msg("Reading the user permissions from the raw response")
 
 	body, err := api.RawJSONRequest(ctx, http.MethodGet, "/api/v2/user/permissions", nil, nil)

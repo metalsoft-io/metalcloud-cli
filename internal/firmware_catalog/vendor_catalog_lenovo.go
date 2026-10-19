@@ -122,10 +122,6 @@ func (vc *VendorCatalog) processLenovoCatalog(ctx context.Context) error {
 				description = softwareUpdate.FixID
 			}
 
-			componentVendorConfiguration := map[string]any{
-				"requires": softwareUpdate.RequisitesFixIDs,
-			}
-
 			supportedDevices := []map[string]interface{}{
 				{
 					"id":    softwareUpdate.ComponentID,
@@ -157,7 +153,6 @@ func (vc *VendorCatalog) processLenovoCatalog(ctx context.Context) error {
 				VendorSupportedDevices: supportedDevices,
 				VendorSupportedSystems: supportedSystems,
 				VendorReleaseTimestamp: nil,
-				Vendor:                 componentVendorConfiguration,
 			}
 
 			vc.Binaries = append(vc.Binaries, &firmwareBinary)

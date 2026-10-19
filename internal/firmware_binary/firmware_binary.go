@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"strconv"
+	"time"
 
 	"github.com/metalsoft-io/metalcloud-cli/pkg/api"
 	"github.com/metalsoft-io/metalcloud-cli/pkg/formatter"
@@ -188,6 +189,7 @@ func FirmwareBinaryDelete(ctx context.Context, firmwareBinaryId string) error {
 
 func FirmwareBinaryConfigExample(ctx context.Context) error {
 	// Example create firmware binary configuration
+	exampleReleaseTimestamp := time.Date(2024, time.April, 1, 12, 0, 0, 0, time.UTC)
 	firmwareBinaryConfiguration := sdk.CreateFirmwareBinary{
 		Name:                   "BIOS-R740-2.15.0",
 		CatalogId:              1,
@@ -198,7 +200,7 @@ func FirmwareBinaryConfigExample(ctx context.Context) error {
 		PackageVersion:         sdk.PtrString("2.15.0"),
 		RebootRequired:         true,
 		UpdateSeverity:         "recommended",
-		VendorReleaseTimestamp: sdk.PtrString("2024-04-01T12:00:00Z"),
+		VendorReleaseTimestamp: &exampleReleaseTimestamp,
 		VendorSupportedDevices: []map[string]interface{}{
 			{
 				"model": "PowerEdge R740",

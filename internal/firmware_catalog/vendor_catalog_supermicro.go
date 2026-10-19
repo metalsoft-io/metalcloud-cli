@@ -103,23 +103,12 @@ func (vc *VendorCatalog) processSupermicroCatalog(ctx context.Context) error {
 			},
 		}
 
-		// Prepare vendor configuration
-		vendorConfiguration := map[string]interface{}{
-			"componentType": component.ComponentType,
-			"model":         component.Model,
-		}
-
-		if component.MD5 != "" {
-			vendorConfiguration["md5"] = component.MD5
-		}
-		if component.SHA256 != "" {
-			vendorConfiguration["sha256"] = component.SHA256
-		}
-
 		// Parse release date
-		var timestamp time.Time
+		var releaseTimestamp *time.Time
 		if component.ReleaseDate != "" {
-			timestamp, _ = time.Parse("2006-01-02", component.ReleaseDate)
+			if t, err := time.Parse("2006-01-02", component.ReleaseDate); err == nil {
+				releaseTimestamp = &t
+			}
 		}
 
 		// Extract the .bin file from the .zip archive
@@ -142,15 +131,14 @@ func (vc *VendorCatalog) processSupermicroCatalog(ctx context.Context) error {
 			UpdateSeverity:         UpdateSeverityUnknown,
 			VendorSupportedDevices: supportedDevices,
 			VendorSupportedSystems: []map[string]interface{}{},
-			VendorReleaseTimestamp: sdk.PtrString(timestamp.Format(time.RFC3339)),
-			Vendor:                 vendorConfiguration,
+			VendorReleaseTimestamp: releaseTimestamp,
 		}
 
 		vc.Binaries = append(vc.Binaries, binary)
 	}
 
 	vc.CatalogInfo.VendorId = sdk.PtrString(catalog.CatalogVersion)
-	vc.CatalogInfo.VendorReleaseTimestamp = sdk.PtrString(catalog.ReleaseDate)
+	vc.CatalogInfo.VendorReleaseTimestamp = parseVendorTimestamp(catalog.ReleaseDate)
 
 	logger.Get().Info().Msgf("Processed %d Supermicro firmware binaries", len(vc.Binaries))
 

@@ -150,7 +150,7 @@ func (vc *VendorCatalog) processDellCatalog(ctx context.Context) error {
 
 	// Update vendor catalog info
 	vc.CatalogInfo.VendorId = sdk.PtrString(manifest.Identifier)
-	vc.CatalogInfo.VendorReleaseTimestamp = sdk.PtrString(manifest.DateTime)
+	vc.CatalogInfo.VendorReleaseTimestamp = parseVendorTimestamp(manifest.DateTime)
 	vc.CatalogInfo.VendorConfiguration = map[string]any{
 		"baseLocation":                manifest.BaseLocation,
 		"baseLocationAccessProtocols": manifest.BaseLocationAccessProtocols,
@@ -234,15 +234,7 @@ func (vc *VendorCatalog) processDellCatalog(ctx context.Context) error {
 			UpdateSeverity:         severity,
 			VendorSupportedDevices: supportedDevices,
 			VendorSupportedSystems: supportedSystems,
-			VendorReleaseTimestamp: sdk.PtrString(timestamp.Format(time.RFC3339)),
-			Vendor: map[string]any{
-				"path":        component.Path,
-				"size":        component.Size,
-				"category":    component.Category.Display,
-				"datetime":    component.DateTime,
-				"releaseId":   component.ReleaseID,
-				"packageType": component.PackageType,
-			},
+			VendorReleaseTimestamp: &timestamp,
 		}
 
 		vc.Binaries = append(vc.Binaries, &firmwareBinary)

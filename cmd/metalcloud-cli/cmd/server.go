@@ -981,7 +981,7 @@ Examples:
   metalcloud-cli server firmware generate-audit --config-source ./audit-config.json
 
   # Generate audit using piped JSON configuration
-  echo '{"servers": [123, 456]}' | metalcloud-cli server firmware generate-audit --config-source pipe
+  echo '{"serverIds": [123, 456]}' | metalcloud-cli server firmware generate-audit --config-source pipe
 `,
 		SilenceUsage: true,
 		Annotations:  map[string]string{system.REQUIRED_PERMISSION: system.PERMISSION_SERVERS_READ},
