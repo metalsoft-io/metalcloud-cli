@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"time"
 
 	"github.com/metalsoft-io/metalcloud-cli/pkg/api"
 	"github.com/metalsoft-io/metalcloud-cli/pkg/formatter"
@@ -387,7 +388,102 @@ func ServerFirmwareGenerateAudit(ctx context.Context, config []byte) error {
 		return err
 	}
 
-	return formatter.PrintResult(audit, nil)
+	// JSON and YAML output keep the full audit (baseline, upgrade and downgrade options).
+	if formatter.IsNativeFormat() {
+		return formatter.PrintResult(audit, nil)
+	}
+
+	return formatter.PrintResult(flattenServerFirmwareAudit(audit), &serverFirmwareAuditPrintConfig)
+}
+
+// ServerFirmwareAuditRow is the tabular view of the audit of one server component.
+// A server that could not be audited is represented by a single row carrying the error.
+type ServerFirmwareAuditRow struct {
+	ServerId       int64
+	Baseline       string
+	ComponentId    string
+	Component      string
+	Type           string
+	CurrentVersion string
+	TargetVersion  string
+	LatestVersion  string
+	Status         string
+	BelowMinimum   string
+	Upgrades       int
+	Downgrades     int
+	Error          string
+}
+
+var serverFirmwareAuditPrintConfig = formatter.PrintConfig{
+	FieldsConfig: map[string]formatter.RecordFieldConfig{
+		"ServerId":       {Title: "Server ID", Order: 1},
+		"Baseline":       {Title: "Baseline", Order: 2},
+		"ComponentId":    {Title: "Component ID", Order: 3},
+		"Component":      {Title: "Component", Order: 4, MaxWidth: 40},
+		"Type":           {Title: "Type", Order: 5},
+		"CurrentVersion": {Title: "Current Version", Order: 6},
+		"TargetVersion":  {Title: "Target Version", Order: 7},
+		"LatestVersion":  {Title: "Latest Version", Order: 8},
+		"Status":         {Title: "Status", Order: 9},
+		"BelowMinimum":   {Title: "Below Minimum", Order: 10},
+		"Upgrades":       {Title: "Upgrades", Order: 11},
+		"Downgrades":     {Title: "Downgrades", Order: 12},
+		"Error":          {Title: "Error", Order: 13, MaxWidth: 60},
+	},
+}
+
+func flattenServerFirmwareAudit(audits []sdk.ServerFirmwareAudit) []ServerFirmwareAuditRow {
+	rows := []ServerFirmwareAuditRow{}
+
+	for _, audit := range audits {
+		baseline := ""
+		if audit.Baseline != nil {
+			baseline = audit.Baseline.Name
+		}
+
+		if audit.Error != nil {
+			rows = append(rows, ServerFirmwareAuditRow{
+				ServerId: audit.ServerId,
+				Baseline: baseline,
+				Error:    fmt.Sprintf("%d: %s", int(audit.Error.StatusCode), audit.Error.Message),
+			})
+			continue
+		}
+
+		for _, component := range audit.Components {
+			belowMinimum := ""
+			if component.BelowMinimumVersion != nil {
+				belowMinimum = "No"
+				if *component.BelowMinimumVersion {
+					belowMinimum = "Yes"
+				}
+			}
+
+			rows = append(rows, ServerFirmwareAuditRow{
+				ServerId:       audit.ServerId,
+				Baseline:       baseline,
+				ComponentId:    fmt.Sprintf("%d", component.ComponentId),
+				Component:      component.Name,
+				Type:           derefString(component.Type),
+				CurrentVersion: derefString(component.CurrentVersion),
+				TargetVersion:  derefString(component.TargetVersion),
+				LatestVersion:  derefString(component.LatestVersion),
+				Status:         component.Status,
+				BelowMinimum:   belowMinimum,
+				Upgrades:       len(component.Upgrades),
+				Downgrades:     len(component.Downgrades),
+			})
+		}
+	}
+
+	return rows
+}
+
+func derefString(s *string) string {
+	if s == nil {
+		return ""
+	}
+	return *s
 }
 
 var serverFirmwareBatchUpgradePrintConfig = formatter.PrintConfig{
@@ -434,8 +530,7 @@ func ServerFirmwareUpgradeBatch(ctx context.Context, serverIds []string) error {
 }
 
 // ServerFirmwareScheduleUpgradeBatch schedules a firmware upgrade for a batch of
-// servers. The API models this as an action on one server (the first id given),
-// with the full list of servers to schedule carried in the request body.
+// servers. The full list of server ids is carried in the request body.
 func ServerFirmwareScheduleUpgradeBatch(ctx context.Context, serverIds []string, scheduleTimestamp string, confirmationRequired bool) error {
 	if len(serverIds) == 0 {
 		err := fmt.Errorf("at least one server ID is required")
@@ -444,11 +539,6 @@ func ServerFirmwareScheduleUpgradeBatch(ctx context.Context, serverIds []string,
 	}
 
 	logger.Get().Info().Msgf("Scheduling batch firmware upgrade for %d servers", len(serverIds))
-
-	serverIdNumeric, err := GetServerId(serverIds[0])
-	if err != nil {
-		return err
-	}
 
 	serverIdsNumeric, err := utils.GetInt64SliceFromStrings(serverIds)
 	if err != nil {
@@ -463,13 +553,17 @@ func ServerFirmwareScheduleUpgradeBatch(ctx context.Context, serverIds []string,
 	}
 
 	if scheduleTimestamp != "" {
-		scheduleConfig.ScheduleUpdateTimestamp = sdk.PtrString(scheduleTimestamp)
+		scheduleTime, err := time.Parse(time.RFC3339, scheduleTimestamp)
+		if err != nil {
+			return fmt.Errorf("invalid schedule timestamp '%s' (expected RFC3339, e.g. 2026-01-02T15:04:05Z): %w", scheduleTimestamp, err)
+		}
+		scheduleConfig.ScheduleUpdateTimestamp = &scheduleTime
 	}
 
 	client := api.GetApiClient(ctx)
 
 	result, httpRes, err := client.ServerFirmwareAPI.
-		BatchScheduleServerFirmwareUpgrade(ctx, serverIdNumeric).
+		BatchScheduleServerFirmwareUpgrade(ctx).
 		BatchScheduleServerFirmwareUpgrade(scheduleConfig).
 		Execute()
 	if err := response_inspector.InspectResponse(httpRes, err); err != nil {
