@@ -37,6 +37,7 @@ Optional Flags:
   --filter-requires-manual-cleaning       Filter by manual cleaning requirement
   --filter-drift-detection-sync-status    Filter by drift detection sync status
   --filter-firmware-baseline-compliance   Filter by firmware baseline compliance status (unknown, compliant, non_compliant)
+  --filter-health-state                   Filter by health state (healthy, warnings_present, critical_warnings_present, failed)
   --filter-firmware-backup-enabled        Filter by firmware backup setting
   --filter-firmware-drift-detection       Filter by firmware drift detection setting
   --filter-infrastructure-id              Filter by the infrastructure the server is allocated to
@@ -60,6 +61,9 @@ Examples:
   # Every server that is not compliant with its firmware baseline
   metalcloud-cli server list --filter-firmware-baseline-compliance non_compliant
 
+  # Every server whose health is degraded or failed
+  metalcloud-cli server list --filter-health-state warnings_present,critical_warnings_present,failed
+
   # Second page of 50 servers
   metalcloud-cli server list --page 2 --limit 50
 
@@ -82,6 +86,7 @@ metalcloud-cli server list [flags]
       --filter-firmware-backup-enabled strings        Filter the result by firmware backup setting.
       --filter-firmware-baseline-compliance strings   Filter the result by firmware baseline compliance status (unknown, compliant, non_compliant).
       --filter-firmware-drift-detection strings       Filter the result by firmware drift detection setting.
+      --filter-health-state strings                   Filter the result by health state (healthy, warnings_present, critical_warnings_present, failed).
       --filter-id strings                             Filter the result by server ID.
       --filter-infrastructure-id strings              Filter the result by the infrastructure the server is allocated to.
       --filter-management-address strings             Filter the result by management address.

@@ -92,6 +92,7 @@ func TestServerList_SendsServerSideFilters(t *testing.T) {
 		FilterType:                       []string{"7"},
 		FilterFirmwareBaselineCompliance: []string{"$not:$eq:compliant"},
 		FilterVendor:                     []string{"Dell"},
+		FilterHealthState:                []string{"failed", "warnings_present"},
 	})
 	if err != nil {
 		t.Fatalf("ServerList: unexpected error: %v", err)
@@ -108,6 +109,7 @@ func TestServerList_SendsServerSideFilters(t *testing.T) {
 		"filter.serverTypeId":                     {"7"},
 		"filter.firmwareBaselineComplianceStatus": {"$not:$eq:compliant"},
 		"filter.vendor":                           {"Dell"},
+		"filter.healthState":                      {"$eq:failed", "$or:$eq:warnings_present"},
 	}
 	for key, want := range expect {
 		got := q[key]

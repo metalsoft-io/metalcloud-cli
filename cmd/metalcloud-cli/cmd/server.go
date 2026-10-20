@@ -31,6 +31,7 @@ var (
 		listFilterRequiresManualCleaning     []string
 		listFilterDriftDetectionSyncStatus   []string
 		listFilterFirmwareBaselineCompliance []string
+		listFilterHealthState                []string
 		listFilterFirmwareBackupEnabled      []string
 		listFilterFirmwareDriftDetection     []string
 		listFilterTags                       []string
@@ -158,6 +159,7 @@ Optional Flags:
   --filter-requires-manual-cleaning       Filter by manual cleaning requirement
   --filter-drift-detection-sync-status    Filter by drift detection sync status
   --filter-firmware-baseline-compliance   Filter by firmware baseline compliance status (unknown, compliant, non_compliant)
+  --filter-health-state                   Filter by health state (healthy, warnings_present, critical_warnings_present, failed)
   --filter-firmware-backup-enabled        Filter by firmware backup setting
   --filter-firmware-drift-detection       Filter by firmware drift detection setting
   --filter-infrastructure-id              Filter by the infrastructure the server is allocated to
@@ -180,6 +182,9 @@ Examples:
 
   # Every server that is not compliant with its firmware baseline
   metalcloud-cli server list --filter-firmware-baseline-compliance non_compliant
+
+  # Every server whose health is degraded or failed
+  metalcloud-cli server list --filter-health-state warnings_present,critical_warnings_present,failed
 
   # Second page of 50 servers
   metalcloud-cli server list --page 2 --limit 50
@@ -208,6 +213,7 @@ Examples:
 				FilterRequiresManualCleaning:     serverFlags.listFilterRequiresManualCleaning,
 				FilterDriftDetectionSyncStatus:   serverFlags.listFilterDriftDetectionSyncStatus,
 				FilterFirmwareBaselineCompliance: serverFlags.listFilterFirmwareBaselineCompliance,
+				FilterHealthState:                serverFlags.listFilterHealthState,
 				FilterFirmwareBackupEnabled:      serverFlags.listFilterFirmwareBackupEnabled,
 				FilterFirmwareDriftDetection:     serverFlags.listFilterFirmwareDriftDetection,
 				FilterTags:                       serverFlags.listFilterTags,
@@ -1620,6 +1626,7 @@ func init() {
 	serverListCmd.Flags().StringSliceVar(&serverFlags.listFilterRequiresManualCleaning, "filter-requires-manual-cleaning", nil, "Filter the result by manual cleaning requirement.")
 	serverListCmd.Flags().StringSliceVar(&serverFlags.listFilterDriftDetectionSyncStatus, "filter-drift-detection-sync-status", nil, "Filter the result by drift detection sync status.")
 	serverListCmd.Flags().StringSliceVar(&serverFlags.listFilterFirmwareBaselineCompliance, "filter-firmware-baseline-compliance", nil, "Filter the result by firmware baseline compliance status (unknown, compliant, non_compliant).")
+	serverListCmd.Flags().StringSliceVar(&serverFlags.listFilterHealthState, "filter-health-state", nil, "Filter the result by health state (healthy, warnings_present, critical_warnings_present, failed).")
 	serverListCmd.Flags().StringSliceVar(&serverFlags.listFilterFirmwareBackupEnabled, "filter-firmware-backup-enabled", nil, "Filter the result by firmware backup setting.")
 	serverListCmd.Flags().StringSliceVar(&serverFlags.listFilterFirmwareDriftDetection, "filter-firmware-drift-detection", nil, "Filter the result by firmware drift detection setting.")
 	serverListCmd.Flags().StringSliceVar(&serverFlags.listFilterInfrastructureId, "filter-infrastructure-id", nil, "Filter the result by the infrastructure the server is allocated to.")

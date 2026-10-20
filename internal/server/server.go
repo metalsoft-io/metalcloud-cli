@@ -218,6 +218,7 @@ type ListFlags struct {
 	FilterRequiresManualCleaning     []string
 	FilterDriftDetectionSyncStatus   []string
 	FilterFirmwareBaselineCompliance []string
+	FilterHealthState                []string
 	FilterFirmwareBackupEnabled      []string
 	FilterFirmwareDriftDetection     []string
 	FilterTags                       []string
@@ -257,6 +258,7 @@ func ServerList(ctx context.Context, flags ListFlags) error {
 	apply(flags.FilterRequiresManualCleaning, request.FilterRequiresManualCleaning)
 	apply(flags.FilterDriftDetectionSyncStatus, request.FilterDriftDetectionSyncStatus)
 	apply(flags.FilterFirmwareBaselineCompliance, request.FilterFirmwareBaselineComplianceStatus)
+	apply(flags.FilterHealthState, request.FilterHealthState)
 	apply(flags.FilterFirmwareBackupEnabled, request.FilterFirmwareBackupEnabled)
 	apply(flags.FilterFirmwareDriftDetection, request.FilterFirmwareDriftDetectionEnabled)
 	apply(flags.FilterTags, request.FilterTags)
