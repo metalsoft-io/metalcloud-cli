@@ -439,7 +439,7 @@ func TestServerFirmwareUpgradeBatch(t *testing.T) {
 func TestServerFirmwareScheduleUpgradeBatch(t *testing.T) {
 	rec := &hwRecorder{}
 	ts := hwServer(t, rec, map[string]http.HandlerFunc{
-		"/api/v2/servers/1/firmware/actions/batch-schedule-upgrade": testutils.RawHandler(http.StatusOK,
+		"/api/v2/servers/firmware/actions/batch-schedule-upgrade": testutils.RawHandler(http.StatusOK,
 			`{"failed":{}}`),
 	})
 	defer ts.Close()
@@ -454,8 +454,8 @@ func TestServerFirmwareScheduleUpgradeBatch(t *testing.T) {
 	})
 
 	last := rec.last()
-	if last.Path != "/api/v2/servers/1/firmware/actions/batch-schedule-upgrade" {
-		t.Errorf("the first server id should address the endpoint, got %s", last.Path)
+	if last.Path != "/api/v2/servers/firmware/actions/batch-schedule-upgrade" {
+		t.Errorf("unexpected endpoint path, got %s", last.Path)
 	}
 	if !strings.Contains(last.Body, `"serverIds":[1,2]`) ||
 		!strings.Contains(last.Body, `"scheduleUpdateTimestamp":"2024-01-01T10:00:00Z"`) ||

@@ -6,27 +6,45 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"sort"
 	"strconv"
+	"strings"
 
 	"github.com/metalsoft-io/metalcloud-cli/pkg/api"
 	"github.com/metalsoft-io/metalcloud-cli/pkg/formatter"
 	"github.com/metalsoft-io/metalcloud-cli/pkg/logger"
 	"github.com/metalsoft-io/metalcloud-cli/pkg/response_inspector"
 	"github.com/metalsoft-io/metalcloud-cli/pkg/utils"
+	"github.com/spf13/viper"
 )
 
 // eventRaw avoids SDK unmarshal failure: the SDK's typed Event model rejects
 // API responses whose enum values it doesn't know (e.g. a numeric EventTypes
-// like "109") and requires `severity`, which the API may omit. Parsing the raw
+// like "109") and requires `severity`, which the API no longer returns (it is `level`). Parsing the raw
 // body into plain string fields keeps `event list`/`event get` tolerant of
 // SDK <-> API schema drift.
 type eventRaw struct {
 	Id                interface{} `json:"id"`
 	Type              *string     `json:"type"`
-	Severity          *string     `json:"severity"`
+	Level             *string     `json:"level"`
 	Visibility        *string     `json:"visibility"`
 	OccurredTimestamp *string     `json:"occurredTimestamp"`
 	Title             *string     `json:"title"`
+
+	// Fields shown in the table formats so that an exported audit trail says what happened,
+	// to which entity and who did it. Identifiers are kept loosely typed because the API
+	// has been seen to send them both as strings and as numbers.
+	Message                   *string     `json:"message"`
+	UserId                    interface{} `json:"userId"`
+	UserIdAuthenticated       interface{} `json:"userIdAuthenticated"`
+	InfrastructureId          interface{} `json:"infrastructureId"`
+	ServerId                  interface{} `json:"serverId"`
+	NetworkDeviceId           interface{} `json:"networkDeviceId"`
+	NetworkDeviceControllerId interface{} `json:"networkDeviceControllerId"`
+	StorageId                 interface{} `json:"storageId"`
+	VmPoolId                  interface{} `json:"vmPoolId"`
+	SiteId                    interface{} `json:"siteId"`
+	JobId                     interface{} `json:"jobId"`
 }
 
 var eventPrintConfig = formatter.PrintConfig{
@@ -38,7 +56,7 @@ var eventPrintConfig = formatter.PrintConfig{
 		"Type": {
 			Order: 2,
 		},
-		"Severity": {
+		"Level": {
 			Order: 3,
 		},
 		"Visibility": {
@@ -52,24 +70,142 @@ var eventPrintConfig = formatter.PrintConfig{
 		"Title": {
 			Order: 6,
 		},
+		"Message": {
+			MaxWidth: 60,
+			Order:    7,
+		},
+		"UserId": {
+			Title: "User ID",
+			Order: 8,
+		},
+		"UserIdAuthenticated": {
+			Title: "Authenticated User ID",
+			Order: 9,
+		},
+		"InfrastructureId": {
+			Title: "Infrastructure ID",
+			Order: 10,
+		},
+		"ServerId": {
+			Title: "Server ID",
+			Order: 11,
+		},
+		"NetworkDeviceId": {
+			Title: "Network Device ID",
+			Order: 12,
+		},
+		"NetworkDeviceControllerId": {
+			Title: "Network Device Controller ID",
+			Order: 13,
+		},
+		"StorageId": {
+			Title: "Storage ID",
+			Order: 14,
+		},
+		"VmPoolId": {
+			Title: "VM Pool ID",
+			Order: 15,
+		},
+		"SiteId": {
+			Title: "Site ID",
+			Order: 16,
+		},
+		"JobId": {
+			Title: "Job ID",
+			Order: 17,
+		},
 	},
 }
 
+// optionalEventColumns are the entity and actor columns that only apply to some events.
+// The text and markdown tables leave out the ones that are empty for every event shown, so a
+// listing of server events does not carry a wall of empty storage, VM pool and job columns.
+var optionalEventColumns = []struct {
+	field string
+	value func(e eventRaw) interface{}
+}{
+	{"UserId", func(e eventRaw) interface{} { return e.UserId }},
+	{"UserIdAuthenticated", func(e eventRaw) interface{} { return e.UserIdAuthenticated }},
+	{"InfrastructureId", func(e eventRaw) interface{} { return e.InfrastructureId }},
+	{"ServerId", func(e eventRaw) interface{} { return e.ServerId }},
+	{"NetworkDeviceId", func(e eventRaw) interface{} { return e.NetworkDeviceId }},
+	{"NetworkDeviceControllerId", func(e eventRaw) interface{} { return e.NetworkDeviceControllerId }},
+	{"StorageId", func(e eventRaw) interface{} { return e.StorageId }},
+	{"VmPoolId", func(e eventRaw) interface{} { return e.VmPoolId }},
+	{"SiteId", func(e eventRaw) interface{} { return e.SiteId }},
+	{"JobId", func(e eventRaw) interface{} { return e.JobId }},
+}
+
+func isEmptyValue(value interface{}) bool {
+	if value == nil {
+		return true
+	}
+
+	text, ok := value.(string)
+	return ok && strings.TrimSpace(text) == ""
+}
+
+// eventPrintConfigFor returns the print config to render events with. For the text and
+// markdown tables, optional columns that are empty for all of the events are dropped and the
+// remaining columns renumbered. CSV, JSON and YAML keep every column so that exports have a
+// stable layout whatever the data.
+func eventPrintConfigFor(events []eventRaw) *formatter.PrintConfig {
+	switch strings.ToLower(viper.GetString(formatter.ConfigFormat)) {
+	case "text", "md":
+	default:
+		return &eventPrintConfig
+	}
+
+	fields := make(map[string]formatter.RecordFieldConfig, len(eventPrintConfig.FieldsConfig))
+	for name, config := range eventPrintConfig.FieldsConfig {
+		fields[name] = config
+	}
+
+	for _, column := range optionalEventColumns {
+		used := false
+		for _, event := range events {
+			if !isEmptyValue(column.value(event)) {
+				used = true
+				break
+			}
+		}
+		if !used {
+			delete(fields, column.field)
+		}
+	}
+
+	names := make([]string, 0, len(fields))
+	for name := range fields {
+		names = append(names, name)
+	}
+	sort.Slice(names, func(i, j int) bool { return fields[names[i]].Order < fields[names[j]].Order })
+
+	for i, name := range names {
+		config := fields[name]
+		config.Order = i + 1
+		fields[name] = config
+	}
+
+	return &formatter.PrintConfig{FieldsConfig: fields}
+}
+
 type ListFlags struct {
-	FilterId               []string
-	FilterType             []string
-	FilterSeverity         []string
-	FilterVisibility       []string
-	FilterInfrastructureId []string
-	FilterUserId           []string
-	FilterServerId         []string
-	FilterJobId            []string
-	FilterSiteId           []string
-	SortBy                 []string
-	Page                   int
-	Limit                  int
-	Search                 string
-	SearchBy               []string
+	FilterId                  []string
+	FilterType                []string
+	FilterSeverity            []string
+	FilterVisibility          []string
+	FilterInfrastructureId    []string
+	FilterUserId              []string
+	FilterUserIdAuthenticated []string
+	FilterServerId            []string
+	FilterNetworkDeviceId     []string
+	FilterJobId               []string
+	FilterSiteId              []string
+	SortBy                    []string
+	Page                      int
+	Limit                     int
+	Search                    string
+	SearchBy                  []string
 }
 
 func EventList(ctx context.Context, flags ListFlags) error {
@@ -95,6 +231,12 @@ func EventList(ctx context.Context, flags ListFlags) error {
 	}
 	if len(flags.FilterUserId) > 0 {
 		request = request.FilterUserId(flags.FilterUserId)
+	}
+	if len(flags.FilterUserIdAuthenticated) > 0 {
+		request = request.FilterUserIdAuthenticated(flags.FilterUserIdAuthenticated)
+	}
+	if len(flags.FilterNetworkDeviceId) > 0 {
+		request = request.FilterNetworkDeviceId(flags.FilterNetworkDeviceId)
 	}
 	if len(flags.FilterServerId) > 0 {
 		request = request.FilterServerId(flags.FilterServerId)
@@ -128,7 +270,7 @@ func EventList(ctx context.Context, flags ListFlags) error {
 		if err != nil {
 			return fmt.Errorf("failed to parse events: %w", err)
 		}
-		return utils.PrintAllRaw(rawItems, records, meta, len(records), &eventPrintConfig)
+		return utils.PrintAllRaw(rawItems, records, meta, len(records), eventPrintConfigFor(records))
 	}
 
 	if flags.Limit > 0 {
@@ -144,7 +286,7 @@ func EventList(ctx context.Context, flags ListFlags) error {
 		if err != nil {
 			return fmt.Errorf("failed to parse events: %w", err)
 		}
-		return utils.PrintAllRaw(rawItems, records, meta, len(records), &eventPrintConfig)
+		return utils.PrintAllRaw(rawItems, records, meta, len(records), eventPrintConfigFor(records))
 	}
 
 	rawItems, meta, err := utils.FetchAllPagesRaw(func(page float32) (*http.Response, error) {
@@ -160,7 +302,7 @@ func EventList(ctx context.Context, flags ListFlags) error {
 		return fmt.Errorf("failed to parse events: %w", err)
 	}
 
-	return utils.PrintAllRaw(rawItems, records, meta, len(records), &eventPrintConfig)
+	return utils.PrintAllRaw(rawItems, records, meta, len(records), eventPrintConfigFor(records))
 }
 
 func EventGet(ctx context.Context, eventId string) error {
@@ -173,8 +315,8 @@ func EventGet(ctx context.Context, eventId string) error {
 
 	client := api.GetApiClient(ctx)
 
-	// Raw-body parse: the SDK Event model rejects unknown enum values and requires
-	// `severity`, which the API can omit, so SDK unmarshalling fails on valid responses.
+	// Raw-body parse: the SDK Event model rejects unknown enum values and may require
+	// fields the API no longer returns, so SDK unmarshalling fails on valid responses.
 	_, httpRes, sdkErr := client.EventAPI.GetEvent(ctx, id).Execute()
 	if httpRes != nil && httpRes.StatusCode >= 400 {
 		return response_inspector.InspectResponse(httpRes, sdkErr)
@@ -193,7 +335,7 @@ func EventGet(ctx context.Context, eventId string) error {
 		return fmt.Errorf("failed to parse event: %w", err)
 	}
 
-	return formatter.PrintResult(record, &eventPrintConfig)
+	return formatter.PrintResult(record, eventPrintConfigFor([]eventRaw{record}))
 }
 
 func getEventId(eventId string) (int64, error) {

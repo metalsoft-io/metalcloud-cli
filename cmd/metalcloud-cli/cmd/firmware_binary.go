@@ -10,6 +10,19 @@ import (
 var (
 	firmwareBinaryFlags = struct {
 		configSource string
+
+		// list
+		filterId                     []string
+		filterCatalogId              []string
+		filterExternalId             []string
+		filterPackageId              []string
+		filterPackageVersion         []string
+		filterUpdateSeverity         []string
+		filterRebootRequired         []string
+		filterCreatedTimestamp       []string
+		filterVendorReleaseTimestamp []string
+		page                         int
+		limit                        int
 	}{}
 
 	firmwareBinaryCmd = &cobra.Command{
@@ -47,21 +60,58 @@ This command displays all available firmware binaries with their basic informati
 - Catalog ID and package information
 - Target hardware components and models
 - Version information and update severity
-- Reboot requirements and vendor details
+- Reboot requirements and vendor release details
 - Release timestamps and download URLs
 - External ID and vendor info URLs
 
 The output includes both catalog-managed binaries and individually registered ones.
 
-No additional flags are required for this command.
+Filters are applied server-side. Every --filter-* flag accepts a comma-separated list or can be
+repeated; multiple values are combined with OR. A single value is sent as-is, so it may also use the
+API operator syntax (e.g. '$not:$eq:value', '$ilike:value' or '$gt:2025-01-01').
+Without --page/--limit all matching binaries are returned.
+
+Optional Flags:
+  --filter-id                        Filter by binary ID
+  --filter-catalog-id                Filter by catalog ID
+  --filter-update-severity           Filter by update severity (e.g. critical)
+  --filter-reboot-required           Filter by reboot requirement (true or false)
+  --filter-package-version           Filter by package version
+  --filter-external-id               Filter by the vendor's artefact ID
+  --filter-package-id                Filter by package ID
+  --filter-created-timestamp         Filter by creation timestamp
+  --filter-vendor-release-timestamp  Filter by vendor release timestamp
+  --page                             Page number to retrieve (default: return all records)
+  --limit                            Number of records per page, or maximum records when used without --page
 
 Examples:
+  # List all firmware binaries
   metalcloud-cli firmware-binary list
-  metalcloud-cli fw-binary ls`,
+
+  # Critical binaries in catalog 8813
+  metalcloud-cli firmware-binary list --filter-catalog-id 8813 --filter-update-severity critical
+
+  # Binaries that do not require a reboot
+  metalcloud-cli fw-binary ls --filter-reboot-required false
+
+  # Second page of 50 binaries
+  metalcloud-cli firmware-binary list --page 2 --limit 50`,
 		SilenceUsage: true,
 		Annotations:  map[string]string{system.REQUIRED_PERMISSION: system.PERMISSION_FIRMWARE_BASELINES_READ},
 		RunE: func(cmd *cobra.Command, args []string) error {
-			return firmware_binary.FirmwareBinaryList(cmd.Context())
+			return firmware_binary.FirmwareBinaryList(cmd.Context(), firmware_binary.ListFlags{
+				FilterId:                     firmwareBinaryFlags.filterId,
+				FilterCatalogId:              firmwareBinaryFlags.filterCatalogId,
+				FilterExternalId:             firmwareBinaryFlags.filterExternalId,
+				FilterPackageId:              firmwareBinaryFlags.filterPackageId,
+				FilterPackageVersion:         firmwareBinaryFlags.filterPackageVersion,
+				FilterUpdateSeverity:         firmwareBinaryFlags.filterUpdateSeverity,
+				FilterRebootRequired:         firmwareBinaryFlags.filterRebootRequired,
+				FilterCreatedTimestamp:       firmwareBinaryFlags.filterCreatedTimestamp,
+				FilterVendorReleaseTimestamp: firmwareBinaryFlags.filterVendorReleaseTimestamp,
+				Page:                         firmwareBinaryFlags.page,
+				Limit:                        firmwareBinaryFlags.limit,
+			})
 		},
 	}
 
@@ -76,7 +126,7 @@ This command displays comprehensive information about a firmware binary includin
 - Hardware compatibility information (vendorSupportedDevices, vendorSupportedSystems)
 - Binary file details (vendorDownloadUrl, cacheDownloadUrl, externalId)
 - Installation requirements (rebootRequired, updateSeverity)
-- Vendor information and release timestamp
+- Vendor release timestamp
 - Creation and modification timestamps
 - Associated links and resources
 
@@ -109,7 +159,7 @@ The configuration template covers:
 - File information (vendorDownloadUrl, vendorInfoUrl, cacheDownloadUrl)
 - Hardware compatibility (vendorSupportedDevices, vendorSupportedSystems)
 - Installation requirements (rebootRequired, updateSeverity)
-- Vendor information and external references
+- External references (externalId)
 
 Use this template as a starting point for creating your own firmware binary configurations.
 Copy the output to a file, modify the values as needed, and use it with the create command.
@@ -155,7 +205,6 @@ Optional configuration includes:
 - Package identification (packageId, packageVersion)
 - External references (externalId, vendorInfoUrl, cacheDownloadUrl)
 - Release information (vendorReleaseTimestamp)
-- Vendor details
 
 Examples:
   metalcloud-cli firmware-binary create --config-source ./bios-update.json
@@ -185,11 +234,7 @@ Configuration file example (bios-update.json):
       "os": "any",
       "version": "any"
     }
-  ],
-  "vendor": {
-    "name": "Dell Inc.",
-    "contact": "support@dell.com"
-  }
+  ]
 }`,
 		SilenceUsage: true,
 		Annotations:  map[string]string{system.REQUIRED_PERMISSION: system.PERMISSION_FIRMWARE_BASELINES_WRITE},
@@ -240,6 +285,18 @@ func init() {
 	firmwareBinaryCmd.AddCommand(firmwareBinaryConfigExampleCmd)
 
 	firmwareBinaryCmd.AddCommand(firmwareBinaryCreateCmd)
+	firmwareBinaryListCmd.Flags().StringSliceVar(&firmwareBinaryFlags.filterId, "filter-id", nil, "Filter the result by binary ID.")
+	firmwareBinaryListCmd.Flags().StringSliceVar(&firmwareBinaryFlags.filterCatalogId, "filter-catalog-id", nil, "Filter the result by catalog ID.")
+	firmwareBinaryListCmd.Flags().StringSliceVar(&firmwareBinaryFlags.filterUpdateSeverity, "filter-update-severity", nil, "Filter the result by update severity.")
+	firmwareBinaryListCmd.Flags().StringSliceVar(&firmwareBinaryFlags.filterRebootRequired, "filter-reboot-required", nil, "Filter the result by reboot requirement (true or false).")
+	firmwareBinaryListCmd.Flags().StringSliceVar(&firmwareBinaryFlags.filterPackageVersion, "filter-package-version", nil, "Filter the result by package version.")
+	firmwareBinaryListCmd.Flags().StringSliceVar(&firmwareBinaryFlags.filterExternalId, "filter-external-id", nil, "Filter the result by the vendor's artefact ID.")
+	firmwareBinaryListCmd.Flags().StringSliceVar(&firmwareBinaryFlags.filterPackageId, "filter-package-id", nil, "Filter the result by package ID.")
+	firmwareBinaryListCmd.Flags().StringSliceVar(&firmwareBinaryFlags.filterCreatedTimestamp, "filter-created-timestamp", nil, "Filter the result by creation timestamp.")
+	firmwareBinaryListCmd.Flags().StringSliceVar(&firmwareBinaryFlags.filterVendorReleaseTimestamp, "filter-vendor-release-timestamp", nil, "Filter the result by vendor release timestamp.")
+	firmwareBinaryListCmd.Flags().IntVar(&firmwareBinaryFlags.page, "page", 0, "Page number to retrieve (default: return all records).")
+	firmwareBinaryListCmd.Flags().IntVar(&firmwareBinaryFlags.limit, "limit", 0, "Number of records per page, or maximum records without --page (default: return all records).")
+
 	firmwareBinaryCreateCmd.Flags().StringVar(&firmwareBinaryFlags.configSource, "config-source", "", "Source of the new firmware binary configuration. Can be 'pipe' or path to a JSON file.")
 	firmwareBinaryCreateCmd.MarkFlagsOneRequired("config-source")
 

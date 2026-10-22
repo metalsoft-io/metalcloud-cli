@@ -62,6 +62,16 @@ var cleanupPolicyPrintConfig = formatter.PrintConfig{
 			Title: "Skip RAID Actions",
 			Order: 10,
 		},
+		"ClearTpm": {
+			Title:       "Clear TPM",
+			Transformer: formatter.FormatBooleanValue,
+			Order:       11,
+		},
+		"ResetRaidControllers": {
+			Title:       "Reset RAID Controllers",
+			Transformer: formatter.FormatBooleanValue,
+			Order:       12,
+		},
 	},
 }
 
@@ -100,7 +110,7 @@ func CleanupPolicyGet(ctx context.Context, cleanupPolicyId string) error {
 	return formatter.PrintResult(cleanupPolicy, &cleanupPolicyPrintConfig)
 }
 
-func CleanupPolicyCreate(ctx context.Context, label string, cleanupDrives, recreateRaid, disableEmbeddedNics bool, raidOneDrive, raidTwoDrives, raidEvenDrives, raidOddDrives, skipRaidActionsStr string) error {
+func CleanupPolicyCreate(ctx context.Context, label string, cleanupDrives, recreateRaid, disableEmbeddedNics, clearTpm, resetRaidControllers bool, raidOneDrive, raidTwoDrives, raidEvenDrives, raidOddDrives, skipRaidActionsStr string) error {
 	logger.Get().Info().Msgf("Creating server cleanup policy")
 
 	client := api.GetApiClient(ctx)
@@ -118,7 +128,15 @@ func CleanupPolicyCreate(ctx context.Context, label string, cleanupDrives, recre
 	var cleanupDrivesFloat float32
 	var recreateRaidFloat float32
 	var disableEmbeddedNicsFloat float32
+	var clearTpmFloat float32
+	var resetRaidControllersFloat float32
 
+	if clearTpm {
+		clearTpmFloat = 1
+	}
+	if resetRaidControllers {
+		resetRaidControllersFloat = 1
+	}
 	if cleanupDrives {
 		cleanupDrivesFloat = 1
 	}
@@ -134,6 +152,8 @@ func CleanupPolicyCreate(ctx context.Context, label string, cleanupDrives, recre
 		CleanupDrivesForOobEnabledServer: cleanupDrivesFloat,
 		RecreateRaid:                     recreateRaidFloat,
 		DisableEmbeddedNics:              disableEmbeddedNicsFloat,
+		ClearTpm:                         clearTpmFloat,
+		ResetRaidControllers:             resetRaidControllersFloat,
 		RaidOneDrive:                     raidOneDrive,
 		RaidTwoDrives:                    raidTwoDrives,
 		RaidEvenNumberMoreThanTwoDrives:  raidEvenDrives,
@@ -149,7 +169,7 @@ func CleanupPolicyCreate(ctx context.Context, label string, cleanupDrives, recre
 	return formatter.PrintResult(cleanupPolicy, &cleanupPolicyPrintConfig)
 }
 
-func CleanupPolicyUpdate(ctx context.Context, cleanupPolicyId string, label string, cleanupDrives, recreateRaid, disableEmbeddedNics bool, raidOneDrive, raidTwoDrives, raidEvenDrives, raidOddDrives, skipRaidActionsStr string, cmd *cobra.Command) error {
+func CleanupPolicyUpdate(ctx context.Context, cleanupPolicyId string, label string, cleanupDrives, recreateRaid, disableEmbeddedNics, clearTpm, resetRaidControllers bool, raidOneDrive, raidTwoDrives, raidEvenDrives, raidOddDrives, skipRaidActionsStr string, cmd *cobra.Command) error {
 	logger.Get().Info().Msgf("Updating server cleanup policy '%s'", cleanupPolicyId)
 
 	cleanupPolicyIdNumber, err := strconv.ParseInt(cleanupPolicyId, 10, 64)
@@ -190,6 +210,22 @@ func CleanupPolicyUpdate(ctx context.Context, cleanupPolicyId string, label stri
 			disableEmbeddedNicsFloat = 1
 		}
 		updateRequest.DisableEmbeddedNics = &disableEmbeddedNicsFloat
+	}
+
+	if cmd.Flags().Changed("clear-tpm") {
+		var clearTpmFloat float32
+		if clearTpm {
+			clearTpmFloat = 1
+		}
+		updateRequest.ClearTpm = &clearTpmFloat
+	}
+
+	if cmd.Flags().Changed("reset-raid-controllers") {
+		var resetRaidControllersFloat float32
+		if resetRaidControllers {
+			resetRaidControllersFloat = 1
+		}
+		updateRequest.ResetRaidControllers = &resetRaidControllersFloat
 	}
 
 	if cmd.Flags().Changed("raid-one-drive") {

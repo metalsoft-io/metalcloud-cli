@@ -16,6 +16,30 @@ var (
 		filterType      []string
 		configSource    string
 
+		// list
+		listFilterId                         []string
+		listFilterSiteId                     []string
+		listFilterVendor                     []string
+		listFilterModel                      []string
+		listFilterSerialNumber               []string
+		listFilterManagementAddress          []string
+		listFilterAdministrationState        []string
+		listFilterPowerStatus                []string
+		listFilterDhcpStatus                 []string
+		listFilterClass                      []string
+		listFilterDiskWipe                   []string
+		listFilterRequiresManualCleaning     []string
+		listFilterDriftDetectionSyncStatus   []string
+		listFilterFirmwareBaselineCompliance []string
+		listFilterHealthState                []string
+		listFilterFirmwareBackupEnabled      []string
+		listFilterFirmwareDriftDetection     []string
+		listFilterTags                       []string
+		listFilterInfrastructureId           []string
+		listFilterOwnerId                    []string
+		listPage                             int
+		listLimit                            int
+
 		siteId            int
 		managementAddress string
 		username          string
@@ -107,10 +131,41 @@ Use "metalcloud-cli server [command] --help" for detailed information about each
 This command displays information about all servers including their IDs, site locations, 
 types, UUIDs, serial numbers, management addresses, vendors, models, and current status.
 
+The table output also shows the operational fields: health state, details and last check, firmware
+baseline compliance and target/current baselines, drift detection status, backup, drift detection and
+health monitoring settings, and tags. These are independent of the lifecycle status.
+
+Filters are applied server-side. Every --filter-* flag accepts a comma-separated list or can be
+repeated; multiple values are combined with OR. A single value is sent as-is, so it may also use the
+API operator syntax (e.g. '$not:$eq:value' or '$ilike:value').
+Without --page/--limit all matching servers are returned.
+
 Optional Flags:
-  --show-credentials     Display server IPMI credentials (username and password)
-  --filter-status        Filter servers by status (e.g., active, registered, provisioning)
-  --filter-type          Filter servers by type ID
+  --show-credentials                      Display server IPMI credentials (username and password)
+  --filter-status                         Filter by server status (e.g., active, registered, provisioning)
+  --filter-type                           Filter by server type ID
+  --filter-id                             Filter by server ID
+  --filter-site-id                        Filter by site ID
+  --filter-tags                           Filter by tag (e.g., a rack or room label)
+  --filter-vendor                         Filter by vendor
+  --filter-model                          Filter by model
+  --filter-serial-number                  Filter by serial number
+  --filter-management-address             Filter by BMC management address
+  --filter-administration-state           Filter by administration state
+  --filter-power-status                   Filter by power status
+  --filter-dhcp-status                    Filter by DHCP status
+  --filter-class                          Filter by server class
+  --filter-disk-wipe                      Filter by disk wipe setting
+  --filter-requires-manual-cleaning       Filter by manual cleaning requirement
+  --filter-drift-detection-sync-status    Filter by drift detection sync status
+  --filter-firmware-baseline-compliance   Filter by firmware baseline compliance status (unknown, compliant, non_compliant)
+  --filter-health-state                   Filter by health state (healthy, warnings_present, critical_warnings_present, failed)
+  --filter-firmware-backup-enabled        Filter by firmware backup setting
+  --filter-firmware-drift-detection       Filter by firmware drift detection setting
+  --filter-infrastructure-id              Filter by the infrastructure the server is allocated to
+  --filter-owner-id                       Filter by the owner (user ID) of the infrastructure
+  --page                                  Page number to retrieve (default: return all records)
+  --limit                                 Number of records per page, or maximum records when used without --page
 
 Examples:
   # List all servers
@@ -122,8 +177,17 @@ Examples:
   # Filter servers by status
   metalcloud-cli server list --filter-status active,registered
 
-  # Filter servers by type
-  metalcloud-cli server list --filter-type 1,2,3
+  # Every server in one site carrying a given tag
+  metalcloud-cli server list --filter-site-id 2 --filter-tags rack-12
+
+  # Every server that is not compliant with its firmware baseline
+  metalcloud-cli server list --filter-firmware-baseline-compliance non_compliant
+
+  # Every server whose health is degraded or failed
+  metalcloud-cli server list --filter-health-state warnings_present,critical_warnings_present,failed
+
+  # Second page of 50 servers
+  metalcloud-cli server list --page 2 --limit 50
 
   # Combine filters
   metalcloud-cli server list --filter-status active --filter-type 1
@@ -131,10 +195,33 @@ Examples:
 		SilenceUsage: true,
 		Annotations:  map[string]string{system.REQUIRED_PERMISSION: system.PERMISSION_SERVERS_READ},
 		RunE: func(cmd *cobra.Command, args []string) error {
-			return server.ServerList(cmd.Context(),
-				serverFlags.showCredentials,
-				serverFlags.filterStatus,
-				serverFlags.filterType)
+			return server.ServerList(cmd.Context(), server.ListFlags{
+				ShowCredentials:                  serverFlags.showCredentials,
+				FilterStatus:                     serverFlags.filterStatus,
+				FilterType:                       serverFlags.filterType,
+				FilterId:                         serverFlags.listFilterId,
+				FilterSiteId:                     serverFlags.listFilterSiteId,
+				FilterVendor:                     serverFlags.listFilterVendor,
+				FilterModel:                      serverFlags.listFilterModel,
+				FilterSerialNumber:               serverFlags.listFilterSerialNumber,
+				FilterManagementAddress:          serverFlags.listFilterManagementAddress,
+				FilterAdministrationState:        serverFlags.listFilterAdministrationState,
+				FilterPowerStatus:                serverFlags.listFilterPowerStatus,
+				FilterDhcpStatus:                 serverFlags.listFilterDhcpStatus,
+				FilterClass:                      serverFlags.listFilterClass,
+				FilterDiskWipe:                   serverFlags.listFilterDiskWipe,
+				FilterRequiresManualCleaning:     serverFlags.listFilterRequiresManualCleaning,
+				FilterDriftDetectionSyncStatus:   serverFlags.listFilterDriftDetectionSyncStatus,
+				FilterFirmwareBaselineCompliance: serverFlags.listFilterFirmwareBaselineCompliance,
+				FilterHealthState:                serverFlags.listFilterHealthState,
+				FilterFirmwareBackupEnabled:      serverFlags.listFilterFirmwareBackupEnabled,
+				FilterFirmwareDriftDetection:     serverFlags.listFilterFirmwareDriftDetection,
+				FilterTags:                       serverFlags.listFilterTags,
+				FilterInfrastructureId:           serverFlags.listFilterInfrastructureId,
+				FilterOwnerId:                    serverFlags.listFilterOwnerId,
+				Page:                             serverFlags.listPage,
+				Limit:                            serverFlags.listLimit,
+			})
 		},
 	}
 
@@ -146,6 +233,10 @@ Examples:
 
 This command retrieves comprehensive information about a server including its configuration,
 status, hardware details, and optionally IPMI credentials.
+
+The table output also shows the operational fields: health state, details and last check, firmware
+baseline compliance and target/current baselines, drift detection status, backup, drift detection and
+health monitoring settings, and tags. These are independent of the lifecycle status.
 
 Required Arguments:
   server_id              The ID of the server to retrieve information for
@@ -896,7 +987,7 @@ Examples:
   metalcloud-cli server firmware generate-audit --config-source ./audit-config.json
 
   # Generate audit using piped JSON configuration
-  echo '{"servers": [123, 456]}' | metalcloud-cli server firmware generate-audit --config-source pipe
+  echo '{"serverIds": [123, 456]}' | metalcloud-cli server firmware generate-audit --config-source pipe
 `,
 		SilenceUsage: true,
 		Annotations:  map[string]string{system.REQUIRED_PERMISSION: system.PERMISSION_SERVERS_READ},
@@ -1520,6 +1611,28 @@ func init() {
 	serverListCmd.Flags().BoolVar(&serverFlags.showCredentials, "show-credentials", false, "If set returns the server IPMI credentials.")
 	serverListCmd.Flags().StringSliceVar(&serverFlags.filterStatus, "filter-status", nil, "Filter the result by server status.")
 	serverListCmd.Flags().StringSliceVar(&serverFlags.filterType, "filter-type", nil, "Filter the result by server type.")
+	serverListCmd.Flags().StringSliceVar(&serverFlags.listFilterId, "filter-id", nil, "Filter the result by server ID.")
+	serverListCmd.Flags().StringSliceVar(&serverFlags.listFilterSiteId, "filter-site-id", nil, "Filter the result by site ID.")
+	serverListCmd.Flags().StringSliceVar(&serverFlags.listFilterTags, "filter-tags", nil, "Filter the result by server tag.")
+	serverListCmd.Flags().StringSliceVar(&serverFlags.listFilterVendor, "filter-vendor", nil, "Filter the result by vendor.")
+	serverListCmd.Flags().StringSliceVar(&serverFlags.listFilterModel, "filter-model", nil, "Filter the result by model.")
+	serverListCmd.Flags().StringSliceVar(&serverFlags.listFilterSerialNumber, "filter-serial-number", nil, "Filter the result by serial number.")
+	serverListCmd.Flags().StringSliceVar(&serverFlags.listFilterManagementAddress, "filter-management-address", nil, "Filter the result by management address.")
+	serverListCmd.Flags().StringSliceVar(&serverFlags.listFilterAdministrationState, "filter-administration-state", nil, "Filter the result by administration state.")
+	serverListCmd.Flags().StringSliceVar(&serverFlags.listFilterPowerStatus, "filter-power-status", nil, "Filter the result by power status.")
+	serverListCmd.Flags().StringSliceVar(&serverFlags.listFilterDhcpStatus, "filter-dhcp-status", nil, "Filter the result by DHCP status.")
+	serverListCmd.Flags().StringSliceVar(&serverFlags.listFilterClass, "filter-class", nil, "Filter the result by server class.")
+	serverListCmd.Flags().StringSliceVar(&serverFlags.listFilterDiskWipe, "filter-disk-wipe", nil, "Filter the result by disk wipe setting.")
+	serverListCmd.Flags().StringSliceVar(&serverFlags.listFilterRequiresManualCleaning, "filter-requires-manual-cleaning", nil, "Filter the result by manual cleaning requirement.")
+	serverListCmd.Flags().StringSliceVar(&serverFlags.listFilterDriftDetectionSyncStatus, "filter-drift-detection-sync-status", nil, "Filter the result by drift detection sync status.")
+	serverListCmd.Flags().StringSliceVar(&serverFlags.listFilterFirmwareBaselineCompliance, "filter-firmware-baseline-compliance", nil, "Filter the result by firmware baseline compliance status (unknown, compliant, non_compliant).")
+	serverListCmd.Flags().StringSliceVar(&serverFlags.listFilterHealthState, "filter-health-state", nil, "Filter the result by health state (healthy, warnings_present, critical_warnings_present, failed).")
+	serverListCmd.Flags().StringSliceVar(&serverFlags.listFilterFirmwareBackupEnabled, "filter-firmware-backup-enabled", nil, "Filter the result by firmware backup setting.")
+	serverListCmd.Flags().StringSliceVar(&serverFlags.listFilterFirmwareDriftDetection, "filter-firmware-drift-detection", nil, "Filter the result by firmware drift detection setting.")
+	serverListCmd.Flags().StringSliceVar(&serverFlags.listFilterInfrastructureId, "filter-infrastructure-id", nil, "Filter the result by the infrastructure the server is allocated to.")
+	serverListCmd.Flags().StringSliceVar(&serverFlags.listFilterOwnerId, "filter-owner-id", nil, "Filter the result by the owner (user ID) of the infrastructure.")
+	serverListCmd.Flags().IntVar(&serverFlags.listPage, "page", 0, "Page number to retrieve (default: return all records).")
+	serverListCmd.Flags().IntVar(&serverFlags.listLimit, "limit", 0, "Number of records per page, or maximum records without --page (default: return all records).")
 
 	serverCmd.AddCommand(serverGetCmd)
 	serverGetCmd.Flags().BoolVar(&serverFlags.showCredentials, "show-credentials", false, "If set returns the server IPMI credentials.")

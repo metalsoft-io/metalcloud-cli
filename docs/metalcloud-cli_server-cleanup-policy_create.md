@@ -15,6 +15,8 @@ Required Flags:
   --cleanup-drives                       Enable cleanup drives for OOB enabled servers
   --recreate-raid                        Enable RAID recreation
   --disable-embedded-nics                Enable disabling embedded NICs
+  --clear-tpm                            Clear the TPM when the server is cleaned up
+  --reset-raid-controllers               Reset the RAID controllers when the server is cleaned up
   --raid-one-drive                       RAID configuration for single drive (e.g. "raid0")
   --raid-two-drives                      RAID configuration for two drives (e.g. "raid1")
   --raid-even-drives                     RAID configuration for even number of drives (>2)
@@ -28,6 +30,7 @@ Examples:
   # Create a basic cleanup policy
   metalcloud-cli server-cleanup-policy create --label "basic-cleanup" \
     --cleanup-drives --recreate-raid --disable-embedded-nics \
+    --clear-tpm --reset-raid-controllers \
     --raid-one-drive "raid0" --raid-two-drives "raid1" \
     --raid-even-drives "raid10" --raid-odd-drives "raid5" \
     --skip-raid-actions "cleanup"
@@ -40,6 +43,7 @@ metalcloud-cli server-cleanup-policy create [flags]
 
 ```
       --cleanup-drives             Enable cleanup drives for OOB enabled servers
+      --clear-tpm                  Clear the TPM when the server is cleaned up
       --disable-embedded-nics      Enable disabling embedded NICs
   -h, --help                       help for create
       --label string               Label for the server cleanup policy
@@ -48,6 +52,7 @@ metalcloud-cli server-cleanup-policy create [flags]
       --raid-one-drive string      RAID configuration for single drive
       --raid-two-drives string     RAID configuration for two drives
       --recreate-raid              Enable RAID recreation
+      --reset-raid-controllers     Reset the RAID controllers when the server is cleaned up
       --skip-raid-actions string   Comma-separated list of RAID actions to skip
 ```
 

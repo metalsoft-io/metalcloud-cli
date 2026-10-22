@@ -9,15 +9,17 @@ import (
 // Server Cleanup Policy commands
 var (
 	serverCleanupPolicyFlags = struct {
-		label               string
-		cleanupDrives       bool
-		recreateRaid        bool
-		disableEmbeddedNics bool
-		raidOneDrive        string
-		raidTwoDrives       string
-		raidEvenDrives      string
-		raidOddDrives       string
-		skipRaidActions     string
+		label                string
+		cleanupDrives        bool
+		recreateRaid         bool
+		disableEmbeddedNics  bool
+		clearTpm             bool
+		resetRaidControllers bool
+		raidOneDrive         string
+		raidTwoDrives        string
+		raidEvenDrives       string
+		raidOddDrives        string
+		skipRaidActions      string
 	}{}
 
 	serverCleanupPolicyCmd = &cobra.Command{
@@ -148,6 +150,8 @@ Required Flags:
   --cleanup-drives                       Enable cleanup drives for OOB enabled servers
   --recreate-raid                        Enable RAID recreation
   --disable-embedded-nics                Enable disabling embedded NICs
+  --clear-tpm                            Clear the TPM when the server is cleaned up
+  --reset-raid-controllers               Reset the RAID controllers when the server is cleaned up
   --raid-one-drive                       RAID configuration for single drive (e.g. "raid0")
   --raid-two-drives                      RAID configuration for two drives (e.g. "raid1")
   --raid-even-drives                     RAID configuration for even number of drives (>2)
@@ -161,6 +165,7 @@ Examples:
   # Create a basic cleanup policy
   metalcloud-cli server-cleanup-policy create --label "basic-cleanup" \
     --cleanup-drives --recreate-raid --disable-embedded-nics \
+    --clear-tpm --reset-raid-controllers \
     --raid-one-drive "raid0" --raid-two-drives "raid1" \
     --raid-even-drives "raid10" --raid-odd-drives "raid5" \
     --skip-raid-actions "cleanup"`,
@@ -172,6 +177,8 @@ Examples:
 				serverCleanupPolicyFlags.cleanupDrives,
 				serverCleanupPolicyFlags.recreateRaid,
 				serverCleanupPolicyFlags.disableEmbeddedNics,
+				serverCleanupPolicyFlags.clearTpm,
+				serverCleanupPolicyFlags.resetRaidControllers,
 				serverCleanupPolicyFlags.raidOneDrive,
 				serverCleanupPolicyFlags.raidTwoDrives,
 				serverCleanupPolicyFlags.raidEvenDrives,
@@ -197,6 +204,8 @@ Optional Flags:
   --cleanup-drives                       Enable cleanup drives for OOB enabled servers
   --recreate-raid                        Enable RAID recreation
   --disable-embedded-nics                Enable disabling embedded NICs
+  --clear-tpm                            Clear the TPM when the server is cleaned up
+  --reset-raid-controllers               Reset the RAID controllers when the server is cleaned up
   --raid-one-drive                       RAID configuration for single drive (e.g. "raid0")
   --raid-two-drives                      RAID configuration for two drives (e.g. "raid1")
   --raid-even-drives                     RAID configuration for even number of drives (>2)
@@ -213,6 +222,12 @@ Examples:
   # Update multiple settings
   metalcloud-cli scp update 123 --cleanup-drives --recreate-raid
 
+  # Clear the TPM and reset the RAID controllers on cleanup
+  metalcloud-cli scp update 123 --clear-tpm --reset-raid-controllers
+
+  # Stop clearing the TPM
+  metalcloud-cli scp update 123 --clear-tpm=false
+
   # Update RAID configurations
   metalcloud-cli srv-cp update 123 --raid-one-drive "RAID1" --raid-two-drives "RAID10"`,
 		SilenceUsage: true,
@@ -224,6 +239,8 @@ Examples:
 				serverCleanupPolicyFlags.cleanupDrives,
 				serverCleanupPolicyFlags.recreateRaid,
 				serverCleanupPolicyFlags.disableEmbeddedNics,
+				serverCleanupPolicyFlags.clearTpm,
+				serverCleanupPolicyFlags.resetRaidControllers,
 				serverCleanupPolicyFlags.raidOneDrive,
 				serverCleanupPolicyFlags.raidTwoDrives,
 				serverCleanupPolicyFlags.raidEvenDrives,
@@ -277,6 +294,8 @@ func init() {
 	serverCleanupPolicyCreateCmd.Flags().BoolVar(&serverCleanupPolicyFlags.cleanupDrives, "cleanup-drives", false, "Enable cleanup drives for OOB enabled servers")
 	serverCleanupPolicyCreateCmd.Flags().BoolVar(&serverCleanupPolicyFlags.recreateRaid, "recreate-raid", false, "Enable RAID recreation")
 	serverCleanupPolicyCreateCmd.Flags().BoolVar(&serverCleanupPolicyFlags.disableEmbeddedNics, "disable-embedded-nics", false, "Enable disabling embedded NICs")
+	serverCleanupPolicyCreateCmd.Flags().BoolVar(&serverCleanupPolicyFlags.clearTpm, "clear-tpm", false, "Clear the TPM when the server is cleaned up")
+	serverCleanupPolicyCreateCmd.Flags().BoolVar(&serverCleanupPolicyFlags.resetRaidControllers, "reset-raid-controllers", false, "Reset the RAID controllers when the server is cleaned up")
 	serverCleanupPolicyCreateCmd.Flags().StringVar(&serverCleanupPolicyFlags.raidOneDrive, "raid-one-drive", "", "RAID configuration for single drive")
 	serverCleanupPolicyCreateCmd.Flags().StringVar(&serverCleanupPolicyFlags.raidTwoDrives, "raid-two-drives", "", "RAID configuration for two drives")
 	serverCleanupPolicyCreateCmd.Flags().StringVar(&serverCleanupPolicyFlags.raidEvenDrives, "raid-even-drives", "", "RAID configuration for even number of drives (>2)")
@@ -293,6 +312,8 @@ func init() {
 	serverCleanupPolicyUpdateCmd.Flags().BoolVar(&serverCleanupPolicyFlags.cleanupDrives, "cleanup-drives", false, "Enable cleanup drives for OOB enabled servers")
 	serverCleanupPolicyUpdateCmd.Flags().BoolVar(&serverCleanupPolicyFlags.recreateRaid, "recreate-raid", false, "Enable RAID recreation")
 	serverCleanupPolicyUpdateCmd.Flags().BoolVar(&serverCleanupPolicyFlags.disableEmbeddedNics, "disable-embedded-nics", false, "Enable disabling embedded NICs")
+	serverCleanupPolicyUpdateCmd.Flags().BoolVar(&serverCleanupPolicyFlags.clearTpm, "clear-tpm", false, "Clear the TPM when the server is cleaned up")
+	serverCleanupPolicyUpdateCmd.Flags().BoolVar(&serverCleanupPolicyFlags.resetRaidControllers, "reset-raid-controllers", false, "Reset the RAID controllers when the server is cleaned up")
 	serverCleanupPolicyUpdateCmd.Flags().StringVar(&serverCleanupPolicyFlags.raidOneDrive, "raid-one-drive", "", "RAID configuration for single drive")
 	serverCleanupPolicyUpdateCmd.Flags().StringVar(&serverCleanupPolicyFlags.raidTwoDrives, "raid-two-drives", "", "RAID configuration for two drives")
 	serverCleanupPolicyUpdateCmd.Flags().StringVar(&serverCleanupPolicyFlags.raidEvenDrives, "raid-even-drives", "", "RAID configuration for even number of drives (>2)")

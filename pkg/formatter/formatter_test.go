@@ -258,3 +258,29 @@ func TestFormatDateTimeValue(t *testing.T) {
 		t.Errorf("FormatDateTimeValue fallback failed")
 	}
 }
+
+func TestFormatHealthValue(t *testing.T) {
+	colors := map[string]text.Color{
+		"healthy":                   text.FgGreen,
+		"warnings_present":          text.FgYellow,
+		"critical_warnings_present": text.FgRed,
+		"failed":                    text.FgRed,
+	}
+	for state, color := range colors {
+		if got, want := FormatHealthValue(state), color.Sprintf("%s", state); got != want {
+			t.Errorf("FormatHealthValue(%q) = %q, want %q", state, got, want)
+		}
+	}
+	if FormatHealthValue("failed") == FormatHealthValue("healthy") {
+		t.Error("failed and healthy must render differently")
+	}
+	if got := FormatHealthValue("something_else"); got != "something_else" {
+		t.Errorf("unknown state should be left uncolored, got %q", got)
+	}
+	if got := FormatHealthValue(""); got != "" {
+		t.Errorf("empty state should stay empty, got %q", got)
+	}
+	if got := FormatHealthValue(7); got != "7" {
+		t.Errorf("non-string value should be printed as is, got %q", got)
+	}
+}

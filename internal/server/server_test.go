@@ -94,7 +94,7 @@ func TestServerList_LinksAsArray(t *testing.T) {
 
 	ctx := setupTestContext(ts.URL)
 
-	err := ServerList(ctx, false, nil, nil)
+	err := ServerList(ctx, ListFlags{})
 	if err != nil {
 		t.Errorf("ServerList with links-as-array: expected nil error, got: %v", err)
 	}
@@ -106,7 +106,7 @@ func TestServerList_LinksAsMap(t *testing.T) {
 
 	ctx := setupTestContext(ts.URL)
 
-	err := ServerList(ctx, false, nil, nil)
+	err := ServerList(ctx, ListFlags{})
 	if err != nil {
 		t.Errorf("ServerList with links-as-map: expected nil error, got: %v", err)
 	}
@@ -123,7 +123,7 @@ func TestServerList_HttpError(t *testing.T) {
 
 	ctx := setupTestContext(ts.URL)
 
-	err := ServerList(ctx, false, nil, nil)
+	err := ServerList(ctx, ListFlags{})
 	if err == nil {
 		t.Error("ServerList with 404 response: expected error, got nil")
 	}

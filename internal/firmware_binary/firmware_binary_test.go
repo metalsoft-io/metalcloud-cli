@@ -36,7 +36,7 @@ func TestFirmwareBinaryList_HappyPath(t *testing.T) {
 	defer srv.Close()
 
 	ctx := testutils.SetupTestContext(srv.URL)
-	if err := FirmwareBinaryList(ctx); err != nil {
+	if err := FirmwareBinaryList(ctx, ListFlags{}); err != nil {
 		t.Fatalf("FirmwareBinaryList() unexpected error: %v", err)
 	}
 }
@@ -48,7 +48,7 @@ func TestFirmwareBinaryList_Error(t *testing.T) {
 	defer srv.Close()
 
 	ctx := testutils.SetupTestContext(srv.URL)
-	if err := FirmwareBinaryList(ctx); err == nil {
+	if err := FirmwareBinaryList(ctx, ListFlags{}); err == nil {
 		t.Fatal("FirmwareBinaryList() expected error, got nil")
 	}
 }
@@ -58,7 +58,7 @@ func TestFirmwareBinaryList_Empty(t *testing.T) {
 	defer srv.Close()
 
 	ctx := testutils.SetupTestContext(srv.URL)
-	if err := FirmwareBinaryList(ctx); err != nil {
+	if err := FirmwareBinaryList(ctx, ListFlags{}); err != nil {
 		t.Fatalf("FirmwareBinaryList() unexpected error on empty: %v", err)
 	}
 }
@@ -80,7 +80,7 @@ func TestFirmwareBinaryList_Pagination(t *testing.T) {
 	defer srv.Close()
 
 	ctx := testutils.SetupTestContext(srv.URL)
-	if err := FirmwareBinaryList(ctx); err != nil {
+	if err := FirmwareBinaryList(ctx, ListFlags{}); err != nil {
 		t.Fatalf("FirmwareBinaryList() pagination error: %v", err)
 	}
 }

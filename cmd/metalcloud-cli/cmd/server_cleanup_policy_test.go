@@ -111,3 +111,34 @@ func TestServerCleanupPolicyDeleteRequiresArg(t *testing.T) {
 		t.Fatal("expected error when no arg provided, got nil")
 	}
 }
+
+func TestServerCleanupPolicyCreateAcceptsClearTpmAndResetRaidControllers(t *testing.T) {
+	srv := newCleanupPolicyTestServer()
+	defer srv.Close()
+
+	_, err := runCLI(t, srv, "server-cleanup-policy", "create",
+		"--label", "wipe",
+		"--clear-tpm",
+		"--reset-raid-controllers",
+		"--raid-one-drive", "none",
+		"--raid-two-drives", "none",
+		"--raid-even-drives", "none",
+		"--raid-odd-drives", "none",
+	)
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+}
+
+func TestServerCleanupPolicyUpdateAcceptsClearTpmAndResetRaidControllers(t *testing.T) {
+	srv := newCleanupPolicyTestServer()
+	defer srv.Close()
+
+	_, err := runCLI(t, srv, "server-cleanup-policy", "update", "1",
+		"--clear-tpm",
+		"--reset-raid-controllers=false",
+	)
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+}

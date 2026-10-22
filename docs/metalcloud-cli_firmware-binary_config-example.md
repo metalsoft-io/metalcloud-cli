@@ -15,7 +15,7 @@ The configuration template covers:
 - File information (vendorDownloadUrl, vendorInfoUrl, cacheDownloadUrl)
 - Hardware compatibility (vendorSupportedDevices, vendorSupportedSystems)
 - Installation requirements (rebootRequired, updateSeverity)
-- Vendor information and external references
+- External references (externalId)
 
 Use this template as a starting point for creating your own firmware binary configurations.
 Copy the output to a file, modify the values as needed, and use it with the create command.

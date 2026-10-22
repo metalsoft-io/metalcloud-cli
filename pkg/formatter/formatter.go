@@ -524,6 +524,27 @@ func FormatStatusValue(value interface{}) string {
 	return fmt.Sprint(value)
 }
 
+// FormatHealthValue colors a server health state so that unhealthy hosts stand out
+// from healthy ones: healthy is green, warnings_present yellow and both
+// critical_warnings_present and failed red. Other values are left uncolored.
+func FormatHealthValue(value interface{}) string {
+	stringValue, ok := value.(string)
+	if !ok || disableColor {
+		return fmt.Sprint(value)
+	}
+
+	switch stringValue {
+	case "healthy":
+		return text.FgGreen.Sprintf("%s", stringValue)
+	case "warnings_present":
+		return text.FgYellow.Sprintf("%s", stringValue)
+	case "critical_warnings_present", "failed":
+		return text.FgRed.Sprintf("%s", stringValue)
+	}
+
+	return stringValue
+}
+
 func FormatDateTimeValue(value interface{}) string {
 	if value == nil {
 		return ""

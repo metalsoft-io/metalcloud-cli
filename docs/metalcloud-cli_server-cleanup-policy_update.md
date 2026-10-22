@@ -18,6 +18,8 @@ Optional Flags:
   --cleanup-drives                       Enable cleanup drives for OOB enabled servers
   --recreate-raid                        Enable RAID recreation
   --disable-embedded-nics                Enable disabling embedded NICs
+  --clear-tpm                            Clear the TPM when the server is cleaned up
+  --reset-raid-controllers               Reset the RAID controllers when the server is cleaned up
   --raid-one-drive                       RAID configuration for single drive (e.g. "raid0")
   --raid-two-drives                      RAID configuration for two drives (e.g. "raid1")
   --raid-even-drives                     RAID configuration for even number of drives (>2)
@@ -34,6 +36,12 @@ Examples:
   # Update multiple settings
   metalcloud-cli scp update 123 --cleanup-drives --recreate-raid
 
+  # Clear the TPM and reset the RAID controllers on cleanup
+  metalcloud-cli scp update 123 --clear-tpm --reset-raid-controllers
+
+  # Stop clearing the TPM
+  metalcloud-cli scp update 123 --clear-tpm=false
+
   # Update RAID configurations
   metalcloud-cli srv-cp update 123 --raid-one-drive "RAID1" --raid-two-drives "RAID10"
 
@@ -45,6 +53,7 @@ metalcloud-cli server-cleanup-policy update <policy-id> [flags]
 
 ```
       --cleanup-drives             Enable cleanup drives for OOB enabled servers
+      --clear-tpm                  Clear the TPM when the server is cleaned up
       --disable-embedded-nics      Enable disabling embedded NICs
   -h, --help                       help for update
       --label string               New label for the server cleanup policy
@@ -53,6 +62,7 @@ metalcloud-cli server-cleanup-policy update <policy-id> [flags]
       --raid-one-drive string      RAID configuration for single drive
       --raid-two-drives string     RAID configuration for two drives
       --recreate-raid              Enable RAID recreation
+      --reset-raid-controllers     Reset the RAID controllers when the server is cleaned up
       --skip-raid-actions string   Comma-separated list of RAID actions to skip
 ```
 

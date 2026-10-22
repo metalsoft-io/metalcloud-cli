@@ -139,7 +139,7 @@ func InterconnectConfigExample(ctx context.Context) error {
 		Name:                 "DC1 to DC2 logical interconnect",
 		Kind:                 &kind,
 		FabricInterconnectId: 1,
-		Annotations:          &map[string]string{"environment": "production"},
+		Annotations:          &map[string]*string{"environment": sdk.PtrString("production")},
 	}
 
 	if formatter.IsNativeFormat() {

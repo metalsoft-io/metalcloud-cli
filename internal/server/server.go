@@ -33,6 +33,20 @@ type serverRaw struct {
 	Revision          float32     `json:"revision"`
 	Links             interface{} `json:"links,omitempty"`
 
+	// Operational fields shown in the table formats. Pointers keep a field the
+	// API did not return distinct from a zero value, and render as empty.
+	HealthState                      *string     `json:"healthState,omitempty"`
+	HealthDetails                    []string    `json:"healthDetails,omitempty"`
+	HealthLastCheckedTimestamp       *string     `json:"healthLastCheckedTimestamp,omitempty"`
+	HealthMonitoringEnabled          interface{} `json:"healthMonitoringEnabled,omitempty"`
+	FirmwareBaselineComplianceStatus *string     `json:"firmwareBaselineComplianceStatus,omitempty"`
+	TargetFirmwareBaselineId         *float64    `json:"targetFirmwareBaselineId,omitempty"`
+	CurrentFirmwareBaselineId        *float64    `json:"currentFirmwareBaselineId,omitempty"`
+	DriftDetectionSyncStatus         *string     `json:"driftDetectionSyncStatus,omitempty"`
+	FirmwareBackupEnabled            *bool       `json:"firmwareBackupEnabled,omitempty"`
+	FirmwareDriftDetectionEnabled    *bool       `json:"firmwareDriftDetectionEnabled,omitempty"`
+	Tags                             []string    `json:"tags,omitempty"`
+
 	body json.RawMessage
 }
 
@@ -58,10 +72,6 @@ func (s serverRaw) MarshalJSON() ([]byte, error) {
 	}
 
 	return json.Marshal(serverRawFields(s))
-}
-
-type serverListRaw struct {
-	Data []serverRaw `json:"data"`
 }
 
 var serverPrintConfig = formatter.PrintConfig{
@@ -101,6 +111,60 @@ var serverPrintConfig = formatter.PrintConfig{
 			Transformer: formatter.FormatStatusValue,
 			Order:       9,
 		},
+		"HealthState": {
+			Title:       "Health",
+			Transformer: formatter.FormatHealthValue,
+			Order:       10,
+		},
+		"HealthDetails": {
+			Title:       "Health details",
+			Transformer: formatter.FormatStringListValue,
+			MaxWidth:    60,
+			Order:       11,
+		},
+		"HealthLastCheckedTimestamp": {
+			Title:       "Health checked",
+			Transformer: formatter.FormatDateTimeValue,
+			Order:       12,
+		},
+		"FirmwareBaselineComplianceStatus": {
+			Title: "FW compliance",
+			Order: 13,
+		},
+		"TargetFirmwareBaselineId": {
+			Title:       "Target FW baseline",
+			Transformer: formatter.FormatIdValue,
+			Order:       14,
+		},
+		"CurrentFirmwareBaselineId": {
+			Title:       "Current FW baseline",
+			Transformer: formatter.FormatIdValue,
+			Order:       15,
+		},
+		"DriftDetectionSyncStatus": {
+			Title: "Drift sync",
+			Order: 16,
+		},
+		"FirmwareBackupEnabled": {
+			Title:       "FW backup",
+			Transformer: formatter.FormatBooleanValue,
+			Order:       17,
+		},
+		"FirmwareDriftDetectionEnabled": {
+			Title:       "FW drift detection",
+			Transformer: formatter.FormatBooleanValue,
+			Order:       18,
+		},
+		"HealthMonitoringEnabled": {
+			Title:       "Health monitoring",
+			Transformer: formatter.FormatBooleanValue,
+			Order:       19,
+		},
+		"Tags": {
+			Title:       "Tags",
+			Transformer: formatter.FormatStringListValue,
+			Order:       20,
+		},
 	},
 }
 
@@ -115,11 +179,11 @@ var serverWithCredentialsPrintConfig = formatter.PrintConfig{
 			InnerFields: map[string]formatter.RecordFieldConfig{
 				"Username": {
 					Title: "User",
-					Order: 10,
+					Order: 21,
 				},
 				"Password": {
 					Title: "Password",
-					Order: 11,
+					Order: 22,
 				},
 			},
 		},
@@ -133,52 +197,118 @@ type serverWithCredentials struct {
 	ServerCredentials sdk.ServerCredentials
 }
 
-func ServerList(ctx context.Context, showCredentials bool, filterStatus []string, filterType []string) error {
-	logger.Get().Info().Msgf("Listing all servers")
+// ListFlags holds the server-side filters and pagination options of `server list`.
+// Every filter maps 1:1 to a `filter.*` query parameter of GET /api/v2/servers.
+type ListFlags struct {
+	ShowCredentials bool
+
+	FilterStatus                     []string
+	FilterType                       []string
+	FilterId                         []string
+	FilterSiteId                     []string
+	FilterVendor                     []string
+	FilterModel                      []string
+	FilterSerialNumber               []string
+	FilterManagementAddress          []string
+	FilterAdministrationState        []string
+	FilterPowerStatus                []string
+	FilterDhcpStatus                 []string
+	FilterClass                      []string
+	FilterDiskWipe                   []string
+	FilterRequiresManualCleaning     []string
+	FilterDriftDetectionSyncStatus   []string
+	FilterFirmwareBaselineCompliance []string
+	FilterHealthState                []string
+	FilterFirmwareBackupEnabled      []string
+	FilterFirmwareDriftDetection     []string
+	FilterTags                       []string
+	FilterInfrastructureId           []string
+	FilterOwnerId                    []string
+
+	Page  int
+	Limit int
+}
+
+func ServerList(ctx context.Context, flags ListFlags) error {
+	logger.Get().Info().Msgf("Listing servers")
 
 	client := api.GetApiClient(ctx)
 
 	request := client.ServerAPI.GetServers(ctx)
 
-	if len(filterStatus) > 0 {
-		request = request.FilterServerStatus(utils.ProcessFilterStringSlice(filterStatus))
+	apply := func(values []string, set func([]string) sdk.ServerAPIGetServersRequest) {
+		if len(values) > 0 {
+			request = set(utils.ProcessFilterStringSlice(values))
+		}
 	}
 
-	if len(filterType) > 0 {
-		request = request.FilterServerTypeId(utils.ProcessFilterStringSlice(filterType))
-	}
+	apply(flags.FilterStatus, request.FilterServerStatus)
+	apply(flags.FilterType, request.FilterServerTypeId)
+	apply(flags.FilterId, request.FilterServerId)
+	apply(flags.FilterSiteId, request.FilterSiteId)
+	apply(flags.FilterVendor, request.FilterVendor)
+	apply(flags.FilterModel, request.FilterModel)
+	apply(flags.FilterSerialNumber, request.FilterSerialNumber)
+	apply(flags.FilterManagementAddress, request.FilterManagementAddress)
+	apply(flags.FilterAdministrationState, request.FilterAdministrationState)
+	apply(flags.FilterPowerStatus, request.FilterPowerStatus)
+	apply(flags.FilterDhcpStatus, request.FilterServerDhcpStatus)
+	apply(flags.FilterClass, request.FilterServerClass)
+	apply(flags.FilterDiskWipe, request.FilterServerDiskWipe)
+	apply(flags.FilterRequiresManualCleaning, request.FilterRequiresManualCleaning)
+	apply(flags.FilterDriftDetectionSyncStatus, request.FilterDriftDetectionSyncStatus)
+	apply(flags.FilterFirmwareBaselineCompliance, request.FilterFirmwareBaselineComplianceStatus)
+	apply(flags.FilterHealthState, request.FilterHealthState)
+	apply(flags.FilterFirmwareBackupEnabled, request.FilterFirmwareBackupEnabled)
+	apply(flags.FilterFirmwareDriftDetection, request.FilterFirmwareDriftDetectionEnabled)
+	apply(flags.FilterTags, request.FilterTags)
+	apply(flags.FilterInfrastructureId, request.FilterInstanceInfrastructureInfrastructureId)
+	apply(flags.FilterOwnerId, request.FilterInstanceInfrastructureUserIdOwner)
 
 	// Raw-body parse: the SDK Server model types ServerMetricsMetadata as a map but
 	// the API returns an array, so typed unmarshalling fails on valid responses.
-	_, httpRes, sdkErr := request.Execute()
+	var (
+		rawItems []json.RawMessage
+		meta     sdk.PaginatedResponseMeta
+		err      error
+	)
 
-	if httpRes != nil && httpRes.StatusCode >= 400 {
-		if err := response_inspector.InspectResponse(httpRes, sdkErr); err != nil {
-			return err
-		}
-	} else if httpRes == nil {
-		return sdkErr
+	switch {
+	case flags.Page > 0:
+		// Specific page requested; spans API pages when limit exceeds the API cap.
+		rawItems, meta, err = utils.FetchPageWindowRaw(func(p, l float32) (*http.Response, error) {
+			_, httpRes, _ := request.Page(p).Limit(l).Execute()
+			return httpRes, nil
+		}, flags.Page, flags.Limit)
+	case flags.Limit > 0:
+		rawItems, meta, err = utils.FetchUpToRaw(func(p, l float32) (*http.Response, error) {
+			_, httpRes, _ := request.Page(p).Limit(l).Execute()
+			return httpRes, nil
+		}, flags.Limit)
+	default:
+		rawItems, meta, err = utils.FetchAllPagesRaw(func(p float32) (*http.Response, error) {
+			_, httpRes, _ := request.Page(p).Limit(100).Execute()
+			return httpRes, nil
+		})
 	}
-
-	body, err := io.ReadAll(httpRes.Body)
 	if err != nil {
-		return fmt.Errorf("failed to read response body: %w", err)
+		return err
 	}
 
-	var raw serverListRaw
-	if err := json.Unmarshal(body, &raw); err != nil {
+	servers, err := utils.UnmarshalRawItems[serverRaw](rawItems)
+	if err != nil {
 		return fmt.Errorf("failed to parse servers: %w", err)
 	}
 
-	if showCredentials {
+	if flags.ShowCredentials {
 		type serverRawWithCredentials struct {
 			ServerInfo        serverRaw             `json:"serverInfo"`
 			ServerCredentials sdk.ServerCredentials `json:"serverCredentials"`
 		}
 
-		data := make([]serverRawWithCredentials, 0, len(raw.Data))
+		data := make([]serverRawWithCredentials, 0, len(servers))
 
-		for _, server := range raw.Data {
+		for _, server := range servers {
 			serverCredentials, httpRes, err := client.ServerAPI.GetServerCredentials(ctx, int64(server.ServerId)).Execute()
 			if err := response_inspector.InspectResponse(httpRes, err); err != nil {
 				return err
@@ -190,10 +320,10 @@ func ServerList(ctx context.Context, showCredentials bool, filterStatus []string
 			})
 		}
 
-		return formatter.PrintResult(data, &serverWithCredentialsPrintConfig)
+		return utils.PrintAll(data, meta, len(data), &serverWithCredentialsPrintConfig)
 	}
 
-	return formatter.PrintResult(raw.Data, &serverPrintConfig)
+	return utils.PrintAllRaw(rawItems, servers, meta, len(servers), &serverPrintConfig)
 }
 
 func ServerGet(ctx context.Context, serverId string, showCredentials bool) error {

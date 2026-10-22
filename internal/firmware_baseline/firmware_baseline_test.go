@@ -14,8 +14,8 @@ func TestMain(m *testing.M) {
 
 func TestFirmwareBaselineList_HappyPath(t *testing.T) {
 	page1 := []map[string]any{
-		{"id": 1, "name": "Baseline A"},
-		{"id": 2, "name": "Baseline B"},
+		{"id": 1, "name": "Baseline A", "createdTimestamp": "2024-01-01T00:00:00Z"},
+		{"id": 2, "name": "Baseline B", "createdTimestamp": "2024-01-01T00:00:00Z"},
 	}
 	srv := testutils.MultiPageServer("/api/v2/firmware/baseline", []any{page1})
 	defer srv.Close()
@@ -52,7 +52,7 @@ func TestFirmwareBaselineList_Pagination(t *testing.T) {
 	makeItems := func(start, count int) []map[string]any {
 		items := make([]map[string]any, count)
 		for i := range items {
-			items[i] = map[string]any{"id": start + i, "name": "baseline"}
+			items[i] = map[string]any{"id": start + i, "name": "baseline", "createdTimestamp": "2024-01-01T00:00:00Z"}
 		}
 		return items
 	}
@@ -71,7 +71,7 @@ func TestFirmwareBaselineList_Pagination(t *testing.T) {
 }
 
 func TestFirmwareBaselineGet_HappyPath(t *testing.T) {
-	baseline := map[string]any{"id": 5, "name": "Prod Baseline"}
+	baseline := map[string]any{"id": 5, "name": "Prod Baseline", "createdTimestamp": "2024-01-01T00:00:00Z"}
 	srv := testutils.NewTestServer(map[string]http.HandlerFunc{
 		"/api/v2/firmware/baseline/5": testutils.JSONHandler(200, baseline),
 	})
@@ -103,7 +103,7 @@ func TestFirmwareBaselineGet_InvalidId(t *testing.T) {
 }
 
 func TestFirmwareBaselineCreate_HappyPath(t *testing.T) {
-	created := map[string]any{"id": 10, "name": "New Baseline"}
+	created := map[string]any{"id": 10, "name": "New Baseline", "createdTimestamp": "2024-01-01T00:00:00Z"}
 	srv := testutils.NewTestServer(map[string]http.HandlerFunc{
 		"/api/v2/firmware/baseline": testutils.JSONHandler(201, created),
 	})

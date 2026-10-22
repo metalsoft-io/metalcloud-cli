@@ -373,7 +373,7 @@ func newServerHardwareTestServer(t *testing.T) *httptest.Server {
 				"failed":     map[string]interface{}{},
 			})
 		})
-		mux.HandleFunc("/api/v2/servers/1/firmware/actions/batch-schedule-upgrade", func(w http.ResponseWriter, r *http.Request) {
+		mux.HandleFunc("/api/v2/servers/firmware/actions/batch-schedule-upgrade", func(w http.ResponseWriter, r *http.Request) {
 			jsonResponse(w, http.StatusOK, map[string]interface{}{"failed": map[string]interface{}{}})
 		})
 	}))

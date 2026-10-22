@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"strconv"
+	"time"
 
 	"github.com/metalsoft-io/metalcloud-cli/pkg/api"
 	"github.com/metalsoft-io/metalcloud-cli/pkg/formatter"
@@ -63,19 +64,66 @@ var firmwareBinaryPrintConfig = formatter.PrintConfig{
 	},
 }
 
-func FirmwareBinaryList(ctx context.Context) error {
-	logger.Get().Info().Msgf("Listing all firmware binaries")
+// ListFlags holds the server-side filters and pagination options of `firmware-binary list`.
+// Every filter maps 1:1 to a `filter.*` query parameter of GET /api/v2/firmware/binary.
+type ListFlags struct {
+	FilterId                     []string
+	FilterCatalogId              []string
+	FilterExternalId             []string
+	FilterPackageId              []string
+	FilterPackageVersion         []string
+	FilterUpdateSeverity         []string
+	FilterRebootRequired         []string
+	FilterCreatedTimestamp       []string
+	FilterVendorReleaseTimestamp []string
+
+	Page  int
+	Limit int
+}
+
+func FirmwareBinaryList(ctx context.Context, flags ListFlags) error {
+	logger.Get().Info().Msgf("Listing firmware binaries")
 
 	client := api.GetApiClient(ctx)
 
 	request := client.FirmwareBinaryAPI.GetFirmwareBinaries(ctx).SortBy([]string{"id:ASC"})
 
-	records, meta, err := utils.FetchAllPages(request)
-	if err != nil {
-		return err
+	apply := func(values []string, set func([]string) sdk.FirmwareBinaryAPIGetFirmwareBinariesRequest) {
+		if len(values) > 0 {
+			request = set(utils.ProcessFilterStringSlice(values))
+		}
 	}
 
-	return utils.PrintAll(records, meta, len(records), &firmwareBinaryPrintConfig)
+	apply(flags.FilterId, request.FilterId)
+	apply(flags.FilterCatalogId, request.FilterCatalogId)
+	apply(flags.FilterExternalId, request.FilterExternalId)
+	apply(flags.FilterPackageId, request.FilterPackageId)
+	apply(flags.FilterPackageVersion, request.FilterPackageVersion)
+	apply(flags.FilterUpdateSeverity, request.FilterUpdateSeverity)
+	apply(flags.FilterRebootRequired, request.FilterRebootRequired)
+	apply(flags.FilterCreatedTimestamp, request.FilterCreatedTimestamp)
+	apply(flags.FilterVendorReleaseTimestamp, request.FilterVendorReleaseTimestamp)
+
+	switch {
+	case flags.Page > 0:
+		records, meta, err := utils.FetchPageWindow(request, flags.Page, flags.Limit)
+		if err != nil {
+			return err
+		}
+		return utils.PrintAll(records, meta, len(records), &firmwareBinaryPrintConfig)
+	case flags.Limit > 0:
+		records, meta, err := utils.FetchUpTo(request, flags.Limit)
+		if err != nil {
+			return err
+		}
+		return utils.PrintAll(records, meta, len(records), &firmwareBinaryPrintConfig)
+	default:
+		records, meta, err := utils.FetchAllPages(request)
+		if err != nil {
+			return err
+		}
+		return utils.PrintAll(records, meta, len(records), &firmwareBinaryPrintConfig)
+	}
 }
 
 func FirmwareBinaryGet(ctx context.Context, firmwareBinaryId string) error {
@@ -141,6 +189,7 @@ func FirmwareBinaryDelete(ctx context.Context, firmwareBinaryId string) error {
 
 func FirmwareBinaryConfigExample(ctx context.Context) error {
 	// Example create firmware binary configuration
+	exampleReleaseTimestamp := time.Date(2024, time.April, 1, 12, 0, 0, 0, time.UTC)
 	firmwareBinaryConfiguration := sdk.CreateFirmwareBinary{
 		Name:                   "BIOS-R740-2.15.0",
 		CatalogId:              1,
@@ -151,7 +200,7 @@ func FirmwareBinaryConfigExample(ctx context.Context) error {
 		PackageVersion:         sdk.PtrString("2.15.0"),
 		RebootRequired:         true,
 		UpdateSeverity:         "recommended",
-		VendorReleaseTimestamp: sdk.PtrString("2024-04-01T12:00:00Z"),
+		VendorReleaseTimestamp: &exampleReleaseTimestamp,
 		VendorSupportedDevices: []map[string]interface{}{
 			{
 				"model": "PowerEdge R740",
@@ -163,10 +212,6 @@ func FirmwareBinaryConfigExample(ctx context.Context) error {
 				"os":      "any",
 				"version": "any",
 			},
-		},
-		Vendor: map[string]interface{}{
-			"name":    "Dell Inc.",
-			"contact": "support@dell.com",
 		},
 	}
 

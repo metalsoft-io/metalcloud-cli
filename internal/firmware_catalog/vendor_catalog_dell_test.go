@@ -290,7 +290,7 @@ func TestProcessDellCatalog_Local(t *testing.T) {
 	if vendorCatalog.CatalogInfo.VendorId == nil || *vendorCatalog.CatalogInfo.VendorId == "" {
 		t.Errorf("processDellCatalog() did not set VendorId")
 	}
-	if vendorCatalog.CatalogInfo.VendorReleaseTimestamp == nil || *vendorCatalog.CatalogInfo.VendorReleaseTimestamp == "" {
+	if vendorCatalog.CatalogInfo.VendorReleaseTimestamp == nil || vendorCatalog.CatalogInfo.VendorReleaseTimestamp.IsZero() {
 		t.Errorf("processDellCatalog() did not set VendorReleaseTimestamp")
 	}
 	if len(vendorCatalog.Binaries) == 0 {
@@ -322,7 +322,7 @@ func TestProcessDellCatalog_Filtered(t *testing.T) {
 	if vendorCatalog.CatalogInfo.VendorId == nil || *vendorCatalog.CatalogInfo.VendorId == "" {
 		t.Errorf("processDellCatalog() did not set VendorId")
 	}
-	if vendorCatalog.CatalogInfo.VendorReleaseTimestamp == nil || *vendorCatalog.CatalogInfo.VendorReleaseTimestamp == "" {
+	if vendorCatalog.CatalogInfo.VendorReleaseTimestamp == nil || vendorCatalog.CatalogInfo.VendorReleaseTimestamp.IsZero() {
 		t.Errorf("processDellCatalog() did not set VendorReleaseTimestamp")
 	}
 	if len(vendorCatalog.Binaries) == 0 {

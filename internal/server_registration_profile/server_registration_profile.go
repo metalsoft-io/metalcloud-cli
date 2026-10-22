@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"strconv"
+	"strings"
 
 	"github.com/metalsoft-io/metalcloud-cli/pkg/api"
 	"github.com/metalsoft-io/metalcloud-cli/pkg/formatter"
@@ -98,7 +99,61 @@ var registrationProfilePrintConfig = formatter.PrintConfig{
 			Title: "RAID Odd 3+ Drives",
 			Order: 18,
 		},
+		"Settings.FirmwareBaselineId": {
+			Title:       "Firmware Baseline",
+			Transformer: formatter.FormatIdValue,
+			Order:       19,
+		},
+		"BiosAttributes": {
+			Title:    "BIOS Profile",
+			MaxWidth: 60,
+			Order:    20,
+		},
 	},
+}
+
+// registrationProfileView adds a printable BIOS profile summary to a registration
+// profile. The embedded profile's MarshalJSON is promoted, so json and yaml output
+// stay exactly the API record; only the table formats see BiosAttributes.
+type registrationProfileView struct {
+	sdk.ServerRegistrationProfile
+	BiosAttributes string `json:"-"`
+}
+
+// registrationProfileSettingsView is the same for a bare settings object.
+type registrationProfileSettingsView struct {
+	sdk.ServerRegistrationProfileSettings
+	BiosAttributes string `json:"-"`
+}
+
+func newRegistrationProfileView(profile sdk.ServerRegistrationProfile) registrationProfileView {
+	return registrationProfileView{
+		ServerRegistrationProfile: profile,
+		BiosAttributes:            formatBiosProfile(profile.Settings.BiosProfile),
+	}
+}
+
+// formatBiosProfile renders the BIOS attributes a profile requires as
+// "attribute=value" entries, qualified with the vendor (and model) they apply to.
+func formatBiosProfile(entries []sdk.ServerRegistrationBiosProfile) string {
+	parts := make([]string, 0, len(entries))
+
+	for _, entry := range entries {
+		part := fmt.Sprintf("%s=%s", entry.AttributeName, entry.AttributeValue)
+
+		scope := strings.TrimSpace(entry.ServerVendor + " " + entry.GetServerModel())
+		if scope != "" {
+			part += " (" + scope + ")"
+		}
+
+		parts = append(parts, part)
+	}
+
+	return strings.Join(parts, "; ")
+}
+
+func printRegistrationProfile(profile *sdk.ServerRegistrationProfile) error {
+	return formatter.PrintResult(newRegistrationProfileView(*profile), &registrationProfilePrintConfig)
 }
 
 func RegistrationProfileList(ctx context.Context) error {
@@ -113,7 +168,12 @@ func RegistrationProfileList(ctx context.Context) error {
 		return err
 	}
 
-	return utils.PrintAll(records, meta, len(records), &registrationProfilePrintConfig)
+	views := make([]registrationProfileView, 0, len(records))
+	for _, record := range records {
+		views = append(views, newRegistrationProfileView(record))
+	}
+
+	return utils.PrintAll(views, meta, len(views), &registrationProfilePrintConfig)
 }
 
 func RegistrationProfileGet(ctx context.Context, registrationProfileId string) error {
@@ -133,7 +193,7 @@ func RegistrationProfileGet(ctx context.Context, registrationProfileId string) e
 		return err
 	}
 
-	return formatter.PrintResult(registrationProfile, &registrationProfilePrintConfig)
+	return printRegistrationProfile(registrationProfile)
 }
 
 func RegistrationProfileCreate(ctx context.Context, name string, settings sdk.ServerRegistrationProfileSettings) error {
@@ -154,7 +214,7 @@ func RegistrationProfileCreate(ctx context.Context, name string, settings sdk.Se
 		return err
 	}
 
-	return formatter.PrintResult(registrationProfile, &registrationProfilePrintConfig)
+	return printRegistrationProfile(registrationProfile)
 }
 
 func RegistrationProfileUpdate(ctx context.Context, registrationProfileId string, name string, settings sdk.ServerRegistrationProfileUpdateSettings) error {
@@ -184,7 +244,7 @@ func RegistrationProfileUpdate(ctx context.Context, registrationProfileId string
 		return err
 	}
 
-	return formatter.PrintResult(registrationProfile, &registrationProfilePrintConfig)
+	return printRegistrationProfile(registrationProfile)
 }
 
 func RegistrationProfileDelete(ctx context.Context, registrationProfileId string) error {
@@ -309,6 +369,16 @@ var registrationProfileSettingsPrintConfig = formatter.PrintConfig{
 			Title: "DPU Mode",
 			Order: 17,
 		},
+		"FirmwareBaselineId": {
+			Title:       "Firmware Baseline",
+			Transformer: formatter.FormatIdValue,
+			Order:       18,
+		},
+		"BiosAttributes": {
+			Title:    "BIOS Profile",
+			MaxWidth: 60,
+			Order:    19,
+		},
 	},
 }
 
@@ -333,7 +403,7 @@ func RegistrationProfileSearch(ctx context.Context, siteId int) error {
 		return nil
 	}
 
-	return formatter.PrintResult(registrationProfile, &registrationProfilePrintConfig)
+	return printRegistrationProfile(registrationProfile)
 }
 
 // RegistrationProfileForServer shows the registration profile a server was, or
@@ -360,7 +430,7 @@ func RegistrationProfileForServer(ctx context.Context, serverId string) error {
 		return nil
 	}
 
-	return formatter.PrintResult(registrationProfile, &registrationProfilePrintConfig)
+	return printRegistrationProfile(registrationProfile)
 }
 
 // RegistrationProfileSystemDefaults shows the built-in registration settings
@@ -382,5 +452,8 @@ func RegistrationProfileSystemDefaults(ctx context.Context) error {
 		return nil
 	}
 
-	return formatter.PrintResult(settings, &registrationProfileSettingsPrintConfig)
+	return formatter.PrintResult(registrationProfileSettingsView{
+		ServerRegistrationProfileSettings: *settings,
+		BiosAttributes:                    formatBiosProfile(settings.BiosProfile),
+	}, &registrationProfileSettingsPrintConfig)
 }

@@ -340,16 +340,6 @@ func TestProcessLenovoCatalog_BinaryFields(t *testing.T) {
 		t.Errorf("UpdateSeverity = %v, want UNKNOWN", binary.UpdateSeverity)
 	}
 
-	// Check vendor configuration (requisites)
-	vendorConfig := binary.Vendor
-	requisites, ok := vendorConfig["requires"].([]string)
-	if !ok {
-		t.Fatalf("Vendor['requires'] should be []string, got %T", vendorConfig["requires"])
-	}
-	if len(requisites) != 2 || requisites[0] != "prereq-1" || requisites[1] != "prereq-2" {
-		t.Errorf("Vendor requisites = %v, want [prereq-1 prereq-2]", requisites)
-	}
-
 	// Check supported devices
 	devices := binary.VendorSupportedDevices
 	if len(devices) != 1 || devices[0]["id"] != lenovoSoftwareUpdateComponentXcc || devices[0]["model"] != lenovoSoftwareUpdateComponentXcc {
@@ -873,5 +863,21 @@ func TestProcessLenovoCatalog_EmptyCatalog(t *testing.T) {
 
 	if len(vc.Binaries) != 0 {
 		t.Errorf("Expected 0 binaries for empty catalog, got %d", len(vc.Binaries))
+	}
+}
+
+func TestLenovoVersionFromFixID(t *testing.T) {
+	cases := map[string]string{
+		"lnvgy_fw_uefi_ise144d-4.50_anyos_32-64": "4.50",
+		"lnvgy_fw_xcc_tei330r-2.01_anyos_noarch": "2.01",
+		"lnvgy_fw_lxpm_pdl124i-1.80_anyos_32-64": "1.80",
+		"lnvgy_fw_uefi_x-1.2.3":                  "1.2.3",
+		"no-version-here_anyos_32-64":            "",
+		"":                                       "",
+	}
+	for fixID, want := range cases {
+		if got := lenovoVersionFromFixID(fixID); got != want {
+			t.Errorf("lenovoVersionFromFixID(%q) = %q, want %q", fixID, got, want)
+		}
 	}
 }

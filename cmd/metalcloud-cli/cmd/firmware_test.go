@@ -25,6 +25,7 @@ func firmwareCatalogFixture() map[string]interface{} {
 func firmwareBaselineFixture() map[string]interface{} {
 	return map[string]interface{}{
 		"id": 1, "name": "Baseline 1", "links": []interface{}{},
+		"createdTimestamp": "2024-01-01T00:00:00Z",
 	}
 }
 

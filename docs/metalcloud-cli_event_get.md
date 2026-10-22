@@ -7,7 +7,7 @@ Get detailed information about a specific event
 Retrieve detailed information about a specific event by its ID.
 
 This command displays comprehensive information about a single event, including
-its metadata, timestamp, severity, type, associated resources, and full description.
+its metadata, timestamp, level, type, associated resources, and full description.
 
 REQUIRED ARGUMENTS:
   event_id                    The unique identifier of the event to retrieve
@@ -21,7 +21,7 @@ Examples:
 
 The output includes:
 - Event ID and timestamp
-- Event type and severity level
+- Event type and level
 - Associated infrastructure, server, job, or site information
 - Full event description and metadata
 - User who triggered the event (if applicable)

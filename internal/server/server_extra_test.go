@@ -4,7 +4,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
-	"net/http/httptest"
 	"strings"
 	"testing"
 
@@ -170,52 +169,6 @@ func TestServerPower_InvalidId(t *testing.T) {
 	ctx := setupTestContext(ts.URL)
 	if err := ServerPower(ctx, "bad", "on"); err == nil {
 		t.Error("ServerPower with invalid id: expected error, got nil")
-	}
-}
-
-func TestServerList_MultiPage(t *testing.T) {
-	page1 := make([]map[string]interface{}, 100)
-	page2 := make([]map[string]interface{}, 100)
-	page3 := make([]map[string]interface{}, 5)
-	for i := range page1 {
-		page1[i] = map[string]interface{}{
-			"serverId": i + 1, "siteId": 1, "serverTypeId": 1,
-			"serverUUID": fmt.Sprintf("uuid-%d", i+1), "serialNumber": fmt.Sprintf("SN-%d", i+1),
-			"managementAddress": "10.0.0.1", "vendor": "Dell", "model": "R640",
-			"serverStatus": "active", "revision": 1, "links": map[string]interface{}{},
-			"serverMetricsMetadata": []interface{}{},
-		}
-	}
-	for i := range page2 {
-		page2[i] = map[string]interface{}{
-			"serverId": 100 + i + 1, "siteId": 1, "serverTypeId": 1,
-			"serverUUID": fmt.Sprintf("uuid-%d", 100+i+1), "serialNumber": fmt.Sprintf("SN-%d", 100+i+1),
-			"managementAddress": "10.0.0.2", "vendor": "Dell", "model": "R640",
-			"serverStatus": "active", "revision": 1, "links": map[string]interface{}{},
-			"serverMetricsMetadata": []interface{}{},
-		}
-	}
-	for i := range page3 {
-		page3[i] = map[string]interface{}{
-			"serverId": 200 + i + 1, "siteId": 1, "serverTypeId": 1,
-			"serverUUID": fmt.Sprintf("uuid-%d", 200+i+1), "serialNumber": fmt.Sprintf("SN-%d", 200+i+1),
-			"managementAddress": "10.0.0.3", "vendor": "Dell", "model": "R640",
-			"serverStatus": "active", "revision": 1, "links": map[string]interface{}{},
-			"serverMetricsMetadata": []interface{}{},
-		}
-	}
-
-	// ServerList uses raw body reads — it does NOT use FetchAllPages.
-	// So we just verify a single-page call of 205 items works without error.
-	all205 := append(append(page1, page2...), page3...)
-	body := buildServersBody(all205)
-
-	ts := httptest.NewServer(newServerListHandler(body, http.StatusOK))
-	defer ts.Close()
-
-	ctx := setupTestContext(ts.URL)
-	if err := ServerList(ctx, false, nil, nil); err != nil {
-		t.Errorf("ServerList with 205 items: expected nil error, got: %v", err)
 	}
 }
 

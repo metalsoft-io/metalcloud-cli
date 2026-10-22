@@ -11,12 +11,14 @@ import (
 // Server Instance Group management commands.
 var (
 	serverInstanceGroupFlags = struct {
-		label         string
-		instanceCount int
-		osTemplateId  int
-		accessMode    string
-		tagged        string
-		redundancy    string
+		label             string
+		instanceCount     int
+		osTemplateId      int
+		serverFilterRules []string
+		serverIds         []string
+		accessMode        string
+		tagged            string
+		redundancy        string
 
 		configSource             string
 		filterInfrastructureId   []string
@@ -133,12 +135,27 @@ Arguments:
   instance_count             Number of instances to create in the group
   os_template_id             (Optional) OS template ID to use for instances
 
+Flags:
+  --server-id strings             Pin the group to a specific server (can be repeated). Shorthand for
+                                  --server-filter-rule server_id:equals:<id>
+  --server-filter-rule strings    Restrict the servers the group may use, as property:operator[:value]
+                                  (can be repeated). Properties: tags, rack, server_id, inventory_ID.
+                                  Operators: equals, contains, does_not_contain, starts_with,
+                                  does_not_starts_with, matches_regexp, affinity, anti_affinity.
+                                  The value is optional for affinity and anti_affinity.
+
 Examples:
   # Create instance group with 3 instances using server type 100
   metalcloud-cli server-instance-group create 1234 web-servers 100 3
 
   # Create instance group with specific OS template
   metalcloud-cli server-instance-group create prod-env db-cluster 200 2 50
+
+  # Deploy the group on a specific server
+  metalcloud-cli server-instance-group create 1234 web-servers 100 1 --server-id 236
+
+  # Only use servers in a given rack
+  metalcloud-cli server-instance-group create 1234 web-servers 100 3 --server-filter-rule rack:equals:A12
 
   # Using alias
   metalcloud-cli ig new 1234 app-servers 150 5`,
@@ -151,7 +168,12 @@ Examples:
 				os_template_id = args[4]
 			}
 
-			return server_instance.ServerInstanceGroupCreate(cmd.Context(), args[0], args[1], args[2], args[3], os_template_id)
+			serverFilteringRules, err := server_instance.BuildServerFilterRules(serverInstanceGroupFlags.serverFilterRules, serverInstanceGroupFlags.serverIds)
+			if err != nil {
+				return err
+			}
+
+			return server_instance.ServerInstanceGroupCreate(cmd.Context(), args[0], args[1], args[2], args[3], os_template_id, serverFilteringRules)
 		},
 	}
 
@@ -171,8 +193,16 @@ Flags:
   --label string           Set the instance group label
   --instance-count int     Set the count of instance group instances (must be > 0)
   --os-template-id int     Set the instance group OS template ID (must be > 0)
+  --server-id strings            Pin the group to a specific server (can be repeated). Shorthand for
+                                 --server-filter-rule server_id:equals:<id>
+  --server-filter-rule strings   Restrict the servers the group may use, as property:operator[:value]
+                                 (can be repeated). Properties: tags, rack, server_id, inventory_ID.
+                                 Operators: equals, contains, does_not_contain, starts_with,
+                                 does_not_starts_with, matches_regexp, affinity, anti_affinity.
 
-Note: At least one of the flags (--label, --instance-count, --os-template-id) must be provided.
+Note: At least one of the flags (--label, --instance-count, --os-template-id, --server-id,
+--server-filter-rule) must be provided. When given, the server filter rules replace the group's
+existing rules.
 
 Examples:
   # Update the label of instance group 1234
@@ -184,6 +214,9 @@ Examples:
   # Change OS template
   metalcloud-cli server-instance-group update 1234 --os-template-id 25
 
+  # Pin the group to server 236
+  metalcloud-cli server-instance-group update 1234 --server-id 236
+
   # Update multiple properties at once
   metalcloud-cli server-instance-group update 1234 --label "updated-servers" --instance-count 3
 
@@ -193,7 +226,12 @@ Examples:
 		Annotations:  map[string]string{system.REQUIRED_PERMISSION: system.PERMISSION_SERVER_INSTANCE_GROUPS_WRITE},
 		Args:         cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
-			return server_instance.ServerInstanceGroupUpdate(cmd.Context(), args[0], serverInstanceGroupFlags.label, serverInstanceGroupFlags.instanceCount, serverInstanceGroupFlags.osTemplateId)
+			serverFilteringRules, err := server_instance.BuildServerFilterRules(serverInstanceGroupFlags.serverFilterRules, serverInstanceGroupFlags.serverIds)
+			if err != nil {
+				return err
+			}
+
+			return server_instance.ServerInstanceGroupUpdate(cmd.Context(), args[0], serverInstanceGroupFlags.label, serverInstanceGroupFlags.instanceCount, serverInstanceGroupFlags.osTemplateId, serverFilteringRules)
 		},
 	}
 
@@ -1499,12 +1537,16 @@ func init() {
 	serverInstanceGroupCmd.AddCommand(serverInstanceGroupGetCmd)
 
 	serverInstanceGroupCmd.AddCommand(serverInstanceGroupCreateCmd)
+	serverInstanceGroupCreateCmd.Flags().StringArrayVar(&serverInstanceGroupFlags.serverFilterRules, "server-filter-rule", nil, "Restrict the servers the group may use, as property:operator[:value]. Can be repeated.")
+	serverInstanceGroupCreateCmd.Flags().StringSliceVar(&serverInstanceGroupFlags.serverIds, "server-id", nil, "Pin the group to a specific server ID. Can be repeated.")
 
 	serverInstanceGroupCmd.AddCommand(serverInstanceGroupUpdateCmd)
 	serverInstanceGroupUpdateCmd.Flags().StringVar(&serverInstanceGroupFlags.label, "label", "", "Set the instance group label.")
 	serverInstanceGroupUpdateCmd.Flags().IntVar(&serverInstanceGroupFlags.instanceCount, "instance-count", 0, "Set the count of instance group instances.")
 	serverInstanceGroupUpdateCmd.Flags().IntVar(&serverInstanceGroupFlags.osTemplateId, "os-template-id", 0, "Set the instance group OS template Id.")
-	serverInstanceGroupUpdateCmd.MarkFlagsOneRequired("label", "instance-count", "os-template-id")
+	serverInstanceGroupUpdateCmd.Flags().StringArrayVar(&serverInstanceGroupFlags.serverFilterRules, "server-filter-rule", nil, "Restrict the servers the group may use, as property:operator[:value]. Replaces the existing rules. Can be repeated.")
+	serverInstanceGroupUpdateCmd.Flags().StringSliceVar(&serverInstanceGroupFlags.serverIds, "server-id", nil, "Pin the group to a specific server ID. Replaces the existing rules. Can be repeated.")
+	serverInstanceGroupUpdateCmd.MarkFlagsOneRequired("label", "instance-count", "os-template-id", "server-filter-rule", "server-id")
 
 	serverInstanceGroupCmd.AddCommand(serverInstanceGroupUpdateMetaCmd)
 	serverInstanceGroupUpdateMetaCmd.Flags().StringVar(&serverInstanceGroupFlags.configSource, "config-source", "", "Source of the metadata. Can be 'pipe' or path to a JSON/YAML file.")

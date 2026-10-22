@@ -158,7 +158,6 @@ func (vc *VendorCatalog) processHpeCatalog(ctx context.Context) error {
 			VendorSupportedDevices: supportedDevices,
 			VendorSupportedSystems: []map[string]interface{}{},
 			VendorReleaseTimestamp: nil,
-			Vendor:                 map[string]any{},
 		}
 
 		vc.Binaries = append(vc.Binaries, &firmwareBinary)

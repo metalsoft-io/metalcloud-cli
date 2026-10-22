@@ -9,6 +9,7 @@ import (
 	"net/http"
 	"os"
 	"path/filepath"
+	"regexp"
 
 	"github.com/metalsoft-io/metalcloud-cli/pkg/logger"
 	sdk "github.com/metalsoft-io/metalcloud-sdk-go"
@@ -24,7 +25,23 @@ const (
 	lenovoSoftwareUpdateTypeFix        = "Fix"
 	lenovoSoftwareUpdateTypeInstallXML = "InstallXML"
 	lenovoSoftwareUpdateTypeReadMe     = "ReadMe"
+
+	// Placeholder description used by some install XMLs; not useful as a binary name.
+	lenovoGenericXmlDescription = "XML file"
 )
+
+// lenovoFixIDVersionPattern extracts the version from a Lenovo FixID such as
+// lnvgy_fw_uefi_ise144d-4.50_anyos_32-64 (build id "ise144d", version "4.50").
+// The architecture suffix (32-64) has no dot, so it is never mistaken for a version.
+var lenovoFixIDVersionPattern = regexp.MustCompile(`-(\d+(?:\.\d+)+)(?:_|$)`)
+
+// lenovoVersionFromFixID returns the version embedded in a FixID, or "" when there is none.
+func lenovoVersionFromFixID(fixID string) string {
+	if m := lenovoFixIDVersionPattern.FindStringSubmatch(fixID); m != nil {
+		return m[1]
+	}
+	return ""
+}
 
 type lenovoSoftwareUpdateFile struct {
 	Type        string `json:"Type"`
@@ -118,12 +135,8 @@ func (vc *VendorCatalog) processLenovoCatalog(ctx context.Context) error {
 				continue
 			}
 
-			if description == "" {
+			if description == "" || description == lenovoGenericXmlDescription {
 				description = softwareUpdate.FixID
-			}
-
-			componentVendorConfiguration := map[string]any{
-				"requires": softwareUpdate.RequisitesFixIDs,
 			}
 
 			supportedDevices := []map[string]interface{}{
@@ -139,9 +152,15 @@ func (vc *VendorCatalog) processLenovoCatalog(ctx context.Context) error {
 				},
 			}
 
+			// Lenovo's SearchDrivers response carries no Version field, so fall back to the
+			// version embedded in the FixID. The firmware search needs it to rank binaries.
+			version := softwareUpdate.Version
+			if version == "" {
+				version = lenovoVersionFromFixID(softwareUpdate.FixID)
+			}
 			var packageVersion *string
-			if softwareUpdate.Version != "" {
-				packageVersion = sdk.PtrString(softwareUpdate.Version)
+			if version != "" {
+				packageVersion = sdk.PtrString(version)
 			}
 
 			firmwareBinary := sdk.FirmwareBinary{
@@ -157,7 +176,6 @@ func (vc *VendorCatalog) processLenovoCatalog(ctx context.Context) error {
 				VendorSupportedDevices: supportedDevices,
 				VendorSupportedSystems: supportedSystems,
 				VendorReleaseTimestamp: nil,
-				Vendor:                 componentVendorConfiguration,
 			}
 
 			vc.Binaries = append(vc.Binaries, &firmwareBinary)
