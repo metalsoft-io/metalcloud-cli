@@ -33,10 +33,10 @@ metalcloud-cli infrastructure utilization-summary [flags]
 ### Options
 
 ```
-      --end-time time            End time for the report. (default 2026-09-20T15:26:54.636786915+03:00)
+      --end-time time            End time for the report. (default 2026-10-22T17:04:52.45954473+03:00)
   -h, --help                     help for utilization-summary
       --infrastructure-id ints   Infrastructure IDs to include in the report.
-      --start-time time          Start time for the report. (default 2026-09-20T15:26:54.636786415+03:00)
+      --start-time time          Start time for the report. (default 2026-10-22T17:04:52.459538745+03:00)
       --user-id int              ID of the user to include in the report.
 ```
 
