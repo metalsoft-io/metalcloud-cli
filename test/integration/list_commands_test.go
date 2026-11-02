@@ -193,11 +193,6 @@ func TestServerList_Integration(t *testing.T) {
 	assertListCommandNoPage(t, "-x", "server", "list", "-f", "json")
 }
 
-func TestServerDefaultCredentialsList_Integration(t *testing.T) {
-	skipIfNoEndpoint(t)
-	assertListCommand(t, "-x", "server-default-credentials", "list", "-f", "json")
-}
-
 func TestServerCleanupPolicyList_Integration(t *testing.T) {
 	skipIfNoEndpoint(t)
 	assertListCommand(t, "-x", "server-cleanup-policy", "list", "-f", "json")
@@ -445,23 +440,6 @@ func TestLogicalNetworkList_PageWithLimitOver100_Integration(t *testing.T) {
 	assertPaginated(t, "-x", "logical-network", "list", "--page", "2", "--limit", "120", "-f", "json")
 }
 
-func TestServerDefaultCredentialsList_Limit_Integration(t *testing.T) {
-	skipIfNoEndpoint(t)
-	assertPaginated(t, "-x", "server-default-credentials", "list", "--limit", "5", "-f", "json")
-}
-func TestServerDefaultCredentialsList_Page_Integration(t *testing.T) {
-	skipIfNoEndpoint(t)
-	assertPaginated(t, "-x", "server-default-credentials", "list", "--page", "1", "-f", "json")
-}
-func TestServerDefaultCredentialsList_LimitOver100_Integration(t *testing.T) {
-	skipIfNoEndpoint(t)
-	assertPaginated(t, "-x", "server-default-credentials", "list", "--limit", "150", "-f", "json")
-}
-func TestServerDefaultCredentialsList_PageLimit_Integration(t *testing.T) {
-	skipIfNoEndpoint(t)
-	assertPaginated(t, "-x", "server-default-credentials", "list", "--page", "1", "--limit", "5", "-f", "json")
-}
-
 func TestVmTypeList_Limit_Integration(t *testing.T) {
 	skipIfNoEndpoint(t)
 	assertPaginated(t, "-x", "vm-type", "list", "--limit", "5", "-f", "json")
@@ -504,7 +482,6 @@ func TestNetworkDeviceDefaultSecretsList_LimitOver100_Integration(t *testing.T) 
 	skipIfNoEndpoint(t)
 	assertPaginated(t, "-x", "network-device", "default-secrets", "list", "--limit", "150", "-f", "json")
 }
-
 
 // ---------------------------------------------------------------------------
 // VM pool sub-commands: VMs, cluster hosts, cluster host VMs
@@ -848,15 +825,6 @@ func TestServerList_AllFormats_Integration(t *testing.T) {
 	for _, fmt := range []string{"json", "csv", "yaml", "text", "md"} {
 		t.Run(fmt, func(t *testing.T) {
 			assertListFormat(t, fmt, "-x", "server", "list")
-		})
-	}
-}
-
-func TestServerDefaultCredentialsList_AllFormats_Integration(t *testing.T) {
-	skipIfNoEndpoint(t)
-	for _, fmt := range []string{"json", "csv", "yaml", "text", "md"} {
-		t.Run(fmt, func(t *testing.T) {
-			assertListFormat(t, fmt, "-x", "server-default-credentials", "list")
 		})
 	}
 }

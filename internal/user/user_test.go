@@ -344,6 +344,7 @@ func makeUserLimits() map[string]any {
 		"serverGroupInstancesMinCount":                     float64(1),
 		"vmInstanceGroupVmInstancesMaxCount":               float64(10),
 		"containerInstanceGroupContainerInstancesMaxCount": float64(10),
+		"endpointInstanceGroupEndpointInstancesMaxCount":   float64(10),
 		"vmInstanceMaxDiskSizeMbytes":                      float64(1048576),
 		"containerInstanceMaxDiskSizeMbytes":               float64(1048576),
 		"driveMaxSizeMbytes":                               float64(1048576),

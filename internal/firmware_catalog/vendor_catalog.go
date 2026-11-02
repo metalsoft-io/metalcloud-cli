@@ -300,6 +300,7 @@ func (vc *VendorCatalog) CreateMetalsoftCatalog(ctx context.Context) error {
 			VendorSupportedDevices: binary.VendorSupportedDevices,
 			VendorSupportedSystems: binary.VendorSupportedSystems,
 			VendorReleaseTimestamp: binary.VendorReleaseTimestamp,
+			ComponentClass:         binary.ComponentClass,
 		}
 
 		if len(binaryCreate.Name) > 255 {

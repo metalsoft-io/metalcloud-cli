@@ -1,24 +1,27 @@
-## metalcloud-cli server-default-credentials config-example
+## metalcloud-cli server set-registration-ready
 
-Show a server default credentials update configuration example
+Set a server to the registration_ready status
 
 ### Synopsis
 
-Show an example of the configuration accepted by 'server-default-credentials update'.
+Set the status of a server to "registration_ready".
+
+Required Arguments:
+  server_id              The ID of the server
 
 Examples:
-  # Write the example to a file and edit it
-  metalcloud-cli server-default-credentials config-example > credentials.json
+  # Mark planned server 123 as ready to be registered
+  metalcloud-cli server set-registration-ready 123
 
 
 ```
-metalcloud-cli server-default-credentials config-example [flags]
+metalcloud-cli server set-registration-ready server_id [flags]
 ```
 
 ### Options
 
 ```
-  -h, --help   help for config-example
+  -h, --help   help for set-registration-ready
 ```
 
 ### Options inherited from parent commands
@@ -36,5 +39,5 @@ metalcloud-cli server-default-credentials config-example [flags]
 
 ### SEE ALSO
 
-* [metalcloud-cli server-default-credentials](metalcloud-cli_server-default-credentials.md)	 - Manage server default credentials and authentication settings
+* [metalcloud-cli server](metalcloud-cli_server.md)	 - Server management
 

@@ -318,9 +318,7 @@ func TestServerEnableSyslog_InvalidId(t *testing.T) {
 func TestServerEnableSyslog_Success(t *testing.T) {
 	ts := testutils.NewTestServer(map[string]http.HandlerFunc{
 		"/api/v2/servers/42":                          testutils.RawHandler(http.StatusOK, serverGetJSON),
-		"/api/v2/servers/42/actions/syslog-subscribe": func(w http.ResponseWriter, r *http.Request) {
-			w.WriteHeader(http.StatusNoContent)
-		},
+		"/api/v2/servers/42/actions/syslog-subscribe": testutils.RawHandler(http.StatusAccepted, `{"jobId":5,"jobGroupId":6}`),
 	})
 	defer ts.Close()
 
@@ -373,18 +371,209 @@ func TestServerReRegister_Success(t *testing.T) {
 }
 
 func TestServerRegister_Success(t *testing.T) {
-	regJSON := `{"serverId":42,"revision":1,"serverUUID":"uuid-42","serialNumber":"SN-042","jobInfo":{"jobId":1,"jobGroupId":2}}`
+	var body map[string]any
 	ts := testutils.NewTestServer(map[string]http.HandlerFunc{
-		"/api/v2/servers": testutils.RawHandler(http.StatusOK, regJSON),
+		"/api/v2/servers": func(w http.ResponseWriter, r *http.Request) {
+			if r.Method != http.MethodPost {
+				http.Error(w, "unexpected method", http.StatusMethodNotAllowed)
+				return
+			}
+			_ = json.NewDecoder(r.Body).Decode(&body)
+			w.Header().Set("Content-Type", "application/json")
+			w.WriteHeader(http.StatusCreated)
+			fmt.Fprint(w, `{"serverId":42,"revision":1}`)
+		},
 	})
 	defer ts.Close()
 
 	ctx := setupTestContext(ts.URL)
-	config := sdk.RegisterServer{
+	config := sdk.CreateServer{
+		SiteId:            1,
+		SerialNumber:      sdk.PtrString("SN-042"),
 		ManagementAddress: sdk.PtrString("10.0.0.100"),
 	}
-	if err := ServerRegister(ctx, config); err != nil {
-		t.Errorf("ServerRegister: expected nil error, got: %v", err)
+	if err := ServerRegister(ctx, config, nil); err != nil {
+		t.Fatalf("ServerRegister: expected nil error, got: %v", err)
+	}
+	if body["serialNumber"] != "SN-042" || body["managementAddress"] != "10.0.0.100" {
+		t.Errorf("unexpected request body: %v", body)
+	}
+	if _, ok := body["serverStatus"]; ok {
+		t.Errorf("serverStatus must be omitted when not set, got body: %v", body)
+	}
+}
+
+func TestServerRegister_PlannedWithRackUpdate(t *testing.T) {
+	var createBody, updateBody map[string]any
+	var ifMatch string
+	ts := testutils.NewTestServer(map[string]http.HandlerFunc{
+		"/api/v2/servers": func(w http.ResponseWriter, r *http.Request) {
+			_ = json.NewDecoder(r.Body).Decode(&createBody)
+			w.Header().Set("Content-Type", "application/json")
+			w.WriteHeader(http.StatusCreated)
+			fmt.Fprint(w, `{"serverId":42,"revision":1}`)
+		},
+		"/api/v2/servers/42": func(w http.ResponseWriter, r *http.Request) {
+			if r.Method != http.MethodPatch {
+				http.Error(w, "unexpected method", http.StatusMethodNotAllowed)
+				return
+			}
+			ifMatch = r.Header.Get("If-Match")
+			_ = json.NewDecoder(r.Body).Decode(&updateBody)
+			w.Header().Set("Content-Type", "application/json")
+			fmt.Fprint(w, serverGetJSON)
+		},
+	})
+	defer ts.Close()
+
+	ctx := setupTestContext(ts.URL)
+	config := sdk.CreateServer{
+		SiteId:       1,
+		SerialNumber: sdk.PtrString("SN-042"),
+		ServerStatus: sdk.PtrString("planned"),
+	}
+	update := &sdk.UpdateServer{
+		RackName:    sdk.PtrString("R01"),
+		InventoryId: sdk.PtrString("INV-1"),
+	}
+	if err := ServerRegister(ctx, config, update); err != nil {
+		t.Fatalf("ServerRegister: expected nil error, got: %v", err)
+	}
+	if createBody["serverStatus"] != "planned" {
+		t.Errorf("expected serverStatus planned, got body: %v", createBody)
+	}
+	if _, ok := createBody["managementAddress"]; ok {
+		t.Errorf("managementAddress must be omitted for a planned server, got body: %v", createBody)
+	}
+	if ifMatch != "1" {
+		t.Errorf("expected If-Match 1 (revision from create), got %q", ifMatch)
+	}
+	if updateBody["rackName"] != "R01" || updateBody["inventoryId"] != "INV-1" {
+		t.Errorf("unexpected update body: %v", updateBody)
+	}
+}
+
+func TestServerRegister_InvalidStatus(t *testing.T) {
+	ctx := setupTestContext("http://localhost")
+	config := sdk.CreateServer{
+		SiteId:       1,
+		SerialNumber: sdk.PtrString("SN-042"),
+		ServerStatus: sdk.PtrString("active"),
+	}
+	if err := ServerRegister(ctx, config, nil); err == nil {
+		t.Error("ServerRegister with invalid status: expected error, got nil")
+	}
+}
+
+func TestServerRegisterPlanned_Success(t *testing.T) {
+	var ifMatch string
+	ts := testutils.NewTestServer(map[string]http.HandlerFunc{
+		"/api/v2/servers/42": testutils.RawHandler(http.StatusOK, serverGetJSON),
+		"/api/v2/servers/42/actions/register": func(w http.ResponseWriter, r *http.Request) {
+			ifMatch = r.Header.Get("If-Match")
+			w.Header().Set("Content-Type", "application/json")
+			w.WriteHeader(http.StatusAccepted)
+			fmt.Fprint(w, `{"serverId":42,"revision":8,"jobInfo":{"jobId":1,"jobGroupId":2}}`)
+		},
+	})
+	defer ts.Close()
+
+	ctx := setupTestContext(ts.URL)
+	if err := ServerRegisterPlanned(ctx, "42"); err != nil {
+		t.Fatalf("ServerRegisterPlanned: expected nil error, got: %v", err)
+	}
+	if ifMatch != "7" {
+		t.Errorf("expected If-Match 7, got %q", ifMatch)
+	}
+}
+
+func TestServerSetRegistrationReady_Success(t *testing.T) {
+	var ifMatch string
+	ts := testutils.NewTestServer(map[string]http.HandlerFunc{
+		"/api/v2/servers/42": testutils.RawHandler(http.StatusOK, serverGetJSON),
+		"/api/v2/servers/42/actions/set-registration-ready": func(w http.ResponseWriter, r *http.Request) {
+			ifMatch = r.Header.Get("If-Match")
+			w.WriteHeader(http.StatusNoContent)
+		},
+	})
+	defer ts.Close()
+
+	ctx := setupTestContext(ts.URL)
+	if err := ServerSetRegistrationReady(ctx, "42"); err != nil {
+		t.Fatalf("ServerSetRegistrationReady: expected nil error, got: %v", err)
+	}
+	if ifMatch != "7" {
+		t.Errorf("expected If-Match 7, got %q", ifMatch)
+	}
+}
+
+const serverReplacementCandidatesJSON = `{
+	"instanceId": 10,
+	"requirements": {
+		"oldServerId": 42,
+		"minRamGbytes": 256,
+		"minCores": 32,
+		"gpuModels": {},
+		"diskSizesByType": {},
+		"localDisksRequired": false,
+		"minFibreChannelPorts": 0,
+		"links": []
+	},
+	"candidates": [
+		{"serverId": 43, "serialNumber": "SN-043", "eligible": true, "downgrade": false, "rank": 1, "skipReasons": [], "warnings": []},
+		{"serverId": 44, "eligible": false, "downgrade": false, "skipReasons": ["not enough RAM", "wrong site"], "warnings": []}
+	]
+}`
+
+func TestServerReplacementCandidates_Success(t *testing.T) {
+	ts := testutils.NewTestServer(map[string]http.HandlerFunc{
+		"/api/v2/servers/42/replacement-candidates": testutils.RawHandler(http.StatusOK, serverReplacementCandidatesJSON),
+	})
+	defer ts.Close()
+
+	ctx := setupTestContext(ts.URL)
+	if err := ServerReplacementCandidates(ctx, "42"); err != nil {
+		t.Errorf("ServerReplacementCandidates: expected nil error, got: %v", err)
+	}
+}
+
+func TestServerReplace_Success(t *testing.T) {
+	var body map[string]any
+	ts := testutils.NewTestServer(map[string]http.HandlerFunc{
+		"/api/v2/servers/42/actions/replace": func(w http.ResponseWriter, r *http.Request) {
+			_ = json.NewDecoder(r.Body).Decode(&body)
+			w.Header().Set("Content-Type", "application/json")
+			w.WriteHeader(http.StatusAccepted)
+			fmt.Fprint(w, `{"instanceId":10,"replacedServerId":42,"replacementServerId":43,"jobGroupId":9}`)
+		},
+	})
+	defer ts.Close()
+
+	ctx := setupTestContext(ts.URL)
+	if err := ServerReplace(ctx, "42", "43", true); err != nil {
+		t.Fatalf("ServerReplace: expected nil error, got: %v", err)
+	}
+	if body["replacementServerId"] != float64(43) || body["acceptDowngrade"] != true {
+		t.Errorf("unexpected request body: %v", body)
+	}
+}
+
+func TestServerReplace_InvalidReplacementId(t *testing.T) {
+	ctx := setupTestContext("http://localhost")
+	if err := ServerReplace(ctx, "42", "bad", false); err == nil {
+		t.Error("ServerReplace with invalid replacement id: expected error, got nil")
+	}
+}
+
+func TestServerCleanupReplaced_Success(t *testing.T) {
+	ts := testutils.NewTestServer(map[string]http.HandlerFunc{
+		"/api/v2/servers/42/actions/cleanup": testutils.RawHandler(http.StatusAccepted, `{"jobId":3,"jobGroupId":4}`),
+	})
+	defer ts.Close()
+
+	ctx := setupTestContext(ts.URL)
+	if err := ServerCleanupReplaced(ctx, "42"); err != nil {
+		t.Errorf("ServerCleanupReplaced: expected nil error, got: %v", err)
 	}
 }
 

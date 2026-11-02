@@ -167,7 +167,7 @@ func DhcpReservationUpdate(ctx context.Context, siteIdOrLabel string, ipVersion 
 	client := api.GetApiClient(ctx)
 
 	reservation, httpRes, err := client.DHCPReservationAPI.
-		UpdateDhcpReservation(ctx, siteId, current.IpVersion, reservationIdNumeric).
+		UpdateDhcpReservation(ctx, siteId, reservationIdNumeric, current.IpVersion).
 		DhcpReservationUpdate(update).
 		IfMatch(strconv.FormatInt(current.Revision, 10)).
 		Execute()
@@ -189,7 +189,7 @@ func DhcpReservationDelete(ctx context.Context, siteIdOrLabel string, ipVersion 
 	client := api.GetApiClient(ctx)
 
 	httpRes, err := client.DHCPReservationAPI.
-		DeleteDhcpReservation(ctx, siteId, current.IpVersion, reservationIdNumeric).
+		DeleteDhcpReservation(ctx, siteId, reservationIdNumeric, current.IpVersion).
 		IfMatch(strconv.FormatInt(current.Revision, 10)).
 		Execute()
 	if err := response_inspector.InspectResponse(httpRes, err); err != nil {
@@ -247,7 +247,7 @@ func getDhcpReservation(ctx context.Context, siteIdOrLabel string, ipVersion str
 	client := api.GetApiClient(ctx)
 
 	reservation, httpRes, err := client.DHCPReservationAPI.
-		GetDhcpReservation(ctx, siteId, ipVersionValue, reservationIdNumeric).
+		GetDhcpReservation(ctx, siteId, reservationIdNumeric, ipVersionValue).
 		Execute()
 	if err := response_inspector.InspectResponse(httpRes, err); err != nil {
 		return nil, 0, 0, err

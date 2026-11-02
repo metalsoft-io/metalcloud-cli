@@ -360,7 +360,6 @@ func TestNetworkDeviceSubResourceRequiredFlags(t *testing.T) {
 		{"network-device", "re-provision", "1"},
 		{"network-device", "run-extension", "1"},
 		{"network-device", "vendor", "update", "3"},
-		{"network-device", "set-health-monitoring-filter"},
 	}
 
 	for _, args := range cases {

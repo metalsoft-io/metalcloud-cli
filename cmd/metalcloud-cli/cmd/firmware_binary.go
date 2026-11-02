@@ -223,19 +223,19 @@ Configuration file example (bios-update.json):
   "rebootRequired": true,
   "updateSeverity": "recommended",
   "vendorReleaseTimestamp": "2024-04-01T12:00:00Z",
-  "vendorSupportedDevices": [
-    {
-      "model": "PowerEdge R740",
-      "type": "server"
-    }
-  ],
+  "vendorSupportedDevices": [],
   "vendorSupportedSystems": [
     {
-      "os": "any",
-      "version": "any"
+      "model": "R740"
     }
   ]
-}`,
+}
+
+vendorSupportedDevices entries identify the devices a device firmware package applies
+to, by PCI ids and/or HPE device class:
+  {"pci": {"vendorId": "14e4", "deviceId": "16d7", "subsystemVendorId": "1028", "subsystemId": "1fe8"}}
+  {"deviceClass": "aa148d2e-6e09-453e-bc6f-63baa5f5ccc4"}
+vendorSupportedSystems entries name the server models the package applies to.`,
 		SilenceUsage: true,
 		Annotations:  map[string]string{system.REQUIRED_PERMISSION: system.PERMISSION_FIRMWARE_BASELINES_WRITE},
 		RunE: func(cmd *cobra.Command, args []string) error {

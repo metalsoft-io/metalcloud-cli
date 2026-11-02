@@ -383,38 +383,6 @@ func NetworkDeviceHealthSummary(ctx context.Context, networkDeviceRef string) er
 	return printRecords(healthSummary, row, &networkDeviceHealthSummaryPrintConfig)
 }
 
-// NetworkDeviceSetHealthMonitoringFilter sets the network device filter applied
-// to the health monitoring WebSocket stream of the given socket. The endpoint
-// is served as a GET and returns no body.
-func NetworkDeviceSetHealthMonitoringFilter(ctx context.Context, socketId string, filterId []string, filterSiteId []string, filterStatus []string, filterHealthStatus []string) error {
-	logger.Get().Info().Msgf("Setting health monitoring filter for socket '%s'", socketId)
-
-	client := api.GetApiClient(ctx)
-
-	request := client.NetworkDeviceAPI.SetNetworkDeviceHealthMonitoringFilter(ctx).SocketId(socketId)
-
-	if len(filterId) > 0 {
-		request = request.FilterId(utils.ProcessFilterStringSlice(filterId))
-	}
-	if len(filterSiteId) > 0 {
-		request = request.FilterSiteId(utils.ProcessFilterStringSlice(filterSiteId))
-	}
-	if len(filterStatus) > 0 {
-		request = request.FilterStatus(utils.ProcessFilterStringSlice(filterStatus))
-	}
-	if len(filterHealthStatus) > 0 {
-		request = request.FilterHealthStatus(utils.ProcessFilterStringSlice(filterHealthStatus))
-	}
-
-	httpRes, err := request.Execute()
-	if err := response_inspector.InspectResponse(httpRes, err); err != nil {
-		return err
-	}
-
-	logger.Get().Info().Msgf("Health monitoring filter set for socket '%s'", socketId)
-	return nil
-}
-
 // NetworkDeviceStatisticsGet shows global network device counters.
 func NetworkDeviceStatisticsGet(ctx context.Context) error {
 	logger.Get().Info().Msgf("Getting network device statistics")

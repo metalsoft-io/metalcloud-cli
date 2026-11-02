@@ -248,7 +248,7 @@ func NetworkDevicePortIpGet(ctx context.Context, networkDeviceRef string, portId
 	client := api.GetApiClient(ctx)
 
 	ipInfo, httpRes, err := client.NetworkDeviceAPI.
-		GetNetworkDevicePortIp(ctx, networkDeviceIdNumeric, portIdNumeric, family, ipIdNumeric).
+		GetNetworkDevicePortIp(ctx, networkDeviceIdNumeric, portIdNumeric, ipIdNumeric, family).
 		Execute()
 	if err := response_inspector.InspectResponse(httpRes, err); err != nil {
 		return err
@@ -284,7 +284,7 @@ func NetworkDevicePortIpRemove(ctx context.Context, networkDeviceRef string, por
 
 	_, err = executeWithRevisionRetry(revision, func(revision string) (any, *http.Response, error) {
 		httpRes, err := client.NetworkDeviceAPI.
-			RemoveNetworkDevicePortIp(ctx, networkDeviceIdNumeric, portIdNumeric, family, ipIdNumeric).
+			RemoveNetworkDevicePortIp(ctx, networkDeviceIdNumeric, portIdNumeric, ipIdNumeric, family).
 			IfMatch(revision).
 			Execute()
 		return nil, httpRes, err

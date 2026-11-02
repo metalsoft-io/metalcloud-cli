@@ -9,6 +9,7 @@ take a --config-source flag.
 
 Required Arguments:
   kind                   The configuration kind. One of:
+                           register
                            register-production
                            import-unmanaged
                            connect-interface

@@ -61,7 +61,6 @@ monitor network devices.
 * [metalcloud-cli network-device run-extension-config-example](metalcloud-cli_network-device_run-extension-config-example.md)	 - Example configuration for the run-extension command
 * [metalcloud-cli network-device secret](metalcloud-cli_network-device_secret.md)	 - Manage the secrets of a network device
 * [metalcloud-cli network-device set-defective](metalcloud-cli_network-device_set-defective.md)	 - Set the network device as defective
-* [metalcloud-cli network-device set-health-monitoring-filter](metalcloud-cli_network-device_set-health-monitoring-filter.md)	 - Set the network device filter of a health monitoring socket
 * [metalcloud-cli network-device set-port-status](metalcloud-cli_network-device_set-port-status.md)	 - Enable or disable a specific port on the network device
 * [metalcloud-cli network-device snapshot](metalcloud-cli_network-device_snapshot.md)	 - Inspect the configuration snapshots of a network device
 * [metalcloud-cli network-device snmp-monitoring](metalcloud-cli_network-device_snmp-monitoring.md)	 - Manage the SNMP monitoring subscription of network devices

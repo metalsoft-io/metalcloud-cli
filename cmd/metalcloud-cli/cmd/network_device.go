@@ -136,7 +136,6 @@ Use the 'config-example' command to generate an example configuration:
     "position": "leaf",
     "isGateway": false,
     "isStorageSwitch": false,
-    "isBorderDevice": false,
     "managementMAC": "AA:BB:CC:DD:EE:FF",
     "managementAddress": "1.1.1.1",
     "managementAddressGateway": "1.1.1.1",
@@ -662,22 +661,17 @@ func init() {
 
 var (
 	networkDeviceSubFlags = struct {
-		configSource       string
-		secretValue        string
-		snmpPort           int32
-		snmpCommunity      string
-		snmpContact        string
-		siteIds            []string
-		fabricIds          []string
-		socketId           string
-		filterId           []string
-		filterSiteId       []string
-		filterStatus       []string
-		filterHealthStatus []string
-		filterKind         []string
-		snapshotKind       string
-		reprovisionType    string
-		search             string
+		configSource    string
+		secretValue     string
+		snmpPort        int32
+		snmpCommunity   string
+		snmpContact     string
+		siteIds         []string
+		fabricIds       []string
+		filterKind      []string
+		snapshotKind    string
+		reprovisionType string
+		search          string
 	}{}
 
 	// --- ports ------------------------------------------------------------
@@ -1569,40 +1563,6 @@ Examples:
 		},
 	}
 
-	networkDeviceSetHealthMonitoringFilterCmd = &cobra.Command{
-		Use:   "set-health-monitoring-filter",
-		Short: "Set the network device filter of a health monitoring socket",
-		Long: `Set the network device filter applied to the health monitoring WebSocket stream
-of the given socket. Only devices matching the filter are streamed to that
-socket. The endpoint returns no content.
-
-Required Flags:
-  --socket-id             The id of the health monitoring WebSocket connection
-
-Optional Flags:
-  --filter-id             Restrict the stream to these network device ids
-  --filter-site-id        Restrict the stream to these site ids
-  --filter-status         Restrict the stream to these device statuses
-  --filter-health-status  Restrict the stream to these health statuses
-
-Examples:
-  # Stream only the devices of site 1
-  metalcloud-cli network-device set-health-monitoring-filter --socket-id abc123 --filter-site-id 1
-
-  # Stream only unhealthy devices
-  metalcloud-cli network-device set-health-monitoring-filter --socket-id abc123 --filter-health-status unhealthy`,
-		SilenceUsage: true,
-		Annotations:  map[string]string{system.REQUIRED_PERMISSION: system.PERMISSION_SWITCHES_READ},
-		RunE: func(cmd *cobra.Command, args []string) error {
-			return network_device.NetworkDeviceSetHealthMonitoringFilter(cmd.Context(),
-				networkDeviceSubFlags.socketId,
-				networkDeviceSubFlags.filterId,
-				networkDeviceSubFlags.filterSiteId,
-				networkDeviceSubFlags.filterStatus,
-				networkDeviceSubFlags.filterHealthStatus)
-		},
-	}
-
 	networkDeviceStatisticsCmd = &cobra.Command{
 		Use:   "statistics",
 		Short: "Show global network device counters",
@@ -2151,14 +2111,6 @@ func init() {
 	// syslog, health and statistics
 	networkDeviceCmd.AddCommand(networkDeviceDisableSyslogCmd)
 	networkDeviceCmd.AddCommand(networkDeviceHealthSummaryCmd)
-
-	networkDeviceCmd.AddCommand(networkDeviceSetHealthMonitoringFilterCmd)
-	networkDeviceSetHealthMonitoringFilterCmd.Flags().StringVar(&networkDeviceSubFlags.socketId, "socket-id", "", "The id of the health monitoring WebSocket connection.")
-	networkDeviceSetHealthMonitoringFilterCmd.Flags().StringSliceVar(&networkDeviceSubFlags.filterId, "filter-id", nil, "Restrict the stream to these network device ids.")
-	networkDeviceSetHealthMonitoringFilterCmd.Flags().StringSliceVar(&networkDeviceSubFlags.filterSiteId, "filter-site-id", nil, "Restrict the stream to these site ids.")
-	networkDeviceSetHealthMonitoringFilterCmd.Flags().StringSliceVar(&networkDeviceSubFlags.filterStatus, "filter-status", nil, "Restrict the stream to these network device statuses.")
-	networkDeviceSetHealthMonitoringFilterCmd.Flags().StringSliceVar(&networkDeviceSubFlags.filterHealthStatus, "filter-health-status", nil, "Restrict the stream to these health statuses.")
-	networkDeviceSetHealthMonitoringFilterCmd.MarkFlagRequired("socket-id")
 
 	networkDeviceCmd.AddCommand(networkDeviceStatisticsCmd)
 

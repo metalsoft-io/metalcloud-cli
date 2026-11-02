@@ -139,17 +139,12 @@ func (vc *VendorCatalog) processLenovoCatalog(ctx context.Context) error {
 				description = softwareUpdate.FixID
 			}
 
-			supportedDevices := []map[string]interface{}{
-				{
-					"id":    softwareUpdate.ComponentID,
-					"model": softwareUpdate.ComponentID,
-				},
-			}
+			// Lenovo provides no PCI ids for the XCC/UEFI/LXPM packages, so only
+			// the system (machine type) the package applies to is recorded.
+			supportedDevices := []sdk.VendorSupportedDevice{}
 
-			supportedSystems := []map[string]interface{}{
-				{
-					"id": serverType,
-				},
+			supportedSystems := []sdk.ServerFirmwareBinaryVendorSupportedSystems{
+				{Model: sdk.PtrString(serverType)},
 			}
 
 			// Lenovo's SearchDrivers response carries no Version field, so fall back to the

@@ -1,0 +1,45 @@
+## metalcloud-cli server cleanup
+
+Wipe a server that was replaced in its instance
+
+### Synopsis
+
+Wipe a server that was replaced in its instance.
+
+The server stays defective after the cleanup; set it available by hand once it is fixed.
+
+Required Arguments:
+  server_id              The ID of the replaced server
+
+Examples:
+  # Clean up replaced server 123
+  metalcloud-cli server cleanup 123
+
+
+```
+metalcloud-cli server cleanup server_id [flags]
+```
+
+### Options
+
+```
+  -h, --help   help for cleanup
+```
+
+### Options inherited from parent commands
+
+```
+  -k, --api_key string         MetalCloud API key
+  -c, --config string          Config file path
+  -d, --debug                  Set to enable debug logging
+  -e, --endpoint string        MetalCloud API endpoint
+  -f, --format string          Output format. Supported values are 'text','csv','md','json','yaml'. (default "text")
+  -i, --insecure_skip_verify   Set to allow insecure transport
+  -l, --log_file string        Log file path
+  -v, --verbosity string       Log level verbosity (default "INFO")
+```
+
+### SEE ALSO
+
+* [metalcloud-cli server](metalcloud-cli_server.md)	 - Server management
+

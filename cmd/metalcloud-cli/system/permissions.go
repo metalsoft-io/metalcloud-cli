@@ -2,7 +2,10 @@ package system
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
+	"io"
+	"net/http"
 
 	"github.com/metalsoft-io/metalcloud-cli/pkg/api"
 	"github.com/metalsoft-io/metalcloud-cli/pkg/response_inspector"
@@ -124,8 +127,6 @@ const (
 	PERMISSION_EXTENSION_INSTANCES_WRITE                                     = "extension_instances_write"
 	PERMISSION_SITES_READ                                                    = "sites_read"
 	PERMISSION_SITES_WRITE                                                   = "sites_write"
-	PERMISSION_SERVER_DEFAULT_CREDENTIALS_READ                               = "server_default_credentials_read"
-	PERMISSION_SERVER_DEFAULT_CREDENTIALS_WRITE                              = "server_default_credentials_write"
 	PERMISSION_SERVER_CLEANUP_POLICIES_READ                                  = "cleanup_policies_read"
 	PERMISSION_SERVER_CLEANUP_POLICIES_WRITE                                 = "cleanup_policies_write"
 	PERMISSION_NETWORK_FABRICS_READ                                          = "network_fabrics_read"
@@ -170,11 +171,41 @@ const (
 	PERMISSION_IMPERSONATE                                                   = "impersonate"
 )
 
-func GetUserPermissions(ctx context.Context) (string, string, []string, error) {
-	client := api.GetApiClient(ctx)
+// CurrentUser holds the fields of GET /api/v2/user the CLI relies on.
+type CurrentUser struct {
+	Id          float64 `json:"id"`
+	Email       string  `json:"email"`
+	AccessLevel string  `json:"accessLevel"`
+}
 
-	user, httpRes, err := client.AuthenticationAPI.GetCurrentUser(ctx).Execute()
+// GetCurrentUser fetches the current user and decodes only the fields the CLI
+// needs. The generated SDK model rejects the whole response when any of its
+// many required properties is missing, and every command runs this call at
+// startup, so a strict decode would break the entire CLI on any server/SDK
+// model mismatch.
+func GetCurrentUser(ctx context.Context) (*CurrentUser, error) {
+	httpRes, err := api.DoJSONRequest(ctx, http.MethodGet, "/api/v2/user", nil)
 	if err := response_inspector.InspectResponse(httpRes, err); err != nil {
+		return nil, err
+	}
+	defer httpRes.Body.Close()
+
+	body, err := io.ReadAll(httpRes.Body)
+	if err != nil {
+		return nil, fmt.Errorf("failed to read current user response: %w", err)
+	}
+
+	var user CurrentUser
+	if err := json.Unmarshal(body, &user); err != nil {
+		return nil, fmt.Errorf("failed to parse current user response: %w", err)
+	}
+
+	return &user, nil
+}
+
+func GetUserPermissions(ctx context.Context) (string, string, []string, error) {
+	user, err := GetCurrentUser(ctx)
+	if err != nil {
 		return "", "", nil, err
 	}
 

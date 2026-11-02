@@ -117,19 +117,17 @@ func (vc *VendorCatalog) processHpeCatalog(ctx context.Context) error {
 		}
 
 		includedBinary := false
-		supportedDevices := []map[string]interface{}{}
 		for _, target := range packageInfo.Target {
 			if len(vc.VendorSystemsFilter) == 0 || slices.Contains(vc.VendorSystemsFilter, target) {
 				includedBinary = true
-
-				supportedDevices = append(supportedDevices, map[string]interface{}{
-					"id":    target, //.Target,
-					"model": target, //.DeviceName,
-					// "DeviceClass":            packageInfo.DeviceClass,
-					// "Target":                 target,
-					// "MinimumVersionRequired": packageInfo.MinimumActiveVersion,
-				})
+				break
 			}
+		}
+
+		// HPE packages are matched by their device class; the targets are
+		// iLO component UUIDs, not PCI ids, so they are only used for filtering.
+		supportedDevices := []sdk.VendorSupportedDevice{
+			{DeviceClass: sdk.PtrString(packageInfo.DeviceClass)},
 		}
 
 		if !includedBinary {
@@ -156,7 +154,7 @@ func (vc *VendorCatalog) processHpeCatalog(ctx context.Context) error {
 			RebootRequired:         packageInfo.RebootRequired == "yes",
 			UpdateSeverity:         UpdateSeverityUnknown,
 			VendorSupportedDevices: supportedDevices,
-			VendorSupportedSystems: []map[string]interface{}{},
+			VendorSupportedSystems: []sdk.ServerFirmwareBinaryVendorSupportedSystems{},
 			VendorReleaseTimestamp: nil,
 		}
 

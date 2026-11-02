@@ -201,6 +201,7 @@ func ServerRegisterProductionConfigExample(ctx context.Context) error {
 // ServerConfigExampleKinds lists the configuration kinds understood by
 // ServerConfigExample, in the order they are shown in the help text.
 var ServerConfigExampleKinds = []string{
+	"register",
 	"register-production",
 	"import-unmanaged",
 	"connect-interface",
@@ -212,6 +213,8 @@ var ServerConfigExampleKinds = []string{
 // server sub-command named by kind.
 func ServerConfigExample(ctx context.Context, kind string) error {
 	switch kind {
+	case "register":
+		return ServerRegisterConfigExample(ctx)
 	case "register-production":
 		return ServerRegisterProductionConfigExample(ctx)
 	case "import-unmanaged":

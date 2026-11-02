@@ -211,6 +211,7 @@ func accountQuotaLimits(serverGroups float64) map[string]any {
 		"serverGroupInstancesMinCount":                     1,
 		"vmInstanceGroupVmInstancesMaxCount":               10,
 		"containerInstanceGroupContainerInstancesMaxCount": 10,
+		"endpointInstanceGroupEndpointInstancesMaxCount":   10,
 		"vmInstanceMaxDiskSizeMbytes":                      1024,
 		"containerInstanceMaxDiskSizeMbytes":               1024,
 		"driveMaxSizeMbytes":                               1024,

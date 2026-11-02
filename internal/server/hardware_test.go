@@ -440,7 +440,7 @@ func TestServerFirmwareScheduleUpgradeBatch(t *testing.T) {
 	rec := &hwRecorder{}
 	ts := hwServer(t, rec, map[string]http.HandlerFunc{
 		"/api/v2/servers/firmware/actions/batch-schedule-upgrade": testutils.RawHandler(http.StatusOK,
-			`{"failed":{}}`),
+			`{"failed":{},"successful":[1,2]}`),
 	})
 	defer ts.Close()
 

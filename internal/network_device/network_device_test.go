@@ -261,7 +261,7 @@ func TestNetworkDeviceCreate_HappyPath(t *testing.T) {
 	config := []byte(`{
 		"siteId":1,"driver":"sonic_enterprise","identifierString":"sw-01",
 		"serialNumber":"SN001","position":"leaf","isGateway":false,
-		"isStorageSwitch":false,"isBorderDevice":false,
+		"isStorageSwitch":false,
 		"managementPassword":"password","username":"admin"
 	}`)
 	if err := NetworkDeviceCreate(ctx, config); err != nil {

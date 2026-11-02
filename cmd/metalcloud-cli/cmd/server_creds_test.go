@@ -8,12 +8,6 @@ import (
 	"testing"
 )
 
-var serverDefaultCredentialsItem = map[string]interface{}{
-	"id":              1.0,
-	"siteId":          1.0,
-	"defaultUsername": "admin",
-}
-
 var serverCleanupPolicyItem = map[string]interface{}{
 	"id":                               1.0,
 	"label":                            "default-policy",
@@ -43,14 +37,6 @@ var serverRegistrationProfileItem = map[string]interface{}{
 
 func newServerCredsTestServer() *httptest.Server {
 	mux := newMux(allPerms, func(mux *http.ServeMux) {
-		mux.HandleFunc("/api/v2/servers/default-credentials/1", func(w http.ResponseWriter, r *http.Request) {
-			w.Header().Set("Content-Type", "application/json")
-			_ = json.NewEncoder(w).Encode(serverDefaultCredentialsItem)
-		})
-		mux.HandleFunc("/api/v2/servers/default-credentials", func(w http.ResponseWriter, r *http.Request) {
-			w.Header().Set("Content-Type", "application/json")
-			_ = json.NewEncoder(w).Encode(paginatedList(serverDefaultCredentialsItem))
-		})
 		mux.HandleFunc("/api/v2/servers/cleanup-policies", func(w http.ResponseWriter, r *http.Request) {
 			w.Header().Set("Content-Type", "application/json")
 			_ = json.NewEncoder(w).Encode(paginatedList(serverCleanupPolicyItem))
@@ -61,42 +47,6 @@ func newServerCredsTestServer() *httptest.Server {
 		})
 	})
 	return httptest.NewServer(mux)
-}
-
-func TestServerDefaultCredentialsList(t *testing.T) {
-	srv := newServerCredsTestServer()
-	defer srv.Close()
-
-	out, err := runCLI(t, srv, "server-default-credentials", "list")
-	if err != nil {
-		t.Fatalf("unexpected error: %v", err)
-	}
-	if !strings.Contains(out, "admin") {
-		t.Errorf("expected output to contain 'admin', got: %s", out)
-	}
-}
-
-func TestServerDefaultCredentialsGet(t *testing.T) {
-	srv := newServerCredsTestServer()
-	defer srv.Close()
-
-	out, err := runCLI(t, srv, "server-default-credentials", "get", "1")
-	if err != nil {
-		t.Fatalf("unexpected error: %v", err)
-	}
-	if !strings.Contains(out, "admin") {
-		t.Errorf("expected output to contain 'admin', got: %s", out)
-	}
-}
-
-func TestServerDefaultCredentialsGetRequiresArg(t *testing.T) {
-	srv := newServerCredsTestServer()
-	defer srv.Close()
-
-	_, err := runCLI(t, srv, "server-default-credentials", "get")
-	if err == nil {
-		t.Fatal("expected error when no arg provided, got nil")
-	}
 }
 
 func TestServerCleanupPolicyList(t *testing.T) {
@@ -122,28 +72,6 @@ func TestServerRegistrationProfileList(t *testing.T) {
 	}
 	if !strings.Contains(out, "default-profile") {
 		t.Errorf("expected output to contain 'default-profile', got: %s", out)
-	}
-}
-
-func TestServerDefaultCredentialsList_Formats(t *testing.T) {
-	srv := newServerCredsTestServer()
-	defer srv.Close()
-	for _, format := range []string{"json", "csv", "yaml", "text", "md"} {
-		t.Run(format, func(t *testing.T) {
-			out, err := runCLIFormat(t, srv, format, "server-default-credentials", "list")
-			if err != nil {
-				t.Fatalf("format %s: %v", format, err)
-			}
-			if out == "" {
-				t.Errorf("format %s: empty output", format)
-			}
-			if format == "json" && !json.Valid([]byte(out)) {
-				t.Errorf("format json: invalid JSON: %s", out)
-			}
-			if format == "csv" && !strings.Contains(out, ",") {
-				t.Errorf("format csv: no comma: %s", out)
-			}
-		})
 	}
 }
 

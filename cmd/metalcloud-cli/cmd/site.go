@@ -342,13 +342,15 @@ Examples:
 		},
 		RunE: func(cmd *cobra.Command, args []string) error {
 			config := sdk.GenerateSiteControllerOneliner{
-				Registry:       siteOneLinerFlags.registry,
-				GitHubTag:      siteOneLinerFlags.gitHubTag,
-				SslHostname:    siteOneLinerFlags.sslHostname,
-				ImagesTag:      siteOneLinerFlags.imagesTag,
-				MsTunnelSecret: siteOneLinerFlags.tunnelSecret,
-				UsePodman:      siteOneLinerFlags.usePodman,
-				InbandMode:     siteOneLinerFlags.inbandMode,
+				Registry:    siteOneLinerFlags.registry,
+				GitHubTag:   siteOneLinerFlags.gitHubTag,
+				SslHostname: siteOneLinerFlags.sslHostname,
+				ImagesTag:   siteOneLinerFlags.imagesTag,
+				UsePodman:   siteOneLinerFlags.usePodman,
+				InbandMode:  siteOneLinerFlags.inbandMode,
+			}
+			if siteOneLinerFlags.tunnelSecret != "" {
+				config.MsTunnelSecret = sdk.PtrString(siteOneLinerFlags.tunnelSecret)
 			}
 			return site.SiteOneLiner(cmd.Context(), args[0], config)
 		},
@@ -495,7 +497,7 @@ func init() {
 	}
 
 	siteOneLinerCmd.Flags().StringVar(&siteOneLinerFlags.imagesTag, "images-tag", "", "Docker images tag version \x1b[33m(default: auto-detected from system version)\x1b[0m")
-	siteOneLinerCmd.Flags().StringVar(&siteOneLinerFlags.tunnelSecret, "tunnel-secret", "", "MS Tunnel secret for secure connections (required)")
+	siteOneLinerCmd.Flags().StringVar(&siteOneLinerFlags.tunnelSecret, "tunnel-secret", "", "MS Tunnel secret for secure connections. When omitted, the configured tunnel shared secret is used.")
 
 	if apiKey := v.GetString("api_key"); apiKey != "" {
 		if endpoint := v.GetString(system.ConfigEndpoint); endpoint != "" {
@@ -510,7 +512,6 @@ func init() {
 	}
 	siteOneLinerCmd.Flags().BoolVar(&siteOneLinerFlags.usePodman, "use-podman", false, "Use Podman instead of Docker")
 	siteOneLinerCmd.Flags().BoolVar(&siteOneLinerFlags.inbandMode, "inband-mode", false, "Install in inband mode")
-	siteOneLinerCmd.MarkFlagRequired("tunnel-secret")
 
 	siteCmd.AddCommand(siteUpdateConfigCmd)
 	siteUpdateConfigCmd.Flags().StringVar(&siteFlags.configSource, "config-source", "", "Source of the site configuration. Can be 'pipe' for stdin or path to a JSON file (required).")

@@ -148,7 +148,7 @@ func FirmwareBaselineConfigExample(ctx context.Context) error {
 		Name:        "example-firmware-baseline",
 		Description: sdk.PtrString("Example firmware baseline for production servers"),
 		MinimumVersions: []sdk.FirmwareMinimumVersion{
-			sdk.FirmwareMinimumVersion{ComponentName: "BMC", MinimumVersion: "1.0"},
+			sdk.FirmwareMinimumVersion{ComponentClass: sdk.SERVERCOMPONENTCLASS_BMC.Ptr(), MinimumVersion: "1.0"},
 		},
 		Catalog: []string{"catalog-1", "catalog-2"},
 	}

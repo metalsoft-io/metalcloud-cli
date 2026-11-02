@@ -6,7 +6,9 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"slices"
 	"strconv"
+	"strings"
 
 	"github.com/metalsoft-io/metalcloud-cli/pkg/api"
 	"github.com/metalsoft-io/metalcloud-cli/pkg/formatter"
@@ -358,17 +360,105 @@ func ServerGet(ctx context.Context, serverId string, showCredentials bool) error
 	return formatter.PrintResult(serverInfo, &serverPrintConfig)
 }
 
-func ServerRegister(ctx context.Context, serverConfig sdk.RegisterServer) error {
-	logger.Get().Info().Msgf("Registering server")
+// ServerRegister creates a server record (POST /servers). With the default
+// "registering" status the server is registered right away; with "planned" or
+// "registration_ready" only the record is created. When rackUpdate is set, the
+// rack and inventory details (not accepted on create) are applied afterwards
+// with an update of the new server.
+func ServerRegister(ctx context.Context, serverConfig sdk.CreateServer, rackUpdate *sdk.UpdateServer) error {
+	logger.Get().Info().Msgf("Creating server")
+
+	if err := validateServerStatusForCreate(serverConfig.ServerStatus); err != nil {
+		return err
+	}
 
 	client := api.GetApiClient(ctx)
 
-	registrationInfo, httpRes, err := client.ServerAPI.RegisterServer(ctx).RegisterServer(serverConfig).Execute()
+	created, httpRes, err := client.ServerAPI.CreateServer(ctx).CreateServer(serverConfig).Execute()
 	if err := response_inspector.InspectResponse(httpRes, err); err != nil {
 		return err
 	}
 
-	return formatter.PrintResult(registrationInfo, &formatter.PrintConfig{
+	revision := created.Revision
+
+	if rackUpdate != nil {
+		logger.Get().Info().Msgf("Setting rack and inventory details of server '%d'", created.ServerId)
+
+		_, httpRes, sdkErr := client.ServerAPI.UpdateServer(ctx, created.ServerId).
+			UpdateServer(*rackUpdate).
+			IfMatch(strconv.FormatInt(revision, 10)).
+			Execute()
+
+		updated, err := parseServerRaw(httpRes, sdkErr)
+		if err != nil {
+			return fmt.Errorf("server %d was created but setting its rack and inventory details failed: %w", created.ServerId, err)
+		}
+		revision = int64(updated.Revision)
+	}
+
+	return formatter.PrintResult(sdk.CreateServerResponse{
+		ServerId: created.ServerId,
+		Revision: revision,
+	}, &serverCreatePrintConfig)
+}
+
+var serverCreatePrintConfig = formatter.PrintConfig{
+	FieldsConfig: map[string]formatter.RecordFieldConfig{
+		"ServerId": {
+			Title: "ID",
+			Order: 1,
+		},
+		"Revision": {
+			Order: 2,
+		},
+	},
+}
+
+// ServerCreateStatuses lists the statuses a server can be created with.
+var ServerCreateStatuses = []string{"planned", "registration_ready", "registering"}
+
+func validateServerStatusForCreate(status *string) error {
+	if status == nil || slices.Contains(ServerCreateStatuses, *status) {
+		return nil
+	}
+	return fmt.Errorf("invalid server status '%s': valid values are %s", *status, strings.Join(ServerCreateStatuses, ", "))
+}
+
+func ServerRegisterConfigExample(ctx context.Context) error {
+	example := sdk.CreateServer{
+		SiteId:                1,
+		SerialNumber:          sdk.PtrString("ABC123XYZ"),
+		ServerStatus:          sdk.PtrString("planned"),
+		ManagementAddress:     sdk.PtrString("10.0.0.1"),
+		Username:              sdk.PtrString("admin"),
+		Password:              sdk.PtrString("secret"),
+		BmcMacAddress:         sdk.PtrString("00:1A:2B:3C:4D:5E"),
+		ServerUUID:            sdk.PtrString("4c4c4544-0042-3510-8051-b4c04f565431"),
+		Vendor:                sdk.PtrString("Dell"),
+		Model:                 sdk.PtrString("PowerEdge R760"),
+		RegistrationProfileId: sdk.PtrInt64(1),
+	}
+
+	return formatter.PrintResult(example, nil)
+}
+
+// ServerRegisterPlanned starts the registration of a server in "planned" state.
+func ServerRegisterPlanned(ctx context.Context, serverId string) error {
+	logger.Get().Info().Msgf("Starting registration of planned server '%s'", serverId)
+
+	serverIdNumeric, revision, err := getServerIdAndRevision(ctx, serverId)
+	if err != nil {
+		return err
+	}
+
+	client := api.GetApiClient(ctx)
+
+	response, httpRes, err := client.ServerAPI.RegisterServer(ctx, serverIdNumeric).IfMatch(revision).Execute()
+	if err := response_inspector.InspectResponse(httpRes, err); err != nil {
+		return err
+	}
+
+	return formatter.PrintResult(response, &formatter.PrintConfig{
 		FieldsConfig: map[string]formatter.RecordFieldConfig{
 			"ServerId": {
 				Title: "ID",
@@ -397,6 +487,157 @@ func ServerRegister(ctx context.Context, serverConfig sdk.RegisterServer) error 
 			},
 		},
 	})
+}
+
+// ServerSetRegistrationReady moves a server to the "registration_ready" status.
+func ServerSetRegistrationReady(ctx context.Context, serverId string) error {
+	logger.Get().Info().Msgf("Setting server '%s' to registration ready", serverId)
+
+	serverIdNumeric, revision, err := getServerIdAndRevision(ctx, serverId)
+	if err != nil {
+		return err
+	}
+
+	client := api.GetApiClient(ctx)
+
+	httpRes, err := client.ServerAPI.SetRegistrationReadyServer(ctx, serverIdNumeric).IfMatch(revision).Execute()
+	if err := response_inspector.InspectResponse(httpRes, err); err != nil {
+		return err
+	}
+
+	logger.Get().Info().Msgf("Server '%s' set to registration ready", serverId)
+
+	return nil
+}
+
+type serverReplacementCandidateRow struct {
+	ServerId          int64
+	ServerTypeId      *int64
+	SerialNumber      *string
+	ManagementAddress *string
+	Eligible          bool
+	Downgrade         bool
+	Rank              *int32
+	SkipReasons       string
+	Warnings          string
+}
+
+var serverReplacementCandidatePrintConfig = formatter.PrintConfig{
+	FieldsConfig: map[string]formatter.RecordFieldConfig{
+		"ServerId":          {Title: "Server ID", Order: 1},
+		"ServerTypeId":      {Title: "Type ID", Order: 2},
+		"SerialNumber":      {Title: "S/N", Order: 3},
+		"ManagementAddress": {Title: "Mgmt Address", Order: 4},
+		"Eligible":          {Order: 5},
+		"Downgrade":         {Order: 6},
+		"Rank":              {Order: 7},
+		"SkipReasons":       {Title: "Skip Reasons", MaxWidth: 50, Order: 8},
+		"Warnings":          {MaxWidth: 50, Order: 9},
+	},
+}
+
+// ServerReplacementCandidates lists the servers that can replace the given
+// server in its instance, eligible ones first.
+func ServerReplacementCandidates(ctx context.Context, serverId string) error {
+	logger.Get().Info().Msgf("Getting replacement candidates for server '%s'", serverId)
+
+	serverIdNumeric, err := GetServerId(serverId)
+	if err != nil {
+		return err
+	}
+
+	client := api.GetApiClient(ctx)
+
+	candidates, httpRes, err := client.ServerAPI.GetServerReplacementCandidates(ctx, serverIdNumeric).Execute()
+	if err := response_inspector.InspectResponse(httpRes, err); err != nil {
+		return err
+	}
+
+	if formatter.IsNativeFormat() {
+		return formatter.PrintResult(candidates, nil)
+	}
+
+	rows := make([]serverReplacementCandidateRow, 0, len(candidates.Candidates))
+	for _, c := range candidates.Candidates {
+		rows = append(rows, serverReplacementCandidateRow{
+			ServerId:          c.ServerId,
+			ServerTypeId:      c.ServerTypeId.Get(),
+			SerialNumber:      c.SerialNumber.Get(),
+			ManagementAddress: c.ManagementAddress.Get(),
+			Eligible:          c.Eligible,
+			Downgrade:         c.Downgrade,
+			Rank:              c.Rank.Get(),
+			SkipReasons:       strings.Join(c.SkipReasons, "; "),
+			Warnings:          strings.Join(c.Warnings, "; "),
+		})
+	}
+
+	return formatter.PrintResult(rows, &serverReplacementCandidatePrintConfig)
+}
+
+// ServerReplace puts the replacement server in the instance of the given
+// server and deploys the infrastructure. The old server becomes defective.
+func ServerReplace(ctx context.Context, serverId string, replacementServerId string, acceptDowngrade bool) error {
+	logger.Get().Info().Msgf("Replacing server '%s' with server '%s'", serverId, replacementServerId)
+
+	serverIdNumeric, err := GetServerId(serverId)
+	if err != nil {
+		return err
+	}
+
+	replacementServerIdNumeric, err := GetServerId(replacementServerId)
+	if err != nil {
+		return err
+	}
+
+	request := sdk.ReplaceServer{
+		ReplacementServerId: replacementServerIdNumeric,
+	}
+	if acceptDowngrade {
+		request.AcceptDowngrade = sdk.PtrBool(true)
+	}
+
+	client := api.GetApiClient(ctx)
+
+	replacement, httpRes, err := client.ServerAPI.ReplaceServer(ctx, serverIdNumeric).ReplaceServer(request).Execute()
+	if err := response_inspector.InspectResponse(httpRes, err); err != nil {
+		return err
+	}
+
+	return formatter.PrintResult(replacement, &formatter.PrintConfig{
+		FieldsConfig: map[string]formatter.RecordFieldConfig{
+			"InstanceId":          {Title: "Instance ID", Order: 1},
+			"ReplacedServerId":    {Title: "Replaced Server", Order: 2},
+			"ReplacementServerId": {Title: "Replacement Server", Order: 3},
+			"JobGroupId":          {Title: "Job Group Id", Order: 4},
+		},
+	})
+}
+
+// ServerCleanupReplaced wipes a server that was replaced in its instance.
+func ServerCleanupReplaced(ctx context.Context, serverId string) error {
+	logger.Get().Info().Msgf("Cleaning up replaced server '%s'", serverId)
+
+	serverIdNumeric, err := GetServerId(serverId)
+	if err != nil {
+		return err
+	}
+
+	client := api.GetApiClient(ctx)
+
+	jobInfo, httpRes, err := client.ServerAPI.CleanupReplacedServer(ctx, serverIdNumeric).Execute()
+	if err := response_inspector.InspectResponse(httpRes, err); err != nil {
+		return err
+	}
+
+	return formatter.PrintResult(jobInfo, &jobInfoPrintConfig)
+}
+
+var jobInfoPrintConfig = formatter.PrintConfig{
+	FieldsConfig: map[string]formatter.RecordFieldConfig{
+		"JobId":      {Title: "Job Id", Order: 1},
+		"JobGroupId": {Title: "Job Group Id", Order: 2},
+	},
 }
 
 func ServerReRegister(ctx context.Context, serverId string) error {
@@ -634,14 +875,14 @@ func ServerEnableSyslog(ctx context.Context, serverId string) error {
 
 	client := api.GetApiClient(ctx)
 
-	httpRes, err := client.ServerAPI.EnableServerSyslog(ctx, serverIdNumeric).IfMatch(revision).Execute()
+	jobInfo, httpRes, err := client.ServerAPI.EnableServerSyslog(ctx, serverIdNumeric).IfMatch(revision).Execute()
 	if err := response_inspector.InspectResponse(httpRes, err); err != nil {
 		return err
 	}
 
-	logger.Get().Info().Msgf("Syslog enabled for server '%s'", serverId)
+	logger.Get().Info().Msgf("Syslog enablement started for server '%s'", serverId)
 
-	return nil
+	return formatter.PrintResult(jobInfo, &jobInfoPrintConfig)
 }
 
 func ServerVncInfo(ctx context.Context, serverId string) error {

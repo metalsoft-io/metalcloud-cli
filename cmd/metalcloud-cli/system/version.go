@@ -10,10 +10,10 @@ import (
 	"github.com/metalsoft-io/metalcloud-cli/pkg/response_inspector"
 )
 
-const minMajor = 7
-const minMinor = 5
-const maxMajor = 7
-const maxMinor = 5
+const minMajor = 8
+const minMinor = 0
+const maxMajor = 8
+const maxMinor = 0
 
 var AllowDevelop bool
 

@@ -242,6 +242,7 @@ func acctQuotaLimits(serverGroups int) map[string]interface{} {
 		"serverGroupInstancesMinCount":                     1,
 		"vmInstanceGroupVmInstancesMaxCount":               10,
 		"containerInstanceGroupContainerInstancesMaxCount": 10,
+		"endpointInstanceGroupEndpointInstancesMaxCount":   10,
 		"vmInstanceMaxDiskSizeMbytes":                      1024,
 		"containerInstanceMaxDiskSizeMbytes":               1024,
 		"driveMaxSizeMbytes":                               1024,

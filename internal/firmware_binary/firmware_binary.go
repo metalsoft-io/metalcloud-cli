@@ -201,17 +201,12 @@ func FirmwareBinaryConfigExample(ctx context.Context) error {
 		RebootRequired:         true,
 		UpdateSeverity:         "recommended",
 		VendorReleaseTimestamp: &exampleReleaseTimestamp,
-		VendorSupportedDevices: []map[string]interface{}{
-			{
-				"model": "PowerEdge R740",
-				"type":  "server",
-			},
-		},
-		VendorSupportedSystems: []map[string]interface{}{
-			{
-				"os":      "any",
-				"version": "any",
-			},
+		// BIOS packages have no PCI ids; for device firmware (NIC, RAID, GPU, ...)
+		// list the PCI ids of the supported devices, e.g.
+		// {Pci: &sdk.PciIds{VendorId: sdk.PtrString("14e4"), DeviceId: sdk.PtrString("16d7")}}.
+		VendorSupportedDevices: []sdk.VendorSupportedDevice{},
+		VendorSupportedSystems: []sdk.ServerFirmwareBinaryVendorSupportedSystems{
+			{Model: sdk.PtrString("R740")},
 		},
 	}
 

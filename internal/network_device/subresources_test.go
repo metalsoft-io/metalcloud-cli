@@ -526,12 +526,6 @@ func TestNetworkDeviceMonitoringCommands(t *testing.T) {
 		t.Errorf("NetworkDeviceStatisticsGet: %v", err)
 	}
 
-	if err := NetworkDeviceSetHealthMonitoringFilter(ctx, "socket-1", nil, []string{"1"}, nil, nil); err != nil {
-		t.Fatalf("NetworkDeviceSetHealthMonitoringFilter: %v", err)
-	}
-	if got := rec.last(); !strings.Contains(got.Query, "socketId=socket-1") {
-		t.Errorf("expected socketId in query, got: %q", got.Query)
-	}
 }
 
 func TestNetworkDeviceSnmpMonitoringBatch_NoSelection(t *testing.T) {

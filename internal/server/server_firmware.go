@@ -572,10 +572,14 @@ func ServerFirmwareScheduleUpgradeBatch(ctx context.Context, serverIds []string,
 
 	return formatter.PrintResult(result, &formatter.PrintConfig{
 		FieldsConfig: map[string]formatter.RecordFieldConfig{
+			"Successful": {
+				Title: "Scheduled",
+				Order: 1,
+			},
 			"Failed": {
 				Title:    "Failed",
 				MaxWidth: 60,
-				Order:    1,
+				Order:    2,
 			},
 		},
 	})

@@ -40,13 +40,25 @@ var (
 		listPage                             int
 		listLimit                            int
 
-		siteId            int
-		managementAddress string
-		username          string
-		password          string
-		serialNumber      string
-		model             string
-		vendor            string
+		siteId                int
+		managementAddress     string
+		username              string
+		password              string
+		serialNumber          string
+		model                 string
+		vendor                string
+		serverStatus          string
+		serverUuid            string
+		bmcMacAddress         string
+		registrationProfileId int
+		rackName              string
+		rackPositionLower     string
+		rackPositionUpper     string
+		inventoryId           string
+
+		// replace
+		replacementServerId string
+		acceptDowngrade     bool
 
 		// snapshots
 		snapshotKind string
@@ -107,8 +119,10 @@ managed individually or in bulk operations.
 
 Available command categories:
   - Basic operations: list, get, register, update, delete
+  - Planned servers: register --status planned, register-planned, set-registration-ready
   - Power management: power (on, off, reset, cycle, soft, status)
   - Maintenance: re-register, factory-reset, archive
+  - Replacement: replacement-candidates, replace, cleanup
   - Security: update-ipmi-credentials, enable-snmp, enable-syslog
   - Remote access: vnc-info, console-info
   - Firmware: firmware subcommands for component management and upgrades
@@ -262,50 +276,71 @@ Examples:
 
 	serverRegisterCmd = &cobra.Command{
 		Use:     "register",
-		Aliases: []string{"new"},
-		Short:   "Register a new server in MetalSoft",
-		Long: `Register a new server in MetalSoft.
+		Aliases: []string{"new", "create"},
+		Short:   "Create a server record and optionally register it",
+		Long: `Create a server record in MetalSoft and optionally start its registration.
 
-You can provide the server configuration either via command-line flags or by specifying a configuration source using the --config-source flag. 
-The configuration source can be a path to a JSON file or 'pipe' to read from standard input.
+The --status flag controls what happens after the record is created:
+  registering            (default) Start the registration right away. The BMC must be
+                         reachable, so --management-address and the BMC credentials
+                         are normally needed.
+  planned                Only record the server, for example ahead of its delivery.
+                         Only --site-id and --serial-number are required; all other
+                         details (BMC address, credentials, rack, inventory) are optional
+                         and can be filled in later with "server update". Start the
+                         registration later with "server register-planned".
+  registration_ready     Record the server as ready to be registered, for example
+                         when it is to be picked up by ZTP/DHCP discovery.
 
-If --config-source is not provided, you must specify at least --site-id and --management-address, along with any other relevant server details such as --username, --password, --serial-number, --model, and --vendor.
-
-Flag Dependencies:
-  --config-source and --site-id are mutually exclusive
-  --site-id and --management-address must be used together when not using --config-source
+You can provide the server configuration either via command-line flags or with
+--config-source (a JSON/YAML file path or 'pipe'). Run
+"metalcloud-cli server config-example register" for an example.
 
 Required Flags (when not using --config-source):
-  --site-id              Site ID where the server is located
-  --management-address   IPMI/BMC management IP address
+  --site-id                Site ID where the server is located
+  --serial-number          Server serial number
 
 Optional Flags:
-  --config-source        Source of server configuration (JSON file path or 'pipe')
-  --username            IPMI/BMC username
-  --password            IPMI/BMC password
-  --serial-number       Server serial number
-  --model               Server model
-  --vendor              Server vendor
+  --config-source          Source of server configuration (file path or 'pipe')
+  --status                 Initial status: registering (default), planned, registration_ready
+  --management-address     BMC management IP address
+  --username               BMC username
+  --password               BMC password
+  --model                  Server model
+  --vendor                 Server vendor
+  --uuid                   Server UUID
+  --bmc-mac                BMC MAC address
+  --registration-profile-id  Registration profile to use
+  --rack-name              Rack name
+  --rack-position-lower    Rack position lower unit
+  --rack-position-upper    Rack position upper unit
+  --inventory-id           Inventory ID
+
+The rack and inventory details are not accepted when the server is created, so they
+are applied with an update of the new server right after it is created.
 
 Examples:
-  # Register using command line flags
-  metalcloud-cli server register --site-id 1 --management-address 10.0.0.1 --username admin --password secret
+  # Create and register a server right away
+  metalcloud-cli server register --site-id 1 --serial-number ABC123 --management-address 10.0.0.1 --username admin --password secret
 
-  # Register with additional server details
-  metalcloud-cli server register --site-id 1 --management-address 10.0.0.1 --username admin --password secret --serial-number ABC123 --model PowerEdge --vendor Dell
+  # Record a planned server with only its serial number
+  metalcloud-cli server register --site-id 1 --serial-number ABC123 --status planned
 
-  # Register using JSON configuration file
+  # Record a planned server with its BMC defaults and rack position
+  metalcloud-cli server register --site-id 1 --serial-number ABC123 --status planned \
+    --username root --password calvin --rack-name R01 --rack-position-lower 10 --rack-position-upper 11
+
+  # Register using a configuration file
   metalcloud-cli server register --config-source ./server.json
 
-  # Register using piped JSON configuration
+  # Register using piped configuration
   cat server.json | metalcloud-cli server register --config-source pipe
 `,
 		SilenceUsage: true,
 		Annotations:  map[string]string{system.REQUIRED_PERMISSION: system.PERMISSION_SERVERS_WRITE},
 		RunE: func(cmd *cobra.Command, args []string) error {
-			var serverConfig sdk.RegisterServer
+			var serverConfig sdk.CreateServer
 
-			// If config source is provided, use it
 			if serverFlags.configSource != "" {
 				config, err := utils.ReadConfigFromPipeOrFile(serverFlags.configSource)
 				if err != nil {
@@ -316,19 +351,137 @@ Examples:
 					return err
 				}
 			} else {
-				// Otherwise build config from command line parameters
-				serverConfig = sdk.RegisterServer{
-					SiteId:            int64(serverFlags.siteId),
-					ManagementAddress: &serverFlags.managementAddress,
-					Username:          &serverFlags.username,
-					Password:          &serverFlags.password,
-					SerialNumber:      &serverFlags.serialNumber,
-					Model:             &serverFlags.model,
-					Vendor:            &serverFlags.vendor,
-				}
+				serverConfig = buildCreateServerFromFlags(cmd)
 			}
 
-			return server.ServerRegister(cmd.Context(), serverConfig)
+			return server.ServerRegister(cmd.Context(), serverConfig, buildRackUpdateFromFlags())
+		},
+	}
+
+	serverRegisterPlannedCmd = &cobra.Command{
+		Use:   "register-planned server_id",
+		Short: "Start the registration of a planned server",
+		Long: `Start the registration of a server in the "planned" state.
+
+The server must have a reachable BMC address and valid BMC credentials. Set them
+first with "server update" if they were not provided when the server was created.
+
+Required Arguments:
+  server_id              The ID of the planned server
+
+Examples:
+  # Start the registration of planned server 123
+  metalcloud-cli server register-planned 123
+`,
+		SilenceUsage: true,
+		Annotations:  map[string]string{system.REQUIRED_PERMISSION: system.PERMISSION_SERVERS_WRITE},
+		Args:         cobra.ExactArgs(1),
+		RunE: func(cmd *cobra.Command, args []string) error {
+			return server.ServerRegisterPlanned(cmd.Context(), args[0])
+		},
+	}
+
+	serverSetRegistrationReadyCmd = &cobra.Command{
+		Use:   "set-registration-ready server_id",
+		Short: "Set a server to the registration_ready status",
+		Long: `Set the status of a server to "registration_ready".
+
+Required Arguments:
+  server_id              The ID of the server
+
+Examples:
+  # Mark planned server 123 as ready to be registered
+  metalcloud-cli server set-registration-ready 123
+`,
+		SilenceUsage: true,
+		Annotations:  map[string]string{system.REQUIRED_PERMISSION: system.PERMISSION_SERVERS_WRITE},
+		Args:         cobra.ExactArgs(1),
+		RunE: func(cmd *cobra.Command, args []string) error {
+			return server.ServerSetRegistrationReady(cmd.Context(), args[0])
+		},
+	}
+
+	serverReplacementCandidatesCmd = &cobra.Command{
+		Use:   "replacement-candidates server_id",
+		Short: "List the servers that can replace a server in its instance",
+		Long: `List the available servers that can replace the given server in its instance.
+
+Eligible candidates are listed first, best first. Ineligible candidates are listed
+with the reasons they were skipped. Use json or yaml output to also see the
+requirements (RAM, cores, disks, GPUs, network links) the candidates were checked against.
+
+Required Arguments:
+  server_id              The ID of the server to replace
+
+Examples:
+  # List replacement candidates for server 123
+  metalcloud-cli server replacement-candidates 123
+
+  # Include the replacement requirements
+  metalcloud-cli server replacement-candidates 123 -f json
+`,
+		SilenceUsage: true,
+		Annotations:  map[string]string{system.REQUIRED_PERMISSION: system.PERMISSION_SERVERS_READ},
+		Args:         cobra.ExactArgs(1),
+		RunE: func(cmd *cobra.Command, args []string) error {
+			return server.ServerReplacementCandidates(cmd.Context(), args[0])
+		},
+	}
+
+	serverReplaceCmd = &cobra.Command{
+		Use:   "replace server_id",
+		Short: "Replace a server in its instance with another server",
+		Long: `Replace a server in its instance with another server.
+
+The replacement server is put in the instance and the infrastructure is deployed,
+which moves the instance onto the new server with the same networking and OS. The
+old server becomes defective and should be wiped with "server cleanup".
+
+Use "server replacement-candidates" to find an eligible replacement server.
+
+Required Arguments:
+  server_id                  The ID of the server to replace
+
+Required Flags:
+  --replacement-server-id    The ID of the server to put in its place
+
+Optional Flags:
+  --accept-downgrade         Accept a replacement with less RAM, cores or disk
+
+Examples:
+  # Replace server 123 with server 456
+  metalcloud-cli server replace 123 --replacement-server-id 456
+
+  # Replace with a smaller server
+  metalcloud-cli server replace 123 --replacement-server-id 456 --accept-downgrade
+`,
+		SilenceUsage: true,
+		Annotations:  map[string]string{system.REQUIRED_PERMISSION: system.PERMISSION_SERVERS_WRITE},
+		Args:         cobra.ExactArgs(1),
+		RunE: func(cmd *cobra.Command, args []string) error {
+			return server.ServerReplace(cmd.Context(), args[0], serverFlags.replacementServerId, serverFlags.acceptDowngrade)
+		},
+	}
+
+	serverCleanupCmd = &cobra.Command{
+		Use:   "cleanup server_id",
+		Short: "Wipe a server that was replaced in its instance",
+		Long: `Wipe a server that was replaced in its instance.
+
+The server stays defective after the cleanup; set it available by hand once it is fixed.
+
+Required Arguments:
+  server_id              The ID of the replaced server
+
+Examples:
+  # Clean up replaced server 123
+  metalcloud-cli server cleanup 123
+`,
+		SilenceUsage: true,
+		Annotations:  map[string]string{system.REQUIRED_PERMISSION: system.PERMISSION_SERVERS_WRITE},
+		Args:         cobra.ExactArgs(1),
+		RunE: func(cmd *cobra.Command, args []string) error {
+			return server.ServerCleanupReplaced(cmd.Context(), args[0])
 		},
 	}
 
@@ -1520,6 +1673,7 @@ take a --config-source flag.
 
 Required Arguments:
   kind                   The configuration kind. One of:
+                           register
                            register-production
                            import-unmanaged
                            connect-interface
@@ -1638,17 +1792,41 @@ func init() {
 	serverGetCmd.Flags().BoolVar(&serverFlags.showCredentials, "show-credentials", false, "If set returns the server IPMI credentials.")
 
 	serverCmd.AddCommand(serverRegisterCmd)
-	serverRegisterCmd.Flags().StringVar(&serverFlags.configSource, "config-source", "", "Source of the new server configuration. Can be 'pipe' or path to a JSON file.")
+	serverRegisterCmd.Flags().StringVar(&serverFlags.configSource, "config-source", "", "Source of the new server configuration. Can be 'pipe' or path to a JSON/YAML file.")
 	serverRegisterCmd.Flags().IntVar(&serverFlags.siteId, "site-id", 0, "Site ID")
-	serverRegisterCmd.Flags().StringVar(&serverFlags.managementAddress, "management-address", "", "Management address")
-	serverRegisterCmd.Flags().StringVar(&serverFlags.username, "username", "", "Username")
-	serverRegisterCmd.Flags().StringVar(&serverFlags.password, "password", "", "Password")
 	serverRegisterCmd.Flags().StringVar(&serverFlags.serialNumber, "serial-number", "", "Serial number")
+	serverRegisterCmd.Flags().StringVar(&serverFlags.serverStatus, "status", "", "Initial server status: registering (default), planned or registration_ready")
+	serverRegisterCmd.Flags().StringVar(&serverFlags.managementAddress, "management-address", "", "BMC management address")
+	serverRegisterCmd.Flags().StringVar(&serverFlags.username, "username", "", "BMC username")
+	serverRegisterCmd.Flags().StringVar(&serverFlags.password, "password", "", "BMC password")
 	serverRegisterCmd.Flags().StringVar(&serverFlags.model, "model", "", "Model")
 	serverRegisterCmd.Flags().StringVar(&serverFlags.vendor, "vendor", "", "Vendor")
+	serverRegisterCmd.Flags().StringVar(&serverFlags.serverUuid, "uuid", "", "Server UUID")
+	serverRegisterCmd.Flags().StringVar(&serverFlags.bmcMacAddress, "bmc-mac", "", "BMC MAC address")
+	serverRegisterCmd.Flags().IntVar(&serverFlags.registrationProfileId, "registration-profile-id", 0, "Registration profile ID")
+	serverRegisterCmd.Flags().StringVar(&serverFlags.rackName, "rack-name", "", "Rack name")
+	serverRegisterCmd.Flags().StringVar(&serverFlags.rackPositionLower, "rack-position-lower", "", "Rack position lower unit")
+	serverRegisterCmd.Flags().StringVar(&serverFlags.rackPositionUpper, "rack-position-upper", "", "Rack position upper unit")
+	serverRegisterCmd.Flags().StringVar(&serverFlags.inventoryId, "inventory-id", "", "Inventory ID")
 	serverRegisterCmd.MarkFlagsOneRequired("config-source", "site-id")
 	serverRegisterCmd.MarkFlagsMutuallyExclusive("config-source", "site-id")
-	serverRegisterCmd.MarkFlagsRequiredTogether("site-id", "management-address")
+	serverRegisterCmd.MarkFlagsRequiredTogether("site-id", "serial-number")
+	for _, flag := range []string{"status", "management-address", "username", "password", "model", "vendor", "uuid", "bmc-mac", "registration-profile-id"} {
+		serverRegisterCmd.MarkFlagsMutuallyExclusive("config-source", flag)
+	}
+
+	serverCmd.AddCommand(serverRegisterPlannedCmd)
+
+	serverCmd.AddCommand(serverSetRegistrationReadyCmd)
+
+	serverCmd.AddCommand(serverReplacementCandidatesCmd)
+
+	serverCmd.AddCommand(serverReplaceCmd)
+	serverReplaceCmd.Flags().StringVar(&serverFlags.replacementServerId, "replacement-server-id", "", "The ID of the server to put in its place")
+	serverReplaceCmd.Flags().BoolVar(&serverFlags.acceptDowngrade, "accept-downgrade", false, "Accept a replacement with less RAM, cores or disk than the instance had")
+	serverReplaceCmd.MarkFlagRequired("replacement-server-id")
+
+	serverCmd.AddCommand(serverCleanupCmd)
 
 	serverCmd.AddCommand(serverReRegisterCmd)
 
@@ -1802,4 +1980,63 @@ func init() {
 	serverImportUnmanagedCmd.MarkFlagsOneRequired("config-source")
 
 	serverCmd.AddCommand(serverConfigExampleCmd)
+}
+
+// buildCreateServerFromFlags builds the server create request from the
+// register flags, setting only the optional fields whose flags were given.
+func buildCreateServerFromFlags(cmd *cobra.Command) sdk.CreateServer {
+	config := sdk.CreateServer{
+		SiteId:       int64(serverFlags.siteId),
+		SerialNumber: sdk.PtrString(serverFlags.serialNumber),
+	}
+
+	optionalString := func(flag string, value string) *string {
+		if cmd.Flags().Changed(flag) {
+			return sdk.PtrString(value)
+		}
+		return nil
+	}
+
+	config.ServerStatus = optionalString("status", serverFlags.serverStatus)
+	config.ManagementAddress = optionalString("management-address", serverFlags.managementAddress)
+	config.Username = optionalString("username", serverFlags.username)
+	config.Password = optionalString("password", serverFlags.password)
+	config.Model = optionalString("model", serverFlags.model)
+	config.Vendor = optionalString("vendor", serverFlags.vendor)
+	config.ServerUUID = optionalString("uuid", serverFlags.serverUuid)
+	config.BmcMacAddress = optionalString("bmc-mac", serverFlags.bmcMacAddress)
+	if cmd.Flags().Changed("registration-profile-id") {
+		config.RegistrationProfileId = sdk.PtrInt64(int64(serverFlags.registrationProfileId))
+	}
+
+	return config
+}
+
+// buildRackUpdateFromFlags returns the follow-up update carrying the rack and
+// inventory details, or nil when none of them were given.
+func buildRackUpdateFromFlags() *sdk.UpdateServer {
+	update := sdk.UpdateServer{}
+	set := false
+
+	if serverFlags.rackName != "" {
+		update.RackName = sdk.PtrString(serverFlags.rackName)
+		set = true
+	}
+	if serverFlags.rackPositionLower != "" {
+		update.RackPositionLowerUnit = sdk.PtrString(serverFlags.rackPositionLower)
+		set = true
+	}
+	if serverFlags.rackPositionUpper != "" {
+		update.RackPositionUpperUnit = sdk.PtrString(serverFlags.rackPositionUpper)
+		set = true
+	}
+	if serverFlags.inventoryId != "" {
+		update.InventoryId = sdk.PtrString(serverFlags.inventoryId)
+		set = true
+	}
+
+	if !set {
+		return nil
+	}
+	return &update
 }

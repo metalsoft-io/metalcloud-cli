@@ -94,13 +94,14 @@ func (vc *VendorCatalog) processSupermicroCatalog(ctx context.Context) error {
 		// The actual cache download URL will be set during upload process
 		binaryDownloadUrl := "https://www.supermicro.com/firmware/not-available"
 
-		// Create supported devices list with id and model
-		// id is used as the unique identifier for the device
-		supportedDevices := []map[string]interface{}{
-			{
-				"id":    component.Model,
-				"model": component.Model,
-			},
+		// Supermicro provides no PCI ids; the component model is the system
+		// (motherboard) model the package applies to.
+		supportedDevices := []sdk.VendorSupportedDevice{}
+		supportedSystems := []sdk.ServerFirmwareBinaryVendorSupportedSystems{}
+		if component.Model != "" {
+			supportedSystems = append(supportedSystems, sdk.ServerFirmwareBinaryVendorSupportedSystems{
+				Model: sdk.PtrString(component.Model),
+			})
 		}
 
 		// Parse release date
@@ -130,7 +131,7 @@ func (vc *VendorCatalog) processSupermicroCatalog(ctx context.Context) error {
 			RebootRequired:         false,
 			UpdateSeverity:         UpdateSeverityUnknown,
 			VendorSupportedDevices: supportedDevices,
-			VendorSupportedSystems: []map[string]interface{}{},
+			VendorSupportedSystems: supportedSystems,
 			VendorReleaseTimestamp: releaseTimestamp,
 		}
 

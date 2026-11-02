@@ -374,7 +374,7 @@ func newServerHardwareTestServer(t *testing.T) *httptest.Server {
 			})
 		})
 		mux.HandleFunc("/api/v2/servers/firmware/actions/batch-schedule-upgrade", func(w http.ResponseWriter, r *http.Request) {
-			jsonResponse(w, http.StatusOK, map[string]interface{}{"failed": map[string]interface{}{}})
+			jsonResponse(w, http.StatusOK, map[string]interface{}{"failed": map[string]interface{}{}, "successful": []int{1, 2}})
 		})
 	}))
 }
@@ -549,5 +549,46 @@ func TestServerFirmwareBatchCommands(t *testing.T) {
 	if _, err := runCLI(t, srv, "server", "firmware", "schedule-upgrade-batch", "1", "2",
 		"--schedule-timestamp", "2024-01-01T10:00:00Z", "--confirmation-required"); err != nil {
 		t.Fatalf("schedule-upgrade-batch: %v", err)
+	}
+}
+
+func TestServerRegisterPlannedFlags(t *testing.T) {
+	var createBody, updateBody map[string]interface{}
+	mux := newMux(allPerms, func(mux *http.ServeMux) {
+		mux.HandleFunc("/api/v2/servers", func(w http.ResponseWriter, r *http.Request) {
+			if r.Method != http.MethodPost {
+				http.Error(w, "unexpected method", http.StatusMethodNotAllowed)
+				return
+			}
+			_ = json.NewDecoder(r.Body).Decode(&createBody)
+			jsonResponse(w, http.StatusCreated, map[string]interface{}{"serverId": 42, "revision": 1})
+		})
+		mux.HandleFunc("/api/v2/servers/42", func(w http.ResponseWriter, r *http.Request) {
+			_ = json.NewDecoder(r.Body).Decode(&updateBody)
+			jsonResponse(w, http.StatusOK, serverItem)
+		})
+	})
+	srv := httptest.NewServer(mux)
+	defer srv.Close()
+
+	if _, err := runCLI(t, srv, "server", "register", "--site-id", "1", "--serial-number", "SN-1",
+		"--status", "planned", "--rack-name", "R01"); err != nil {
+		t.Fatalf("register planned: %v", err)
+	}
+	if createBody["serialNumber"] != "SN-1" || createBody["serverStatus"] != "planned" {
+		t.Errorf("unexpected create body: %v", createBody)
+	}
+	for _, key := range []string{"managementAddress", "username", "password", "model", "vendor"} {
+		if _, ok := createBody[key]; ok {
+			t.Errorf("%s must be omitted when its flag is not given, got body: %v", key, createBody)
+		}
+	}
+	if updateBody["rackName"] != "R01" {
+		t.Errorf("expected the rack name to be set with an update, got: %v", updateBody)
+	}
+
+	// The serial number is required together with the site id.
+	if _, err := runCLI(t, srv, "server", "register", "--site-id", "1"); err == nil {
+		t.Error("expected an error when --serial-number is missing")
 	}
 }

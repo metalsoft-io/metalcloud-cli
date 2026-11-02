@@ -20,7 +20,7 @@ import (
 // User fixture helpers
 // ---------------------------------------------------------------------------
 
-// fullUserJSON is the minimal /api/v2/user JSON that passes strict SDK
+// fullUserJSON is a complete /api/v2/user JSON that also passes strict SDK
 // validation (User + UserConfiguration both have required-property checks).
 // Individual permission keys are embedded as AdditionalProperties and are
 // read by GetUserPermissions to decide which commands remain visible.
@@ -37,6 +37,7 @@ const fullUserJSON = `{
   "franchise":"default","createdTimestamp":"2024-01-01T00:00:00Z",
   "planType":"default","isSuspended":false,"authenticatorEnabled":false,
   "meta":{},
+  "accessibleResources":{},"roleAccessibleResources":{},
   "config":{
     "revision":1,"displayName":"Test User","emailStatus":"active",
     "language":"en","brand":"default","isBrandManager":false,
@@ -73,7 +74,6 @@ const fullUserJSON = `{
     "network_endpoint_groups_read":true,"network_endpoint_groups_write":true,
     "network_device_configuration_templates_read":true,
     "device_auth_providers_read":true,"device_auth_providers_write":true,
-    "server_default_credentials_read":true,"server_default_credentials_write":true,
     "cleanup_policies_read":true,"cleanup_policies_write":true,
     "server_instances_read":true,"server_instances_write":true,
     "server_instance_groups_read":true,"server_instance_groups_write":true,
@@ -95,7 +95,6 @@ var allPerms = []string{
 	"network_endpoint_groups_read",
 	"network_device_configuration_templates_read",
 	"device_auth_providers_read",
-	"server_default_credentials_read",
 }
 
 // ---------------------------------------------------------------------------

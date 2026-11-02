@@ -80,7 +80,6 @@ metalcloud-cli [flags]
 * [metalcloud-cli secret](metalcloud-cli_secret.md)	 - Manage encrypted secrets for secure credential storage
 * [metalcloud-cli server](metalcloud-cli_server.md)	 - Server management
 * [metalcloud-cli server-cleanup-policy](metalcloud-cli_server-cleanup-policy.md)	 - Manage server cleanup policies for automated server maintenance
-* [metalcloud-cli server-default-credentials](metalcloud-cli_server-default-credentials.md)	 - Manage server default credentials and authentication settings
 * [metalcloud-cli server-instance](metalcloud-cli_server-instance.md)	 - Manage individual server instances
 * [metalcloud-cli server-instance-group](metalcloud-cli_server-instance-group.md)	 - Manage server instance groups within infrastructures
 * [metalcloud-cli server-registration-profile](metalcloud-cli_server-registration-profile.md)	 - Manage server registration profiles

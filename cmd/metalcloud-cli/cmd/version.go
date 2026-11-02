@@ -78,7 +78,7 @@ func runVersionCmd(cmd *cobra.Command, args []string) error {
 	// Try to get user access level if API client is available
 	if cmd.Context() != nil {
 		if apiClient, err := api.GetApiClientE(cmd.Context()); err == nil && apiClient != nil {
-			if user, _, err := apiClient.AuthenticationAPI.GetCurrentUser(cmd.Context()).Execute(); err == nil {
+			if user, err := system.GetCurrentUser(cmd.Context()); err == nil {
 				email := ""
 				if user.Email != "" {
 					email = fmt.Sprintf(", Email: %s", user.Email)

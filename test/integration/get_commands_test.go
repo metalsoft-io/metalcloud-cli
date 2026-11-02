@@ -418,19 +418,6 @@ func TestGetServerRegistrationProfile_Integration(t *testing.T) {
 }
 
 // ---------------------------------------------------------------------------
-// server-default-credentials get
-// ---------------------------------------------------------------------------
-
-func TestGetServerDefaultCredentials_Integration(t *testing.T) {
-	skipIfNoEndpoint(t)
-	id := firstIDFrom(t, "-x", "server-default-credentials", "list", "-f", "json")
-	if id == "" {
-		t.Skip("no server default credentials available; skipping server-default-credentials get")
-	}
-	assertGetCommand(t, "-x", "server-default-credentials", "get", id, "-f", "json")
-}
-
-// ---------------------------------------------------------------------------
 // site device-auth-provider get
 // ---------------------------------------------------------------------------
 

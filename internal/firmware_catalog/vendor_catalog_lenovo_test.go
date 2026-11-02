@@ -342,14 +342,14 @@ func TestProcessLenovoCatalog_BinaryFields(t *testing.T) {
 
 	// Check supported devices
 	devices := binary.VendorSupportedDevices
-	if len(devices) != 1 || devices[0]["id"] != lenovoSoftwareUpdateComponentXcc || devices[0]["model"] != lenovoSoftwareUpdateComponentXcc {
-		t.Errorf("VendorSupportedDevices = %v, want [{id: XCC, model: XCC}]", devices)
+	if len(devices) != 0 {
+		t.Errorf("VendorSupportedDevices = %v, want none (Lenovo provides no PCI ids)", devices)
 	}
 
 	// Check supported systems
 	systems := binary.VendorSupportedSystems
-	if len(systems) != 1 || systems[0]["id"] != "7D2V" {
-		t.Errorf("VendorSupportedSystems = %v, want [{id: 7D2V}]", systems)
+	if len(systems) != 1 || systems[0].GetModel() != "7D2V" {
+		t.Errorf("VendorSupportedSystems = %v, want [{model: 7D2V}]", systems)
 	}
 }
 

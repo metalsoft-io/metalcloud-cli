@@ -95,7 +95,6 @@ func NetworkDeviceConfigExample(ctx context.Context) error {
 		Position:         "leaf",
 		IsGateway:        sdk.PtrBool(false),
 		IsStorageSwitch:  sdk.PtrBool(false),
-		IsBorderDevice:   sdk.PtrBool(false),
 	}
 
 	networkDeviceConfiguration.ManagementAddress.Set(sdk.PtrString("1.1.1.1"))

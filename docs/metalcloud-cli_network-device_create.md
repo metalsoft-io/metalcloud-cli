@@ -25,7 +25,6 @@ Use the 'config-example' command to generate an example configuration:
     "position": "leaf",
     "isGateway": false,
     "isStorageSwitch": false,
-    "isBorderDevice": false,
     "managementMAC": "AA:BB:CC:DD:EE:FF",
     "managementAddress": "1.1.1.1",
     "managementAddressGateway": "1.1.1.1",

@@ -5,6 +5,8 @@ import (
 	"os"
 	"strings"
 	"testing"
+
+	sdk "github.com/metalsoft-io/metalcloud-sdk-go"
 )
 
 const mockCatalogXML = `<?xml version="1.0" encoding="utf-16"?>
@@ -377,5 +379,104 @@ func TestProcessDellCatalog_WrongLocalPath(t *testing.T) {
 
 	if !strings.Contains(err.Error(), "no such file or directory") {
 		t.Errorf("processDellCatalog() returned unexpected error: %v", err)
+	}
+}
+
+func TestDellSupportedDevicesFromPCIInfo(t *testing.T) {
+	devices := []dellDevice{
+		{ComponentID: "1", PCIInfo: []dellPCIInfo{{VendorID: "1E0F", DeviceID: "0025", SubVendorID: "1028", SubDeviceID: "223E"}}},
+		// Duplicate PCI ids are reported once.
+		{ComponentID: "2", PCIInfo: []dellPCIInfo{{VendorID: "1E0F", DeviceID: "0025", SubVendorID: "1028", SubDeviceID: "223E"}}},
+		// Devices without PCI ids (BIOS, iDRAC) are skipped.
+		{ComponentID: "159", Display: "BIOS"},
+	}
+
+	got := dellSupportedDevicesFromPCIInfo(devices)
+	if len(got) != 1 {
+		t.Fatalf("expected 1 supported device, got %d: %v", len(got), got)
+	}
+	pci := got[0].GetPci()
+	if pci.GetVendorId() != "1e0f" || pci.GetDeviceId() != "0025" || pci.GetSubsystemVendorId() != "1028" || pci.GetSubsystemId() != "223e" {
+		t.Errorf("unexpected PCI ids: %+v", pci)
+	}
+}
+
+const mockBiosIdracCatalogXML = `<?xml version="1.0" encoding="utf-16"?>
+<Manifest baseLocation="downloads.dell.com" baseLocationAccessProtocols="HTTPS" dateTime="2026-10-29T01:46:12+05:30" identifier="11111111-2222-3333-4444-555555555555" releaseID="TEST1" version="26.10.00">
+  <SoftwareComponent path="FOLDER1/1/BIOS_6Y0JT_WN64_2.25.2.EXE" packageID="6Y0JT" vendorVersion="2.25.2" rebootRequired="true" releaseDate="September 24, 2026">
+    <Name><Display lang="en">Dell Server PowerEdge BIOS R340 Version 2.25.2</Display></Name>
+    <ComponentType value="BIOS"><Display lang="en">BIOS</Display></ComponentType>
+    <Category value="BI"><Display lang="en">BIOS</Display></Category>
+    <SupportedDevices><Device componentID="159" embedded="1"><Display lang="en">PowerEdge BIOS</Display></Device></SupportedDevices>
+    <SupportedSystems><Brand key="3" prefix="PE"><Display lang="en">PowerEdge</Display><Model systemID="088E" systemIDType="BIOS"><Display lang="en">R340</Display></Model></Brand></SupportedSystems>
+  </SoftwareComponent>
+  <SoftwareComponent path="FOLDER2/1/iDRAC-with-Lifecycle-Controller_Firmware_P3PPC_WN64_7.30.30.54_A00.EXE" packageID="P3PPC" vendorVersion="7.30.30.54" rebootRequired="false" releaseDate="October 01, 2026">
+    <Name><Display lang="en">iDRAC9 7.30.30.54</Display></Name>
+    <ComponentType value="FRMW"><Display lang="en">Firmware</Display></ComponentType>
+    <Category value="iDRAC with Lifecycle Controller"><Display lang="en">iDRAC with Lifecycle Controller</Display></Category>
+    <SupportedDevices><Device componentID="25227" embedded="1"><Display lang="en">iDRAC with Lifecycle Controller</Display></Device></SupportedDevices>
+    <SupportedSystems><Brand key="3" prefix="PE"><Display lang="en">PowerEdge</Display><Model systemID="088E" systemIDType="BIOS"><Display lang="en">R340</Display></Model></Brand></SupportedSystems>
+  </SoftwareComponent>
+  <SoftwareComponent path="FOLDER3/1/Network_Firmware_ABCDE_WN64_22.0.0.EXE" packageID="ABCDE" vendorVersion="22.0.0" rebootRequired="true" releaseDate="August 01, 2026">
+    <Name><Display lang="en">Intel NIC firmware</Display></Name>
+    <ComponentType value="FRMW"><Display lang="en">Firmware</Display></ComponentType>
+    <Category value="NI"><Display lang="en">Network</Display></Category>
+    <SupportedDevices><Device componentID="104488" embedded="0"><Display lang="en">Intel X710</Display><PCIInfo deviceID="1572" vendorID="8086" subDeviceID="0006" subVendorID="1028" /></Device></SupportedDevices>
+    <SupportedSystems><Brand key="3" prefix="PE"><Display lang="en">PowerEdge</Display><Model systemID="088E" systemIDType="BIOS"><Display lang="en">R340</Display></Model></Brand></SupportedSystems>
+  </SoftwareComponent>
+  <SoftwareComponent path="FOLDER4/1/Network_Driver_XYZ_WN64_1.0.EXE" packageID="XYZ" vendorVersion="1.0" rebootRequired="false" releaseDate="August 01, 2026">
+    <Name><Display lang="en">Intel NIC driver</Display></Name>
+    <ComponentType value="DRVR"><Display lang="en">Driver</Display></ComponentType>
+    <Category value="NI"><Display lang="en">Network</Display></Category>
+    <SupportedSystems><Brand key="3" prefix="PE"><Display lang="en">PowerEdge</Display><Model systemID="088E" systemIDType="BIOS"><Display lang="en">R340</Display></Model></Brand></SupportedSystems>
+  </SoftwareComponent>
+</Manifest>`
+
+func TestProcessDellCatalog_BiosAndIdrac(t *testing.T) {
+	catalogPath := t.TempDir() + "/catalog.xml"
+	if err := os.WriteFile(catalogPath, []byte(mockBiosIdracCatalogXML), 0o600); err != nil {
+		t.Fatalf("failed to write mock catalog: %v", err)
+	}
+
+	vendorCatalog := &VendorCatalog{VendorLocalCatalogPath: catalogPath}
+	if err := vendorCatalog.processDellCatalog(context.Background()); err != nil {
+		t.Fatalf("processDellCatalog() returned an error: %v", err)
+	}
+
+	byPackage := map[string]*sdk.FirmwareBinary{}
+	for _, binary := range vendorCatalog.Binaries {
+		byPackage[*binary.PackageId] = binary
+	}
+
+	if len(byPackage) != 3 {
+		t.Fatalf("expected BIOS, iDRAC and NIC binaries (driver excluded), got %v", byPackage)
+	}
+
+	expectedClass := map[string]*sdk.ServerComponentClass{
+		"6Y0JT": sdk.SERVERCOMPONENTCLASS_BIOS.Ptr(),
+		"P3PPC": sdk.SERVERCOMPONENTCLASS_BMC.Ptr(),
+		"ABCDE": nil,
+	}
+	for packageId, class := range expectedClass {
+		binary, ok := byPackage[packageId]
+		if !ok {
+			t.Fatalf("binary %s missing", packageId)
+		}
+		switch {
+		case class == nil && binary.ComponentClass != nil:
+			t.Errorf("%s: expected no component class, got %s", packageId, *binary.ComponentClass)
+		case class != nil && (binary.ComponentClass == nil || *binary.ComponentClass != *class):
+			t.Errorf("%s: expected component class %s, got %v", packageId, *class, binary.ComponentClass)
+		}
+		if len(binary.VendorSupportedSystems) != 1 || binary.VendorSupportedSystems[0].GetModel() != "R340" {
+			t.Errorf("%s: unexpected supported systems %v", packageId, binary.VendorSupportedSystems)
+		}
+	}
+
+	if len(byPackage["6Y0JT"].VendorSupportedDevices) != 0 || len(byPackage["P3PPC"].VendorSupportedDevices) != 0 {
+		t.Errorf("BIOS and iDRAC binaries should carry no PCI devices")
+	}
+	if len(byPackage["ABCDE"].VendorSupportedDevices) != 1 {
+		t.Errorf("NIC binary should carry its PCI device, got %v", byPackage["ABCDE"].VendorSupportedDevices)
 	}
 }

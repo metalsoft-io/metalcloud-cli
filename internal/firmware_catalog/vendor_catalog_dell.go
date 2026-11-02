@@ -15,6 +15,10 @@ import (
 
 const (
 	componentTypeFirmware string = "FRMW"
+	componentTypeBios     string = "BIOS"
+
+	// dellCategoryIdrac is the category value of the iDRAC firmware packages.
+	dellCategoryIdrac string = "iDRAC with Lifecycle Controller"
 )
 
 type dellName struct {
@@ -30,6 +34,7 @@ type dellImportantInfo struct {
 }
 
 type dellCategory struct {
+	Value   string `xml:"value,attr"`
 	Display string `xml:"Display"`
 }
 
@@ -41,10 +46,18 @@ type dellDescription struct {
 	Display string `xml:"Display"`
 }
 
+type dellPCIInfo struct {
+	VendorID    string `xml:"vendorID,attr"`
+	DeviceID    string `xml:"deviceID,attr"`
+	SubVendorID string `xml:"subVendorID,attr"`
+	SubDeviceID string `xml:"subDeviceID,attr"`
+}
+
 type dellDevice struct {
-	ComponentID string `xml:"componentID,attr"`
-	Display     string `xml:"Display"`
-	Prefix      string `xml:"prefix,attr"`
+	ComponentID string        `xml:"componentID,attr"`
+	Display     string        `xml:"Display"`
+	Prefix      string        `xml:"prefix,attr"`
+	PCIInfo     []dellPCIInfo `xml:"PCIInfo"`
 }
 
 type dellModel struct {
@@ -166,24 +179,20 @@ func (vc *VendorCatalog) processDellCatalog(ctx context.Context) error {
 
 	// Process catalog components
 	for _, component := range manifest.Components {
-		// We only check for components that are of type firmware
-		if component.ComponentType.Value != componentTypeFirmware {
+		// We only check for firmware and BIOS components
+		if component.ComponentType.Value != componentTypeFirmware && component.ComponentType.Value != componentTypeBios {
 			continue
 		}
 
 		includedBinary := false
-		supportedSystems := []map[string]interface{}{}
+		supportedSystems := []sdk.ServerFirmwareBinaryVendorSupportedSystems{}
 		for _, brand := range component.SupportedSystems.Brands {
 			for _, model := range brand.Models {
-				systemInfo := map[string]interface{}{
-					"id": model.SystemID,
-					// "idType":      model.SystemIDType,
-					// "brandName":   brand.Display,
-					// "brandPrefix": brand.Prefix,
-					// "modelName":   model.Display,
+				if model.Display != "" {
+					supportedSystems = append(supportedSystems, sdk.ServerFirmwareBinaryVendorSupportedSystems{
+						Model: sdk.PtrString(model.Display),
+					})
 				}
-
-				supportedSystems = append(supportedSystems, systemInfo)
 
 				if !includedBinary {
 					systemName := brand.Display + " " + model.Display
@@ -205,15 +214,7 @@ func (vc *VendorCatalog) processDellCatalog(ctx context.Context) error {
 			rebootRequired = true
 		}
 
-		supportedDevices := []map[string]interface{}{}
-		for _, device := range component.SupportedDevices.Devices {
-			deviceInfo := map[string]interface{}{
-				"id":    device.ComponentID,
-				"model": device.Display,
-			}
-
-			supportedDevices = append(supportedDevices, deviceInfo)
-		}
+		supportedDevices := dellSupportedDevicesFromPCIInfo(component.SupportedDevices.Devices)
 
 		timestamp, err := time.Parse("January 02, 2006", component.ReleaseDate)
 		if err != nil {
@@ -235,6 +236,7 @@ func (vc *VendorCatalog) processDellCatalog(ctx context.Context) error {
 			VendorSupportedDevices: supportedDevices,
 			VendorSupportedSystems: supportedSystems,
 			VendorReleaseTimestamp: &timestamp,
+			ComponentClass:         dellComponentClass(component),
 		}
 
 		vc.Binaries = append(vc.Binaries, &firmwareBinary)
@@ -260,4 +262,59 @@ func parseDellUpdateSeverity(dellCriticality string) string {
 	default:
 		return UpdateSeverityUnknown
 	}
+}
+
+// dellComponentClass returns the server component class of the BIOS and iDRAC
+// packages. These carry no PCI ids, so the class is what matches them to the
+// server components. Other packages are matched by their PCI ids and get no class.
+func dellComponentClass(component dellSoftwareComponent) *sdk.ServerComponentClass {
+	switch {
+	case component.ComponentType.Value == componentTypeBios:
+		return sdk.SERVERCOMPONENTCLASS_BIOS.Ptr()
+	case component.Category.Value == dellCategoryIdrac:
+		return sdk.SERVERCOMPONENTCLASS_BMC.Ptr()
+	default:
+		return nil
+	}
+}
+
+// dellSupportedDevicesFromPCIInfo maps the PCIInfo entries of the supported
+// devices of a Dell component to vendor supported devices. Devices without PCI
+// ids (BIOS, iDRAC, ...) are skipped; BIOS and iDRAC packages are matched by
+// their component class instead (see dellComponentClass). Dell writes the ids
+// in upper case; they are normalized to the lower case form used by the API.
+func dellSupportedDevicesFromPCIInfo(devices []dellDevice) []sdk.VendorSupportedDevice {
+	supportedDevices := []sdk.VendorSupportedDevice{}
+	seen := map[dellPCIInfo]bool{}
+
+	optional := func(value string) *string {
+		value = strings.ToLower(strings.TrimSpace(value))
+		if value == "" {
+			return nil
+		}
+		return sdk.PtrString(value)
+	}
+
+	for _, device := range devices {
+		for _, pci := range device.PCIInfo {
+			if pci.VendorID == "" && pci.DeviceID == "" {
+				continue
+			}
+			if seen[pci] {
+				continue
+			}
+			seen[pci] = true
+
+			supportedDevices = append(supportedDevices, sdk.VendorSupportedDevice{
+				Pci: &sdk.PciIds{
+					VendorId:          optional(pci.VendorID),
+					DeviceId:          optional(pci.DeviceID),
+					SubsystemVendorId: optional(pci.SubVendorID),
+					SubsystemId:       optional(pci.SubDeviceID),
+				},
+			})
+		}
+	}
+
+	return supportedDevices
 }
