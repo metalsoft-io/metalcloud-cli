@@ -46,6 +46,8 @@ type VendorCatalog struct {
 	UserPrivateKeyPath      string
 	KnownHostsPath          string
 	IgnoreHostKeyCheck      bool
+	// Force lets an NVIDIA import update a binary whose package file changed (another sha256 for the same file)
+	Force bool
 }
 
 func NewVendorCatalogFromCreateOptions(options FirmwareCatalogCreateOptions) (*VendorCatalog, error) {
@@ -78,6 +80,7 @@ func NewVendorCatalogFromCreateOptions(options FirmwareCatalogCreateOptions) (*V
 		UserPrivateKeyPath:      options.UserPrivateKeyPath,
 		KnownHostsPath:          options.KnownHostsPath,
 		IgnoreHostKeyCheck:      options.IgnoreHostKeyCheck,
+		Force:                   options.Force,
 	}
 
 	if options.VendorUrl != "" {
@@ -92,7 +95,11 @@ func NewVendorCatalogFromCreateOptions(options FirmwareCatalogCreateOptions) (*V
 }
 
 func (vc *VendorCatalog) ProcessVendorCatalog(ctx context.Context) error {
-	if len(vc.ServerTypesFilter) > 0 {
+	if vc.CatalogInfo.Vendor == VendorNvidia && len(vc.ServerTypesFilter) > 0 {
+		// The server types lookup matches servers by vendor, so it never finds HGX trays in OEM chassis; the
+		// platforms an NVIDIA bundle supports come from its manifest (targetPlatforms)
+		logger.Get().Warn().Msgf("Ignoring the server types filter %v for an NVIDIA catalog: its platforms come from the manifest targetPlatforms", vc.ServerTypesFilter)
+	} else if len(vc.ServerTypesFilter) > 0 {
 		logger.Get().Debug().Msgf("Server types filter provided: %v", vc.ServerTypesFilter)
 
 		isHpe := vc.CatalogInfo.Vendor == VendorHp
@@ -163,6 +170,8 @@ func (vc *VendorCatalog) ProcessVendorCatalog(ctx context.Context) error {
 		return vc.processLenovoCatalog(ctx)
 	case VendorSupermicro:
 		return vc.processSupermicroCatalog(ctx)
+	case VendorNvidia:
+		return vc.processNvidiaCatalog(ctx)
 	default:
 		return fmt.Errorf("unsupported vendor %s", vc.CatalogInfo.Vendor)
 	}
@@ -183,15 +192,44 @@ func (vc *VendorCatalog) CreateMetalsoftCatalog(ctx context.Context) error {
 
 	client := api.GetApiClient(ctx)
 
-	firmwareCatalog, httpRes, err := client.FirmwareCatalogAPI.
-		CreateFirmwareCatalogs(ctx).
-		CreateFirmwareCatalog(firmwareCatalogCreate).
-		Execute()
-	if err := response_inspector.InspectResponse(httpRes, err); err != nil {
-		return err
+	// An NVIDIA bundle version is imported again into its own catalog: the catalog and its binaries are updated
+	existingBinaries := map[string]*sdk.FirmwareBinary{}
+	var catalogId int64
+	if vc.CatalogInfo.Vendor == VendorNvidia {
+		existing, err := vc.findNvidiaCatalog(ctx)
+		if err != nil {
+			return err
+		}
+		if existing != nil {
+			catalogId = existing.Id
+			existingBinaries, err = vc.checkExistingNvidiaBinaries(ctx, catalogId)
+			if err != nil {
+				return err
+			}
+			logger.Get().Info().Msgf("Updating firmware catalog %d (%s)", int(catalogId), *vc.CatalogInfo.VendorId)
+			_, httpRes, err := client.FirmwareCatalogAPI.
+				UpdateFirmwareCatalog(ctx, catalogId).
+				UpdateFirmwareCatalog(sdk.UpdateFirmwareCatalog(firmwareCatalogCreate)).
+				Execute()
+			if err := response_inspector.InspectResponse(httpRes, err); err != nil {
+				return err
+			}
+		}
 	}
 
-	vc.CatalogInfo.Id = firmwareCatalog.Id
+	if catalogId == 0 {
+		firmwareCatalog, httpRes, err := client.FirmwareCatalogAPI.
+			CreateFirmwareCatalogs(ctx).
+			CreateFirmwareCatalog(firmwareCatalogCreate).
+			Execute()
+		if err := response_inspector.InspectResponse(httpRes, err); err != nil {
+			return err
+		}
+		catalogId = firmwareCatalog.Id
+	}
+
+	vc.CatalogInfo.Id = catalogId
+	var err error
 
 	var sftpClient *sftp.Client
 	if vc.UploadBinaries {
@@ -287,7 +325,7 @@ func (vc *VendorCatalog) CreateMetalsoftCatalog(ctx context.Context) error {
 		}
 
 		binaryCreate := sdk.CreateFirmwareBinary{
-			CatalogId:              firmwareCatalog.Id,
+			CatalogId:              catalogId,
 			ExternalId:             binary.ExternalId,
 			VendorInfoUrl:          binary.VendorInfoUrl,
 			VendorDownloadUrl:      binary.VendorDownloadUrl,
@@ -301,6 +339,11 @@ func (vc *VendorCatalog) CreateMetalsoftCatalog(ctx context.Context) error {
 			VendorSupportedSystems: binary.VendorSupportedSystems,
 			VendorReleaseTimestamp: binary.VendorReleaseTimestamp,
 			ComponentClass:         binary.ComponentClass,
+			ComponentModel:         binary.ComponentModel,
+			Prerequisites:          binary.Prerequisites,
+			IsBundle:               binary.IsBundle,
+			BundleSteps:            binary.BundleSteps,
+			Sha256:                 binary.Sha256,
 		}
 
 		if len(binaryCreate.Name) > 255 {
@@ -308,7 +351,21 @@ func (vc *VendorCatalog) CreateMetalsoftCatalog(ctx context.Context) error {
 			logger.Get().Warn().Msgf("Binary name %s exceeded 255 characters, truncating to %s", binary.Name, binaryCreate.Name)
 		}
 
-		logger.Get().Debug().Msgf("Creating firmware binary for catalog %d: %v", int(firmwareCatalog.Id), binaryCreate)
+		if existing := existingBinaries[*binary.ExternalId]; existing != nil {
+			logger.Get().Debug().Msgf("Updating firmware binary %d of catalog %d: %v", int(existing.Id), int(catalogId), binaryCreate)
+
+			updated, httpRes, err := client.FirmwareBinaryAPI.SetFirmwareBinary(ctx, existing.Id).
+				CreateFirmwareBinary(binaryCreate).
+				Execute()
+			if err := response_inspector.InspectResponse(httpRes, err); err != nil {
+				return err
+			}
+
+			binary.Id = updated.Id
+			continue
+		}
+
+		logger.Get().Debug().Msgf("Creating firmware binary for catalog %d: %v", int(catalogId), binaryCreate)
 
 		newBinary, httpRes, err := client.FirmwareBinaryAPI.CreateFirmwareBinary(ctx).
 			CreateFirmwareBinary(binaryCreate).

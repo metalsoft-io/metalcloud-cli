@@ -117,7 +117,10 @@ Required Flags:
 
 Examples:
   metalcloud configuration update notification --config-source notification-patch.json
-  echo '{"smtp":{"port":587}}' | metalcloud configuration update notification --config-source pipe`,
+  echo '{"smtp":{"port":587}}' | metalcloud configuration update notification --config-source pipe
+
+  # Who is emailed when a server firmware upgrade starts, completes or fails
+  echo '{"server_firmware_upgrade_notification_emails":["ops@example.com"]}' | metalcloud configuration update notification --config-source pipe`,
 		SilenceUsage: true,
 		Annotations:  map[string]string{system.REQUIRED_PERMISSION: system.PERMISSION_CONFIGURATION_WRITE},
 		Args:         cobra.ExactArgs(1),

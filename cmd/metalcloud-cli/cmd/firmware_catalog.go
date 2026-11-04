@@ -29,6 +29,7 @@ var (
 		userPrivateKeyPath      string
 		knownHostsPath          string
 		ignoreHostKeyCheck      bool
+		force                   bool
 	}{}
 
 	firmwareCatalogCmd = &cobra.Command{
@@ -113,7 +114,7 @@ Configuration Methods:
 
 Required Flags (when not using --config-source):
   --name            Name of the firmware catalog
-  --vendor          Vendor type: 'dell', 'hp', or 'lenovo'
+  --vendor          Vendor type: 'dell', 'hp', 'lenovo', 'supermicro' or 'nvidia'
   --update-type     Update method: 'online' or 'offline'
 
 Source Configuration (mutually exclusive):
@@ -138,7 +139,16 @@ Offline Repository Configuration (required when --upload-binaries is used):
 SSH Configuration (mutually exclusive):
   --user-private-key-path    Path to SSH private key (default: ~/.ssh/id_rsa)
   --known-hosts-path         Path to SSH known hosts file (default: ~/.ssh/known_hosts)
-  --ignore-host-key-check    Skip SSH host key verification`,
+  --ignore-host-key-check    Skip SSH host key verification
+
+NVIDIA HGX/DGX bundles:
+  NVIDIA publishes no machine-readable catalog. Describe a downloaded bundle with a JSON manifest
+  (steps, package files with their SHA-256, target platforms, optional prerequisites) and pass it
+  with --vendor-local-catalog-path; --vendor-local-binaries-path is the folder with the package
+  files, which are checked against the manifest before anything is sent. Each bundle version is one
+  catalog (vendor id "<bundleName>@<bundleVersion>"): importing it again updates that catalog and its
+  binaries. --vendor-url, --download-binaries and --server-types do not apply.
+  --force    Replace a package file whose checksum changed in a catalog imported before`,
 		Example: `
 Dell example (online):
 metalcloud-cli firmware-catalog create \
@@ -171,6 +181,19 @@ metalcloud-cli firmware-catalog create \
   --vendor-url https://downloads.linux.hpe.com/SDR/repo/fwpp-gen11/current/fwrepodata/fwrepo.json \
   --server-types "M.8.8.2.v5" \
   --update-type online
+
+NVIDIA example (bundle manifest, uploaded to the offline repository):
+metalcloud-cli firmware-catalog create \
+  --name "NVIDIA HGX H100 25.06.1" \
+  --vendor nvidia \
+  --update-type offline \
+  --vendor-local-catalog-path ./hgx-h100/manifest.json \
+  --vendor-local-binaries-path ./hgx-h100 \
+  --upload-binaries \
+  --repo-base-url https://repo.mycloud.com/nvidia/hgx-h100/25.06.1 \
+  --repo-ssh-host repo.mycloud.com:22 \
+  --repo-ssh-user admin \
+  --repo-ssh-path /var/www/html/nvidia/hgx-h100/25.06.1
 
 Lenovo example using config file:
 metalcloud-cli firmware-catalog create --config-source ./lenovo-config.json
@@ -238,6 +261,7 @@ server_types_filter:
 					UserPrivateKeyPath:      firmwareCatalogFlags.userPrivateKeyPath,
 					KnownHostsPath:          firmwareCatalogFlags.knownHostsPath,
 					IgnoreHostKeyCheck:      firmwareCatalogFlags.ignoreHostKeyCheck,
+					Force:                   firmwareCatalogFlags.force,
 				}
 			}
 
@@ -328,7 +352,7 @@ func init() {
 	firmwareCatalogCreateCmd.Flags().StringVar(&firmwareCatalogFlags.configSource, "config-source", "", "Source of the new firmware catalog configuration. Can be 'pipe' or path to a JSON file.")
 	firmwareCatalogCreateCmd.Flags().StringVar(&firmwareCatalogFlags.name, "name", "", "Name of the firmware catalog")
 	firmwareCatalogCreateCmd.Flags().StringVar(&firmwareCatalogFlags.description, "description", "", "Description of the firmware catalog")
-	firmwareCatalogCreateCmd.Flags().StringVar(&firmwareCatalogFlags.vendor, "vendor", "", "Vendor type (e.g., 'dell', 'hp')")
+	firmwareCatalogCreateCmd.Flags().StringVar(&firmwareCatalogFlags.vendor, "vendor", "", "Vendor type ('dell', 'hp', 'lenovo', 'supermicro', 'nvidia')")
 	firmwareCatalogCreateCmd.Flags().StringVar(&firmwareCatalogFlags.updateType, "update-type", "", "Update type (e.g., 'online', 'offline')")
 	firmwareCatalogCreateCmd.Flags().StringVar(&firmwareCatalogFlags.vendorUrl, "vendor-url", "", "URL of the online vendor catalog")
 	firmwareCatalogCreateCmd.Flags().StringVar(&firmwareCatalogFlags.vendorToken, "vendor-token", "", "Token for accessing the online vendor catalog")
@@ -345,6 +369,7 @@ func init() {
 	firmwareCatalogCreateCmd.Flags().StringVar(&firmwareCatalogFlags.userPrivateKeyPath, "user-private-key-path", "~/.ssh/id_rsa", "Path to the user's private SSH key")
 	firmwareCatalogCreateCmd.Flags().StringVar(&firmwareCatalogFlags.knownHostsPath, "known-hosts-path", "~/.ssh/known_hosts", "Path to the known hosts file for SSH connections")
 	firmwareCatalogCreateCmd.Flags().BoolVar(&firmwareCatalogFlags.ignoreHostKeyCheck, "ignore-host-key-check", false, "Ignore host key check for SSH connections")
+	firmwareCatalogCreateCmd.Flags().BoolVar(&firmwareCatalogFlags.force, "force", false, "NVIDIA only: replace a package file whose checksum changed in a catalog imported before")
 	firmwareCatalogCreateCmd.MarkFlagsMutuallyExclusive("config-source", "name")
 	firmwareCatalogCreateCmd.MarkFlagsRequiredTogether("name", "vendor", "update-type")
 	firmwareCatalogCreateCmd.MarkFlagsMutuallyExclusive("vendor-url", "vendor-local-catalog-path")
