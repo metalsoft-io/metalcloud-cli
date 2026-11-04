@@ -21,8 +21,13 @@ var (
 		filterRebootRequired         []string
 		filterCreatedTimestamp       []string
 		filterVendorReleaseTimestamp []string
+		filterIsBundle               []string
+		filterComponentClass         []string
 		page                         int
 		limit                        int
+
+		// config-example
+		bundle bool
 	}{}
 
 	firmwareBinaryCmd = &cobra.Command{
@@ -81,6 +86,8 @@ Optional Flags:
   --filter-package-id                Filter by package ID
   --filter-created-timestamp         Filter by creation timestamp
   --filter-vendor-release-timestamp  Filter by vendor release timestamp
+  --filter-is-bundle                 Filter bundles (true) or single packages (false)
+  --filter-component-class           Filter by component class (e.g. gpu, bios, nvswitch)
   --page                             Page number to retrieve (default: return all records)
   --limit                            Number of records per page, or maximum records when used without --page
 
@@ -95,7 +102,10 @@ Examples:
   metalcloud-cli fw-binary ls --filter-reboot-required false
 
   # Second page of 50 binaries
-  metalcloud-cli firmware-binary list --page 2 --limit 50`,
+  metalcloud-cli firmware-binary list --page 2 --limit 50
+
+  # NVIDIA bundles of catalog 10183
+  metalcloud-cli firmware-binary list --filter-catalog-id 10183 --filter-is-bundle true`,
 		SilenceUsage: true,
 		Annotations:  map[string]string{system.REQUIRED_PERMISSION: system.PERMISSION_FIRMWARE_BASELINES_READ},
 		RunE: func(cmd *cobra.Command, args []string) error {
@@ -109,6 +119,8 @@ Examples:
 				FilterRebootRequired:         firmwareBinaryFlags.filterRebootRequired,
 				FilterCreatedTimestamp:       firmwareBinaryFlags.filterCreatedTimestamp,
 				FilterVendorReleaseTimestamp: firmwareBinaryFlags.filterVendorReleaseTimestamp,
+				FilterIsBundle:               firmwareBinaryFlags.filterIsBundle,
+				FilterComponentClass:         firmwareBinaryFlags.filterComponentClass,
 				Page:                         firmwareBinaryFlags.page,
 				Limit:                        firmwareBinaryFlags.limit,
 			})
@@ -164,12 +176,21 @@ The configuration template covers:
 Use this template as a starting point for creating your own firmware binary configurations.
 Copy the output to a file, modify the values as needed, and use it with the create command.
 
+With --bundle it shows a firmware bundle instead: a multi-component package (e.g. an NVIDIA HGX
+.fwpkg) applied through ordered steps, with the host firmware versions it needs installed first
+(prerequisites). NVIDIA bundles are usually imported from a manifest with
+'firmware-catalog create --vendor nvidia'.
+
 Examples:
   metalcloud-cli firmware-binary config-example > my-firmware.json
-  metalcloud-cli fw-binary config-example | grep -A 50 "dell"`,
+  metalcloud-cli fw-binary config-example | grep -A 50 "dell"
+  metalcloud-cli firmware-binary config-example --bundle > hgx-bundle.json`,
 		SilenceUsage: true,
 		Annotations:  map[string]string{system.REQUIRED_PERMISSION: system.PERMISSION_FIRMWARE_BASELINES_WRITE},
 		RunE: func(cmd *cobra.Command, args []string) error {
+			if firmwareBinaryFlags.bundle {
+				return firmware_binary.FirmwareBundleConfigExample(cmd.Context())
+			}
 			return firmware_binary.FirmwareBinaryConfigExample(cmd.Context())
 		},
 	}
@@ -248,6 +269,39 @@ vendorSupportedSystems entries name the server models the package applies to.`,
 		},
 	}
 
+	firmwareBinaryUpdateCmd = &cobra.Command{
+		Use:     "update firmware_binary_id",
+		Aliases: []string{"edit"},
+		Short:   "Update a firmware binary from a configuration file",
+		Long: `Update a firmware binary from a configuration file.
+
+Only the fields in the configuration change; the others keep their current values. A field set to
+null is cleared. Use it to add prerequisites to a binary, or to correct the steps of a bundle.
+
+Required Flags:
+  --config-source    Source of the changes (JSON/YAML file path or 'pipe')
+
+Examples:
+  # Require a minimum host BIOS and BMC before the bundle is scheduled
+  echo '{"prerequisites": [{"platform": "NVIDIA DGXH100", "componentClass": "bios", "minimumVersion": "01.02.05"},
+                           {"componentClass": "bmc", "minimumVersion": "23.06.00"}]}' |
+    metalcloud-cli firmware-binary update 4796 --config-source pipe
+
+  # Change the severity
+  metalcloud-cli fw-binary update 4796 --config-source ./severity.json`,
+		SilenceUsage: true,
+		Annotations:  map[string]string{system.REQUIRED_PERMISSION: system.PERMISSION_FIRMWARE_BASELINES_WRITE},
+		Args:         cobra.ExactArgs(1),
+		RunE: func(cmd *cobra.Command, args []string) error {
+			config, err := utils.ReadConfigFromPipeOrFile(firmwareBinaryFlags.configSource)
+			if err != nil {
+				return err
+			}
+
+			return firmware_binary.FirmwareBinaryUpdate(cmd.Context(), args[0], config)
+		},
+	}
+
 	firmwareBinaryDeleteCmd = &cobra.Command{
 		Use:     "delete firmware_binary_id",
 		Aliases: []string{"rm"},
@@ -294,11 +348,19 @@ func init() {
 	firmwareBinaryListCmd.Flags().StringSliceVar(&firmwareBinaryFlags.filterPackageId, "filter-package-id", nil, "Filter the result by package ID.")
 	firmwareBinaryListCmd.Flags().StringSliceVar(&firmwareBinaryFlags.filterCreatedTimestamp, "filter-created-timestamp", nil, "Filter the result by creation timestamp.")
 	firmwareBinaryListCmd.Flags().StringSliceVar(&firmwareBinaryFlags.filterVendorReleaseTimestamp, "filter-vendor-release-timestamp", nil, "Filter the result by vendor release timestamp.")
+	firmwareBinaryListCmd.Flags().StringSliceVar(&firmwareBinaryFlags.filterIsBundle, "filter-is-bundle", nil, "Filter bundles (true) or single packages (false).")
+	firmwareBinaryListCmd.Flags().StringSliceVar(&firmwareBinaryFlags.filterComponentClass, "filter-component-class", nil, "Filter the result by component class (e.g. gpu, bios, nvswitch).")
 	firmwareBinaryListCmd.Flags().IntVar(&firmwareBinaryFlags.page, "page", 0, "Page number to retrieve (default: return all records).")
 	firmwareBinaryListCmd.Flags().IntVar(&firmwareBinaryFlags.limit, "limit", 0, "Number of records per page, or maximum records without --page (default: return all records).")
 
 	firmwareBinaryCreateCmd.Flags().StringVar(&firmwareBinaryFlags.configSource, "config-source", "", "Source of the new firmware binary configuration. Can be 'pipe' or path to a JSON file.")
 	firmwareBinaryCreateCmd.MarkFlagsOneRequired("config-source")
+
+	firmwareBinaryConfigExampleCmd.Flags().BoolVar(&firmwareBinaryFlags.bundle, "bundle", false, "Show a firmware bundle (ordered steps and prerequisites) instead of a single package.")
+
+	firmwareBinaryCmd.AddCommand(firmwareBinaryUpdateCmd)
+	firmwareBinaryUpdateCmd.Flags().StringVar(&firmwareBinaryFlags.configSource, "config-source", "", "Source of the changes. Can be 'pipe' or path to a JSON/YAML file.")
+	firmwareBinaryUpdateCmd.MarkFlagsOneRequired("config-source")
 
 	firmwareBinaryCmd.AddCommand(firmwareBinaryDeleteCmd)
 }

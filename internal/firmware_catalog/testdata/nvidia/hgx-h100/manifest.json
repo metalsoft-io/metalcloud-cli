@@ -1,0 +1,53 @@
+{
+    "schemaVersion": 1,
+    "bundleName": "HGX H100 8-GPU",
+    "bundleVersion": "25.06.1",
+    "bundleFile": "nvfw_HGX_H100x8_250612.fwpkg",
+    "targetPlatforms": ["NVIDIA DGXH100", "Supermicro SYS-821GE-TNHR"],
+    "releaseDate": "2025-06-12",
+    "releaseNotesUrl": "https://docs.nvidia.com/dgx/dgxh100-fw-rn/index.html",
+    "updateSeverity": "recommended",
+    "steps": [
+        {
+            "id": "erot",
+            "componentClass": "gpu_erot",
+            "targetPattern": "^HGX_FW_ERoT_",
+            "packageFile": "nvfw_HGX_H100x8_250612.fwpkg",
+            "packageVersion": "25.06.1",
+            "sha256": "f013d7e18fbde4f8f4cd8fce030ec358d5b50c02d2f711ce3dca0179dfe979c2",
+            "activation": "none",
+            "dependsOnStep": null
+        },
+        {
+            "id": "hmc",
+            "componentClass": "hgx_hmc",
+            "targetPattern": "^HGX_FW_(HMC|BMC)_0$",
+            "packageFile": "nvfw_HGX_H100x8_250612.fwpkg",
+            "packageVersion": "25.06.1",
+            "sha256": "f013d7e18fbde4f8f4cd8fce030ec358d5b50c02d2f711ce3dca0179dfe979c2",
+            "activation": "hgx_reset",
+            "dependsOnStep": "erot"
+        },
+        {
+            "id": "gpu",
+            "componentClass": "gpu",
+            "targetPattern": "^HGX_FW_GPU_SXM_\\d+$",
+            "packageFile": "nvfw_HGX_H100x8_250612.fwpkg",
+            "packageVersion": "25.06.1",
+            "sha256": "f013d7e18fbde4f8f4cd8fce030ec358d5b50c02d2f711ce3dca0179dfe979c2",
+            "activation": "chassis_power_cycle",
+            "verifyVersion": "96.00.9F.00.01",
+            "dependsOnStep": "hmc"
+        },
+        {
+            "id": "retimer",
+            "componentClass": "pcie_retimer",
+            "targetPattern": "^HGX_FW_PCIeRetimer_\\d+$",
+            "packageFile": "nvfw_HGX_H100x8_retimer_250612.fwpkg",
+            "packageVersion": "25.06.1",
+            "sha256": "77b6cc60811f5b21ffe0e559364a59f2b6158f5ad10a3bbc2279e712bea75b6d",
+            "activation": "host_reset",
+            "dependsOnStep": "hmc"
+        }
+    ]
+}

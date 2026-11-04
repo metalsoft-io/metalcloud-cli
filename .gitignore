@@ -28,6 +28,7 @@ metalcloud.yaml
 /bin
 *.log
 *.json
+!internal/firmware_catalog/testdata/**/*.json
 Catalog.xml
 
 # Go workspace file
