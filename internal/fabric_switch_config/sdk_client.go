@@ -106,7 +106,7 @@ func (c *sdkClient) UpdateDevice(deviceId int64, body DeviceUpdate, revision int
 }
 
 func (c *sdkClient) ListPorts(deviceId int64) ([]*PortRecord, error) {
-	portsInfo, httpRes, err := c.api.NetworkDeviceAPI.GetNetworkDevicePorts(c.ctx, float32(deviceId)).Execute()
+	portsInfo, httpRes, err := c.api.NetworkDeviceAPI.GetNetworkDevicePorts(c.ctx, int64(deviceId)).Execute()
 	if err := response_inspector.InspectResponse(httpRes, err); err != nil {
 		return nil, err
 	}

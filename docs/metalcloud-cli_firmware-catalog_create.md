@@ -15,7 +15,7 @@ Configuration Methods:
 
 Required Flags (when not using --config-source):
   --name            Name of the firmware catalog
-  --vendor          Vendor type: 'dell', 'hp', or 'lenovo'
+  --vendor          Vendor type: 'dell', 'hp', 'lenovo', 'supermicro' or 'nvidia'
   --update-type     Update method: 'online' or 'offline'
 
 Source Configuration (mutually exclusive):
@@ -41,6 +41,15 @@ SSH Configuration (mutually exclusive):
   --user-private-key-path    Path to SSH private key (default: ~/.ssh/id_rsa)
   --known-hosts-path         Path to SSH known hosts file (default: ~/.ssh/known_hosts)
   --ignore-host-key-check    Skip SSH host key verification
+
+NVIDIA HGX/DGX bundles:
+  NVIDIA publishes no machine-readable catalog. Describe a downloaded bundle with a JSON manifest
+  (steps, package files with their SHA-256, target platforms, optional prerequisites) and pass it
+  with --vendor-local-catalog-path; --vendor-local-binaries-path is the folder with the package
+  files, which are checked against the manifest before anything is sent. Each bundle version is one
+  catalog (vendor id "<bundleName>@<bundleVersion>"): importing it again updates that catalog and its
+  binaries. --vendor-url, --download-binaries and --server-types do not apply.
+  --force    Replace a package file whose checksum changed in a catalog imported before
 
 ```
 metalcloud-cli firmware-catalog create [flags]
@@ -82,6 +91,19 @@ metalcloud-cli firmware-catalog create \
   --server-types "M.8.8.2.v5" \
   --update-type online
 
+NVIDIA example (bundle manifest, uploaded to the offline repository):
+metalcloud-cli firmware-catalog create \
+  --name "NVIDIA HGX H100 25.06.1" \
+  --vendor nvidia \
+  --update-type offline \
+  --vendor-local-catalog-path ./hgx-h100/manifest.json \
+  --vendor-local-binaries-path ./hgx-h100 \
+  --upload-binaries \
+  --repo-base-url https://repo.mycloud.com/nvidia/hgx-h100/25.06.1 \
+  --repo-ssh-host repo.mycloud.com:22 \
+  --repo-ssh-user admin \
+  --repo-ssh-path /var/www/html/nvidia/hgx-h100/25.06.1
+
 Lenovo example using config file:
 metalcloud-cli firmware-catalog create --config-source ./lenovo-config.json
 
@@ -118,6 +140,7 @@ server_types_filter:
       --config-source string                Source of the new firmware catalog configuration. Can be 'pipe' or path to a JSON file.
       --description string                  Description of the firmware catalog
       --download-binaries                   Download binaries from the vendor catalog
+      --force                               NVIDIA only: replace a package file whose checksum changed in a catalog imported before
   -h, --help                                help for create
       --ignore-host-key-check               Ignore host key check for SSH connections
       --known-hosts-path string             Path to the known hosts file for SSH connections (default "~/.ssh/known_hosts")
@@ -130,7 +153,7 @@ server_types_filter:
       --update-type string                  Update type (e.g., 'online', 'offline')
       --upload-binaries                     Upload binaries to the offline repository
       --user-private-key-path string        Path to the user's private SSH key (default "~/.ssh/id_rsa")
-      --vendor string                       Vendor type (e.g., 'dell', 'hp')
+      --vendor string                       Vendor type ('dell', 'hp', 'lenovo', 'supermicro', 'nvidia')
       --vendor-local-binaries-path string   Path to the local binaries directory
       --vendor-local-catalog-path string    Path to the local catalog file
       --vendor-systems strings              List of supported vendor systems (comma-separated)

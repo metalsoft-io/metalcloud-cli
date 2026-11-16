@@ -188,7 +188,7 @@ func NetworkDevicePortsLiveStatus(ctx context.Context, networkDeviceRef string) 
 	client := api.GetApiClient(ctx)
 
 	portsInfo, httpRes, err := client.NetworkDeviceAPI.
-		GetPorts(ctx, float32(networkDeviceIdNumeric)).
+		GetPorts(ctx, int64(networkDeviceIdNumeric)).
 		Execute()
 	if err := response_inspector.InspectResponse(httpRes, err); err != nil {
 		return err

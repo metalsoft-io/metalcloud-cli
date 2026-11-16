@@ -364,7 +364,6 @@ func ExternalConnectionInterfaceRemove(ctx context.Context, externalConnectionId
 
 	httpRes, err := client.ExternalConnectionAPI.
 		DeleteExternalConnectionInterface(ctx, externalConnectionId, connectionInterface.Id).
-		IfMatch(connectionInterface.Revision).
 		Execute()
 	if err := response_inspector.InspectResponse(httpRes, err); err != nil {
 		return err
@@ -485,7 +484,7 @@ func NetworkDeviceInterfacesGet(ctx context.Context, networkDeviceIdOrLabel stri
 		return err
 	}
 
-	networkDeviceId, err := utils.GetFloat32FromString(networkDevice.Id)
+	networkDeviceId, err := utils.GetInt64FromString(networkDevice.Id)
 	if err != nil {
 		return err
 	}

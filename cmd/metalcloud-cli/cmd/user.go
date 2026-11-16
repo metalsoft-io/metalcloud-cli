@@ -37,6 +37,12 @@ var (
 		newPassword            string
 		currentPassword        string
 		callbackToken          string
+		apiTokenName           string
+		apiTokenLabel          string
+		apiTokenDescription    string
+		apiTokenScope          string
+		apiTokenExpires        string
+		apiTokenPermissions    []string
 	}{}
 
 	userCmd = &cobra.Command{
@@ -544,36 +550,151 @@ Examples:
 		},
 	}
 
-	userApiKeyGetCmd = &cobra.Command{
-		Use:   "api-key",
-		Short: "Get the current user's API key",
-		Long: `Retrieve the API key for the currently authenticated user.
+	userApiTokenCmd = &cobra.Command{
+		Use:     "api-token [command]",
+		Aliases: []string{"api-tokens", "token", "tokens"},
+		Short:   "Manage the current user's API tokens",
+		Long: `Manage the API tokens of the currently authenticated user.
+
+A user can own several API tokens, each with its own label, scope, permissions
+and expiry. The token value is shown only when the token is created or
+regenerated; store it right away.`,
+	}
+
+	userApiTokenListCmd = &cobra.Command{
+		Use:     "list",
+		Aliases: []string{"ls"},
+		Short:   "List the current user's API tokens",
+		Long: `List the API tokens of the currently authenticated user.
 
 Examples:
-  metalcloud-cli user api-key`,
+  metalcloud-cli user api-token list`,
 		SilenceUsage: true,
 		Annotations:  map[string]string{system.REQUIRED_PERMISSION: system.PERMISSION_USERS_READ},
 		Args:         cobra.NoArgs,
 		RunE: func(cmd *cobra.Command, args []string) error {
-			return user.GetApiKey(cmd.Context())
+			return user.ApiTokenList(cmd.Context())
 		},
 	}
 
-	userApiKeyRegenerateCmd = &cobra.Command{
-		Use:   "api-key-regenerate",
-		Short: "Regenerate the current user's API key",
-		Long: `Regenerate the API key for the currently authenticated user.
-
-WARNING: This will invalidate your current API key. You will need to update
-any scripts or configurations that use the old key.
+	userApiTokenGetCmd = &cobra.Command{
+		Use:     "get api_token_id",
+		Aliases: []string{"show"},
+		Short:   "Get an API token of the current user",
+		Long: `Get the details of an API token of the currently authenticated user.
+The token value itself is never returned.
 
 Examples:
-  metalcloud-cli user api-key-regenerate`,
+  metalcloud-cli user api-token get 12`,
+		SilenceUsage: true,
+		Annotations:  map[string]string{system.REQUIRED_PERMISSION: system.PERMISSION_USERS_READ},
+		Args:         cobra.ExactArgs(1),
+		RunE: func(cmd *cobra.Command, args []string) error {
+			return user.ApiTokenGet(cmd.Context(), args[0])
+		},
+	}
+
+	userApiTokenSettingsCmd = &cobra.Command{
+		Use:   "settings",
+		Short: "Show the API token limits of the controller",
+		Long: `Show the default validity, the maximum number of tokens per user and the
+latest expiry a new or regenerated token may have.
+
+Examples:
+  metalcloud-cli user api-token settings`,
+		SilenceUsage: true,
+		Annotations:  map[string]string{system.REQUIRED_PERMISSION: system.PERMISSION_USERS_READ},
+		Args:         cobra.NoArgs,
+		RunE: func(cmd *cobra.Command, args []string) error {
+			return user.ApiTokenSettings(cmd.Context())
+		},
+	}
+
+	userApiTokenCreateCmd = &cobra.Command{
+		Use:   "create",
+		Short: "Create an API token for the current user",
+		Long: `Create an API token for the currently authenticated user.
+
+The token value is printed once; store it right away.
+
+Flags:
+  --name                  Display name of the token (required unless --config-source is used)
+  --label                 Unique (per user) label; derived from the name when omitted
+  --description           Free-text description
+  --scope                 account (default) or system; system needs the global_token_write permission
+  --expires               Expiry as an RFC 3339 timestamp or a YYYY-MM-DD date (UTC);
+                          defaults to the controller's default token validity
+  --permission            Permission label granted to the token (repeatable or comma-separated)
+  --config-source         Full CreateApiToken body (JSON/YAML file path or 'pipe'),
+                          needed to grant policy entries
+
+Examples:
+  metalcloud-cli user api-token create --name "CI pipeline" --expires 2027-06-30 --permission infrastructures_read
+  metalcloud-cli user api-token create --config-source token.json`,
 		SilenceUsage: true,
 		Annotations:  map[string]string{system.REQUIRED_PERMISSION: system.PERMISSION_USERS_WRITE},
 		Args:         cobra.NoArgs,
 		RunE: func(cmd *cobra.Command, args []string) error {
-			return user.RegenerateApiKey(cmd.Context())
+			if userFlags.configSource != "" {
+				config, err := utils.ReadConfigFromPipeOrFile(userFlags.configSource)
+				if err != nil {
+					return err
+				}
+				return user.ApiTokenCreate(cmd.Context(), user.ApiTokenCreateOptions{}, config)
+			}
+
+			if userFlags.apiTokenName == "" {
+				return fmt.Errorf("--name is required when --config-source is not used")
+			}
+
+			return user.ApiTokenCreate(cmd.Context(), user.ApiTokenCreateOptions{
+				Name:        userFlags.apiTokenName,
+				Label:       userFlags.apiTokenLabel,
+				Description: userFlags.apiTokenDescription,
+				Scope:       userFlags.apiTokenScope,
+				Expires:     userFlags.apiTokenExpires,
+				Permissions: userFlags.apiTokenPermissions,
+			}, nil)
+		},
+	}
+
+	userApiTokenRegenerateCmd = &cobra.Command{
+		Use:   "regenerate api_token_id",
+		Short: "Regenerate an API token of the current user",
+		Long: `Regenerate an API token of the currently authenticated user.
+
+WARNING: The previous token value stops working. Update any scripts or
+configurations that use it.
+
+Flags:
+  --expires               New expiry as an RFC 3339 timestamp or a YYYY-MM-DD date (UTC);
+                          defaults to the controller's default token validity
+
+Examples:
+  metalcloud-cli user api-token regenerate 12
+  metalcloud-cli user api-token regenerate 12 --expires 2027-06-30`,
+		SilenceUsage: true,
+		Annotations:  map[string]string{system.REQUIRED_PERMISSION: system.PERMISSION_USERS_WRITE},
+		Args:         cobra.ExactArgs(1),
+		RunE: func(cmd *cobra.Command, args []string) error {
+			return user.ApiTokenRegenerate(cmd.Context(), args[0], userFlags.apiTokenExpires)
+		},
+	}
+
+	userApiTokenDeleteCmd = &cobra.Command{
+		Use:     "delete api_token_id",
+		Aliases: []string{"rm"},
+		Short:   "Delete an API token of the current user",
+		Long: `Delete an API token of the currently authenticated user. The token stops
+working immediately.
+
+Examples:
+  metalcloud-cli user api-token delete 12`,
+		SilenceUsage: true,
+		Annotations:  map[string]string{system.REQUIRED_PERMISSION: system.PERMISSION_USERS_WRITE},
+		Args:         cobra.ExactArgs(1),
+		RunE: func(cmd *cobra.Command, args []string) error {
+			return user.ApiTokenDelete(cmd.Context(), args[0])
 		},
 	}
 
@@ -1293,9 +1414,26 @@ func init() {
 	userResetPasswordCmd.Flags().StringVar(&userFlags.callbackToken, "token", "", "The password reset token.")
 	userResetPasswordCmd.MarkFlagRequired("token")
 
-	// Self-service: API key
-	userCmd.AddCommand(userApiKeyGetCmd)
-	userCmd.AddCommand(userApiKeyRegenerateCmd)
+	// Self-service: API tokens
+	userCmd.AddCommand(userApiTokenCmd)
+	userApiTokenCmd.AddCommand(userApiTokenListCmd)
+	userApiTokenCmd.AddCommand(userApiTokenGetCmd)
+	userApiTokenCmd.AddCommand(userApiTokenSettingsCmd)
+
+	userApiTokenCmd.AddCommand(userApiTokenCreateCmd)
+	userApiTokenCreateCmd.Flags().StringVar(&userFlags.apiTokenName, "name", "", "Display name of the token.")
+	userApiTokenCreateCmd.Flags().StringVar(&userFlags.apiTokenLabel, "label", "", "Unique (per user) label of the token.")
+	userApiTokenCreateCmd.Flags().StringVar(&userFlags.apiTokenDescription, "description", "", "Free-text description of the token.")
+	userApiTokenCreateCmd.Flags().StringVar(&userFlags.apiTokenScope, "scope", "", "Token scope: account (default) or system.")
+	userApiTokenCreateCmd.Flags().StringVar(&userFlags.apiTokenExpires, "expires", "", "Expiry as an RFC 3339 timestamp or YYYY-MM-DD date (UTC).")
+	userApiTokenCreateCmd.Flags().StringSliceVar(&userFlags.apiTokenPermissions, "permission", nil, "Permission label granted to the token (repeatable).")
+	userApiTokenCreateCmd.Flags().StringVar(&userFlags.configSource, "config-source", "", "Source of the CreateApiToken body. Can be 'pipe' or path to a JSON/YAML file.")
+	userApiTokenCreateCmd.MarkFlagsMutuallyExclusive("name", "config-source")
+
+	userApiTokenCmd.AddCommand(userApiTokenRegenerateCmd)
+	userApiTokenRegenerateCmd.Flags().StringVar(&userFlags.apiTokenExpires, "expires", "", "New expiry as an RFC 3339 timestamp or YYYY-MM-DD date (UTC).")
+
+	userApiTokenCmd.AddCommand(userApiTokenDeleteCmd)
 
 	// Self-service: 2FA
 	userCmd.AddCommand(user2FAEnableCmd)

@@ -81,7 +81,7 @@ func ResourcePoolGet(ctx context.Context, poolId string) error {
 
 	client := api.GetApiClient(ctx)
 
-	pool, httpRes, err := client.ResourcePoolAPI.GetResourcePool(ctx, float32(poolIdNumber)).Execute()
+	pool, httpRes, err := client.ResourcePoolAPI.GetResourcePool(ctx, int64(poolIdNumber)).Execute()
 	if err := response_inspector.InspectResponse(httpRes, err); err != nil {
 		return err
 	}

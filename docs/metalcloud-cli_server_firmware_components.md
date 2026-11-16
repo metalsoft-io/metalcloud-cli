@@ -7,14 +7,22 @@ List firmware components for a server
 List firmware components for a server.
 
 This command displays all firmware components available on the specified server,
-including their IDs, names, current versions, and status information.
+including their IDs, names, class, vendor, model, versions and, for the components of a
+GPU baseboard (an HGX tray), the baseboard they belong to.
 
 Required Arguments:
   server_id              The ID of the server to query
 
+Optional Flags:
+  --class                Only the components of these classes (bios, bmc, gpu, nic, hgx_hmc, ...)
+  --baseboard            Only the components of these GPU baseboards
+
 Examples:
   # List firmware components for server with ID 123
   metalcloud-cli server firmware components 123
+
+  # Only the GPUs
+  metalcloud-cli server firmware components 123 --class gpu
 
   # Using short alias
   metalcloud-cli server fw ls 123
@@ -27,7 +35,9 @@ metalcloud-cli server firmware components server_id [flags]
 ### Options
 
 ```
-  -h, --help   help for components
+      --baseboard strings   Only the components of these GPU baseboards.
+      --class strings       Only the components of these classes.
+  -h, --help                help for components
 ```
 
 ### Options inherited from parent commands

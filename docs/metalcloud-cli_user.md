@@ -40,8 +40,7 @@ the user ID as a parameter. Use 'metalcloud-cli user list' to find user IDs.
 * [metalcloud-cli user 2fa-disable](metalcloud-cli_user_2fa-disable.md)	 - Disable two-factor authentication
 * [metalcloud-cli user 2fa-enable](metalcloud-cli_user_2fa-enable.md)	 - Enable two-factor authentication
 * [metalcloud-cli user 2fa-generate-secret](metalcloud-cli_user_2fa-generate-secret.md)	 - Generate a new 2FA secret for setting up an authenticator app
-* [metalcloud-cli user api-key](metalcloud-cli_user_api-key.md)	 - Get the current user's API key
-* [metalcloud-cli user api-key-regenerate](metalcloud-cli_user_api-key-regenerate.md)	 - Regenerate the current user's API key
+* [metalcloud-cli user api-token](metalcloud-cli_user_api-token.md)	 - Manage the current user's API tokens
 * [metalcloud-cli user archive](metalcloud-cli_user_archive.md)	 - Archive a user account to mark it as inactive
 * [metalcloud-cli user change-account](metalcloud-cli_user_change-account.md)	 - Move a user to a different account
 * [metalcloud-cli user change-password](metalcloud-cli_user_change-password.md)	 - Change the password of the current user

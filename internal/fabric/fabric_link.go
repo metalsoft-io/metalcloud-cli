@@ -66,13 +66,13 @@ var fabricLinkPrintConfig = formatter.PrintConfig{
 type NetworkFabricLinkFlat struct {
 	Id                          int64
 	NetworkFabricId             int64
-	NetworkDeviceAId            float32
+	NetworkDeviceAId            int64
 	NetworkDeviceAName          string
 	NetworkDeviceARef           string
 	NetworkDeviceAInterfaceId   int64
 	NetworkDeviceAInterfaceName string
 	NetworkDeviceAInterfaceRef  string
-	NetworkDeviceBId            float32
+	NetworkDeviceBId            int64
 	NetworkDeviceBName          string
 	NetworkDeviceBRef           string
 	NetworkDeviceBInterfaceId   int64
@@ -144,7 +144,7 @@ func FabricLinksGet(ctx context.Context, fabricId string) error {
 type interfaceInfo struct {
 	InterfaceId       int64
 	InterfaceName     string
-	NetworkDeviceId   float32
+	NetworkDeviceId   int64
 	NetworkDeviceName string
 	InterfaceRef      string
 	NetworkDeviceRef  string
@@ -159,7 +159,7 @@ func getFabricInterfacesMap(ctx context.Context, client *sdk.APIClient, fabricId
 	}
 
 	for _, nd := range networkDevices.Data {
-		nd_id, err := utils.GetFloat32FromString(nd.Id)
+		nd_id, err := utils.GetInt64FromString(nd.Id)
 		if err != nil {
 			continue
 		}
@@ -176,7 +176,7 @@ func getFabricInterfacesMap(ctx context.Context, client *sdk.APIClient, fabricId
 				nd_id,
 				nd.IdentifierString,
 				fmt.Sprintf("%s (%d)", p.InterfaceName, p.InterfaceId),
-				fmt.Sprintf("%s (%.0f)", nd.IdentifierString, nd_id),
+				fmt.Sprintf("%s (%d)", nd.IdentifierString, nd_id),
 			}
 		}
 	}
@@ -249,7 +249,7 @@ func FabricLinkAddEx(ctx context.Context, fabricId string,
 			continue
 		}
 
-		nd_id, err := utils.GetFloat32FromString(nd.Id)
+		nd_id, err := utils.GetInt64FromString(nd.Id)
 		if err != nil {
 			continue
 		}

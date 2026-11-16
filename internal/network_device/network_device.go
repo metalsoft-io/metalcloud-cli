@@ -367,7 +367,7 @@ func NetworkDeviceGetPorts(ctx context.Context, networkDeviceId string) error {
 		return err
 	}
 
-	portsInfo, err := GetNetworkDevicePorts(ctx, float32(networkDeviceIdNumeric))
+	portsInfo, err := GetNetworkDevicePorts(ctx, int64(networkDeviceIdNumeric))
 	if err != nil {
 		return err
 	}
@@ -773,7 +773,7 @@ func getNetworkDeviceByIdOrLabel(ctx context.Context, deviceRef string, siteId *
 	}
 }
 
-func GetNetworkDevicePorts(ctx context.Context, networkDeviceId float32) ([]sdk.NetworkDeviceInterface, error) {
+func GetNetworkDevicePorts(ctx context.Context, networkDeviceId int64) ([]sdk.NetworkDeviceInterface, error) {
 	client := api.GetApiClient(ctx)
 
 	portsInfo, httpRes, err := client.NetworkDeviceAPI.

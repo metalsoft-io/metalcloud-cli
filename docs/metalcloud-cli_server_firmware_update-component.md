@@ -16,7 +16,15 @@ Required Arguments:
 Required Flags:
   --config-source        Source of the component update configuration. Can be 'pipe' or path to a JSON file
 
+When the target version comes from a firmware package that other components share (for example
+an NVIDIA bundle step that updates every GPU of an HGX tray in one job), the same target is set
+on every component the package updates, and setting it to null resets all of them. The text
+output lists the other components whose target changed.
+
 Examples:
+  # Set the target version of a component
+  echo '{"firmwareTargetVersion": "96.00.A5.00.01"}' | metalcloud-cli server firmware update-component 123 456 --config-source pipe
+
   # Update component using JSON configuration file
   metalcloud-cli server firmware update-component 123 456 --config-source ./component-config.json
 

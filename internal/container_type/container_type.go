@@ -105,7 +105,7 @@ func ContainerTypeGet(ctx context.Context, containerTypeId string) error {
 
 	// The SDK types this path parameter as float32.
 	containerType, httpRes, err := client.ContainerTypeAPI.
-		GetContainerType(ctx, float32(containerTypeIdNumerical)).
+		GetContainerType(ctx, int64(containerTypeIdNumerical)).
 		Execute()
 	if err := response_inspector.InspectResponse(httpRes, err); err != nil {
 		return err

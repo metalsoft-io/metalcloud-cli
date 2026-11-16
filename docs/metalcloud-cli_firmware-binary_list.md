@@ -32,6 +32,8 @@ Optional Flags:
   --filter-package-id                Filter by package ID
   --filter-created-timestamp         Filter by creation timestamp
   --filter-vendor-release-timestamp  Filter by vendor release timestamp
+  --filter-is-bundle                 Filter bundles (true) or single packages (false)
+  --filter-component-class           Filter by component class (e.g. gpu, bios, nvswitch)
   --page                             Page number to retrieve (default: return all records)
   --limit                            Number of records per page, or maximum records when used without --page
 
@@ -48,6 +50,9 @@ Examples:
   # Second page of 50 binaries
   metalcloud-cli firmware-binary list --page 2 --limit 50
 
+  # NVIDIA bundles of catalog 10183
+  metalcloud-cli firmware-binary list --filter-catalog-id 10183 --filter-is-bundle true
+
 ```
 metalcloud-cli firmware-binary list [flags]
 ```
@@ -56,9 +61,11 @@ metalcloud-cli firmware-binary list [flags]
 
 ```
       --filter-catalog-id strings                 Filter the result by catalog ID.
+      --filter-component-class strings            Filter the result by component class (e.g. gpu, bios, nvswitch).
       --filter-created-timestamp strings          Filter the result by creation timestamp.
       --filter-external-id strings                Filter the result by the vendor's artefact ID.
       --filter-id strings                         Filter the result by binary ID.
+      --filter-is-bundle strings                  Filter bundles (true) or single packages (false).
       --filter-package-id strings                 Filter the result by package ID.
       --filter-package-version strings            Filter the result by package version.
       --filter-reboot-required strings            Filter the result by reboot requirement (true or false).

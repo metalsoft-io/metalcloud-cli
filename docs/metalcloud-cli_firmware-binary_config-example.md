@@ -20,9 +20,15 @@ The configuration template covers:
 Use this template as a starting point for creating your own firmware binary configurations.
 Copy the output to a file, modify the values as needed, and use it with the create command.
 
+With --bundle it shows a firmware bundle instead: a multi-component package (e.g. an NVIDIA HGX
+.fwpkg) applied through ordered steps, with the host firmware versions it needs installed first
+(prerequisites). NVIDIA bundles are usually imported from a manifest with
+'firmware-catalog create --vendor nvidia'.
+
 Examples:
   metalcloud-cli firmware-binary config-example > my-firmware.json
   metalcloud-cli fw-binary config-example | grep -A 50 "dell"
+  metalcloud-cli firmware-binary config-example --bundle > hgx-bundle.json
 
 ```
 metalcloud-cli firmware-binary config-example [flags]
@@ -31,7 +37,8 @@ metalcloud-cli firmware-binary config-example [flags]
 ### Options
 
 ```
-  -h, --help   help for config-example
+      --bundle   Show a firmware bundle (ordered steps and prerequisites) instead of a single package.
+  -h, --help     help for config-example
 ```
 
 ### Options inherited from parent commands

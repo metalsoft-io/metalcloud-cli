@@ -260,7 +260,7 @@ func VMPoolGet(ctx context.Context, vmPoolId string) error {
 
 	client := api.GetApiClient(ctx)
 
-	vmPool, httpRes, err := client.VMPoolAPI.GetVMPool(ctx, float32(vmPoolIdNumeric)).Execute()
+	vmPool, httpRes, err := client.VMPoolAPI.GetVMPool(ctx, int64(vmPoolIdNumeric)).Execute()
 	if err := response_inspector.InspectResponse(httpRes, err); err != nil {
 		return err
 	}

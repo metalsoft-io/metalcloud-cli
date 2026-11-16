@@ -55,7 +55,7 @@ func NetworkDeviceVirtualFunctionList(ctx context.Context, networkDeviceRef stri
 	client := api.GetApiClient(ctx)
 
 	request := client.NetworkDeviceAPI.
-		GetNetworkDeviceVirtualFunctions(ctx, float32(networkDeviceIdNumeric)).
+		GetNetworkDeviceVirtualFunctions(ctx, int64(networkDeviceIdNumeric)).
 		SortBy([]string{"id:ASC"})
 
 	records, meta, err := utils.FetchAllPages(request)
@@ -82,7 +82,7 @@ func NetworkDeviceVirtualFunctionGet(ctx context.Context, networkDeviceRef strin
 	client := api.GetApiClient(ctx)
 
 	virtualFunction, httpRes, err := client.NetworkDeviceAPI.
-		GetNetworkDeviceVirtualFunction(ctx, float32(networkDeviceIdNumeric), float32(virtualFunctionIdNumeric)).
+		GetNetworkDeviceVirtualFunction(ctx, int64(networkDeviceIdNumeric), int64(virtualFunctionIdNumeric)).
 		Execute()
 	if err := response_inspector.InspectResponse(httpRes, err); err != nil {
 		return err
@@ -104,7 +104,7 @@ func NetworkDevicePortVirtualFunctionList(ctx context.Context, networkDeviceRef 
 	client := api.GetApiClient(ctx)
 
 	request := client.NetworkDeviceAPI.
-		GetNetworkDevicePortVirtualFunctions(ctx, float32(networkDeviceIdNumeric), float32(portIdNumeric)).
+		GetNetworkDevicePortVirtualFunctions(ctx, int64(networkDeviceIdNumeric), int64(portIdNumeric)).
 		SortBy([]string{"id:ASC"})
 
 	records, meta, err := utils.FetchAllPages(request)
@@ -131,7 +131,7 @@ func NetworkDevicePortVirtualFunctionGet(ctx context.Context, networkDeviceRef s
 	client := api.GetApiClient(ctx)
 
 	virtualFunction, httpRes, err := client.NetworkDeviceAPI.
-		GetNetworkDevicePortVirtualFunction(ctx, float32(networkDeviceIdNumeric), float32(portIdNumeric), float32(virtualFunctionIdNumeric)).
+		GetNetworkDevicePortVirtualFunction(ctx, int64(networkDeviceIdNumeric), int64(portIdNumeric), int64(virtualFunctionIdNumeric)).
 		Execute()
 	if err := response_inspector.InspectResponse(httpRes, err); err != nil {
 		return err

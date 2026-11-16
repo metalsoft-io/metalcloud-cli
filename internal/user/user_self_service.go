@@ -18,39 +18,6 @@ import (
 	sdk "github.com/metalsoft-io/metalcloud-sdk-go"
 )
 
-func GetApiKey(ctx context.Context) error {
-	logger.Get().Info().Msgf("Getting API key for current user")
-
-	client := api.GetApiClient(ctx)
-
-	apiKey, httpRes, err := client.UserAPI.GetUserApiKey(ctx).Execute()
-	if err := response_inspector.InspectResponse(httpRes, err); err != nil {
-		return err
-	}
-
-	fmt.Println(apiKey.ApiKey)
-	return nil
-}
-
-func RegenerateApiKey(ctx context.Context) error {
-	logger.Get().Info().Msgf("Regenerating API key for current user")
-
-	revision, err := getCurrentUserRevision(ctx)
-	if err != nil {
-		return err
-	}
-
-	client := api.GetApiClient(ctx)
-
-	userInfo, httpRes, err := client.UserAPI.RegenerateUserApiKey(ctx).IfMatch(revision).Execute()
-	if err := response_inspector.InspectResponse(httpRes, err); err != nil {
-		return err
-	}
-
-	fmt.Println("API key has been regenerated. Your previous key is no longer valid.")
-	return formatter.PrintResult(userInfo, &userPrintConfig)
-}
-
 func Enable2FA(ctx context.Context, token string) error {
 	logger.Get().Info().Msgf("Enabling 2FA for current user")
 
@@ -473,7 +440,7 @@ func VerifyEmail(ctx context.Context, token string) error {
 
 	client := api.GetApiClient(ctx)
 
-	httpRes, err := client.UserAPI.UserControllerHandleEmailVerify(ctx).Token(token).Execute()
+	httpRes, err := client.UserAPI.HandleEmailVerify(ctx).Token(token).Execute()
 	if err := response_inspector.InspectResponse(httpRes, err); err != nil {
 		return err
 	}
@@ -490,7 +457,7 @@ func ResetPassword(ctx context.Context, token string) error {
 
 	client := api.GetApiClient(ctx)
 
-	httpRes, err := client.UserAPI.UserControllerHandleUserResetPassword(ctx).Token(token).Execute()
+	httpRes, err := client.UserAPI.HandleUserResetPassword(ctx).Token(token).Execute()
 	if err := response_inspector.InspectResponse(httpRes, err); err != nil {
 		return err
 	}

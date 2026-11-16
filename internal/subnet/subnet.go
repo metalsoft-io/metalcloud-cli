@@ -232,7 +232,7 @@ func SubnetIps(ctx context.Context, subnetId string) error {
 
 	client := api.GetApiClient(ctx)
 
-	result, httpRes, err := client.SubnetAPI.GetSubnetIps(ctx, float32(id)).Execute()
+	result, httpRes, err := client.SubnetAPI.GetSubnetIps(ctx, int64(id)).Execute()
 	if err := response_inspector.InspectResponse(httpRes, err); err != nil {
 		return err
 	}
@@ -250,7 +250,7 @@ func SubnetIpRanges(ctx context.Context, subnetId string) error {
 
 	client := api.GetApiClient(ctx)
 
-	result, httpRes, err := client.SubnetAPI.GetSubnetIpRanges(ctx, float32(id)).Execute()
+	result, httpRes, err := client.SubnetAPI.GetSubnetIpRanges(ctx, int64(id)).Execute()
 	if err := response_inspector.InspectResponse(httpRes, err); err != nil {
 		return err
 	}

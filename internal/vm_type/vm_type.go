@@ -95,7 +95,7 @@ func VMTypeGet(ctx context.Context, vmTypeId string) error {
 
 	client := api.GetApiClient(ctx)
 
-	vmType, httpRes, err := client.VMTypeAPI.GetVMType(ctx, float32(vmTypeIdNumeric)).Execute()
+	vmType, httpRes, err := client.VMTypeAPI.GetVMType(ctx, int64(vmTypeIdNumeric)).Execute()
 	if err := response_inspector.InspectResponse(httpRes, err); err != nil {
 		return err
 	}

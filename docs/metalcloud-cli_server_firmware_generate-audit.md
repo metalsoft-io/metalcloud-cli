@@ -20,6 +20,13 @@ Examples:
   # Generate audit using piped JSON configuration
   echo '{"serverIds": [123, 456]}' | metalcloud-cli server firmware generate-audit --config-source pipe
 
+  # Also run the safety checks an upgrade would run now and list the jobs it would create
+  echo '{"serverIds": [123]}' | metalcloud-cli server firmware generate-audit --config-source pipe --include-preflight
+
+Optional Flags:
+  --include-preflight    Run the upgrade safety checks (BMC checks included) and list the planned
+                         jobs, in order, for each server. Nothing is changed.
+
 
 ```
 metalcloud-cli server firmware generate-audit [flags]
@@ -30,6 +37,7 @@ metalcloud-cli server firmware generate-audit [flags]
 ```
       --config-source string   Source of the audit configuration. Can be 'pipe' or path to a JSON file.
   -h, --help                   help for generate-audit
+      --include-preflight      Run the upgrade safety checks and list the planned jobs for each server.
 ```
 
 ### Options inherited from parent commands

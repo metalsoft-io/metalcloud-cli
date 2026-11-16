@@ -392,7 +392,7 @@ func AccountGetConfig(ctx context.Context, accountId string) error {
 	client := api.GetApiClient(ctx)
 
 	accountConfig, httpRes, err := client.AccountAPI.
-		AccountControllerGetUserConfiguration(ctx, accountIdNumber).
+		GetAccountConfiguration(ctx, accountIdNumber).
 		Execute()
 	if err := response_inspector.InspectResponse(httpRes, err); err != nil {
 		return err

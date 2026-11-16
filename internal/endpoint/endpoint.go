@@ -254,7 +254,7 @@ func (r *interfaceResolver) resolve(ctx context.Context, siteId int64, input End
 			return 0, fmt.Errorf("invalid network device id '%s': %w", device.Id, err)
 		}
 
-		interfaces, err := network_device.GetNetworkDevicePorts(ctx, float32(deviceIdNumeric))
+		interfaces, err := network_device.GetNetworkDevicePorts(ctx, int64(deviceIdNumeric))
 		if err != nil {
 			return 0, err
 		}
@@ -509,7 +509,7 @@ func EndpointNetworkDeviceInterfaces(ctx context.Context, networkDeviceIdOrLabel
 		return err
 	}
 
-	deviceIdNumeric, err := utils.GetFloat32FromString(device.Id)
+	deviceIdNumeric, err := utils.GetInt64FromString(device.Id)
 	if err != nil {
 		return fmt.Errorf("invalid network device id '%s': %w", device.Id, err)
 	}

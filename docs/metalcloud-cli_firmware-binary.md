@@ -50,4 +50,5 @@ Use cases:
 * [metalcloud-cli firmware-binary delete](metalcloud-cli_firmware-binary_delete.md)	 - Delete a firmware binary permanently
 * [metalcloud-cli firmware-binary get](metalcloud-cli_firmware-binary_get.md)	 - Get detailed information about a specific firmware binary
 * [metalcloud-cli firmware-binary list](metalcloud-cli_firmware-binary_list.md)	 - List all firmware binaries
+* [metalcloud-cli firmware-binary update](metalcloud-cli_firmware-binary_update.md)	 - Update a firmware binary from a configuration file
 

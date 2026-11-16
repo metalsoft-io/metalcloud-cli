@@ -222,13 +222,13 @@ func VariableConfigExample(ctx context.Context) error {
 	return formatter.PrintResult(variableConfiguration, nil)
 }
 
-func getVariableId(variableId string) (float32, error) {
-	variableIdNumeric, err := strconv.ParseFloat(variableId, 32)
+func getVariableId(variableId string) (int64, error) {
+	variableIdNumeric, err := strconv.ParseInt(variableId, 10, 64)
 	if err != nil {
 		err := fmt.Errorf("invalid variable ID: '%s'", variableId)
 		logger.Get().Error().Err(err).Msg("")
 		return 0, err
 	}
 
-	return float32(variableIdNumeric), nil
+	return variableIdNumeric, nil
 }

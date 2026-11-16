@@ -1,25 +1,22 @@
-## metalcloud-cli user api-key-regenerate
+## metalcloud-cli user api-token list
 
-Regenerate the current user's API key
+List the current user's API tokens
 
 ### Synopsis
 
-Regenerate the API key for the currently authenticated user.
-
-WARNING: This will invalidate your current API key. You will need to update
-any scripts or configurations that use the old key.
+List the API tokens of the currently authenticated user.
 
 Examples:
-  metalcloud-cli user api-key-regenerate
+  metalcloud-cli user api-token list
 
 ```
-metalcloud-cli user api-key-regenerate [flags]
+metalcloud-cli user api-token list [flags]
 ```
 
 ### Options
 
 ```
-  -h, --help   help for api-key-regenerate
+  -h, --help   help for list
 ```
 
 ### Options inherited from parent commands
@@ -37,5 +34,5 @@ metalcloud-cli user api-key-regenerate [flags]
 
 ### SEE ALSO
 
-* [metalcloud-cli user](metalcloud-cli_user.md)	 - Manage user accounts and their properties
+* [metalcloud-cli user api-token](metalcloud-cli_user_api-token.md)	 - Manage the current user's API tokens
 

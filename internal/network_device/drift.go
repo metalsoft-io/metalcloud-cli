@@ -82,7 +82,7 @@ func NetworkDeviceDriftList(ctx context.Context, networkDeviceRef string) error 
 	client := api.GetApiClient(ctx)
 
 	request := client.NetworkDeviceAPI.
-		GetNetworkDeviceDriftHistory(ctx, float32(networkDeviceIdNumeric)).
+		GetNetworkDeviceDriftHistory(ctx, int64(networkDeviceIdNumeric)).
 		SortBy([]string{"id:ASC"})
 
 	records, meta, err := utils.FetchAllPages(request)
@@ -110,7 +110,7 @@ func NetworkDeviceDriftGet(ctx context.Context, networkDeviceRef string, driftId
 	client := api.GetApiClient(ctx)
 
 	drift, httpRes, err := client.NetworkDeviceAPI.
-		GetNetworkDeviceDriftHistoryById(ctx, float32(networkDeviceIdNumeric), float32(driftIdNumeric)).
+		GetNetworkDeviceDriftHistoryById(ctx, int64(networkDeviceIdNumeric), int64(driftIdNumeric)).
 		Execute()
 	if err := response_inspector.InspectResponse(httpRes, err); err != nil {
 		return err
@@ -183,7 +183,7 @@ func NetworkDeviceSyncTargetSnapshot(ctx context.Context, networkDeviceRef strin
 	client := api.GetApiClient(ctx)
 
 	httpRes, err := client.NetworkDeviceAPI.
-		NetworkDeviceSyncTargetSnapshotWithLatestSnapshot(ctx, float32(networkDeviceIdNumeric)).
+		NetworkDeviceSyncTargetSnapshotWithLatestSnapshot(ctx, int64(networkDeviceIdNumeric)).
 		Execute()
 	if err := response_inspector.InspectResponse(httpRes, err); err != nil {
 		return err

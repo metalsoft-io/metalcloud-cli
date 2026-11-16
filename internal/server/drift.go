@@ -81,7 +81,7 @@ func ServerDriftList(ctx context.Context, serverId string) error {
 	client := api.GetApiClient(ctx)
 
 	request := client.ServerAPI.
-		GetServerDriftHistory(ctx, float32(serverIdNumeric)).
+		GetServerDriftHistory(ctx, int64(serverIdNumeric)).
 		SortBy([]string{"id:ASC"})
 
 	records, meta, err := utils.FetchAllPages(request)
@@ -109,7 +109,7 @@ func ServerDriftGet(ctx context.Context, serverId string, driftId string) error 
 	client := api.GetApiClient(ctx)
 
 	drift, httpRes, err := client.ServerAPI.
-		GetServerDriftHistoryById(ctx, float32(serverIdNumeric), float32(driftIdNumeric)).
+		GetServerDriftHistoryById(ctx, int64(serverIdNumeric), int64(driftIdNumeric)).
 		Execute()
 	if err := response_inspector.InspectResponse(httpRes, err); err != nil {
 		return err

@@ -294,8 +294,8 @@ func validateFamily(family string) error {
 	return err
 }
 
-func linkConfigPath(linkIdNumeric float32) string {
-	return fmt.Sprintf("/api/v2/point-to-point-links/%d/config", int64(linkIdNumeric))
+func linkConfigPath(linkIdNumeric int64) string {
+	return fmt.Sprintf("/api/v2/point-to-point-links/%d/config", linkIdNumeric)
 }
 
 func staticRoutesPath(linkId string, family string) (string, error) {
@@ -331,7 +331,7 @@ func staticRoutePath(linkId string, family string, routeId string) (string, erro
 // its config object. Config sub-resources (static routes, allocation
 // strategies) are guarded by the config's revision, which differs from the
 // link's own.
-func getLinkConfigIdAndRevision(ctx context.Context, linkId string) (float32, string, error) {
+func getLinkConfigIdAndRevision(ctx context.Context, linkId string) (int64, string, error) {
 	linkIdNumeric, err := getPointToPointLinkId(linkId)
 	if err != nil {
 		return 0, "", err

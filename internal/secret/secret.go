@@ -163,13 +163,13 @@ func SecretConfigExample(ctx context.Context) error {
 	return formatter.PrintResult(secretConfiguration, nil)
 }
 
-func getSecretId(secretId string) (float32, error) {
-	secretIdNumeric, err := strconv.ParseFloat(secretId, 32)
+func getSecretId(secretId string) (int64, error) {
+	secretIdNumeric, err := strconv.ParseInt(secretId, 10, 64)
 	if err != nil {
 		err := fmt.Errorf("invalid secret ID: '%s'", secretId)
 		logger.Get().Error().Err(err).Msg("")
 		return 0, err
 	}
 
-	return float32(secretIdNumeric), nil
+	return secretIdNumeric, nil
 }

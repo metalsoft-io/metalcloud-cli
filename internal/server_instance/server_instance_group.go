@@ -573,7 +573,7 @@ func ServerInstanceGroupNetworkUpdate(ctx context.Context, serverInstanceGroupId
 		return err
 	}
 
-	networkConnectionIdNumerical, err := utils.GetFloat32FromString(networkConnectionId)
+	networkConnectionIdNumerical, err := utils.GetInt64FromString(networkConnectionId)
 	if err != nil {
 		return err
 	}

@@ -314,7 +314,7 @@ func BucketGetCredentials(ctx context.Context, infrastructureIdOrLabel string, b
 	client := api.GetApiClient(ctx)
 
 	credentials, httpRes, err := client.BucketAPI.
-		GetBucketCredentials(ctx, float32(infrastructureInfo.Id), bucketIdNumeric).
+		GetBucketCredentials(ctx, int64(infrastructureInfo.Id), bucketIdNumeric).
 		Execute()
 	if err := response_inspector.InspectResponse(httpRes, err); err != nil {
 		return err

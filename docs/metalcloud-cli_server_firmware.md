@@ -14,7 +14,7 @@ Available commands:
   - Information: components, component-info, inventory, fetch-versions
   - Updates: update-info, update-component
   - Upgrades: upgrade, upgrade-component, schedule-upgrade
-  - Auditing: generate-audit
+  - Auditing: generate-audit, search-dry-run
 
 Use "metalcloud-cli server firmware [command] --help" for detailed information about each command.
 
@@ -48,6 +48,7 @@ Use "metalcloud-cli server firmware [command] --help" for detailed information a
 * [metalcloud-cli server firmware inventory](metalcloud-cli_server_firmware_inventory.md)	 - Get firmware inventory from redfish
 * [metalcloud-cli server firmware schedule-upgrade](metalcloud-cli_server_firmware_schedule-upgrade.md)	 - Schedule a firmware upgrade for a server
 * [metalcloud-cli server firmware schedule-upgrade-batch](metalcloud-cli_server_firmware_schedule-upgrade-batch.md)	 - Schedule a firmware upgrade for several servers at once
+* [metalcloud-cli server firmware search-dry-run](metalcloud-cli_server_firmware_search-dry-run.md)	 - Explain which firmware binaries match each component of a server
 * [metalcloud-cli server firmware update-component](metalcloud-cli_server_firmware_update-component.md)	 - Update firmware component settings
 * [metalcloud-cli server firmware update-info](metalcloud-cli_server_firmware_update-info.md)	 - Update firmware information for a server
 * [metalcloud-cli server firmware upgrade](metalcloud-cli_server_firmware_upgrade.md)	 - Upgrade firmware for all components on a server

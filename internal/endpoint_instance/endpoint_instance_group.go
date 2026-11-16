@@ -591,9 +591,7 @@ func EndpointInstanceGroupNetworkUpdate(ctx context.Context, endpointInstanceGro
 		return err
 	}
 
-	// The SDK types this path parameter as float32 while every other
-	// connection operation types it as int64.
-	connectionIdNumerical, err := utils.GetFloat32FromString(connectionId)
+	connectionIdNumerical, err := utils.GetInt64FromString(connectionId)
 	if err != nil {
 		return err
 	}

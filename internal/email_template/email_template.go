@@ -131,7 +131,7 @@ func EmailTemplateUpdate(ctx context.Context, emailTemplateName string, config [
 	client := api.GetApiClient(ctx)
 
 	emailTemplate, httpRes, err := client.EmailTemplateAPI.
-		EmailTemplatesControllerPatchEmailTemplate(ctx, current.Name).
+		PatchEmailTemplate(ctx, current.Name).
 		EmailTemplateUpdate(update).
 		IfMatch(strconv.FormatInt(current.Revision, 10)).
 		Execute()

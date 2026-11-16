@@ -104,7 +104,7 @@ func PointToPointLinkGet(ctx context.Context, linkId string) error {
 		return err
 	}
 
-	httpRes, err := api.DoJSONRequest(ctx, http.MethodGet, fmt.Sprintf("/api/v2/point-to-point-links/%d", int64(linkIdNumeric)), nil)
+	httpRes, err := api.DoJSONRequest(ctx, http.MethodGet, fmt.Sprintf("/api/v2/point-to-point-links/%d", linkIdNumeric), nil)
 	if err := response_inspector.InspectResponse(httpRes, err); err != nil {
 		return err
 	}
@@ -274,7 +274,7 @@ func PointToPointLinkConfigExample(ctx context.Context) error {
 	return formatter.PrintResult(example, nil)
 }
 
-func getPointToPointLinkId(linkId string) (float32, error) {
+func getPointToPointLinkId(linkId string) (int64, error) {
 	linkIdNumeric, err := strconv.ParseInt(linkId, 10, 64)
 	if err != nil {
 		err := fmt.Errorf("invalid point-to-point link ID: '%s'", linkId)
@@ -282,10 +282,10 @@ func getPointToPointLinkId(linkId string) (float32, error) {
 		return 0, err
 	}
 
-	return float32(linkIdNumeric), nil
+	return linkIdNumeric, nil
 }
 
-func getPointToPointLinkIdAndRevision(ctx context.Context, linkId string) (float32, string, error) {
+func getPointToPointLinkIdAndRevision(ctx context.Context, linkId string) (int64, string, error) {
 	linkIdNumeric, err := getPointToPointLinkId(linkId)
 	if err != nil {
 		return 0, "", err

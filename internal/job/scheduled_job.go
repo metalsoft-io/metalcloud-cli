@@ -162,7 +162,7 @@ func ScheduledJobUpdate(ctx context.Context, scheduledJobId string, configBytes 
 
 	client := api.GetApiClient(ctx)
 
-	_, httpRes, err := client.JobAPI.UpdateScheduledJob(ctx, float32(id)).UpdateScheduledJob(scheduledJobConfig).Execute()
+	_, httpRes, err := client.JobAPI.UpdateScheduledJob(ctx, int64(id)).UpdateScheduledJob(scheduledJobConfig).Execute()
 	if err := response_inspector.InspectResponse(httpRes, err); err != nil {
 		return err
 	}

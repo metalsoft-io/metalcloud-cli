@@ -216,7 +216,7 @@ type OsTemplateUpdateOptions struct {
 func OsTemplateUpdate(ctx context.Context, osTemplateId string, osTemplateUpdateOptions OsTemplateUpdateOptions) error {
 	logger.Get().Info().Msgf("Updating OS template %s", osTemplateId)
 
-	osTemplateIdNumeric, revision, err := getOsTemplateIdAndRevision(ctx, osTemplateId)
+	osTemplateIdNumeric, err := getOsTemplateId(osTemplateId)
 	if err != nil {
 		return err
 	}
@@ -227,7 +227,6 @@ func OsTemplateUpdate(ctx context.Context, osTemplateId string, osTemplateUpdate
 		_, httpRes, err := client.OSTemplateAPI.
 			UpdateOSTemplate(ctx, osTemplateIdNumeric).
 			OSTemplateUpdate(*osTemplateUpdateOptions.Template).
-			IfMatch(revision).
 			Execute()
 		if err := response_inspector.InspectResponse(httpRes, err); err != nil {
 			return err
@@ -307,7 +306,6 @@ func OsTemplateSetStatus(ctx context.Context, osTemplateId string, newStatus str
 	_, httpRes, err := client.OSTemplateAPI.
 		UpdateOSTemplate(ctx, osTemplate.Id).
 		OSTemplateUpdate(osTemplateUpdates).
-		IfMatch(strconv.Itoa(int(osTemplate.Revision))).
 		Execute()
 	if err := response_inspector.InspectResponse(httpRes, err); err != nil {
 		return err

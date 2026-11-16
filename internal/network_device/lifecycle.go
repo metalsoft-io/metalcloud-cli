@@ -30,7 +30,7 @@ func NetworkDeviceReplace(ctx context.Context, networkDeviceRef string, newNetwo
 
 	client := api.GetApiClient(ctx)
 
-	result, httpRes, err := client.NetworkDeviceAPI.
+	httpRes, err := client.NetworkDeviceAPI.
 		ReplaceNetworkDevice(ctx, networkDeviceIdNumeric).
 		SwitchReplace(sdk.SwitchReplace{NewSwitchId: newNetworkDeviceIdNumeric}).
 		Execute()
@@ -38,7 +38,8 @@ func NetworkDeviceReplace(ctx context.Context, networkDeviceRef string, newNetwo
 		return err
 	}
 
-	return formatter.PrintResult(result, nil)
+	logger.Get().Info().Msgf("Network device %d replaced by %d", networkDeviceIdNumeric, newNetworkDeviceIdNumeric)
+	return nil
 }
 
 // NetworkDeviceReProvision re-runs provisioning on a network device.

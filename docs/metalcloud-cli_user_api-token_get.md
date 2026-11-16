@@ -1,22 +1,23 @@
-## metalcloud-cli user api-key
+## metalcloud-cli user api-token get
 
-Get the current user's API key
+Get an API token of the current user
 
 ### Synopsis
 
-Retrieve the API key for the currently authenticated user.
+Get the details of an API token of the currently authenticated user.
+The token value itself is never returned.
 
 Examples:
-  metalcloud-cli user api-key
+  metalcloud-cli user api-token get 12
 
 ```
-metalcloud-cli user api-key [flags]
+metalcloud-cli user api-token get api_token_id [flags]
 ```
 
 ### Options
 
 ```
-  -h, --help   help for api-key
+  -h, --help   help for get
 ```
 
 ### Options inherited from parent commands
@@ -34,5 +35,5 @@ metalcloud-cli user api-key [flags]
 
 ### SEE ALSO
 
-* [metalcloud-cli user](metalcloud-cli_user.md)	 - Manage user accounts and their properties
+* [metalcloud-cli user api-token](metalcloud-cli_user_api-token.md)	 - Manage the current user's API tokens
 

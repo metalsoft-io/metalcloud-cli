@@ -262,9 +262,6 @@ func TestExternalConnectionInterfaces(t *testing.T) {
 	if removed.Method != http.MethodDelete || removed.Path != "/api/v2/external-connections/12/interfaces/5" {
 		t.Errorf("unexpected remove request: %s %s", removed.Method, removed.Path)
 	}
-	if got := removed.Header.Get("If-Match"); got != "2" {
-		t.Errorf("interface remove If-Match = %q, want %q", got, "2")
-	}
 
 	if err := ExternalConnectionInterfaceGet(ctx, "12", "not-a-number"); err == nil {
 		t.Error("expected error for non-numeric interface ID")
