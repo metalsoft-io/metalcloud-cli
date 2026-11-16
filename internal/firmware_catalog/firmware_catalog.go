@@ -109,6 +109,8 @@ type FirmwareCatalogCreateOptions struct {
 	UserPrivateKeyPath      string   `json:"user_private_key_path,omitempty"`
 	KnownHostsPath          string   `json:"known_hosts_path,omitempty"`
 	IgnoreHostKeyCheck      bool     `json:"ignore_host_key_check,omitempty"`
+	// Force lets an NVIDIA import update a binary whose package file changed (another sha256 for the same file)
+	Force bool `json:"force,omitempty"`
 }
 
 func FirmwareCatalogCreate(ctx context.Context, firmwareCatalogOptions FirmwareCatalogCreateOptions) error {

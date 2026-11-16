@@ -10,6 +10,8 @@ const (
 	VendorLenovo     = "lenovo"
 	VendorHp         = "hp"
 	VendorSupermicro = "supermicro"
+	// VendorNvidia catalogs are built from an NVIDIA HGX/DGX bundle manifest (see NVIDIA_BUNDLE_IMPORT.md)
+	VendorNvidia = "nvidia"
 
 	UpdateTypeOnline  = "online"
 	UpdateTypeOffline = "offline"
@@ -21,7 +23,7 @@ const (
 )
 
 // ValidVendors lists the supported firmware catalog vendors.
-var ValidVendors = []string{VendorDell, VendorLenovo, VendorHp, VendorSupermicro}
+var ValidVendors = []string{VendorDell, VendorLenovo, VendorHp, VendorSupermicro, VendorNvidia}
 
 // ValidUpdateTypes lists the supported catalog update types.
 var ValidUpdateTypes = []string{UpdateTypeOnline, UpdateTypeOffline}

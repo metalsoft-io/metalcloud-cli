@@ -117,11 +117,39 @@ var serverComponentPrintConfig = formatter.PrintConfig{
 			Title: "Scheduled",
 			Order: 10,
 		},
+		"ComponentClass": {
+			Title: "Class",
+			Order: 11,
+		},
+		"ComponentVendor": {
+			Title: "Vendor",
+			Order: 12,
+		},
+		"ComponentModel": {
+			Title:    "Model",
+			Order:    13,
+			MaxWidth: 30,
+		},
+		"BaseboardId": {
+			Title: "Baseboard",
+			Order: 14,
+		},
 	},
+}
+
+// ComponentsListFlags filters `server firmware components`; every filter maps to a `filter.*` query parameter.
+type ComponentsListFlags struct {
+	FilterComponentClass []string
+	FilterBaseboardId    []string
 }
 
 // ServerFirmwareComponentsList lists all firmware components for a server
 func ServerFirmwareComponentsList(ctx context.Context, serverId string) error {
+	return ServerFirmwareComponentsListFiltered(ctx, serverId, ComponentsListFlags{})
+}
+
+// ServerFirmwareComponentsListFiltered lists the firmware components of a server, filtered by class or baseboard
+func ServerFirmwareComponentsListFiltered(ctx context.Context, serverId string, flags ComponentsListFlags) error {
 	logger.Get().Info().Msgf("Listing firmware components for server '%s'", serverId)
 
 	serverIdNumeric, err := GetServerId(serverId)
@@ -132,6 +160,12 @@ func ServerFirmwareComponentsList(ctx context.Context, serverId string) error {
 	client := api.GetApiClient(ctx)
 
 	request := client.ServerFirmwareAPI.GetServerComponents(ctx, serverIdNumeric).SortBy([]string{"id:ASC"})
+	if len(flags.FilterComponentClass) > 0 {
+		request = request.FilterComponentClass(utils.ProcessFilterStringSlice(flags.FilterComponentClass))
+	}
+	if len(flags.FilterBaseboardId) > 0 {
+		request = request.FilterBaseboardId(utils.ProcessFilterStringSlice(flags.FilterBaseboardId))
+	}
 
 	components, meta, err := utils.FetchAllPages(request)
 	if err != nil {
@@ -187,13 +221,101 @@ func ServerFirmwareComponentUpdate(ctx context.Context, serverId string, compone
 
 	client := api.GetApiClient(ctx)
 
+	// A target from a firmware package delivered to a target other components share (an HGX tray) is set, or
+	// reset, on every component the package updates: the targets before the change show which
+	var targetsBefore map[int64]string
+	if updateConfig.FirmwareTargetVersion != nil || configSetsTargetVersion(config) {
+		targetsBefore, err = serverComponentTargets(ctx, serverIdNumeric)
+		if err != nil {
+			return err
+		}
+	}
+
 	component, httpRes, err := client.ServerFirmwareAPI.UpdateServerComponent(ctx, serverIdNumeric, componentIdNumeric).UpdateServerComponent(updateConfig).Execute()
 	if err := response_inspector.InspectResponse(httpRes, err); err != nil {
 		return err
 	}
 
 	logger.Get().Info().Msgf("Firmware component '%s' updated for server '%s'", componentId, serverId)
-	return formatter.PrintResult(component, &serverComponentPrintConfig)
+	if err := formatter.PrintResult(component, &serverComponentPrintConfig); err != nil {
+		return err
+	}
+
+	if targetsBefore == nil || !formatter.IsTextFormat() {
+		return nil
+	}
+	changed, err := changedServerComponentTargets(ctx, serverIdNumeric, componentIdNumeric, targetsBefore)
+	if err != nil {
+		return err
+	}
+	if len(changed) > 0 {
+		fmt.Printf("\nThe same firmware package updates these components, so their target changed too (%d):\n", len(changed))
+		return formatter.PrintResult(changed, &packageTargetPrintConfig)
+	}
+	return nil
+}
+
+// configSetsTargetVersion is whether the update sets or resets (null) firmwareTargetVersion.
+func configSetsTargetVersion(config []byte) bool {
+	var fields map[string]any
+	if utils.UnmarshalContent(config, &fields) != nil {
+		return false
+	}
+	_, present := fields["firmwareTargetVersion"]
+	return present
+}
+
+// PackageTargetChange is a component whose target version changed with another component's.
+type PackageTargetChange struct {
+	ComponentId    int64
+	Component      string
+	PreviousTarget string
+	TargetVersion  string
+}
+
+var packageTargetPrintConfig = formatter.PrintConfig{
+	FieldsConfig: map[string]formatter.RecordFieldConfig{
+		"ComponentId":    {Title: "Component ID", Order: 1},
+		"Component":      {Title: "Component", Order: 2, MaxWidth: 40},
+		"PreviousTarget": {Title: "Previous Target", Order: 3},
+		"TargetVersion":  {Title: "Target Version", Order: 4},
+	},
+}
+
+func serverComponentTargets(ctx context.Context, serverId int64) (map[int64]string, error) {
+	client := api.GetApiClient(ctx)
+	components, _, err := utils.FetchAllPages(client.ServerFirmwareAPI.GetServerComponents(ctx, serverId).SortBy([]string{"id:ASC"}))
+	if err != nil {
+		return nil, err
+	}
+	targets := map[int64]string{}
+	for _, component := range components {
+		targets[component.Id] = derefString(component.FirmwareTargetVersion)
+	}
+	return targets, nil
+}
+
+// changedServerComponentTargets lists the other components whose target changed since targetsBefore.
+func changedServerComponentTargets(ctx context.Context, serverId int64, componentId int64, targetsBefore map[int64]string) ([]PackageTargetChange, error) {
+	client := api.GetApiClient(ctx)
+	components, _, err := utils.FetchAllPages(client.ServerFirmwareAPI.GetServerComponents(ctx, serverId).SortBy([]string{"id:ASC"}))
+	if err != nil {
+		return nil, err
+	}
+	changed := []PackageTargetChange{}
+	for _, component := range components {
+		target := derefString(component.FirmwareTargetVersion)
+		if component.Id == componentId || target == targetsBefore[component.Id] {
+			continue
+		}
+		changed = append(changed, PackageTargetChange{
+			ComponentId:    component.Id,
+			Component:      derefString(component.Name),
+			PreviousTarget: targetsBefore[component.Id],
+			TargetVersion:  target,
+		})
+	}
+	return changed, nil
 }
 
 // ServerFirmwareUpdateInfo updates firmware information for a server
@@ -256,12 +378,16 @@ func ServerFirmwareUpgrade(ctx context.Context, serverId string) error {
 	client := api.GetApiClient(ctx)
 
 	jobInfo, httpRes, err := client.ServerFirmwareAPI.UpgradeFirmwareOfServer(ctx, serverIdNumeric).Execute()
-	if err := response_inspector.InspectResponse(httpRes, err); err != nil {
+	if err := inspectFirmwareJobResponse(httpRes, err); err != nil {
 		return err
 	}
 
 	logger.Get().Info().Msgf("Firmware upgrade initiated for server '%s'", serverId)
-	return formatter.PrintResult(jobInfo, &formatter.PrintConfig{
+	// The components the safety checks left out are part of the JSON/YAML output; the text output lists them
+	if formatter.IsNativeFormat() {
+		return formatter.PrintResult(jobInfo, nil)
+	}
+	if err := formatter.PrintResult(jobInfo, &formatter.PrintConfig{
 		FieldsConfig: map[string]formatter.RecordFieldConfig{
 			"JobId": {
 				Title: "Job ID",
@@ -276,7 +402,14 @@ func ServerFirmwareUpgrade(ctx context.Context, serverId string) error {
 				Order: 3,
 			},
 		},
-	})
+	}); err != nil {
+		return err
+	}
+	if len(jobInfo.RefusedComponents) > 0 {
+		fmt.Printf("\nLeft out by the safety checks (%d):\n", len(jobInfo.RefusedComponents))
+		return formatter.PrintResult(jobInfo.RefusedComponents, &firmwareRefusalPrintConfig)
+	}
+	return nil
 }
 
 // ServerFirmwareComponentUpgrade upgrades firmware for a specific component
@@ -302,7 +435,7 @@ func ServerFirmwareComponentUpgrade(ctx context.Context, serverId string, compon
 	client := api.GetApiClient(ctx)
 
 	jobInfo, httpRes, err := client.ServerFirmwareAPI.UpgradeFirmwareOfServerComponent(ctx, serverIdNumeric, componentIdNumeric).FirmwareUpgrade(upgradeConfig).Execute()
-	if err := response_inspector.InspectResponse(httpRes, err); err != nil {
+	if err := inspectFirmwareJobResponse(httpRes, err); err != nil {
 		return err
 	}
 
@@ -373,12 +506,22 @@ func ServerFirmwareFetchVersions(ctx context.Context, serverId string) error {
 
 // ServerFirmwareGenerateAudit generates a firmware upgrade audit for servers
 func ServerFirmwareGenerateAudit(ctx context.Context, config []byte) error {
+	return ServerFirmwareGenerateAuditWithPreflight(ctx, config, false)
+}
+
+// ServerFirmwareGenerateAuditWithPreflight generates the audit and, with includePreflight, runs on each server
+// the safety checks an upgrade of the target versions would run now (BMC checks included) and lists the jobs it
+// would create. Nothing is changed.
+func ServerFirmwareGenerateAuditWithPreflight(ctx context.Context, config []byte, includePreflight bool) error {
 	logger.Get().Info().Msgf("Generating firmware upgrade audit")
 
 	var auditConfig sdk.GenerateFirmwareUpgradeAudit
 	err := utils.UnmarshalContent(config, &auditConfig)
 	if err != nil {
 		return err
+	}
+	if includePreflight {
+		auditConfig.IncludePreflight = sdk.PtrBool(true)
 	}
 
 	client := api.GetApiClient(ctx)
@@ -393,7 +536,13 @@ func ServerFirmwareGenerateAudit(ctx context.Context, config []byte) error {
 		return formatter.PrintResult(audit, nil)
 	}
 
-	return formatter.PrintResult(flattenServerFirmwareAudit(audit), &serverFirmwareAuditPrintConfig)
+	if err := formatter.PrintResult(flattenServerFirmwareAudit(audit), &serverFirmwareAuditPrintConfig); err != nil {
+		return err
+	}
+	if !formatter.IsTextFormat() {
+		return nil
+	}
+	return printFirmwareAuditDetails(audit)
 }
 
 // ServerFirmwareAuditRow is the tabular view of the audit of one server component.
@@ -411,6 +560,7 @@ type ServerFirmwareAuditRow struct {
 	BelowMinimum   string
 	Upgrades       int
 	Downgrades     int
+	Checks         string
 	Error          string
 }
 
@@ -428,7 +578,8 @@ var serverFirmwareAuditPrintConfig = formatter.PrintConfig{
 		"BelowMinimum":   {Title: "Below Minimum", Order: 10},
 		"Upgrades":       {Title: "Upgrades", Order: 11},
 		"Downgrades":     {Title: "Downgrades", Order: 12},
-		"Error":          {Title: "Error", Order: 13, MaxWidth: 60},
+		"Checks":         {Title: "Checks", Order: 13, MaxWidth: 50},
+		"Error":          {Title: "Error", Order: 14, MaxWidth: 60},
 	},
 }
 
@@ -472,6 +623,7 @@ func flattenServerFirmwareAudit(audits []sdk.ServerFirmwareAudit) []ServerFirmwa
 				BelowMinimum:   belowMinimum,
 				Upgrades:       len(component.Upgrades),
 				Downgrades:     len(component.Downgrades),
+				Checks:         summarizeFirmwareChecks(component.Checks),
 			})
 		}
 	}

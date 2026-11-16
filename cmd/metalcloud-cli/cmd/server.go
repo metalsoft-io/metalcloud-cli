@@ -105,6 +105,18 @@ var (
 		// firmware schedule-upgrade-batch
 		firmwareBatchScheduleTimestamp    string
 		firmwareBatchConfirmationRequired bool
+
+		// firmware components
+		firmwareComponentClass     []string
+		firmwareComponentBaseboard []string
+
+		// firmware generate-audit
+		firmwareIncludePreflight bool
+
+		// firmware search-dry-run
+		firmwareDryRunBaselineId  int64
+		firmwareDryRunCatalogIds  []int64
+		firmwareDryRunAllVersions bool
 	}{}
 
 	serverCmd = &cobra.Command{
@@ -864,7 +876,7 @@ Available commands:
   - Information: components, component-info, inventory, fetch-versions
   - Updates: update-info, update-component
   - Upgrades: upgrade, upgrade-component, schedule-upgrade
-  - Auditing: generate-audit
+  - Auditing: generate-audit, search-dry-run
 
 Use "metalcloud-cli server firmware [command] --help" for detailed information about each command.
 `,
@@ -877,14 +889,22 @@ Use "metalcloud-cli server firmware [command] --help" for detailed information a
 		Long: `List firmware components for a server.
 
 This command displays all firmware components available on the specified server,
-including their IDs, names, current versions, and status information.
+including their IDs, names, class, vendor, model, versions and, for the components of a
+GPU baseboard (an HGX tray), the baseboard they belong to.
 
 Required Arguments:
   server_id              The ID of the server to query
 
+Optional Flags:
+  --class                Only the components of these classes (bios, bmc, gpu, nic, hgx_hmc, ...)
+  --baseboard            Only the components of these GPU baseboards
+
 Examples:
   # List firmware components for server with ID 123
   metalcloud-cli server firmware components 123
+
+  # Only the GPUs
+  metalcloud-cli server firmware components 123 --class gpu
 
   # Using short alias
   metalcloud-cli server fw ls 123
@@ -893,7 +913,10 @@ Examples:
 		Annotations:  map[string]string{system.REQUIRED_PERMISSION: system.PERMISSION_SERVERS_READ},
 		Args:         cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
-			return server.ServerFirmwareComponentsList(cmd.Context(), args[0])
+			return server.ServerFirmwareComponentsListFiltered(cmd.Context(), args[0], server.ComponentsListFlags{
+				FilterComponentClass: serverFlags.firmwareComponentClass,
+				FilterBaseboardId:    serverFlags.firmwareComponentBaseboard,
+			})
 		},
 	}
 
@@ -940,7 +963,15 @@ Required Arguments:
 Required Flags:
   --config-source        Source of the component update configuration. Can be 'pipe' or path to a JSON file
 
+When the target version comes from a firmware package that other components share (for example
+an NVIDIA bundle step that updates every GPU of an HGX tray in one job), the same target is set
+on every component the package updates, and setting it to null resets all of them. The text
+output lists the other components whose target changed.
+
 Examples:
+  # Set the target version of a component
+  echo '{"firmwareTargetVersion": "96.00.A5.00.01"}' | metalcloud-cli server firmware update-component 123 456 --config-source pipe
+
   # Update component using JSON configuration file
   metalcloud-cli server firmware update-component 123 456 --config-source ./component-config.json
 
@@ -1014,6 +1045,11 @@ Examples:
 This command initiates a firmware upgrade process for all upgradeable components
 on the specified server. The system will automatically determine which components
 need updates and apply the latest available firmware versions.
+
+Before the jobs are created the safety checks run (server state, other firmware jobs,
+BMC reachability, prerequisites, component health). Components the checks refuse are
+left out and listed with their reason; when nothing is left the upgrade is refused and
+each reason is printed. Use 'generate-audit --include-preflight' to see the outcome first.
 
 Required Arguments:
   server_id              The ID of the server to upgrade
@@ -1141,6 +1177,13 @@ Examples:
 
   # Generate audit using piped JSON configuration
   echo '{"serverIds": [123, 456]}' | metalcloud-cli server firmware generate-audit --config-source pipe
+
+  # Also run the safety checks an upgrade would run now and list the jobs it would create
+  echo '{"serverIds": [123]}' | metalcloud-cli server firmware generate-audit --config-source pipe --include-preflight
+
+Optional Flags:
+  --include-preflight    Run the upgrade safety checks (BMC checks included) and list the planned
+                         jobs, in order, for each server. Nothing is changed.
 `,
 		SilenceUsage: true,
 		Annotations:  map[string]string{system.REQUIRED_PERMISSION: system.PERMISSION_SERVERS_READ},
@@ -1149,7 +1192,46 @@ Examples:
 			if err != nil {
 				return err
 			}
-			return server.ServerFirmwareGenerateAudit(cmd.Context(), config)
+			return server.ServerFirmwareGenerateAuditWithPreflight(cmd.Context(), config, serverFlags.firmwareIncludePreflight)
+		},
+	}
+
+	serverFirmwareSearchDryRunCmd = &cobra.Command{
+		Use:     "search-dry-run server_id",
+		Aliases: []string{"explain-matching"},
+		Short:   "Explain which firmware binaries match each component of a server",
+		Long: `Explain which firmware binaries match each component of a server.
+
+Runs the binary search a firmware upgrade uses and shows, for each component, the binaries
+that matched (with the rules that matched them) and the ones rejected (with the reason).
+Nothing is stored or scheduled.
+
+Required Arguments:
+  server_id              The ID of the server
+
+Optional Flags:
+  --baseline-id          Search this firmware baseline
+  --catalog-ids          Search these firmware catalogs (instead of a baseline)
+  --all-versions         Include every matching version, not only the latest
+
+Without --baseline-id or --catalog-ids the server's target baseline is searched.
+
+Examples:
+  # Search the server's target baseline
+  metalcloud-cli server firmware search-dry-run 123
+
+  # Search two catalogs, every version
+  metalcloud-cli server firmware search-dry-run 123 --catalog-ids 10,11 --all-versions
+`,
+		SilenceUsage: true,
+		Annotations:  map[string]string{system.REQUIRED_PERMISSION: system.PERMISSION_SERVERS_READ},
+		Args:         cobra.ExactArgs(1),
+		RunE: func(cmd *cobra.Command, args []string) error {
+			return server.ServerFirmwareSearchDryRun(cmd.Context(), args[0], server.ServerFirmwareSearchDryRunOptions{
+				BaselineId:         serverFlags.firmwareDryRunBaselineId,
+				CatalogIds:         serverFlags.firmwareDryRunCatalogIds,
+				IncludeAllVersions: serverFlags.firmwareDryRunAllVersions,
+			})
 		},
 	}
 
@@ -1862,6 +1944,8 @@ func init() {
 
 	// Firmware component listing
 	serverFirmwareCmd.AddCommand(serverFirmwareComponentsListCmd)
+	serverFirmwareComponentsListCmd.Flags().StringSliceVar(&serverFlags.firmwareComponentClass, "class", nil, "Only the components of these classes.")
+	serverFirmwareComponentsListCmd.Flags().StringSliceVar(&serverFlags.firmwareComponentBaseboard, "baseboard", nil, "Only the components of these GPU baseboards.")
 
 	// Get firmware component info
 	serverFirmwareCmd.AddCommand(serverFirmwareComponentGetCmd)
@@ -1897,6 +1981,14 @@ func init() {
 	serverFirmwareCmd.AddCommand(serverFirmwareGenerateAuditCmd)
 	serverFirmwareGenerateAuditCmd.Flags().StringVar(&serverFlags.configSource, "config-source", "", "Source of the audit configuration. Can be 'pipe' or path to a JSON file.")
 	serverFirmwareGenerateAuditCmd.MarkFlagsOneRequired("config-source")
+	serverFirmwareGenerateAuditCmd.Flags().BoolVar(&serverFlags.firmwareIncludePreflight, "include-preflight", false, "Run the upgrade safety checks and list the planned jobs for each server.")
+
+	// Explain the firmware binary search
+	serverFirmwareCmd.AddCommand(serverFirmwareSearchDryRunCmd)
+	serverFirmwareSearchDryRunCmd.Flags().Int64Var(&serverFlags.firmwareDryRunBaselineId, "baseline-id", 0, "Search this firmware baseline.")
+	serverFirmwareSearchDryRunCmd.Flags().Int64SliceVar(&serverFlags.firmwareDryRunCatalogIds, "catalog-ids", nil, "Search these firmware catalogs.")
+	serverFirmwareSearchDryRunCmd.Flags().BoolVar(&serverFlags.firmwareDryRunAllVersions, "all-versions", false, "Include every matching version, not only the latest.")
+	serverFirmwareSearchDryRunCmd.MarkFlagsMutuallyExclusive("baseline-id", "catalog-ids")
 
 	// Batch firmware operations
 	serverFirmwareCmd.AddCommand(serverFirmwareUpgradeBatchCmd)
