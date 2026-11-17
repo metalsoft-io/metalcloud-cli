@@ -117,3 +117,14 @@ func extractZip(archivePath, targetDir string) error {
 
 	return nil
 }
+
+// validateAssetFileName rejects asset file names that would resolve outside the archive's assets
+// directory. The names come from template.yaml on import and from the server on export, so neither
+// is trusted: a name such as "../../home/user/.ssh/id_ed25519" would otherwise read (import) or
+// overwrite (export) arbitrary files on the user's machine.
+func validateAssetFileName(name string) error {
+	if !filepath.IsLocal(name) || filepath.Clean(name) == "." {
+		return fmt.Errorf("invalid asset file name %q: must be a relative path inside the assets directory", name)
+	}
+	return nil
+}

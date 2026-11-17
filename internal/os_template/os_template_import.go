@@ -52,7 +52,14 @@ func OsTemplateImport(ctx context.Context, archivePath string, name string, labe
 	createOptions.Template.Visibility = sdk.PtrString("private")
 
 	// Process content assets: read files and encode
-	assetsDir := filepath.Join(tmpDir, "assets")
+	// Reads go through an os.Root so neither "../" names nor symlinks can reach files outside assets/.
+	var assetsRoot *os.Root
+	defer func() {
+		if assetsRoot != nil {
+			assetsRoot.Close()
+		}
+	}()
+
 	for i, asset := range createOptions.TemplateAssets {
 		if asset.File.Url != nil && *asset.File.Url != "" {
 			// URL-based asset: nothing to process
@@ -60,8 +67,18 @@ func OsTemplateImport(ctx context.Context, archivePath string, name string, labe
 		}
 
 		// Content-based asset: read from assets directory
-		assetFilePath := filepath.Join(assetsDir, asset.File.Name)
-		fileData, err := os.ReadFile(assetFilePath)
+		if err := validateAssetFileName(asset.File.Name); err != nil {
+			return err
+		}
+
+		if assetsRoot == nil {
+			assetsRoot, err = os.OpenRoot(filepath.Join(tmpDir, "assets"))
+			if err != nil {
+				return fmt.Errorf("failed to open assets directory in archive: %w", err)
+			}
+		}
+
+		fileData, err := assetsRoot.ReadFile(asset.File.Name)
 		if err != nil {
 			return fmt.Errorf("failed to read asset file '%s': %w", asset.File.Name, err)
 		}

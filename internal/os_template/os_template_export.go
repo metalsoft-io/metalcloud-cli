@@ -49,6 +49,13 @@ func OsTemplateExport(ctx context.Context, osTemplateId string, outputPath strin
 		return fmt.Errorf("failed to create assets directory: %w", err)
 	}
 
+	// Writes go through an os.Root so server-supplied asset names cannot escape assets/.
+	assetsRoot, err := os.OpenRoot(assetsDir)
+	if err != nil {
+		return fmt.Errorf("failed to open assets directory: %w", err)
+	}
+	defer assetsRoot.Close()
+
 	var assetCreates []sdk.TemplateAssetCreate
 
 	for _, asset := range templateAssetList.Data {
@@ -58,7 +65,12 @@ func OsTemplateExport(ctx context.Context, osTemplateId string, outputPath strin
 			// URL-based asset (e.g., ISO link): preserve URL, no file to save
 			logger.Get().Info().Msgf("Asset '%s' is URL-based, preserving URL reference", asset.File.Name)
 		} else {
-			// Content-based asset: fetch full content via individual GET
+			// Content-based asset: reject unsafe names before fetching anything
+			if err := validateAssetFileName(asset.File.Name); err != nil {
+				return fmt.Errorf("cannot export asset ID %d: %w", asset.Id, err)
+			}
+
+			// Fetch full content via individual GET
 			fullAsset, httpRes, err := client.TemplateAssetAPI.
 				GetTemplateAsset(ctx, asset.Id).
 				Execute()
@@ -76,8 +88,7 @@ func OsTemplateExport(ctx context.Context, osTemplateId string, outputPath strin
 				return fmt.Errorf("failed to decode content for asset '%s': %w", asset.File.Name, err)
 			}
 
-			assetFilePath := filepath.Join(assetsDir, asset.File.Name)
-			if err := os.WriteFile(assetFilePath, decoded, 0644); err != nil {
+			if err := assetsRoot.WriteFile(asset.File.Name, decoded, 0644); err != nil {
 				return fmt.Errorf("failed to write asset file '%s': %w", asset.File.Name, err)
 			}
 
