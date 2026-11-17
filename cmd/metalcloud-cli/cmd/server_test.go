@@ -592,3 +592,54 @@ func TestServerRegisterPlannedFlags(t *testing.T) {
 		t.Error("expected an error when --serial-number is missing")
 	}
 }
+
+// --- server update-ipmi-credentials ---
+
+func runIpmiCredentialsUpdate(t *testing.T, extraArgs ...string) map[string]interface{} {
+	t.Helper()
+	var body map[string]interface{}
+	srv := httptest.NewServer(newMux(allPerms, func(mux *http.ServeMux) {
+		mux.HandleFunc("/api/v2/servers/1", func(w http.ResponseWriter, r *http.Request) {
+			w.Header().Set("Content-Type", "application/json")
+			_ = json.NewEncoder(w).Encode(serverItem)
+		})
+		mux.HandleFunc("/api/v2/servers/1/actions/update-ipmi-credentials", func(w http.ResponseWriter, r *http.Request) {
+			_ = json.NewDecoder(r.Body).Decode(&body)
+			w.Header().Set("Content-Type", "application/json")
+			_ = json.NewEncoder(w).Encode(map[string]interface{}{"username": "admin"})
+		})
+	}))
+	defer srv.Close()
+
+	args := append([]string{"server", "update-ipmi-credentials", "1", "admin", "newpass"}, extraArgs...)
+	if _, err := runCLI(t, srv, args...); err != nil {
+		t.Fatalf("%v: unexpected error: %v", extraArgs, err)
+	}
+	if body == nil {
+		t.Fatalf("%v: no request body received", extraArgs)
+	}
+	return body
+}
+
+func TestServerUpdateIpmiCredentials_Defaults(t *testing.T) {
+	body := runIpmiCredentialsUpdate(t)
+	if body["username"] != "admin" || body["password"] != "newpass" {
+		t.Errorf("wrong credentials in body: %v", body)
+	}
+	if body["updateOnServer"] != false {
+		t.Errorf("expected updateOnServer false by default, got: %v", body)
+	}
+	if _, ok := body["host"]; ok {
+		t.Errorf("host must not be sent unless --host is given: %v", body)
+	}
+}
+
+func TestServerUpdateIpmiCredentials_UpdateOnServerAndHost(t *testing.T) {
+	body := runIpmiCredentialsUpdate(t, "--update-on-server", "--host", "10.0.0.15")
+	if body["updateOnServer"] != true {
+		t.Errorf("expected updateOnServer true, got: %v", body)
+	}
+	if body["host"] != "10.0.0.15" {
+		t.Errorf("expected host 10.0.0.15, got: %v", body)
+	}
+}

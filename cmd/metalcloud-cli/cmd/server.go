@@ -56,6 +56,10 @@ var (
 		rackPositionUpper     string
 		inventoryId           string
 
+		// update-ipmi-credentials
+		ipmiHost           string
+		ipmiUpdateOnServer bool
+
 		// replace
 		replacementServerId string
 		acceptDowngrade     bool
@@ -714,20 +718,34 @@ This command updates the IPMI/BMC username and password for the specified server
 The credentials are used for server management operations like power control
 and hardware monitoring.
 
+By default the new credentials are only recorded in MetalCloud; the BMC itself
+is not changed. Pass --update-on-server to also set them on the BMC (password
+rotation). Pass --host to also change the server's management address.
+
 Required Arguments:
   server_id              The ID of the server to update
   username               New IPMI/BMC username
   password               New IPMI/BMC password
 
+Optional Flags:
+  --host                 New management (BMC) address of the server
+  --update-on-server     Also change the credentials on the BMC itself
+
 Examples:
-  # Update IPMI credentials for server with ID 123
+  # Record new IPMI credentials for server with ID 123
   metalcloud-cli server update-ipmi-credentials 123 admin newpassword
+
+  # Rotate the BMC password on the BMC itself
+  metalcloud-cli server update-ipmi-credentials 123 admin newpassword --update-on-server
+
+  # Record new credentials and a new management address
+  metalcloud-cli server update-ipmi-credentials 123 admin newpassword --host 10.0.0.15
 `,
 		SilenceUsage: true,
 		Annotations:  map[string]string{system.REQUIRED_PERMISSION: system.PERMISSION_SERVERS_WRITE},
 		Args:         cobra.ExactArgs(3),
 		RunE: func(cmd *cobra.Command, args []string) error {
-			return server.ServerUpdateIpmiCredentials(cmd.Context(), args[0], args[1], args[2])
+			return server.ServerUpdateIpmiCredentials(cmd.Context(), args[0], args[1], args[2], serverFlags.ipmiHost, serverFlags.ipmiUpdateOnServer)
 		},
 	}
 
@@ -1926,6 +1944,8 @@ func init() {
 	serverUpdateCmd.MarkFlagsOneRequired("config-source")
 
 	serverCmd.AddCommand(serverUpdateIpmiCredentialsCmd)
+	serverUpdateIpmiCredentialsCmd.Flags().StringVar(&serverFlags.ipmiHost, "host", "", "New management (BMC) address of the server.")
+	serverUpdateIpmiCredentialsCmd.Flags().BoolVar(&serverFlags.ipmiUpdateOnServer, "update-on-server", false, "Also change the credentials on the BMC itself, not only in MetalCloud.")
 
 	serverCmd.AddCommand(serverEnableSnmpCmd)
 

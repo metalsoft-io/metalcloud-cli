@@ -330,7 +330,7 @@ func TestServerEnableSyslog_Success(t *testing.T) {
 
 func TestServerUpdateIpmiCredentials_InvalidId(t *testing.T) {
 	ctx := setupTestContext("http://localhost")
-	if err := ServerUpdateIpmiCredentials(ctx, "bad", "user", "pass"); err == nil {
+	if err := ServerUpdateIpmiCredentials(ctx, "bad", "user", "pass", "", false); err == nil {
 		t.Error("ServerUpdateIpmiCredentials with invalid id: expected error, got nil")
 	}
 }
@@ -344,7 +344,7 @@ func TestServerUpdateIpmiCredentials_Success(t *testing.T) {
 	defer ts.Close()
 
 	ctx := setupTestContext(ts.URL)
-	if err := ServerUpdateIpmiCredentials(ctx, "42", "admin", "newpass"); err != nil {
+	if err := ServerUpdateIpmiCredentials(ctx, "42", "admin", "newpass", "", false); err != nil {
 		t.Errorf("ServerUpdateIpmiCredentials: expected nil error, got: %v", err)
 	}
 }

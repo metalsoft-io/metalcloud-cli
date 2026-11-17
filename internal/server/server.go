@@ -820,7 +820,10 @@ func ServerUpdate(ctx context.Context, serverId string, config []byte) error {
 	return formatter.PrintResult(serverInfo, &serverPrintConfig)
 }
 
-func ServerUpdateIpmiCredentials(ctx context.Context, serverId string, username string, password string) error {
+// ServerUpdateIpmiCredentials calls the update-ipmi-credentials action. host,
+// when non-empty, also changes the server's management address; updateOnServer
+// also changes the credentials on the BMC itself rather than only recording them.
+func ServerUpdateIpmiCredentials(ctx context.Context, serverId string, username string, password string, host string, updateOnServer bool) error {
 	logger.Get().Info().Msgf("Updating IPMI credentials for server '%s'", serverId)
 
 	serverIdNumeric, revision, err := getServerIdAndRevision(ctx, serverId)
@@ -833,6 +836,12 @@ func ServerUpdateIpmiCredentials(ctx context.Context, serverId string, username 
 	credentials := sdk.UpdateServerIpmiCredentials{
 		Username: sdk.PtrString(username),
 		Password: sdk.PtrString(password),
+	}
+	// Setters rather than field literals: UpdateOnServer is a plain bool in some
+	// SDK revisions and *bool in others.
+	credentials.SetUpdateOnServer(updateOnServer)
+	if host != "" {
+		credentials.SetHost(host)
 	}
 
 	serverCredentials, httpRes, err := client.ServerAPI.UpdateServerIpmiCredentials(ctx, serverIdNumeric).UpdateServerIpmiCredentials(credentials).IfMatch(revision).Execute()
