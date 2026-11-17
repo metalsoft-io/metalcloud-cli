@@ -297,6 +297,59 @@ func TestScheduledJobList_Formats(t *testing.T) {
 	}
 }
 
+// --- scheduled-job get ---
+
+// get must print every field the API returns for json/yaml, so an operator can
+// read a job back and resend description and waitForCompletion on update.
+func TestScheduledJobGet_FullRecordInJsonAndYaml(t *testing.T) {
+	job := scheduledJobFixture(5649)
+	job["description"] = "nightly cleanup"
+	job["waitForCompletion"] = 1
+	srv := httptest.NewServer(newMux(allPerms, func(mux *http.ServeMux) {
+		mux.HandleFunc("/api/v2/scheduled-jobs/5649", func(w http.ResponseWriter, r *http.Request) {
+			w.Header().Set("Content-Type", "application/json")
+			_ = json.NewEncoder(w).Encode(job)
+		})
+	}))
+	defer srv.Close()
+
+	out, err := runCLIFormat(t, srv, "json", "scheduled-job", "get", "5649")
+	if err != nil {
+		t.Fatalf("json: %v", err)
+	}
+	var got map[string]interface{}
+	if err := json.Unmarshal([]byte(out), &got); err != nil {
+		t.Fatalf("json: invalid output: %v: %s", err, out)
+	}
+	for key := range job {
+		if _, ok := got[key]; !ok {
+			t.Errorf("json: missing field %q: %s", key, out)
+		}
+	}
+	if got["description"] != "nightly cleanup" || got["waitForCompletion"] != float64(1) {
+		t.Errorf("json: wrong description/waitForCompletion: %s", out)
+	}
+
+	out, err = runCLIFormat(t, srv, "yaml", "scheduled-job", "get", "5649")
+	if err != nil {
+		t.Fatalf("yaml: %v", err)
+	}
+	for _, want := range []string{"description: nightly cleanup", "waitForCompletion: 1"} {
+		if !strings.Contains(out, want) {
+			t.Errorf("yaml: missing %q: %s", want, out)
+		}
+	}
+
+	// The table keeps its trimmed column set.
+	out, err = runCLIFormat(t, srv, "text", "scheduled-job", "get", "5649")
+	if err != nil {
+		t.Fatalf("text: %v", err)
+	}
+	if !strings.Contains(out, "nightly-task") || !strings.Contains(out, "enabled") {
+		t.Errorf("text: unexpected table: %s", out)
+	}
+}
+
 // --- scheduled-job create ---
 
 func TestScheduledJobCreate(t *testing.T) {

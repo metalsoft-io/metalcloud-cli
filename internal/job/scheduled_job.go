@@ -125,7 +125,7 @@ func ScheduledJobGet(ctx context.Context, scheduledJobId string) error {
 		return fmt.Errorf("failed to parse scheduled job: %w", err)
 	}
 
-	return formatter.PrintResult(scheduledJob, &scheduledJobPrintConfig)
+	return utils.PrintOneRaw(body, scheduledJob, &scheduledJobPrintConfig)
 }
 
 func ScheduledJobCreate(ctx context.Context, configBytes []byte) error {

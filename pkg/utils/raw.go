@@ -4,8 +4,10 @@ import (
 	"encoding/json"
 	"fmt"
 	"strconv"
+	"strings"
 
 	"github.com/metalsoft-io/metalcloud-cli/pkg/formatter"
+	"github.com/spf13/viper"
 )
 
 // DecodeRawObject decodes a JSON object body into a generic map. Use it for
@@ -45,6 +47,17 @@ func PrintRawObject(body []byte, printConfig *formatter.PrintConfig) error {
 		return err
 	}
 	return formatter.PrintResult(object, printConfig)
+}
+
+// PrintOneRaw is the single-object counterpart of PrintAllRaw: json and yaml
+// output print the full response body, so fields the trimmed record type does
+// not model are not lost; other formats print record with printConfig.
+func PrintOneRaw(body []byte, record interface{}, printConfig *formatter.PrintConfig) error {
+	format := strings.ToLower(viper.GetString(formatter.ConfigFormat))
+	if format == "json" || format == "yaml" {
+		return PrintRawObject(body, printConfig)
+	}
+	return formatter.PrintResult(record, printConfig)
 }
 
 // RevisionFromRaw extracts the optimistic-concurrency revision from a raw
