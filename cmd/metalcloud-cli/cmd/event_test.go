@@ -152,3 +152,49 @@ func TestEventGet_NoSeverity(t *testing.T) {
 		t.Errorf("expected output to contain event title, got: %s", out)
 	}
 }
+
+// event get must print every field the API returns for json/yaml — including
+// ones eventRaw does not model, such as context — and must not invent a
+// severity field the API does not send.
+func TestEventGet_FullRecordInJsonAndYaml(t *testing.T) {
+	event := map[string]interface{}{
+		"id": "673217", "type": "server_power_on", "level": "info", "visibility": "public",
+		"title": "Server powered on", "message": "Server 288 powered on",
+		"occurredTimestamp": "2024-01-01T00:00:00Z", "serverId": "288", "jobId": "9001",
+		"context": map[string]interface{}{"source": "bmc"},
+	}
+	srv := httptest.NewServer(newMux(allPerms, func(mux *http.ServeMux) {
+		mux.HandleFunc("/api/v2/events/673217", func(w http.ResponseWriter, r *http.Request) {
+			w.Header().Set("Content-Type", "application/json")
+			_ = json.NewEncoder(w).Encode(event)
+		})
+	}))
+	defer srv.Close()
+
+	out, err := runCLIFormat(t, srv, "json", "event", "get", "673217")
+	if err != nil {
+		t.Fatalf("json: %v", err)
+	}
+	var got map[string]interface{}
+	if err := json.Unmarshal([]byte(out), &got); err != nil {
+		t.Fatalf("json: invalid output: %v: %s", err, out)
+	}
+	for key := range event {
+		if _, ok := got[key]; !ok {
+			t.Errorf("json: missing field %q: %s", key, out)
+		}
+	}
+	if _, ok := got["severity"]; ok {
+		t.Errorf("json: printed a severity field the API did not send: %s", out)
+	}
+
+	out, err = runCLIFormat(t, srv, "yaml", "event", "get", "673217")
+	if err != nil {
+		t.Fatalf("yaml: %v", err)
+	}
+	for _, want := range []string{`serverId: "288"`, "level: info", "source: bmc"} {
+		if !strings.Contains(out, want) {
+			t.Errorf("yaml: missing %q: %s", want, out)
+		}
+	}
+}

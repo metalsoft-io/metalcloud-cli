@@ -335,7 +335,7 @@ func EventGet(ctx context.Context, eventId string) error {
 		return fmt.Errorf("failed to parse event: %w", err)
 	}
 
-	return formatter.PrintResult(record, eventPrintConfigFor([]eventRaw{record}))
+	return utils.PrintOneRaw(body, record, eventPrintConfigFor([]eventRaw{record}))
 }
 
 func getEventId(eventId string) (int64, error) {
