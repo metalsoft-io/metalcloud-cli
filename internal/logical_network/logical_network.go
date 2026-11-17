@@ -347,9 +347,16 @@ func LogicalNetworkUpdate(ctx context.Context, logicalNetworkId string, config [
 
 	client := api.GetApiClient(ctx)
 
+	ln, httpRes, err := client.LogicalNetworkAPI.GetLogicalNetwork(ctx, logicalNetworkIdNumeric).Execute()
+	if err := response_inspector.InspectResponse(httpRes, err); err != nil {
+		return err
+	}
+	revision := strconv.Itoa(int(ln.Revision))
+
 	logicalNetwork, httpRes, err := client.LogicalNetworkAPI.
 		UpdateLogicalNetwork(ctx, logicalNetworkIdNumeric).
 		UpdateLogicalNetwork(logicalNetworkUpdate).
+		IfMatch(revision).
 		Execute()
 	if err := response_inspector.InspectResponse(httpRes, err); err != nil {
 		return err
