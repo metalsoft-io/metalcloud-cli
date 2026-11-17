@@ -215,3 +215,42 @@ func TestDhcpReservationDelete_SendsIfMatch(t *testing.T) {
 		t.Errorf("expected If-Match 5 (the reservation revision), got %q", ifMatch)
 	}
 }
+
+// The match flags are only read on the flag path, so combining any of them
+// with --config-source must be rejected rather than silently dropped.
+func TestDhcpReservationCreate_ConfigSourceRejectsMatchFlags(t *testing.T) {
+	var ifMatch, body string
+	srv := newDhcpReservationTestServer(&ifMatch, &body)
+	defer srv.Close()
+
+	f, err := os.CreateTemp(t.TempDir(), "dhcp-res-*.json")
+	if err != nil {
+		t.Fatalf("create temp file: %v", err)
+	}
+	_, _ = f.WriteString(`{"allocation":{"kind":"manual","ip":"192.168.1.10","subnetId":3}}`)
+	f.Close()
+
+	matchFlags := map[string]string{
+		"--mac-address": "AA:BB:CC:DD:EE:FF",
+		"--circuit-id":  "leaf-01:swp1",
+		"--device-type": "server",
+		"--vendor":      "dell",
+		"--giaddr":      "10.0.0.1",
+		"--priority":    "10",
+	}
+	for flag, value := range matchFlags {
+		body = ""
+		_, err := runCLI(t, srv, "dhcp-reservation", "create", "1", "ipv4", "--config-source", f.Name(), flag, value)
+		if err == nil {
+			t.Errorf("%s with --config-source: expected an error, got none", flag)
+		}
+		if body != "" {
+			t.Errorf("%s with --config-source: a create request was sent: %s", flag, body)
+		}
+	}
+
+	// --config-source on its own still works.
+	if _, err := runCLI(t, srv, "dhcp-reservation", "create", "1", "ipv4", "--config-source", f.Name()); err != nil {
+		t.Fatalf("--config-source alone: unexpected error: %v", err)
+	}
+}

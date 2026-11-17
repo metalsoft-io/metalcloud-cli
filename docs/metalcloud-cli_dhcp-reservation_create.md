@@ -22,7 +22,7 @@ Required Flags (one of):
   --subnet-pool-id     Allocate from these pools, in order (auto allocation)
   --config-source      'pipe' to read from stdin, or a path to a JSON/YAML file
 
-Optional Flags:
+Optional Flags (not allowed with --config-source; set these in the file instead):
   --mac-address   MAC address to match, as six colon-separated hex octets
   --circuit-id    Option 82 circuit id to match
   --device-type   Device type guard/filter
