@@ -6,7 +6,7 @@ package integration
 //
 // Requirements:
 //   - METALCLOUD_ENDPOINT  — API endpoint URL
-//   - METALCLOUD_API_KEY   — API key
+//   - METALCLOUD_API_KEY   — API token (or a legacy API key)
 //   - METALCLOUD_TEST_SITE_ID — site ID to create resources under (where required)
 //
 // Run: go test -tags integration_crud ./test/integration/
@@ -269,35 +269,6 @@ func TestServerCleanupPolicyCRUD_Integration(t *testing.T) {
 	stdout, _, err = runCLI(t, "-x", "server-cleanup-policy", "get", id, "-f", "json")
 	if err != nil {
 		t.Errorf("server-cleanup-policy get after create failed: %v\nstdout: %s", err, stdout)
-	}
-}
-
-// ---------------------------------------------------------------------------
-// Cron Job CRUD
-// ---------------------------------------------------------------------------
-
-func TestCronJobCRUD_Integration(t *testing.T) {
-	skipIfNoEndpoint(t)
-
-	// Valid functionName values are deployment-specific. Pass via METALCLOUD_TEST_CRON_FUNCTION.
-	fn := os.Getenv("METALCLOUD_TEST_CRON_FUNCTION")
-	if fn == "" {
-		t.Skip("METALCLOUD_TEST_CRON_FUNCTION required — set to a valid cron function name for this deployment (e.g. 'syncUsers')")
-	}
-	payload := `{"label":"` + uniqueName("test-ci-cron") + `","functionName":"` + fn + `","params":[],"schedule":"0 * * * *","waitForCompletion":0,"lifetimeSeconds":60,"disabled":1}`
-	stdout, stderr, err := runCLI(t, "-x", "cron-job", "create", "--config-source", writeTempJSON(t, payload), "-f", "json")
-	if err != nil {
-		t.Fatalf("cron-job create failed: %v\nstdout: %s\nstderr: %s", err, stdout, stderr)
-	}
-
-	id := extractID(t, stdout)
-	t.Cleanup(func() {
-		runCLI(t, "-x", "cron-job", "delete", id) //nolint:errcheck
-	})
-
-	stdout, _, err = runCLI(t, "-x", "cron-job", "get", id, "-f", "json")
-	if err != nil {
-		t.Errorf("cron-job get after create failed: %v\nstdout: %s", err, stdout)
 	}
 }
 

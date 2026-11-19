@@ -563,7 +563,7 @@ Examples:
 This command retrieves and displays the templates found in a local directory,
 showing their basic information and configuration. It is the offline alternative
 to 'list-repo': everything it reports is read from the local filesystem, so it
-needs no network access and no API endpoint or API key.
+needs no network access and no API endpoint or API token.
 
 The directory must hold the templates in the same layout used by the template
 repositories:
@@ -602,7 +602,7 @@ local directory. It is the alternative to 'create-from-repo' for air-gapped
 environments: the template and its assets are read from the local filesystem
 instead of being cloned from a repository, so no repository access is needed.
 The template itself is still created through the MetalSoft API, so an endpoint
-and an API key are required.
+and an API token are required.
 
 The directory must hold the templates in the same layout used by the template
 repositories:

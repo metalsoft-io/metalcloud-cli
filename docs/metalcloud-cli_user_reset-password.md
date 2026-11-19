@@ -9,8 +9,8 @@ Consume a password reset token, as following the link from the e-mail would.
 The token is the value of the 'token' query parameter of the password reset link that
 the platform sent by e-mail. The API exposes no password parameter on this endpoint:
 it only validates the token and redirects to the page where the new password is
-chosen. Use 'user change-password' to set a password from the CLI, or
-'user set-password' to set the password of another user as an administrator.
+chosen. Change your own password in the UI, or use 'user set-password' to set
+the password of another user as an administrator.
 
 Required Flags:
   --token                 The password reset token
@@ -32,7 +32,7 @@ metalcloud-cli user reset-password [flags]
 ### Options inherited from parent commands
 
 ```
-  -k, --api_key string         MetalCloud API key
+  -k, --api_key string         MetalCloud API token (msat_...), or a legacy API key (<user id>:<key>)
   -c, --config string          Config file path
   -d, --debug                  Set to enable debug logging
   -e, --endpoint string        MetalCloud API endpoint

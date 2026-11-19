@@ -49,23 +49,29 @@ To install using `go get` (this should also work on Windows):
 go get github.com/metalsoft-io/metalcloud-cli
 ```
 
-## Getting the API key
+## Getting an API token
 
-In the MetalCloud's UI go to the upper left corner and click on your initials. Then go to **Account Settings** > **API Key** and copy the API key.
+In the MetalCloud's UI go to the upper left corner and click on your initials. Then go to **Account Settings** > **API Tokens**, create a token and copy its value (it starts with `msat_`). The value is shown only once, when the token is created or regenerated.
+
+To run administration commands (servers, accounts, users and other resources that need admin permissions), choose the **System** scope when creating the token. A token with the default **Account** scope only grants what any user of your account can do, and those commands fail with `403 Forbidden`. The scope choice is shown only to users with the `global_token_write` permission.
+
+API keys created before version 8.0 (of the form `<user id>:<key>`) keep working as API tokens with the **System** scope until they expire, so an existing configuration keeps working unchanged. API tokens are created, regenerated and deleted only in the UI.
 
 Configure credentials as environment variables:
 
 ```bash
 export METALCLOUD_ENDPOINT="https://metal.mycompany.com"
-export METALCLOUD_API_KEY="<your key>"
+export METALCLOUD_API_KEY="<your API token>"
 ```
 
-Alternatively you can put the endpoint and API key configuration in a `metalcloud.yaml` configuration file:
+Alternatively you can put the endpoint and API token configuration in a `metalcloud.yaml` configuration file:
 
 ```yaml
 endpoint: 'https://metal.mycompany.com'
-api_key: '<your key>'
+api_key: '<your API token>'
 ```
+
+The environment variable and the configuration key keep the name `api_key` for compatibility with existing configurations; they accept both an API token and a legacy API key.
 
 ## Getting a list of supported commands
 
@@ -209,7 +215,7 @@ To run the CLI in VS Code in debug mode add the following configuration in `laun
             "showLog": false,
             "dlvFlags": ["--check-go-version=false"],
             "env": {
-                "METALCLOUD_API_KEY": "<your key>",
+                "METALCLOUD_API_KEY": "<your API token>",
                 "METALCLOUD_ENDPOINT": "https://metal.mycompany.com"
             }
         }
@@ -237,7 +243,7 @@ go test $(go list ./... | grep -v '/internal/testutils\|/internal/vm$\|/pkg/api\
 
 ```bash
 export METALCLOUD_ENDPOINT="https://your-instance.metalsoft.io"
-export METALCLOUD_API_KEY="<your key>"
+export METALCLOUD_API_KEY="<your API token>"
 go test -tags integration -v ./test/integration/
 ```
 
@@ -253,13 +259,12 @@ Integration tests are read-only (list/get only). They skip automatically when `M
 
 ```bash
 export METALCLOUD_ENDPOINT="https://your-instance.metalsoft.io"
-export METALCLOUD_API_KEY="<your key>"
+export METALCLOUD_API_KEY="<your API token>"
 export METALCLOUD_TEST_SITE_ID="<site id>"
 # Optional — enables additional tests:
 # export METALCLOUD_TEST_FABRIC_ID="<fabric id>"      # logical-network-profile CRUD
 # export METALCLOUD_TEST_INFRA_ID="<infra id>"        # server-instance-group CRUD
 # export METALCLOUD_TEST_SERVER_TYPE_ID="<type id>"   # server-instance-group CRUD
-# export METALCLOUD_TEST_CRON_FUNCTION="<fn name>"    # cron-job CRUD (function names are deployment-specific)
 go test -tags integration_crud -v ./test/integration/
 ```
 

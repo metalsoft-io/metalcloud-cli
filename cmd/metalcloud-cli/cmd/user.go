@@ -32,17 +32,8 @@ var (
 		accessLevel            string
 		emailVerified          bool
 		createWithAccount      bool
-		twoFAToken             string
 		redirectUrl            string
-		newPassword            string
-		currentPassword        string
 		callbackToken          string
-		apiTokenName           string
-		apiTokenLabel          string
-		apiTokenDescription    string
-		apiTokenScope          string
-		apiTokenExpires        string
-		apiTokenPermissions    []string
 	}{}
 
 	userCmd = &cobra.Command{
@@ -550,194 +541,6 @@ Examples:
 		},
 	}
 
-	userApiTokenCmd = &cobra.Command{
-		Use:     "api-token [command]",
-		Aliases: []string{"api-tokens", "token", "tokens"},
-		Short:   "Manage the current user's API tokens",
-		Long: `Manage the API tokens of the currently authenticated user.
-
-A user can own several API tokens, each with its own label, scope, permissions
-and expiry. The token value is shown only when the token is created or
-regenerated; store it right away.`,
-	}
-
-	userApiTokenListCmd = &cobra.Command{
-		Use:     "list",
-		Aliases: []string{"ls"},
-		Short:   "List the current user's API tokens",
-		Long: `List the API tokens of the currently authenticated user.
-
-Examples:
-  metalcloud-cli user api-token list`,
-		SilenceUsage: true,
-		Annotations:  map[string]string{system.REQUIRED_PERMISSION: system.PERMISSION_USERS_READ},
-		Args:         cobra.NoArgs,
-		RunE: func(cmd *cobra.Command, args []string) error {
-			return user.ApiTokenList(cmd.Context())
-		},
-	}
-
-	userApiTokenGetCmd = &cobra.Command{
-		Use:     "get api_token_id",
-		Aliases: []string{"show"},
-		Short:   "Get an API token of the current user",
-		Long: `Get the details of an API token of the currently authenticated user.
-The token value itself is never returned.
-
-Examples:
-  metalcloud-cli user api-token get 12`,
-		SilenceUsage: true,
-		Annotations:  map[string]string{system.REQUIRED_PERMISSION: system.PERMISSION_USERS_READ},
-		Args:         cobra.ExactArgs(1),
-		RunE: func(cmd *cobra.Command, args []string) error {
-			return user.ApiTokenGet(cmd.Context(), args[0])
-		},
-	}
-
-	userApiTokenSettingsCmd = &cobra.Command{
-		Use:   "settings",
-		Short: "Show the API token limits of the controller",
-		Long: `Show the default validity, the maximum number of tokens per user and the
-latest expiry a new or regenerated token may have.
-
-Examples:
-  metalcloud-cli user api-token settings`,
-		SilenceUsage: true,
-		Annotations:  map[string]string{system.REQUIRED_PERMISSION: system.PERMISSION_USERS_READ},
-		Args:         cobra.NoArgs,
-		RunE: func(cmd *cobra.Command, args []string) error {
-			return user.ApiTokenSettings(cmd.Context())
-		},
-	}
-
-	userApiTokenCreateCmd = &cobra.Command{
-		Use:   "create",
-		Short: "Create an API token for the current user",
-		Long: `Create an API token for the currently authenticated user.
-
-The token value is printed once; store it right away.
-
-Flags:
-  --name                  Display name of the token (required unless --config-source is used)
-  --label                 Unique (per user) label; derived from the name when omitted
-  --description           Free-text description
-  --scope                 account (default) or system; system needs the global_token_write permission
-  --expires               Expiry as an RFC 3339 timestamp or a YYYY-MM-DD date (UTC);
-                          defaults to the controller's default token validity
-  --permission            Permission label granted to the token (repeatable or comma-separated)
-  --config-source         Full CreateApiToken body (JSON/YAML file path or 'pipe'),
-                          needed to grant policy entries
-
-Examples:
-  metalcloud-cli user api-token create --name "CI pipeline" --expires 2027-06-30 --permission infrastructures_read
-  metalcloud-cli user api-token create --config-source token.json`,
-		SilenceUsage: true,
-		Annotations:  map[string]string{system.REQUIRED_PERMISSION: system.PERMISSION_USERS_WRITE},
-		Args:         cobra.NoArgs,
-		RunE: func(cmd *cobra.Command, args []string) error {
-			if userFlags.configSource != "" {
-				config, err := utils.ReadConfigFromPipeOrFile(userFlags.configSource)
-				if err != nil {
-					return err
-				}
-				return user.ApiTokenCreate(cmd.Context(), user.ApiTokenCreateOptions{}, config)
-			}
-
-			if userFlags.apiTokenName == "" {
-				return fmt.Errorf("--name is required when --config-source is not used")
-			}
-
-			return user.ApiTokenCreate(cmd.Context(), user.ApiTokenCreateOptions{
-				Name:        userFlags.apiTokenName,
-				Label:       userFlags.apiTokenLabel,
-				Description: userFlags.apiTokenDescription,
-				Scope:       userFlags.apiTokenScope,
-				Expires:     userFlags.apiTokenExpires,
-				Permissions: userFlags.apiTokenPermissions,
-			}, nil)
-		},
-	}
-
-	userApiTokenRegenerateCmd = &cobra.Command{
-		Use:   "regenerate api_token_id",
-		Short: "Regenerate an API token of the current user",
-		Long: `Regenerate an API token of the currently authenticated user.
-
-WARNING: The previous token value stops working. Update any scripts or
-configurations that use it.
-
-Flags:
-  --expires               New expiry as an RFC 3339 timestamp or a YYYY-MM-DD date (UTC);
-                          defaults to the controller's default token validity
-
-Examples:
-  metalcloud-cli user api-token regenerate 12
-  metalcloud-cli user api-token regenerate 12 --expires 2027-06-30`,
-		SilenceUsage: true,
-		Annotations:  map[string]string{system.REQUIRED_PERMISSION: system.PERMISSION_USERS_WRITE},
-		Args:         cobra.ExactArgs(1),
-		RunE: func(cmd *cobra.Command, args []string) error {
-			return user.ApiTokenRegenerate(cmd.Context(), args[0], userFlags.apiTokenExpires)
-		},
-	}
-
-	userApiTokenDeleteCmd = &cobra.Command{
-		Use:     "delete api_token_id",
-		Aliases: []string{"rm"},
-		Short:   "Delete an API token of the current user",
-		Long: `Delete an API token of the currently authenticated user. The token stops
-working immediately.
-
-Examples:
-  metalcloud-cli user api-token delete 12`,
-		SilenceUsage: true,
-		Annotations:  map[string]string{system.REQUIRED_PERMISSION: system.PERMISSION_USERS_WRITE},
-		Args:         cobra.ExactArgs(1),
-		RunE: func(cmd *cobra.Command, args []string) error {
-			return user.ApiTokenDelete(cmd.Context(), args[0])
-		},
-	}
-
-	user2FAEnableCmd = &cobra.Command{
-		Use:   "2fa-enable",
-		Short: "Enable two-factor authentication",
-		Long: `Enable two-factor authentication for the current user.
-
-You must first generate a 2FA secret using 'user 2fa-generate-secret', configure
-your authenticator app, then provide the TOTP token to verify and enable 2FA.
-
-Required Flags:
-  --token string    The TOTP code from your authenticator app
-
-Examples:
-  # First generate the secret
-  metalcloud-cli user 2fa-generate-secret
-
-  # Then enable 2FA with the token from your authenticator app
-  metalcloud-cli user 2fa-enable --token 123456`,
-		SilenceUsage: true,
-		Annotations:  map[string]string{system.REQUIRED_PERMISSION: system.PERMISSION_USERS_WRITE},
-		Args:         cobra.NoArgs,
-		RunE: func(cmd *cobra.Command, args []string) error {
-			return user.Enable2FA(cmd.Context(), userFlags.twoFAToken)
-		},
-	}
-
-	user2FADisableCmd = &cobra.Command{
-		Use:   "2fa-disable",
-		Short: "Disable two-factor authentication",
-		Long: `Disable two-factor authentication for the current user.
-
-Examples:
-  metalcloud-cli user 2fa-disable`,
-		SilenceUsage: true,
-		Annotations:  map[string]string{system.REQUIRED_PERMISSION: system.PERMISSION_USERS_WRITE},
-		Args:         cobra.NoArgs,
-		RunE: func(cmd *cobra.Command, args []string) error {
-			return user.Disable2FA(cmd.Context())
-		},
-	}
-
 	userSetPasswordCmd = &cobra.Command{
 		Use:   "set-password user_id",
 		Short: "Set the password for a user (admin only)",
@@ -756,24 +559,6 @@ Examples:
 		Args:         cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			return user.SetPassword(cmd.Context(), args[0], userFlags.password)
-		},
-	}
-
-	user2FAGenerateSecretCmd = &cobra.Command{
-		Use:   "2fa-generate-secret",
-		Short: "Generate a new 2FA secret for setting up an authenticator app",
-		Long: `Generate a new two-factor authentication secret and QR code.
-
-Use the generated secret or QR code to configure your authenticator app (e.g., Google
-Authenticator, Authy), then call 'user 2fa-enable --token <code>' to activate 2FA.
-
-Examples:
-  metalcloud-cli user 2fa-generate-secret`,
-		SilenceUsage: true,
-		Annotations:  map[string]string{system.REQUIRED_PERMISSION: system.PERMISSION_USERS_READ},
-		Args:         cobra.NoArgs,
-		RunE: func(cmd *cobra.Command, args []string) error {
-			return user.GenerateUser2FASecret(cmd.Context())
 		},
 	}
 
@@ -1083,60 +868,6 @@ Examples:
 		},
 	}
 
-	userChangePasswordCmd = &cobra.Command{
-		Use:     "change-password",
-		Aliases: []string{"password-change"},
-		Short:   "Change the password of the current user",
-		Long: `Change the password of the user owning the API key in use.
-
-The new password can be supplied through flags or through a JSON/YAML payload. The
-current password is required unless the platform policy allows changing it without.
-
-Required Flags (when not using --config-source):
-  --new-password          The new password
-
-Optional Flags:
-  --current-password      The password currently in use
-  --config-source         Source of the password change payload (JSON/YAML file or 'pipe')
-
-Configuration File Format (JSON):
-  {
-    "newPassword": "newSecret123",
-    "oldPassword": "oldSecret123"
-  }
-
-Examples:
-  metalcloud-cli user change-password --current-password oldSecret123 --new-password newSecret123
-  echo '{"newPassword":"newSecret123","oldPassword":"oldSecret123"}' | metalcloud-cli user change-password --config-source pipe`,
-		SilenceUsage: true,
-		Annotations:  map[string]string{system.REQUIRED_PERMISSION: system.PERMISSION_USERS_WRITE},
-		Args:         cobra.NoArgs,
-		RunE: func(cmd *cobra.Command, args []string) error {
-			if userFlags.configSource != "" {
-				config, err := utils.ReadConfigFromPipeOrFile(userFlags.configSource)
-				if err != nil {
-					return err
-				}
-
-				return user.ChangePassword(cmd.Context(), config)
-			}
-
-			passwordUpdate := sdk.UserUpdatePassword{
-				NewPassword: userFlags.newPassword,
-			}
-			if userFlags.currentPassword != "" {
-				passwordUpdate.OldPassword = sdk.PtrString(userFlags.currentPassword)
-			}
-
-			configBytes, err := json.Marshal(passwordUpdate)
-			if err != nil {
-				return fmt.Errorf("could not marshal password change payload: %s", err)
-			}
-
-			return user.ChangePassword(cmd.Context(), configBytes)
-		},
-	}
-
 	userInitiatePasswordResetCmd = &cobra.Command{
 		Use:     "initiate-password-reset",
 		Aliases: []string{"password-reset"},
@@ -1162,55 +893,11 @@ Examples:
 		},
 	}
 
-	userInitiateEmailChangeCmd = &cobra.Command{
-		Use:     "initiate-email-change",
-		Aliases: []string{"email-change"},
-		Short:   "Start changing the e-mail address of the current user",
-		Long: `Start the e-mail address change flow for the user owning the API key in use.
-
-A verification message is sent to the new address; the change takes effect only after
-the link in that message is followed.
-
-Required Flags:
-  --email                 The new e-mail address
-
-Optional Flags:
-  --redirect-url          URL the user is redirected to after verifying the address
-
-Examples:
-  metalcloud-cli user initiate-email-change --email new.address@company.com`,
-		SilenceUsage: true,
-		Annotations:  map[string]string{system.REQUIRED_PERMISSION: system.PERMISSION_USERS_WRITE},
-		Args:         cobra.NoArgs,
-		RunE: func(cmd *cobra.Command, args []string) error {
-			return user.InitiateEmailChange(cmd.Context(), userFlags.email, userFlags.redirectUrl)
-		},
-	}
-
-	userRegenerateJwtSaltCmd = &cobra.Command{
-		Use:     "regenerate-jwt-salt",
-		Aliases: []string{"jwt-salt-regenerate"},
-		Short:   "Regenerate the JWT salt of the current user",
-		Long: `Regenerate the JWT salt of the user owning the API key in use.
-
-WARNING: this invalidates every session and token issued so far for this user, on
-every device and in every browser. You will have to log in again.
-
-Examples:
-  metalcloud-cli user regenerate-jwt-salt`,
-		SilenceUsage: true,
-		Annotations:  map[string]string{system.REQUIRED_PERMISSION: system.PERMISSION_USERS_WRITE},
-		Args:         cobra.NoArgs,
-		RunE: func(cmd *cobra.Command, args []string) error {
-			return user.RegenerateJwtSalt(cmd.Context())
-		},
-	}
-
 	userPermissionsCmd = &cobra.Command{
 		Use:     "permissions",
 		Aliases: []string{"my-permissions"},
 		Short:   "List the permissions of the current user",
-		Long: `List the permissions of the user owning the API key in use.
+		Long: `List the permissions of the user owning the API token in use.
 
 The permissions come from the roles assigned to the user and determine which API
 operations, and therefore which CLI commands, are available.
@@ -1257,8 +944,8 @@ Examples:
 The token is the value of the 'token' query parameter of the password reset link that
 the platform sent by e-mail. The API exposes no password parameter on this endpoint:
 it only validates the token and redirects to the page where the new password is
-chosen. Use 'user change-password' to set a password from the CLI, or
-'user set-password' to set the password of another user as an administrator.
+chosen. Change your own password in the UI, or use 'user set-password' to set
+the password of another user as an administrator.
 
 Required Flags:
   --token                 The password reset token
@@ -1382,27 +1069,12 @@ func init() {
 	userCmd.AddCommand(userDeleteCmd)
 
 	// Self-service: password
-	userCmd.AddCommand(userChangePasswordCmd)
-	userChangePasswordCmd.Flags().StringVar(&userFlags.newPassword, "new-password", "", "The new password of the current user.")
-	userChangePasswordCmd.Flags().StringVar(&userFlags.currentPassword, "current-password", "", "The password currently in use.")
-	userChangePasswordCmd.Flags().StringVar(&userFlags.configSource, "config-source", "", "Source of the password change payload. Can be 'pipe' or path to a JSON/YAML file.")
-	userChangePasswordCmd.MarkFlagsOneRequired("new-password", "config-source")
-	userChangePasswordCmd.MarkFlagsMutuallyExclusive("new-password", "config-source")
-	userChangePasswordCmd.MarkFlagsMutuallyExclusive("current-password", "config-source")
-
 	userCmd.AddCommand(userInitiatePasswordResetCmd)
 	userInitiatePasswordResetCmd.Flags().StringVar(&userFlags.email, "email", "", "The e-mail address of the account to reset.")
 	userInitiatePasswordResetCmd.Flags().StringVar(&userFlags.redirectUrl, "redirect-url", "", "URL the user is redirected to after resetting the password.")
 	userInitiatePasswordResetCmd.MarkFlagRequired("email")
 
-	// Self-service: e-mail address
-	userCmd.AddCommand(userInitiateEmailChangeCmd)
-	userInitiateEmailChangeCmd.Flags().StringVar(&userFlags.email, "email", "", "The new e-mail address of the current user.")
-	userInitiateEmailChangeCmd.Flags().StringVar(&userFlags.redirectUrl, "redirect-url", "", "URL the user is redirected to after verifying the e-mail address.")
-	userInitiateEmailChangeCmd.MarkFlagRequired("email")
-
-	// Self-service: sessions and permissions
-	userCmd.AddCommand(userRegenerateJwtSaltCmd)
+	// Self-service: permissions
 	userCmd.AddCommand(userPermissionsCmd)
 
 	// Self-service: e-mail verification and password reset callbacks
@@ -1413,32 +1085,4 @@ func init() {
 	userCmd.AddCommand(userResetPasswordCmd)
 	userResetPasswordCmd.Flags().StringVar(&userFlags.callbackToken, "token", "", "The password reset token.")
 	userResetPasswordCmd.MarkFlagRequired("token")
-
-	// Self-service: API tokens
-	userCmd.AddCommand(userApiTokenCmd)
-	userApiTokenCmd.AddCommand(userApiTokenListCmd)
-	userApiTokenCmd.AddCommand(userApiTokenGetCmd)
-	userApiTokenCmd.AddCommand(userApiTokenSettingsCmd)
-
-	userApiTokenCmd.AddCommand(userApiTokenCreateCmd)
-	userApiTokenCreateCmd.Flags().StringVar(&userFlags.apiTokenName, "name", "", "Display name of the token.")
-	userApiTokenCreateCmd.Flags().StringVar(&userFlags.apiTokenLabel, "label", "", "Unique (per user) label of the token.")
-	userApiTokenCreateCmd.Flags().StringVar(&userFlags.apiTokenDescription, "description", "", "Free-text description of the token.")
-	userApiTokenCreateCmd.Flags().StringVar(&userFlags.apiTokenScope, "scope", "", "Token scope: account (default) or system.")
-	userApiTokenCreateCmd.Flags().StringVar(&userFlags.apiTokenExpires, "expires", "", "Expiry as an RFC 3339 timestamp or YYYY-MM-DD date (UTC).")
-	userApiTokenCreateCmd.Flags().StringSliceVar(&userFlags.apiTokenPermissions, "permission", nil, "Permission label granted to the token (repeatable).")
-	userApiTokenCreateCmd.Flags().StringVar(&userFlags.configSource, "config-source", "", "Source of the CreateApiToken body. Can be 'pipe' or path to a JSON/YAML file.")
-	userApiTokenCreateCmd.MarkFlagsMutuallyExclusive("name", "config-source")
-
-	userApiTokenCmd.AddCommand(userApiTokenRegenerateCmd)
-	userApiTokenRegenerateCmd.Flags().StringVar(&userFlags.apiTokenExpires, "expires", "", "New expiry as an RFC 3339 timestamp or YYYY-MM-DD date (UTC).")
-
-	userApiTokenCmd.AddCommand(userApiTokenDeleteCmd)
-
-	// Self-service: 2FA
-	userCmd.AddCommand(user2FAEnableCmd)
-	user2FAEnableCmd.Flags().StringVar(&userFlags.twoFAToken, "token", "", "The TOTP code from your authenticator app.")
-	user2FAEnableCmd.MarkFlagRequired("token")
-	userCmd.AddCommand(user2FADisableCmd)
-	userCmd.AddCommand(user2FAGenerateSecretCmd)
 }

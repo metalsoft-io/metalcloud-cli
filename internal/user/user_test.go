@@ -9,7 +9,6 @@ import (
 	"testing"
 
 	"github.com/metalsoft-io/metalcloud-cli/internal/testutils"
-	"github.com/metalsoft-io/metalcloud-cli/pkg/api"
 )
 
 func TestMain(m *testing.M) {
@@ -1079,30 +1078,6 @@ func TestGetPermissions_500(t *testing.T) {
 	}
 }
 
-func TestChangePassword_SendsIfMatch(t *testing.T) {
-	rec := &requestRecorder{}
-	ts := testutils.NewTestServer(map[string]http.HandlerFunc{
-		"/api/v2/users/1":                      testutils.JSONHandler(200, makeUser(1)),
-		"/api/v2/user/actions/change-password": rec.wrap(testutils.JSONHandler(200, makeUser(1))),
-	})
-	defer ts.Close()
-
-	ctx := testutils.SetupTestContext(ts.URL)
-	ctx = api.SetUserId(ctx, "1")
-
-	if err := ChangePassword(ctx, []byte(`{"newPassword":"new","oldPassword":"old"}`)); err != nil {
-		t.Fatalf("expected nil error, got: %v", err)
-	}
-
-	req := rec.last()
-	if req.Header.Get("If-Match") != "1" {
-		t.Errorf("expected If-Match 1, got %q", req.Header.Get("If-Match"))
-	}
-	if !strings.Contains(req.Body, "newPassword") {
-		t.Errorf("expected the new password in the body, got %q", req.Body)
-	}
-}
-
 func TestInitiatePasswordReset_SendsEmail(t *testing.T) {
 	rec := &requestRecorder{}
 	ts := testutils.NewTestServer(map[string]http.HandlerFunc{
@@ -1121,43 +1096,6 @@ func TestInitiatePasswordReset_SendsEmail(t *testing.T) {
 	}
 	if !strings.Contains(req.Body, "https://example.com/login") {
 		t.Errorf("expected the redirect URL in the body, got %q", req.Body)
-	}
-}
-
-func TestInitiateEmailChange_HappyPath(t *testing.T) {
-	rec := &requestRecorder{}
-	ts := testutils.NewTestServer(map[string]http.HandlerFunc{
-		"/api/v2/user/actions/initiate-email-change": rec.wrap(testutils.JSONHandler(200, makeUser(1))),
-	})
-	defer ts.Close()
-
-	ctx := testutils.SetupTestContext(ts.URL)
-	if err := InitiateEmailChange(ctx, "new@example.com", ""); err != nil {
-		t.Fatalf("expected nil error, got: %v", err)
-	}
-
-	if req := rec.last(); !strings.Contains(req.Body, "new@example.com") {
-		t.Errorf("expected the new address in the body, got %q", req.Body)
-	}
-}
-
-func TestRegenerateJwtSalt_SendsIfMatch(t *testing.T) {
-	rec := &requestRecorder{}
-	ts := testutils.NewTestServer(map[string]http.HandlerFunc{
-		"/api/v2/users/1":                          testutils.JSONHandler(200, makeUser(1)),
-		"/api/v2/user/actions/regenerate-jwt-salt": rec.wrap(testutils.JSONHandler(200, makeUser(1))),
-	})
-	defer ts.Close()
-
-	ctx := testutils.SetupTestContext(ts.URL)
-	ctx = api.SetUserId(ctx, "1")
-
-	if err := RegenerateJwtSalt(ctx); err != nil {
-		t.Fatalf("expected nil error, got: %v", err)
-	}
-
-	if req := rec.last(); req.Header.Get("If-Match") != "1" {
-		t.Errorf("expected If-Match 1, got %q", req.Header.Get("If-Match"))
 	}
 }
 

@@ -45,7 +45,7 @@ func init() {
 
 	// Add the global persistent flags
 	rootCmd.PersistentFlags().StringP(system.ConfigEndpoint, "e", "", "MetalCloud API endpoint")
-	rootCmd.PersistentFlags().StringP(system.ConfigApiKey, "k", "", "MetalCloud API key")
+	rootCmd.PersistentFlags().StringP(system.ConfigApiKey, "k", "", "MetalCloud API token (msat_...), or a legacy API key (<user id>:<key>)")
 	rootCmd.PersistentFlags().StringP(logger.ConfigVerbosity, "v", "INFO", "Log level verbosity")
 	rootCmd.PersistentFlags().StringP(logger.ConfigLogFile, "l", "", "Log file path")
 	rootCmd.PersistentFlags().StringP(formatter.ConfigFormat, "f", "text", "Output format. Supported values are 'text','csv','md','json','yaml'.")
@@ -118,7 +118,7 @@ func rootPersistentPreRun(cmd *cobra.Command, args []string) error {
 	}
 
 	if !skipValidation && viper.GetString(system.ConfigApiKey) == "" {
-		return fmt.Errorf("API key is required. Use --%s flag or set %s_%s environment variable",
+		return fmt.Errorf("API token is required. Use --%s flag or set %s_%s environment variable",
 			system.ConfigApiKey,
 			strings.ToUpper(system.ConfigPrefix),
 			strings.ToUpper(system.ConfigApiKey))

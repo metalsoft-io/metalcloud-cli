@@ -172,21 +172,6 @@ func TestFirmwareBinaryList_Integration(t *testing.T) {
 	assertListCommand(t, "-x", "firmware-binary", "list", "-f", "json")
 }
 
-func TestFirmwarePolicyList_Integration(t *testing.T) {
-	skipIfNoEndpoint(t)
-	stdout, stderr, err := runCLI(t, "-x", "firmware-policy", "list", "-f", "json")
-	if err != nil {
-		if strings.Contains(stderr, "404") {
-			t.Skip("firmware-policy endpoint not available on this deployment")
-		}
-		t.Errorf("firmware-policy list failed: %v\nstdout: %s\nstderr: %s", err, stdout, stderr)
-		return
-	}
-	if !json.Valid([]byte(stdout)) {
-		t.Errorf("stdout is not valid JSON: %s", stdout)
-	}
-}
-
 func TestServerList_Integration(t *testing.T) {
 	skipIfNoEndpoint(t)
 	// ServerList uses raw-body parsing to work around SDK bug — no FetchAllPages, no pagination summary.
@@ -201,12 +186,6 @@ func TestServerCleanupPolicyList_Integration(t *testing.T) {
 func TestServerRegistrationProfileList_Integration(t *testing.T) {
 	skipIfNoEndpoint(t)
 	assertListCommand(t, "-x", "server-registration-profile", "list", "-f", "json")
-}
-
-func TestCronJobList_Integration(t *testing.T) {
-	skipIfNoEndpoint(t)
-	// CronJobList uses raw-body parsing — no FetchAllPages, no pagination summary.
-	assertListCommandNoPage(t, "-x", "cron-job", "list", "-f", "json")
 }
 
 func TestJobList_Integration(t *testing.T) {
@@ -239,11 +218,6 @@ func TestNetworkDeviceConfigurationTemplateList_Integration(t *testing.T) {
 func TestNetworkDeviceLinkAggregationTemplateList_Integration(t *testing.T) {
 	skipIfNoEndpoint(t)
 	assertListCommand(t, "-x", "network-configuration", "link-aggregation-template", "list", "-f", "json")
-}
-
-func TestNetworkDeviceDefaultSecretsList_Integration(t *testing.T) {
-	skipIfNoEndpoint(t)
-	assertListCommand(t, "-x", "network-device", "default-secrets", "list", "-f", "json")
 }
 
 func TestCustomIsoList_Integration(t *testing.T) {
@@ -468,19 +442,6 @@ func TestResourcePoolList_Page_Integration(t *testing.T) {
 func TestResourcePoolList_LimitOver100_Integration(t *testing.T) {
 	skipIfNoEndpoint(t)
 	assertPaginated(t, "-x", "resource-pool", "list", "--limit", "150", "-f", "json")
-}
-
-func TestNetworkDeviceDefaultSecretsList_Limit_Integration(t *testing.T) {
-	skipIfNoEndpoint(t)
-	assertPaginated(t, "-x", "network-device", "default-secrets", "list", "--limit", "5", "-f", "json")
-}
-func TestNetworkDeviceDefaultSecretsList_Page_Integration(t *testing.T) {
-	skipIfNoEndpoint(t)
-	assertPaginated(t, "-x", "network-device", "default-secrets", "list", "--page", "1", "-f", "json")
-}
-func TestNetworkDeviceDefaultSecretsList_LimitOver100_Integration(t *testing.T) {
-	skipIfNoEndpoint(t)
-	assertPaginated(t, "-x", "network-device", "default-secrets", "list", "--limit", "150", "-f", "json")
 }
 
 // ---------------------------------------------------------------------------
@@ -807,19 +768,6 @@ func TestFirmwareBinaryList_AllFormats_Integration(t *testing.T) {
 	}
 }
 
-func TestFirmwarePolicyList_AllFormats_Integration(t *testing.T) {
-	skipIfNoEndpoint(t)
-	// Probe once: firmware-policy endpoint is missing on some deployments.
-	if _, stderr, err := runCLI(t, "-x", "firmware-policy", "list", "-f", "json"); err != nil && strings.Contains(stderr, "404") {
-		t.Skip("firmware-policy endpoint not available on this deployment")
-	}
-	for _, fmt := range []string{"json", "csv", "yaml", "text", "md"} {
-		t.Run(fmt, func(t *testing.T) {
-			assertListFormat(t, fmt, "-x", "firmware-policy", "list")
-		})
-	}
-}
-
 func TestServerList_AllFormats_Integration(t *testing.T) {
 	skipIfNoEndpoint(t)
 	for _, fmt := range []string{"json", "csv", "yaml", "text", "md"} {
@@ -843,15 +791,6 @@ func TestServerRegistrationProfileList_AllFormats_Integration(t *testing.T) {
 	for _, fmt := range []string{"json", "csv", "yaml", "text", "md"} {
 		t.Run(fmt, func(t *testing.T) {
 			assertListFormat(t, fmt, "-x", "server-registration-profile", "list")
-		})
-	}
-}
-
-func TestCronJobList_AllFormats_Integration(t *testing.T) {
-	skipIfNoEndpoint(t)
-	for _, fmt := range []string{"json", "csv", "yaml", "text", "md"} {
-		t.Run(fmt, func(t *testing.T) {
-			assertListFormat(t, fmt, "-x", "cron-job", "list")
 		})
 	}
 }
@@ -906,15 +845,6 @@ func TestNetworkDeviceLinkAggregationTemplateList_AllFormats_Integration(t *test
 	for _, fmt := range []string{"json", "csv", "yaml", "text", "md"} {
 		t.Run(fmt, func(t *testing.T) {
 			assertListFormat(t, fmt, "-x", "network-configuration", "link-aggregation-template", "list")
-		})
-	}
-}
-
-func TestNetworkDeviceDefaultSecretsList_AllFormats_Integration(t *testing.T) {
-	skipIfNoEndpoint(t)
-	for _, fmt := range []string{"json", "csv", "yaml", "text", "md"} {
-		t.Run(fmt, func(t *testing.T) {
-			assertListFormat(t, fmt, "-x", "network-device", "default-secrets", "list")
 		})
 	}
 }

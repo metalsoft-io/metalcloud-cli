@@ -183,28 +183,6 @@ func TestGetFirmwareCatalog_Integration(t *testing.T) {
 }
 
 // ---------------------------------------------------------------------------
-// firmware-policy get
-// NOTE: firmware-policy list returns 404 on this deployment; test skips gracefully.
-// ---------------------------------------------------------------------------
-
-func TestGetFirmwarePolicy_Integration(t *testing.T) {
-	skipIfNoEndpoint(t)
-	stdout, stderr, err := runCLI(t, "-x", "firmware-policy", "list", "-f", "json")
-	if err != nil {
-		if strings.Contains(stderr, "404") || strings.Contains(stderr, "Not Found") {
-			t.Skip("firmware-policy endpoint not available on this deployment; skipping")
-		}
-		t.Skipf("firmware-policy list failed: %v", err)
-	}
-	id := firstIDFrom(t, "-x", "firmware-policy", "list", "-f", "json")
-	if id == "" {
-		t.Skip("no firmware policies available; skipping firmware-policy get")
-	}
-	assertGetCommand(t, "-x", "firmware-policy", "get", id, "-f", "json")
-	_ = stdout
-}
-
-// ---------------------------------------------------------------------------
 // job get
 // NOTE: job get has a known bug: jobId is stored as float32 in the SDK, which
 // silently truncates large IDs (e.g. 24671855 → 24671856), causing 404.

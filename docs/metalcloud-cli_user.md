@@ -24,7 +24,7 @@ the user ID as a parameter. Use 'metalcloud-cli user list' to find user IDs.
 ### Options inherited from parent commands
 
 ```
-  -k, --api_key string         MetalCloud API key
+  -k, --api_key string         MetalCloud API token (msat_...), or a legacy API key (<user id>:<key>)
   -c, --config string          Config file path
   -d, --debug                  Set to enable debug logging
   -e, --endpoint string        MetalCloud API endpoint
@@ -37,13 +37,8 @@ the user ID as a parameter. Use 'metalcloud-cli user list' to find user IDs.
 ### SEE ALSO
 
 * [metalcloud-cli](metalcloud-cli.md)	 - MetalCloud CLI
-* [metalcloud-cli user 2fa-disable](metalcloud-cli_user_2fa-disable.md)	 - Disable two-factor authentication
-* [metalcloud-cli user 2fa-enable](metalcloud-cli_user_2fa-enable.md)	 - Enable two-factor authentication
-* [metalcloud-cli user 2fa-generate-secret](metalcloud-cli_user_2fa-generate-secret.md)	 - Generate a new 2FA secret for setting up an authenticator app
-* [metalcloud-cli user api-token](metalcloud-cli_user_api-token.md)	 - Manage the current user's API tokens
 * [metalcloud-cli user archive](metalcloud-cli_user_archive.md)	 - Archive a user account to mark it as inactive
 * [metalcloud-cli user change-account](metalcloud-cli_user_change-account.md)	 - Move a user to a different account
-* [metalcloud-cli user change-password](metalcloud-cli_user_change-password.md)	 - Change the password of the current user
 * [metalcloud-cli user config](metalcloud-cli_user_config.md)	 - Display the configuration of a user
 * [metalcloud-cli user config-update](metalcloud-cli_user_config-update.md)	 - Update comprehensive user configuration settings
 * [metalcloud-cli user create](metalcloud-cli_user_create.md)	 - Create a new user account with specified properties
@@ -51,12 +46,10 @@ the user ID as a parameter. Use 'metalcloud-cli user list' to find user IDs.
 * [metalcloud-cli user delegate](metalcloud-cli_user_delegate.md)	 - Manage user delegates
 * [metalcloud-cli user delete](metalcloud-cli_user_delete.md)	 - Delete a user and erase their personal information
 * [metalcloud-cli user get](metalcloud-cli_user_get.md)	 - Display detailed information for a specific user
-* [metalcloud-cli user initiate-email-change](metalcloud-cli_user_initiate-email-change.md)	 - Start changing the e-mail address of the current user
 * [metalcloud-cli user initiate-password-reset](metalcloud-cli_user_initiate-password-reset.md)	 - Send a password reset message to an e-mail address
 * [metalcloud-cli user limits](metalcloud-cli_user_limits.md)	 - Display resource limits for a specific user
 * [metalcloud-cli user list](metalcloud-cli_user_list.md)	 - List users with filtering and search options
 * [metalcloud-cli user permissions](metalcloud-cli_user_permissions.md)	 - List the permissions of the current user
-* [metalcloud-cli user regenerate-jwt-salt](metalcloud-cli_user_regenerate-jwt-salt.md)	 - Regenerate the JWT salt of the current user
 * [metalcloud-cli user resend-email-verification](metalcloud-cli_user_resend-email-verification.md)	 - Resend the e-mail verification message to a user
 * [metalcloud-cli user resend-invitation](metalcloud-cli_user_resend-invitation.md)	 - Resend the platform invitation to a user
 * [metalcloud-cli user reset-password](metalcloud-cli_user_reset-password.md)	 - Consume a password reset token

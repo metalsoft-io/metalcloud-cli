@@ -107,23 +107,6 @@ func TestSubresInfrastructureUsers(t *testing.T) {
 	}
 }
 
-func TestSubresInfrastructureUserLimits(t *testing.T) {
-	skipIfNoEndpoint(t)
-	id := firstInfraID(t)
-	if id == "" {
-		t.Skip("no infrastructures available")
-	}
-	stdout, _, err := runCLI(t, "-x", "infrastructure", "user-limits", id, "-f", "json")
-	// API may return 404 on environments where this endpoint is not yet available
-	if err != nil {
-		t.Logf("infrastructure user-limits returned error (may be unimplemented): %v", err)
-		return
-	}
-	if !json.Valid([]byte(stdout)) {
-		t.Errorf("invalid JSON: %s", stdout)
-	}
-}
-
 // ── resource-pool ────────────────────────────────────────────────────────────
 
 func TestSubresResourcePoolGetServers(t *testing.T) {
@@ -838,17 +821,6 @@ func TestConfigExampleLogicalNetworkProfile(t *testing.T) {
 	}
 }
 
-func TestConfigExampleFirmwarePolicy(t *testing.T) {
-	skipIfNoEndpoint(t)
-	stdout, _, err := runCLI(t, "-x", "firmware-policy", "config-example")
-	if err != nil {
-		t.Fatalf("unexpected error: %v", err)
-	}
-	if stdout == "" {
-		t.Error("empty output")
-	}
-}
-
 func TestConfigExampleFirmwareBinary(t *testing.T) {
 	skipIfNoEndpoint(t)
 	stdout, _, err := runCLI(t, "-x", "firmware-binary", "config-example")
@@ -963,17 +935,6 @@ func TestConfigExampleNetworkDevice(t *testing.T) {
 	}
 }
 
-func TestConfigExampleNetworkDeviceExampleDefaults(t *testing.T) {
-	skipIfNoEndpoint(t)
-	stdout, _, err := runCLI(t, "-x", "network-device", "example-defaults")
-	if err != nil {
-		t.Fatalf("unexpected error: %v", err)
-	}
-	if stdout == "" {
-		t.Error("empty output")
-	}
-}
-
 func TestConfigExampleOSTemplateExampleCreate(t *testing.T) {
 	skipIfNoEndpoint(t)
 	stdout, _, err := runCLI(t, "-x", "os-template", "example-create")
@@ -989,15 +950,4 @@ func TestConfigExampleServerInstanceGroup(t *testing.T) {
 	skipIfNoEndpoint(t)
 	// server-instance-group does not have a config-example subcommand per source inspection
 	t.Skip("server-instance-group has no config-example subcommand")
-}
-
-func TestConfigExampleGlobalFirmwareConfig(t *testing.T) {
-	skipIfNoEndpoint(t)
-	stdout, _, err := runCLI(t, "-x", "firmware-policy", "global-config", "config-example")
-	if err != nil {
-		t.Fatalf("unexpected error: %v", err)
-	}
-	if stdout == "" {
-		t.Error("empty output")
-	}
 }

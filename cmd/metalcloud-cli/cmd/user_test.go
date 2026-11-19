@@ -444,39 +444,6 @@ func TestUserPermissions(t *testing.T) {
 	}
 }
 
-func TestUserChangePassword(t *testing.T) {
-	gotBody := ""
-	gotIfMatch := ""
-	srv := httptest.NewServer(newMux(allPerms, func(mux *http.ServeMux) {
-		mux.HandleFunc("/api/v2/users/1", func(w http.ResponseWriter, r *http.Request) {
-			jsonResponse(w, http.StatusOK, userListFixture(1))
-		})
-		mux.HandleFunc("/api/v2/user/actions/change-password", func(w http.ResponseWriter, r *http.Request) {
-			body, _ := io.ReadAll(r.Body)
-			gotBody = string(body)
-			gotIfMatch = r.Header.Get("If-Match")
-			jsonResponse(w, http.StatusOK, userListFixture(1))
-		})
-	}))
-	defer srv.Close()
-
-	if _, err := runCLI(t, srv, "user", "change-password", "--current-password", "old", "--new-password", "new"); err != nil {
-		t.Fatalf("expected no error, got: %v", err)
-	}
-	if !strings.Contains(gotBody, "newPassword") || !strings.Contains(gotBody, "oldPassword") {
-		t.Errorf("expected both passwords in the body, got %q", gotBody)
-	}
-	if gotIfMatch != "1" {
-		t.Errorf("expected If-Match 1, got %q", gotIfMatch)
-	}
-}
-
-func TestUserChangePassword_RequiresFlags(t *testing.T) {
-	if _, err := runCLI(t, nil, "user", "change-password"); err == nil {
-		t.Fatal("expected error when neither --new-password nor --config-source is given")
-	}
-}
-
 func TestUserInitiatePasswordReset(t *testing.T) {
 	gotBody := ""
 	srv := httptest.NewServer(newMux(allPerms, func(mux *http.ServeMux) {
@@ -493,40 +460,6 @@ func TestUserInitiatePasswordReset(t *testing.T) {
 	}
 	if !strings.Contains(gotBody, "user@example.com") {
 		t.Errorf("expected the e-mail address in the body, got %q", gotBody)
-	}
-}
-
-func TestUserInitiateEmailChange(t *testing.T) {
-	srv := httptest.NewServer(newMux(allPerms, func(mux *http.ServeMux) {
-		mux.HandleFunc("/api/v2/user/actions/initiate-email-change", func(w http.ResponseWriter, r *http.Request) {
-			jsonResponse(w, http.StatusOK, userListFixture(1))
-		})
-	}))
-	defer srv.Close()
-
-	if _, err := runCLI(t, srv, "user", "initiate-email-change", "--email", "new@example.com"); err != nil {
-		t.Fatalf("expected no error, got: %v", err)
-	}
-}
-
-func TestUserRegenerateJwtSalt(t *testing.T) {
-	gotIfMatch := ""
-	srv := httptest.NewServer(newMux(allPerms, func(mux *http.ServeMux) {
-		mux.HandleFunc("/api/v2/users/1", func(w http.ResponseWriter, r *http.Request) {
-			jsonResponse(w, http.StatusOK, userListFixture(1))
-		})
-		mux.HandleFunc("/api/v2/user/actions/regenerate-jwt-salt", func(w http.ResponseWriter, r *http.Request) {
-			gotIfMatch = r.Header.Get("If-Match")
-			jsonResponse(w, http.StatusOK, userListFixture(1))
-		})
-	}))
-	defer srv.Close()
-
-	if _, err := runCLI(t, srv, "user", "regenerate-jwt-salt"); err != nil {
-		t.Fatalf("expected no error, got: %v", err)
-	}
-	if gotIfMatch != "1" {
-		t.Errorf("expected If-Match 1, got %q", gotIfMatch)
 	}
 }
 

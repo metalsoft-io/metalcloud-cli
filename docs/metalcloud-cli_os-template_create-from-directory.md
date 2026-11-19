@@ -11,7 +11,7 @@ local directory. It is the alternative to 'create-from-repo' for air-gapped
 environments: the template and its assets are read from the local filesystem
 instead of being cloned from a repository, so no repository access is needed.
 The template itself is still created through the MetalSoft API, so an endpoint
-and an API key are required.
+and an API token are required.
 
 The directory must hold the templates in the same layout used by the template
 repositories:
@@ -63,7 +63,7 @@ metalcloud-cli os-template create-from-directory <os_template_path> [flags]
 ### Options inherited from parent commands
 
 ```
-  -k, --api_key string         MetalCloud API key
+  -k, --api_key string         MetalCloud API token (msat_...), or a legacy API key (<user id>:<key>)
   -c, --config string          Config file path
   -d, --debug                  Set to enable debug logging
   -e, --endpoint string        MetalCloud API endpoint

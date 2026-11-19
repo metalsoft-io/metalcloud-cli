@@ -9,7 +9,7 @@ List all available OS templates from a local directory.
 This command retrieves and displays the templates found in a local directory,
 showing their basic information and configuration. It is the offline alternative
 to 'list-repo': everything it reports is read from the local filesystem, so it
-needs no network access and no API endpoint or API key.
+needs no network access and no API endpoint or API token.
 
 The directory must hold the templates in the same layout used by the template
 repositories:
@@ -44,7 +44,7 @@ metalcloud-cli os-template list-directory [flags]
 ### Options inherited from parent commands
 
 ```
-  -k, --api_key string         MetalCloud API key
+  -k, --api_key string         MetalCloud API token (msat_...), or a legacy API key (<user id>:<key>)
   -c, --config string          Config file path
   -d, --debug                  Set to enable debug logging
   -e, --endpoint string        MetalCloud API endpoint

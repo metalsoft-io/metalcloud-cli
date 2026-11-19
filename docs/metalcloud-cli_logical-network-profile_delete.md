@@ -39,7 +39,7 @@ metalcloud-cli logical-network-profile delete logical_network_profile_id [flags]
 ### Options inherited from parent commands
 
 ```
-  -k, --api_key string         MetalCloud API key
+  -k, --api_key string         MetalCloud API token (msat_...), or a legacy API key (<user id>:<key>)
   -c, --config string          Config file path
   -d, --debug                  Set to enable debug logging
   -e, --endpoint string        MetalCloud API endpoint
