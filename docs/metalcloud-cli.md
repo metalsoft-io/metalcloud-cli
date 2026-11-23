@@ -64,6 +64,8 @@ metalcloud-cli [flags]
 * [metalcloud-cli logical-network](metalcloud-cli_logical-network.md)	 - Manage logical networks within fabrics
 * [metalcloud-cli logical-network-interconnect](metalcloud-cli_logical-network-interconnect.md)	 - Logical network interconnect management
 * [metalcloud-cli logical-network-profile](metalcloud-cli_logical-network-profile.md)	 - Manage logical network profiles for network configuration templates
+* [metalcloud-cli login](metalcloud-cli_login.md)	 - Sign in through the browser
+* [metalcloud-cli logout](metalcloud-cli_logout.md)	 - End the saved session and forget it
 * [metalcloud-cli network-configuration](metalcloud-cli_network-configuration.md)	 - Manage network configuration templates
 * [metalcloud-cli network-device](metalcloud-cli_network-device.md)	 - Manage network devices (switches) in the infrastructure
 * [metalcloud-cli network-device-controller](metalcloud-cli_network-device-controller.md)	 - Network device controller management

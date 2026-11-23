@@ -1,19 +1,27 @@
 package cmd
 
 import (
+	"errors"
 	"fmt"
 	"net/url"
 	"os"
 	"slices"
 	"strings"
+	"time"
 
 	"github.com/metalsoft-io/metalcloud-cli/cmd/metalcloud-cli/system"
+	"github.com/metalsoft-io/metalcloud-cli/internal/login"
 	"github.com/metalsoft-io/metalcloud-cli/pkg/api"
 	"github.com/metalsoft-io/metalcloud-cli/pkg/formatter"
 	"github.com/metalsoft-io/metalcloud-cli/pkg/logger"
 	"github.com/spf13/cobra"
 	"github.com/spf13/cobra/doc"
 	"github.com/spf13/viper"
+)
+
+const (
+	noCredentialText = "Sign in with `metalcloud-cli login`, or set an API token with --api_key or METALCLOUD_API_KEY."
+	sessionEndedText = "Your session has ended; run `metalcloud-cli login`"
 )
 
 var (
@@ -117,17 +125,25 @@ func rootPersistentPreRun(cmd *cobra.Command, args []string) error {
 		return fmt.Errorf("invalid API endpoint URL: %s", endpoint)
 	}
 
-	if !skipValidation && viper.GetString(system.ConfigApiKey) == "" {
-		return fmt.Errorf("API token is required. Use --%s flag or set %s_%s environment variable",
-			system.ConfigApiKey,
-			strings.ToUpper(system.ConfigPrefix),
-			strings.ToUpper(system.ConfigApiKey))
+	// login and logout manage the saved sign-in themselves
+	if cmd.Annotations[system.NO_API_KEY_COMMAND] == "true" {
+		return nil
+	}
+
+	// A command uses the API token if there is one, else the saved sign-in for the endpoint
+	credential := viper.GetString(system.ConfigApiKey)
+	fromSession := false
+	if !skipValidation {
+		credential, fromSession, err = resolveCredential(credential, endpoint, time.Now())
+		if err != nil {
+			return err
+		}
 	}
 
 	// Create API client
 	ctx := api.SetApiClient(cmd.Context(),
 		viper.GetString(system.ConfigEndpoint),
-		viper.GetString(system.ConfigApiKey),
+		credential,
 		viper.GetBool(system.ConfigDebug),
 		viper.GetBool(system.ConfigInsecure),
 	)
@@ -137,7 +153,7 @@ func rootPersistentPreRun(cmd *cobra.Command, args []string) error {
 		// Validate the version of the CLI
 		err = system.ValidateVersion(ctx, Version)
 		if err != nil {
-			return err
+			return sessionEndedOr(err, fromSession, endpoint)
 		}
 	}
 
@@ -148,7 +164,7 @@ func rootPersistentPreRun(cmd *cobra.Command, args []string) error {
 			cmd.SetContext(ctx)
 			return nil
 		}
-		return err
+		return sessionEndedOr(err, fromSession, endpoint)
 	}
 
 	ctx = api.SetUserId(ctx, userId)
@@ -164,6 +180,39 @@ func rootPersistentPreRun(cmd *cobra.Command, args []string) error {
 	cmd.SetContext(ctx)
 
 	return nil
+}
+
+// resolveCredential picks what authenticates a command: the API token (flag, environment variable or
+// config), else the saved session for the endpoint if it has not expired.
+func resolveCredential(apiKey, endpoint string, now time.Time) (token string, fromSession bool, err error) {
+	if apiKey != "" {
+		return apiKey, false, nil
+	}
+
+	session, err := login.LoadSession(endpoint)
+	if err != nil {
+		return "", false, err
+	}
+	if session != nil && session.Token != "" {
+		expires, parseErr := time.Parse(time.RFC3339, session.ExpiresTimestamp)
+		if parseErr == nil && now.Before(expires) {
+			return session.Token, true, nil
+		}
+	}
+
+	return "", false, errors.New(noCredentialText)
+}
+
+// sessionEndedOr turns a 401 on a saved session into the session-ended message and forgets the session.
+// Any other error, a 403 included, is returned as it is and the session stays.
+func sessionEndedOr(err error, fromSession bool, endpoint string) error {
+	if fromSession && strings.HasPrefix(err.Error(), "401 ") {
+		if delErr := login.DeleteSession(endpoint); delErr != nil {
+			logger.Get().Warn().Err(delErr).Msg("Could not remove the ended session")
+		}
+		return errors.New(sessionEndedText)
+	}
+	return err
 }
 
 func rootPersistentPostRun(cmd *cobra.Command, args []string) error {

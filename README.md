@@ -73,6 +73,30 @@ api_key: '<your API token>'
 
 The environment variable and the configuration key keep the name `api_key` for compatibility with existing configurations; they accept both an API token and a legacy API key.
 
+## Signing in
+
+Instead of an API token you can sign in as yourself, with whatever you use to sign in to the UI (password with MFA, LDAP, SAML or OIDC):
+
+```bash
+metalcloud-cli login
+```
+
+The command prints a URL and a code, and opens the URL in your browser. Check that the page shows the same code, confirm your identity and approve. On a machine without a browser, run `metalcloud-cli login --no-browser` and open the printed URL on any other device. The endpoint (`--endpoint`, `METALCLOUD_ENDPOINT` or `metalcloud.yaml`) must be set; no API token is needed.
+
+The session is saved in `$HOME/.metalcloud/sessions.json` (the folder is readable only by you, and so is the file), one entry per endpoint. `metalcloud.yaml` is never changed.
+
+Each command uses, in this order:
+
+1. the API token from `--api_key`, `METALCLOUD_API_KEY` or `metalcloud.yaml`;
+2. else the saved session for the endpoint, if it has not expired;
+3. else it stops and asks you to sign in.
+
+A session ends by the same rules as a browser session, for example after an hour without use or after a password change. The next command then removes it and asks you to run `metalcloud-cli login` again. Only one CLI session per user is kept: signing in again, on any machine, ends the previous one.
+
+`metalcloud-cli logout` ends the session on the server and removes it from the file, even if the server can't be reached.
+
+A CLI session has the same access as your UI session, except for what could be misused if a sign-in were approved by mistake: it can't manage API tokens, change your password, email or two-factor authentication, or re-authenticate. Those commands fail with `403 This route does not accept a CLI session; use the UI or an API token.`, and the session stays. The user also needs the `api_key_use` permission, as for API tokens. Older servers without this feature answer: `This MetalCloud doesn't support signing in from the CLI; use an API token.`
+
 ## Getting a list of supported commands
 
 Use `metalcloud-cli --help` for a list of supported commands.

@@ -17,6 +17,10 @@ const REQUIRED_PERMISSION = "requiredPermission"
 // API endpoint, API key, version validation or user permissions, so they can run offline.
 const LOCAL_COMMAND = "localCommand"
 
+// NO_API_KEY_COMMAND marks the commands that manage the saved sign-in (login, logout). They still need
+// the endpoint, but no credential, and make no startup calls with one.
+const NO_API_KEY_COMMAND = "noApiKeyCommand"
+
 const (
 	PERMISSION_ADMIN_ACCESS                                                  = "admin_access"
 	PERMISSION_AI_READ                                                       = "ai_read"
