@@ -15,6 +15,8 @@ type Session struct {
 	ExpiresTimestamp string `json:"expiresTimestamp"`
 	UserEmail        string `json:"userEmail"`
 	CreatedTimestamp string `json:"createdTimestamp"`
+	// ServiceAccount marks a session signed in from a service account's token file.
+	ServiceAccount bool `json:"serviceAccount,omitempty"`
 }
 
 // SessionsPath returns the session file's path. It is a variable so tests can point it elsewhere.
@@ -28,6 +30,17 @@ var SessionsPath = func() (string, error) {
 
 func sessionKey(endpoint string) string {
 	return strings.TrimRight(endpoint, "/")
+}
+
+// serviceAccountKey is the entry of a service-account session. It is kept apart from the person's
+// entry for the same endpoint, and from the entries of other service accounts, by the token file's
+// absolute path: each token file is one account.
+func serviceAccountKey(endpoint, tokenFile string) string {
+	path, err := filepath.Abs(tokenFile)
+	if err != nil {
+		path = filepath.Clean(tokenFile)
+	}
+	return sessionKey(endpoint) + "#service-account:" + path
 }
 
 func readSessions(path string) (map[string]Session, error) {
@@ -127,6 +140,61 @@ func DeleteSession(endpoint string) error {
 		return err
 	}
 	key := sessionKey(endpoint)
+	if _, ok := sessions[key]; !ok {
+		return nil
+	}
+	delete(sessions, key)
+	return writeSessions(path, sessions)
+}
+
+// LoadServiceAccountSession returns the saved service-account session for the endpoint and token
+// file, or nil when there is none. The person's session and the sessions of other token files are not
+// looked at.
+func LoadServiceAccountSession(endpoint, tokenFile string) (*Session, error) {
+	path, err := SessionsPath()
+	if err != nil {
+		return nil, err
+	}
+	sessions, err := readSessions(path)
+	if err != nil {
+		return nil, err
+	}
+	s, ok := sessions[serviceAccountKey(endpoint, tokenFile)]
+	if !ok {
+		return nil, nil
+	}
+	return &s, nil
+}
+
+// SaveServiceAccountSession stores the session as the service-account session of the endpoint and
+// token file, marked as such, and keeps every other entry, the person's session for the endpoint and
+// other token files' sessions included.
+func SaveServiceAccountSession(endpoint, tokenFile string, s Session) error {
+	path, err := SessionsPath()
+	if err != nil {
+		return err
+	}
+	sessions, err := readSessions(path)
+	if err != nil {
+		return err
+	}
+	s.ServiceAccount = true
+	sessions[serviceAccountKey(endpoint, tokenFile)] = s
+	return writeSessions(path, sessions)
+}
+
+// DeleteServiceAccountSession removes the service-account session of the endpoint and token file and
+// keeps every other entry. A missing entry is not an error.
+func DeleteServiceAccountSession(endpoint, tokenFile string) error {
+	path, err := SessionsPath()
+	if err != nil {
+		return err
+	}
+	sessions, err := readSessions(path)
+	if err != nil {
+		return err
+	}
+	key := serviceAccountKey(endpoint, tokenFile)
 	if _, ok := sessions[key]; !ok {
 		return nil
 	}

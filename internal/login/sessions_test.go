@@ -1,6 +1,7 @@
 package login
 
 import (
+	"encoding/json"
 	"os"
 	"path/filepath"
 	"runtime"
@@ -121,5 +122,149 @@ func TestSaveSessionTightensExistingFolder(t *testing.T) {
 	}
 	if got := info.Mode().Perm(); got != 0o700 {
 		t.Fatalf("folder mode = %o, want 700", got)
+	}
+}
+
+func TestServiceAccountSessionIsKeptApartFromThePersonsSession(t *testing.T) {
+	path := useTempSessionsPath(t)
+	const endpoint = "https://a.example.com/"
+	tokenFile := filepath.Join(t.TempDir(), "token")
+
+	if err := SaveSession(endpoint, Session{Token: "person", UserEmail: "p@x"}); err != nil {
+		t.Fatal(err)
+	}
+	if err := SaveServiceAccountSession(endpoint, tokenFile, Session{Token: "robot", ExpiresTimestamp: "2030-01-01T00:00:00Z"}); err != nil {
+		t.Fatal(err)
+	}
+
+	person, err := LoadSession("https://a.example.com")
+	if err != nil || person == nil || person.Token != "person" || person.ServiceAccount {
+		t.Fatalf("person = %+v, err = %v", person, err)
+	}
+	robot, err := LoadServiceAccountSession("https://a.example.com", tokenFile)
+	if err != nil || robot == nil || robot.Token != "robot" || !robot.ServiceAccount {
+		t.Fatalf("robot = %+v, err = %v", robot, err)
+	}
+
+	data, err := os.ReadFile(path)
+	if err != nil {
+		t.Fatal(err)
+	}
+	var raw map[string]map[string]any
+	if err := json.Unmarshal(data, &raw); err != nil {
+		t.Fatal(err)
+	}
+	key := "https://a.example.com#service-account:" + tokenFile
+	if _, ok := raw[key]; !ok {
+		t.Errorf("no %q entry in %s", key, data)
+	}
+	if _, has := raw["https://a.example.com"]["serviceAccount"]; has {
+		t.Errorf("the person's entry carries a serviceAccount field: %v", raw["https://a.example.com"])
+	}
+	if raw[key]["serviceAccount"] != true {
+		t.Errorf("the marked entry is not marked: %v", raw[key])
+	}
+	fileInfo, err := os.Stat(path)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if runtime.GOOS != "windows" && fileInfo.Mode().Perm() != 0o600 {
+		t.Errorf("file mode = %o, want 600", fileInfo.Mode().Perm())
+	}
+}
+
+func TestDeleteServiceAccountSessionKeepsThePersonsSession(t *testing.T) {
+	useTempSessionsPath(t)
+	const endpoint = "https://a.example.com"
+	const tokenFile = "/run/secrets/robot-token"
+
+	if err := SaveSession(endpoint, Session{Token: "person"}); err != nil {
+		t.Fatal(err)
+	}
+	if err := SaveServiceAccountSession(endpoint, tokenFile, Session{Token: "robot"}); err != nil {
+		t.Fatal(err)
+	}
+
+	if err := DeleteServiceAccountSession(endpoint, tokenFile); err != nil {
+		t.Fatal(err)
+	}
+	if s, _ := LoadServiceAccountSession(endpoint, tokenFile); s != nil {
+		t.Errorf("marked session still there: %+v", s)
+	}
+	if s, _ := LoadSession(endpoint); s == nil || s.Token != "person" {
+		t.Errorf("the person's session was touched: %+v", s)
+	}
+
+	// deleting a missing entry is fine, and DeleteSession leaves a marked one alone
+	if err := DeleteServiceAccountSession(endpoint, tokenFile); err != nil {
+		t.Errorf("deleting a missing entry: %v", err)
+	}
+	if err := SaveServiceAccountSession(endpoint, tokenFile, Session{Token: "robot"}); err != nil {
+		t.Fatal(err)
+	}
+	if err := DeleteSession(endpoint); err != nil {
+		t.Fatal(err)
+	}
+	if s, _ := LoadServiceAccountSession(endpoint, tokenFile); s == nil {
+		t.Error("DeleteSession removed the marked session")
+	}
+}
+
+func TestServiceAccountSessionsAreKeyedByTokenFile(t *testing.T) {
+	useTempSessionsPath(t)
+	const endpoint = "https://a.example.com"
+	dir := t.TempDir()
+	fileA := filepath.Join(dir, "a")
+	fileB := filepath.Join(dir, "b")
+
+	if err := SaveSession(endpoint, Session{Token: "person"}); err != nil {
+		t.Fatal(err)
+	}
+	if err := SaveServiceAccountSession(endpoint, fileA, Session{Token: "robot-a"}); err != nil {
+		t.Fatal(err)
+	}
+	if s, _ := LoadServiceAccountSession(endpoint, fileB); s != nil {
+		t.Fatalf("another token file sees the session of a: %+v", s)
+	}
+	if err := SaveServiceAccountSession(endpoint, fileB, Session{Token: "robot-b"}); err != nil {
+		t.Fatal(err)
+	}
+	if s, _ := LoadServiceAccountSession(endpoint, fileA); s == nil || s.Token != "robot-a" {
+		t.Errorf("signing in with b changed a: %+v", s)
+	}
+	if s, _ := LoadServiceAccountSession(endpoint, fileB); s == nil || s.Token != "robot-b" {
+		t.Errorf("b = %+v", s)
+	}
+
+	if err := DeleteServiceAccountSession(endpoint, fileA); err != nil {
+		t.Fatal(err)
+	}
+	if s, _ := LoadServiceAccountSession(endpoint, fileA); s != nil {
+		t.Errorf("a is still there: %+v", s)
+	}
+	if s, _ := LoadServiceAccountSession(endpoint, fileB); s == nil || s.Token != "robot-b" {
+		t.Errorf("deleting a removed b: %+v", s)
+	}
+	if s, _ := LoadSession(endpoint); s == nil || s.Token != "person" {
+		t.Errorf("the person's session was touched: %+v", s)
+	}
+}
+
+func TestServiceAccountSessionKeyUsesTheAbsoluteCleanedPath(t *testing.T) {
+	useTempSessionsPath(t)
+	const endpoint = "https://a.example.com"
+	dir := t.TempDir()
+	t.Chdir(dir)
+
+	if err := SaveServiceAccountSession(endpoint, "./sub/../token", Session{Token: "robot"}); err != nil {
+		t.Fatal(err)
+	}
+	// the same file, spelled absolutely, finds the session
+	cwd, err := os.Getwd()
+	if err != nil {
+		t.Fatal(err)
+	}
+	if s, _ := LoadServiceAccountSession(endpoint, filepath.Join(cwd, "token")); s == nil || s.Token != "robot" {
+		t.Errorf("absolute spelling: %+v", s)
 	}
 }

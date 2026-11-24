@@ -504,3 +504,47 @@ func TestUserResetPassword_RequiresToken(t *testing.T) {
 		t.Fatal("expected error when --token is missing")
 	}
 }
+
+func TestUserCreateServiceAccountSubject(t *testing.T) {
+	var body map[string]interface{}
+	srv := httptest.NewServer(newMux(allPerms, func(mux *http.ServeMux) {
+		mux.HandleFunc("/api/v2/users", func(w http.ResponseWriter, r *http.Request) {
+			_ = json.NewDecoder(r.Body).Decode(&body)
+			w.Header().Set("Content-Type", "application/json")
+			_ = json.NewEncoder(w).Encode(userListFixture(2))
+		})
+	}))
+	defer srv.Close()
+
+	// no --password: a service account has none
+	_, err := runCLI(t, srv, "user", "create", "--email", "sa@example.com", "--service-account-subject", "client-1")
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if body["serviceAccountSubject"] != "client-1" || body["email"] != "sa@example.com" {
+		t.Errorf("body = %v", body)
+	}
+	if _, has := body["password"]; has {
+		t.Errorf("body carries a password: %v", body)
+	}
+}
+
+func TestUserCreateServiceAccountSubjectRefusesAPassword(t *testing.T) {
+	srv := httptest.NewServer(newMux(allPerms, nil))
+	defer srv.Close()
+
+	_, err := runCLI(t, srv, "user", "create", "--email", "sa@example.com", "--password", "x", "--service-account-subject", "client-1")
+	if err == nil {
+		t.Fatal("expected an error for --password with --service-account-subject")
+	}
+}
+
+func TestUserCreateStillNeedsAPasswordWithoutASubject(t *testing.T) {
+	srv := httptest.NewServer(newMux(allPerms, nil))
+	defer srv.Close()
+
+	_, err := runCLI(t, srv, "user", "create", "--email", "a@example.com")
+	if err == nil {
+		t.Fatal("expected an error for --email without --password or --service-account-subject")
+	}
+}

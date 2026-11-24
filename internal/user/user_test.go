@@ -1,6 +1,7 @@
 package user
 
 import (
+	"encoding/json"
 	"io"
 	"net/http"
 	"net/url"
@@ -9,6 +10,8 @@ import (
 	"testing"
 
 	"github.com/metalsoft-io/metalcloud-cli/internal/testutils"
+	"github.com/metalsoft-io/metalcloud-cli/pkg/formatter"
+	"github.com/spf13/viper"
 )
 
 func TestMain(m *testing.M) {
@@ -1146,5 +1149,87 @@ func TestResetPassword_500(t *testing.T) {
 	ctx := testutils.SetupTestContext(ts.URL)
 	if err := ResetPassword(ctx, "token-456"); err == nil {
 		t.Fatal("expected error on 500, got nil")
+	}
+}
+
+// --- service accounts ---
+
+func serviceAccountUser(id int) map[string]any {
+	u := makeUser(id)
+	u["provider"] = "service-account"
+	u["serviceAccountSubject"] = "client-1"
+	return u
+}
+
+// The SDK keeps serviceAccountSubject in AdditionalProperties of CreateUser: it has to reach the
+// request body, and no password may be added.
+func TestCreate_SendsServiceAccountSubjectInTheBody(t *testing.T) {
+	var body map[string]any
+	ts := testutils.NewTestServer(map[string]http.HandlerFunc{
+		"/api/v2/users": func(w http.ResponseWriter, r *http.Request) {
+			if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
+				t.Errorf("request body: %v", err)
+			}
+			testutils.JSONHandler(201, serviceAccountUser(42))(w, r)
+		},
+	})
+	defer ts.Close()
+
+	ctx := testutils.SetupTestContext(ts.URL)
+	config := []byte(`{"email":"sa@example.com","displayName":"SA","accessLevel":"user","serviceAccountSubject":"client-1"}`)
+	if err := Create(ctx, config); err != nil {
+		t.Fatalf("expected nil error, got: %v", err)
+	}
+	if body["serviceAccountSubject"] != "client-1" {
+		t.Errorf("body = %v, want serviceAccountSubject client-1", body)
+	}
+	if _, has := body["password"]; has {
+		t.Errorf("body carries a password: %v", body)
+	}
+}
+
+func TestGet_TextShowsProviderColumn(t *testing.T) {
+	ts := testutils.NewTestServer(map[string]http.HandlerFunc{
+		"/api/v2/users/42": testutils.JSONHandler(200, serviceAccountUser(42)),
+	})
+	defer ts.Close()
+
+	viper.Set(formatter.ConfigFormat, "text")
+	defer testutils.SetupTestFormat()
+
+	ctx := testutils.SetupTestContext(ts.URL)
+	var err error
+	out := testutils.CaptureStdout(t, func() { err = Get(ctx, "42") })
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !strings.Contains(out, "PROVIDER") || !strings.Contains(out, "service-account") {
+		t.Errorf("no Provider column in:\n%s", out)
+	}
+}
+
+func TestGetAndList_JSONCarryProviderAndSubject(t *testing.T) {
+	ts := testutils.NewTestServer(map[string]http.HandlerFunc{
+		"/api/v2/users/42": testutils.JSONHandler(200, serviceAccountUser(42)),
+		"/api/v2/users": testutils.JSONHandler(200, map[string]any{
+			"data": []any{serviceAccountUser(42)},
+			"meta": map[string]any{"currentPage": 1, "totalPages": 1, "itemsPerPage": 100},
+		}),
+	})
+	defer ts.Close()
+
+	ctx := testutils.SetupTestContext(ts.URL)
+	for name, run := range map[string]func() error{
+		"get":  func() error { return Get(ctx, "42") },
+		"list": func() error { return List(ctx, false, "", "", "", "", "", "", "", "") },
+	} {
+		var err error
+		out := testutils.CaptureStdout(t, func() { err = run() })
+		if err != nil {
+			t.Fatalf("%s: %v", name, err)
+		}
+		if !strings.Contains(out, `"provider":"service-account"`) || !strings.Contains(out, `"serviceAccountSubject":"client-1"`) {
+			t.Errorf("%s: JSON lacks provider or serviceAccountSubject:\n%s", name, out)
+		}
 	}
 }

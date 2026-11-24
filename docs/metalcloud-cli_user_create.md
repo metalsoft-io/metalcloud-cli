@@ -12,7 +12,7 @@ account can be created automatically.
 
 Required Flags (when not using --config-source):
   --email                 User's email address (required, used as login)
-  --password              User's password (required for CLI creation)
+  --password              User's password (required for CLI creation, except for a service account)
 
 Optional Flags:
   --config-source         Source of user configuration (JSON file path or 'pipe')
@@ -21,9 +21,14 @@ Optional Flags:
   --email-verified        Mark user email as verified (default: false)
   --account-id            Associate user with existing account ID
   --create-with-account   Create a new account for the user (mutually exclusive with --account-id)
+  --service-account-subject
+                          Create a service account instead of a person: the subject (sub) that the
+                          service account's tokens carry at your OIDC provider. A service account has
+                          no password and signs in only with a provider token; see 'login --help'.
 
 Dependencies:
-  - --email and --password are required together when not using --config-source
+  - --email and --password must be given together for a person (a service account has no password)
+  - --service-account-subject needs --email and excludes --password and --config-source
   - --config-source is mutually exclusive with --email
   - --account-id and --create-with-account are mutually exclusive
 
@@ -53,6 +58,9 @@ metalcloud-cli user create [flags]
   # Create user with new account
   metalcloud-cli user create --email admin@company.com --password admin123 --access-level admin --create-with-account
   
+  # Create a service account for an OIDC client
+  metalcloud-cli user create --email robot@company.com --service-account-subject client-1 --access-level user
+
   # Create user from JSON file
   metalcloud-cli user create --config-source user1.json
   
@@ -63,15 +71,16 @@ metalcloud-cli user create [flags]
 ### Options
 
 ```
-      --access-level string    Access level (e.g., 'admin', 'user')
-      --account-id int         Account ID to associate the user with
-      --config-source string   Source of the new user configuration. Can be 'pipe' or path to a JSON file.
-      --create-with-account    Create new account for the user
-      --display-name string    User's display name
-      --email string           User's email address
-      --email-verified         Set the user email as verified
-  -h, --help                   help for create
-      --password string        User's password (if not provided, a random password will be generated)
+      --access-level string              Access level (e.g., 'admin', 'user')
+      --account-id int                   Account ID to associate the user with
+      --config-source string             Source of the new user configuration. Can be 'pipe' or path to a JSON file.
+      --create-with-account              Create new account for the user
+      --display-name string              User's display name
+      --email string                     User's email address
+      --email-verified                   Set the user email as verified
+  -h, --help                             help for create
+      --password string                  User's password (if not provided, a random password will be generated)
+      --service-account-subject string   Create a service account whose provider tokens carry this subject (sub); it has no password
 ```
 
 ### Options inherited from parent commands

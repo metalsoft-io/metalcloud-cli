@@ -2,7 +2,9 @@ package cmd
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
+	"strings"
 
 	"github.com/metalsoft-io/metalcloud-cli/cmd/metalcloud-cli/system"
 	"github.com/metalsoft-io/metalcloud-cli/internal/user"
@@ -32,6 +34,7 @@ var (
 		accessLevel            string
 		emailVerified          bool
 		createWithAccount      bool
+		serviceAccountSubject  string
 		redirectUrl            string
 		callbackToken          string
 	}{}
@@ -135,7 +138,7 @@ account can be created automatically.
 
 Required Flags (when not using --config-source):
   --email                 User's email address (required, used as login)
-  --password              User's password (required for CLI creation)
+  --password              User's password (required for CLI creation, except for a service account)
 
 Optional Flags:
   --config-source         Source of user configuration (JSON file path or 'pipe')
@@ -144,9 +147,14 @@ Optional Flags:
   --email-verified        Mark user email as verified (default: false)
   --account-id            Associate user with existing account ID
   --create-with-account   Create a new account for the user (mutually exclusive with --account-id)
+  --service-account-subject
+                          Create a service account instead of a person: the subject (sub) that the
+                          service account's tokens carry at your OIDC provider. A service account has
+                          no password and signs in only with a provider token; see 'login --help'.
 
 Dependencies:
-  - --email and --password are required together when not using --config-source
+  - --email and --password must be given together for a person (a service account has no password)
+  - --service-account-subject needs --email and excludes --password and --config-source
   - --config-source is mutually exclusive with --email
   - --account-id and --create-with-account are mutually exclusive
 
@@ -168,6 +176,9 @@ Configuration File Format (JSON):
   # Create user with new account
   metalcloud-cli user create --email admin@company.com --password admin123 --access-level admin --create-with-account
   
+  # Create a service account for an OIDC client
+  metalcloud-cli user create --email robot@company.com --service-account-subject client-1 --access-level user
+
   # Create user from JSON file
   metalcloud-cli user create --config-source user1.json
   
@@ -176,6 +187,11 @@ Configuration File Format (JSON):
 		SilenceUsage: true,
 		Annotations:  map[string]string{system.REQUIRED_PERMISSION: system.PERMISSION_USERS_WRITE},
 		RunE: func(cmd *cobra.Command, args []string) error {
+			// --email and --password go together, except for a service account, which has no password
+			if !cmd.Flags().Changed("service-account-subject") && (userFlags.email != "") != (userFlags.password != "") {
+				return errors.New("--email and --password must be given together, unless --service-account-subject is given")
+			}
+
 			// If config source is provided, use it
 			if userFlags.configSource != "" {
 				config, err := utils.ReadConfigFromPipeOrFile(userFlags.configSource)
@@ -187,8 +203,23 @@ Configuration File Format (JSON):
 
 			// Otherwise build config from command line parameters
 			userConfig := sdk.CreateUser{
-				Email:    userFlags.email,
-				Password: sdk.PtrString(userFlags.password),
+				Email: userFlags.email,
+			}
+
+			if cmd.Flags().Changed("service-account-subject") {
+				// The SDK's CreateUser has no field for the subject: it goes through AdditionalProperties.
+				// A service account has no password.
+				if strings.TrimSpace(userFlags.serviceAccountSubject) == "" {
+					return errors.New("--service-account-subject must not be empty")
+				}
+				if userFlags.email == "" {
+					return errors.New("--email is required with --service-account-subject")
+				}
+				userConfig.AdditionalProperties = map[string]interface{}{
+					"serviceAccountSubject": userFlags.serviceAccountSubject,
+				}
+			} else {
+				userConfig.Password = sdk.PtrString(userFlags.password)
 			}
 
 			if cmd.Flags().Changed("email-verified") {
@@ -989,10 +1020,12 @@ func init() {
 	userCreateCmd.Flags().StringVar(&userFlags.accessLevel, "access-level", "", "Access level (e.g., 'admin', 'user')")
 	userCreateCmd.Flags().IntVar(&userFlags.accountId, "account-id", 0, "Account ID to associate the user with")
 	userCreateCmd.Flags().BoolVar(&userFlags.createWithAccount, "create-with-account", false, "Create new account for the user")
+	userCreateCmd.Flags().StringVar(&userFlags.serviceAccountSubject, "service-account-subject", "", "Create a service account whose provider tokens carry this subject (sub); it has no password")
 
 	// Mark required fields that are mutually exclusive with config-source
 	userCreateCmd.MarkFlagsMutuallyExclusive("config-source", "email")
-	userCreateCmd.MarkFlagsRequiredTogether("email", "password")
+	userCreateCmd.MarkFlagsMutuallyExclusive("password", "service-account-subject")
+	userCreateCmd.MarkFlagsMutuallyExclusive("config-source", "service-account-subject")
 	userCreateCmd.MarkFlagsMutuallyExclusive("account-id", "create-with-account")
 
 	// User create bulk

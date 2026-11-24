@@ -54,6 +54,22 @@ var userPrintConfig = formatter.PrintConfig{
 	},
 }
 
+// userGetPrintConfig is userPrintConfig plus the provider, which only the full User has: the list
+// item (UserInfo) does not. The text tables read struct fields, so the service account's subject, which
+// the SDK keeps in AdditionalProperties, is only in the json and yaml output.
+var userGetPrintConfig = func() formatter.PrintConfig {
+	fields := map[string]formatter.RecordFieldConfig{
+		"Provider": {
+			Title: "Provider",
+			Order: 8,
+		},
+	}
+	for name, field := range userPrintConfig.FieldsConfig {
+		fields[name] = field
+	}
+	return formatter.PrintConfig{FieldsConfig: fields}
+}()
+
 // userLimitsPrintConfig formats the effective quota limits (QuotaProfileLimits)
 // returned by the quota-limits-breakdown endpoint.
 var userLimitsPrintConfig = formatter.PrintConfig{
@@ -173,7 +189,7 @@ func Get(ctx context.Context, userId string) error {
 		return err
 	}
 
-	return formatter.PrintResult(userInfo, &userPrintConfig)
+	return formatter.PrintResult(userInfo, &userGetPrintConfig)
 }
 
 func Create(ctx context.Context, config []byte) error {

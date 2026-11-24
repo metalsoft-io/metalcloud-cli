@@ -88,14 +88,37 @@ The session is saved in `$HOME/.metalcloud/sessions.json` (the folder is readabl
 Each command uses, in this order:
 
 1. the API token from `--api_key`, `METALCLOUD_API_KEY` or `metalcloud.yaml`;
-2. else the saved session for the endpoint, if it has not expired;
-3. else it stops and asks you to sign in.
+2. else the service account token file, if one is set (see below);
+3. else the saved session for the endpoint, if it has not expired;
+4. else it stops and asks you to sign in.
 
 A session ends by the same rules as a browser session, for example after an hour without use or after a password change. The next command then removes it and asks you to run `metalcloud-cli login` again. Only one CLI session per user is kept: signing in again, on any machine, ends the previous one.
 
 `metalcloud-cli logout` ends the session on the server and removes it from the file, even if the server can't be reached.
 
 A CLI session has the same access as your UI session, except for what could be misused if a sign-in were approved by mistake: it can't manage API tokens, change your password, email or two-factor authentication, or re-authenticate. Those commands fail with `403 This route does not accept a CLI session; use the UI or an API token.`, and the session stays. The user also needs the `api_key_use` permission, as for API tokens. Older servers without this feature answer: `This MetalCloud doesn't support signing in from the CLI; use an API token.`
+
+### Signing in as a service account
+
+Automation (a CI job, a Kubernetes workload) can sign in as a service account with a token from your OIDC provider, without a person or a browser:
+
+```bash
+metalcloud-cli login --service-account-token-file /var/run/secrets/metalcloud/token
+```
+
+Set `--service-account-token-file` or the environment variable `METALCLOUD_SERVICE_ACCOUNT_TOKEN_FILE` (or `service-account-token-file` in `metalcloud.yaml`) to the path of a file that holds the provider token. Your tooling keeps the file current; the CLI reads it, trimmed, at each sign-in and never keeps a copy.
+
+While the token file is set, every command signs in with it, so `login` is optional for automation. The session is saved in `$HOME/.metalcloud/sessions.json` as a service account session, separate from your own session for the same endpoint, which is ignored but not removed. Each token file has its own session, so two service accounts can share one `$HOME`. A command signs in again from the file when there is no such session or it ends within 60 seconds, or when the server has ended the session earlier (the command's first calls then get a `401`; the CLI signs in once and repeats them). If the session can't be saved, for example on a read-only `$HOME`, the command still runs and prints a warning on stderr, and the next command signs in again. If a command gets a `401` after it has started, it fails with `The service account's session ended; the next command signs in again from the token file.` `--api_key` and `METALCLOUD_API_KEY` still take precedence.
+
+A rejected token answers `The provider token wasn't accepted; check the token file and the service account's subject.`, and a MetalCloud that has service accounts turned off answers `This MetalCloud doesn't accept service accounts.` `metalcloud-cli logout` removes only your own session.
+
+An administrator creates the service account with the subject (`sub`) that the provider puts in its tokens; a service account has no password:
+
+```bash
+metalcloud-cli user create --email robot@mycompany.com --service-account-subject client-1 --access-level user
+```
+
+`metalcloud-cli user get` shows the provider (`service-account`) in its text output, and `-f json` or `-f yaml` of `user get` show `provider` and `serviceAccountSubject`; `user list -f json` or `-f yaml` shows `provider`.
 
 ## Getting a list of supported commands
 

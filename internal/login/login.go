@@ -11,6 +11,7 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"os"
 	"os/exec"
 	"runtime"
 	"strings"
@@ -21,6 +22,9 @@ var (
 	ErrNotSupported = errors.New("This MetalCloud doesn't support signing in from the CLI; use an API token.")
 	ErrDenied       = errors.New("The sign-in was denied.")
 	ErrExpired      = errors.New("The sign-in request has expired; run `metalcloud-cli login` again.")
+
+	ErrServiceAccountTokenRejected = errors.New("The provider token wasn't accepted; check the token file and the service account's subject.")
+	ErrServiceAccountsNotAccepted  = errors.New("This MetalCloud doesn't accept service accounts.")
 )
 
 // slowDownStep is added to the polling interval each time the server answers 429.
@@ -223,6 +227,106 @@ func Logout(ctx context.Context, c Client, token string) error {
 	return nil
 }
 
+// warnOut is where non-fatal warnings go. It is a variable so tests can capture it.
+var warnOut io.Writer = os.Stderr
+
+// serviceAccountExpiryMargin is how close to its end a saved service-account session is replaced by a
+// new sign-in.
+const serviceAccountExpiryMargin = 60 * time.Second
+
+// SignInServiceAccount exchanges the provider token of a service account for a session. The session
+// comes back marked as a service-account session and is not saved.
+func SignInServiceAccount(ctx context.Context, c Client, providerToken string) (*Session, error) {
+	status, body, err := c.post(ctx, "/api/v2/service-accounts/actions/sign-in", map[string]string{"token": providerToken}, "")
+	if err != nil {
+		return nil, err
+	}
+
+	switch status {
+	case http.StatusOK, http.StatusCreated:
+	case http.StatusUnauthorized:
+		return nil, ErrServiceAccountTokenRejected
+	case http.StatusForbidden:
+		return nil, ErrServiceAccountsNotAccepted
+	case http.StatusNotFound:
+		// An older server has no such route.
+		return nil, ErrNotSupported
+	default:
+		return nil, statusError("signing in the service account", status, body)
+	}
+
+	var r struct {
+		Token            string `json:"token"`
+		ExpiresTimestamp string `json:"expiresTimestamp"`
+	}
+	if err := json.Unmarshal(body, &r); err != nil || r.Token == "" {
+		return nil, fmt.Errorf("unexpected answer from the server when signing in the service account")
+	}
+
+	return &Session{
+		Token:            r.Token,
+		ExpiresTimestamp: r.ExpiresTimestamp,
+		CreatedTimestamp: time.Now().UTC().Format(time.RFC3339),
+		ServiceAccount:   true,
+	}, nil
+}
+
+// ServiceAccountCredential returns the token that authenticates commands as a service account: the
+// saved service-account session for the endpoint and token file while it has more than 60 seconds
+// left, else a new sign-in with the provider token read from tokenFile, which is saved. The file is
+// read at each sign-in and never cached.
+func ServiceAccountCredential(ctx context.Context, c Client, tokenFile, endpoint string, now time.Time) (string, error) {
+	saved, err := LoadServiceAccountSession(endpoint, tokenFile)
+	if err != nil {
+		return "", err
+	}
+	if saved != nil && saved.Token != "" {
+		expires, parseErr := time.Parse(time.RFC3339, saved.ExpiresTimestamp)
+		if parseErr == nil && expires.Sub(now) > serviceAccountExpiryMargin {
+			return saved.Token, nil
+		}
+	}
+
+	session, err := signInFromFile(ctx, c, tokenFile)
+	if err != nil {
+		return "", err
+	}
+	// A session that can't be saved, for example on a read-only $HOME, still serves this command: the
+	// next one signs in again.
+	if err := SaveServiceAccountSession(endpoint, tokenFile, *session); err != nil {
+		path, _ := SessionsPath()
+		fmt.Fprintf(warnOut, "Warning: the service account session could not be saved to %s (%v); the CLI will sign in again on the next command.\n", path, err)
+	}
+	return session.Token, nil
+}
+
+// SignInServiceAccountFromFile reads the provider token from tokenFile, signs in with it and saves
+// the session as the service-account session of the endpoint and token file.
+func SignInServiceAccountFromFile(ctx context.Context, c Client, tokenFile, endpoint string) (*Session, error) {
+	session, err := signInFromFile(ctx, c, tokenFile)
+	if err != nil {
+		return nil, err
+	}
+	if err := SaveServiceAccountSession(endpoint, tokenFile, *session); err != nil {
+		return nil, fmt.Errorf("signed in, but the session could not be saved: %w", err)
+	}
+	return session, nil
+}
+
+// signInFromFile reads the provider token from tokenFile, fresh at each call, and signs in with it.
+func signInFromFile(ctx context.Context, c Client, tokenFile string) (*Session, error) {
+	content, err := os.ReadFile(tokenFile)
+	if err != nil {
+		return nil, fmt.Errorf("cannot read the service account token file: %w", err)
+	}
+	providerToken := strings.TrimSpace(string(content))
+	if providerToken == "" {
+		return nil, fmt.Errorf("the service account token file is empty: %s", tokenFile)
+	}
+
+	return SignInServiceAccount(ctx, c, providerToken)
+}
+
 // formatUserCode shows the code as XXXX-XXXX.
 func formatUserCode(code string) string {
 	plain := strings.ToUpper(strings.ReplaceAll(code, "-", ""))
@@ -232,8 +336,8 @@ func formatUserCode(code string) string {
 	return code
 }
 
-// formatExpiry shows an ISO timestamp in UTC; anything unparsable is shown as received.
-func formatExpiry(ts string) string {
+// FormatExpiry shows an ISO timestamp in UTC; anything unparsable is shown as received.
+func FormatExpiry(ts string) string {
 	t, err := time.Parse(time.RFC3339, ts)
 	if err != nil {
 		return ts
@@ -282,6 +386,6 @@ func Login(ctx context.Context, c Client, clientName, version string, noBrowser 
 		return fmt.Errorf("signed in, but the session could not be saved: %w", err)
 	}
 
-	fmt.Fprintf(out, "Signed in as %s. The session is valid until %s.\n", approved.UserEmail, formatExpiry(approved.ExpiresTimestamp))
+	fmt.Fprintf(out, "Signed in as %s. The session is valid until %s.\n", approved.UserEmail, FormatExpiry(approved.ExpiresTimestamp))
 	return nil
 }
