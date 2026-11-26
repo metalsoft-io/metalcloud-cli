@@ -37,7 +37,7 @@ metalcloud-cli network-device port ip replace <network_device_id> <port_id> <fam
 ### Options inherited from parent commands
 
 ```
-  -k, --api_key string         MetalCloud API token (msat_...), or a legacy API key (<user id>:<key>)
+  -k, --api_key string         MetalCloud API token (msat_...), or a legacy API key (<user id>:<key>), which works only until it expires
   -c, --config string          Config file path
   -d, --debug                  Set to enable debug logging
   -e, --endpoint string        MetalCloud API endpoint

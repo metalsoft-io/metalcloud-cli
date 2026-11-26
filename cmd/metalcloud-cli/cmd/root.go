@@ -70,7 +70,7 @@ func init() {
 
 	// Add the global persistent flags
 	rootCmd.PersistentFlags().StringP(system.ConfigEndpoint, "e", "", "MetalCloud API endpoint")
-	rootCmd.PersistentFlags().StringP(system.ConfigApiKey, "k", "", "MetalCloud API token (msat_...), or a legacy API key (<user id>:<key>)")
+	rootCmd.PersistentFlags().StringP(system.ConfigApiKey, "k", "", "MetalCloud API token (msat_...), or a legacy API key (<user id>:<key>), which works only until it expires")
 	rootCmd.PersistentFlags().StringP(logger.ConfigVerbosity, "v", "INFO", "Log level verbosity")
 	rootCmd.PersistentFlags().StringP(logger.ConfigLogFile, "l", "", "Log file path")
 	rootCmd.PersistentFlags().StringP(formatter.ConfigFormat, "f", "text", "Output format. Supported values are 'text','csv','md','json','yaml'.")

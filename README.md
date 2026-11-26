@@ -71,7 +71,7 @@ endpoint: 'https://metal.mycompany.com'
 api_key: '<your API token>'
 ```
 
-The environment variable and the configuration key keep the name `api_key` for compatibility with existing configurations; they accept both an API token and a legacy API key.
+The environment variable and the configuration key keep the name `api_key` for compatibility with existing configurations; they accept both an API token and a legacy API key, which works only until it expires.
 
 ## Signing in
 
