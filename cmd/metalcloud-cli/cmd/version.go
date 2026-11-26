@@ -1,8 +1,10 @@
 package cmd
 
 import (
+	"context"
 	"fmt"
 	"os"
+	"time"
 
 	"github.com/metalsoft-io/metalcloud-cli/cmd/metalcloud-cli/system"
 	"github.com/metalsoft-io/metalcloud-cli/pkg/api"
@@ -75,23 +77,8 @@ func runVersionCmd(cmd *cobra.Command, args []string) error {
 
 	fmt.Printf("Debug Mode: %t\n", viper.GetBool(system.ConfigDebug))
 
-	// Try to get user access level if API client is available
 	if cmd.Context() != nil {
-		if apiClient, err := api.GetApiClientE(cmd.Context()); err == nil && apiClient != nil {
-			if user, err := system.GetCurrentUser(cmd.Context()); err == nil {
-				email := ""
-				if user.Email != "" {
-					email = fmt.Sprintf(", Email: %s", user.Email)
-				}
-
-				accessLevel := "Unknown"
-				if user.AccessLevel != "" {
-					accessLevel = user.AccessLevel
-				}
-
-				fmt.Printf("User ID: %d%s, Access Level: %s\n", int(user.Id), email, accessLevel)
-			}
-		}
+		fmt.Println(currentUserLine(cmd.Context()))
 	}
 
 	// Environment variables
@@ -113,6 +100,38 @@ func runVersionCmd(cmd *cobra.Command, args []string) error {
 	}
 
 	return nil
+}
+
+// currentUserLine describes the user the CLI runs as, read with the credential any other command would
+// use: the API token, the service account's token file or the saved session. When the user can't be
+// read, the line says why, so a refused or missing credential doesn't pass for a working one.
+func currentUserLine(ctx context.Context) string {
+	endpoint := viper.GetString(system.ConfigEndpoint)
+	if endpoint == "" {
+		return "User: cannot be read: no API endpoint is set"
+	}
+
+	tokenFile := viper.GetString(tokenFileKey)
+	credential, kind, err := resolveCredential(ctx, viper.GetString(system.ConfigApiKey), tokenFile, loginClient(), time.Now())
+	if err != nil {
+		return "User: cannot be read: " + err.Error()
+	}
+
+	ctx = api.SetApiClient(ctx, endpoint, credential, viper.GetBool(system.ConfigDebug), viper.GetBool(system.ConfigInsecure))
+	user, err := system.GetCurrentUser(ctx)
+	if err != nil {
+		return "User: cannot be read: " + sessionEndedOr(err, kind, endpoint, tokenFile).Error()
+	}
+
+	email := ""
+	if user.Email != "" {
+		email = fmt.Sprintf(", Email: %s", user.Email)
+	}
+	accessLevel := "Unknown"
+	if user.AccessLevel != "" {
+		accessLevel = user.AccessLevel
+	}
+	return fmt.Sprintf("User ID: %d%s, Access Level: %s", int(user.Id), email, accessLevel)
 }
 
 func init() {

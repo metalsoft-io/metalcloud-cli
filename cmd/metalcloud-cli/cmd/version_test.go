@@ -5,6 +5,7 @@ import (
 	"net/http/httptest"
 	"strings"
 	"testing"
+	"time"
 )
 
 // version_test.go covers:
@@ -46,5 +47,72 @@ func TestVersionCommandAlias(t *testing.T) {
 	}
 	if !strings.Contains(out, "CLI Version") {
 		t.Errorf("expected output to contain 'CLI Version', got: %s", out)
+	}
+}
+
+// newVersionAuthServer answers /api/v2/user only for "Bearer good", and with the gateway's 401 body
+// for an expired API token otherwise.
+func newVersionAuthServer() *httptest.Server {
+	mux := http.NewServeMux()
+	mux.HandleFunc("/api/v2/version", func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
+		_, _ = w.Write([]byte(versionResponse))
+	})
+	mux.HandleFunc("/api/v2/user", func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
+		if r.Header.Get("Authorization") != "Bearer good" {
+			w.WriteHeader(http.StatusUnauthorized)
+			_, _ = w.Write([]byte(`{"statusCode":401,"errorCode":"401","message":"API token has expired."}`))
+			return
+		}
+		_, _ = w.Write([]byte(fullUserJSON))
+	})
+	return httptest.NewServer(mux)
+}
+
+func userLine(out string) string {
+	for _, line := range strings.Split(out, "\n") {
+		if strings.HasPrefix(line, "User") {
+			return line
+		}
+	}
+	return ""
+}
+
+func TestVersionSaysWhyTheUserCannotBeRead(t *testing.T) {
+	useTempSessions(t)
+	srv := newVersionAuthServer()
+	defer srv.Close()
+
+	// a refused token: the line says so and why, and version still succeeds
+	out, err := runCLIWithKey(t, srv, "expired", "version")
+	if err != nil {
+		t.Fatalf("expired: %v", err)
+	}
+	if line := userLine(out); !strings.HasPrefix(line, "User: cannot be read: ") || !strings.Contains(line, "API token has expired.") {
+		t.Errorf("expired: user line = %q", line)
+	}
+
+	out, err = runCLIWithKey(t, srv, "good", "version")
+	if line := userLine(out); err != nil || !strings.HasPrefix(line, "User ID: 1, Email: test@test.com") {
+		t.Errorf("good: user line = %q, err = %v", line, err)
+	}
+
+	// no credential at all
+	out, err = runCLIWithKey(t, srv, "", "version")
+	if line := userLine(out); err != nil || line != "User: cannot be read: "+noCredentialText {
+		t.Errorf("none: user line = %q, err = %v", line, err)
+	}
+}
+
+func TestVersionUsesTheSavedSession(t *testing.T) {
+	useTempSessions(t)
+	srv := newVersionAuthServer()
+	defer srv.Close()
+	saveTestSession(t, srv.URL, "good", time.Now().Add(time.Hour))
+
+	out, err := runCLIWithKey(t, srv, "", "version")
+	if line := userLine(out); err != nil || !strings.HasPrefix(line, "User ID: 1, Email: test@test.com") {
+		t.Errorf("user line = %q, err = %v", line, err)
 	}
 }
