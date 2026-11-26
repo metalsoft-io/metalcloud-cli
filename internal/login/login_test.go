@@ -11,6 +11,7 @@ import (
 	"os"
 	"path/filepath"
 	"runtime"
+	"strconv"
 	"strings"
 	"sync/atomic"
 	"testing"
@@ -164,6 +165,116 @@ func TestWaitStopsOnContextCancel(t *testing.T) {
 	time.Sleep(50 * time.Millisecond)
 	if atomic.LoadInt32(&calls) != n {
 		t.Error("polling continued after cancel")
+	}
+}
+
+// startedValidFor is startedFor with a code that stays valid for validity.
+func startedValidFor(interval, validity time.Duration) *Started {
+	s := startedFor(interval)
+	s.ExpiresIn = validity
+	return s
+}
+
+const approvedJSON = `{"status":"approved","token":"tok","expiresTimestamp":"2026-12-01T10:00:00Z","user":{"id":7,"email":"me@x.io"}}`
+
+func TestWaitKeepsPollingThroughServerErrorsUntilApproved(t *testing.T) {
+	// a gateway or auth service restart: the code stays valid on the server meanwhile
+	for _, status := range []int{http.StatusInternalServerError, http.StatusBadGateway, http.StatusServiceUnavailable, http.StatusGatewayTimeout} {
+		var calls int32
+		srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			switch atomic.AddInt32(&calls, 1) {
+			case 1:
+				_, _ = w.Write([]byte(`{"status":"pending"}`))
+			case 2, 3:
+				w.WriteHeader(status)
+				_, _ = w.Write([]byte(`{"message":"Failed sending POST cli-login/token request to auth-microservice"}`))
+			default:
+				_, _ = w.Write([]byte(approvedJSON))
+			}
+		}))
+		a, err := Wait(context.Background(), Client{Endpoint: srv.URL}, startedValidFor(5*time.Millisecond, time.Minute))
+		srv.Close()
+		if err != nil || a == nil || a.Token != "tok" {
+			t.Errorf("%d: approved = %+v, err = %v", status, a, err)
+		}
+		if calls != 4 {
+			t.Errorf("%d: polls = %d, want 4", status, calls)
+		}
+	}
+}
+
+func TestWaitKeepsPollingThroughAFailedRequest(t *testing.T) {
+	var calls int32
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if atomic.AddInt32(&calls, 1) == 1 {
+			// the connection drops without an answer
+			conn, _, err := w.(http.Hijacker).Hijack()
+			if err == nil {
+				conn.Close()
+			}
+			return
+		}
+		_, _ = w.Write([]byte(approvedJSON))
+	}))
+	defer srv.Close()
+
+	a, err := Wait(context.Background(), Client{Endpoint: srv.URL}, startedValidFor(5*time.Millisecond, time.Minute))
+	if err != nil || a == nil || a.Token != "tok" || calls != 2 {
+		t.Errorf("approved = %+v, err = %v, polls = %d", a, err, calls)
+	}
+}
+
+func TestWaitGivesUpWhenTheCodeRunsOutDuringServerErrors(t *testing.T) {
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(http.StatusBadGateway)
+	}))
+	defer srv.Close()
+
+	start := time.Now()
+	_, err := Wait(context.Background(), Client{Endpoint: srv.URL}, startedValidFor(5*time.Millisecond, 60*time.Millisecond))
+	if !errors.Is(err, ErrExpired) || !strings.Contains(err.Error(), "502 Bad Gateway") {
+		t.Errorf("err = %v, want the expiry with the last 502", err)
+	}
+	if took := time.Since(start); took < 60*time.Millisecond || took > time.Second {
+		t.Errorf("gave up after %v, want at the end of the 60ms validity", took)
+	}
+}
+
+func TestWaitStopsOnContextCancelDuringServerErrors(t *testing.T) {
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(http.StatusServiceUnavailable)
+	}))
+	defer srv.Close()
+
+	ctx, cancel := context.WithTimeout(context.Background(), 60*time.Millisecond)
+	defer cancel()
+	start := time.Now()
+	_, err := Wait(ctx, Client{Endpoint: srv.URL}, startedValidFor(10*time.Millisecond, time.Minute))
+	if !errors.Is(err, context.DeadlineExceeded) || time.Since(start) > time.Second {
+		t.Errorf("err = %v after %v, want the context deadline promptly", err, time.Since(start))
+	}
+}
+
+func TestWaitStillStopsAtOtherErrors(t *testing.T) {
+	cases := []struct {
+		name    string
+		status  int
+		started *Started
+	}{
+		{"400 while the code is valid", http.StatusBadRequest, startedValidFor(5*time.Millisecond, time.Minute)},
+		{"502 without a known validity", http.StatusBadGateway, startedFor(5 * time.Millisecond)},
+	}
+	for _, tc := range cases {
+		var calls int32
+		srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			atomic.AddInt32(&calls, 1)
+			w.WriteHeader(tc.status)
+		}))
+		_, err := Wait(context.Background(), Client{Endpoint: srv.URL}, tc.started)
+		srv.Close()
+		if err == nil || !strings.Contains(err.Error(), "waiting for the sign-in failed: "+strconv.Itoa(tc.status)) || calls != 1 {
+			t.Errorf("%s: err = %v, polls = %d", tc.name, err, calls)
+		}
 	}
 }
 

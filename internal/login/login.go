@@ -164,9 +164,13 @@ func Start(ctx context.Context, c Client, clientName, version string) (*Started,
 	}, nil
 }
 
-// Wait polls until the user approves or denies the request, it expires, or ctx ends.
+// Wait polls until the user approves or denies the request, it expires, or ctx ends. While the code is
+// valid, a server error (5xx) or a request that fails, as during a gateway or auth service restart,
+// doesn't end it: polling goes on, and only when the code's validity has run out is the last such
+// error reported. Without a known validity, the first one ends it.
 func Wait(ctx context.Context, c Client, s *Started) (*Approved, error) {
 	interval := s.Interval
+	validUntil := time.Now().Add(s.ExpiresIn)
 
 	for {
 		timer := time.NewTimer(interval)
@@ -178,8 +182,20 @@ func Wait(ctx context.Context, c Client, s *Started) (*Approved, error) {
 		}
 
 		status, body, err := c.post(ctx, "/api/v2/cli-login/token", map[string]string{"deviceCode": s.DeviceCode}, "")
+		if ctx.Err() != nil {
+			return nil, ctx.Err()
+		}
+		if err == nil && status >= 500 {
+			err = statusError("waiting for the sign-in", status, body)
+		}
 		if err != nil {
-			return nil, err
+			if s.ExpiresIn <= 0 {
+				return nil, err
+			}
+			if time.Now().After(validUntil) {
+				return nil, fmt.Errorf("%w Last error: %v", ErrExpired, err)
+			}
+			continue
 		}
 
 		switch status {
