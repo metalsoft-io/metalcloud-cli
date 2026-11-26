@@ -68,8 +68,8 @@ can be sorted and searched through.
 Filters:
   --archived              Return only archived users
   --filter-id             Filter by specific user ID
-  --filter-display-name   Filter by user display name (partial matches)
-  --filter-email          Filter by email address (partial matches)
+  --filter-display-name   Filter by a whole display name (case-insensitive)
+  --filter-email          Filter by a whole email address (case-insensitive)
   --filter-account-id     Filter by account ID
   --filter-infrastructure-id Filter by default infrastructure ID
 
@@ -81,7 +81,8 @@ Search and Sort:
 Examples:
   metalcloud-cli user list
   metalcloud-cli user list --archived
-  metalcloud-cli user list --filter-email "@company.com"
+  metalcloud-cli user list --filter-email "jane.doe@company.com"
+  metalcloud-cli user list --search "@company.com" --search-by email
   metalcloud-cli user list --search "john" --search-by "displayName,email"
   metalcloud-cli user list --sort-by "createdTimestamp:DESC"`,
 		SilenceUsage: true,
@@ -998,8 +999,8 @@ func init() {
 	userCmd.AddCommand(userListCmd)
 	userListCmd.Flags().BoolVar(&userFlags.archived, "archived", false, "Return only archived users.")
 	userListCmd.Flags().StringVar(&userFlags.filterId, "filter-id", "", "Filter by user ID.")
-	userListCmd.Flags().StringVar(&userFlags.filterDisplayName, "filter-display-name", "", "Filter by display name.")
-	userListCmd.Flags().StringVar(&userFlags.filterEmail, "filter-email", "", "Filter by email.")
+	userListCmd.Flags().StringVar(&userFlags.filterDisplayName, "filter-display-name", "", "Filter by a whole display name (case-insensitive).")
+	userListCmd.Flags().StringVar(&userFlags.filterEmail, "filter-email", "", "Filter by a whole email address (case-insensitive).")
 	userListCmd.Flags().StringVar(&userFlags.filterAccountId, "filter-account-id", "", "Filter by account ID.")
 	userListCmd.Flags().StringVar(&userFlags.filterInfrastructureId, "filter-infrastructure-id", "", "Filter by default infrastructure ID.")
 	userListCmd.Flags().StringVar(&userFlags.sortBy, "sort-by", "id:ASC", "Sort by field (e.g., 'id:ASC').")

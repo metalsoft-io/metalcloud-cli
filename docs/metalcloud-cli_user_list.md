@@ -13,8 +13,8 @@ can be sorted and searched through.
 Filters:
   --archived              Return only archived users
   --filter-id             Filter by specific user ID
-  --filter-display-name   Filter by user display name (partial matches)
-  --filter-email          Filter by email address (partial matches)
+  --filter-display-name   Filter by a whole display name (case-insensitive)
+  --filter-email          Filter by a whole email address (case-insensitive)
   --filter-account-id     Filter by account ID
   --filter-infrastructure-id Filter by default infrastructure ID
 
@@ -26,7 +26,8 @@ Search and Sort:
 Examples:
   metalcloud-cli user list
   metalcloud-cli user list --archived
-  metalcloud-cli user list --filter-email "@company.com"
+  metalcloud-cli user list --filter-email "jane.doe@company.com"
+  metalcloud-cli user list --search "@company.com" --search-by email
   metalcloud-cli user list --search "john" --search-by "displayName,email"
   metalcloud-cli user list --sort-by "createdTimestamp:DESC"
 
@@ -39,8 +40,8 @@ metalcloud-cli user list [flags]
 ```
       --archived                          Return only archived users.
       --filter-account-id string          Filter by account ID.
-      --filter-display-name string        Filter by display name.
-      --filter-email string               Filter by email.
+      --filter-display-name string        Filter by a whole display name (case-insensitive).
+      --filter-email string               Filter by a whole email address (case-insensitive).
       --filter-id string                  Filter by user ID.
       --filter-infrastructure-id string   Filter by default infrastructure ID.
   -h, --help                              help for list
