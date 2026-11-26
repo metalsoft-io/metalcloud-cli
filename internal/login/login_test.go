@@ -5,6 +5,7 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
+	"fmt"
 	"net/http"
 	"net/http/httptest"
 	"os"
@@ -514,6 +515,109 @@ func TestServiceAccountCredentialSaveWorksWithoutAWarning(t *testing.T) {
 	_, err := ServiceAccountCredential(context.Background(), Client{Endpoint: srv.URL}, writeTokenFile(t, "provider-token"), srv.URL, time.Date(2029, 12, 31, 0, 0, 0, 0, time.UTC))
 	if err != nil || warnings.Len() != 0 {
 		t.Errorf("err = %v, warnings = %q", err, warnings.String())
+	}
+}
+
+// pretendOtherUser makes the files the test creates look like another user's.
+func pretendOtherUser(t *testing.T) {
+	t.Helper()
+	if os.Getuid() == 0 {
+		t.Skip("root's own files are trusted")
+	}
+	old := selfUID
+	selfUID = os.Getuid() + 1
+	t.Cleanup(func() { selfUID = old })
+}
+
+func TestSignInFromFileWarnsWhenOtherUsersCanChangeTheTokenFile(t *testing.T) {
+	if runtime.GOOS == "windows" {
+		t.Skip("Unix modes do not apply on Windows")
+	}
+	warnings := captureWarnings(t)
+	srv := newServiceAccountServer(t, http.StatusCreated, "sess-1", "2030-01-01T00:00:00Z")
+	file := writeTokenFile(t, "provider-token")
+	signIn := func(label string) string {
+		t.Helper()
+		warnings.Reset()
+		if s, err := signInFromFile(context.Background(), Client{Endpoint: srv.URL}, file); err != nil || s.Token != "sess-1" {
+			t.Fatalf("%s: session = %+v, err = %v", label, s, err)
+		}
+		if strings.Contains(warnings.String(), "provider-token") || strings.Contains(warnings.String(), "sess-1") {
+			t.Errorf("%s: the warning carries a token: %q", label, warnings.String())
+		}
+		return warnings.String()
+	}
+
+	// others may read it: mounted secrets often are 0644 or 0444
+	for _, mode := range []os.FileMode{0o600, 0o644, 0o444, 0o640} {
+		if err := os.Chmod(file, mode); err != nil {
+			t.Fatal(err)
+		}
+		if out := signIn(fmt.Sprintf("%04o", mode)); out != "" {
+			t.Errorf("%04o: warnings = %q", mode, out)
+		}
+	}
+
+	for _, mode := range []os.FileMode{0o664, 0o646, 0o620} {
+		if err := os.Chmod(file, mode); err != nil {
+			t.Fatal(err)
+		}
+		out := signIn(fmt.Sprintf("%04o", mode))
+		want := fmt.Sprintf("Warning: other users can change the service account token file %s (mode %04o)", file, mode)
+		if strings.Count(out, "\n") != 1 || !strings.Contains(out, want) {
+			t.Errorf("%04o: warnings = %q, want one with %q", mode, out, want)
+		}
+	}
+
+	// the owner can change it whatever the mode
+	if err := os.Chmod(file, 0o600); err != nil {
+		t.Fatal(err)
+	}
+	pretendOtherUser(t)
+	out := signIn("another owner")
+	want := fmt.Sprintf("Warning: the service account token file %s belongs to another user (uid %d)", file, os.Getuid())
+	if strings.Count(out, "\n") != 1 || !strings.Contains(out, want) {
+		t.Errorf("another owner: warnings = %q, want one with %q", out, want)
+	}
+}
+
+func TestSignInFromFileTrustsATokenFileOfRoot(t *testing.T) {
+	const file = "/etc/hosts"
+	perm, uid, ok := unixStat(file)
+	if !ok || uid != 0 || perm&0o022 != 0 {
+		t.Skipf("%s is not a root file closed to writes (ok %v, uid %d, mode %04o)", file, ok, uid, perm)
+	}
+	pretendOtherUser(t)
+	warnings := captureWarnings(t)
+	srv := newServiceAccountServer(t, http.StatusCreated, "sess-1", "2030-01-01T00:00:00Z")
+
+	if _, err := signInFromFile(context.Background(), Client{Endpoint: srv.URL}, file); err != nil {
+		t.Fatal(err)
+	}
+	if warnings.Len() != 0 {
+		t.Errorf("warnings = %q", warnings.String())
+	}
+}
+
+func TestServiceAccountCredentialDoesNotLookAtTheTokenFileWhileTheSessionIsValid(t *testing.T) {
+	if runtime.GOOS == "windows" {
+		t.Skip("Unix modes do not apply on Windows")
+	}
+	useTempSessionsPath(t)
+	warnings := captureWarnings(t)
+	srv := newServiceAccountServer(t, http.StatusCreated, "sess-1", "2030-01-01T00:00:00Z")
+	file := writeTokenFile(t, "provider-token")
+	now := time.Date(2029, 12, 31, 0, 0, 0, 0, time.UTC)
+	if err := os.Chmod(file, 0o666); err != nil {
+		t.Fatal(err)
+	}
+
+	if _, err := ServiceAccountCredential(context.Background(), Client{Endpoint: srv.URL}, file, srv.URL, now); err != nil || strings.Count(warnings.String(), "\n") != 1 {
+		t.Fatalf("sign-in: err = %v, warnings = %q", err, warnings.String())
+	}
+	warnings.Reset()
+	if _, err := ServiceAccountCredential(context.Background(), Client{Endpoint: srv.URL}, file, srv.URL, now); err != nil || warnings.Len() != 0 || srv.calls != 1 {
+		t.Errorf("reuse: err = %v, calls = %d, warnings = %q", err, srv.calls, warnings.String())
 	}
 }
 

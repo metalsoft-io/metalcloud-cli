@@ -323,6 +323,16 @@ func signInFromFile(ctx context.Context, c Client, tokenFile string) (*Session, 
 	if providerToken == "" {
 		return nil, fmt.Errorf("the service account token file is empty: %s", tokenFile)
 	}
+	// Others may read the file (mounted secrets often are 0644 or 0444), but whoever can change it
+	// chooses who the CLI signs in as.
+	if perm, uid, ok := unixStat(tokenFile); ok {
+		switch {
+		case otherOwner(uid):
+			fmt.Fprintf(warnOut, "Warning: the service account token file %s belongs to another user (uid %d), who can change it; run `sudo chown $USER %s`.\n", tokenFile, uid, tokenFile)
+		case perm&0o022 != 0:
+			fmt.Fprintf(warnOut, "Warning: other users can change the service account token file %s (mode %04o); run `chmod go-w %s`.\n", tokenFile, perm, tokenFile)
+		}
+	}
 
 	return SignInServiceAccount(ctx, c, providerToken)
 }

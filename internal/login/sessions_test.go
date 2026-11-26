@@ -5,6 +5,8 @@ import (
 	"os"
 	"path/filepath"
 	"runtime"
+	"strconv"
+	"strings"
 	"testing"
 )
 
@@ -266,5 +268,159 @@ func TestServiceAccountSessionKeyUsesTheAbsoluteCleanedPath(t *testing.T) {
 	}
 	if s, _ := LoadServiceAccountSession(endpoint, filepath.Join(cwd, "token")); s == nil || s.Token != "robot" {
 		t.Errorf("absolute spelling: %+v", s)
+	}
+}
+
+func TestLoadWarnsWhenTheFileIsOpenToOtherUsers(t *testing.T) {
+	if runtime.GOOS == "windows" {
+		t.Skip("Unix modes do not apply on Windows")
+	}
+	path := useTempSessionsPath(t)
+	const endpoint = "https://a.example.com"
+	tokenFile := filepath.Join(t.TempDir(), "token")
+	buf := captureWarnings(t)
+
+	if err := SaveSession(endpoint, Session{Token: "person"}); err != nil {
+		t.Fatal(err)
+	}
+	if err := SaveServiceAccountSession(endpoint, tokenFile, Session{Token: "robot"}); err != nil {
+		t.Fatal(err)
+	}
+	if s, _ := LoadSession(endpoint); s == nil || s.Token != "person" {
+		t.Fatalf("person = %+v", s)
+	}
+	if buf.Len() != 0 {
+		t.Fatalf("warning on a 0600 file: %q", buf.String())
+	}
+
+	for _, mode := range []os.FileMode{0o644, 0o640, 0o602} {
+		if err := os.Chmod(path, mode); err != nil {
+			t.Fatal(err)
+		}
+		buf.Reset()
+		if s, _ := LoadSession(endpoint); s == nil || s.Token != "person" {
+			t.Errorf("%04o: person = %+v", mode, s)
+		}
+		if s, _ := LoadServiceAccountSession(endpoint, tokenFile); s == nil || s.Token != "robot" {
+			t.Errorf("%04o: robot = %+v", mode, s)
+		}
+		want := "Warning: " + path
+		if got := strings.Count(buf.String(), want); got != 2 {
+			t.Errorf("%04o: %d warnings naming the file, want 2: %q", mode, got, buf.String())
+		}
+		if !strings.Contains(buf.String(), "0"+strconv.FormatUint(uint64(mode), 8)) {
+			t.Errorf("%04o: the warning does not show the mode: %q", mode, buf.String())
+		}
+	}
+
+	// the next write makes it 0600 again, and the warning stops
+	if err := DeleteSession(endpoint); err != nil {
+		t.Fatal(err)
+	}
+	buf.Reset()
+	if s, _ := LoadServiceAccountSession(endpoint, tokenFile); s == nil {
+		t.Fatal("robot lost")
+	}
+	if buf.Len() != 0 {
+		t.Errorf("warning after the rewrite: %q", buf.String())
+	}
+}
+
+func TestLoadWarnsWhenOtherUsersCanWriteTheFolder(t *testing.T) {
+	if runtime.GOOS == "windows" {
+		t.Skip("Unix modes do not apply on Windows")
+	}
+	path := useTempSessionsPath(t)
+	dir := filepath.Dir(path)
+	const endpoint = "https://a.example.com"
+	tokenFile := filepath.Join(t.TempDir(), "token")
+	buf := captureWarnings(t)
+
+	if err := SaveSession(endpoint, Session{Token: "person"}); err != nil {
+		t.Fatal(err)
+	}
+	if err := SaveServiceAccountSession(endpoint, tokenFile, Session{Token: "robot"}); err != nil {
+		t.Fatal(err)
+	}
+
+	// others may list the folder: nothing to warn about while the file itself is 0600
+	if err := os.Chmod(dir, 0o755); err != nil {
+		t.Fatal(err)
+	}
+	if s, _ := LoadSession(endpoint); s == nil || buf.Len() != 0 {
+		t.Fatalf("0755: session = %+v, warnings = %q", s, buf.String())
+	}
+
+	for _, mode := range []os.FileMode{0o777, 0o770, 0o703} {
+		if err := os.Chmod(dir, mode); err != nil {
+			t.Fatal(err)
+		}
+		buf.Reset()
+		if s, _ := LoadSession(endpoint); s == nil || s.Token != "person" {
+			t.Errorf("%04o: person = %+v", mode, s)
+		}
+		if s, _ := LoadServiceAccountSession(endpoint, tokenFile); s == nil || s.Token != "robot" {
+			t.Errorf("%04o: robot = %+v", mode, s)
+		}
+		want := "Warning: other users can write to " + dir + " (mode 0" + strconv.FormatUint(uint64(mode), 8) + ")"
+		if got := strings.Count(buf.String(), want); got != 2 {
+			t.Errorf("%04o: %d warnings %q, want 2: %q", mode, got, want, buf.String())
+		}
+		if strings.Contains(buf.String(), "Warning: "+path) {
+			t.Errorf("%04o: the 0600 file was warned about: %q", mode, buf.String())
+		}
+	}
+
+	// a missing file holds nothing, so the folder is not looked at
+	if err := os.Rename(path, path+".bak"); err != nil {
+		t.Fatal(err)
+	}
+	buf.Reset()
+	if s, err := LoadSession(endpoint); s != nil || err != nil || buf.Len() != 0 {
+		t.Errorf("missing file: session = %+v, err = %v, warnings = %q", s, err, buf.String())
+	}
+	if err := os.Rename(path+".bak", path); err != nil {
+		t.Fatal(err)
+	}
+
+	// the next write makes the folder 0700 again, and the warning stops
+	if err := DeleteSession(endpoint); err != nil {
+		t.Fatal(err)
+	}
+	buf.Reset()
+	if s, _ := LoadServiceAccountSession(endpoint, tokenFile); s == nil || buf.Len() != 0 {
+		t.Errorf("after the rewrite: robot = %+v, warnings = %q", s, buf.String())
+	}
+}
+
+func TestLoadWarnsWhenTheFileAndFolderBelongToAnotherUser(t *testing.T) {
+	if runtime.GOOS == "windows" {
+		t.Skip("Unix owners do not apply on Windows")
+	}
+	path := useTempSessionsPath(t)
+	dir := filepath.Dir(path)
+	const endpoint = "https://a.example.com"
+	buf := captureWarnings(t)
+
+	if err := SaveSession(endpoint, Session{Token: "person"}); err != nil {
+		t.Fatal(err)
+	}
+	pretendOtherUser(t)
+
+	// the owner warning stands for the mode one: removing the file fixes both
+	for _, mode := range []os.FileMode{0o600, 0o644} {
+		if err := os.Chmod(path, mode); err != nil {
+			t.Fatal(err)
+		}
+		buf.Reset()
+		if s, _ := LoadSession(endpoint); s == nil || s.Token != "person" {
+			t.Errorf("%04o: person = %+v", mode, s)
+		}
+		out := buf.String()
+		file := "Warning: " + path + " holds session tokens but belongs to another user (uid " + strconv.Itoa(os.Getuid()) + ")"
+		folder := "Warning: " + dir + " belongs to another user (uid " + strconv.Itoa(os.Getuid()) + ")"
+		if strings.Count(out, "\n") != 2 || !strings.Contains(out, file) || !strings.Contains(out, folder) {
+			t.Errorf("%04o: warnings = %q, want %q and %q", mode, out, file, folder)
+		}
 	}
 }

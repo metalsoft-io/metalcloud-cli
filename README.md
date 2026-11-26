@@ -83,7 +83,7 @@ metalcloud-cli login
 
 The command prints a URL and a code, and opens the URL in your browser. Check that the page shows the same code, confirm your identity and approve. On a machine without a browser, run `metalcloud-cli login --no-browser` and open the printed URL on any other device. The endpoint (`--endpoint`, `METALCLOUD_ENDPOINT` or `metalcloud.yaml`) must be set; no API token is needed.
 
-The session is saved in `$HOME/.metalcloud/sessions.json` (the folder is readable only by you, and so is the file), one entry per endpoint. `metalcloud.yaml` is never changed.
+The session is saved in `$HOME/.metalcloud/sessions.json` (the folder is readable only by you, and so is the file), one entry per endpoint. `metalcloud.yaml` is never changed. If other users can read or change the file, or replace it through the folder, because of the permissions or because the file or folder belongs to someone other than you or root (for example after a restore from a backup), every command that uses a saved session prints a warning on stderr that says how to fix it.
 
 Each command uses, in this order:
 
@@ -106,7 +106,7 @@ Automation (a CI job, a Kubernetes workload) can sign in as a service account wi
 metalcloud-cli login --service-account-token-file /var/run/secrets/metalcloud/token
 ```
 
-Set `--service-account-token-file` or the environment variable `METALCLOUD_SERVICE_ACCOUNT_TOKEN_FILE` (or `service-account-token-file` in `metalcloud.yaml`) to the path of a file that holds the provider token. Your tooling keeps the file current; the CLI reads it, trimmed, at each sign-in and never keeps a copy.
+Set `--service-account-token-file` or the environment variable `METALCLOUD_SERVICE_ACCOUNT_TOKEN_FILE` (or `service-account-token-file` in `metalcloud.yaml`) to the path of a file that holds the provider token. Your tooling keeps the file current; the CLI reads it, trimmed, at each sign-in and never keeps a copy. If the file belongs to someone other than you or root, or its permissions let other users change it, each sign-in from it prints a warning on stderr and still goes ahead.
 
 While the token file is set, every command signs in with it, so `login` is optional for automation. The session is saved in `$HOME/.metalcloud/sessions.json` as a service account session, separate from your own session for the same endpoint, which is ignored but not removed. Each token file has its own session, so two service accounts can share one `$HOME`. A command signs in again from the file when there is no such session or it ends within 60 seconds, or when the server has ended the session earlier (the command's first calls then get a `401`; the CLI signs in once and repeats them). If the session can't be saved, for example on a read-only `$HOME`, the command still runs and prints a warning on stderr, and the next command signs in again. If a command gets a `401` after it has started, it fails with `The service account's session ended; the next command signs in again from the token file.` `--api_key` and `METALCLOUD_API_KEY` still take precedence.
 

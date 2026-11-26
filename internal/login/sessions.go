@@ -62,6 +62,43 @@ func readSessions(path string) (map[string]Session, error) {
 	return sessions, nil
 }
 
+// selfUID is the current user's id. It is a variable so tests can make their own files look like
+// another user's.
+var selfUID = os.Getuid()
+
+// otherOwner tells whether a file of this owner can be changed by someone other than you and root,
+// who can change any file anyway.
+func otherOwner(uid int) bool {
+	return uid != selfUID && uid != 0
+}
+
+// warnIfOpen warns on stderr when users other than you and root can read or change the session file,
+// or replace it through its folder: by owning them, or through their modes. The file is used anyway;
+// the next write (login, logout, an ended session) replaces it with one of yours with mode 0600, and
+// makes the folder 0700 if it is yours. A missing file holds nothing, so it is not looked at.
+func warnIfOpen(path string) {
+	perm, uid, ok := unixStat(path)
+	if !ok {
+		return
+	}
+	switch {
+	case otherOwner(uid):
+		fmt.Fprintf(warnOut, "Warning: %s holds session tokens but belongs to another user (uid %d); remove it and sign in again.\n", path, uid)
+	case perm&0o077 != 0:
+		fmt.Fprintf(warnOut, "Warning: %s holds session tokens but other users can read or change it (mode %04o); run `chmod 600 %s`.\n", path, perm, path)
+	}
+
+	dir := filepath.Dir(path)
+	dirPerm, dirUID, ok := unixStat(dir)
+	switch {
+	case !ok:
+	case otherOwner(dirUID):
+		fmt.Fprintf(warnOut, "Warning: %s belongs to another user (uid %d), who can replace the session file in it; run `sudo chown $USER %s`.\n", dir, dirUID, dir)
+	case dirPerm&0o022 != 0:
+		fmt.Fprintf(warnOut, "Warning: other users can write to %s (mode %04o) and replace the session file in it; run `chmod 700 %s`.\n", dir, dirPerm, dir)
+	}
+}
+
 // writeSessions replaces the file through a 0600 temporary file in the same folder, so the result is
 // 0600 whatever the old file's mode was.
 func writeSessions(path string, sessions map[string]Session) error {
@@ -108,6 +145,7 @@ func LoadSession(endpoint string) (*Session, error) {
 	if err != nil {
 		return nil, err
 	}
+	warnIfOpen(path)
 	s, ok := sessions[sessionKey(endpoint)]
 	if !ok {
 		return nil, nil
@@ -159,6 +197,7 @@ func LoadServiceAccountSession(endpoint, tokenFile string) (*Session, error) {
 	if err != nil {
 		return nil, err
 	}
+	warnIfOpen(path)
 	s, ok := sessions[serviceAccountKey(endpoint, tokenFile)]
 	if !ok {
 		return nil, nil
