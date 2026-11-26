@@ -929,10 +929,13 @@ Examples:
 		Use:     "permissions",
 		Aliases: []string{"my-permissions"},
 		Short:   "List the permissions of the current user",
-		Long: `List the permissions of the user owning the API token in use.
+		Long: `List the permissions of the roles assigned to the user the command runs as: the owner
+of the API token in use, or the user signed in with 'login'.
 
-The permissions come from the roles assigned to the user and determine which API
-operations, and therefore which CLI commands, are available.
+The list is the same whatever the credential allows, and the credential can allow less:
+an API token with the Account scope or other restrictions is refused operations that these
+permissions cover (403 Forbidden), and a session signed in with 'login' is refused a few
+account-security operations, such as managing API tokens.
 
 Examples:
   metalcloud-cli user permissions
