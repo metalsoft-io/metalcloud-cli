@@ -819,3 +819,55 @@ func TestLogoutDeletesEntryEvenWhenServerCallFails(t *testing.T) {
 		t.Error("session not deleted")
 	}
 }
+
+func TestApiKeyWhitespaceIsTrimmedAndControlCharactersAreRefused(t *testing.T) {
+	useTempSessions(t)
+	var requests int32
+	var auth []string
+	mux := newMux(nil, func(mux *http.ServeMux) {
+		mux.HandleFunc("/api/v2/sites", func(w http.ResponseWriter, r *http.Request) {
+			auth = append(auth, r.Header.Get("Authorization"))
+			w.Header().Set("Content-Type", "application/json")
+			_, _ = w.Write([]byte(`{"data":[],"meta":{"currentPage":1,"totalPages":1,"itemsPerPage":100}}`))
+		})
+	})
+	api := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		atomic.AddInt32(&requests, 1)
+		mux.ServeHTTP(w, r)
+	}))
+	defer api.Close()
+
+	// a token pasted or read from a file often ends in a newline
+	for _, key := range []string{"msat_key\n", "msat_key\r\n", " msat_key \n", "\tmsat_key"} {
+		auth = nil
+		if _, err := runCLIWithKey(t, api, key, "site", "list"); err != nil {
+			t.Errorf("%q: %v", key, err)
+		}
+		if len(auth) != 1 || auth[0] != "Bearer msat_key" {
+			t.Errorf("%q: Authorization headers = %q", key, auth)
+		}
+	}
+
+	// whitespace alone is no token: the saved session is looked for, and there is none
+	if _, err := runCLIWithKey(t, api, " \n", "site", "list"); err == nil || err.Error() != noCredentialText {
+		t.Errorf("whitespace only: err = %v, want %q", err, noCredentialText)
+	}
+
+	// a control character inside is refused by name, before any request, without showing the token
+	for _, tc := range []struct{ key, char string }{
+		{"msat_\nkey", `'\n'`},
+		{"msat_key\x00tail", `'\x00'`},
+		{"msat\x7fkey", `'\x7f'`},
+	} {
+		atomic.StoreInt32(&requests, 0)
+		_, err := runCLIWithKey(t, api, tc.key, "site", "list")
+		if err == nil || !strings.Contains(err.Error(), "API token") || !strings.Contains(err.Error(), tc.char) {
+			t.Errorf("%q: err = %v, want one naming the API token and %s", tc.key, err, tc.char)
+		} else if strings.Contains(err.Error(), "msat") || strings.Contains(err.Error(), "key\x00") {
+			t.Errorf("%q: the error shows the token: %v", tc.key, err)
+		}
+		if n := atomic.LoadInt32(&requests); n != 0 {
+			t.Errorf("%q: %d requests sent", tc.key, n)
+		}
+	}
+}

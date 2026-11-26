@@ -10,6 +10,7 @@ import (
 	"slices"
 	"strings"
 	"time"
+	"unicode"
 
 	"github.com/metalsoft-io/metalcloud-cli/cmd/metalcloud-cli/system"
 	"github.com/metalsoft-io/metalcloud-cli/internal/login"
@@ -229,7 +230,15 @@ func rootPersistentPreRun(cmd *cobra.Command, args []string) error {
 // config), else the service account's token file when one is set (a person's saved session is then
 // ignored), else the saved session for the endpoint if it has not expired.
 func resolveCredential(ctx context.Context, apiKey, tokenFile string, c login.Client, now time.Time) (token string, kind credentialKind, err error) {
+	// A token pasted or read from a file often ends in a newline, which net/http refuses in a header:
+	// the whitespace around it is dropped, and a control character left inside is refused by name.
+	apiKey = strings.TrimSpace(apiKey)
 	if apiKey != "" {
+		for _, r := range apiKey {
+			if unicode.IsControl(r) {
+				return "", credentialAPIKey, fmt.Errorf("the API token contains the control character %q; check --api_key, METALCLOUD_API_KEY or api_key in the configuration file", r)
+			}
+		}
 		return apiKey, credentialAPIKey, nil
 	}
 

@@ -3,6 +3,7 @@ package cmd
 import (
 	"context"
 	"net/url"
+	"strings"
 
 	"github.com/metalsoft-io/metalcloud-cli/cmd/metalcloud-cli/system"
 	"github.com/metalsoft-io/metalcloud-cli/internal/site"
@@ -499,7 +500,7 @@ func init() {
 	siteOneLinerCmd.Flags().StringVar(&siteOneLinerFlags.imagesTag, "images-tag", "", "Docker images tag version \x1b[33m(default: auto-detected from system version)\x1b[0m")
 	siteOneLinerCmd.Flags().StringVar(&siteOneLinerFlags.tunnelSecret, "tunnel-secret", "", "MS Tunnel secret for secure connections. When omitted, the configured tunnel shared secret is used.")
 
-	if apiKey := v.GetString("api_key"); apiKey != "" {
+	if apiKey := strings.TrimSpace(v.GetString("api_key")); apiKey != "" {
 		if endpoint := v.GetString(system.ConfigEndpoint); endpoint != "" {
 			ctx := api.SetApiClient(context.Background(), endpoint, apiKey, false, v.GetBool("insecure_skip_verify"))
 			if client, err := api.GetApiClientE(ctx); err == nil {
